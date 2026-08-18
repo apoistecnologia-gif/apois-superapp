@@ -11,7 +11,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - name: Checkout superapp
         uses: actions/checkout@v4
@@ -53,3 +53,16 @@ jobs:
 
       - name: Build Entregas Cliente in isolated workspace
         run: npm run build:entregas
+
+      - name: Assemble unified APOIS shell
+        run: npm run build:shell
+
+      - name: Verify nested module bundle
+        run: npm run verify:dist
+
+      - name: Upload assembled web bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: apois-superapp-web-dist
+          path: superapp/shell/dist
+          if-no-files-found: error
