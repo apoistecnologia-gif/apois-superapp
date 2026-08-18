@@ -20,6 +20,12 @@ function replaceRequired(path, search, replacement, label) {
 
 if (name === 'corridas') {
   // Corridas já usa Hash History e base relativa no snapshot protegido.
+  replaceRequired(
+    '.work/corridas/src/integrations/supabase/client.ts',
+    '      storage: typeof window !== "undefined" ? localStorage : undefined,\n      persistSession: true,',
+    '      storage: typeof window !== "undefined" ? localStorage : undefined,\n      storageKey: "apois-superapp-corridas-auth-v1",\n      persistSession: true,',
+    'corridas: sessão Supabase isolada dentro do Superapp',
+  );
   console.log('[OK] corridas: createHashHistory + base relativa já são nativos do módulo');
   process.exit(0);
 }
@@ -54,6 +60,12 @@ if (name === 'entregas') {
     'src="/apois-app-icon.png"',
     'src="./apois-app-icon.png"',
     'entregas: ícone do splash relativo ao módulo',
+  );
+  replaceRequired(
+    '.work/entregas/src/integrations/supabase/client.ts',
+    '    storage: typeof window !== "undefined" ? window.localStorage : undefined,\n    // Merchant uses a dedicated auth namespace.',
+    '    storage: typeof window !== "undefined" ? window.localStorage : undefined,\n    storageKey: "apois-superapp-entregas-auth-v1",\n    // Merchant uses a dedicated auth namespace.',
+    'entregas: sessão Supabase isolada dentro do Superapp',
   );
   replaceRequired(
     '.work/entregas/src/components/GoogleLoginButton.tsx',
