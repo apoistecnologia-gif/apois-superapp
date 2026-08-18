@@ -20,7 +20,7 @@
   <main>
     <header><div class="brand">APOIS<span>.</span></div><div class="tag">Tudo em um só app</div></header>
     <h1>O que você precisa agora?</h1>
-    <p class="lead">Escolha um serviço. Nesta primeira etapa os módulos continuam independentes e protegidos.</p>
+    <p class="lead">Escolha o serviço que você quer usar.</p>
     <section class="services" aria-label="Serviços APOIS">
       <button class="service" data-module="corridas">
         <span class="arrow">›</span><div class="icon">🚘</div><h2>Corridas</h2><p>Carro, moto, fretes, guincho e envios.</p>
@@ -29,13 +29,16 @@
         <span class="arrow">›</span><div class="icon">🛍️</div><h2>Entregas</h2><p>Restaurantes, mercados, farmácias e lojas.</p>
       </button>
     </section>
-    <footer>APOIS — um ecossistema, módulos preservados.</footer>
+    <footer>APOIS — tudo em um só lugar.</footer>
   </main>
   <script>
+    const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html'};
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
       const moduleName=button.dataset.module;
+      const destination=moduleUrls[moduleName];
+      if(!destination)return;
       window.dispatchEvent(new CustomEvent('apois:module-selected',{detail:{module:moduleName}}));
-      console.info('[APOIS superapp] módulo selecionado:',moduleName);
+      window.location.href=destination;
     }));
   </script>
 </body>
