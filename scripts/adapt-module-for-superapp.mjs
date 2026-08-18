@@ -25,6 +25,18 @@ if (name === 'corridas') {
     '      storage: typeof window !== "undefined" ? localStorage : undefined,\n      storageKey: "apois-superapp-corridas-auth-v1",\n      persistSession: true,',
     'corridas: sessão Supabase isolada dentro do Superapp',
   );
+  replaceRequired(
+    '.work/corridas/src/hooks/use-location.tsx',
+    'const LAST_LOCATION_KEY = "apois-last-location";',
+    'const LAST_LOCATION_KEY = "apois-superapp-corridas-last-location";',
+    'corridas: cache de localização isolado dentro do Superapp',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/use-location.tsx',
+    '  }, [checkPermissions, refreshLocation, updateLocationState]);',
+    '  }, [checkPermissions, permissionState, refreshLocation, updateLocationState]);',
+    'corridas: watcher de localização reinicia após mudança de permissão',
+  );
   console.log('[OK] corridas: createHashHistory + base relativa já são nativos do módulo');
   process.exit(0);
 }
