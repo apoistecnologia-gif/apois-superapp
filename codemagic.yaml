@@ -59,11 +59,14 @@ workflows:
           grep -Fq 'data-apois-superapp-bridge' .work/corridas/dist/index.html
           grep -Fq 'data-apois-superapp-bridge' .work/entregas/.output/public/index.html
           grep -Fq "appPlugin.addListener('backButton'" .work/entregas/.output/public/index.html
+          grep -Fq "appPlugin.addListener('appStateChange'" .work/entregas/.output/public/index.html
+          grep -Fq 'enforceSessionBoundary' .work/corridas/dist/index.html
+          grep -Fq 'enforceSessionBoundary' .work/entregas/.output/public/index.html
           grep -Fq 'apois-superapp:last-route:' .work/entregas/.output/public/index.html
           grep -Fq 'window.location.replace(shellUrl)' .work/entregas/.output/public/index.html
           grep -Fq 'window.location.replace(destination)' superapp/shell/index.html
           grep -Fq 'br.com.apois.app://auth/' superapp/shell/index.html
-          echo "[OK] Sessões isoladas, histórico estável, OAuth, recuperação, Push e deep links adaptados"
+          echo "[OK] Sessões isoladas, retomada segura, histórico, OAuth, recuperação, Push e deep links adaptados"
 
       - name: Create Capacitor Android project
         script: |
