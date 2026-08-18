@@ -65,8 +65,11 @@ workflows:
           grep -Fq 'emailRedirectTo: "br.com.apois.app://auth/callback"' .work/entregas/src/routes/register.tsx
           grep -Fq 'redirectTo: "br.com.apois.app://auth/reset"' .work/entregas/src/routes/login.tsx
           grep -Fq 'VITE_APOIS_SUPERAPP_PUSH_ENABLED' .work/entregas/src/lib/customer-push.ts
+          grep -Fq 'data-apois-superapp-bridge' .work/corridas/dist/index.html
+          grep -Fq 'data-apois-superapp-bridge' .work/entregas/.output/public/index.html
+          grep -Fq "appPlugin.addListener('backButton'" .work/entregas/.output/public/index.html
           grep -Fq 'br.com.apois.app://auth/' superapp/shell/index.html
-          echo "[OK] Entregas OAuth, confirmação, recuperação e Push adaptados ao Superapp"
+          echo "[OK] OAuth, confirmação, recuperação, Push, deep links e retorno ao shell adaptados"
 
       - name: Create Capacitor Android project
         script: |
