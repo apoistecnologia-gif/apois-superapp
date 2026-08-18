@@ -48,6 +48,9 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           npm run build:superapp
+          grep -Fq 'br.com.apois.app://auth/callback' .work/entregas/src/components/GoogleLoginButton.tsx
+          grep -Fq 'window.location.replace("#/inicio")' .work/entregas/src/components/GoogleLoginButton.tsx
+          echo "[OK] Entregas OAuth adaptado para o package unificado"
 
       - name: Create Capacitor Android project
         script: |
