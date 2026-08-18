@@ -153,6 +153,9 @@ function injectSuperappBridge(indexPath, moduleName) {
 
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), name]);
 run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
+if (name === 'corridas') {
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
+}
 
 const config = manifest.modules[name];
 const cwd = resolve(root, config.workspace);
@@ -167,6 +170,12 @@ if (name === 'corridas') {
   }
   env.VITE_SUPABASE_URL = corridasUrl;
   env.VITE_SUPABASE_PUBLISHABLE_KEY = corridasKey;
+  env.VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED = process.env.APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1' ? '1' : '0';
+  console.log(
+    env.VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1'
+      ? '[OK] corridas: push FCM do Superapp explicitamente habilitado'
+      : '[INFO] corridas: push FCM mantido isolado; Realtime + polling seguem ativos',
+  );
 
   // Corridas renders its passenger map with Google Maps JavaScript API inside
   // the WebView. That credential must not be confused with the Android-native
