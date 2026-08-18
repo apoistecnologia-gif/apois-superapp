@@ -55,6 +55,11 @@ workflows:
           grep -Fq 'PolylineDecoder' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'displayedRoutePoints' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'PolylineDecoder.decode(encodedPolyline)' .work/corridas/src/components/map/PassengerMap.tsx
+          grep -Fq 'payment_method: selectedMethod' .work/corridas/src/hooks/rides/use-ride-request.tsx
+          grep -Fq 'pickup_address: pickupAddress' .work/corridas/src/hooks/rides/use-ride-request.tsx
+          grep -Fq 'destination_name: destination?.formattedAddress' .work/corridas/src/hooks/rides/use-ride-request.tsx
+          grep -Fq 'service_details: selectedCategory.details ?? {}' .work/corridas/src/hooks/rides/use-ride-request.tsx
+          grep -Fq 'selectedMethod !== requestDataRef.current.paymentMethod' .work/corridas/src/hooks/rides/use-ride-request.tsx
           python3 - <<'PY'
           from pathlib import Path
           p = Path('.work/corridas/src/hooks/rides/use-active-ride.tsx')
@@ -86,7 +91,7 @@ workflows:
           grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/modules/corridas/index.html
           grep -Fq "pushNotificationActionPerformed" superapp/shell/dist/index.html
           grep -Fq "#/pedido/" superapp/shell/dist/modules/corridas/index.html
-          echo "[OK] Sessões, localização, rota ativa, Realtime fallback, OAuth, Push e deep links adaptados"
+          echo "[OK] Corridas request payload, sessão, localização, rota ativa, Realtime fallback, OAuth, Push e deep links adaptados"
 
       - name: Create Capacitor Android project
         script: |
