@@ -55,6 +55,18 @@ if (name === 'entregas') {
     'src="./apois-app-icon.png"',
     'entregas: ícone do splash relativo ao módulo',
   );
+  replaceRequired(
+    '.work/entregas/src/components/GoogleLoginButton.tsx',
+    'const CUSTOMER_OAUTH_CALLBACK = "br.com.apois.cliente://auth/callback";',
+    'const CUSTOMER_OAUTH_CALLBACK = "br.com.apois.app://auth/callback";',
+    'entregas: callback Google usa package unificado',
+  );
+  replaceRequired(
+    '.work/entregas/src/components/GoogleLoginButton.tsx',
+    '      window.location.replace("/inicio");',
+    '      window.location.replace("#/inicio");',
+    'entregas: pós-login Google respeita Hash History do Superapp',
+  );
   process.exit(0);
 }
 
