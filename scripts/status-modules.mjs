@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process';
 
 const modules = [
-  ['APOIS Entregas', 'apps/entregas'],
-  ['APOIS Corridas Passageiro', 'apps/corridas-passageiro'],
-  ['APOIS Corridas Motorista/Admin', 'apps/corridas-motorista-admin'],
+  ['APOIS Entregas', 'sources/apois-entregas'],
+  ['APOIS Corridas Passageiro', 'sources/apois-corridas-passageiro'],
+  ['APOIS Corridas Motorista/Admin', 'sources/apois-corridas-motorista-admin'],
 ];
 
 for (const [label, path] of modules) {
