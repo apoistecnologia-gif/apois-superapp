@@ -84,10 +84,11 @@ if (config.render) {
     process.exit(1);
   }
 
-  // Apenas atributos de assets são normalizados; dados de rota/hidratação permanecem intactos.
-  html = html
-    .replace(/(src|href)="\/assets\//g, '$1="./assets/')
-    .replace(/href="\/favicon/g, 'href="./favicon');
+  // The Entregas bundle lives under /modules/entregas inside the Superapp.
+  // Convert root-relative local resource references to paths relative to that folder.
+  // Protocol-relative/external URLs (//host/...) are intentionally preserved.
+  html = html.replace(/(src|href)="\/(?!\/)/g, '$1="./');
+
   const output = resolve(cwd, config.render.output);
   writeFileSync(output, html);
   console.log(`[OK] ${name}: index mobile renderizado em ${config.render.output}`);
