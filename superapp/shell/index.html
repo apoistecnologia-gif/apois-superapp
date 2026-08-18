@@ -37,7 +37,48 @@
   </main>
   <script>
     const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html#/'};
-    document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{const moduleName=button.dataset.module;const destination=moduleUrls[moduleName];if(!destination)return;window.dispatchEvent(new CustomEvent('apois:module-selected',{detail:{module:moduleName}}));window.location.href=destination;}));
+
+    function openModule(moduleName){
+      const destination=moduleUrls[moduleName];
+      if(!destination)return;
+      window.dispatchEvent(new CustomEvent('apois:module-selected',{detail:{module:moduleName}}));
+      window.location.href=destination;
+    }
+
+    document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>openModule(button.dataset.module)));
+
+    function relayAuthDeepLink(rawUrl){
+      if(typeof rawUrl!=='string'||!rawUrl.startsWith('br.com.apois.app://auth/'))return false;
+      try{
+        const incoming=new URL(rawUrl);
+        const path=incoming.pathname.replace(/^\//,'');
+        const params=new URLSearchParams(incoming.search);
+        const fragment=incoming.hash.replace(/^#/,'');
+        if(fragment){
+          const fragmentParams=new URLSearchParams(fragment);
+          fragmentParams.forEach((value,key)=>{if(!params.has(key))params.set(key,value);});
+        }
+        const query=params.toString();
+        const suffix=query?`?${query}`:'';
+        if(path==='reset'){
+          window.location.href=`./modules/entregas/index.html#/redefinir-senha${suffix}`;
+          return true;
+        }
+        if(path==='callback'){
+          window.location.href=`./modules/entregas/index.html#/auth/callback${suffix}`;
+          return true;
+        }
+      }catch(error){
+        console.error('[APOIS] deep link inválido',error);
+      }
+      return false;
+    }
+
+    const appPlugin=window.Capacitor?.Plugins?.App;
+    if(appPlugin){
+      appPlugin.addListener('appUrlOpen',({url})=>{relayAuthDeepLink(url);}).catch(()=>undefined);
+      appPlugin.getLaunchUrl().then((result)=>{if(result?.url)relayAuthDeepLink(result.url);}).catch(()=>undefined);
+    }
   </script>
 </body>
 </html>
