@@ -43,6 +43,18 @@ if (name === 'entregas') {
     'export default defineConfig({\n  vite: { base: "./" },\n',
     'entregas: gerar assets com caminhos relativos',
   );
+  replaceRequired(
+    '.work/entregas/src/routes/index.tsx',
+    'src="/apois-logo.svg"',
+    'src="./apois-logo.svg"',
+    'entregas: logo principal relativa ao módulo',
+  );
+  replaceRequired(
+    '.work/entregas/src/components/ApoisLaunchSplash.tsx',
+    'src="/apois-app-icon.png"',
+    'src="./apois-app-icon.png"',
+    'entregas: ícone do splash relativo ao módulo',
+  );
   process.exit(0);
 }
 
