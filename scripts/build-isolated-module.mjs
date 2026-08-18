@@ -33,29 +33,19 @@ const config = manifest.modules[name];
 const cwd = resolve(root, config.workspace);
 const env = { ...process.env, ...(config.env ?? {}) };
 
-// Keep each existing product attached to its own backend during the integration.
-// Prefixed variables avoid accidentally compiling Corridas against Entregas (or vice-versa).
+// Keep the two production backends isolated inside the experimental APK.
+// Corridas source expects the generic VITE_SUPABASE_* names, while Codemagic
+// stores its values under CORRIDAS_* to avoid overwriting Entregas variables.
 if (name === 'corridas') {
-  env.VITE_SUPABASE_URL = process.env.CORRIDAS_VITE_SUPABASE_URL ?? process.env.CORRIDAS_SUPABASE_URL ?? '';
-  env.VITE_SUPABASE_PUBLISHABLE_KEY =
-    process.env.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY ?? process.env.CORRIDAS_SUPABASE_PUBLISHABLE_KEY ?? '';
-  if (process.env.CORRIDAS_VITE_GOOGLE_MAPS_API_KEY) {
-    env.VITE_GOOGLE_MAPS_API_KEY = process.env.CORRIDAS_VITE_GOOGLE_MAPS_API_KEY;
+  const corridasUrl = process.env.CORRIDAS_VITE_SUPABASE_URL;
+  const corridasKey = process.env.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!corridasUrl || !corridasKey) {
+    console.error('[FAIL] corridas: variáveis CORRIDAS_VITE_SUPABASE_* ausentes');
+    process.exit(1);
   }
-} else if (name === 'entregas') {
-  env.VITE_SUPABASE_URL = process.env.ENTREGAS_VITE_SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? '';
-  env.VITE_SUPABASE_PUBLISHABLE_KEY =
-    process.env.ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '';
-  if (process.env.ENTREGAS_VITE_GOOGLE_MAPS_API_KEY) {
-    env.VITE_GOOGLE_MAPS_API_KEY = process.env.ENTREGAS_VITE_GOOGLE_MAPS_API_KEY;
-  }
-  env.APOIS_MOBILE_BUILD = '1';
-  env.VITE_APOIS_PRODUCT_MODE = 'customer';
-}
-
-if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_PUBLISHABLE_KEY) {
-  console.error(`[FAIL] ${name}: credenciais públicas do Supabase não configuradas para este módulo.`);
-  process.exit(1);
+  env.VITE_SUPABASE_URL = corridasUrl;
+  env.VITE_SUPABASE_PUBLISHABLE_KEY = corridasKey;
+  console.log('[OK] corridas: ambiente Supabase isolado aplicado');
 }
 
 for (const command of [config.install, config.build]) {
@@ -94,6 +84,7 @@ if (config.render) {
     process.exit(1);
   }
 
+  // Apenas atributos de assets são normalizados; dados de rota/hidratação permanecem intactos.
   html = html
     .replace(/(src|href)="\/assets\//g, '$1="./assets/')
     .replace(/href="\/favicon/g, 'href="./favicon');
