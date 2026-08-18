@@ -123,8 +123,8 @@ workflows:
           bunx cap add android
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           bunx cap sync android
-          grep -Fq ':capacitor-google-maps' android/settings.gradle
-          grep -Fq ':capacitor-push-notifications' android/settings.gradle
+          grep -Fq ':capacitor-google-maps' android/capacitor.settings.gradle
+          grep -Fq ':capacitor-push-notifications' android/capacitor.settings.gradle
           echo "[OK] Plugins nativos Maps + Push registrados no Android"
           cd ../..
           node scripts/configure-superapp-android.mjs
