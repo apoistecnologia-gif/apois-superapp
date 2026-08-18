@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "sources:clone": "bash scripts/bootstrap-sources.sh",
-    "sources:status": "bash scripts/source-status.sh"
+    "sources:status": "bash scripts/source-status.sh",
+    "status:modules": "node scripts/status-modules.mjs",
+    "verify:pins": "node scripts/verify-module-pins.mjs"
   }
 }
