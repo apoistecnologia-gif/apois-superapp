@@ -1,0 +1,19 @@
+{
+  "modules": {
+    "corridas": {
+      "source": "sources/apois-corridas-passageiro",
+      "workspace": ".work/corridas",
+      "install": ["bun", "install"],
+      "build": ["bun", "run", "build:capacitor"],
+      "purpose": "APOIS Corridas - passageiro"
+    },
+    "entregas": {
+      "source": "sources/apois-entregas",
+      "workspace": ".work/entregas",
+      "install": ["bun", "install"],
+      "build": ["bun", "run", "build:customer"],
+      "purpose": "APOIS Entregas - cliente"
+    }
+  },
+  "rule": "Never patch source submodules. Copy to .work first and patch/build only there."
+}
