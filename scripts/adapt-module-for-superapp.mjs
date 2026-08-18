@@ -37,6 +37,42 @@ if (name === 'corridas') {
     '  }, [checkPermissions, permissionState, refreshLocation, updateLocationState]);',
     'corridas: watcher de localização reinicia após mudança de permissão',
   );
+  replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    'import { googleMapsLoader } from "@/services/google/google-maps-loader";',
+    'import { googleMapsLoader } from "@/services/google/google-maps-loader";\nimport { PolylineDecoder } from "@/services/routes/polyline-decoder";',
+    'corridas: mapa ativo importa decoder de polyline persistida',
+  );
+  replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    '  destination: customDestination,\n  driverLocation,',
+    '  destination: customDestination,\n  encodedPolyline,\n  driverLocation,',
+    'corridas: mapa ativo consome polyline recebida da corrida',
+  );
+  replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    '  const validDriverLocation = useMemo<Coordinate | null>(() => {',
+    '  const displayedRoutePoints = useMemo(() => {\n    if (route?.decodedPoints && route.decodedPoints.length > 1) return route.decodedPoints;\n    if (!encodedPolyline) return [];\n    try {\n      return PolylineDecoder.decode(encodedPolyline);\n    } catch (error) {\n      console.warn("[PassengerMap] Polyline persistida inválida", error);\n      return [];\n    }\n  }, [encodedPolyline, route?.decodedPoints]);\n\n  const validDriverLocation = useMemo<Coordinate | null>(() => {',
+    'corridas: mapa restaura rota da corrida mesmo sem estado global',
+  );
+  replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    '    if (route?.decodedPoints && route.decodedPoints.length > 1) {\n      const path = route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));',
+    '    if (displayedRoutePoints.length > 1) {\n      const path = displayedRoutePoints.map((point) => ({ lat: point.lat, lng: point.lng }));',
+    'corridas: desenho da rota usa fallback persistido',
+  );
+  replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    '  }, [destination, orderedStops, origin, route?.decodedPoints, status]);',
+    '  }, [destination, displayedRoutePoints, orderedStops, origin, status]);',
+    'corridas: atualização do mapa acompanha rota persistida',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-active-ride.tsx',
+    '      !userId ||\n      screenState !== "active" ||\n      isRealtimeConnected ||\n      !currentRideIdRef.current',
+    '      !userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
+    'corridas: polling de segurança continua mesmo com Realtime conectado',
+  );
   console.log('[OK] corridas: createHashHistory + base relativa já são nativos do módulo');
   process.exit(0);
 }
