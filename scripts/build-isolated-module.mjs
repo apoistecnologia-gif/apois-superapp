@@ -26,6 +26,68 @@ function run(bin, args, options = {}) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+function injectSuperappBridge(indexPath, moduleName) {
+  let html = readFileSync(indexPath, 'utf8');
+  if (html.includes('data-apois-superapp-bridge')) return;
+
+  const bridge = `
+<script data-apois-superapp-bridge>
+(() => {
+  const moduleName = ${JSON.stringify(moduleName)};
+  const shellUrl = '../../index.html';
+  const appPlugin = window.Capacitor?.Plugins?.App;
+
+  function routeAuthDeepLink(rawUrl) {
+    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
+    try {
+      const incoming = new URL(rawUrl);
+      const path = incoming.pathname.replace(/^\\//, '');
+      const params = new URLSearchParams(incoming.search);
+      const fragment = incoming.hash.replace(/^#/, '');
+      if (fragment) {
+        const fragmentParams = new URLSearchParams(fragment);
+        fragmentParams.forEach((value, key) => { if (!params.has(key)) params.set(key, value); });
+      }
+      const query = params.toString();
+      const suffix = query ? '?' + query : '';
+      if (path === 'reset') {
+        window.location.replace('#/redefinir-senha' + suffix);
+        return true;
+      }
+      if (path === 'callback') {
+        window.location.replace('#/auth/callback' + suffix);
+        return true;
+      }
+    } catch (error) {
+      console.error('[APOIS] Falha ao processar deep link no módulo', error);
+    }
+    return false;
+  }
+
+  if (appPlugin) {
+    appPlugin.addListener('appUrlOpen', ({ url }) => { routeAuthDeepLink(url); }).catch(() => undefined);
+    appPlugin.getLaunchUrl().then((result) => { if (result?.url) routeAuthDeepLink(result.url); }).catch(() => undefined);
+    appPlugin.addListener('backButton', ({ canGoBack }) => {
+      const hash = window.location.hash || '';
+      const rootHashes = ['', '#', '#/', '#/login'];
+      const atModuleRoot = moduleName === 'entregas'
+        ? rootHashes.includes(hash)
+        : (!canGoBack || window.history.length <= 2);
+      if (atModuleRoot) {
+        window.location.href = shellUrl;
+        return;
+      }
+      window.history.back();
+    }).catch(() => undefined);
+  }
+})();
+</script>`;
+
+  html = html.includes('</body>') ? html.replace('</body>', `${bridge}\n</body>`) : `${html}\n${bridge}\n`;
+  writeFileSync(indexPath, html);
+  console.log(`[OK] ${moduleName}: bridge do Superapp injetado`);
+}
+
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), name]);
 run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
 
@@ -118,5 +180,10 @@ if (config.render) {
   writeFileSync(output, html);
   console.log(`[OK] ${name}: index mobile renderizado em ${config.render.output}`);
 }
+
+const finalIndex = name === 'corridas'
+  ? resolve(cwd, 'dist/index.html')
+  : resolve(cwd, config.render?.output ?? '.output/public/index.html');
+injectSuperappBridge(finalIndex, name);
 
 console.log(`[OK] ${name}: build isolado concluído em ${config.workspace}`);
