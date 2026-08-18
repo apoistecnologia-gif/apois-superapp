@@ -25,6 +25,13 @@ function requireOrWarn(condition, message) {
   else warn(message);
 }
 
+function validateGoogleKey(value, envName, label) {
+  requireOrWarn(Boolean(value), `${label} disponível`);
+  if (!value) return;
+  if (/^(AIza)[A-Za-z0-9_-]{20,}$/.test(value)) ok(`${label} tem formato plausível`);
+  else fail(`${envName} não parece uma chave Google válida`);
+}
+
 if (!/^([A-Za-z][A-Za-z0-9_]*\.)+[A-Za-z][A-Za-z0-9_]*$/.test(APP_PACKAGE)) {
   fail(`package Android inválido: ${APP_PACKAGE}`);
 } else {
@@ -39,11 +46,13 @@ if (EXPECTED_SHA1) {
   }
 }
 
-const mapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim() || '';
-requireOrWarn(Boolean(mapsKey), 'Google Maps API key disponível para o package unificado');
-if (mapsKey) {
-  if (/^(AIza)[A-Za-z0-9_-]{20,}$/.test(mapsKey)) ok('Google Maps API key tem formato plausível');
-  else fail('CORRIDAS_ANDROID_MAPS_API_KEY não parece uma chave Google válida');
+const androidMapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim() || '';
+const webMapsKey = process.env.CORRIDAS_WEB_MAPS_API_KEY?.trim() || '';
+validateGoogleKey(androidMapsKey, 'CORRIDAS_ANDROID_MAPS_API_KEY', 'Google Maps Android key do Superapp');
+validateGoogleKey(webMapsKey, 'CORRIDAS_WEB_MAPS_API_KEY', 'Google Maps JavaScript/Places key do Superapp');
+
+if (androidMapsKey && webMapsKey && androidMapsKey === webMapsKey) {
+  warn('Maps Android e Maps JavaScript estão usando a mesma chave. Para produção, use credenciais separadas com restrições diferentes.');
 }
 
 const firebaseB64 = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim() || '';
