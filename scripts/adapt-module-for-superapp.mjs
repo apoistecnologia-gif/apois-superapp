@@ -34,8 +34,8 @@ if (name === 'entregas') {
   replaceRequired(
     '.work/entregas/src/router.tsx',
     '  const router = createRouter({\n    routeTree,',
-    '  const hashHistory = createHashHistory();\n\n  const router = createRouter({\n    routeTree,\n    history: hashHistory,',
-    'entregas: usar Hash History dentro do Superapp',
+    '  const hashHistory = typeof window !== "undefined" ? createHashHistory() : undefined;\n\n  const router = createRouter({\n    routeTree,\n    ...(hashHistory ? { history: hashHistory } : {}),',
+    'entregas: usar Hash History apenas no WebView/browser',
   );
   replaceRequired(
     '.work/entregas/vite.config.ts',
