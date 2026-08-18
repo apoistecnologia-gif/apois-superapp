@@ -51,4 +51,18 @@ replaceRequired(
   'corridas: FCM próprio fica isolado até projeto Firebase unificado estar compatível',
 );
 
+replaceRequired(
+  '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
+  '                {status === "motorista_a_caminho" && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
+  '                {["motorista_a_caminho", "motorista_chegou"].includes(status) && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
+  'corridas: PIN permanece visível até o motorista iniciar a viagem',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/rides/active/RideStatusHeader.tsx',
+  '          subtitle: "Dirija-se ao local de embarque",',
+  '          subtitle: "Informe o código de segurança ao motorista para iniciar",',
+  'corridas: chegada orienta passageiro a informar o PIN',
+);
+
 console.log('[OK] corridas: runtime do Superapp endurecido sem alterar o app original');
