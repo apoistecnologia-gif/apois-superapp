@@ -45,7 +45,32 @@ if (name === 'corridas') {
   }
   env.VITE_SUPABASE_URL = corridasUrl;
   env.VITE_SUPABASE_PUBLISHABLE_KEY = corridasKey;
+
+  // The same Android-restricted Google key is used by the native map plugin
+  // and injected into the Corridas web bundle for Places/Maps JS when present.
+  const mapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
+  if (mapsKey) {
+    env.VITE_GOOGLE_MAPS_API_KEY = mapsKey;
+    console.log('[OK] corridas: Google Maps/Places key do Superapp aplicada');
+  } else {
+    console.warn('[WARN] corridas: CORRIDAS_ANDROID_MAPS_API_KEY ausente; mapas serão homologados depois da configuração');
+  }
+
   console.log('[OK] corridas: ambiente Supabase isolado aplicado');
+}
+
+if (name === 'entregas') {
+  // Do not let the embedded customer module register FCM until the unified
+  // Android package has its own google-services.json. This prevents login from
+  // triggering a native push initialization against an unconfigured Firebase app.
+  env.VITE_APOIS_SUPERAPP_PUSH_ENABLED = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim()
+    ? '1'
+    : '0';
+  console.log(
+    env.VITE_APOIS_SUPERAPP_PUSH_ENABLED === '1'
+      ? '[OK] entregas: push do Superapp habilitado para este build'
+      : '[INFO] entregas: push do Superapp mantido desabilitado até Firebase ser configurado',
+  );
 }
 
 for (const command of [config.install, config.build]) {
