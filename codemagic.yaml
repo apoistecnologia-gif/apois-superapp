@@ -66,6 +66,10 @@ workflows:
           grep -Fq 'window.location.replace(shellUrl)' .work/entregas/.output/public/index.html
           grep -Fq 'window.location.replace(destination)' superapp/shell/index.html
           grep -Fq 'br.com.apois.app://auth/' superapp/shell/index.html
+          grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/index.html
+          grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/modules/corridas/index.html
+          grep -Fq "pushNotificationActionPerformed" superapp/shell/dist/index.html
+          grep -Fq "#/pedido/" superapp/shell/dist/modules/corridas/index.html
           echo "[OK] Sessões isoladas, retomada segura, histórico, OAuth, recuperação, Push e deep links adaptados"
 
       - name: Create Capacitor Android project
