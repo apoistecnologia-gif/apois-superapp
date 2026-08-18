@@ -13,6 +13,7 @@ workflows:
         APP_PACKAGE: "br.com.apois.app"
         APP_LABEL: "APOIS"
         EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"
+        APOIS_STRICT_NATIVE_CONFIG: "1"
     scripts:
       - name: Install Bun
         script: |
@@ -36,6 +37,9 @@ workflows:
           : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?Add CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY to Codemagic}"
           : "${VITE_SUPABASE_URL:?Existing APOIS Entregas VITE_SUPABASE_URL is required}"
           : "${VITE_SUPABASE_PUBLISHABLE_KEY:?Existing APOIS Entregas publishable key is required}"
+          : "${CORRIDAS_WEB_MAPS_API_KEY:?Add CORRIDAS_WEB_MAPS_API_KEY to Codemagic}"
+          : "${CORRIDAS_ANDROID_MAPS_API_KEY:?Add CORRIDAS_ANDROID_MAPS_API_KEY to Codemagic}"
+          : "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:?Add unified Firebase google-services.json for br.com.apois.app to Codemagic}"
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
@@ -70,12 +74,20 @@ workflows:
           guard = '!userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current'
           if guard not in text:
               raise SystemExit('polling de segurança da corrida não foi aplicado')
-          if 'RIDE_STATUS_ORDER' not in text or 'lastAcceptedStatusRef' not in text:
-              raise SystemExit('proteção monotônica do status da corrida não foi aplicada')
-          print('[OK] Corridas mantém polling de segurança e status monotônico')
+          required = [
+              'RIDE_STATUS_ORDER',
+              'lastAcceptedStatusRef',
+              'await loadRide(currentRideId)',
+              'status === "expired" || status.startsWith("cancelada")',
+          ]
+          missing = [item for item in required if item not in text]
+          if missing:
+              raise SystemExit(f'proteções do lifecycle da corrida ausentes: {missing}')
+          print('[OK] Corridas mantém polling, terminal recovery e status monotônico')
           PY
           grep -Fq 'apois-superapp-entregas-auth-v1' .work/entregas/src/integrations/supabase/client.ts
           grep -Fq 'br.com.apois.app://auth/callback' .work/entregas/src/components/GoogleLoginButton.tsx
+          grep -Fq '__APOIS_SUPERAPP_AUTH_BRIDGE__' .work/entregas/src/components/GoogleLoginButton.tsx
           grep -Fq 'window.location.replace("#/inicio")' .work/entregas/src/components/GoogleLoginButton.tsx
           grep -Fq 'emailRedirectTo: "br.com.apois.app://auth/callback"' .work/entregas/src/routes/register.tsx
           grep -Fq 'redirectTo: "br.com.apois.app://auth/reset"' .work/entregas/src/routes/login.tsx
@@ -92,11 +104,13 @@ workflows:
           grep -Fq 'window.location.replace(shellUrl)' .work/entregas/.output/public/index.html
           grep -Fq 'window.location.replace(destination)' superapp/shell/index.html
           grep -Fq 'br.com.apois.app://auth/' superapp/shell/index.html
+          grep -Fq 'apois-superapp:last-auth-deeplink' superapp/shell/dist/index.html
+          grep -Fq 'apois-superapp:last-auth-deeplink' superapp/shell/dist/modules/entregas/index.html
           grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/index.html
           grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/modules/corridas/index.html
           grep -Fq "pushNotificationActionPerformed" superapp/shell/dist/index.html
           grep -Fq "#/pedido/" superapp/shell/dist/modules/corridas/index.html
-          echo "[OK] Corridas lifecycle/PIN, request payload, sessão, localização, rota ativa, Realtime fallback, OAuth, Push e deep links adaptados"
+          echo "[OK] Corridas lifecycle/PIN, retomada terminal, request payload, sessão, localização, rota ativa, OAuth, Push e deep links adaptados"
 
       - name: Create Capacitor Android project
         script: |
@@ -117,17 +131,15 @@ workflows:
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.POST_NOTIFICATIONS' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:scheme="br.com.apois.app"' superapp/shell/android/app/src/main/AndroidManifest.xml
-          if [ -n "${CORRIDAS_ANDROID_MAPS_API_KEY:-}" ]; then
-            grep -Fq 'com.google.android.geo.API_KEY' superapp/shell/android/app/src/main/AndroidManifest.xml
-            echo "[OK] Google Maps API key inserida no AndroidManifest"
-          fi
+          grep -Fq 'com.google.android.geo.API_KEY' superapp/shell/android/app/src/main/AndroidManifest.xml
+          grep -Fq "apply plugin: 'com.google.gms.google-services'" superapp/shell/android/app/build.gradle
+          test -s superapp/shell/android/app/google-services.json
+          echo "[OK] Google Maps + Firebase/FCM conectados ao projeto Android gerado"
 
-      - name: Configure optional Firebase for unified package
+      - name: Validate unified Firebase package
         script: |
           set -euo pipefail
-          if [ -n "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
-            printf '%s' "$FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > superapp/shell/android/app/google-services.json
-            python3 - <<'PY'
+          python3 - <<'PY'
           import json, os
           path = 'superapp/shell/android/app/google-services.json'
           package = os.environ['APP_PACKAGE']
@@ -141,9 +153,6 @@ workflows:
               raise SystemExit(f'google-services.json não contém {package}: {packages}')
           print(f'[OK] Firebase confirmado para {package}')
           PY
-          else
-            echo "Firebase Superapp config not supplied; APK will build for integration testing but push is not expected to work yet."
-          fi
 
       - name: Build and sign experimental APK
         script: |
