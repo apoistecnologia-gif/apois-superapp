@@ -36,23 +36,61 @@ function injectSuperappBridge(indexPath, moduleName) {
   const moduleName = ${JSON.stringify(moduleName)};
   const shellUrl = '../../index.html';
   const routeStorageKey = 'apois-superapp:last-route:' + moduleName;
+  const authStorageKey = moduleName === 'corridas'
+    ? 'apois-superapp-corridas-auth-v1'
+    : 'apois-superapp-entregas-auth-v1';
   const appPlugin = window.Capacitor?.Plugins?.App;
+
+  function currentRoute() {
+    return window.location.hash || window.location.pathname || '/';
+  }
 
   function persistRoute() {
     try {
-      const route = window.location.hash || '';
+      const route = currentRoute();
       if (route) localStorage.setItem(routeStorageKey, route);
     } catch {}
+  }
+
+  function clearPersistedRoute() {
+    try { localStorage.removeItem(routeStorageKey); } catch {}
+  }
+
+  function hasPersistedSession() {
+    try {
+      const raw = localStorage.getItem(authStorageKey);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return Boolean(parsed?.access_token || parsed?.currentSession?.access_token || parsed?.session?.access_token);
+    } catch {
+      try { return Boolean(localStorage.getItem(authStorageKey)); } catch { return false; }
+    }
+  }
+
+  function isPublicRoute() {
+    const route = currentRoute();
+    return route === '/' || route === '#' || route === '#/' || route.includes('/login') || route.includes('/register') || route.includes('/auth/callback') || route.includes('/redefinir-senha');
+  }
+
+  function enforceSessionBoundary() {
+    if (hasPersistedSession() || isPublicRoute()) return;
+    clearPersistedRoute();
+    if (moduleName === 'entregas') window.location.replace('#/login');
+    else window.location.replace('./index.html#/login');
   }
 
   persistRoute();
   window.addEventListener('hashchange', persistRoute);
   window.addEventListener('pagehide', persistRoute);
+  window.addEventListener('storage', (event) => {
+    if (event.key === authStorageKey && !event.newValue) {
+      clearPersistedRoute();
+      enforceSessionBoundary();
+    }
+  });
 
   function returnToShell() {
     persistRoute();
-    // Replace prevents history loops such as shell -> module -> shell -> module,
-    // which previously could require several Android back presses.
     window.location.replace(shellUrl);
   }
 
@@ -86,6 +124,10 @@ function injectSuperappBridge(indexPath, moduleName) {
   if (appPlugin) {
     appPlugin.addListener('appUrlOpen', ({ url }) => { routeAuthDeepLink(url); }).catch(() => undefined);
     appPlugin.getLaunchUrl().then((result) => { if (result?.url) routeAuthDeepLink(result.url); }).catch(() => undefined);
+    appPlugin.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) enforceSessionBoundary();
+      else persistRoute();
+    }).catch(() => undefined);
     appPlugin.addListener('backButton', ({ canGoBack }) => {
       const hash = window.location.hash || '';
       const rootHashes = ['', '#', '#/', '#/login'];
@@ -99,6 +141,8 @@ function injectSuperappBridge(indexPath, moduleName) {
       window.history.back();
     }).catch(() => undefined);
   }
+
+  window.setTimeout(enforceSessionBoundary, 350);
 })();
 </script>`;
 
