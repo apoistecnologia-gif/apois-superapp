@@ -10,6 +10,7 @@ const required = [
   'modules/corridas/index.html',
   'modules/entregas/index.html',
 ];
+const AUTH_DEEP_LINK_KEY = 'apois-superapp:last-auth-deeplink';
 
 let failed = false;
 for (const relative of required) {
@@ -31,6 +32,13 @@ if (!failed) {
     console.log('[OK] shell aponta para Corridas e Entregas locais');
   }
 
+  if (!shell.includes(AUTH_DEEP_LINK_KEY)) {
+    console.error('[FAIL] shell não protege callback OAuth/reset contra reprocessamento do launch URL');
+    failed = true;
+  } else {
+    console.log('[OK] shell deduplica deep links de autenticação');
+  }
+
   const corridas = readFileSync(resolve(dist, 'modules/corridas/index.html'), 'utf8');
   if (/\b(?:src|href)="\/assets\//.test(corridas)) {
     console.error('[FAIL] Corridas contém asset absoluto /assets/');
@@ -45,6 +53,13 @@ if (!failed) {
     failed = true;
   } else {
     console.log('[OK] Entregas usa assets compatíveis com pasta aninhada');
+  }
+
+  if (!entregas.includes(AUTH_DEEP_LINK_KEY)) {
+    console.error('[FAIL] Entregas não deduplica appUrlOpen/getLaunchUrl de autenticação');
+    failed = true;
+  } else {
+    console.log('[OK] Entregas deduplica deep links OAuth/reset no bridge nativo');
   }
 }
 
