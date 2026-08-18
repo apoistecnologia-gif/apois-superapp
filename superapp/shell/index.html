@@ -32,7 +32,7 @@
     <footer>APOIS — tudo em um só lugar.</footer>
   </main>
   <script>
-    const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html'};
+    const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html#/'};
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
       const moduleName=button.dataset.module;
       const destination=moduleUrls[moduleName];
