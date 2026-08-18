@@ -25,6 +25,20 @@ replaceRequired(
 
 replaceRequired(
   '.work/corridas/src/hooks/rides/use-active-ride.tsx',
+  '  const passengerId = profile?.id ?? null;\n',
+  '  const passengerId = profile?.id ?? null;\n  const userId = passengerId;\n',
+  'corridas: mantém alias estável usado pela validação do polling',
+);
+
+replaceRequired(
+  '.work/corridas/src/hooks/rides/use-active-ride.tsx',
+  '      !passengerId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
+  '      !userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
+  'corridas: polling de segurança permanece ativo com identidade autenticada',
+);
+
+replaceRequired(
+  '.work/corridas/src/hooks/rides/use-active-ride.tsx',
   '  const realtimeConnectedRef = useRef(false);\n',
   '  const realtimeConnectedRef = useRef(false);\n  const lastAcceptedStatusRef = useRef<RideStatus | null>(null);\n',
   'corridas: guarda último estado aceito da corrida',
@@ -63,6 +77,20 @@ replaceRequired(
   '  useEffect(() => {\n    let cancelled = false;\n\n    const syncPushSession = async () => {',
   '  useEffect(() => {\n    if (import.meta.env["VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED"] !== "1") return;\n\n    let cancelled = false;\n\n    const syncPushSession = async () => {',
   'corridas: FCM próprio fica isolado até projeto Firebase unificado estar compatível',
+);
+
+replaceRequired(
+  '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
+  '  const isQueuedRide =\n    status === "procurar_motorista" && Boolean(ride.driver_id && ride.queued_after_ride_id);',
+  '  const isQueuedRide =\n    status === "procurar_motorista" && Boolean(ride.driver_id && ride.queued_after_ride_id);\n  const isPreTripStatus = ["motorista_a_caminho", "motorista_chegou"].includes(status);',
+  'corridas: explicita estados pré-viagem que mantêm PIN disponível',
+);
+
+replaceRequired(
+  '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
+  '  if (\n    screenState === "active" &&\n    ["motorista_a_caminho", "motorista_chegou", "em_viagem"].includes(status)\n  ) {',
+  '  if (screenState === "active" && (isPreTripStatus || status === "em_viagem")) {',
+  'corridas: fluxo ativo distingue pré-viagem de viagem iniciada',
 );
 
 replaceRequired(
