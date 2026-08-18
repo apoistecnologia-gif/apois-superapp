@@ -19,7 +19,6 @@ function replaceRequired(path, search, replacement, label) {
 }
 
 if (name === 'corridas') {
-  // Corridas já usa Hash History e base relativa no snapshot protegido.
   replaceRequired(
     '.work/corridas/src/integrations/supabase/client.ts',
     '      storage: typeof window !== "undefined" ? localStorage : undefined,\n      persistSession: true,',
@@ -108,6 +107,18 @@ if (name === 'entregas') {
     'export function isNativeCustomerAndroid() {\n  return (\n    getApoisProductMode() === "customer" &&\n    Capacitor.isNativePlatform() &&\n    Capacitor.getPlatform() === "android"\n  );\n}',
     'export function isNativeCustomerAndroid() {\n  const superappPushEnabled = import.meta.env["VITE_APOIS_SUPERAPP_PUSH_ENABLED"] !== "0";\n  return (\n    superappPushEnabled &&\n    getApoisProductMode() === "customer" &&\n    Capacitor.isNativePlatform() &&\n    Capacitor.getPlatform() === "android"\n  );\n}',
     'entregas: push só inicializa quando Firebase do Superapp estiver pronto',
+  );
+  replaceRequired(
+    '.work/entregas/src/lib/customer-push.ts',
+    '"register_customer_push_device"',
+    '"register_superapp_customer_push_device"',
+    'entregas: token FCM registra package do Superapp sem afetar app cliente',
+  );
+  replaceRequired(
+    '.work/entregas/src/lib/customer-push.ts',
+    '"remove_customer_push_devices"',
+    '"remove_superapp_customer_push_devices"',
+    'entregas: logout remove somente token FCM do Superapp',
   );
   replaceRequired(
     '.work/entregas/src/lib/customer-push.ts',
