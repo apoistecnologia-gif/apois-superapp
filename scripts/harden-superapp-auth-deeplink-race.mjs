@@ -26,8 +26,8 @@ replaceRequired(
 
 replaceRequired(
   'superapp/shell/dist/modules/entregas/index.html',
-  "  function routeAuthDeepLink(rawUrl) {\n    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;\n    try {\n      const incoming = new URL(rawUrl);",
-  `  function routeAuthDeepLink(rawUrl) {\n    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;\n    try {\n      const deepLinkKey = ${JSON.stringify(AUTH_DEEP_LINK_KEY)};\n      try {\n        const previous = sessionStorage.getItem(deepLinkKey);\n        if (previous === rawUrl) return true;\n        sessionStorage.setItem(deepLinkKey, rawUrl);\n      } catch {}\n      const incoming = new URL(rawUrl);`,
+  "  function routeAuthDeepLink(rawUrl) {\n    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;\n    try {\n      void browserPlugin?.close?.().catch(() => undefined);\n      const incoming = new URL(rawUrl);",
+  `  function routeAuthDeepLink(rawUrl) {\n    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;\n    try {\n      const deepLinkKey = ${JSON.stringify(AUTH_DEEP_LINK_KEY)};\n      try {\n        const previous = sessionStorage.getItem(deepLinkKey);\n        if (previous === rawUrl) return true;\n        sessionStorage.setItem(deepLinkKey, rawUrl);\n      } catch {}\n      void browserPlugin?.close?.().catch(() => undefined);\n      const incoming = new URL(rawUrl);`,
   'entregas: appUrlOpen/getLaunchUrl não repetem callback OAuth/reset',
 );
 
