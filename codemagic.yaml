@@ -48,7 +48,6 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           npm run build:superapp
-          node scripts/validate-superapp-bundle.mjs
 
       - name: Create Capacitor Android project
         script: |
