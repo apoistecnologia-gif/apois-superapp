@@ -60,6 +60,9 @@ workflows:
           grep -Fq 'destination_name: destination?.formattedAddress' .work/corridas/src/hooks/rides/use-ride-request.tsx
           grep -Fq 'service_details: selectedCategory.details ?? {}' .work/corridas/src/hooks/rides/use-ride-request.tsx
           grep -Fq 'selectedMethod !== requestDataRef.current.paymentMethod' .work/corridas/src/hooks/rides/use-ride-request.tsx
+          grep -Fq '["motorista_a_caminho", "motorista_chegou"].includes(status)' '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx'
+          grep -Fq 'Informe o código de segurança ao motorista para iniciar' .work/corridas/src/components/rides/active/RideStatusHeader.tsx
+          grep -Fq 'VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED' .work/corridas/src/hooks/use-push-notifications.tsx
           python3 - <<'PY'
           from pathlib import Path
           p = Path('.work/corridas/src/hooks/rides/use-active-ride.tsx')
@@ -67,7 +70,9 @@ workflows:
           guard = '!userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current'
           if guard not in text:
               raise SystemExit('polling de segurança da corrida não foi aplicado')
-          print('[OK] Corridas mantém polling de segurança mesmo com Realtime conectado')
+          if 'RIDE_STATUS_ORDER' not in text or 'lastAcceptedStatusRef' not in text:
+              raise SystemExit('proteção monotônica do status da corrida não foi aplicada')
+          print('[OK] Corridas mantém polling de segurança e status monotônico')
           PY
           grep -Fq 'apois-superapp-entregas-auth-v1' .work/entregas/src/integrations/supabase/client.ts
           grep -Fq 'br.com.apois.app://auth/callback' .work/entregas/src/components/GoogleLoginButton.tsx
@@ -91,7 +96,7 @@ workflows:
           grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/modules/corridas/index.html
           grep -Fq "pushNotificationActionPerformed" superapp/shell/dist/index.html
           grep -Fq "#/pedido/" superapp/shell/dist/modules/corridas/index.html
-          echo "[OK] Corridas request payload, sessão, localização, rota ativa, Realtime fallback, OAuth, Push e deep links adaptados"
+          echo "[OK] Corridas lifecycle/PIN, request payload, sessão, localização, rota ativa, Realtime fallback, OAuth, Push e deep links adaptados"
 
       - name: Create Capacitor Android project
         script: |
