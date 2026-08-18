@@ -16,8 +16,9 @@
     "build:corridas": "node scripts/normalize-corridas-superapp-input.mjs && node scripts/build-isolated-module.mjs corridas",
     "build:entregas": "node scripts/build-isolated-module.mjs entregas",
     "build:shell": "node superapp/shell/build.mjs",
+    "harden:auth-deeplink": "node scripts/harden-superapp-auth-deeplink-race.mjs",
     "inject:push-routing": "node scripts/inject-superapp-push-routing.mjs",
     "verify:dist": "node scripts/verify-superapp-dist.mjs",
-    "build:superapp": "npm run build:corridas && npm run build:entregas && npm run build:shell && npm run inject:push-routing && npm run verify:dist"
+    "build:superapp": "npm run build:corridas && npm run build:entregas && npm run build:shell && npm run harden:auth-deeplink && npm run inject:push-routing && npm run verify:dist"
   }
 }
