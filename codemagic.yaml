@@ -57,9 +57,9 @@ workflows:
           cd superapp/shell
           bun install
           rm -rf android
-          npx cap add android
+          bunx cap add android
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
-          npx cap sync android
+          bunx cap sync android
           cd ../..
           node scripts/configure-superapp-android.mjs
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml
