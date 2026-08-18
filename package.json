@@ -1,0 +1,14 @@
+{
+  "name": "apois-superapp",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "shared/*",
+    "superapp/*"
+  ],
+  "scripts": {
+    "sources:clone": "bash scripts/bootstrap-sources.sh",
+    "sources:status": "bash scripts/source-status.sh"
+  }
+}
