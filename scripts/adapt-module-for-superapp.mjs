@@ -68,6 +68,30 @@ if (name === 'entregas') {
     'entregas: pós-login Google respeita Hash History do Superapp',
   );
   replaceRequired(
+    '.work/entregas/src/routes/register.tsx',
+    '          emailRedirectTo: `${window.location.origin}/auth/callback`,',
+    '          emailRedirectTo: "br.com.apois.app://auth/callback",',
+    'entregas: confirmação de cadastro retorna ao Superapp',
+  );
+  replaceRequired(
+    '.work/entregas/src/routes/login.tsx',
+    '      redirectTo: `${window.location.origin}/redefinir-senha`,',
+    '      redirectTo: "br.com.apois.app://auth/reset",',
+    'entregas: recuperação de senha retorna ao Superapp',
+  );
+  replaceRequired(
+    '.work/entregas/src/routes/auth.callback.tsx',
+    '      const params = new URLSearchParams(window.location.search);',
+    '      const routeQuery = window.location.hash.includes("?")\n        ? window.location.hash.slice(window.location.hash.indexOf("?") + 1)\n        : "";\n      const params = new URLSearchParams(window.location.search || routeQuery);',
+    'entregas: callback lê parâmetros dentro do Hash History',
+  );
+  replaceRequired(
+    '.work/entregas/src/routes/redefinir-senha.tsx',
+    '      const params = new URLSearchParams(window.location.search);',
+    '      const routeQuery = window.location.hash.includes("?")\n        ? window.location.hash.slice(window.location.hash.indexOf("?") + 1)\n        : "";\n      const params = new URLSearchParams(window.location.search || routeQuery);',
+    'entregas: recuperação lê parâmetros dentro do Hash History',
+  );
+  replaceRequired(
     '.work/entregas/src/lib/customer-push.ts',
     'export function isNativeCustomerAndroid() {\n  return (\n    getApoisProductMode() === "customer" &&\n    Capacitor.isNativePlatform() &&\n    Capacitor.getPlatform() === "android"\n  );\n}',
     'export function isNativeCustomerAndroid() {\n  const superappPushEnabled = import.meta.env["VITE_APOIS_SUPERAPP_PUSH_ENABLED"] !== "0";\n  return (\n    superappPushEnabled &&\n    getApoisProductMode() === "customer" &&\n    Capacitor.isNativePlatform() &&\n    Capacitor.getPlatform() === "android"\n  );\n}',
