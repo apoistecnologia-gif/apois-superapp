@@ -12,6 +12,17 @@
       "workspace": ".work/entregas",
       "install": ["bun", "install"],
       "build": ["bun", "run", "build:customer"],
+      "env": {
+        "APOIS_MOBILE_BUILD": "1",
+        "VITE_APOIS_PRODUCT_MODE": "customer"
+      },
+      "render": {
+        "server": ["node", ".output/server/index.mjs"],
+        "host": "127.0.0.1",
+        "port": 4173,
+        "route": "/",
+        "output": ".output/public/index.html"
+      },
       "purpose": "APOIS Entregas - cliente"
     }
   },
