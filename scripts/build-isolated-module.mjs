@@ -168,12 +168,24 @@ if (name === 'corridas') {
   env.VITE_SUPABASE_URL = corridasUrl;
   env.VITE_SUPABASE_PUBLISHABLE_KEY = corridasKey;
 
-  const mapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
-  if (mapsKey) {
-    env.VITE_GOOGLE_MAPS_API_KEY = mapsKey;
-    console.log('[OK] corridas: Google Maps/Places key do Superapp aplicada');
+  // Corridas renders its passenger map with Google Maps JavaScript API inside
+  // the WebView. That credential must not be confused with the Android-native
+  // Maps key injected in AndroidManifest.xml, because the restriction models
+  // are different. Keep both credentials independent.
+  const webMapsKey = process.env.CORRIDAS_WEB_MAPS_API_KEY?.trim();
+  if (webMapsKey) {
+    env.VITE_GOOGLE_MAPS_API_KEY = webMapsKey;
+    console.log('[OK] corridas: Google Maps JavaScript/Places key aplicada ao bundle');
   } else {
-    console.warn('[WARN] corridas: CORRIDAS_ANDROID_MAPS_API_KEY ausente; mapas serão homologados depois da configuração');
+    delete env.VITE_GOOGLE_MAPS_API_KEY;
+    console.warn('[WARN] corridas: CORRIDAS_WEB_MAPS_API_KEY ausente; mapa web será homologado após configuração');
+  }
+
+  const androidMapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
+  if (androidMapsKey) {
+    console.log('[OK] corridas: Google Maps Android key disponível para o shell nativo');
+  } else {
+    console.warn('[WARN] corridas: CORRIDAS_ANDROID_MAPS_API_KEY ausente; mapa nativo será homologado após configuração');
   }
 
   console.log('[OK] corridas: ambiente Supabase isolado aplicado');
