@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "android:add": "npx cap add android",
-    "android:sync": "npx cap sync android"
+    "android:add": "bunx cap add android",
+    "android:sync": "bunx cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
@@ -22,6 +22,7 @@
     "@capacitor/status-bar": "^8.0.3"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.5.0"
+    "@capacitor/cli": "^8.5.0",
+    "typescript": "^5.8.3"
   }
 }
