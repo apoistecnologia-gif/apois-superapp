@@ -73,6 +73,66 @@ if (name === 'corridas') {
     '      !userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
     'corridas: polling de segurança continua mesmo com Realtime conectado',
   );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    'import { useRoute } from "@/hooks/use-route";',
+    'import { useRoute } from "@/hooks/use-route";\nimport { usePickupAddress } from "@/hooks/use-pickup-address";\nimport { useDestination } from "@/hooks/use-destination";\nimport { usePaymentMethods } from "@/hooks/use-payment-methods";',
+    'corridas: solicitação importa endereço, destino e pagamento reais',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '  destination: RouteCoordinates | null;\n}',
+    '  destination: RouteCoordinates | null;\n  paymentMethod: string | null;\n}',
+    'corridas: idempotência considera método de pagamento',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '  const { route } = useRoute();',
+    '  const { route } = useRoute();\n  const { address: pickupAddress, pickupLabel, pickupShortLabel, pickupPlaceId } = usePickupAddress();\n  const { destination } = useDestination();\n  const { selectedMethod } = usePaymentMethods();',
+    'corridas: solicitação lê dados reais da revisão',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '    destination: null,\n  });',
+    '    destination: null,\n    paymentMethod: null,\n  });',
+    'corridas: snapshot inicia pagamento isolado',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '      !sameCoordinates(currentOrigin, requestDataRef.current.origin) ||\n      !sameCoordinates(currentDestination, requestDataRef.current.destination);',
+    '      !sameCoordinates(currentOrigin, requestDataRef.current.origin) ||\n      !sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      selectedMethod !== requestDataRef.current.paymentMethod;',
+    'corridas: nova forma de pagamento gera nova chave idempotente',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '        destination: currentDestination,\n      };',
+    '        destination: currentDestination,\n        paymentMethod: selectedMethod,\n      };',
+    'corridas: snapshot persiste forma de pagamento',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '  }, [selectedCategory, route, request.requestKey]);',
+    '  }, [selectedCategory, selectedMethod, route, request.requestKey]);',
+    'corridas: revisão reage à forma de pagamento',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '        origin_name: "Origem",\n        destination_name: "Destino",\n        distance_km: route.distanceMeters / 1000,\n        duration_min: route.durationSeconds / 60,\n        service_details: {},',
+    '        origin_name: pickupLabel || pickupShortLabel || pickupAddress || "Origem",\n        destination_name: destination?.formattedAddress || destination?.label || "Destino",\n        distance_km: route.distanceMeters / 1000,\n        duration_min: route.durationSeconds / 60,\n        pickup_label: pickupLabel,\n        pickup_short_label: pickupShortLabel,\n        pickup_address: pickupAddress,\n        pickup_place_id: pickupPlaceId,\n        pickup_source: "gps",\n        payment_method: selectedMethod,\n        service_details: selectedCategory.details ?? {},',
+    'corridas: backend recebe endereço, pagamento e detalhes reais do serviço',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '  }, [user, selectedCategory, route, request.requestKey]);',
+    '  }, [user, selectedCategory, route, request.requestKey, pickupAddress, pickupLabel, pickupShortLabel, pickupPlaceId, destination, selectedMethod]);',
+    'corridas: confirmação acompanha todos os dados enviados',
+  );
+  replaceRequired(
+    '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+    '    requestDataRef.current = { category: null, origin: null, destination: null };',
+    '    requestDataRef.current = { category: null, origin: null, destination: null, paymentMethod: null };',
+    'corridas: reset limpa snapshot idempotente completo',
+  );
   console.log('[OK] corridas: createHashHistory + base relativa já são nativos do módulo');
   process.exit(0);
 }
