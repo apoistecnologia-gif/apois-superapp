@@ -12,6 +12,8 @@
     "sources:status": "bash scripts/source-status.sh",
     "status:modules": "node scripts/status-modules.mjs",
     "verify:pins": "node scripts/verify-module-pins.mjs",
-    "prepare:modules": "node scripts/prepare-workspace.mjs"
+    "prepare:modules": "node scripts/prepare-workspace.mjs",
+    "build:corridas": "node scripts/build-isolated-module.mjs corridas",
+    "build:entregas": "node scripts/build-isolated-module.mjs entregas"
   }
 }
