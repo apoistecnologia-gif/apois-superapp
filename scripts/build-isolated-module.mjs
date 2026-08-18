@@ -35,7 +35,26 @@ function injectSuperappBridge(indexPath, moduleName) {
 (() => {
   const moduleName = ${JSON.stringify(moduleName)};
   const shellUrl = '../../index.html';
+  const routeStorageKey = 'apois-superapp:last-route:' + moduleName;
   const appPlugin = window.Capacitor?.Plugins?.App;
+
+  function persistRoute() {
+    try {
+      const route = window.location.hash || '';
+      if (route) localStorage.setItem(routeStorageKey, route);
+    } catch {}
+  }
+
+  persistRoute();
+  window.addEventListener('hashchange', persistRoute);
+  window.addEventListener('pagehide', persistRoute);
+
+  function returnToShell() {
+    persistRoute();
+    // Replace prevents history loops such as shell -> module -> shell -> module,
+    // which previously could require several Android back presses.
+    window.location.replace(shellUrl);
+  }
 
   function routeAuthDeepLink(rawUrl) {
     if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
@@ -74,7 +93,7 @@ function injectSuperappBridge(indexPath, moduleName) {
         ? rootHashes.includes(hash)
         : (!canGoBack || window.history.length <= 2);
       if (atModuleRoot) {
-        window.location.href = shellUrl;
+        returnToShell();
         return;
       }
       window.history.back();
@@ -95,9 +114,6 @@ const config = manifest.modules[name];
 const cwd = resolve(root, config.workspace);
 const env = { ...process.env, ...(config.env ?? {}) };
 
-// Keep the two production backends isolated inside the experimental APK.
-// Corridas source expects the generic VITE_SUPABASE_* names, while Codemagic
-// stores its values under CORRIDAS_* to avoid overwriting Entregas variables.
 if (name === 'corridas') {
   const corridasUrl = process.env.CORRIDAS_VITE_SUPABASE_URL;
   const corridasKey = process.env.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -108,8 +124,6 @@ if (name === 'corridas') {
   env.VITE_SUPABASE_URL = corridasUrl;
   env.VITE_SUPABASE_PUBLISHABLE_KEY = corridasKey;
 
-  // The same Android-restricted Google key is used by the native map plugin
-  // and injected into the Corridas web bundle for Places/Maps JS when present.
   const mapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
   if (mapsKey) {
     env.VITE_GOOGLE_MAPS_API_KEY = mapsKey;
@@ -122,9 +136,6 @@ if (name === 'corridas') {
 }
 
 if (name === 'entregas') {
-  // Do not let the embedded customer module register FCM until the unified
-  // Android package has its own google-services.json. This prevents login from
-  // triggering a native push initialization against an unconfigured Firebase app.
   env.VITE_APOIS_SUPERAPP_PUSH_ENABLED = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim()
     ? '1'
     : '0';
@@ -171,9 +182,6 @@ if (config.render) {
     process.exit(1);
   }
 
-  // The Entregas bundle lives under /modules/entregas inside the Superapp.
-  // Convert root-relative local resource references to paths relative to that folder.
-  // Protocol-relative/external URLs (//host/...) are intentionally preserved.
   html = html.replace(/(src|href)="\/(?!\/)/g, '$1="./');
 
   const output = resolve(cwd, config.render.output);
