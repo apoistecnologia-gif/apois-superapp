@@ -42,6 +42,18 @@ workflows:
           : "${CM_KEY_PASSWORD:?Codemagic key password is missing}"
           test -s "$CM_KEYSTORE_PATH"
 
+          if [ -n "${CORRIDAS_ANDROID_MAPS_API_KEY:-}" ]; then
+            echo "[OK] Chave Android Google Maps disponível para o Superapp"
+          else
+            echo "[WARN] CORRIDAS_ANDROID_MAPS_API_KEY ainda não cadastrada; mapa nativo será validado depois"
+          fi
+
+          if [ -n "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+            echo "[OK] Firebase do package unificado disponível"
+          else
+            echo "[WARN] Firebase do Superapp ainda não cadastrado; Push será validado depois"
+          fi
+
       - name: Build Corridas + Entregas + shell
         script: |
           set -euo pipefail
@@ -63,9 +75,13 @@ workflows:
           bunx cap add android
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           bunx cap sync android
+          grep -Fq ':capacitor-google-maps' android/settings.gradle
+          grep -Fq ':capacitor-push-notifications' android/settings.gradle
+          echo "[OK] Plugins nativos Maps + Push registrados no Android"
           cd ../..
           node scripts/configure-superapp-android.mjs
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android.permission.POST_NOTIFICATIONS' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:scheme="br.com.apois.app"' superapp/shell/android/app/src/main/AndroidManifest.xml
 
       - name: Configure optional Firebase for unified package
