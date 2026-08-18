@@ -52,6 +52,18 @@ workflows:
           grep -Fq 'apois-superapp-corridas-auth-v1' .work/corridas/src/integrations/supabase/client.ts
           grep -Fq 'apois-superapp-corridas-last-location' .work/corridas/src/hooks/use-location.tsx
           grep -Fq '[checkPermissions, permissionState, refreshLocation, updateLocationState]' .work/corridas/src/hooks/use-location.tsx
+          grep -Fq 'PolylineDecoder' .work/corridas/src/components/map/PassengerMap.tsx
+          grep -Fq 'displayedRoutePoints' .work/corridas/src/components/map/PassengerMap.tsx
+          grep -Fq 'PolylineDecoder.decode(encodedPolyline)' .work/corridas/src/components/map/PassengerMap.tsx
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('.work/corridas/src/hooks/rides/use-active-ride.tsx')
+          text = p.read_text(encoding='utf-8')
+          guard = '!userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current'
+          if guard not in text:
+              raise SystemExit('polling de segurança da corrida não foi aplicado')
+          print('[OK] Corridas mantém polling de segurança mesmo com Realtime conectado')
+          PY
           grep -Fq 'apois-superapp-entregas-auth-v1' .work/entregas/src/integrations/supabase/client.ts
           grep -Fq 'br.com.apois.app://auth/callback' .work/entregas/src/components/GoogleLoginButton.tsx
           grep -Fq 'window.location.replace("#/inicio")' .work/entregas/src/components/GoogleLoginButton.tsx
@@ -74,7 +86,7 @@ workflows:
           grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/modules/corridas/index.html
           grep -Fq "pushNotificationActionPerformed" superapp/shell/dist/index.html
           grep -Fq "#/pedido/" superapp/shell/dist/modules/corridas/index.html
-          echo "[OK] Sessões, localização Corridas, retomada, histórico, OAuth, recuperação, Push e deep links adaptados"
+          echo "[OK] Sessões, localização, rota ativa, Realtime fallback, OAuth, Push e deep links adaptados"
 
       - name: Create Capacitor Android project
         script: |
