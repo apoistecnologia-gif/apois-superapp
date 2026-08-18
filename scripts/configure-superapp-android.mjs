@@ -1,7 +1,10 @@
 import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
+const APP_PACKAGE = process.env.APP_PACKAGE?.trim() || 'br.com.apois.app';
+const androidRoot = resolve('superapp/shell/android');
+const appRoot = join(androidRoot, 'app');
+const manifestPath = join(appRoot, 'src/main/AndroidManifest.xml');
 let xml = readFileSync(manifestPath, 'utf8');
 
 const permissions = [
@@ -43,7 +46,42 @@ if (mapsKey && !xml.includes('com.google.android.geo.API_KEY')) {
 writeFileSync(manifestPath, xml);
 console.log('[OK] AndroidManifest do APOIS Superapp configurado.');
 
-const resRoot = resolve('superapp/shell/android/app/src/main/res');
+// Capacitor 8 already ships the Google Services Gradle hook in the generated
+// app module. Validate that invariant instead of patching Gradle blindly.
+const appGradlePath = join(appRoot, 'build.gradle');
+const appGradle = readFileSync(appGradlePath, 'utf8');
+if (!appGradle.includes("apply plugin: 'com.google.gms.google-services'") || !appGradle.includes("file('google-services.json')")) {
+  throw new Error('Projeto Android gerado não contém o hook padrão do Google Services esperado pelo Capacitor 8.');
+}
+console.log('[OK] Android gerado contém hook condicional do Google Services/FCM.');
+
+const firebaseB64 = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim();
+if (firebaseB64) {
+  let firebaseConfig;
+  try {
+    firebaseConfig = JSON.parse(Buffer.from(firebaseB64, 'base64').toString('utf8'));
+  } catch (error) {
+    throw new Error(`Firebase do Superapp inválido: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  const packages = (Array.isArray(firebaseConfig?.client) ? firebaseConfig.client : [])
+    .map((client) => client?.client_info?.android_client_info?.package_name)
+    .filter(Boolean);
+  if (!packages.includes(APP_PACKAGE)) {
+    throw new Error(`google-services.json não contém ${APP_PACKAGE}; encontrados: ${packages.join(', ') || 'nenhum'}`);
+  }
+
+  writeFileSync(
+    join(appRoot, 'google-services.json'),
+    `${JSON.stringify(firebaseConfig, null, 2)}\n`,
+    'utf8',
+  );
+  console.log(`[OK] Firebase unificado materializado e validado para ${APP_PACKAGE}.`);
+} else {
+  console.warn('[WARN] Firebase unificado ainda não foi fornecido; Push permanecerá desabilitado no Superapp.');
+}
+
+const resRoot = join(appRoot, 'src/main/res');
 const brandingCandidates = [
   resolve('.work/corridas/dist/favicon.png'),
   resolve('.work/corridas/public/favicon.png'),
