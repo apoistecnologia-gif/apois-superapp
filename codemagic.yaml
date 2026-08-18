@@ -49,6 +49,8 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           npm run build:superapp
+          grep -Fq 'apois-superapp-corridas-auth-v1' .work/corridas/src/integrations/supabase/client.ts
+          grep -Fq 'apois-superapp-entregas-auth-v1' .work/entregas/src/integrations/supabase/client.ts
           grep -Fq 'br.com.apois.app://auth/callback' .work/entregas/src/components/GoogleLoginButton.tsx
           grep -Fq 'window.location.replace("#/inicio")' .work/entregas/src/components/GoogleLoginButton.tsx
           grep -Fq 'emailRedirectTo: "br.com.apois.app://auth/callback"' .work/entregas/src/routes/register.tsx
@@ -58,7 +60,7 @@ workflows:
           grep -Fq 'data-apois-superapp-bridge' .work/entregas/.output/public/index.html
           grep -Fq "appPlugin.addListener('backButton'" .work/entregas/.output/public/index.html
           grep -Fq 'br.com.apois.app://auth/' superapp/shell/index.html
-          echo "[OK] OAuth, confirmação, recuperação, Push, deep links e retorno ao shell adaptados"
+          echo "[OK] Sessões isoladas, OAuth, recuperação, Push, deep links e retorno ao shell adaptados"
 
       - name: Create Capacitor Android project
         script: |
