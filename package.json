@@ -16,6 +16,7 @@
     "build:corridas": "node scripts/build-isolated-module.mjs corridas",
     "build:entregas": "node scripts/build-isolated-module.mjs entregas",
     "build:shell": "node superapp/shell/build.mjs",
-    "build:superapp": "npm run build:corridas && npm run build:entregas && npm run build:shell"
+    "verify:dist": "node scripts/verify-superapp-dist.mjs",
+    "build:superapp": "npm run build:corridas && npm run build:entregas && npm run build:shell && npm run verify:dist"
   }
 }
