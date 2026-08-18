@@ -1,0 +1,19 @@
+{
+  "created_at": "2026-08-18",
+  "policy": "copy-only: do not modify source repositories during superapp integration",
+  "sources": {
+    "entregas": {
+      "repository": "franciel046631/apois-entregas",
+      "branch": "main",
+      "observed_commit": "835772994e2c9828dbcef759016c4fad613090e4"
+    },
+    "corridas_passageiro": {
+      "repository": "franciel046631/say-hello-buddy-23-84b5dcbf",
+      "branch": "feat/apois-passageiro-completo"
+    },
+    "corridas_motorista_admin": {
+      "repository": "franciel046631/movvi-go-connect",
+      "branch": "fix/apois-corridas-consolidacao"
+    }
+  }
+}
