@@ -37,12 +37,16 @@
   </main>
   <script>
     const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html#/'};
+    const LAST_MODULE_KEY='apois-superapp:last-module';
 
     function openModule(moduleName){
       const destination=moduleUrls[moduleName];
       if(!destination)return;
+      try{localStorage.setItem(LAST_MODULE_KEY,moduleName);}catch{}
       window.dispatchEvent(new CustomEvent('apois:module-selected',{detail:{module:moduleName}}));
-      window.location.href=destination;
+      // Replace instead of pushing a new history entry. The module bridge is
+      // responsible for returning to the shell, preventing shell/module loops.
+      window.location.replace(destination);
     }
 
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>openModule(button.dataset.module)));
@@ -61,11 +65,11 @@
         const query=params.toString();
         const suffix=query?`?${query}`:'';
         if(path==='reset'){
-          window.location.href=`./modules/entregas/index.html#/redefinir-senha${suffix}`;
+          window.location.replace(`./modules/entregas/index.html#/redefinir-senha${suffix}`);
           return true;
         }
         if(path==='callback'){
-          window.location.href=`./modules/entregas/index.html#/auth/callback${suffix}`;
+          window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix}`);
           return true;
         }
       }catch(error){
