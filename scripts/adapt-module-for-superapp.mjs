@@ -67,6 +67,24 @@ if (name === 'entregas') {
     '      window.location.replace("#/inicio");',
     'entregas: pós-login Google respeita Hash History do Superapp',
   );
+  replaceRequired(
+    '.work/entregas/src/lib/customer-push.ts',
+    'export function isNativeCustomerAndroid() {\n  return (\n    getApoisProductMode() === "customer" &&\n    Capacitor.isNativePlatform() &&\n    Capacitor.getPlatform() === "android"\n  );\n}',
+    'export function isNativeCustomerAndroid() {\n  const superappPushEnabled = import.meta.env["VITE_APOIS_SUPERAPP_PUSH_ENABLED"] !== "0";\n  return (\n    superappPushEnabled &&\n    getApoisProductMode() === "customer" &&\n    Capacitor.isNativePlatform() &&\n    Capacitor.getPlatform() === "android"\n  );\n}',
+    'entregas: push só inicializa quando Firebase do Superapp estiver pronto',
+  );
+  replaceRequired(
+    '.work/entregas/src/lib/customer-push.ts',
+    '    ? `/pedido/${encodeURIComponent(orderId)}`\n    : "/notificacoes";',
+    '    ? `#/pedido/${encodeURIComponent(orderId)}`\n    : "#/notificacoes";',
+    'entregas: push abre rotas compatíveis com Hash History',
+  );
+  replaceRequired(
+    '.work/entregas/src/lib/customer-push.ts',
+    '        if (window.location.pathname !== target) window.location.assign(target);',
+    '        if (window.location.hash !== target) window.location.assign(target);',
+    'entregas: navegação de push compara hash no Superapp',
+  );
   process.exit(0);
 }
 
