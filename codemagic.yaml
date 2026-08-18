@@ -41,18 +41,7 @@ workflows:
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
           : "${CM_KEY_PASSWORD:?Codemagic key password is missing}"
           test -s "$CM_KEYSTORE_PATH"
-
-          if [ -n "${CORRIDAS_ANDROID_MAPS_API_KEY:-}" ]; then
-            echo "[OK] Chave Android Google Maps disponível para o Superapp"
-          else
-            echo "[WARN] CORRIDAS_ANDROID_MAPS_API_KEY ainda não cadastrada; mapa nativo será validado depois"
-          fi
-
-          if [ -n "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
-            echo "[OK] Firebase do package unificado disponível"
-          else
-            echo "[WARN] Firebase do Superapp ainda não cadastrado; Push será validado depois"
-          fi
+          node scripts/validate-superapp-native-config.mjs
 
       - name: Build Corridas + Entregas + shell
         script: |
@@ -90,14 +79,30 @@ workflows:
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.POST_NOTIFICATIONS' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:scheme="br.com.apois.app"' superapp/shell/android/app/src/main/AndroidManifest.xml
+          if [ -n "${CORRIDAS_ANDROID_MAPS_API_KEY:-}" ]; then
+            grep -Fq 'com.google.android.geo.API_KEY' superapp/shell/android/app/src/main/AndroidManifest.xml
+            echo "[OK] Google Maps API key inserida no AndroidManifest"
+          fi
 
       - name: Configure optional Firebase for unified package
         script: |
           set -euo pipefail
           if [ -n "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
             printf '%s' "$FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > superapp/shell/android/app/google-services.json
-            grep -Fq "$APP_PACKAGE" superapp/shell/android/app/google-services.json
-            echo "Firebase configured for $APP_PACKAGE"
+            python3 - <<'PY'
+          import json, os
+          path = 'superapp/shell/android/app/google-services.json'
+          package = os.environ['APP_PACKAGE']
+          with open(path, encoding='utf-8') as fh:
+              data = json.load(fh)
+          packages = [
+              c.get('client_info', {}).get('android_client_info', {}).get('package_name')
+              for c in data.get('client', [])
+          ]
+          if package not in packages:
+              raise SystemExit(f'google-services.json não contém {package}: {packages}')
+          print(f'[OK] Firebase confirmado para {package}')
+          PY
           else
             echo "Firebase Superapp config not supplied; APK will build for integration testing but push is not expected to work yet."
           fi
