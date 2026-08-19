@@ -77,6 +77,24 @@ if (legacyTelemetry) {
   }
 }
 
+for (const [path, label] of [
+  ['.work/entregas/src/routes/auth.callback.tsx', 'callback OAuth/e-mail'],
+  ['.work/entregas/src/routes/redefinir-senha.tsx', 'recuperação de senha'],
+]) {
+  const authRoute = requireFile(path);
+  if (!authRoute) continue;
+  if (authRoute.includes('const params = new URLSearchParams(window.location.search);')) {
+    fail(`Entregas ${label} ainda ignora query dentro do Hash Router`);
+  } else if (
+    !authRoute.includes('window.location.hash.includes("?")') ||
+    !authRoute.includes('new URLSearchParams(hashQuery || window.location.search)')
+  ) {
+    fail(`Entregas ${label} não possui leitura Hash-aware dos parâmetros Supabase`);
+  } else {
+    ok(`Entregas ${label} lê code/error/next de #/rota?...`);
+  }
+}
+
 const shellSource = requireFile('superapp/shell/index.html');
 if (shellSource) {
   if (!shellSource.includes('./assets/apois-brand.png')) fail('shell ainda não usa a arte oficial APOIS');
