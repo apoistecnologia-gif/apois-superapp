@@ -128,11 +128,13 @@ requireText(
     "'/cadastro'",
     "'/recuperar-senha'",
     "new Set(['', '#', '#/', '#/inicio', '#/login'])",
+    'localStorage.removeItem(authStorageKey)',
+    'env.VITE_PUBLIC_APP_URL = publicAppUrl',
     "window.location.replace(shellUrl)",
     "appPlugin.addListener('backButton'",
     "appPlugin.addListener('appStateChange'",
   ],
-  'bridge cobre sessão, rotas públicas, retomada, deep links e Android Back',
+  'bridge cobre sessão íntegra, rotas públicas, retomada, deep links, ambiente e Android Back',
 );
 
 requireText(
@@ -181,13 +183,28 @@ requireText(
 );
 
 requireText(
+  'superapp/shell/build.mjs',
+  [
+    "resolve(root, '../branding/apois-launcher.png')",
+    "resolve(dist, 'assets/apois-brand.png')",
+    'arte oficial APOIS copiada para o shell',
+  ],
+  'shell inclui a arte oficial da APOIS e falha se ela estiver ausente',
+);
+
+requireText(
   'scripts/install-superapp-launcher.mjs',
-  ['copyFileSync(normalizedSource, join(dir, \'ic_launcher.png\'))', 'A arte versionada é imutável durante o build'],
-  'launcher normaliza somente cópia temporária',
+  [
+    "{ dir: 'mipmap-mdpi', legacy: 48, foreground: 108 }",
+    "{ dir: 'mipmap-xxxhdpi', legacy: 192, foreground: 432 }",
+    "copyFileSync(legacyTmp, join(dir, 'ic_launcher.png'))",
+    "copyFileSync(foregroundTmp, join(dir, 'ic_launcher_foreground.png'))",
+  ],
+  'launcher gera raster oficial na dimensão Android correta por densidade',
 );
 forbidText(
   'scripts/install-superapp-launcher.mjs',
-  ['copyFileSync(normalizedSource, source)'],
+  ['copyFileSync(source, source)', 'copyFileSync(normalizedSource, source)'],
   'build Android não altera a arte versionada',
 );
 
@@ -215,7 +232,7 @@ requireText(
 forbidText(
   'codemagic.yaml',
   ['cmp -s superapp/branding/apois-launcher.png superapp/shell/android'],
-  'Codemagic não pressupõe que PNG normalizado seja byte-idêntico à arte fonte',
+  'Codemagic não pressupõe que PNG redimensionado seja byte-idêntico à arte fonte',
 );
 
 requireText(
