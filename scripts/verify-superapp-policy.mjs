@@ -15,7 +15,7 @@ function requireFile(path) {
 const paymentMethods = requireFile('.work/corridas/src/hooks/use-payment-methods.tsx');
 if (paymentMethods) {
   if (!paymentMethods.includes('method.isActive && method.enabled && method.code === "pix"')) fail('Corridas Superapp não está restringindo as formas de pagamento a PIX');
-  else ok('Corridas Superapp é PIX-only mesmo se a fonte compartilhada mantiver Dinheiro ativo');
+  else ok('Corridas Superapp é PIX-only mesmo se a fonte compartilhada mantiver método legado ativo');
 }
 
 const customerPush = requireFile('.work/entregas/src/lib/customer-push.ts');
@@ -46,6 +46,44 @@ const searchRoute = requireFile('.work/entregas/src/routes/buscar.tsx');
 if (searchRoute) {
   if (!searchRoute.includes('overflow-y-auto px-4 pb-32 pt-2')) fail('Busca de Entregas ainda pode ficar encoberta pelo rodapé fixo');
   else ok('Busca de Entregas reserva espaço para rodapé e safe area');
+}
+
+const landingRoute = requireFile('.work/entregas/src/routes/index.tsx');
+if (landingRoute) {
+  if (landingRoute.includes('src="/apois-logo.svg"')) fail('landing de Entregas ainda usa logo absoluto e quebra dentro de modules/entregas');
+  else if (!landingRoute.includes('src="./apois-logo.svg"')) fail('landing de Entregas não aponta para o logo público relativo');
+  else ok('landing de Entregas resolve o logo dentro do módulo aninhado');
+}
+
+const launchSplash = requireFile('.work/entregas/src/components/ApoisLaunchSplash.tsx');
+if (launchSplash) {
+  if (!launchSplash.includes('export function ApoisLaunchSplash()') || !launchSplash.includes('return null;')) {
+    fail('Entregas ainda exibe uma segunda splash React ao entrar no módulo do Superapp');
+  } else if (launchSplash.includes('/apois-app-icon.png') || launchSplash.includes('SPLASH_MS')) {
+    fail('splash legada de Entregas ainda contém asset/timer do app separado');
+  } else {
+    ok('Entregas não duplica a splash nativa/shell ao trocar de módulo');
+  }
+}
+
+const legacyTelemetry = requireFile('.work/entregas/src/lib/lovable-error-reporting.ts');
+if (legacyTelemetry) {
+  if (legacyTelemetry.includes('__lovableEvents') || legacyTelemetry.includes('__lovableReportRuntimeError')) {
+    fail('bundle Entregas ainda contém hooks de telemetria do editor Lovable');
+  } else if (!legacyTelemetry.includes('[APOIS Superapp] erro capturado pelo boundary')) {
+    fail('ErrorBoundary de Entregas não possui diagnóstico local após remover telemetria antiga');
+  } else {
+    ok('Entregas remove telemetria Lovable e mantém diagnóstico local do ErrorBoundary');
+  }
+}
+
+const shellSource = requireFile('superapp/shell/index.html');
+if (shellSource) {
+  if (!shellSource.includes('./assets/apois-brand.png')) fail('shell ainda não usa a arte oficial APOIS');
+  else if (shellSource.includes('<div class="logo-mark">A</div>')) fail('shell ainda contém marca provisória em texto');
+  else ok('shell usa arte oficial APOIS');
+  if (!shellSource.includes("return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';")) fail('entrada dos módulos não é determinística por sessão');
+  else ok('shell envia sessão válida para Início e sessão ausente para Login');
 }
 
 process.exit(failed ? 1 : 0);
