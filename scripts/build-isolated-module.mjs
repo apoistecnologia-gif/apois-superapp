@@ -215,6 +215,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
 }
 if (name === 'entregas') {
+  run(process.execPath, [resolve(root, 'scripts/normalize-entregas-adaptation-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
