@@ -39,6 +39,9 @@ function injectSuperappBridge(indexPath, moduleName) {
   const authStorageKey = moduleName === 'corridas'
     ? 'apois-superapp-corridas-auth-v1'
     : 'apois-superapp-entregas-auth-v1';
+  const authDeepLinkKey = 'apois-superapp:last-auth-deeplink';
+  const corridasRecoveryKey = 'apois-superapp:corridas-recovery-url';
+  const entregasAuthForwardKey = 'apois-superapp:entregas-auth-url';
   const appPlugin = window.Capacitor?.Plugins?.App;
   const browserPlugin = window.Capacitor?.Plugins?.Browser;
   if (moduleName === 'entregas') window.__APOIS_SUPERAPP_AUTH_BRIDGE__ = true;
@@ -96,20 +99,49 @@ function injectSuperappBridge(indexPath, moduleName) {
     window.location.replace(shellUrl);
   }
 
+  function parseAuthDeepLink(rawUrl) {
+    const incoming = new URL(rawUrl);
+    const path = incoming.pathname.replace(/^\\//, '');
+    const params = new URLSearchParams(incoming.search);
+    const fragment = incoming.hash.replace(/^#/, '');
+    if (fragment) {
+      const fragmentParams = new URLSearchParams(fragment);
+      fragmentParams.forEach((value, key) => { if (!params.has(key)) params.set(key, value); });
+    }
+    return { path, suffix: params.toString() ? '?' + params.toString() : '' };
+  }
+
   function routeAuthDeepLink(rawUrl) {
-    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
+    if (typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
     try {
-      void browserPlugin?.close?.().catch(() => undefined);
-      const incoming = new URL(rawUrl);
-      const path = incoming.pathname.replace(/^\\//, '');
-      const params = new URLSearchParams(incoming.search);
-      const fragment = incoming.hash.replace(/^#/, '');
-      if (fragment) {
-        const fragmentParams = new URLSearchParams(fragment);
-        fragmentParams.forEach((value, key) => { if (!params.has(key)) params.set(key, value); });
+      const { path, suffix } = parseAuthDeepLink(rawUrl);
+
+      if (moduleName === 'corridas') {
+        if (path === 'reset' || path === 'callback' || path === 'email-change') {
+          try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
+          window.location.replace('../entregas/index.html');
+          return true;
+        }
+        return false;
       }
-      const query = params.toString();
-      const suffix = query ? '?' + query : '';
+
+      try {
+        const previous = sessionStorage.getItem(authDeepLinkKey);
+        if (previous === rawUrl) return true;
+        sessionStorage.setItem(authDeepLinkKey, rawUrl);
+      } catch {}
+
+      void browserPlugin?.close?.().catch(() => undefined);
+
+      if (path === 'corridas-reset') {
+        try { sessionStorage.setItem(corridasRecoveryKey, rawUrl); } catch {}
+        window.location.replace('../corridas/index.html');
+        return true;
+      }
+      if (path === 'email-change') {
+        window.location.replace('#/perfil/dados-pessoais' + suffix);
+        return true;
+      }
       if (path === 'reset') {
         window.location.replace('#/redefinir-senha' + suffix);
         return true;
@@ -127,6 +159,15 @@ function injectSuperappBridge(indexPath, moduleName) {
   if (appPlugin) {
     appPlugin.addListener('appUrlOpen', ({ url }) => { routeAuthDeepLink(url); }).catch(() => undefined);
     appPlugin.getLaunchUrl().then((result) => { if (result?.url) routeAuthDeepLink(result.url); }).catch(() => undefined);
+    if (moduleName === 'entregas') {
+      try {
+        const forwardedAuthUrl = sessionStorage.getItem(entregasAuthForwardKey);
+        if (forwardedAuthUrl) {
+          sessionStorage.removeItem(entregasAuthForwardKey);
+          routeAuthDeepLink(forwardedAuthUrl);
+        }
+      } catch {}
+    }
     appPlugin.addListener('appStateChange', ({ isActive }) => {
       if (isActive) enforceSessionBoundary();
       else persistRoute();
