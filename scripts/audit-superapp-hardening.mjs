@@ -99,7 +99,7 @@ check('scripts/harden-entregas-superapp-image-fallbacks.mjs', [
 check('scripts/harden-entregas-superapp-legal-routes.mjs', [
   'window.history.back()',
   'safe area superior',
-  'gateway financeiro obsoleto',
+  'política não fixa provedor financeiro diferente do configurado em produção',
 ], 'rotas legais têm navegação/safe areas e texto financeiro atualizado');
 
 check('scripts/harden-superapp-android-security.mjs', [
