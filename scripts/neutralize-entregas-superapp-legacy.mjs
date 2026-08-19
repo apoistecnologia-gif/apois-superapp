@@ -10,7 +10,7 @@ function requireSnapshotFile(path, markers, label) {
   const before = readFileSync(target, 'utf8');
   const missing = markers.filter((marker) => !before.includes(marker));
   if (missing.length) {
-    console.error(`[FAIL] Entregas: ${label} mudou no snapshot protegido: ${missing.join(', ')}`);
+    console.error(`[FAIL] Entregas: ${label} mudou na cópia adaptada: ${missing.join(', ')}`);
     process.exit(1);
   }
   return { target, before };
@@ -28,26 +28,21 @@ console.log('[OK] Entregas: telemetria do editor legado neutralizada apenas na c
 
 const splash = requireSnapshotFile(
   '.work/entregas/src/components/ApoisLaunchSplash.tsx',
-  ['const SPLASH_MS = 1900;', 'src="/apois-app-icon.png"', 'export function ApoisLaunchSplash()'],
-  'splash React legado',
+  ['const SPLASH_MS = 1900;', 'src="./apois-app-icon.png"', 'export function ApoisLaunchSplash()'],
+  'splash React legado já adaptado para caminho relativo',
 );
 
 // O APK já exibe a splash nativa e em seguida o shell único da APOIS. Ao entrar
-// em Entregas não deve aparecer uma segunda splash de quase dois segundos nem
-// um asset absoluto do aplicativo antigo. A exportação é preservada para que o
-// Root continue estável sem carregar uma animação duplicada.
+// em Entregas não deve aparecer uma segunda splash de quase dois segundos. A
+// exportação é preservada para que o Root continue estável sem animação duplicada.
 const splashReplacement = `export function ApoisLaunchSplash() {\n  return null;\n}\n`;
 writeFileSync(splash.target, splashReplacement, 'utf8');
 console.log('[OK] Entregas: splash duplicada removida dentro do módulo do Superapp');
 
 const landing = requireSnapshotFile(
   '.work/entregas/src/routes/index.tsx',
-  ['src="/apois-logo.svg"', 'alt="APOIS Entregas"'],
-  'logo da landing do cliente',
+  ['src="./apois-logo.svg"', 'alt="APOIS Entregas"'],
+  'logo relativo da landing do cliente',
 );
-writeFileSync(
-  landing.target,
-  landing.before.replace('src="/apois-logo.svg"', 'src="./apois-logo.svg"'),
-  'utf8',
-);
-console.log('[OK] Entregas: logo pública usa caminho relativo ao módulo aninhado');
+writeFileSync(landing.target, landing.before, 'utf8');
+console.log('[OK] Entregas: logo pública permanece relativa ao módulo aninhado');
