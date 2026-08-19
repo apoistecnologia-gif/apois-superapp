@@ -8,6 +8,11 @@ const dist = resolve(root, 'superapp/shell/dist');
 const required = [
   'index.html',
   'modules/corridas/index.html',
+  'modules/corridas/assets/ride-categories/carros.svg',
+  'modules/corridas/assets/ride-categories/motos.svg',
+  'modules/corridas/assets/ride-categories/fretes.svg',
+  'modules/corridas/assets/ride-categories/guincho.svg',
+  'modules/corridas/assets/ride-categories/envios.svg',
   'modules/entregas/index.html',
 ];
 const AUTH_DEEP_LINK_KEY = 'apois-superapp:last-auth-deeplink';
@@ -44,7 +49,41 @@ if (!failed) {
     console.error('[FAIL] Corridas contém asset absoluto /assets/');
     failed = true;
   } else {
-    console.log('[OK] Corridas usa assets compatíveis com pasta aninhada');
+    console.log('[OK] Corridas usa assets HTML compatíveis com pasta aninhada');
+  }
+
+  const corridasHomeSource = readFileSync(
+    resolve(root, '.work/corridas/src/routes/_authenticated.inicio.tsx'),
+    'utf8',
+  );
+  if (corridasHomeSource.includes('"/assets/ride-categories/')) {
+    console.error('[FAIL] cards de categoria de Corridas ainda usam /assets absoluto no runtime');
+    failed = true;
+  } else if (!corridasHomeSource.includes('"./assets/ride-categories/carros.svg"')) {
+    console.error('[FAIL] cards de categoria não foram adaptados para assets relativos do módulo');
+    failed = true;
+  } else {
+    console.log('[OK] artes de Carro/Moto/Fretes/Guincho/Envios usam caminho relativo do módulo');
+  }
+
+  const corridasAppShell = readFileSync(
+    resolve(root, '.work/corridas/src/components/layout/AppShell.tsx'),
+    'utf8',
+  );
+  const bottomNavMarkers = [
+    'aria-label="Navegação inferior"',
+    'const showBottomNavigation',
+    'pathname !== "/inicio"',
+    'pathname.startsWith("/corridas/")',
+    '{ label: "Carteira", icon: WalletCards, to: "/carteira" }',
+    '{ label: "Notificações", icon: Bell, to: "/notificacoes" }',
+  ];
+  const missingBottomNav = bottomNavMarkers.filter((marker) => !corridasAppShell.includes(marker));
+  if (missingBottomNav.length) {
+    console.error(`[FAIL] rodapé persistente de Corridas incompleto: ${missingBottomNav.join(', ')}`);
+    failed = true;
+  } else {
+    console.log('[OK] rodapé persiste nas telas normais e fica fora somente da jornada ativa');
   }
 
   const entregas = readFileSync(resolve(dist, 'modules/entregas/index.html'), 'utf8');
