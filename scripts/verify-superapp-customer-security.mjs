@@ -124,4 +124,33 @@ forbidMarkers('scripts/inject-superapp-push-routing.mjs', [
   "entregasBase + '#/notificacoes'",
 ], 'roteamento cruzado não aponta para rota inexistente de Entregas');
 
+requireMarkers('.work/entregas/src/routes/register.tsx', [
+  'Não foi possível criar sua conta agora. Confira os dados e tente novamente.',
+  '<Link to="/termos" className="font-bold text-primary">',
+  '<Link to="/privacidade" className="font-bold text-primary">',
+], 'cadastro mantém mensagens seguras e documentos legais dentro do app');
+forbidMarkers('.work/entregas/src/routes/register.tsx', [
+  '`Erro ao criar conta: ${error.message}`',
+  'to="/termos" target="_blank"',
+  'to="/privacidade" target="_blank"',
+], 'cadastro não expõe erro técnico nem abre navegação paralela');
+
+requireMarkers('.work/entregas/src/routes/perfil/ajuda/chamado/$ticketId.tsx', [
+  'import { Browser } from "@capacitor/browser";',
+  'await Browser.open({ url: data.signedUrl });',
+  'pt-[max(env(safe-area-inset-top),1rem)]',
+], 'conversa de suporte abre anexo pelo Browser nativo e respeita safe area');
+forbidMarkers('.work/entregas/src/routes/perfil/ajuda/chamado/$ticketId.tsx', [
+  'document.createElement("a")',
+  'anchor.target = "_blank"',
+], 'suporte não cria janela WebView paralela para anexo');
+
+requireMarkers('.work/entregas/src/lib/lovable-error-reporting.ts', [
+  'console.error("[APOIS] erro capturado pela interface"',
+], 'telemetria de erro do cliente permanece local ao Superapp');
+forbidMarkers('.work/entregas/src/lib/lovable-error-reporting.ts', [
+  '__lovableEvents',
+  '__lovableReportRuntimeError',
+], 'bundle do cliente não mantém hooks de telemetria Lovable');
+
 process.exit(failed ? 1 : 0);
