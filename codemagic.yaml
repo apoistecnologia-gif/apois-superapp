@@ -85,7 +85,9 @@ workflows:
           from pathlib import Path
           p = Path('.work/corridas/src/hooks/rides/use-active-ride.tsx')
           text = p.read_text(encoding='utf-8')
-          guard = '!userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current'
+          guard = '!userId ||\
+      screenState !== "active" ||\
+      !currentRideIdRef.current'
           if guard not in text:
               raise SystemExit('polling de segurança da corrida não foi aplicado')
           required = [
@@ -162,7 +164,28 @@ workflows:
           test -s superapp/shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          cmp -s superapp/shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+          expected = {
+              'mipmap-mdpi/ic_launcher.png': (48, 48),
+              'mipmap-hdpi/ic_launcher.png': (72, 72),
+              'mipmap-xhdpi/ic_launcher.png': (96, 96),
+              'mipmap-xxhdpi/ic_launcher.png': (144, 144),
+              'mipmap-xxxhdpi/ic_launcher.png': (192, 192),
+              'mipmap-mdpi/ic_launcher_foreground.png': (108, 108),
+              'mipmap-xxxhdpi/ic_launcher_foreground.png': (432, 432),
+          }
+          root = Path('superapp/shell/android/app/src/main/res')
+          for rel, size in expected.items():
+              data = (root / rel).read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'{rel} não é PNG válido')
+              actual = struct.unpack('>II', data[16:24])
+              if actual != size:
+                  raise SystemExit(f'{rel}: dimensão {actual}, esperada {size}')
+          print('[OK] dimensões de launcher legacy/adaptive corretas por densidade')
+          PY
           cmp -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
           test ! -e superapp/shell/android/app/src/main/res/mipmap-anydpi/ic_launcher.xml
           grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
