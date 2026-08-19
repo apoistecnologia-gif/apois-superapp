@@ -54,8 +54,17 @@ check('package.json', [
 check('.apois/modules.json', [
   'harden-corridas-superapp-storage.mjs',
   'namespace-entregas-superapp-storage.mjs',
+  'harden-entregas-superapp-account-security.mjs',
   '--frozen-lockfile',
-], 'build dos módulos executa isolamento de storage e mantém locks protegidos');
+], 'build dos módulos executa isolamento de storage, segurança de conta e mantém locks protegidos');
+
+check('scripts/harden-entregas-superapp-account-security.mjs', [
+  'Não foi possível encerrar o vínculo de notificações deste aparelho.',
+  'await removeCustomerPushRegistration(true);',
+  'Não foi possível sair com segurança.',
+  'Não foi possível desativar sua conta com segurança.',
+  'Revise os dados e tente novamente.',
+], 'Entregas remove vínculo Push antes de logout/desativação e sanitiza falhas do perfil');
 
 check('supabase/migrations/20260819022000_harden_entregas_admin_rpc_privileges.sql', [
   'admin_create_merchant',
