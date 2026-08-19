@@ -113,7 +113,7 @@ for (const target of targets) {
       if (!entregasBase) return null;
       return delivery.orderId
         ? entregasBase + '#/pedido/' + encodeURIComponent(delivery.orderId)
-        : entregasBase + '#/notificacoes';
+        : entregasBase + '#/perfil/notificacoes';
     }
 
     if (ride.isRide) {
