@@ -46,6 +46,23 @@ if (EXPECTED_SHA1) {
   }
 }
 
+const publicAppUrl = process.env.CORRIDAS_PUBLIC_APP_URL?.trim() || '';
+requireOrWarn(Boolean(publicAppUrl), 'URL pública de acompanhamento de Corridas disponível');
+if (publicAppUrl) {
+  try {
+    const parsed = new URL(publicAppUrl);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      fail('CORRIDAS_PUBLIC_APP_URL deve usar http/https');
+    } else if (strict && parsed.protocol !== 'https:') {
+      fail('CORRIDAS_PUBLIC_APP_URL deve usar HTTPS em modo estrito');
+    } else {
+      ok(`URL pública de acompanhamento válida: ${parsed.hostname}`);
+    }
+  } catch {
+    fail('CORRIDAS_PUBLIC_APP_URL não é uma URL válida');
+  }
+}
+
 const androidMapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim() || '';
 const webMapsKey = process.env.CORRIDAS_WEB_MAPS_API_KEY?.trim() || '';
 validateGoogleKey(androidMapsKey, 'CORRIDAS_ANDROID_MAPS_API_KEY', 'Google Maps Android key do Superapp');
