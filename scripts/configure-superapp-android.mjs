@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const APP_PACKAGE = process.env.APP_PACKAGE?.trim() || 'br.com.apois.app';
@@ -83,12 +83,35 @@ if (firebaseB64) {
 
 const resRoot = join(appRoot, 'src/main/res');
 const drawableDir = join(resRoot, 'drawable');
+const mipmapAnyDir = join(resRoot, 'mipmap-anydpi');
 const mipmapAdaptiveDir = join(resRoot, 'mipmap-anydpi-v26');
 mkdirSync(drawableDir, { recursive: true });
+mkdirSync(mipmapAnyDir, { recursive: true });
 mkdirSync(mipmapAdaptiveDir, { recursive: true });
 
-// APOIS Brasil launcher mark: gold stylized A over black. Kept as vector so
-// Android adaptive/round launchers never fall back to Capacitor's blue icon.
+// Remove every Capacitor stock launcher/splash bitmap. This prevents older
+// Android resource qualifiers from selecting the old white/blue artwork.
+let removedStockBranding = 0;
+for (const dirName of readdirSync(resRoot)) {
+  if (!dirName.startsWith('mipmap-') && !dirName.startsWith('drawable')) continue;
+  const dirPath = join(resRoot, dirName);
+  let entries = [];
+  try {
+    entries = readdirSync(dirPath);
+  } catch {
+    continue;
+  }
+  for (const entry of entries) {
+    if (!entry.endsWith('.png')) continue;
+    if (!entry.startsWith('ic_launcher') && !entry.startsWith('splash')) continue;
+    rmSync(join(dirPath, entry), { force: true });
+    removedStockBranding += 1;
+  }
+}
+
+// APOIS Brasil launcher mark: stylized gold A over black. The vector is used
+// for legacy, adaptive, round and themed icons so all Android versions share
+// the same identity and never fall back to the Capacitor icon.
 const launcherForegroundXml = `<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -155,9 +178,11 @@ const splashXml = `<?xml version="1.0" encoding="utf-8"?>
 
 writeFileSync(join(drawableDir, 'ic_launcher_foreground.xml'), launcherForegroundXml, 'utf8');
 writeFileSync(join(drawableDir, 'ic_launcher_monochrome.xml'), launcherMonochromeXml, 'utf8');
+writeFileSync(join(drawableDir, 'splash.xml'), splashXml, 'utf8');
+writeFileSync(join(mipmapAnyDir, 'ic_launcher.xml'), launcherForegroundXml, 'utf8');
+writeFileSync(join(mipmapAnyDir, 'ic_launcher_round.xml'), launcherForegroundXml, 'utf8');
 writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher.xml'), adaptiveIconXml, 'utf8');
 writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher_round.xml'), adaptiveIconXml, 'utf8');
-writeFileSync(join(drawableDir, 'splash.xml'), splashXml, 'utf8');
 
 const colorsPath = join(resRoot, 'values', 'colors.xml');
 if (existsSync(colorsPath)) {
@@ -169,4 +194,4 @@ if (existsSync(colorsPath)) {
   writeFileSync(colorsPath, colors);
 }
 
-console.log('[OK] Ícone adaptativo, redondo, monocromático e splash do Superapp preparados com identidade APOIS Brasil.');
+console.log(`[OK] APOIS Brasil branding: ${removedStockBranding} bitmaps padrão removidos; ícone legacy/adaptativo/redondo/monocromático e splash instalados.`);
