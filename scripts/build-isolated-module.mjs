@@ -116,13 +116,18 @@ function injectSuperappBridge(indexPath, moduleName) {
       const fragmentParams = new URLSearchParams(fragment);
       fragmentParams.forEach((value, key) => { if (!params.has(key)) params.set(key, value); });
     }
-    return { path, suffix: params.toString() ? '?' + params.toString() : '' };
+    return { path, params };
+  }
+
+  function suffixFromParams(params) {
+    const query = params.toString();
+    return query ? '?' + query : '';
   }
 
   function routeAuthDeepLink(rawUrl) {
     if (typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
     try {
-      const { path, suffix } = parseAuthDeepLink(rawUrl);
+      const { path, params } = parseAuthDeepLink(rawUrl);
 
       if (moduleName === 'corridas') {
         if (path === 'reset' || path === 'callback' || path === 'email-change') {
@@ -147,15 +152,16 @@ function injectSuperappBridge(indexPath, moduleName) {
         return true;
       }
       if (path === 'email-change') {
-        window.location.replace('#/perfil/dados-pessoais' + suffix);
+        if (!params.has('next')) params.set('next', '/perfil/dados-pessoais');
+        window.location.replace('#/auth/callback' + suffixFromParams(params));
         return true;
       }
       if (path === 'reset') {
-        window.location.replace('#/redefinir-senha' + suffix);
+        window.location.replace('#/redefinir-senha' + suffixFromParams(params));
         return true;
       }
       if (path === 'callback') {
-        window.location.replace('#/auth/callback' + suffix);
+        window.location.replace('#/auth/callback' + suffixFromParams(params));
         return true;
       }
     } catch (error) {
