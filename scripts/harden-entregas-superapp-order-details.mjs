@@ -13,6 +13,13 @@ if (!source.includes('import { AppBottomNav } from "@/components/AppBottomNav";'
   );
 }
 
+if (source.includes('className="flex h-screen w-full flex-col overflow-hidden bg-black text-white"')) {
+  source = source.replace(
+    'className="flex h-screen w-full flex-col overflow-hidden bg-black text-white"',
+    'className="relative flex h-screen w-full flex-col overflow-hidden bg-black text-white"',
+  );
+}
+
 if (source.includes('className="flex-1 space-y-6 overflow-y-auto p-4 pb-20"')) {
   source = source.replace(
     'className="flex-1 space-y-6 overflow-y-auto p-4 pb-20"',
@@ -33,6 +40,7 @@ if (!source.includes('<AppBottomNav activeTab="pedidos" />')) {
 
 for (const marker of [
   'import { AppBottomNav } from "@/components/AppBottomNav";',
+  'relative flex h-screen w-full flex-col overflow-hidden',
   'overflow-y-auto p-4 pb-32',
   '<AppBottomNav activeTab="pedidos" />',
   'Não foi possível cancelar este pedido. Tente novamente.',
@@ -44,4 +52,4 @@ if (source.includes('toast.error(error?.message || "Não foi possível cancelar 
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregas: detalhes do pedido mantêm rodapé, safe area e erros públicos seguros.');
+console.log('[OK] Entregas: detalhes do pedido mantêm rodapé ancorado, safe area e erros públicos seguros.');
