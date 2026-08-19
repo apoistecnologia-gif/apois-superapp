@@ -99,6 +99,13 @@ replaceRequired(
 
 replaceRequired(
   '.work/entregas/src/components/AppBottomNav.tsx',
+  '<div className="flex min-h-[56px] min-w-[68px] flex-col items-center justify-center gap-1 px-1 transition-all active:scale-95">',
+  '<div className="flex min-h-[64px] min-w-[72px] flex-col items-center justify-center gap-1 px-1 transition-all active:scale-95">',
+  'entregas: botões do rodapé ganham alvo de toque maior',
+);
+
+replaceRequired(
+  '.work/entregas/src/components/AppBottomNav.tsx',
   'className="apois-customer-soft-glow grid h-16 w-16 place-items-center rounded-full border border-primary/35 bg-primary text-white ring-4 ring-background transition-transform active:scale-90"',
   'className="apois-customer-soft-glow grid h-[68px] w-[68px] place-items-center rounded-full border border-primary/35 bg-primary text-white ring-4 ring-background transition-transform active:scale-90"',
   'entregas: ação central do rodapé fica mais legível',
@@ -109,13 +116,6 @@ replaceRequired(
   'className={`h-7 w-7 transition-colors ${active ? "text-primary" : "text-zinc-500"}`}',
   'className={`h-8 w-8 transition-colors ${active ? "text-primary" : "text-zinc-500"}`}',
   'entregas: ícones do rodapé ficam maiores',
-);
-
-replaceRequired(
-  '.work/entregas/src/components/AppBottomNav.tsx',
-  'className="flex min-h-[56px] min-w-[68px] flex-col items-center justify-center gap-1 px-1 transition-all active:scale-95"',
-  'className="flex min-h-[64px] min-w-[72px] flex-col items-center justify-center gap-1 px-1 transition-all active:scale-95"',
-  'entregas: botões do rodapé ganham alvo de toque maior',
 );
 
 replaceRequired(
@@ -160,4 +160,25 @@ replaceRequired(
   'entregas: checkout ignora método legado em storage e aceita somente PIX',
 );
 
-console.log('[OK] entregas: OAuth, sessão Hash, push compartilhado, rodapé e PIX-only respeitam o Superapp sem alterar o app original');
+replaceRequired(
+  '.work/entregas/src/routes/checkout.tsx',
+  '        const providerDetail =\n          payload?.provider?.message ||\n          payload?.provider?.error ||\n          payload?.provider?.status_detail ||\n          null;\n\n        if (typeof payload?.error === "string" && payload.error.trim()) {\n          return providerDetail ? `${payload.error} (${providerDetail})` : payload.error;\n        }',
+  '        if (typeof payload?.error === "string" && payload.error.trim()) {\n          return payload.error;\n        }',
+  'entregas: checkout não mostra detalhe técnico do provedor ao cliente',
+);
+
+replaceRequired(
+  '.work/entregas/src/routes/checkout.tsx',
+  '  return typeof error?.message === "string" && error.message.trim() ? error.message : fallback;',
+  '  return fallback;',
+  'entregas: falha de Edge Function usa mensagem de cliente em vez de erro técnico bruto',
+);
+
+replaceRequired(
+  '.work/entregas/src/routes/checkout.tsx',
+  '      const configuredProvider =\n        typeof providerSetting === "string" ? providerSetting.trim().toLowerCase() : "mercadopago";\n      const pixFunction =\n        configuredProvider === "asaas" ? "create-asaas-pix-charge" : "create-pix-charge";',
+  '      const configuredProvider =\n        typeof providerSetting === "string" ? providerSetting.trim().toLowerCase() : "";\n      if (!new Set(["openpix", "asaas"]).has(configuredProvider)) {\n        throw new Error("O pagamento PIX está temporariamente indisponível. Tente novamente em instantes.");\n      }\n      const pixFunction =\n        configuredProvider === "asaas" ? "create-asaas-pix-charge" : "create-pix-charge";',
+  'entregas: checkout falha de modo seguro se o provedor PIX estiver inconsistente',
+);
+
+console.log('[OK] entregas: OAuth, sessão Hash, push compartilhado, rodapé, PIX-only e erros de checkout respeitam o Superapp sem alterar o app original');
