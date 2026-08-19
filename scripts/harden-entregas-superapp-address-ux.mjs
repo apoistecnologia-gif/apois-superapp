@@ -53,3 +53,29 @@ patch('.work/entregas/src/routes/enderecos.tsx', (source) => {
     'Lista de endereços respeita safe area superior',
   );
 }, 'Entregas: lista de endereços respeita barra superior do Android');
+
+patch('.work/entregas/src/components/CustomerLocationAddressSelector.tsx', (source) => {
+  if (!source.includes('import { Geolocation } from "@capacitor/geolocation";')) {
+    source = `import { Geolocation } from "@capacitor/geolocation";\n${source}`;
+  }
+
+  const startMarker = '  const locate = async () => {';
+  const endMarker = '\n\n  useEffect(() => {';
+  const start = source.indexOf(startMarker);
+  const end = source.indexOf(endMarker, start);
+  if (start < 0 || end < 0) throw new Error('Localização: função locate esperada não encontrada');
+
+  const nativeLocate = `  const locate = async () => {\n    if (isLocating) return;\n    setIsLocating(true);\n    try {\n      let permission = await Geolocation.checkPermissions();\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        permission = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });\n      }\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        toast.error("Permita o acesso à localização para preencher seu endereço automaticamente.");\n        return;\n      }\n\n      const position = await Geolocation.getCurrentPosition({\n        enableHighAccuracy: true,\n        timeout: 15000,\n        maximumAge: 15000,\n      });\n      const lat = position.coords.latitude;\n      const lng = position.coords.longitude;\n\n      try {\n        const data = await invokeMaps({ action: "reverse_geocode", lat, lng });\n        const first = data?.results?.[0];\n        if (!first?.address_components) throw new Error("reverse_geocode_empty");\n\n        const address = parseAddressComponents(first.address_components);\n        onAddressSelected({ ...address, latitude: lat, longitude: lng });\n        const missing = [\n          !address.street && "rua",\n          !address.number && "número",\n          !address.neighborhood && "bairro",\n          !address.city && "cidade",\n          !address.state && "UF",\n          !address.postal_code && "CEP",\n        ].filter(Boolean);\n        if (missing.length > 0) {\n          toast.success(\`Localização encontrada. Complete apenas: \${missing.join(", ")}.\`);\n        } else {\n          toast.success("Endereço preenchido pela sua localização.");\n        }\n      } catch (error) {\n        console.error("Erro ao converter GPS em endereço:", error);\n        onAddressSelected({\n          street: "",\n          number: "",\n          neighborhood: "",\n          city: "",\n          state: "",\n          postal_code: "",\n          latitude: lat,\n          longitude: lng,\n        });\n        toast.error("Localização obtida. Complete manualmente os dados do endereço que não puderam ser identificados.");\n      }\n    } catch (error) {\n      console.error("Erro de geolocalização:", error);\n      toast.error("Não foi possível acessar sua localização. Verifique a permissão do aplicativo e tente novamente.");\n    } finally {\n      setIsLocating(false);\n    }\n  };`;
+
+  source = `${source.slice(0, start)}${nativeLocate}${source.slice(end)}`;
+  source = source.replace(
+    '      toast.error(error instanceof Error ? error.message : "Não foi possível carregar o endereço.");',
+    '      toast.error("Não foi possível carregar este endereço. Tente outra busca ou complete os dados manualmente.");',
+  );
+
+  if (source.includes('navigator.geolocation')) throw new Error('Localização: navigator.geolocation legado ainda presente');
+  if (source.includes('Localização obtida, mas não foi possível buscar o endereço: ${error.message}')) {
+    throw new Error('Localização: erro técnico ainda exposto ao cliente');
+  }
+  return source;
+}, 'Entregas: localização de endereço usa plugin nativo e mensagens seguras');
