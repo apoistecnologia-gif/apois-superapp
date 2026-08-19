@@ -1,3 +1,4 @@
+import './harden-superapp-android-security.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -76,5 +77,11 @@ if (!manifest.includes('android:icon="@mipmap/ic_launcher"')) {
 if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) {
   throw new Error('AndroidManifest não aponta para @mipmap/ic_launcher_round.');
 }
+if (!manifest.includes('android:allowBackup="false"')) {
+  throw new Error('AndroidManifest permite backup de dados do WebView/sessões.');
+}
+if (!manifest.includes('android:usesCleartextTraffic="false"')) {
+  throw new Error('AndroidManifest não bloqueia tráfego HTTP cleartext.');
+}
 
-console.log('[OK] Launcher APOIS Brasil gerado nas dimensões corretas para todas as densidades Android.');
+console.log('[OK] Launcher APOIS Brasil gerado nas dimensões corretas e Android hardening validado.');
