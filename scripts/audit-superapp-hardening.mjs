@@ -41,6 +41,16 @@ check('scripts/harden-corridas-superapp-storage.mjs', [
   'recent-destinations',
 ], 'Corridas usa sessão isolada para storage operacional');
 
+check('scripts/harden-superapp-shell-auth-deeplink-source.mjs', [
+  'Date.now()-Number(previous?.at||0)<5000',
+  'JSON.stringify({url:rawUrl,at:Date.now()})',
+], 'shell fonte limita deduplicação de deep link a cinco segundos');
+
+check('package.json', [
+  'harden-superapp-shell-auth-deeplink-source.mjs && node superapp/shell/build.mjs',
+  'verify-superapp-auth-deeplinks.mjs',
+], 'build aplica e valida hardening de deep link antes e depois da montagem');
+
 check('.apois/modules.json', [
   'harden-corridas-superapp-storage.mjs',
   'namespace-entregas-superapp-storage.mjs',
