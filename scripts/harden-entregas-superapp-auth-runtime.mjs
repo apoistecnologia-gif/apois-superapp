@@ -30,4 +30,11 @@ replaceRequired(
   'entregas: isolamento de sessão valida a rota Hash do módulo em vez do caminho físico do Superapp',
 );
 
-console.log('[OK] entregas: OAuth e isolamento de sessão respeitam o runtime Hash do Superapp sem alterar o app original');
+replaceRequired(
+  '.work/entregas/src/routes/perfil/dados-pessoais.tsx',
+  '          { email: requestedEmail },\n          { emailRedirectTo: `${window.location.origin}/perfil/dados-pessoais` },',
+  '          { email: requestedEmail },\n          { emailRedirectTo: "br.com.apois.app://auth/email-change" },',
+  'entregas: confirmação de troca de e-mail retorna ao package unificado',
+);
+
+console.log('[OK] entregas: OAuth, sessão Hash e retorno de troca de e-mail respeitam o Superapp sem alterar o app original');
