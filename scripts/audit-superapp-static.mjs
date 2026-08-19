@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,6 +46,17 @@ for (const [name, commit] of Object.entries(expectedPins)) {
   }
 }
 
+const workflowsDir = resolve(root, '.github/workflows');
+const workflows = existsSync(workflowsDir)
+  ? readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name))
+  : [];
+if (workflows.length) {
+  console.error(`[FAIL] GitHub Actions não deve gerar/validar o Superapp; use Codemagic: ${workflows.join(', ')}`);
+  failed = true;
+} else {
+  console.log('[OK] build/validação do Superapp não depende de GitHub Actions; Codemagic é o CI nativo');
+}
+
 const obsoleteFiles = [
   'scripts/normalize-corridas-superapp-input.mjs',
   'scripts/normalize-entregas-superapp-build.mjs',
@@ -85,12 +96,14 @@ requireText(
     "'apois-superapp:last-route:' + moduleName",
     "'apois-superapp:corridas-recovery-url'",
     "'apois-superapp:entregas-auth-url'",
+    "'/cadastro'",
+    "'/recuperar-senha'",
     "new Set(['', '#', '#/', '#/inicio', '#/login'])",
     "window.location.replace(shellUrl)",
     "appPlugin.addListener('backButton'",
     "appPlugin.addListener('appStateChange'",
   ],
-  'bridge cobre sessão, retomada, deep links e Android Back no início dos módulos',
+  'bridge cobre sessão, rotas públicas, retomada, deep links e Android Back',
 );
 
 requireText(
