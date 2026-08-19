@@ -23,6 +23,19 @@ replaceRequired(
   'corridas: artes de categorias usam caminho relativo ao módulo do Superapp',
 );
 
+replaceRequired(
+  '.work/corridas/src/lib/auth/native-password-recovery.ts',
+  'export const NATIVE_PASSWORD_RECOVERY_REDIRECT =\n  "apoispassageiro://auth/redefinir-senha";',
+  'export const NATIVE_PASSWORD_RECOVERY_REDIRECT =\n  "br.com.apois.app://auth/corridas-reset";',
+  'corridas: recuperação de senha usa esquema nativo único do Superapp',
+);
+replaceRequired(
+  '.work/corridas/src/lib/auth/native-password-recovery.ts',
+  '    url.protocol === "apoispassageiro:" &&\n    url.hostname === "auth" &&\n    url.pathname.replace(/\\/+$/, "") === "/redefinir-senha"',
+  '    url.protocol === "br.com.apois.app:" &&\n    url.hostname === "auth" &&\n    url.pathname.replace(/\\/+$/, "") === "/corridas-reset"',
+  'corridas: consumidor nativo reconhece callback de recuperação do Superapp',
+);
+
 // Home carried a private copy of the bottom navigation. It disappeared as soon
 // as the same /inicio route switched into its destination-selected branch and
 // also competed for vertical space with the shell footer. The Superapp owns a
@@ -79,4 +92,4 @@ replaceRequired(
   'corridas: rodapé único permanece em todas as telas normais e detalhes',
 );
 
-console.log('[OK] corridas: imagens de categorias e rodapé global único corrigidos apenas em .work');
+console.log('[OK] corridas: assets, recuperação nativa e rodapé global único corrigidos apenas em .work');
