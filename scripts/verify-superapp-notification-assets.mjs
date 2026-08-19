@@ -51,10 +51,16 @@ requireAll('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
   'const maxAvatarBytes = 5 * 1024 * 1024;',
 ], 'dados pessoais mantém fallback e limites de avatar');
 
+requireAll('.work/entregas/src/components/ProductCustomizationSheet.tsx', [
+  'onError={(event) => { event.currentTarget.style.display = "none"; }}',
+  'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+], 'personalização de produto possui fallback de imagem e safe area inferior');
+
 requireAll('scripts/harden-entregas-superapp-image-fallbacks.mjs', [
   "'.work/entregas/src/routes/perfil/index.tsx'",
   "'.work/entregas/src/routes/perfil/dados-pessoais.tsx'",
-], 'hardener de imagens cobre avatares');
+  "'.work/entregas/src/components/ProductCustomizationSheet.tsx'",
+], 'hardener de imagens cobre avatares e personalização');
 requireAll('scripts/harden-entregas-superapp-notification-feed.mjs', [
   'payload ainda pode abrir área merchant',
   'Central de notificações',
