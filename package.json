@@ -13,12 +13,13 @@
     "status:modules": "node scripts/status-modules.mjs",
     "audit:static": "node scripts/audit-superapp-static.mjs",
     "verify:pins": "node scripts/verify-module-pins.mjs",
+    "verify:rides-push-firebase": "node scripts/validate-rides-push-firebase.mjs",
     "prepare:modules": "node scripts/prepare-workspace.mjs",
     "build:corridas": "node scripts/build-isolated-module.mjs corridas",
     "build:entregas": "node scripts/build-isolated-module.mjs entregas",
     "build:shell": "node superapp/shell/build.mjs",
     "inject:push-routing": "node scripts/inject-superapp-push-routing.mjs",
     "verify:dist": "node scripts/verify-superapp-dist.mjs && node scripts/verify-superapp-policy.mjs",
-    "build:superapp": "npm run audit:static && npm run verify:pins && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run inject:push-routing && npm run verify:dist"
+    "build:superapp": "npm run audit:static && npm run verify:pins && npm run verify:rides-push-firebase && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run inject:push-routing && npm run verify:dist"
   }
 }
