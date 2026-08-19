@@ -103,7 +103,7 @@ check('scripts/harden-superapp-android-security.mjs', [
   "setApplicationAttribute('allowBackup', 'false')",
   "setApplicationAttribute('usesCleartextTraffic', 'false')",
   'android.permission.ACCESS_BACKGROUND_LOCATION',
-  'android:windowSoftInputMode=\\"adjustResize\\"',
+  'android:windowSoftInputMode="adjustResize"',
   'android.permission.REQUEST_INSTALL_PACKAGES',
 ], 'Android fixa API 36/versionamento e reduz superfície de permissões para Play Store');
 
