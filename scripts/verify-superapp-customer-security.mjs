@@ -72,12 +72,30 @@ requireMarkers('.work/entregas/src/routes/enderecos.tsx', [
   'const setDefaultAddress = async (addressId: string)',
   '"set_default_customer_address"',
   'await setDefaultAddress(selectedAddress.id);',
-], 'confirmação de endereço usa RPC atômica do backend');
+  'pt-[max(env(safe-area-inset-top),1rem)]',
+], 'confirmação de endereço usa RPC atômica e respeita safe area');
 forbidMarkers('.work/entregas/src/routes/enderecos.tsx', [
   'setDefaultWithFallback',
   'RPC set_default_customer_address failed, using RLS fallback',
   '.update({ is_default: false })',
 ], 'confirmação de endereço não replica transação do backend no cliente');
+
+requireMarkers('.work/entregas/src/routes/enderecos/novo.tsx', [
+  'Não foi possível salvar este endereço. Confira os dados e tente novamente.',
+], 'novo endereço usa mensagem pública segura');
+forbidMarkers('.work/entregas/src/routes/enderecos/novo.tsx', [
+  'toast.error(`Erro ao salvar: ${error.message}`)',
+], 'novo endereço não expõe erro técnico do backend');
+
+requireMarkers('.work/entregas/src/routes/enderecos/editar/$addressId.tsx', [
+  'const isCompletingMissingField = locationFields.has(name) && previousValue.length === 0;',
+  'const mustReconfirmPoint = locationFields.has(name) && !isCompletingMissingField;',
+  'Não foi possível atualizar este endereço. Confira os dados e tente novamente.',
+], 'edição completa campos ausentes sem perder coordenadas e usa mensagem segura');
+forbidMarkers('.work/entregas/src/routes/enderecos/editar/$addressId.tsx', [
+  'toast.error(`Erro ao salvar: ${error.message}`)',
+  '...(locationFields.has(name) ? { latitude: null, longitude: null } : {})',
+], 'edição não perde GPS ao completar campo ausente nem expõe erro técnico');
 
 for (const [path, label] of [
   ['.work/entregas/src/routes/perfil/pagamentos.tsx', 'Pagamentos'],
