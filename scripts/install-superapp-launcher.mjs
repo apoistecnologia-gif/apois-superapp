@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -13,34 +13,37 @@ if (!existsSync(resRoot)) {
   throw new Error(`Recursos Android não encontrados: ${resRoot}`);
 }
 
-function renderPng(target, size) {
-  mkdirSync(resolve(target, '..'), { recursive: true });
-  const result = spawnSync(
-    'sips',
-    ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', target],
-    { encoding: 'utf8' },
+// The checked-in artwork may arrive as an indexed/palette PNG. AAPT2 can abort
+// while crunching some palette encodings. Re-encode it with macOS CoreGraphics
+// before copying it into Android resources, producing a conventional PNG that
+// is safe for the release resource pipeline.
+const normalizedSource = '/tmp/apois-launcher-normalized.png';
+const normalize = spawnSync(
+  'sips',
+  ['-s', 'format', 'png', '-z', '192', '192', source, '--out', normalizedSource],
+  { encoding: 'utf8' },
+);
+if (normalize.error || normalize.status !== 0 || !existsSync(normalizedSource)) {
+  throw new Error(
+    `Falha ao normalizar launcher com sips: ${normalize.error?.message || normalize.stderr || normalize.stdout || 'erro desconhecido'}`,
   );
-  if (result.error || result.status !== 0 || !existsSync(target)) {
-    throw new Error(
-      `Falha ao rasterizar launcher ${size}px com sips: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`,
-    );
-  }
 }
+copyFileSync(normalizedSource, source);
 
-const densitySizes = {
-  'mipmap-mdpi': { launcher: 48, foreground: 108 },
-  'mipmap-hdpi': { launcher: 72, foreground: 162 },
-  'mipmap-xhdpi': { launcher: 96, foreground: 216 },
-  'mipmap-xxhdpi': { launcher: 144, foreground: 324 },
-  'mipmap-xxxhdpi': { launcher: 192, foreground: 432 },
-};
+const densityDirs = [
+  'mipmap-mdpi',
+  'mipmap-hdpi',
+  'mipmap-xhdpi',
+  'mipmap-xxhdpi',
+  'mipmap-xxxhdpi',
+];
 
-for (const [dirName, sizes] of Object.entries(densitySizes)) {
+for (const dirName of densityDirs) {
   const dir = join(resRoot, dirName);
   mkdirSync(dir, { recursive: true });
-  renderPng(join(dir, 'ic_launcher.png'), sizes.launcher);
-  renderPng(join(dir, 'ic_launcher_round.png'), sizes.launcher);
-  renderPng(join(dir, 'ic_launcher_foreground.png'), sizes.foreground);
+  copyFileSync(source, join(dir, 'ic_launcher.png'));
+  copyFileSync(source, join(dir, 'ic_launcher_round.png'));
+  copyFileSync(source, join(dir, 'ic_launcher_foreground.png'));
 }
 
 // Legacy launchers must resolve to the real raster artwork instead of the
@@ -69,4 +72,4 @@ if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) {
   throw new Error('AndroidManifest não aponta para @mipmap/ic_launcher_round.');
 }
 
-console.log('[OK] Launcher APOIS Brasil rasterizado em PNG padrão por densidade e adaptive icon configurado.');
+console.log('[OK] Launcher APOIS Brasil normalizado para PNG compatível com AAPT2 e instalado em todas as densidades.');
