@@ -1,3 +1,4 @@
+import './harden-corridas-superapp-push-isolation.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -84,10 +85,6 @@ replaceRequired(
   'corridas: recuperação encaminhada pelo shell é consumida após troca de módulo',
 );
 
-// Home carried a private copy of the bottom navigation. It disappeared as soon
-// as the same /inicio route switched into its destination-selected branch and
-// also competed for vertical space with the shell footer. The Superapp owns a
-// single footer in AppShell instead, so remove only this transient Home copy.
 replaceRequired(
   '.work/corridas/src/routes/_authenticated.inicio.tsx',
   '  Bell,\n',
@@ -140,4 +137,4 @@ replaceRequired(
   'corridas: rodapé único permanece em todas as telas normais e detalhes',
 );
 
-console.log('[OK] corridas: assets, compartilhamento, recuperação nativa encaminhável e rodapé global único corrigidos apenas em .work');
+console.log('[OK] corridas: assets, compartilhamento, recuperação nativa encaminhável, isolamento Push e rodapé global único corrigidos apenas em .work');
