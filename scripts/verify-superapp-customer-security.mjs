@@ -202,4 +202,19 @@ forbidMarkers('.work/entregas/src/routes/estabelecimento.$merchantId.tsx', [
   'window.history.back()',
 ], 'estabelecimento não depende do histórico físico do WebView');
 
+for (const path of [
+  '.work/entregas/src/routes/termos.tsx',
+  '.work/entregas/src/routes/privacidade.tsx',
+]) {
+  requireMarkers(path, [
+    'onClick={() => void navigate({ to: "/", replace: true })}',
+    'pt-[max(env(safe-area-inset-top),1rem)]',
+    'pb-[max(env(safe-area-inset-bottom),3rem)]',
+  ], `${path}: rota legal permanece no módulo e respeita safe areas`);
+  forbidMarkers(path, ['window.history.back()'], `${path}: rota legal não usa histórico físico do WebView`);
+}
+forbidMarkers('.work/entregas/src/routes/privacidade.tsx', [
+  'processamento de PIX Mercado Pago',
+], 'política de privacidade não fixa gateway financeiro obsoleto');
+
 process.exit(failed ? 1 : 0);
