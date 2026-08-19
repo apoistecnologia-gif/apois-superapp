@@ -36,6 +36,7 @@ const lock = JSON.parse(read('.apois/source-lock.json'));
 const expectedPins = {
   entregas: '835772994e2c9828dbcef759016c4fad613090e4',
   corridas_passageiro: 'c25dd67464f0913da3dfbe5504ec018d6ff8dfec',
+  corridas_motorista_admin: 'd10008ec86da135512e70aa6f3c0dc954922af9c',
 };
 for (const [name, commit] of Object.entries(expectedPins)) {
   if (lock.sources?.[name]?.commit !== commit) {
@@ -47,14 +48,11 @@ for (const [name, commit] of Object.entries(expectedPins)) {
 }
 
 const workflowsDir = resolve(root, '.github/workflows');
-const workflows = existsSync(workflowsDir)
-  ? readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name))
-  : [];
-if (workflows.length) {
-  console.error(`[FAIL] GitHub Actions não deve gerar/validar o Superapp; use Codemagic: ${workflows.join(', ')}`);
+if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
+  console.error('[FAIL] Superapp voltou a conter GitHub Actions; builds devem ocorrer somente no Codemagic');
   failed = true;
 } else {
-  console.log('[OK] build/validação do Superapp não depende de GitHub Actions; Codemagic é o CI nativo');
+  console.log('[OK] nenhum GitHub Action ativo no Superapp');
 }
 
 const obsoleteFiles = [
@@ -89,6 +87,28 @@ forbidText(
 );
 
 requireText(
+  '.apois/modules.json',
+  ['"install": ["bun", "install", "--frozen-lockfile"]'],
+  'módulos usam os bun.lock protegidos sem atualizar dependências durante o build',
+);
+
+requireText(
+  'scripts/bootstrap-sources.sh',
+  ['git submodule sync --recursive', 'git submodule update --init --recursive', 'npm run verify:pins'],
+  'bootstrap inicializa os mesmos submódulos protegidos usados pelo build',
+);
+forbidText(
+  'scripts/bootstrap-sources.sh',
+  ['apps/corridas-passageiro', 'apps/corridas-motorista-admin', 'apps/entregas', 'git clone --depth 1'],
+  'bootstrap não cria cópias paralelas nem segue HEAD de branch',
+);
+requireText(
+  'scripts/source-status.sh',
+  ['sources/apois-corridas-passageiro', 'sources/apois-corridas-motorista-admin', 'sources/apois-entregas', 'npm run verify:pins'],
+  'status das fontes aponta para os snapshots realmente consumidos',
+);
+
+requireText(
   'scripts/build-isolated-module.mjs',
   [
     "'apois-superapp-corridas-auth-v1'",
@@ -96,14 +116,12 @@ requireText(
     "'apois-superapp:last-route:' + moduleName",
     "'apois-superapp:corridas-recovery-url'",
     "'apois-superapp:entregas-auth-url'",
-    "'/cadastro'",
-    "'/recuperar-senha'",
     "new Set(['', '#', '#/', '#/inicio', '#/login'])",
     "window.location.replace(shellUrl)",
     "appPlugin.addListener('backButton'",
     "appPlugin.addListener('appStateChange'",
   ],
-  'bridge cobre sessão, rotas públicas, retomada, deep links e Android Back',
+  'bridge cobre sessão, retomada, deep links e Android Back no início dos módulos',
 );
 
 requireText(
@@ -111,15 +129,19 @@ requireText(
   [
     'br.com.apois.app://auth/email-change',
     '_app_package: "br.com.apois.app"',
+    'const isDeliveryPush =',
+    'if (!target) return;',
+    'Sair somente\\n  // de Entregas não pode cancelar a inscrição nativa usada por Corridas',
     '<nav className="fixed bottom-0',
     'min-h-[88px]',
     'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
     'overflow-y-auto px-4 pb-32 pt-5',
+    'overflow-y-auto px-4 pb-32 pt-2',
     'overflow-y-auto p-4 pb-32',
     'overflow-y-auto p-4 pb-32 pt-5',
     'const paymentMethod = "pix";',
   ],
-  'Entregas mantém auth/push isolados, rodapé seguro e checkout PIX-only',
+  'Entregas mantém auth/push isolados, token nativo compartilhado, rodapé seguro e checkout PIX-only',
 );
 
 requireText(
@@ -137,12 +159,19 @@ requireText(
 
 requireText(
   'scripts/inject-superapp-push-routing.mjs',
-  [
-    'notificationType',
-    'const isDeliveryPush',
-    'if (!destination) return;',
-  ],
+  ['notificationType', 'const isDeliveryPush', 'if (!destination) return;'],
   'roteador de Push de Entregas não intercepta Push de Corridas',
+);
+
+requireText(
+  'scripts/install-superapp-launcher.mjs',
+  ['copyFileSync(normalizedSource, join(dir, \'ic_launcher.png\'))', 'A arte versionada é imutável durante o build'],
+  'launcher normaliza somente cópia temporária',
+);
+forbidText(
+  'scripts/install-superapp-launcher.mjs',
+  ['copyFileSync(normalizedSource, source)'],
+  'build Android não altera a arte versionada',
 );
 
 requireText(
@@ -156,12 +185,20 @@ requireText(
   [
     'android-superapp-experimental:',
     'APP_PACKAGE: "br.com.apois.app"',
+    'BUN_VERSION: "1.3.14"',
+    'bash -s "bun-v${BUN_VERSION}"',
+    'test "$(bun --version)" = "$BUN_VERSION"',
     'EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"',
     'APOIS_STRICT_NATIVE_CONFIG: "1"',
     'npm run verify:pins',
     'APOIS-Superapp.apk',
   ],
-  'Codemagic preserva package, assinatura, pins e nome final esperados',
+  'Codemagic preserva toolchain, package, assinatura, pins e nome final esperados',
+);
+forbidText(
+  'codemagic.yaml',
+  ['cmp -s superapp/branding/apois-launcher.png superapp/shell/android'],
+  'Codemagic não pressupõe que PNG normalizado seja byte-idêntico à arte fonte',
 );
 
 requireText(
