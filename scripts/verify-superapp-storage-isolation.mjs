@@ -2,6 +2,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const checks = [
+  ['.work/corridas/src/services/destinations/destination-storage.ts', [
+    'apois-superapp-corridas-auth-v1',
+    'parsed?.user?.id ?? parsed?.currentSession?.user?.id ?? parsed?.session?.user?.id',
+    'apois:passageiro:${this.getUserId()}:recent-destinations',
+    'apois:passageiro:${this.getUserId()}:favorites',
+  ]],
+  ['.work/corridas/src/services/push/push-service.ts', [
+    'apois-superapp-corridas:push-device-id',
+  ]],
   ['.work/entregas/src/contexts/CartContext.tsx', [
     'apois-superapp-entregas:cart',
     'apois-superapp-entregas:merchant',
@@ -38,6 +47,18 @@ for (const [path, markers] of checks) {
     failed = true;
   } else {
     console.log(`[OK] storage isolation ${path}`);
+  }
+}
+
+const destinationStorage = existsSync(resolve('.work/corridas/src/services/destinations/destination-storage.ts'))
+  ? readFileSync(resolve('.work/corridas/src/services/destinations/destination-storage.ts'), 'utf8')
+  : '';
+if (destinationStorage) {
+  if (destinationStorage.includes('sb-${projectRef}-auth-token')) {
+    console.error('[FAIL] Corridas ainda tenta descobrir usuário pelo storageKey Supabase antigo');
+    failed = true;
+  } else {
+    console.log('[OK] favoritos/recentes de Corridas leem a sessão isolada do Superapp');
   }
 }
 
