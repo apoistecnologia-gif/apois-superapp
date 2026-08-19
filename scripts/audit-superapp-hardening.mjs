@@ -55,8 +55,10 @@ check('.apois/modules.json', [
   'harden-corridas-superapp-storage.mjs',
   'namespace-entregas-superapp-storage.mjs',
   'harden-entregas-superapp-account-security.mjs',
+  'harden-entregas-superapp-address-confirmation.mjs',
+  'harden-entregas-superapp-customer-ux.mjs',
   '--frozen-lockfile',
-], 'build dos módulos executa isolamento de storage, segurança de conta e mantém locks protegidos');
+], 'build dos módulos executa isolamento, segurança e hardening do cliente com locks protegidos');
 
 check('scripts/harden-entregas-superapp-account-security.mjs', [
   'Não foi possível encerrar o vínculo de notificações deste aparelho.',
@@ -65,6 +67,13 @@ check('scripts/harden-entregas-superapp-account-security.mjs', [
   'Não foi possível desativar sua conta com segurança.',
   'Revise os dados e tente novamente.',
 ], 'Entregas remove vínculo Push antes de logout/desativação e sanitiza falhas do perfil');
+
+check('scripts/harden-entregas-superapp-customer-ux.mjs', [
+  'telemetria do editor Lovable removida',
+  'Não foi possível criar sua conta agora. Confira os dados e tente novamente.',
+  'await Browser.open({ url: data.signedUrl });',
+  'pt-[max(env(safe-area-inset-top),1rem)]',
+], 'hardening do cliente remove telemetria do editor, sanitiza cadastro e prepara suporte Android');
 
 check('supabase/migrations/20260819022000_harden_entregas_admin_rpc_privileges.sql', [
   'admin_create_merchant',
