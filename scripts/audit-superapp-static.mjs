@@ -171,8 +171,12 @@ requireText(
     'return fallback;',
     'new Set(["openpix", "asaas"]).has(configuredProvider)',
     'O pagamento PIX está temporariamente indisponível.',
+    'if (!payment?.qrCodeText)',
+    'typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : ""',
+    'Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.',
+    'toast.error("Não foi possível atualizar sua senha. Tente novamente.")',
   ],
-  'Entregas mantém auth/push isolados, token compartilhado, rodapé seguro e checkout PIX-only com erro público seguro',
+  'Entregas mantém auth/push isolados, token compartilhado, rodapé seguro, checkout PIX resiliente e erros públicos sanitizados',
 );
 
 requireText(
@@ -186,6 +190,22 @@ requireText(
     '<ActiveRideMap ride={ride} compact />',
   ],
   'Corridas mantém lifecycle, retomada, push gate e mapa Pix endurecidos',
+);
+
+requireText(
+  'scripts/harden-corridas-superapp-push-isolation.mjs',
+  [
+    'isPushRideEvent',
+    'const hasDeliveryMarker =',
+    'if (hasDeliveryMarker) return;',
+    'if (!isPushRideEvent(data["event"]) && !hasRideId) return;',
+  ],
+  'listener próprio de Corridas não consome Push de Entregas no package unificado',
+);
+requireText(
+  'scripts/fix-corridas-superapp-ui.mjs',
+  ["import './harden-corridas-superapp-push-isolation.mjs';"],
+  'isolamento do listener de Corridas é executado antes da compilação do módulo',
 );
 
 requireText(
