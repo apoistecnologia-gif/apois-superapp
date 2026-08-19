@@ -111,9 +111,8 @@ for (const dirName of readdirSync(resRoot)) {
   }
 }
 
-// APOIS Brasil launcher mark: stylized gold A over black. The vector is used
-// for legacy, adaptive, round and themed icons so all Android versions share
-// the same identity and never fall back to the Capacitor icon.
+// Fallback vetorial usado apenas enquanto o projeto nativo está sendo montado.
+// O instalador de branding substitui os launchers pelo PNG oficial da APOIS.
 const launcherForegroundXml = `<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -164,16 +163,19 @@ const adaptiveIconXml = `<?xml version="1.0" encoding="utf-8"?>
 </adaptive-icon>
 `;
 
+// A splash nativa usa a MESMA arte oficial que será instalada nos mipmaps.
+// Assim não aparece mais o símbolo vetorial provisório nem o ícone padrão do
+// Android/Capacitor durante a abertura do Superapp.
 const splashXml = `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@android:color/black" />
     <item android:gravity="center">
         <inset
-            android:drawable="@drawable/ic_launcher_foreground"
-            android:insetLeft="72dp"
-            android:insetTop="72dp"
-            android:insetRight="72dp"
-            android:insetBottom="72dp" />
+            android:drawable="@mipmap/ic_launcher_foreground"
+            android:insetLeft="64dp"
+            android:insetTop="64dp"
+            android:insetRight="64dp"
+            android:insetBottom="64dp" />
     </item>
 </layer-list>
 `;
@@ -233,4 +235,4 @@ if (existsSync(legacyColorsPath)) {
   else writeFileSync(legacyColorsPath, legacyColors, 'utf8');
 }
 
-console.log(`[OK] APOIS Brasil branding: ${removedStockBranding} bitmaps padrão removidos; ícone legacy/adaptativo/redondo/monocromático e splash instalados.`);
+console.log(`[OK] APOIS Brasil branding: ${removedStockBranding} bitmaps padrão removidos; ícone legacy/adaptativo/redondo/monocromático e splash oficial instalados.`);
