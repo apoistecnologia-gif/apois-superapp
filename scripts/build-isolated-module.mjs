@@ -68,7 +68,8 @@ function injectSuperappBridge(indexPath, moduleName) {
       const parsed = JSON.parse(raw);
       return Boolean(parsed?.access_token || parsed?.currentSession?.access_token || parsed?.session?.access_token);
     } catch {
-      try { return Boolean(localStorage.getItem(authStorageKey)); } catch { return false; }
+      try { localStorage.removeItem(authStorageKey); } catch {}
+      return false;
     }
   }
 
@@ -231,6 +232,11 @@ if (name === 'corridas') {
   env.VITE_SUPABASE_URL = corridasUrl;
   env.VITE_SUPABASE_PUBLISHABLE_KEY = corridasKey;
   env.VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED = process.env.APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1' ? '1' : '0';
+
+  const publicAppUrl = process.env.CORRIDAS_PUBLIC_APP_URL?.trim();
+  if (publicAppUrl) env.VITE_PUBLIC_APP_URL = publicAppUrl;
+  else delete env.VITE_PUBLIC_APP_URL;
+
   console.log(
     env.VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1'
       ? '[OK] corridas: push FCM do Superapp explicitamente habilitado'
@@ -303,7 +309,9 @@ if (config.render) {
     process.exit(1);
   }
 
-  html = html.replace(/(src|href)="\/(?!\/)/g, '$1="./');
+  html = html
+    .replace(/(src|href)="\/(?!\/)/g, '$1="./')
+    .replace(/(src|href)='\/(?!\/)/g, "$1='./");
 
   const output = resolve(cwd, config.render.output);
   writeFileSync(output, html);
