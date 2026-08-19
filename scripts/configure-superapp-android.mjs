@@ -186,27 +186,51 @@ writeFileSync(join(mipmapAnyDir, 'ic_launcher_round.xml'), launcherForegroundXml
 writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher.xml'), adaptiveIconXml, 'utf8');
 writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher_round.xml'), adaptiveIconXml, 'utf8');
 
-const colorsPath = join(valuesDir, 'colors.xml');
+// Capacitor 8 already creates values/ic_launcher_background.xml with the
+// resource name ic_launcher_background. Update that canonical definition in
+// place. Creating a second copy in values/colors.xml makes aapt merge fail with
+// a duplicate color resource during assembleRelease.
+const launcherBackgroundPath = join(valuesDir, 'ic_launcher_background.xml');
 const launcherBackgroundColor = '<color name="ic_launcher_background">#050505</color>';
-if (existsSync(colorsPath)) {
-  let colors = readFileSync(colorsPath, 'utf8');
-  if (/<color name="ic_launcher_background">[^<]*<\/color>/.test(colors)) {
-    colors = colors.replace(
+if (existsSync(launcherBackgroundPath)) {
+  let backgroundValues = readFileSync(launcherBackgroundPath, 'utf8');
+  if (/<color name="ic_launcher_background">[^<]*<\/color>/.test(backgroundValues)) {
+    backgroundValues = backgroundValues.replace(
       /<color name="ic_launcher_background">[^<]*<\/color>/,
       launcherBackgroundColor,
     );
-  } else if (colors.includes('</resources>')) {
-    colors = colors.replace('</resources>', `    ${launcherBackgroundColor}\n</resources>`);
+  } else if (backgroundValues.includes('</resources>')) {
+    backgroundValues = backgroundValues.replace(
+      '</resources>',
+      `    ${launcherBackgroundColor}\n</resources>`,
+    );
   } else {
-    throw new Error('colors.xml existe, mas não contém um bloco <resources> válido.');
+    throw new Error('ic_launcher_background.xml existe, mas não contém um bloco <resources> válido.');
   }
-  writeFileSync(colorsPath, colors, 'utf8');
+  writeFileSync(launcherBackgroundPath, backgroundValues, 'utf8');
 } else {
   writeFileSync(
-    colorsPath,
+    launcherBackgroundPath,
     `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    ${launcherBackgroundColor}\n</resources>\n`,
     'utf8',
   );
+}
+
+// Clean the transient colors.xml created by the previous Superapp branding
+// implementation if this script is rerun in an existing Android tree.
+const legacyColorsPath = join(valuesDir, 'colors.xml');
+if (existsSync(legacyColorsPath)) {
+  let legacyColors = readFileSync(legacyColorsPath, 'utf8');
+  legacyColors = legacyColors.replace(
+    /\s*<color name="ic_launcher_background">[^<]*<\/color>\s*/,
+    '\n',
+  );
+  const remainingResources = legacyColors
+    .replace(/<\?xml[^>]*\?>/g, '')
+    .replace(/<\/?resources>/g, '')
+    .trim();
+  if (!remainingResources) rmSync(legacyColorsPath, { force: true });
+  else writeFileSync(legacyColorsPath, legacyColors, 'utf8');
 }
 
 console.log(`[OK] APOIS Brasil branding: ${removedStockBranding} bitmaps padrão removidos; ícone legacy/adaptativo/redondo/monocromático e splash instalados.`);
