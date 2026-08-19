@@ -18,7 +18,7 @@
     "build:entregas": "node scripts/build-isolated-module.mjs entregas",
     "build:shell": "node superapp/shell/build.mjs",
     "inject:push-routing": "node scripts/inject-superapp-push-routing.mjs",
-    "verify:dist": "node scripts/verify-superapp-dist.mjs",
+    "verify:dist": "node scripts/verify-superapp-dist.mjs && node scripts/verify-superapp-policy.mjs",
     "build:superapp": "npm run audit:static && npm run verify:pins && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run inject:push-routing && npm run verify:dist"
   }
 }
