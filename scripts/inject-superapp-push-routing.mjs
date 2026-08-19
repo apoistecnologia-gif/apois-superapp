@@ -54,11 +54,12 @@ for (const target of targets) {
   function deliveryMarker(data) {
     const orderId = data.orderId || data.order_id || data.orderID;
     const notificationType = data.notificationType || data.notification_type;
+    const isDeliveryPush =
+      (typeof notificationType === 'string' && notificationType.trim().length > 0) ||
+      (typeof orderId === 'string' && orderId.trim().length > 0);
     return {
       orderId: typeof orderId === 'string' ? orderId.trim() : '',
-      isDelivery:
-        (typeof notificationType === 'string' && notificationType.trim().length > 0) ||
-        (typeof orderId === 'string' && orderId.trim().length > 0),
+      isDelivery: isDeliveryPush,
     };
   }
 
