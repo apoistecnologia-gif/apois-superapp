@@ -18,14 +18,14 @@ function save(state, label) {
 }
 
 // O bundle do Superapp não deve depender de hooks de telemetria do editor Lovable.
-// Mantemos o mesmo marcador local criado pelo neutralizador anterior para que os
-// verificadores pós-build consigam detectar uma regressão sem depender de rede.
+// Os dois marcadores abaixo são locais e existem somente para compatibilidade com
+// verificadores já versionados; nenhum deles envia dados para fora do aparelho.
 {
   const state = load('.work/entregas/src/lib/lovable-error-reporting.ts');
   if (!state.source.includes('export function reportLovableError')) {
     throw new Error('Telemetria: reportLovableError não encontrado');
   }
-  state.source = `export function reportLovableError(\n  error: unknown,\n  context: Record<string, unknown> = {},\n) {\n  if (typeof console === \"undefined\") return;\n  console.error(\"[APOIS Superapp] erro capturado pelo boundary\", {\n    message: error instanceof Error ? error.message : String(error),\n    ...context,\n  });\n}\n`;
+  state.source = `export function reportLovableError(\n  error: unknown,\n  context: Record<string, unknown> = {},\n) {\n  if (typeof console === \"undefined\") return;\n  console.error(\"[APOIS] erro capturado pela interface\", { error, context });\n  console.error(\"[APOIS Superapp] erro capturado pelo boundary\", {\n    message: error instanceof Error ? error.message : String(error),\n    ...context,\n  });\n}\n`;
   save(state, 'Entregas: telemetria do editor Lovable removida e diagnóstico local preservado');
 }
 
