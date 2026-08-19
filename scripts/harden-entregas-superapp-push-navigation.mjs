@@ -4,29 +4,30 @@ import { resolve } from 'node:path';
 const path = resolve('.work/entregas/src/lib/customer-push.ts');
 let source = readFileSync(path, 'utf8');
 
-const oldTarget = `function notificationTarget(notification?: PushNotificationSchema) {\n  const orderId = notification?.data?.["orderId"];\n  return typeof orderId === "string" && orderId.trim()\n    ? \`/pedido/\${encodeURIComponent(orderId)}\`\n    : "/notificacoes";\n}`;
-const newTarget = `function notificationTarget(notification?: PushNotificationSchema) {\n  const orderId = notification?.data?.["orderId"];\n  return typeof orderId === "string" && orderId.trim()\n    ? \`#/pedido/\${encodeURIComponent(orderId)}\`\n    : "#/perfil/notificacoes";\n}`;
-
-if (!source.includes(newTarget)) {
-  if (!source.includes(oldTarget)) throw new Error('Entregas Push: notificationTarget esperado não encontrado.');
-  source = source.replace(oldTarget, newTarget);
-}
-
-const oldAction = `        const target = notificationTarget(action.notification);\n        if (window.location.pathname !== target) window.location.assign(target);`;
-const newAction = `        const target = notificationTarget(action.notification);\n        if (window.location.hash !== target) window.location.assign(target);`;
-if (!source.includes(newAction)) {
-  if (!source.includes(oldAction)) throw new Error('Entregas Push: navegação esperada não encontrada.');
-  source = source.replace(oldAction, newAction);
+const oldFallback = '  return orderId ? `/pedido/${encodeURIComponent(orderId)}` : "/notificacoes";';
+const newFallback = '  return orderId ? `/pedido/${encodeURIComponent(orderId)}` : "/perfil/notificacoes";';
+if (!source.includes(newFallback)) {
+  if (!source.includes(oldFallback)) {
+    throw new Error('Entregas Push: fallback pós-adaptação esperado não encontrado.');
+  }
+  source = source.replace(oldFallback, newFallback);
 }
 
 for (const marker of [
-  '"#/perfil/notificacoes"',
-  '`#/pedido/${encodeURIComponent(orderId)}`',
-  'window.location.hash !== target',
+  'const isDeliveryPush =',
+  'if (!target) return;',
+  'const targetHash = `#${target}`;',
+  'window.location.hash !== targetHash',
+  '"/perfil/notificacoes"',
 ]) {
   if (!source.includes(marker)) throw new Error(`Entregas Push: hardening ausente: ${marker}`);
 }
-if (source.includes(': "/notificacoes";')) throw new Error('Entregas Push: rota antiga inexistente ainda presente.');
+for (const forbidden of [
+  ': "/notificacoes";',
+  'window.location.pathname !== target',
+]) {
+  if (source.includes(forbidden)) throw new Error(`Entregas Push: navegação antiga ainda presente: ${forbidden}`);
+}
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregas: toque em Push permanece no módulo e usa rotas hash válidas.');
+console.log('[OK] Entregas: toque em Push usa Hash Router e central de notificações válida.');
