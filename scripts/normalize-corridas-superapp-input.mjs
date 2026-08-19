@@ -84,4 +84,23 @@ if (!source.includes(currentReplacement)) {
 }
 
 writeFileSync(full, source);
+
+// The isolated builder prepares .work and then runs the runtime hardener. Wire
+// the Superapp-only UI repair immediately after that hardener, still inside the
+// transient checkout, so the protected Corridas source remains untouched.
+const builderPath = 'scripts/build-isolated-module.mjs';
+const builderFull = resolve(root, builderPath);
+let builder = readFileSync(builderFull, 'utf8');
+const builderNeedle = "if (name === 'corridas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);\n}";
+const builderReplacement = "if (name === 'corridas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);\n  run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);\n}";
+if (!builder.includes('scripts/fix-corridas-superapp-ui.mjs')) {
+  if (!builder.includes(builderNeedle)) {
+    console.error(`[FAIL] corridas: ponto de hardening inesperado em ${builderPath}`);
+    process.exit(1);
+  }
+  builder = builder.replace(builderNeedle, builderReplacement);
+  writeFileSync(builderFull, builder);
+  console.log('[OK] corridas: reparo visual do Superapp conectado ao build isolado');
+}
+
 console.log('[OK] corridas: adaptador totalmente normalizado para o snapshot fixado antes de preparar .work');
