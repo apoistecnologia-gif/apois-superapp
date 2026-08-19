@@ -29,6 +29,9 @@ scripts/
   adapt-module-for-superapp.mjs
   build-isolated-module.mjs
   inject-superapp-push-routing.mjs
+  audit-superapp-static.mjs
+  audit-superapp-hardening.mjs
+  audit-superapp-play-store.mjs
   verify-superapp-dist.mjs
   verify-superapp-policy.mjs
   configure-superapp-android.mjs
@@ -47,7 +50,7 @@ Os commits efetivamente usados são os commits dos submodules registrados neste 
 
 ## Shell e navegação
 
-Ao abrir o APK, o shell mostra dois produtos:
+Ao abrir o app, o shell mostra dois produtos:
 
 - **Corridas**
 - **Entregas**
@@ -68,9 +71,9 @@ O shell distribui os callbacks para o módulo correto. Entregas usa callback, re
 
 A confirmação de alteração de e-mail de Entregas passa primeiro por `#/auth/callback`, onde a sessão é efetivamente trocada, antes de retornar aos dados pessoais.
 
-## Pagamento de Corridas no Superapp
+## Pagamentos no Superapp
 
-No módulo Corridas do Superapp, a interface aceita **somente PIX**. A adaptação ocorre exclusivamente em `.work/corridas`; o projeto de origem não é alterado.
+No cliente, os módulos Corridas e Entregas são **PIX-only**. Qualquer método legado existente nas fontes protegidas é filtrado somente na cópia `.work`, sem modificar os aplicativos originais.
 
 O backend continua sendo a fonte confiável do pagamento e do despacho. Uma corrida PIX não deve entrar em despacho antes da confirmação de pagamento.
 
@@ -84,7 +87,13 @@ Corridas e Entregas compartilham o mesmo package Android e, consequentemente, o 
 - push de Entregas recebido dentro de Corridas é encaminhado para Entregas;
 - logout de Entregas remove o vínculo de Entregas no backend sem executar `PushNotifications.unregister()`, preservando o token nativo compartilhado.
 
-## Google Maps
+O Push próprio de Corridas permanece **desabilitado por padrão** (`APOIS_SUPERAPP_RIDES_PUSH_ENABLED=0`) até a identidade do Firebase server-side ser comprovadamente compatível com o Firebase do package unificado.
+
+## Endereço e Google Maps
+
+Entregas usa Geolocation nativo do Capacitor no APK. Reverse geocode, autocomplete e place details passam pela Edge Function `google-maps-address` autenticada.
+
+A função consome `consume_google_maps_lookup_quota()` antes da consulta e limita a operação a 120 consultas por minuto por usuário ativo. `anon` não possui execução da RPC.
 
 O build exige chaves separadas para os contextos Android e Web/JavaScript:
 
@@ -94,6 +103,19 @@ CORRIDAS_WEB_MAPS_API_KEY
 ```
 
 Em produção elas devem ter restrições adequadas ao respectivo uso.
+
+## Privacidade e exclusão de conta
+
+O cliente de Entregas possui caminho interno de solicitação de exclusão em **Perfil → Dados pessoais → Excluir minha conta**. A solicitação é registrada no backend e o token Push vinculado ao usuário é removido antes do logout.
+
+Também existem recursos públicos no Supabase Entregas para configuração da ficha da Google Play:
+
+```text
+https://sbvhdgyuuperszlsllji.supabase.co/functions/v1/privacy-policy
+https://sbvhdgyuuperszlsllji.supabase.co/functions/v1/account-deletion
+```
+
+A segunda URL permite solicitar exclusão mesmo sem acesso ao aplicativo e não revela se o e-mail informado possui conta.
 
 ## Branding Android
 
@@ -107,7 +129,24 @@ O launcher usa `superapp/branding/apois-launcher.png` como fonte oficial. O buil
 | xxhdpi | 144×144 | 324×324 |
 | xxxhdpi | 192×192 | 432×432 |
 
-A splash nativa usa a mesma arte oficial sobre fundo preto. Bitmaps padrão do Capacitor/Android são removidos antes do build para evitar reaparecimento do ícone branco/azul padrão.
+A splash nativa usa a mesma arte oficial sobre fundo preto. Bitmaps padrão do Capacitor/Android são removidos antes do build para evitar reaparecimento do ícone padrão.
+
+## Android / Google Play
+
+O projeto nativo é recriado pelo Capacitor no Codemagic e recebe hardening determinístico antes do release:
+
+- `applicationId`: `br.com.apois.app`;
+- label: `APOIS`;
+- `compileSdk` e `targetSdk`: API 36;
+- `allowBackup=false`;
+- cleartext HTTP bloqueado;
+- sem `ACCESS_BACKGROUND_LOCATION`;
+- teclado com `adjustResize`;
+- versionamento por `APP_VERSION_CODE` e `APP_VERSION_NAME`;
+- launcher/adaptive icon e splash validados;
+- assinatura final comparada com o SHA-1 esperado.
+
+O release também executa `zipalign -v -c -P 16 4` no APK assinado para validar o empacotamento exigido em dispositivos com páginas de memória de 16 KB.
 
 ## Build do bundle unificado
 
@@ -118,17 +157,21 @@ npm run verify:pins
 npm run build:superapp
 ```
 
-`build:superapp` executa:
+`build:superapp` executa, nesta ordem:
 
 1. auditoria estática;
-2. validação dos pins dos módulos;
-3. build isolado de Corridas;
-4. build isolado de Entregas;
-5. montagem do shell;
-6. injeção do roteamento global de Push;
-7. validação estrutural e de políticas do resultado final.
+2. validação dos pins protegidos;
+3. auditoria de hardening;
+4. auditoria de produção/Google Play;
+5. gate de compatibilidade Firebase do Push Corridas;
+6. build isolado de Corridas;
+7. build isolado de Entregas;
+8. montagem do shell;
+9. hardening de deep links;
+10. injeção do roteamento global de Push;
+11. validações pós-build de estrutura, políticas, storage, auth/deep links, segurança do cliente, endereço e assets de notificações.
 
-O shell falha o build se qualquer bundle obrigatório estiver ausente.
+O shell falha o build se qualquer bundle ou contrato obrigatório estiver ausente.
 
 ## Verificações disponíveis
 
@@ -136,11 +179,11 @@ O shell falha o build se qualquer bundle obrigatório estiver ausente.
 npm run sources:status
 npm run status:modules
 npm run audit:static
+npm run audit:hardening
+npm run audit:play-store
 npm run verify:pins
 npm run verify:dist
 ```
-
-`verify:dist` também verifica regras específicas do Superapp, incluindo PIX-only em Corridas, isolamento de Push e espaço de safe-area/rodapé em telas adaptadas de Entregas.
 
 ## Codemagic
 
@@ -154,28 +197,29 @@ O workflow:
 
 - fixa Bun em `1.3.14`;
 - inicializa e valida os submodules protegidos;
-- valida variáveis externas;
+- valida variáveis externas com mensagens explícitas;
 - compila Corridas + Entregas + shell;
 - cria o projeto Capacitor Android;
 - configura Maps, deep links, Firebase e permissões;
-- gera launcher por densidade e valida as dimensões PNG;
-- compila APK Release;
-- assina com o keystore configurado;
-- valida o SHA-1 da assinatura;
-- publica `APOIS-Superapp.apk` como artefato.
+- fixa API 36 e versionamento;
+- gera launcher por densidade e valida dimensões PNG;
+- compila `assembleRelease` e `bundleRelease`;
+- assina e valida o APK;
+- valida SHA-1 da assinatura;
+- valida o empacotamento 16 KB do APK;
+- assina e verifica o AAB;
+- publica `APOIS-Superapp.apk` e `APOIS-Superapp.aab` como artefatos.
 
 ## Variáveis externas obrigatórias para release Android
-
-As seguintes configurações não podem ser inventadas pelo código e precisam existir no ambiente de build:
 
 ```text
 CORRIDAS_VITE_SUPABASE_URL
 CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY
+CORRIDAS_PUBLIC_APP_URL
 VITE_SUPABASE_URL
 VITE_SUPABASE_PUBLISHABLE_KEY
 CORRIDAS_WEB_MAPS_API_KEY
 CORRIDAS_ANDROID_MAPS_API_KEY
-CORRIDAS_PUBLIC_APP_URL
 FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64
 ```
 
@@ -190,19 +234,21 @@ CM_KEY_PASSWORD
 
 `CORRIDAS_PUBLIC_APP_URL` precisa ser uma URL pública **HTTPS** em modo de release estrito.
 
-`FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64` precisa representar um `google-services.json` que contenha exatamente o cliente Android compatível com `br.com.apois.app`.
+`FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64` precisa representar um `google-services.json` que contenha o cliente Android compatível com `br.com.apois.app`.
 
-## Gate antes de gerar APK
+## Gate antes do release
 
-O APK só deve ser liberado quando:
+O artefato só deve ser liberado quando:
 
 - `verify:pins` estiver verde;
 - `build:superapp` estiver verde;
 - configuração nativa estiver verde em modo estrito;
-- Firebase estiver confirmado para `br.com.apois.app`;
+- Firebase mobile estiver confirmado para `br.com.apois.app`;
 - Maps Android/Web estiverem configurados;
 - `CORRIDAS_PUBLIC_APP_URL` estiver definida em HTTPS;
 - launcher/splash passarem pelas validações de densidade;
-- assinatura final corresponder ao SHA-1 esperado.
+- assinatura final corresponder ao SHA-1 esperado;
+- APK passar pelo check de empacotamento 16 KB;
+- AAB estiver assinado e verificado.
 
 Enquanto algum desses itens depender de credencial externa ainda não confirmada, o repositório deve continuar sendo corrigido e validado sem fingir que o release já está homologado.
