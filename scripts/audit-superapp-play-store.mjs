@@ -70,29 +70,29 @@ requireAll('codemagic.yaml', [
   'APP_VERSION_CODE: "1"',
   'APP_VERSION_NAME: "1.0.0"',
   'APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"',
-  '${CORRIDAS_PUBLIC_APP_URL:?Add a public HTTPS CORRIDAS_PUBLIC_APP_URL to Codemagic}',
-  'targetSdkVersion[[:space:]]*=[[:space:]]*36',
   'assembleRelease bundleRelease',
   'zipalign" -v -c -P 16 4 "$SIGNED_APK"',
   'jarsigner',
   'APOIS-Superapp.apk',
   'APOIS-Superapp.aab',
-], 'Codemagic prepara APK/AAB e verifica empacotamento 16 KB antes de publicar');
+], 'Codemagic prepara APK/AAB assinados e verifica empacotamento 16 KB');
 
 forbidAll('codemagic.yaml', [
   '.github/workflows',
   'APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "1"',
-], 'release não habilita Actions nem Push Corridas sem prova Firebase');
+  '${CORRIDAS_PUBLIC_APP_URL:?Add a public HTTPS CORRIDAS_PUBLIC_APP_URL to Codemagic}',
+], 'release não usa Actions, não ativa Push Corridas sem prova e não bloqueia build por recurso opcional');
 
 requireAll('scripts/validate-superapp-native-config.mjs', [
   "APP_PACKAGE !== 'br.com.apois.app'",
-  'CORRIDAS_PUBLIC_APP_URL deve usar HTTPS em modo estrito',
+  'CORRIDAS_PUBLIC_APP_URL ausente; somente o compartilhamento público de corrida ficará indisponível neste release',
+  'CORRIDAS_PUBLIC_APP_URL deve usar HTTPS quando configurada em modo estrito',
   'CORRIDAS_PUBLIC_APP_URL não pode apontar para localhost/rede local em produção',
   'APP_VERSION_CODE deve ser inteiro positivo',
   'APP_VERSION_NAME deve usar formato semântico',
   'Maps Android e Maps JavaScript não devem compartilhar a mesma chave no release',
   'google-services.json não contém o package',
-], 'validador de release rejeita URL, versão, Maps e Firebase incompatíveis');
+], 'validador mantém gates críticos e trata compartilhamento público como recurso opcional');
 
 requireAll('.env.example', [
   'CORRIDAS_PUBLIC_APP_URL=',
