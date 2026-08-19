@@ -100,4 +100,60 @@ replaceRequired(
   'corridas: chegada orienta passageiro a informar o PIN',
 );
 
-console.log('[OK] corridas: finalização, cancelamento, retomada e monotonicidade endurecidos apenas em .work');
+replaceRequired(
+  '.work/corridas/src/components/map/ActiveRideMap.tsx',
+  'interface ActiveRideMapProps {\n  ride: ActiveRide;\n}',
+  'interface ActiveRideMapProps {\n  ride: ActiveRide;\n  compact?: boolean;\n}',
+  'corridas: mapa ativo aceita modo compacto',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/map/ActiveRideMap.tsx',
+  'export function ActiveRideMap({ ride }: ActiveRideMapProps) {',
+  'export function ActiveRideMap({ ride, compact = false }: ActiveRideMapProps) {',
+  'corridas: mapa ativo recebe modo compacto',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/map/ActiveRideMap.tsx',
+  '      mapRef.current.fitBounds(bounds, {\n        top: 132,\n        right: 36,\n        bottom: 265,\n        left: 36,\n      });',
+  '      mapRef.current.fitBounds(\n        bounds,\n        compact\n          ? { top: 24, right: 24, bottom: 24, left: 24 }\n          : { top: 132, right: 36, bottom: 265, left: 36 },\n      );',
+  'corridas: enquadramento compacto não força mapa-múndi',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/map/ActiveRideMap.tsx',
+  '        mapRef.current.fitBounds(approachBounds, {\n          top: 132,\n          right: 36,\n          bottom: 265,\n          left: 36,\n        });',
+  '        mapRef.current.fitBounds(\n          approachBounds,\n          compact\n            ? { top: 24, right: 24, bottom: 24, left: 24 }\n            : { top: 132, right: 36, bottom: 265, left: 36 },\n        );',
+  'corridas: aproximação do motorista respeita mapa compacto',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/map/ActiveRideMap.tsx',
+  '  }, [destination, orderedStops, origin, routePoints, status]);',
+  '  }, [compact, destination, orderedStops, origin, routePoints, status]);',
+  'corridas: efeito estático acompanha modo compacto',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/map/ActiveRideMap.tsx',
+  '  }, [driverLocation, origin, ride.driver_heading, status]);',
+  '  }, [compact, driverLocation, origin, ride.driver_heading, status]);',
+  'corridas: tracking acompanha modo compacto',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/map/ActiveRideMap.tsx',
+  '    <div className="relative h-full min-h-[320px] w-full overflow-hidden bg-[#171a21]">',
+  '    <div className={`relative h-full ${compact ? "min-h-0" : "min-h-[320px]"} w-full overflow-hidden bg-[#171a21]`}>',
+  'corridas: mapa compacto usa altura real do card',
+);
+
+replaceRequired(
+  '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
+  '            <section className="h-[190px] overflow-hidden rounded-[26px] border border-white/8 bg-zinc-900">\n              <ActiveRideMap ride={ride} />\n            </section>',
+  '            <section className="h-[230px] overflow-hidden rounded-[26px] border border-white/8 bg-zinc-900">\n              <ActiveRideMap ride={ride} compact />\n            </section>',
+  'corridas: pagamento mostra mapa real escuro com rota enquadrada',
+);
+
+console.log('[OK] corridas: lifecycle, PIN, retomada e mapa compacto do pagamento endurecidos apenas em .work');
