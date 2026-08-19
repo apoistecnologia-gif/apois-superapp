@@ -109,6 +109,15 @@ requireText(
 );
 
 requireText(
+  'scripts/prepare-workspace.mjs',
+  [
+    'method.isActive && method.enabled && method.code === "pix"',
+    'Superapp oferece somente PIX mesmo se a fonte mantiver métodos legados ativos',
+  ],
+  'Corridas aplica PIX-only apenas na cópia protegida do Superapp',
+);
+
+requireText(
   'scripts/build-isolated-module.mjs',
   [
     "'apois-superapp-corridas-auth-v1'",
@@ -116,12 +125,14 @@ requireText(
     "'apois-superapp:last-route:' + moduleName",
     "'apois-superapp:corridas-recovery-url'",
     "'apois-superapp:entregas-auth-url'",
+    "'/cadastro'",
+    "'/recuperar-senha'",
     "new Set(['', '#', '#/', '#/inicio', '#/login'])",
     "window.location.replace(shellUrl)",
     "appPlugin.addListener('backButton'",
     "appPlugin.addListener('appStateChange'",
   ],
-  'bridge cobre sessão, retomada, deep links e Android Back no início dos módulos',
+  'bridge cobre sessão, rotas públicas, retomada, deep links e Android Back',
 );
 
 requireText(
@@ -159,8 +170,14 @@ requireText(
 
 requireText(
   'scripts/inject-superapp-push-routing.mjs',
-  ['notificationType', 'const isDeliveryPush', 'if (!destination) return;'],
-  'roteador de Push de Entregas não intercepta Push de Corridas',
+  [
+    "moduleName: 'entregas'",
+    "corridasBase: '../corridas/index.html'",
+    'const rideEvents = new Set',
+    'if (delivery.isDelivery && ride.isRide) return null;',
+    'if (!destination) return;',
+  ],
+  'roteador global distingue Corridas/Entregas e encaminha notificações entre módulos',
 );
 
 requireText(
