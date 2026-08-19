@@ -40,6 +40,8 @@ function injectSuperappBridge(indexPath, moduleName) {
     ? 'apois-superapp-corridas-auth-v1'
     : 'apois-superapp-entregas-auth-v1';
   const appPlugin = window.Capacitor?.Plugins?.App;
+  const browserPlugin = window.Capacitor?.Plugins?.Browser;
+  if (moduleName === 'entregas') window.__APOIS_SUPERAPP_AUTH_BRIDGE__ = true;
 
   function currentRoute() {
     return window.location.hash || window.location.pathname || '/';
@@ -97,6 +99,7 @@ function injectSuperappBridge(indexPath, moduleName) {
   function routeAuthDeepLink(rawUrl) {
     if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
     try {
+      void browserPlugin?.close?.().catch(() => undefined);
       const incoming = new URL(rawUrl);
       const path = incoming.pathname.replace(/^\\//, '');
       const params = new URLSearchParams(incoming.search);
@@ -155,6 +158,10 @@ run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), name]);
 run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
 if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
+}
+if (name === 'entregas') {
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
 }
 
 const config = manifest.modules[name];
@@ -177,10 +184,6 @@ if (name === 'corridas') {
       : '[INFO] corridas: push FCM mantido isolado; Realtime + polling seguem ativos',
   );
 
-  // Corridas renders its passenger map with Google Maps JavaScript API inside
-  // the WebView. That credential must not be confused with the Android-native
-  // Maps key injected in AndroidManifest.xml, because the restriction models
-  // are different. Keep both credentials independent.
   const webMapsKey = process.env.CORRIDAS_WEB_MAPS_API_KEY?.trim();
   if (webMapsKey) {
     env.VITE_GOOGLE_MAPS_API_KEY = webMapsKey;
