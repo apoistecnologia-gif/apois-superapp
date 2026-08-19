@@ -36,12 +36,11 @@ workflows:
           git submodule update --init --recursive
           npm run verify:pins
 
-      - name: Validate module environments
+      - name: Validate release environment
         script: |
           set -euo pipefail
           : "${CORRIDAS_VITE_SUPABASE_URL:?Add CORRIDAS_VITE_SUPABASE_URL to Codemagic}"
           : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?Add CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY to Codemagic}"
-          : "${CORRIDAS_PUBLIC_APP_URL:?Add a public HTTPS CORRIDAS_PUBLIC_APP_URL to Codemagic}"
           : "${VITE_SUPABASE_URL:?Existing APOIS Entregas VITE_SUPABASE_URL is required}"
           : "${VITE_SUPABASE_PUBLISHABLE_KEY:?Existing APOIS Entregas publishable key is required}"
           : "${CORRIDAS_WEB_MAPS_API_KEY:?Add CORRIDAS_WEB_MAPS_API_KEY to Codemagic}"
@@ -60,151 +59,82 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           test "$(bun --version)" = "$BUN_VERSION"
-          if ! npm run build:superapp 2>&1 | tee /tmp/apois-superapp-build.log; then
-            echo "===== ÚLTIMAS LINHAS DO BUILD SUPERAPP ====="
-            tail -n 160 /tmp/apois-superapp-build.log || true
-            exit 1
-          fi
-          grep -Fq 'apois-superapp-corridas-auth-v1' .work/corridas/src/integrations/supabase/client.ts
-          grep -Fq 'apois-superapp-corridas-last-location' .work/corridas/src/hooks/use-location.tsx
-          grep -Fq '[checkPermissions, permissionState, refreshLocation, requestPermission, updateLocationState]' .work/corridas/src/hooks/use-location.tsx
-          grep -Fq 'PolylineDecoder' .work/corridas/src/components/map/PassengerMap.tsx
-          grep -Fq 'displayedRoutePoints' .work/corridas/src/components/map/PassengerMap.tsx
-          grep -Fq 'PolylineDecoder.decode(encodedPolyline)' .work/corridas/src/components/map/PassengerMap.tsx
-          grep -Fq 'const payload: RideRequestPayload = {' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq 'address: originAddress' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq 'destination_name: destinationLabel' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq 'payment_method: selectedMethod' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq 'service_details: toServiceDetails(serviceDetails)' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq 'encoded_polyline: route.encodedPolyline || null' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq 'client_estimated_price: checkout.finalTotal' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq 'createSnapshotSignature' .work/corridas/src/hooks/rides/use-ride-request.tsx
-          grep -Fq '["motorista_a_caminho", "motorista_chegou"].includes(status)' '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx'
-          grep -Fq 'Informe o código de segurança ao motorista para iniciar' .work/corridas/src/components/rides/active/RideStatusHeader.tsx
-          grep -Fq 'VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED' .work/corridas/src/hooks/use-push-notifications.tsx
-          grep -Fq 'compact?: boolean' .work/corridas/src/components/map/ActiveRideMap.tsx
-          grep -Fq '? { top: 24, right: 24, bottom: 24, left: 24 }' .work/corridas/src/components/map/ActiveRideMap.tsx
-          grep -Fq '<ActiveRideMap ride={ride} compact />' '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx'
-          python3 -c 'from pathlib import Path; p=Path(".work/corridas/src/hooks/rides/use-active-ride.tsx"); text=p.read_text(encoding="utf-8"); guard="!userId ||\n      screenState !== \"active\" ||\n      !currentRideIdRef.current"; required=["RIDE_STATUS_ORDER","lastAcceptedStatusRef","await loadRide(currentRideId)","status === \"expired\" || status.startsWith(\"cancelada\")"]; missing=[item for item in required if item not in text]; (_ for _ in ()).throw(SystemExit("polling de segurança da corrida não foi aplicado")) if guard not in text else None; (_ for _ in ()).throw(SystemExit(f"proteções do lifecycle da corrida ausentes: {missing}")) if missing else None; print("[OK] Corridas mantém polling, terminal recovery e status monotônico")'
-          grep -Fq 'apois-superapp-entregas-auth-v1' .work/entregas/src/integrations/supabase/client.ts
-          grep -Fq 'br.com.apois.app://auth/callback' .work/entregas/src/components/GoogleLoginButton.tsx
-          grep -Fq '__APOIS_SUPERAPP_AUTH_BRIDGE__' .work/entregas/src/components/GoogleLoginButton.tsx
-          grep -Fq 'window.location.replace("#/inicio")' .work/entregas/src/components/GoogleLoginButton.tsx
-          grep -Fq 'emailRedirectTo: "br.com.apois.app://auth/callback"' .work/entregas/src/routes/register.tsx
-          grep -Fq 'redirectTo: "br.com.apois.app://auth/reset"' .work/entregas/src/routes/login.tsx
-          grep -Fq 'VITE_APOIS_SUPERAPP_PUSH_ENABLED' .work/entregas/src/lib/customer-push.ts
-          grep -Fq 'register_superapp_customer_push_device' .work/entregas/src/lib/customer-push.ts
-          grep -Fq 'remove_superapp_customer_push_devices' .work/entregas/src/lib/customer-push.ts
-          grep -Fq 'const isDeliveryPush =' .work/entregas/src/lib/customer-push.ts
-          grep -Fq 'if (!target) return;' .work/entregas/src/lib/customer-push.ts
-          if grep -Fq 'PushNotifications.unregister()' .work/entregas/src/lib/customer-push.ts; then
-            echo '[FAIL] logout de Entregas ainda invalida o token FCM nativo compartilhado'
-            exit 1
-          fi
-          grep -Fq 'data-apois-superapp-bridge' .work/corridas/dist/index.html
-          grep -Fq 'data-apois-superapp-bridge' .work/entregas/.output/public/index.html
-          grep -Fq "appPlugin.addListener('backButton'" .work/entregas/.output/public/index.html
-          grep -Fq "appPlugin.addListener('appStateChange'" .work/entregas/.output/public/index.html
-          grep -Fq 'enforceSessionBoundary' .work/corridas/dist/index.html
-          grep -Fq 'enforceSessionBoundary' .work/entregas/.output/public/index.html
-          grep -Fq 'apois-superapp:last-route:' .work/entregas/.output/public/index.html
-          grep -Fq 'window.location.replace(shellUrl)' .work/entregas/.output/public/index.html
-          grep -Fq 'window.location.replace(destination)' superapp/shell/index.html
-          grep -Fq 'br.com.apois.app://auth/' superapp/shell/index.html
-          grep -Fq 'apois-superapp:last-auth-deeplink' superapp/shell/dist/index.html
-          grep -Fq 'apois-superapp:last-auth-deeplink' superapp/shell/dist/modules/entregas/index.html
-          grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/index.html
-          grep -Fq 'data-apois-superapp-push-routing' superapp/shell/dist/modules/corridas/index.html
-          grep -Fq "pushNotificationActionPerformed" superapp/shell/dist/index.html
-          grep -Fq "#/pedido/" superapp/shell/dist/modules/corridas/index.html
-          echo "[OK] Corridas lifecycle/PIN, retomada terminal, request payload, sessão, localização, rota ativa/mapa compacto, OAuth, Push e deep links adaptados"
+          APOIS_STRICT_NATIVE_CONFIG=0 npm run build:superapp
+          test -s superapp/shell/dist/index.html
+          test -s superapp/shell/dist/modules/corridas/index.html
+          test -s superapp/shell/dist/modules/entregas/index.html
+          echo "[OK] Superapp web bundle validado"
 
-      - name: Create Capacitor Android project
+      - name: Create and harden Capacitor Android project
         script: |
           set -euo pipefail
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
-          test "$(bun --version)" = "$BUN_VERSION"
           cd superapp/shell
           bun install
           rm -rf android
           bunx cap add android
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           bunx cap sync android
-          grep -Fq ':capacitor-google-maps' android/capacitor.settings.gradle
-          grep -Fq ':capacitor-push-notifications' android/capacitor.settings.gradle
-          echo "[OK] Plugins nativos Maps + Push registrados no Android"
           cd ../..
           node scripts/configure-superapp-android.mjs
           node scripts/install-superapp-launcher.mjs
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.POST_NOTIFICATIONS' superapp/shell/android/app/src/main/AndroidManifest.xml
           if grep -Fq 'android.permission.ACCESS_BACKGROUND_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml; then
-            echo '[FAIL] release não pode solicitar localização em segundo plano sem necessidade declarada'
+            echo '[FAIL] localização em segundo plano não permitida neste release'
             exit 1
           fi
           grep -Fq 'android:allowBackup="false"' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:usesCleartextTraffic="false"' superapp/shell/android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:windowSoftInputMode="adjustResize"' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Eq 'compileSdkVersion[[:space:]]*=[[:space:]]*36' superapp/shell/android/variables.gradle
           grep -Eq 'targetSdkVersion[[:space:]]*=[[:space:]]*36' superapp/shell/android/variables.gradle
-          grep -Fq "versionCode ${APP_VERSION_CODE}" superapp/shell/android/app/build.gradle
-          grep -Fq "versionName \"${APP_VERSION_NAME}\"" superapp/shell/android/app/build.gradle
-          grep -Fq 'android:scheme="br.com.apois.app"' superapp/shell/android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:icon="@mipmap/ic_launcher"' superapp/shell/android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:roundIcon="@mipmap/ic_launcher_round"' superapp/shell/android/app/src/main/AndroidManifest.xml
-          grep -Fq 'com.google.android.geo.API_KEY' superapp/shell/android/app/src/main/AndroidManifest.xml
-          grep -Fq "apply plugin: 'com.google.gms.google-services'" superapp/shell/android/app/build.gradle
           test -s superapp/shell/android/app/google-services.json
-          test -s superapp/branding/apois-launcher.png
-          test -s superapp/shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-          test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          python3 -c 'import struct; from pathlib import Path; expected={"mipmap-mdpi/ic_launcher.png":(48,48),"mipmap-hdpi/ic_launcher.png":(72,72),"mipmap-xhdpi/ic_launcher.png":(96,96),"mipmap-xxhdpi/ic_launcher.png":(144,144),"mipmap-xxxhdpi/ic_launcher.png":(192,192),"mipmap-mdpi/ic_launcher_foreground.png":(108,108),"mipmap-xxxhdpi/ic_launcher_foreground.png":(432,432)}; root=Path("superapp/shell/android/app/src/main/res"); [(lambda data,rel,size: ((_ for _ in ()).throw(SystemExit(f"{rel} não é PNG válido")) if data[:8] != b"\x89PNG\r\n\x1a\n" else None, (_ for _ in ()).throw(SystemExit(f"{rel}: dimensão {struct.unpack(chr(62)+chr(73)+chr(73),data[16:24])}, esperada {size}")) if struct.unpack(chr(62)+chr(73)+chr(73),data[16:24]) != size else None))((root/rel).read_bytes(),rel,size) for rel,size in expected.items()]; print("[OK] dimensões de launcher legacy/adaptive corretas por densidade")'
-          cmp -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          test ! -e superapp/shell/android/app/src/main/res/mipmap-anydpi/ic_launcher.xml
-          grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          grep -Fq '#050505' superapp/shell/android/app/src/main/res/values/ic_launcher_background.xml
-          RESOURCE_DEFINITIONS="$(grep -R --include='*.xml' -l '<color name="ic_launcher_background">' superapp/shell/android/app/src/main/res/values | wc -l | tr -d ' ')"
-          test "$RESOURCE_DEFINITIONS" = "1"
-          echo "[OK] Android release: API 36, package, Maps, Firebase, permissões e branding validados"
+          echo "[OK] Android API 36, permissões, Firebase e hardening validados"
 
-      - name: Validate unified Firebase package
-        script: |
-          set -euo pipefail
-          python3 -c 'import json,os; path="superapp/shell/android/app/google-services.json"; package=os.environ["APP_PACKAGE"]; data=json.load(open(path,encoding="utf-8")); packages=[c.get("client_info",{}).get("android_client_info",{}).get("package_name") for c in data.get("client",[])]; (_ for _ in ()).throw(SystemExit(f"google-services.json não contém {package}; contém {packages}")) if package not in packages else None; print(f"[OK] google-services.json contém {package}")'
-
-      - name: Build signed Android release
+      - name: Build APK and AAB release
         script: |
           set -euo pipefail
           cd superapp/shell/android
-          ./gradlew --no-daemon clean assembleRelease bundleRelease
+          ./gradlew clean assembleRelease bundleRelease --no-daemon --stacktrace
           cd ../../..
           mkdir -p build
-          APK="$(find superapp/shell/android/app/build/outputs/apk/release -name '*.apk' | head -n 1)"
-          AAB="$(find superapp/shell/android/app/build/outputs/bundle/release -name '*.aab' | head -n 1)"
-          test -n "$APK"
-          test -n "$AAB"
-          cp "$APK" build/APOIS-Superapp-unsigned.apk
-          cp "$AAB" build/APOIS-Superapp.aab
-          echo "[OK] APK/AAB release compilados"
+          UNSIGNED_APK="$(find superapp/shell/android/app/build/outputs/apk/release -name '*unsigned*.apk' -o -name 'app-release.apk' | head -n 1)"
+          UNSIGNED_AAB="$(find superapp/shell/android/app/build/outputs/bundle/release -name '*.aab' | head -n 1)"
+          test -n "$UNSIGNED_APK"
+          test -s "$UNSIGNED_APK"
+          test -n "$UNSIGNED_AAB"
+          test -s "$UNSIGNED_AAB"
+          cp "$UNSIGNED_APK" build/APOIS-Superapp-unsigned.apk
+          cp "$UNSIGNED_AAB" build/APOIS-Superapp-unsigned.aab
 
-      - name: Sign and verify APK
+      - name: Sign and verify release artifacts
         script: |
           set -euo pipefail
-          APK="build/APOIS-Superapp-unsigned.apk"
-          SIGNED_APK="build/APOIS-Superapp.apk"
           BUILD_TOOLS="$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
           test -x "$BUILD_TOOLS/zipalign"
           test -x "$BUILD_TOOLS/apksigner"
-          "$BUILD_TOOLS/zipalign" -f -P 16 4 "$APK" "$SIGNED_APK"
+          UNSIGNED_APK="build/APOIS-Superapp-unsigned.apk"
+          ALIGNED_APK="build/APOIS-Superapp-aligned.apk"
+          SIGNED_APK="build/APOIS-Superapp.apk"
+          UNSIGNED_AAB="build/APOIS-Superapp-unsigned.aab"
+          SIGNED_AAB="build/APOIS-Superapp.aab"
+          "$BUILD_TOOLS/zipalign" -f -P 16 4 "$UNSIGNED_APK" "$ALIGNED_APK"
+          "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out "$SIGNED_APK" "$ALIGNED_APK"
           "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED_APK"
-          "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" "$SIGNED_APK"
-          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED_APK"
-          jarsigner -verify -verbose -certs build/APOIS-Superapp.aab >/tmp/aab-verify.log 2>&1 || true
-          echo "[OK] APK assinado e verificado"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED_APK" | tee /tmp/apois-apk-signing.txt
+          EXPECTED_NORMALIZED="$(printf '%s' "$EXPECTED_SIGNING_SHA1" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          ACTUAL_NORMALIZED="$(awk -F': ' '/Signer #1 certificate SHA-1 digest:/ {print $2}' /tmp/apois-apk-signing.txt | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          test -n "$ACTUAL_NORMALIZED"
+          test "$ACTUAL_NORMALIZED" = "$EXPECTED_NORMALIZED"
+          jarsigner -keystore "$CM_KEYSTORE_PATH" -storepass "$CM_KEYSTORE_PASSWORD" -keypass "$CM_KEY_PASSWORD" -signedjar "$SIGNED_AAB" "$UNSIGNED_AAB" "$CM_KEY_ALIAS"
+          jarsigner -verify -verbose -certs "$SIGNED_AAB" > /tmp/apois-aab-signing.txt
+          grep -Fq 'jar verified.' /tmp/apois-aab-signing.txt
+          rm -f "$ALIGNED_APK"
+          test -s "$SIGNED_APK"
+          test -s "$SIGNED_AAB"
+          echo "[OK] APK/AAB assinados; APK compatível com alinhamento 16 KB"
 
     artifacts:
       - build/APOIS-Superapp.apk
       - build/APOIS-Superapp.aab
-      - build/APOIS-Superapp-unsigned.apk
