@@ -74,7 +74,15 @@ function injectSuperappBridge(indexPath, moduleName) {
 
   function isPublicRoute() {
     const route = currentRoute();
-    return route === '/' || route === '#' || route === '#/' || route.includes('/login') || route.includes('/register') || route.includes('/auth/callback') || route.includes('/redefinir-senha');
+    const publicFragments = [
+      '/login',
+      '/register',
+      '/cadastro',
+      '/recuperar-senha',
+      '/redefinir-senha',
+      '/auth/callback',
+    ];
+    return route === '/' || route === '#' || route === '#/' || publicFragments.some((fragment) => route.includes(fragment));
   }
 
   function enforceSessionBoundary() {
