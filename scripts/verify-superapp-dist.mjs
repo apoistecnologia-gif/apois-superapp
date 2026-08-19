@@ -30,6 +30,32 @@ for (const relative of required) {
   }
 }
 
+const packageJson = readFileSync(resolve(root, 'package.json'), 'utf8');
+for (const obsolete of [
+  'normalize-corridas-superapp-input',
+  'normalize-entregas-superapp-build',
+  'route-corridas-recovery-deeplink',
+  'harden-superapp-auth-deeplink-race',
+]) {
+  if (packageJson.includes(obsolete)) {
+    console.error(`[FAIL] pipeline ainda depende de patcher obsoleto: ${obsolete}`);
+    failed = true;
+  }
+}
+if (!failed) console.log('[OK] pipeline principal não depende de scripts que se autoalteram ou patches pós-build de auth');
+
+const capacitorConfig = readFileSync(resolve(root, 'superapp/shell/capacitor.config.ts'), 'utf8');
+if (!capacitorConfig.includes("appId: 'br.com.apois.app'")) {
+  console.error('[FAIL] package Android do shell não é br.com.apois.app');
+  failed = true;
+}
+if (!capacitorConfig.includes("style: 'LIGHT'") || !capacitorConfig.includes("backgroundColor: '#050505'")) {
+  console.error('[FAIL] StatusBar não está configurada para ícones claros no fundo escuro');
+  failed = true;
+} else {
+  console.log('[OK] shell Android usa package unificado e StatusBar legível');
+}
+
 if (!failed) {
   const shell = readFileSync(resolve(dist, 'index.html'), 'utf8');
   if (!shell.includes('./modules/corridas/index.html') || !shell.includes('./modules/entregas/index.html')) {
@@ -60,6 +86,18 @@ if (!failed) {
     console.log('[OK] shell encaminha troca de e-mail para o perfil de Entregas');
   }
 
+  if (
+    !shell.includes("'apois-superapp:last-route:'+moduleName") ||
+    !shell.includes('function resumableRoute(moduleName)') ||
+    !shell.includes("route.includes('/auth/callback')") ||
+    !shell.includes("route.includes('/redefinir-senha')")
+  ) {
+    console.error('[FAIL] shell não retoma rotas autenticadas com filtro de rotas públicas');
+    failed = true;
+  } else {
+    console.log('[OK] shell retoma somente rotas persistidas seguras de sessões ativas');
+  }
+
   const corridas = readFileSync(resolve(dist, 'modules/corridas/index.html'), 'utf8');
   if (/\b(?:src|href)="\/assets\//.test(corridas)) {
     console.error('[FAIL] Corridas contém asset absoluto /assets/');
@@ -77,6 +115,17 @@ if (!failed) {
     failed = true;
   } else {
     console.log('[OK] Corridas encaminha OAuth/reset/e-mail de Entregas sem perder o appUrlOpen');
+  }
+
+  if (
+    !corridas.includes('notificationType') ||
+    !corridas.includes('if (!destination) return;') ||
+    !corridas.includes('const isDeliveryPush')
+  ) {
+    console.error('[FAIL] listener de Push no módulo Corridas pode interceptar notificações de outro produto');
+    failed = true;
+  } else {
+    console.log('[OK] listener de Entregas ignora Push de Corridas no módulo compartilhado');
   }
 
   const corridasHomeSource = readFileSync(
@@ -222,6 +271,53 @@ if (!failed) {
     failed = true;
   } else {
     console.log('[OK] troca de e-mail de Entregas retorna ao package unificado');
+  }
+
+  const entregasPush = readFileSync(resolve(root, '.work/entregas/src/lib/customer-push.ts'), 'utf8');
+  if (
+    !entregasPush.includes('"register_superapp_customer_push_device"') ||
+    !entregasPush.includes('"remove_superapp_customer_push_devices"') ||
+    !entregasPush.includes('_app_package: "br.com.apois.app"')
+  ) {
+    console.error('[FAIL] Push de Entregas não está explicitamente isolado no package do Superapp');
+    failed = true;
+  } else {
+    console.log('[OK] Push de Entregas registra e remove somente o package br.com.apois.app');
+  }
+
+  const entregasBottomNav = readFileSync(
+    resolve(root, '.work/entregas/src/components/AppBottomNav.tsx'),
+    'utf8',
+  );
+  if (
+    !entregasBottomNav.includes('<nav className="fixed bottom-0') ||
+    !entregasBottomNav.includes('min-h-[88px]') ||
+    !entregasBottomNav.includes('pb-[max(env(safe-area-inset-bottom),1.25rem)]') ||
+    !entregasBottomNav.includes('h-8 w-8')
+  ) {
+    console.error('[FAIL] rodapé do cliente Entregas não está protegido contra barra Android/área de toque pequena');
+    failed = true;
+  } else {
+    console.log('[OK] rodapé de Entregas fica fixo, maior e respeita safe area Android');
+  }
+
+  const entregasHome = readFileSync(resolve(root, '.work/entregas/src/routes/inicio.tsx'), 'utf8');
+  if (!entregasHome.includes('overflow-y-auto px-4 pb-32 pt-5')) {
+    console.error('[FAIL] Home de Entregas pode esconder conteúdo atrás do rodapé fixo');
+    failed = true;
+  } else {
+    console.log('[OK] Home de Entregas reserva espaço para o rodapé fixo');
+  }
+
+  const entregasCheckout = readFileSync(resolve(root, '.work/entregas/src/routes/checkout.tsx'), 'utf8');
+  if (
+    !entregasCheckout.includes('const paymentMethod = "pix";') ||
+    entregasCheckout.includes('sessionStorage.getItem("apois_payment_method") || "pix"')
+  ) {
+    console.error('[FAIL] checkout de Entregas ainda pode reutilizar método de pagamento legado do storage');
+    failed = true;
+  } else {
+    console.log('[OK] checkout de Entregas é PIX-only mesmo com storage legado no aparelho');
   }
 }
 
