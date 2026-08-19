@@ -70,6 +70,12 @@ check('supabase/migrations/20260819023900_harden_entregas_trigger_execute.sql', 
   'grant execute on function public.guard_merchant_delivery_location() to service_role',
 ], 'função de trigger de Entregas não fica diretamente exposta aos papéis do app');
 
+check('supabase/migrations/20260819024600_harden_entregas_merchant_owner_membership.sql', [
+  "only admin can assign merchant owner role",
+  "canonical owner membership can only be changed by admin",
+  "owner role must match merchant owner_user_id",
+], 'propriedade canônica do estabelecimento não pode ser tomada por RPC de membros');
+
 check('.env.example', [
   'CORRIDAS_FIREBASE_PROJECT_ID=',
   'APOIS_SUPERAPP_RIDES_PUSH_ENABLED=0',
