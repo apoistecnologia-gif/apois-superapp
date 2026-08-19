@@ -105,8 +105,7 @@
           const fragmentParams=new URLSearchParams(fragment);
           fragmentParams.forEach((value,key)=>{if(!params.has(key))params.set(key,value);});
         }
-        const query=params.toString();
-        const suffix=query?`?${query}`:'';
+        const suffix=()=>{const query=params.toString();return query?`?${query}`:'';};
 
         if(path==='corridas-reset'){
           try{sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl);}catch{}
@@ -114,15 +113,16 @@
           return true;
         }
         if(path==='email-change'){
-          window.location.replace(`./modules/entregas/index.html#/perfil/dados-pessoais${suffix}`);
+          if(!params.has('next'))params.set('next','/perfil/dados-pessoais');
+          window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix()}`);
           return true;
         }
         if(path==='reset'){
-          window.location.replace(`./modules/entregas/index.html#/redefinir-senha${suffix}`);
+          window.location.replace(`./modules/entregas/index.html#/redefinir-senha${suffix()}`);
           return true;
         }
         if(path==='callback'){
-          window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix}`);
+          window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix()}`);
           return true;
         }
       }catch(error){
