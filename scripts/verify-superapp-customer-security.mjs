@@ -76,12 +76,23 @@ requireMarkers('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
   'await removeCustomerPushRegistration(true);',
   '<AppBottomNav activeTab="perfil" />',
   'pb-[calc(env(safe-area-inset-bottom)+7rem)]',
-  'Não foi possível desativar sua conta com segurança. Tente novamente.',
-], 'Dados Pessoais mantém rodapé, safe area e desativação segura');
+  'request_own_account_deletion',
+  'Solicitar exclusão da conta',
+  'Não foi possível solicitar a exclusão da conta. Tente novamente.',
+], 'Dados Pessoais mantém rodapé, safe area e solicitação de exclusão');
 forbidMarkers('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
   'toast.error(error?.message || "Não foi possível salvar as alterações.")',
   'toast.error(error?.message || "Não foi possível desativar sua conta.")',
-], 'Dados Pessoais não expõe erros técnicos do backend');
+  'deactivate_own_account',
+  'Desativar conta',
+], 'Dados Pessoais não expõe erro técnico nem mantém simples desativação no cliente');
+
+requireMarkers('supabase/migrations/20260819143000_account_deletion_requests.sql', [
+  'account_deletion_requests',
+  'request_own_account_deletion',
+  'revoke all on function public.request_own_account_deletion() from public, anon',
+  'grant execute on function public.request_own_account_deletion() to authenticated, service_role',
+], 'backend versiona solicitação de exclusão com privilégio mínimo');
 
 requireMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
   'relative flex h-screen w-full flex-col overflow-hidden',
