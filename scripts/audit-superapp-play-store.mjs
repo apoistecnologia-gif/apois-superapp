@@ -73,10 +73,11 @@ requireAll('codemagic.yaml', [
   '${CORRIDAS_PUBLIC_APP_URL:?Add a public HTTPS CORRIDAS_PUBLIC_APP_URL to Codemagic}',
   'targetSdkVersion[[:space:]]*=[[:space:]]*36',
   'assembleRelease bundleRelease',
+  'zipalign" -v -c -P 16 4 "$SIGNED_APK"',
   'jarsigner',
   'APOIS-Superapp.apk',
   'APOIS-Superapp.aab',
-], 'Codemagic prepara APK e AAB release, bloqueando configuração nativa incompleta');
+], 'Codemagic prepara APK/AAB e verifica empacotamento 16 KB antes de publicar');
 
 forbidAll('codemagic.yaml', [
   '.github/workflows',
