@@ -11,6 +11,7 @@
     "sources:clone": "bash scripts/bootstrap-sources.sh",
     "sources:status": "bash scripts/source-status.sh",
     "status:modules": "node scripts/status-modules.mjs",
+    "audit:static": "node scripts/audit-superapp-static.mjs",
     "verify:pins": "node scripts/verify-module-pins.mjs",
     "prepare:modules": "node scripts/prepare-workspace.mjs",
     "build:corridas": "node scripts/build-isolated-module.mjs corridas",
@@ -18,6 +19,6 @@
     "build:shell": "node superapp/shell/build.mjs",
     "inject:push-routing": "node scripts/inject-superapp-push-routing.mjs",
     "verify:dist": "node scripts/verify-superapp-dist.mjs",
-    "build:superapp": "npm run verify:pins && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run inject:push-routing && npm run verify:dist"
+    "build:superapp": "npm run audit:static && npm run verify:pins && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run inject:push-routing && npm run verify:dist"
   }
 }
