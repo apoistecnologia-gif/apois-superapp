@@ -1,6 +1,6 @@
 workflows:
   android-superapp-experimental:
-    name: APOIS Superapp - APK Experimental
+    name: APOIS Superapp - Android Release
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -12,9 +12,12 @@ workflows:
       vars:
         APP_PACKAGE: "br.com.apois.app"
         APP_LABEL: "APOIS"
+        APP_VERSION_CODE: "1"
+        APP_VERSION_NAME: "1.0.0"
         BUN_VERSION: "1.3.14"
         EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"
         APOIS_STRICT_NATIVE_CONFIG: "1"
+        APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"
     scripts:
       - name: Install pinned Bun
         script: |
@@ -38,6 +41,7 @@ workflows:
           set -euo pipefail
           : "${CORRIDAS_VITE_SUPABASE_URL:?Add CORRIDAS_VITE_SUPABASE_URL to Codemagic}"
           : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?Add CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY to Codemagic}"
+          : "${CORRIDAS_PUBLIC_APP_URL:?Add a public HTTPS CORRIDAS_PUBLIC_APP_URL to Codemagic}"
           : "${VITE_SUPABASE_URL:?Existing APOIS Entregas VITE_SUPABASE_URL is required}"
           : "${VITE_SUPABASE_PUBLISHABLE_KEY:?Existing APOIS Entregas publishable key is required}"
           : "${CORRIDAS_WEB_MAPS_API_KEY:?Add CORRIDAS_WEB_MAPS_API_KEY to Codemagic}"
@@ -154,6 +158,17 @@ workflows:
           node scripts/install-superapp-launcher.mjs
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.POST_NOTIFICATIONS' superapp/shell/android/app/src/main/AndroidManifest.xml
+          if grep -Fq 'android.permission.ACCESS_BACKGROUND_LOCATION' superapp/shell/android/app/src/main/AndroidManifest.xml; then
+            echo '[FAIL] release não pode solicitar localização em segundo plano sem necessidade declarada'
+            exit 1
+          fi
+          grep -Fq 'android:allowBackup="false"' superapp/shell/android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:usesCleartextTraffic="false"' superapp/shell/android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:windowSoftInputMode="adjustResize"' superapp/shell/android/app/src/main/AndroidManifest.xml
+          grep -Eq 'compileSdkVersion[[:space:]]*=[[:space:]]*36' superapp/shell/android/variables.gradle
+          grep -Eq 'targetSdkVersion[[:space:]]*=[[:space:]]*36' superapp/shell/android/variables.gradle
+          grep -Fq "versionCode ${APP_VERSION_CODE}" superapp/shell/android/app/build.gradle
+          grep -Fq "versionName \"${APP_VERSION_NAME}\"" superapp/shell/android/app/build.gradle
           grep -Fq 'android:scheme="br.com.apois.app"' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:icon="@mipmap/ic_launcher"' superapp/shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:roundIcon="@mipmap/ic_launcher_round"' superapp/shell/android/app/src/main/AndroidManifest.xml
@@ -192,7 +207,7 @@ workflows:
           grep -Fq '#050505' superapp/shell/android/app/src/main/res/values/ic_launcher_background.xml
           RESOURCE_DEFINITIONS="$(grep -R --include='*.xml' -l '<color name="ic_launcher_background">' superapp/shell/android/app/src/main/res/values | wc -l | tr -d ' ')"
           test "$RESOURCE_DEFINITIONS" = "1"
-          echo "[OK] Google Maps + Firebase/FCM + launcher real APOIS Brasil conectados ao projeto Android gerado"
+          echo "[OK] Android release: API 36, package, Maps, Firebase, permissões e branding validados"
 
       - name: Validate unified Firebase package
         script: |
@@ -212,19 +227,21 @@ workflows:
           print(f'[OK] Firebase confirmado para {package}')
           PY
 
-      - name: Build and sign experimental APK
+      - name: Build and sign release APK + AAB
         script: |
           set -euo pipefail
           cd superapp/shell/android
-          if ! ./gradlew clean assembleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/apois-superapp-gradle.log; then
+          if ! ./gradlew clean assembleRelease bundleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/apois-superapp-gradle.log; then
             echo "===== PRIMEIROS ERROS DO GRADLE ====="
             grep -nE 'FAILURE:|Execution failed|Android resource|AAPT|error:|Caused by:' /tmp/apois-superapp-gradle.log | head -n 60 || true
             echo "===== CONTEXTO FINAL DO GRADLE ====="
             tail -n 120 /tmp/apois-superapp-gradle.log || true
             exit 1
           fi
-          UNSIGNED="app/build/outputs/apk/release/app-release-unsigned.apk"
-          test -s "$UNSIGNED"
+          UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          UNSIGNED_AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$UNSIGNED_APK"
+          test -s "$UNSIGNED_AAB"
           BUILD_TOOLS="$(python3 - <<'PY'
           from pathlib import Path
           import os
@@ -239,21 +256,34 @@ workflows:
           PY
           )"
           ALIGNED="$CM_BUILD_DIR/APOIS-Superapp-release-aligned.apk"
-          SIGNED="$CM_BUILD_DIR/APOIS-Superapp.apk"
-          "$BUILD_TOOLS/zipalign" -f -p 4 "$UNSIGNED" "$ALIGNED"
+          SIGNED_APK="$CM_BUILD_DIR/APOIS-Superapp.apk"
+          SIGNED_AAB="$CM_BUILD_DIR/APOIS-Superapp.aab"
+          "$BUILD_TOOLS/zipalign" -f -p 4 "$UNSIGNED_APK" "$ALIGNED"
           "$BUILD_TOOLS/apksigner" sign \
             --ks "$CM_KEYSTORE_PATH" \
             --ks-key-alias "$CM_KEY_ALIAS" \
             --ks-pass "pass:$CM_KEYSTORE_PASSWORD" \
             --key-pass "pass:$CM_KEY_PASSWORD" \
-            --out "$SIGNED" \
+            --out "$SIGNED_APK" \
             "$ALIGNED"
-          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED" | tee /tmp/apois-superapp-signing.txt
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED_APK" | tee /tmp/apois-superapp-signing.txt
           EXPECTED_NORMALIZED="$(printf '%s' "$EXPECTED_SIGNING_SHA1" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           ACTUAL_NORMALIZED="$(awk -F': ' '/Signer #1 certificate SHA-1 digest:/ {print $2}' /tmp/apois-superapp-signing.txt | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           test -n "$ACTUAL_NORMALIZED"
           test "$ACTUAL_NORMALIZED" = "$EXPECTED_NORMALIZED"
+          jarsigner \
+            -keystore "$CM_KEYSTORE_PATH" \
+            -storepass "$CM_KEYSTORE_PASSWORD" \
+            -keypass "$CM_KEY_PASSWORD" \
+            -signedjar "$SIGNED_AAB" \
+            "$UNSIGNED_AAB" \
+            "$CM_KEY_ALIAS"
+          jarsigner -verify -verbose -certs "$SIGNED_AAB" > /tmp/apois-superapp-aab-signing.txt
+          grep -Fq 'jar verified.' /tmp/apois-superapp-aab-signing.txt
           rm -f "$ALIGNED"
-          test -s "$SIGNED"
+          test -s "$SIGNED_APK"
+          test -s "$SIGNED_AAB"
+          echo "[OK] APK e AAB release assinados e verificados"
     artifacts:
       - APOIS-Superapp.apk
+      - APOIS-Superapp.aab
