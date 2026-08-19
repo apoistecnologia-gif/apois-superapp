@@ -53,13 +53,46 @@ workflows:
           test -s "$CM_KEYSTORE_PATH"
           node scripts/validate-superapp-native-config.mjs
 
+      - name: Audit Superapp before build
+        script: |
+          set -euo pipefail
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          run_audit() {
+            name="$1"
+            shift
+            log="/tmp/${name}.log"
+            echo "===== ${name} ====="
+            if ! "$@" 2>&1 | tee "$log"; then
+              echo "===== FALHAS EXATAS: ${name} ====="
+              grep -E '\[FAIL\]|Error:|ERR_|error:' "$log" | tail -n 80 || true
+              echo "===== ÚLTIMAS 120 LINHAS: ${name} ====="
+              tail -n 120 "$log" || true
+              exit 1
+            fi
+          }
+          run_audit audit-static node scripts/audit-superapp-static.mjs
+          run_audit verify-pins node scripts/verify-module-pins.mjs
+          run_audit audit-hardening node scripts/audit-superapp-hardening.mjs
+          run_audit audit-play-store node scripts/audit-superapp-play-store.mjs
+          run_audit audit-release-integrity node scripts/audit-superapp-release-integrity.mjs
+          run_audit verify-rides-push node scripts/validate-rides-push-firebase.mjs
+          echo "[OK] Todas as auditorias pré-build passaram"
+
       - name: Build Corridas + Entregas + shell
         script: |
           set -euo pipefail
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           test "$(bun --version)" = "$BUN_VERSION"
-          APOIS_STRICT_NATIVE_CONFIG=0 npm run build:superapp
+          build_log=/tmp/apois-module-build.log
+          if ! (npm run build:corridas && npm run build:entregas && npm run build:shell && npm run harden:auth-deeplinks && npm run inject:push-routing && npm run verify:dist) 2>&1 | tee "$build_log"; then
+            echo "===== FALHAS EXATAS DO BUILD ====="
+            grep -E '\[FAIL\]|Error:|ERR_|error:' "$build_log" | tail -n 100 || true
+            echo "===== ÚLTIMAS 160 LINHAS DO BUILD ====="
+            tail -n 160 "$build_log" || true
+            exit 1
+          fi
           test -s superapp/shell/dist/index.html
           test -s superapp/shell/dist/modules/corridas/index.html
           test -s superapp/shell/dist/modules/entregas/index.html
@@ -99,7 +132,7 @@ workflows:
           ./gradlew clean assembleRelease bundleRelease --no-daemon --stacktrace
           cd ../../..
           mkdir -p build
-          UNSIGNED_APK="$(find superapp/shell/android/app/build/outputs/apk/release -name '*unsigned*.apk' -o -name 'app-release.apk' | head -n 1)"
+          UNSIGNED_APK="$(find superapp/shell/android/app/build/outputs/apk/release \( -name '*unsigned*.apk' -o -name 'app-release.apk' \) | head -n 1)"
           UNSIGNED_AAB="$(find superapp/shell/android/app/build/outputs/bundle/release -name '*.aab' | head -n 1)"
           test -n "$UNSIGNED_APK"
           test -s "$UNSIGNED_APK"
