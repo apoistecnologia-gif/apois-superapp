@@ -16,6 +16,7 @@ const required = [
   'modules/entregas/index.html',
 ];
 const AUTH_DEEP_LINK_KEY = 'apois-superapp:last-auth-deeplink';
+const CORRIDAS_RECOVERY_KEY = 'apois-superapp:corridas-recovery-url';
 
 let failed = false;
 for (const relative of required) {
@@ -42,6 +43,13 @@ if (!failed) {
     failed = true;
   } else {
     console.log('[OK] shell deduplica deep links de autenticação');
+  }
+
+  if (!shell.includes("path==='corridas-reset'") || !shell.includes(CORRIDAS_RECOVERY_KEY)) {
+    console.error('[FAIL] shell não encaminha recuperação de senha de Corridas');
+    failed = true;
+  } else {
+    console.log('[OK] shell encaminha recuperação de senha para Corridas');
   }
 
   const corridas = readFileSync(resolve(dist, 'modules/corridas/index.html'), 'utf8');
@@ -101,6 +109,28 @@ if (!failed) {
     console.log('[OK] rodapé único persiste na Home e telas normais; some apenas na jornada ativa');
   }
 
+  const recoverySource = readFileSync(
+    resolve(root, '.work/corridas/src/lib/auth/native-password-recovery.ts'),
+    'utf8',
+  );
+  const recoveryMarkers = [
+    'br.com.apois.app://auth/corridas-reset',
+    'url.protocol === "br.com.apois.app:"',
+    'url.pathname.replace(/\\/+$/, "") === "/corridas-reset"',
+    CORRIDAS_RECOVERY_KEY,
+    'window.sessionStorage.removeItem(FORWARDED_RECOVERY_KEY)',
+  ];
+  const missingRecovery = recoveryMarkers.filter((marker) => !recoverySource.includes(marker));
+  if (missingRecovery.length) {
+    console.error(`[FAIL] recuperação nativa de Corridas incompleta: ${missingRecovery.join(', ')}`);
+    failed = true;
+  } else if (recoverySource.includes('apoispassageiro://auth/redefinir-senha')) {
+    console.error('[FAIL] Corridas ainda contém esquema nativo antigo de recuperação');
+    failed = true;
+  } else {
+    console.log('[OK] recuperação de senha de Corridas usa deep link do Superapp e aceita encaminhamento entre módulos');
+  }
+
   const entregas = readFileSync(resolve(dist, 'modules/entregas/index.html'), 'utf8');
   if (/\b(?:src|href)="\/assets\//.test(entregas)) {
     console.error('[FAIL] Entregas contém asset absoluto /assets/');
@@ -114,6 +144,13 @@ if (!failed) {
     failed = true;
   } else {
     console.log('[OK] Entregas deduplica deep links OAuth/reset no bridge nativo');
+  }
+
+  if (!entregas.includes("path === 'corridas-reset'") || !entregas.includes(CORRIDAS_RECOVERY_KEY)) {
+    console.error('[FAIL] Entregas não encaminha deep link de recuperação de Corridas');
+    failed = true;
+  } else {
+    console.log('[OK] Entregas encaminha recuperação de Corridas sem perder o link nativo');
   }
 }
 
