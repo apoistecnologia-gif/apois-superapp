@@ -37,6 +37,9 @@ if (!/^([A-Za-z][A-Za-z0-9_]*\.)+[A-Za-z][A-Za-z0-9_]*$/.test(APP_PACKAGE)) {
 } else {
   ok(`package Android válido: ${APP_PACKAGE}`);
 }
+if (strict && APP_PACKAGE !== 'br.com.apois.app') {
+  fail(`APP_PACKAGE de produção deve ser br.com.apois.app, recebido: ${APP_PACKAGE}`);
+}
 
 if (EXPECTED_SHA1) {
   if (/^(?:[0-9A-Fa-f]{2}:){19}[0-9A-Fa-f]{2}$/.test(EXPECTED_SHA1)) {
@@ -44,6 +47,22 @@ if (EXPECTED_SHA1) {
   } else {
     fail('EXPECTED_SIGNING_SHA1 está em formato inválido');
   }
+} else {
+  requireOrWarn(false, 'SHA-1 esperado da assinatura disponível');
+}
+
+const versionCodeRaw = process.env.APP_VERSION_CODE?.trim() || '1';
+const versionName = process.env.APP_VERSION_NAME?.trim() || '1.0.0';
+const versionCode = Number.parseInt(versionCodeRaw, 10);
+if (!/^\d+$/.test(versionCodeRaw) || !Number.isInteger(versionCode) || versionCode < 1) {
+  fail('APP_VERSION_CODE deve ser inteiro positivo');
+} else {
+  ok(`versionCode Android válido: ${versionCode}`);
+}
+if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(versionName)) {
+  fail('APP_VERSION_NAME deve usar formato semântico, por exemplo 1.0.0');
+} else {
+  ok(`versionName Android válido: ${versionName}`);
 }
 
 const publicAppUrl = process.env.CORRIDAS_PUBLIC_APP_URL?.trim() || '';
@@ -51,10 +70,15 @@ requireOrWarn(Boolean(publicAppUrl), 'URL pública de acompanhamento de Corridas
 if (publicAppUrl) {
   try {
     const parsed = new URL(publicAppUrl);
+    const localHost = ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(parsed.hostname) || parsed.hostname.endsWith('.local');
     if (!['http:', 'https:'].includes(parsed.protocol)) {
       fail('CORRIDAS_PUBLIC_APP_URL deve usar http/https');
     } else if (strict && parsed.protocol !== 'https:') {
       fail('CORRIDAS_PUBLIC_APP_URL deve usar HTTPS em modo estrito');
+    } else if (strict && localHost) {
+      fail('CORRIDAS_PUBLIC_APP_URL não pode apontar para localhost/rede local em produção');
+    } else if (parsed.username || parsed.password) {
+      fail('CORRIDAS_PUBLIC_APP_URL não pode conter credenciais embutidas');
     } else {
       ok(`URL pública de acompanhamento válida: ${parsed.hostname}`);
     }
@@ -69,7 +93,8 @@ validateGoogleKey(androidMapsKey, 'CORRIDAS_ANDROID_MAPS_API_KEY', 'Google Maps 
 validateGoogleKey(webMapsKey, 'CORRIDAS_WEB_MAPS_API_KEY', 'Google Maps JavaScript/Places key do Superapp');
 
 if (androidMapsKey && webMapsKey && androidMapsKey === webMapsKey) {
-  warn('Maps Android e Maps JavaScript estão usando a mesma chave. Para produção, use credenciais separadas com restrições diferentes.');
+  if (strict) fail('Maps Android e Maps JavaScript não devem compartilhar a mesma chave no release; use restrições específicas por plataforma.');
+  else warn('Maps Android e Maps JavaScript estão usando a mesma chave. Para produção, use credenciais separadas com restrições diferentes.');
 }
 
 const firebaseB64 = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim() || '';
