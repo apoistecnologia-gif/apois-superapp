@@ -11,12 +11,30 @@ const originalFunction = `function notificationTarget(notification?: PushNotific
     : "/notificacoes";
 }`;
 
-const functionPattern = /function notificationTarget\(notification\?: PushNotificationSchema\)(?:: string \| null)? \{[\s\S]*?\n\}/;
+const originalReceived = `    receivedHandle = await PushNotifications.addListener("pushNotificationReceived", () => {
+      window.dispatchEvent(new CustomEvent("apois:customer-push"));
+    });`;
 
-if (!functionPattern.test(source)) {
-  throw new Error('Entregas customer-push: função notificationTarget não encontrada.');
+const originalAction = `    actionHandle = await PushNotifications.addListener(
+      "pushNotificationActionPerformed",
+      (action) => {
+        const target = notificationTarget(action.notification);
+        if (window.location.pathname !== target) window.location.assign(target);
+      },
+    );`;
+
+const functionPattern = /function notificationTarget\(notification\?: PushNotificationSchema\)(?:: string \| null)? \{[\s\S]*?\n\}/;
+const receivedPattern = /    receivedHandle = await PushNotifications\.addListener\("pushNotificationReceived",[\s\S]*?\n    \}\);/;
+const actionPattern = /    actionHandle = await PushNotifications\.addListener\(\n      "pushNotificationActionPerformed",[\s\S]*?\n    \);/;
+
+for (const [pattern, replacement, label] of [
+  [functionPattern, originalFunction, 'notificationTarget'],
+  [receivedPattern, originalReceived, 'pushNotificationReceived'],
+  [actionPattern, originalAction, 'pushNotificationActionPerformed'],
+]) {
+  if (!pattern.test(source)) throw new Error(`Entregas customer-push: ${label} não encontrado.`);
+  source = source.replace(pattern, replacement);
 }
 
-source = source.replace(functionPattern, originalFunction);
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregas: notificationTarget normalizado antes do hardener do Superapp.');
+console.log('[OK] Entregas: alvos de Push normalizados estruturalmente antes do hardener do Superapp.');
