@@ -33,11 +33,22 @@ replaceOnce(
   'bridge fecha navegador OAuth antes de rotear callback',
 );
 
-replaceOnce(
-  "if (name === 'corridas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);\n}\n\nconst config = manifest.modules[name];",
-  "if (name === 'corridas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);\n}\nif (name === 'entregas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);\n}\n\nconst config = manifest.modules[name];",
-  'build Entregas aplica hardening OAuth somente em .work',
-);
+const corridasBlockLegacy = "if (name === 'corridas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);\n}\n\nconst config = manifest.modules[name];";
+const corridasBlockWithUiRepair = "if (name === 'corridas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);\n  run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);\n}\n\nconst config = manifest.modules[name];";
+const desiredBuildBlock = "if (name === 'corridas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);\n  run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);\n}\nif (name === 'entregas') {\n  run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);\n}\n\nconst config = manifest.modules[name];";
+
+if (source.includes(desiredBuildBlock)) {
+  console.log('[OK] build Entregas aplica hardening OAuth e preserva reparo visual de Corridas: já aplicado');
+} else if (source.includes(corridasBlockWithUiRepair)) {
+  source = source.replace(corridasBlockWithUiRepair, desiredBuildBlock);
+  console.log('[OK] build Entregas aplica hardening OAuth preservando reparo visual de Corridas');
+} else if (source.includes(corridasBlockLegacy)) {
+  source = source.replace(corridasBlockLegacy, desiredBuildBlock);
+  console.log('[OK] build Entregas aplica hardening OAuth e prepara reparo visual de Corridas');
+} else {
+  console.error(`[FAIL] build Entregas: bloco de hardening inesperado em ${path}`);
+  process.exit(1);
+}
 
 writeFileSync(full, source);
 console.log('[OK] Entregas: build isolado preparado para callback OAuth único no Superapp');
