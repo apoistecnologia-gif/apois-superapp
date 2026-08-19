@@ -133,8 +133,23 @@ requireText(
     "window.location.replace(shellUrl)",
     "appPlugin.addListener('backButton'",
     "appPlugin.addListener('appStateChange'",
+    "scripts/normalize-entregas-adaptation-handoff.mjs",
   ],
-  'bridge cobre sessão íntegra, rotas públicas, retomada, deep links, ambiente e Android Back',
+  'bridge cobre sessão íntegra, rotas públicas, retomada, deep links, ambiente, Android Back e handoff determinístico de Entregas',
+);
+
+requireText(
+  'scripts/normalize-entregas-adaptation-handoff.mjs',
+  [
+    '? `#/pedido/${encodeURIComponent(orderId)}`',
+    '? `/pedido/${encodeURIComponent(orderId)}`',
+    'window.location.hash !== target',
+    'window.location.pathname !== target',
+    'const interimHash =',
+    'const originalParams =',
+    'handoff entre adaptador base e hardeners especializados concluído',
+  ],
+  'handoff de Entregas normaliza somente a saída intermediária antes dos hardeners especializados',
 );
 
 requireText(
@@ -153,8 +168,11 @@ requireText(
     'overflow-y-auto p-4 pb-32',
     'overflow-y-auto p-4 pb-32 pt-5',
     'const paymentMethod = "pix";',
+    'return fallback;',
+    'new Set(["openpix", "asaas"]).has(configuredProvider)',
+    'O pagamento PIX está temporariamente indisponível.',
   ],
-  'Entregas mantém auth/push isolados, token nativo compartilhado, rodapé seguro e checkout PIX-only',
+  'Entregas mantém auth/push isolados, token compartilhado, rodapé seguro e checkout PIX-only com erro público seguro',
 );
 
 requireText(
