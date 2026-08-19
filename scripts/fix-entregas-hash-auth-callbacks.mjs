@@ -32,4 +32,12 @@ replaceRequired(
   'Entregas: recuperação de senha lê code/erro dentro do Hash Router',
 );
 
-console.log('[OK] Entregas: callbacks Supabase compatíveis com #/rota?code=... no Superapp');
+const loginHashAwareSearch = `const hashQuery = window.location.hash.includes(\"?\")\n          ? window.location.hash.slice(window.location.hash.indexOf(\"?\") + 1)\n          : \"\";\n        const searchParams = new URLSearchParams(hashQuery || window.location.search);`;
+replaceRequired(
+  '.work/entregas/src/routes/login.tsx',
+  'const searchParams = new URLSearchParams(window.location.search);',
+  loginHashAwareSearch,
+  'Entregas: login preserva redirect seguro recebido dentro do Hash Router',
+);
+
+console.log('[OK] Entregas: parâmetros de autenticação compatíveis com #/rota?... no Superapp');
