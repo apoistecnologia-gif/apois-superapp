@@ -96,6 +96,26 @@ for (const [path, label, variable] of [
   }
 }
 
+const checkout = requireFile('.work/entregas/src/routes/checkout.tsx');
+if (checkout) {
+  if (!checkout.includes('const paymentMethod = "pix";')) fail('checkout Entregas não está PIX-only');
+  else ok('checkout Entregas está PIX-only');
+  if (checkout.includes('payload?.provider?.message') || checkout.includes('payload?.provider?.status_detail')) {
+    fail('checkout Entregas ainda pode expor detalhe técnico do provedor ao cliente');
+  } else if (!checkout.includes('return fallback;')) {
+    fail('checkout Entregas não possui fallback seguro para erro técnico de Edge Function');
+  } else {
+    ok('checkout Entregas exibe somente mensagens seguras ao cliente');
+  }
+  if (!checkout.includes('new Set(["openpix", "asaas"]).has(configuredProvider)')) {
+    fail('checkout Entregas ainda escolhe função PIX por fallback permissivo');
+  } else if (!checkout.includes('O pagamento PIX está temporariamente indisponível. Tente novamente em instantes.')) {
+    fail('checkout Entregas não possui erro seguro para provedor PIX inconsistente');
+  } else {
+    ok('checkout Entregas valida explicitamente o provedor PIX antes de gerar cobrança');
+  }
+}
+
 const shellSource = requireFile('superapp/shell/index.html');
 if (shellSource) {
   if (!shellSource.includes('./assets/apois-brand.png')) fail('shell ainda não usa a arte oficial APOIS');
