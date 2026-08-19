@@ -68,6 +68,17 @@ forbidMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
   'toast.error(error?.message || "Não foi possível cancelar este pedido.")',
 ], 'cancelamento de pedido não expõe erro técnico do RPC');
 
+requireMarkers('.work/entregas/src/routes/enderecos.tsx', [
+  'const setDefaultAddress = async (addressId: string)',
+  '"set_default_customer_address"',
+  'await setDefaultAddress(selectedAddress.id);',
+], 'confirmação de endereço usa RPC atômica do backend');
+forbidMarkers('.work/entregas/src/routes/enderecos.tsx', [
+  'setDefaultWithFallback',
+  'RPC set_default_customer_address failed, using RLS fallback',
+  '.update({ is_default: false })',
+], 'confirmação de endereço não replica transação do backend no cliente');
+
 for (const [path, label] of [
   ['.work/entregas/src/routes/perfil/pagamentos.tsx', 'Pagamentos'],
   ['.work/entregas/src/routes/perfil/notificacoes.tsx', 'Notificações'],
