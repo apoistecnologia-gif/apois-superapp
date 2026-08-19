@@ -1,5 +1,5 @@
-import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 const APP_PACKAGE = process.env.APP_PACKAGE?.trim() || 'br.com.apois.app';
 const androidRoot = resolve('superapp/shell/android');
@@ -82,44 +82,91 @@ if (firebaseB64) {
 }
 
 const resRoot = join(appRoot, 'src/main/res');
-const brandingCandidates = [
-  resolve('.work/corridas/dist/favicon.png'),
-  resolve('.work/corridas/public/favicon.png'),
-  resolve('.work/entregas/.output/public/apois-app-icon.png'),
-];
-const brandingIcon = brandingCandidates.find((candidate) => existsSync(candidate));
+const drawableDir = join(resRoot, 'drawable');
+const mipmapAdaptiveDir = join(resRoot, 'mipmap-anydpi-v26');
+mkdirSync(drawableDir, { recursive: true });
+mkdirSync(mipmapAdaptiveDir, { recursive: true });
 
-if (brandingIcon && existsSync(resRoot)) {
-  let replaced = 0;
-  for (const dirName of readdirSync(resRoot)) {
-    if (!dirName.startsWith('mipmap-') && !dirName.startsWith('drawable')) continue;
-    const dirPath = join(resRoot, dirName);
-    let entries = [];
-    try {
-      entries = readdirSync(dirPath);
-    } catch {
-      continue;
-    }
-    for (const entry of entries) {
-      if (!entry.endsWith('.png')) continue;
-      const fileName = basename(entry);
-      if (!fileName.startsWith('ic_launcher') && !fileName.startsWith('splash')) continue;
-      copyFileSync(brandingIcon, join(dirPath, entry));
-      replaced += 1;
-    }
-  }
+// APOIS Brasil launcher mark: gold stylized A over black. Kept as vector so
+// Android adaptive/round launchers never fall back to Capacitor's blue icon.
+const launcherForegroundXml = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="432"
+    android:viewportHeight="432">
+    <path
+        android:fillColor="#D4A62A"
+        android:pathData="M78,374 L176,68 L226,68 L128,374 Z" />
+    <path
+        android:fillColor="#F1C84B"
+        android:pathData="M204,68 L254,68 L354,374 L304,374 Z" />
+    <path
+        android:fillColor="#D9AB2B"
+        android:pathData="M116,298 C168,248 248,226 328,238 L311,269 C243,258 174,277 129,317 Z" />
+    <path
+        android:fillColor="#C69218"
+        android:pathData="M168,314 C216,278 271,265 317,271 L304,294 C262,291 221,302 183,333 Z" />
+</vector>
+`;
 
-  const colorsPath = join(resRoot, 'values', 'colors.xml');
-  if (existsSync(colorsPath)) {
-    let colors = readFileSync(colorsPath, 'utf8');
-    colors = colors.replace(
-      /<color name="ic_launcher_background">[^<]*<\/color>/,
-      '<color name="ic_launcher_background">#050505</color>',
-    );
-    writeFileSync(colorsPath, colors);
-  }
+const launcherMonochromeXml = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="432"
+    android:viewportHeight="432">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M78,374 L176,68 L226,68 L128,374 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M204,68 L254,68 L354,374 L304,374 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M116,298 C168,248 248,226 328,238 L311,269 C243,258 174,277 129,317 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M168,314 C216,278 271,265 317,271 L304,294 C262,291 221,302 183,333 Z" />
+</vector>
+`;
 
-  console.log(`[OK] Branding Android aplicado usando ${brandingIcon} (${replaced} imagens substituídas).`);
-} else {
-  console.warn('[WARN] Branding Android: ícone APOIS não encontrado; mantendo recursos padrão do Capacitor.');
+const adaptiveIconXml = `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
+</adaptive-icon>
+`;
+
+const splashXml = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/black" />
+    <item android:gravity="center">
+        <inset
+            android:drawable="@drawable/ic_launcher_foreground"
+            android:insetLeft="72dp"
+            android:insetTop="72dp"
+            android:insetRight="72dp"
+            android:insetBottom="72dp" />
+    </item>
+</layer-list>
+`;
+
+writeFileSync(join(drawableDir, 'ic_launcher_foreground.xml'), launcherForegroundXml, 'utf8');
+writeFileSync(join(drawableDir, 'ic_launcher_monochrome.xml'), launcherMonochromeXml, 'utf8');
+writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher.xml'), adaptiveIconXml, 'utf8');
+writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher_round.xml'), adaptiveIconXml, 'utf8');
+writeFileSync(join(drawableDir, 'splash.xml'), splashXml, 'utf8');
+
+const colorsPath = join(resRoot, 'values', 'colors.xml');
+if (existsSync(colorsPath)) {
+  let colors = readFileSync(colorsPath, 'utf8');
+  colors = colors.replace(
+    /<color name="ic_launcher_background">[^<]*<\/color>/,
+    '<color name="ic_launcher_background">#050505</color>',
+  );
+  writeFileSync(colorsPath, colors);
 }
+
+console.log('[OK] Ícone adaptativo, redondo, monocromático e splash do Superapp preparados com identidade APOIS Brasil.');
