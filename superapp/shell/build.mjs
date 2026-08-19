@@ -15,8 +15,8 @@ const modules = [
 
 for (const [name, source] of modules) {
   if (!existsSync(source)) {
-    console.warn(`[WARN] bundle ${name} ainda não existe em ${source}`);
-    continue;
+    console.error(`[FAIL] bundle obrigatório ${name} não existe em ${source}`);
+    process.exit(1);
   }
   const target = resolve(dist, 'modules', name);
   mkdirSync(target, { recursive: true });
