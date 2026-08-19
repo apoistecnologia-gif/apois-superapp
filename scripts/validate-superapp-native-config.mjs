@@ -66,15 +66,16 @@ if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(versionName)) {
 }
 
 const publicAppUrl = process.env.CORRIDAS_PUBLIC_APP_URL?.trim() || '';
-requireOrWarn(Boolean(publicAppUrl), 'URL pública de acompanhamento de Corridas disponível');
-if (publicAppUrl) {
+if (!publicAppUrl) {
+  warn('CORRIDAS_PUBLIC_APP_URL ausente; somente o compartilhamento público de corrida ficará indisponível neste release');
+} else {
   try {
     const parsed = new URL(publicAppUrl);
     const localHost = ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(parsed.hostname) || parsed.hostname.endsWith('.local');
     if (!['http:', 'https:'].includes(parsed.protocol)) {
       fail('CORRIDAS_PUBLIC_APP_URL deve usar http/https');
     } else if (strict && parsed.protocol !== 'https:') {
-      fail('CORRIDAS_PUBLIC_APP_URL deve usar HTTPS em modo estrito');
+      fail('CORRIDAS_PUBLIC_APP_URL deve usar HTTPS quando configurada em modo estrito');
     } else if (strict && localHost) {
       fail('CORRIDAS_PUBLIC_APP_URL não pode apontar para localhost/rede local em produção');
     } else if (parsed.username || parsed.password) {
