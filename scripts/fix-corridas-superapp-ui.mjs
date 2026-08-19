@@ -26,7 +26,7 @@ replaceRequired(
 replaceRequired(
   '.work/corridas/src/lib/auth/native-password-recovery.ts',
   'export const NATIVE_PASSWORD_RECOVERY_REDIRECT =\n  "apoispassageiro://auth/redefinir-senha";',
-  'export const NATIVE_PASSWORD_RECOVERY_REDIRECT =\n  "br.com.apois.app://auth/corridas-reset";',
+  'export const NATIVE_PASSWORD_RECOVERY_REDIRECT =\n  "br.com.apois.app://auth/corridas-reset";\n\nconst FORWARDED_RECOVERY_KEY = "apois-superapp:corridas-recovery-url";',
   'corridas: recuperação de senha usa esquema nativo único do Superapp',
 );
 replaceRequired(
@@ -34,6 +34,12 @@ replaceRequired(
   '    url.protocol === "apoispassageiro:" &&\n    url.hostname === "auth" &&\n    url.pathname.replace(/\\/+$/, "") === "/redefinir-senha"',
   '    url.protocol === "br.com.apois.app:" &&\n    url.hostname === "auth" &&\n    url.pathname.replace(/\\/+$/, "") === "/corridas-reset"',
   'corridas: consumidor nativo reconhece callback de recuperação do Superapp',
+);
+replaceRequired(
+  '.work/corridas/src/lib/auth/native-password-recovery.ts',
+  '  const launchUrl = await App.getLaunchUrl();\n  if (launchUrl?.url) await handle({ url: launchUrl.url });\n\n  return async () => {',
+  '  const launchUrl = await App.getLaunchUrl();\n  if (launchUrl?.url) await handle({ url: launchUrl.url });\n\n  // Se o deep link chegou enquanto o shell ou Entregas estava aberto, o\n  // Superapp o encaminha por sessionStorage antes de trocar para Corridas.\n  try {\n    const forwardedUrl = window.sessionStorage.getItem(FORWARDED_RECOVERY_KEY);\n    if (forwardedUrl) {\n      window.sessionStorage.removeItem(FORWARDED_RECOVERY_KEY);\n      await handle({ url: forwardedUrl });\n    }\n  } catch {\n    // O appUrlOpen/getLaunchUrl continua sendo a fonte principal.\n  }\n\n  return async () => {',
+  'corridas: recuperação encaminhada pelo shell é consumida após troca de módulo',
 );
 
 // Home carried a private copy of the bottom navigation. It disappeared as soon
@@ -92,4 +98,4 @@ replaceRequired(
   'corridas: rodapé único permanece em todas as telas normais e detalhes',
 );
 
-console.log('[OK] corridas: assets, recuperação nativa e rodapé global único corrigidos apenas em .work');
+console.log('[OK] corridas: assets, recuperação nativa encaminhável e rodapé global único corrigidos apenas em .work');
