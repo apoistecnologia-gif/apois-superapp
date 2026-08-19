@@ -174,10 +174,8 @@ function injectSuperappBridge(indexPath, moduleName) {
     }).catch(() => undefined);
     appPlugin.addListener('backButton', ({ canGoBack }) => {
       const hash = window.location.hash || '';
-      const rootHashes = ['', '#', '#/', '#/login'];
-      const atModuleRoot = moduleName === 'entregas'
-        ? rootHashes.includes(hash)
-        : (!canGoBack || window.history.length <= 2);
+      const moduleRootHashes = new Set(['', '#', '#/', '#/inicio', '#/login']);
+      const atModuleRoot = moduleRootHashes.has(hash) || (!hash && !canGoBack);
       if (atModuleRoot) {
         returnToShell();
         return;
