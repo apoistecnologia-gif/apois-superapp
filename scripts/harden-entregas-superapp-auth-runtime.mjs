@@ -182,6 +182,20 @@ replaceRequired(
 );
 
 replaceRequired(
+  '.work/entregas/src/routes/checkout.tsx',
+  '      if (!payment?.qrCodeText || !payment?.qrCodeImageUrl) {\n        throw new Error("O provedor de pagamento não retornou os dados completos do PIX.");\n      }',
+  '      if (!payment?.qrCodeText) {\n        throw new Error("O provedor de pagamento não retornou o código PIX.");\n      }',
+  'entregas: PIX válido não depende de imagem QR opcional do provedor',
+);
+
+replaceRequired(
+  '.work/entregas/src/routes/checkout.tsx',
+  '        qrCodeImageUrl: payment.qrCodeImageUrl,',
+  '        qrCodeImageUrl: typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : "",',
+  'entregas: QR local permanece disponível quando provedor retornar somente brCode',
+);
+
+replaceRequired(
   '.work/entregas/src/routes/auth.callback.tsx',
   '      const providerError = params.get("error_description") || params.get("error");\n      if (providerError) {\n        if (!cancelled) setErrorMessage(providerError);\n        return;\n      }',
   '      const providerError = params.get("error_description") || params.get("error");\n      if (providerError) {\n        if (!cancelled) setErrorMessage("Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.");\n        return;\n      }',
