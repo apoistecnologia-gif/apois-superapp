@@ -106,14 +106,13 @@ for (const target of targets) {
     const delivery = deliveryMarker(data);
     const ride = rideMarker(data);
 
-    // Payload ambíguo é ignorado em vez de abrir o produto errado.
     if (delivery.isDelivery && ride.isRide) return null;
 
     if (delivery.isDelivery) {
       if (!entregasBase) return null;
       return delivery.orderId
         ? entregasBase + '#/pedido/' + encodeURIComponent(delivery.orderId)
-        : entregasBase + '#/perfil/notificacoes';
+        : entregasBase + '#/notificacoes';
     }
 
     if (ride.isRide) {
