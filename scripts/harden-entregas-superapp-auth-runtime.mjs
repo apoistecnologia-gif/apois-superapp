@@ -57,9 +57,30 @@ replaceRequired(
 
 replaceRequired(
   '.work/entregas/src/lib/customer-push.ts',
+  'function notificationTarget(notification?: PushNotificationSchema) {\n  const orderId = notification?.data?.["orderId"];\n  return typeof orderId === "string" && orderId.trim()\n    ? `/pedido/${encodeURIComponent(orderId)}`\n    : "/notificacoes";\n}',
+  'function notificationTarget(notification?: PushNotificationSchema): string | null {\n  const data = notification?.data ?? {};\n  const rawOrderId = data["orderId"] ?? data["order_id"] ?? data["orderID"];\n  const notificationType = data["notificationType"] ?? data["notification_type"];\n  const orderId = typeof rawOrderId === "string" ? rawOrderId.trim() : "";\n  const isDeliveryPush =\n    orderId.length > 0 ||\n    (typeof notificationType === "string" && notificationType.trim().length > 0);\n  if (!isDeliveryPush) return null;\n  return orderId ? `/pedido/${encodeURIComponent(orderId)}` : "/notificacoes";\n}',
+  'entregas: listener próprio ignora notificações pertencentes a Corridas',
+);
+
+replaceRequired(
+  '.work/entregas/src/lib/customer-push.ts',
+  '    receivedHandle = await PushNotifications.addListener("pushNotificationReceived", () => {\n      window.dispatchEvent(new CustomEvent("apois:customer-push"));\n    });',
+  '    receivedHandle = await PushNotifications.addListener("pushNotificationReceived", (notification) => {\n      if (!notificationTarget(notification)) return;\n      window.dispatchEvent(new CustomEvent("apois:customer-push"));\n    });',
+  'entregas: push em primeiro plano só atualiza pedidos quando pertence a Entregas',
+);
+
+replaceRequired(
+  '.work/entregas/src/lib/customer-push.ts',
   '        const target = notificationTarget(action.notification);\n        if (window.location.pathname !== target) window.location.assign(target);',
-  '        const target = notificationTarget(action.notification);\n        const targetHash = `#${target}`;\n        if (window.location.hash !== targetHash) window.location.replace(targetHash);',
-  'entregas: toque em push navega por Hash History sem sair da pasta aninhada do Superapp',
+  '        const target = notificationTarget(action.notification);\n        if (!target) return;\n        const targetHash = `#${target}`;\n        if (window.location.hash !== targetHash) window.location.replace(targetHash);',
+  'entregas: toque em push filtra o produto e navega por Hash History dentro do Superapp',
+);
+
+replaceRequired(
+  '.work/entregas/src/lib/customer-push.ts',
+  '  try {\n    await PushNotifications.unregister();\n  } catch (error) {\n    console.warn(\n      "customer local push unregister failed",\n      error instanceof Error ? error.message : "unknown",\n    );\n  }\n  await removeCustomerPushListeners();',
+  '  // O token FCM é compartilhado pelo package br.com.apois.app. Sair somente\n  // de Entregas não pode cancelar a inscrição nativa usada por Corridas.\n  await removeCustomerPushListeners();',
+  'entregas: logout não invalida o token FCM nativo compartilhado pelo Superapp',
 );
 
 replaceRequired(
@@ -112,6 +133,13 @@ replaceRequired(
 );
 
 replaceRequired(
+  '.work/entregas/src/routes/buscar.tsx',
+  '<main className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-2">',
+  '<main className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-4 pb-32 pt-2">',
+  'entregas: busca reserva espaço real para o rodapé fixo do Superapp',
+);
+
+replaceRequired(
   '.work/entregas/src/routes/pedidos.tsx',
   '<main className="scrollbar-none flex-1 space-y-4 overflow-y-auto p-4 pb-24">',
   '<main className="scrollbar-none flex-1 space-y-4 overflow-y-auto p-4 pb-32">',
@@ -132,4 +160,4 @@ replaceRequired(
   'entregas: checkout ignora método legado em storage e aceita somente PIX',
 );
 
-console.log('[OK] entregas: OAuth, sessão Hash, e-mail, Push, rodapé e PIX-only respeitam o Superapp sem alterar o app original');
+console.log('[OK] entregas: OAuth, sessão Hash, push compartilhado, rodapé e PIX-only respeitam o Superapp sem alterar o app original');
