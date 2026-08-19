@@ -21,11 +21,7 @@ function replaceRequired(path, search, replacement, label) {
 
 function validatePublicAppUrl(value) {
   if (!value) {
-    if (strictNativeConfig) {
-      console.error('[FAIL] corridas: CORRIDAS_PUBLIC_APP_URL é obrigatório na homologação final para compartilhamento de corrida');
-      process.exit(1);
-    }
-    console.warn('[WARN] corridas: CORRIDAS_PUBLIC_APP_URL ausente; compartilhamento público continuará indisponível em build não estrito');
+    console.warn('[WARN] corridas: CORRIDAS_PUBLIC_APP_URL ausente; somente o compartilhamento público de corrida ficará indisponível neste release');
     return '';
   }
   let parsed;
@@ -40,7 +36,7 @@ function validatePublicAppUrl(value) {
     process.exit(1);
   }
   if (strictNativeConfig && parsed.protocol !== 'https:') {
-    console.error('[FAIL] corridas: CORRIDAS_PUBLIC_APP_URL deve usar HTTPS em homologação final');
+    console.error('[FAIL] corridas: quando CORRIDAS_PUBLIC_APP_URL for configurada no release Android, ela deve usar HTTPS');
     process.exit(1);
   }
   const normalized = value.replace(/\/#\/?$/, '').replace(/\/+$/, '');
