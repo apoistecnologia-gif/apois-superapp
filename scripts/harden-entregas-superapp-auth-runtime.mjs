@@ -1,3 +1,4 @@
+import './normalize-entregas-customer-push-before-hardening.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
