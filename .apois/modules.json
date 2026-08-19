@@ -11,7 +11,7 @@
       "source": "sources/apois-entregas",
       "workspace": ".work/entregas",
       "install": ["bun", "install", "--frozen-lockfile"],
-      "build": ["bash", "-lc", "node ../../scripts/namespace-entregas-superapp-storage.mjs && node ../../scripts/harden-entregas-superapp-error-page.mjs && bun run build:customer"],
+      "build": ["bash", "-lc", "node ../../scripts/namespace-entregas-superapp-storage.mjs && node ../../scripts/harden-entregas-superapp-error-page.mjs && node ../../scripts/harden-entregas-superapp-account-security.mjs && bun run build:customer"],
       "env": {
         "APOIS_MOBILE_BUILD": "1",
         "VITE_APOIS_PRODUCT_MODE": "customer"
