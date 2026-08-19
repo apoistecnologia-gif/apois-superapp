@@ -33,7 +33,14 @@ function forbidMarkers(path, markers, label) {
 requireMarkers('.work/entregas/src/lib/customer-push.ts', [
   'remove_superapp_customer_push_devices',
   'Não foi possível encerrar o vínculo de notificações deste aparelho.',
-], 'logout de Entregas exige remoção segura do vínculo Push do Superapp');
+  '`#/pedido/${encodeURIComponent(orderId)}`',
+  '"#/perfil/notificacoes"',
+  'window.location.hash !== target',
+], 'Push e logout de Entregas ficam seguros dentro do Superapp');
+forbidMarkers('.work/entregas/src/lib/customer-push.ts', [
+  ': "/notificacoes";',
+  'window.location.pathname !== target',
+], 'Push de Entregas não usa rota inexistente nem sai do hash router');
 
 requireMarkers('.work/entregas/src/routes/perfil/index.tsx', [
   'await removeCustomerPushRegistration(true);',
@@ -98,5 +105,12 @@ forbidMarkers('.work/entregas/src/components/CustomerDeliveryMap.tsx', [
   'setConfirmationPin',
   'KeyRound',
 ], 'mapa não duplica o PIN que já existe nos detalhes do pedido');
+
+requireMarkers('scripts/inject-superapp-push-routing.mjs', [
+  "entregasBase + '#/perfil/notificacoes'",
+], 'roteamento cruzado de Push abre a central de notificações válida de Entregas');
+forbidMarkers('scripts/inject-superapp-push-routing.mjs', [
+  "entregasBase + '#/notificacoes'",
+], 'roteamento cruzado não aponta para rota inexistente de Entregas');
 
 process.exit(failed ? 1 : 0);
