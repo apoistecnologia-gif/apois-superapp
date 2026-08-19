@@ -52,10 +52,14 @@ workflows:
           set -euo pipefail
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
-          npm run build:superapp
+          if ! npm run build:superapp 2>&1 | tee /tmp/apois-superapp-build.log; then
+            echo "===== ÚLTIMAS LINHAS DO BUILD SUPERAPP ====="
+            tail -n 160 /tmp/apois-superapp-build.log || true
+            exit 1
+          fi
           grep -Fq 'apois-superapp-corridas-auth-v1' .work/corridas/src/integrations/supabase/client.ts
           grep -Fq 'apois-superapp-corridas-last-location' .work/corridas/src/hooks/use-location.tsx
-          grep -Fq '[checkPermissions, permissionState, refreshLocation, updateLocationState]' .work/corridas/src/hooks/use-location.tsx
+          grep -Fq '[checkPermissions, permissionState, refreshLocation, requestPermission, updateLocationState]' .work/corridas/src/hooks/use-location.tsx
           grep -Fq 'PolylineDecoder' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'displayedRoutePoints' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'PolylineDecoder.decode(encodedPolyline)' .work/corridas/src/components/map/PassengerMap.tsx
