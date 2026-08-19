@@ -11,7 +11,7 @@
     "sources:clone": "bash scripts/bootstrap-sources.sh",
     "sources:status": "bash scripts/source-status.sh",
     "status:modules": "node scripts/status-modules.mjs",
-    "audit:static": "node scripts/audit-superapp-static.mjs",
+    "audit:static": "node scripts/audit-superapp-static.mjs && node scripts/audit-superapp-hardening.mjs",
     "verify:pins": "node scripts/verify-module-pins.mjs",
     "verify:rides-push-firebase": "node scripts/validate-rides-push-firebase.mjs",
     "prepare:modules": "node scripts/prepare-workspace.mjs",
