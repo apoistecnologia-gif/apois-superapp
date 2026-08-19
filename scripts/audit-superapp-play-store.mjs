@@ -117,7 +117,7 @@ requireAll('supabase/functions/account-deletion/index.ts', [
   'Solicitar exclusão da conta',
   'external_account_deletion_requests',
   'Se houver uma conta associada ao e-mail informado',
-  'verify',
+  'SERVICE_ROLE',
 ], 'recurso público de exclusão é versionado sem revelar existência da conta');
 requireAll('supabase/migrations/20260819144000_external_account_deletion_requests.sql', [
   'external_account_deletion_requests',
