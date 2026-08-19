@@ -105,6 +105,20 @@ replaceRequired(
 );
 
 replaceRequired(
+  '.work/entregas/src/routes/pedidos.tsx',
+  '<main className="scrollbar-none flex-1 space-y-4 overflow-y-auto p-4 pb-24">',
+  '<main className="scrollbar-none flex-1 space-y-4 overflow-y-auto p-4 pb-32">',
+  'entregas: lista de pedidos reserva espaço para o rodapé fixo',
+);
+
+replaceRequired(
+  '.work/entregas/src/routes/perfil/index.tsx',
+  '<main className="scrollbar-none flex-1 overflow-y-auto p-4 pb-20 pt-5">',
+  '<main className="scrollbar-none flex-1 overflow-y-auto p-4 pb-32 pt-5">',
+  'entregas: perfil reserva espaço para o rodapé fixo',
+);
+
+replaceRequired(
   '.work/entregas/src/routes/checkout.tsx',
   '  const paymentMethod =\n    typeof window !== "undefined" ? sessionStorage.getItem("apois_payment_method") || "pix" : "pix";',
   '  const paymentMethod = "pix";',
