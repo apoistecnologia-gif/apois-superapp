@@ -20,13 +20,10 @@ function save(state, label) {
 // O bundle do Superapp não deve depender de hooks de telemetria do editor Lovable.
 {
   const state = load('.work/entregas/src/lib/lovable-error-reporting.ts');
-  const start = state.source.indexOf('export function reportLovableError');
-  if (start < 0) throw new Error('Telemetria: reportLovableError não encontrado');
-  const replacement = `export function reportLovableError(error: unknown, context: Record<string, unknown> = {}) {\n  console.error("[APOIS] erro capturado pela interface", { error, context });\n}\n`;
-  state.source = `${state.source.slice(0, start)}${replacement}`;
-  if (state.source.includes('__lovableEvents') || state.source.includes('__lovableReportRuntimeError')) {
-    throw new Error('Telemetria: hooks Lovable ainda presentes no bundle do cliente');
+  if (!state.source.includes('export function reportLovableError')) {
+    throw new Error('Telemetria: reportLovableError não encontrado');
   }
+  state.source = `export function reportLovableError(\n  error: unknown,\n  context: Record<string, unknown> = {},\n) {\n  console.error("[APOIS] erro capturado pela interface", { error, context });\n}\n`;
   save(state, 'Entregas: telemetria do editor Lovable removida da cópia Superapp');
 }
 
