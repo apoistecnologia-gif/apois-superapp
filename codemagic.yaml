@@ -170,3 +170,69 @@ workflows:
     artifacts:
       - build/APOIS-Superapp.apk
       - build/APOIS-Superapp.aab
+
+  android-field-apps-test:
+    name: APOIS Motorista + Entregador - APKs Teste
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 21
+      android_signing:
+        - apois_entregas_release
+      groups:
+        - apois_android
+      vars:
+        BUN_VERSION: "1.3.14"
+        APOIS_MOTORISTA_VERSION_CODE: "1"
+        APOIS_MOTORISTA_VERSION_NAME: "1.0.0"
+    scripts:
+      - name: Install pinned Bun
+        script: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
+          bun --version
+          java -version
+
+      - name: Initialize protected source snapshots
+        script: |
+          set -euo pipefail
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -d sources/apois-corridas-motorista-admin
+          test -d sources/apois-entregas
+
+      - name: Validate field app environment
+        script: |
+          set -euo pipefail
+          : "${CORRIDAS_VITE_SUPABASE_URL:?CORRIDAS_VITE_SUPABASE_URL is required}"
+          : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY is required}"
+          : "${CORRIDAS_WEB_MAPS_API_KEY:?CORRIDAS_WEB_MAPS_API_KEY is required}"
+          : "${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required for Entregas}"
+          : "${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY is required for Entregas}"
+          : "${FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64:?FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64 is required for Entregador push}"
+          : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
+          : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
+          : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
+          : "${CM_KEY_PASSWORD:?Codemagic key password is missing}"
+          test -s "$CM_KEYSTORE_PATH"
+
+      - name: Build signed Motorista APK
+        script: |
+          set -euo pipefail
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          bash scripts/build-test-motorista.sh
+
+      - name: Build signed Entregador APK
+        script: |
+          set -euo pipefail
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          bash scripts/build-test-entregador.sh
+
+    artifacts:
+      - build/APOIS-Motorista.apk
+      - build/APOIS-Entregador.apk
