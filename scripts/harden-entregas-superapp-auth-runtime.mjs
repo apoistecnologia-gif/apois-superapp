@@ -56,6 +56,13 @@ replaceRequired(
 );
 
 replaceRequired(
+  '.work/entregas/src/lib/customer-push.ts',
+  '        const target = notificationTarget(action.notification);\n        if (window.location.pathname !== target) window.location.assign(target);',
+  '        const target = notificationTarget(action.notification);\n        const targetHash = `#${target}`;\n        if (window.location.hash !== targetHash) window.location.replace(targetHash);',
+  'entregas: toque em push navega por Hash History sem sair da pasta aninhada do Superapp',
+);
+
+replaceRequired(
   '.work/entregas/src/components/AppBottomNav.tsx',
   '<nav className="absolute bottom-0 left-0 right-0 z-50 border-t border-border/80 bg-background/95 backdrop-blur-xl">',
   '<nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/80 bg-background/95 backdrop-blur-xl">',
