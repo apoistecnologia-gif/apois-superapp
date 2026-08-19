@@ -144,7 +144,9 @@ workflows:
           test -s superapp/shell/android/app/src/main/res/drawable/ic_launcher_foreground.xml
           test -s superapp/shell/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           grep -Fq '#D4A62A' superapp/shell/android/app/src/main/res/drawable/ic_launcher_foreground.xml
-          grep -Fq '#050505' superapp/shell/android/app/src/main/res/values/colors.xml
+          grep -Fq '#050505' superapp/shell/android/app/src/main/res/values/ic_launcher_background.xml
+          RESOURCE_DEFINITIONS="$(grep -R --include='*.xml' -l '<color name="ic_launcher_background">' superapp/shell/android/app/src/main/res/values | wc -l | tr -d ' ')"
+          test "$RESOURCE_DEFINITIONS" = "1"
           if find superapp/shell/android/app/src/main/res -type f \( -name 'ic_launcher*.png' -o -name 'splash*.png' \) | grep -q .; then
             echo '[FAIL] Branding padrão/bitmap antigo ainda presente no Android gerado'
             exit 1
@@ -173,7 +175,13 @@ workflows:
         script: |
           set -euo pipefail
           cd superapp/shell/android
-          ./gradlew clean assembleRelease --no-daemon --stacktrace
+          if ! ./gradlew clean assembleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/apois-superapp-gradle.log; then
+            echo "===== PRIMEIROS ERROS DO GRADLE ====="
+            grep -nE 'FAILURE:|Execution failed|Android resource|AAPT|error:|Caused by:' /tmp/apois-superapp-gradle.log | head -n 60 || true
+            echo "===== CONTEXTO FINAL DO GRADLE ====="
+            tail -n 120 /tmp/apois-superapp-gradle.log || true
+            exit 1
+          fi
           UNSIGNED="app/build/outputs/apk/release/app-release-unsigned.apk"
           test -s "$UNSIGNED"
           BUILD_TOOLS="$(python3 - <<'PY'
