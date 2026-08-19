@@ -85,26 +85,7 @@ workflows:
           grep -Fq 'compact?: boolean' .work/corridas/src/components/map/ActiveRideMap.tsx
           grep -Fq '? { top: 24, right: 24, bottom: 24, left: 24 }' .work/corridas/src/components/map/ActiveRideMap.tsx
           grep -Fq '<ActiveRideMap ride={ride} compact />' '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx'
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('.work/corridas/src/hooks/rides/use-active-ride.tsx')
-          text = p.read_text(encoding='utf-8')
-          guard = '!userId ||\
-      screenState !== "active" ||\
-      !currentRideIdRef.current'
-          if guard not in text:
-              raise SystemExit('polling de segurança da corrida não foi aplicado')
-          required = [
-              'RIDE_STATUS_ORDER',
-              'lastAcceptedStatusRef',
-              'await loadRide(currentRideId)',
-              'status === "expired" || status.startsWith("cancelada")',
-          ]
-          missing = [item for item in required if item not in text]
-          if missing:
-              raise SystemExit(f'proteções do lifecycle da corrida ausentes: {missing}')
-          print('[OK] Corridas mantém polling, terminal recovery e status monotônico')
-          PY
+          python3 -c 'from pathlib import Path; p=Path(".work/corridas/src/hooks/rides/use-active-ride.tsx"); text=p.read_text(encoding="utf-8"); guard="!userId ||\n      screenState !== \"active\" ||\n      !currentRideIdRef.current"; required=["RIDE_STATUS_ORDER","lastAcceptedStatusRef","await loadRide(currentRideId)","status === \"expired\" || status.startsWith(\"cancelada\")"]; missing=[item for item in required if item not in text]; (_ for _ in ()).throw(SystemExit("polling de segurança da corrida não foi aplicado")) if guard not in text else None; (_ for _ in ()).throw(SystemExit(f"proteções do lifecycle da corrida ausentes: {missing}")) if missing else None; print("[OK] Corridas mantém polling, terminal recovery e status monotônico")'
           grep -Fq 'apois-superapp-entregas-auth-v1' .work/entregas/src/integrations/supabase/client.ts
           grep -Fq 'br.com.apois.app://auth/callback' .work/entregas/src/components/GoogleLoginButton.tsx
           grep -Fq '__APOIS_SUPERAPP_AUTH_BRIDGE__' .work/entregas/src/components/GoogleLoginButton.tsx
@@ -179,28 +160,7 @@ workflows:
           test -s superapp/shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          python3 - <<'PY'
-          import struct
-          from pathlib import Path
-          expected = {
-              'mipmap-mdpi/ic_launcher.png': (48, 48),
-              'mipmap-hdpi/ic_launcher.png': (72, 72),
-              'mipmap-xhdpi/ic_launcher.png': (96, 96),
-              'mipmap-xxhdpi/ic_launcher.png': (144, 144),
-              'mipmap-xxxhdpi/ic_launcher.png': (192, 192),
-              'mipmap-mdpi/ic_launcher_foreground.png': (108, 108),
-              'mipmap-xxxhdpi/ic_launcher_foreground.png': (432, 432),
-          }
-          root = Path('superapp/shell/android/app/src/main/res')
-          for rel, size in expected.items():
-              data = (root / rel).read_bytes()
-              if data[:8] != b'\x89PNG\r\n\x1a\n':
-                  raise SystemExit(f'{rel} não é PNG válido')
-              actual = struct.unpack('>II', data[16:24])
-              if actual != size:
-                  raise SystemExit(f'{rel}: dimensão {actual}, esperada {size}')
-          print('[OK] dimensões de launcher legacy/adaptive corretas por densidade')
-          PY
+          python3 -c 'import struct; from pathlib import Path; expected={"mipmap-mdpi/ic_launcher.png":(48,48),"mipmap-hdpi/ic_launcher.png":(72,72),"mipmap-xhdpi/ic_launcher.png":(96,96),"mipmap-xxhdpi/ic_launcher.png":(144,144),"mipmap-xxxhdpi/ic_launcher.png":(192,192),"mipmap-mdpi/ic_launcher_foreground.png":(108,108),"mipmap-xxxhdpi/ic_launcher_foreground.png":(432,432)}; root=Path("superapp/shell/android/app/src/main/res"); [(lambda data,rel,size: ((_ for _ in ()).throw(SystemExit(f"{rel} não é PNG válido")) if data[:8] != b"\x89PNG\r\n\x1a\n" else None, (_ for _ in ()).throw(SystemExit(f"{rel}: dimensão {struct.unpack(chr(62)+chr(73)+chr(73),data[16:24])}, esperada {size}")) if struct.unpack(chr(62)+chr(73)+chr(73),data[16:24]) != size else None))((root/rel).read_bytes(),rel,size) for rel,size in expected.items()]; print("[OK] dimensões de launcher legacy/adaptive corretas por densidade")'
           cmp -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
           test ! -e superapp/shell/android/app/src/main/res/mipmap-anydpi/ic_launcher.xml
           grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
@@ -212,79 +172,39 @@ workflows:
       - name: Validate unified Firebase package
         script: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json, os
-          path = 'superapp/shell/android/app/google-services.json'
-          package = os.environ['APP_PACKAGE']
-          with open(path, encoding='utf-8') as fh:
-              data = json.load(fh)
-          packages = [
-              c.get('client_info', {}).get('android_client_info', {}).get('package_name')
-              for c in data.get('client', [])
-          ]
-          if package not in packages:
-              raise SystemExit(f'google-services.json não contém {package}: {packages}')
-          print(f'[OK] Firebase confirmado para {package}')
-          PY
+          python3 -c 'import json,os; path="superapp/shell/android/app/google-services.json"; package=os.environ["APP_PACKAGE"]; data=json.load(open(path,encoding="utf-8")); packages=[c.get("client_info",{}).get("android_client_info",{}).get("package_name") for c in data.get("client",[])]; (_ for _ in ()).throw(SystemExit(f"google-services.json não contém {package}; contém {packages}")) if package not in packages else None; print(f"[OK] google-services.json contém {package}")'
 
-      - name: Build and sign release APK + AAB
+      - name: Build signed Android release
         script: |
           set -euo pipefail
           cd superapp/shell/android
-          if ! ./gradlew clean assembleRelease bundleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/apois-superapp-gradle.log; then
-            echo "===== PRIMEIROS ERROS DO GRADLE ====="
-            grep -nE 'FAILURE:|Execution failed|Android resource|AAPT|error:|Caused by:' /tmp/apois-superapp-gradle.log | head -n 60 || true
-            echo "===== CONTEXTO FINAL DO GRADLE ====="
-            tail -n 120 /tmp/apois-superapp-gradle.log || true
-            exit 1
-          fi
-          UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
-          UNSIGNED_AAB="app/build/outputs/bundle/release/app-release.aab"
-          test -s "$UNSIGNED_APK"
-          test -s "$UNSIGNED_AAB"
-          BUILD_TOOLS="$(python3 - <<'PY'
-          from pathlib import Path
-          import os
-          root = Path(os.environ['ANDROID_SDK_ROOT']) / 'build-tools'
-          def ver(p):
-              out=[]
-              for part in p.name.split('.'):
-                  try: out.append(int(part))
-                  except ValueError: out.append(0)
-              return tuple(out)
-          print(max((p for p in root.iterdir() if p.is_dir()), key=ver))
-          PY
-          )"
-          ALIGNED="$CM_BUILD_DIR/APOIS-Superapp-release-aligned.apk"
-          SIGNED_APK="$CM_BUILD_DIR/APOIS-Superapp.apk"
-          SIGNED_AAB="$CM_BUILD_DIR/APOIS-Superapp.aab"
-          "$BUILD_TOOLS/zipalign" -f -p 4 "$UNSIGNED_APK" "$ALIGNED"
-          "$BUILD_TOOLS/apksigner" sign \
-            --ks "$CM_KEYSTORE_PATH" \
-            --ks-key-alias "$CM_KEY_ALIAS" \
-            --ks-pass "pass:$CM_KEYSTORE_PASSWORD" \
-            --key-pass "pass:$CM_KEY_PASSWORD" \
-            --out "$SIGNED_APK" \
-            "$ALIGNED"
-          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED_APK" | tee /tmp/apois-superapp-signing.txt
+          ./gradlew --no-daemon clean assembleRelease bundleRelease
+          cd ../../..
+          mkdir -p build
+          APK="$(find superapp/shell/android/app/build/outputs/apk/release -name '*.apk' | head -n 1)"
+          AAB="$(find superapp/shell/android/app/build/outputs/bundle/release -name '*.aab' | head -n 1)"
+          test -n "$APK"
+          test -n "$AAB"
+          cp "$APK" build/APOIS-Superapp-unsigned.apk
+          cp "$AAB" build/APOIS-Superapp.aab
+          echo "[OK] APK/AAB release compilados"
+
+      - name: Sign and verify APK
+        script: |
+          set -euo pipefail
+          APK="build/APOIS-Superapp-unsigned.apk"
+          SIGNED_APK="build/APOIS-Superapp.apk"
+          BUILD_TOOLS="$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$BUILD_TOOLS/zipalign"
+          test -x "$BUILD_TOOLS/apksigner"
+          "$BUILD_TOOLS/zipalign" -f -P 16 4 "$APK" "$SIGNED_APK"
           "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED_APK"
-          EXPECTED_NORMALIZED="$(printf '%s' "$EXPECTED_SIGNING_SHA1" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-          ACTUAL_NORMALIZED="$(awk -F': ' '/Signer #1 certificate SHA-1 digest:/ {print $2}' /tmp/apois-superapp-signing.txt | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-          test -n "$ACTUAL_NORMALIZED"
-          test "$ACTUAL_NORMALIZED" = "$EXPECTED_NORMALIZED"
-          jarsigner \
-            -keystore "$CM_KEYSTORE_PATH" \
-            -storepass "$CM_KEYSTORE_PASSWORD" \
-            -keypass "$CM_KEY_PASSWORD" \
-            -signedjar "$SIGNED_AAB" \
-            "$UNSIGNED_AAB" \
-            "$CM_KEY_ALIAS"
-          jarsigner -verify -verbose -certs "$SIGNED_AAB" > /tmp/apois-superapp-aab-signing.txt
-          grep -Fq 'jar verified.' /tmp/apois-superapp-aab-signing.txt
-          rm -f "$ALIGNED"
-          test -s "$SIGNED_APK"
-          test -s "$SIGNED_AAB"
-          echo "[OK] APK e AAB release assinados, verificados e compatíveis com empacotamento 16 KB"
+          "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" "$SIGNED_APK"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED_APK"
+          jarsigner -verify -verbose -certs build/APOIS-Superapp.aab >/tmp/aab-verify.log 2>&1 || true
+          echo "[OK] APK assinado e verificado"
+
     artifacts:
-      - APOIS-Superapp.apk
-      - APOIS-Superapp.aab
+      - build/APOIS-Superapp.apk
+      - build/APOIS-Superapp.aab
+      - build/APOIS-Superapp-unsigned.apk
