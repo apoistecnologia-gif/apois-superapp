@@ -85,9 +85,11 @@ const resRoot = join(appRoot, 'src/main/res');
 const drawableDir = join(resRoot, 'drawable');
 const mipmapAnyDir = join(resRoot, 'mipmap-anydpi');
 const mipmapAdaptiveDir = join(resRoot, 'mipmap-anydpi-v26');
+const valuesDir = join(resRoot, 'values');
 mkdirSync(drawableDir, { recursive: true });
 mkdirSync(mipmapAnyDir, { recursive: true });
 mkdirSync(mipmapAdaptiveDir, { recursive: true });
+mkdirSync(valuesDir, { recursive: true });
 
 // Remove every Capacitor stock launcher/splash bitmap. This prevents older
 // Android resource qualifiers from selecting the old white/blue artwork.
@@ -184,14 +186,27 @@ writeFileSync(join(mipmapAnyDir, 'ic_launcher_round.xml'), launcherForegroundXml
 writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher.xml'), adaptiveIconXml, 'utf8');
 writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher_round.xml'), adaptiveIconXml, 'utf8');
 
-const colorsPath = join(resRoot, 'values', 'colors.xml');
+const colorsPath = join(valuesDir, 'colors.xml');
+const launcherBackgroundColor = '<color name="ic_launcher_background">#050505</color>';
 if (existsSync(colorsPath)) {
   let colors = readFileSync(colorsPath, 'utf8');
-  colors = colors.replace(
-    /<color name="ic_launcher_background">[^<]*<\/color>/,
-    '<color name="ic_launcher_background">#050505</color>',
+  if (/<color name="ic_launcher_background">[^<]*<\/color>/.test(colors)) {
+    colors = colors.replace(
+      /<color name="ic_launcher_background">[^<]*<\/color>/,
+      launcherBackgroundColor,
+    );
+  } else if (colors.includes('</resources>')) {
+    colors = colors.replace('</resources>', `    ${launcherBackgroundColor}\n</resources>`);
+  } else {
+    throw new Error('colors.xml existe, mas não contém um bloco <resources> válido.');
+  }
+  writeFileSync(colorsPath, colors, 'utf8');
+} else {
+  writeFileSync(
+    colorsPath,
+    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    ${launcherBackgroundColor}\n</resources>\n`,
+    'utf8',
   );
-  writeFileSync(colorsPath, colors);
 }
 
 console.log(`[OK] APOIS Brasil branding: ${removedStockBranding} bitmaps padrão removidos; ícone legacy/adaptativo/redondo/monocromático e splash instalados.`);
