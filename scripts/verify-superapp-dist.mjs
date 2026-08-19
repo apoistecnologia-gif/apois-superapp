@@ -17,6 +17,7 @@ const required = [
 ];
 const AUTH_DEEP_LINK_KEY = 'apois-superapp:last-auth-deeplink';
 const CORRIDAS_RECOVERY_KEY = 'apois-superapp:corridas-recovery-url';
+const ENTREGAS_AUTH_FORWARD_KEY = 'apois-superapp:entregas-auth-url';
 
 let failed = false;
 for (const relative of required) {
@@ -52,12 +53,30 @@ if (!failed) {
     console.log('[OK] shell encaminha recuperação de senha para Corridas');
   }
 
+  if (!shell.includes("path==='email-change'") || !shell.includes('./modules/entregas/index.html#/perfil/dados-pessoais')) {
+    console.error('[FAIL] shell não encaminha confirmação de troca de e-mail para Entregas');
+    failed = true;
+  } else {
+    console.log('[OK] shell encaminha troca de e-mail para o perfil de Entregas');
+  }
+
   const corridas = readFileSync(resolve(dist, 'modules/corridas/index.html'), 'utf8');
   if (/\b(?:src|href)="\/assets\//.test(corridas)) {
     console.error('[FAIL] Corridas contém asset absoluto /assets/');
     failed = true;
   } else {
     console.log('[OK] Corridas usa assets HTML compatíveis com pasta aninhada');
+  }
+
+  if (
+    !corridas.includes(ENTREGAS_AUTH_FORWARD_KEY) ||
+    !corridas.includes("path === 'reset' || path === 'callback' || path === 'email-change'") ||
+    !corridas.includes("window.location.replace('../entregas/index.html')")
+  ) {
+    console.error('[FAIL] Corridas não preserva callbacks de autenticação pertencentes a Entregas');
+    failed = true;
+  } else {
+    console.log('[OK] Corridas encaminha OAuth/reset/e-mail de Entregas sem perder o appUrlOpen');
   }
 
   const corridasHomeSource = readFileSync(
@@ -131,6 +150,21 @@ if (!failed) {
     console.log('[OK] recuperação de senha de Corridas usa deep link do Superapp e aceita encaminhamento entre módulos');
   }
 
+  const publicBase = process.env.CORRIDAS_PUBLIC_APP_URL?.trim();
+  if (publicBase) {
+    const activeRideSource = readFileSync(
+      resolve(root, '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx'),
+      'utf8',
+    );
+    const normalized = publicBase.replace(/\/#\/?$/, '').replace(/\/+$/, '');
+    if (!activeRideSource.includes(`const configuredBase = ${JSON.stringify(normalized)};`)) {
+      console.error('[FAIL] link de compartilhamento de Corridas não recebeu CORRIDAS_PUBLIC_APP_URL');
+      failed = true;
+    } else {
+      console.log('[OK] compartilhamento de Corridas usa URL pública configurada');
+    }
+  }
+
   const entregas = readFileSync(resolve(dist, 'modules/entregas/index.html'), 'utf8');
   if (/\b(?:src|href)="\/assets\//.test(entregas)) {
     console.error('[FAIL] Entregas contém asset absoluto /assets/');
@@ -151,6 +185,43 @@ if (!failed) {
     failed = true;
   } else {
     console.log('[OK] Entregas encaminha recuperação de Corridas sem perder o link nativo');
+  }
+
+  if (
+    !entregas.includes("path === 'email-change'") ||
+    !entregas.includes("window.location.replace('#/perfil/dados-pessoais' + suffix)") ||
+    !entregas.includes(ENTREGAS_AUTH_FORWARD_KEY) ||
+    !entregas.includes('sessionStorage.removeItem')
+  ) {
+    console.error('[FAIL] Entregas não conclui roteamento de e-mail/callback encaminhado por Corridas');
+    failed = true;
+  } else {
+    console.log('[OK] Entregas conclui callbacks próprios e remove o encaminhamento após consumo');
+  }
+
+  const entregasSessionIsolation = readFileSync(
+    resolve(root, '.work/entregas/src/components/AuthSessionIsolation.tsx'),
+    'utf8',
+  );
+  if (
+    !entregasSessionIsolation.includes('window.location.hash.startsWith("#/")') ||
+    !entregasSessionIsolation.includes('window.location.replace(`#${getProductLandingRoute(product)}`)')
+  ) {
+    console.error('[FAIL] isolamento de sessão de Entregas ainda usa o pathname físico do módulo');
+    failed = true;
+  } else {
+    console.log('[OK] isolamento de sessão de Entregas respeita Hash History dentro do Superapp');
+  }
+
+  const entregasProfile = readFileSync(
+    resolve(root, '.work/entregas/src/routes/perfil/dados-pessoais.tsx'),
+    'utf8',
+  );
+  if (!entregasProfile.includes('emailRedirectTo: "br.com.apois.app://auth/email-change"')) {
+    console.error('[FAIL] troca de e-mail de Entregas ainda retorna para origin WebView inválida');
+    failed = true;
+  } else {
+    console.log('[OK] troca de e-mail de Entregas retorna ao package unificado');
   }
 }
 
