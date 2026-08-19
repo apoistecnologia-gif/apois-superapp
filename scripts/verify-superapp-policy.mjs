@@ -26,6 +26,15 @@ if (customerPush) {
   else ok('listener de Entregas filtra o produto e preserva o token FCM nativo compartilhado');
 }
 
+const ridesPush = requireFile('.work/corridas/src/services/push/push-service.ts');
+if (ridesPush) {
+  if (!ridesPush.includes('isPushRideEvent')) fail('listener próprio de Corridas não usa classificador canônico de eventos');
+  else if (!ridesPush.includes('const hasDeliveryMarker =')) fail('listener próprio de Corridas não detecta marcadores de Entregas');
+  else if (!ridesPush.includes('if (hasDeliveryMarker) return;')) fail('listener próprio de Corridas ainda pode consumir Push de Entregas');
+  else if (!ridesPush.includes('if (!isPushRideEvent(data["event"]) && !hasRideId) return;')) fail('listener próprio de Corridas ainda aceita payload Push desconhecido');
+  else ok('listener próprio de Corridas permanece restrito a payloads de corrida');
+}
+
 const htmlTargets = [
   ['shell', 'superapp/shell/dist/index.html', './modules/corridas/index.html', './modules/entregas/index.html'],
   ['corridas', 'superapp/shell/dist/modules/corridas/index.html', null, '../entregas/index.html'],
@@ -96,6 +105,20 @@ for (const [path, label, variable] of [
   }
 }
 
+const authCallback = requireFile('.work/entregas/src/routes/auth.callback.tsx');
+if (authCallback) {
+  if (authCallback.includes('setErrorMessage(providerError)')) fail('callback Entregas ainda exibe erro bruto do provedor');
+  else if (!authCallback.includes('Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.')) fail('callback Entregas não possui mensagem pública segura');
+  else ok('callback Entregas sanitiza falhas externas antes de exibir ao usuário');
+}
+
+const resetPassword = requireFile('.work/entregas/src/routes/redefinir-senha.tsx');
+if (resetPassword) {
+  if (resetPassword.includes('toast.error(error.message || "Não foi possível atualizar sua senha.")')) fail('redefinição de senha Entregas ainda exibe erro bruto do provedor');
+  else if (!resetPassword.includes('toast.error("Não foi possível atualizar sua senha. Tente novamente.")')) fail('redefinição de senha Entregas não possui mensagem pública segura');
+  else ok('redefinição de senha Entregas mantém detalhe técnico somente no console local');
+}
+
 const checkout = requireFile('.work/entregas/src/routes/checkout.tsx');
 if (checkout) {
   if (!checkout.includes('const paymentMethod = "pix";')) fail('checkout Entregas não está PIX-only');
@@ -113,6 +136,13 @@ if (checkout) {
     fail('checkout Entregas não possui erro seguro para provedor PIX inconsistente');
   } else {
     ok('checkout Entregas valida explicitamente o provedor PIX antes de gerar cobrança');
+  }
+  if (checkout.includes('if (!payment?.qrCodeText || !payment?.qrCodeImageUrl)')) {
+    fail('checkout Entregas ainda rejeita PIX válido quando o provedor não fornece imagem QR');
+  } else if (!checkout.includes('if (!payment?.qrCodeText)') || !checkout.includes('typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : ""')) {
+    fail('checkout Entregas não possui fallback de QR local para brCode sem imagem do provedor');
+  } else {
+    ok('checkout Entregas aceita brCode válido e gera QR local quando necessário');
   }
 }
 
