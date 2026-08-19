@@ -51,6 +51,16 @@ patch('.work/entregas/src/routes/sacola.tsx', (source) => {
   return source;
 }, 'Entregas: Sacola não exibe logo remota quebrada');
 
+patch('.work/entregas/src/routes/perfil/index.tsx', (source) => {
+  source = addImageFallbacks(source, ['profile?.avatar_url'], 'Perfil');
+  return source;
+}, 'Entregas: perfil não exibe avatar remoto quebrado');
+
+patch('.work/entregas/src/routes/perfil/dados-pessoais.tsx', (source) => {
+  source = addImageFallbacks(source, ['avatarSrc'], 'Dados pessoais');
+  return source;
+}, 'Entregas: edição de perfil não exibe avatar remoto quebrado');
+
 patch('.work/entregas/src/routes/estabelecimento.$merchantId.tsx', (source) => {
   source = addImageFallbacks(
     source,
@@ -60,9 +70,7 @@ patch('.work/entregas/src/routes/estabelecimento.$merchantId.tsx', (source) => {
 
   const legacyBack = 'onClick={() => window.history.back()}';
   const safeBack = 'onClick={() => void navigate({ to: "/inicio", replace: true })}';
-  if (source.includes(legacyBack)) {
-    source = source.split(legacyBack).join(safeBack);
-  }
+  if (source.includes(legacyBack)) source = source.split(legacyBack).join(safeBack);
   if (source.includes('window.history.back()')) {
     throw new Error('Estabelecimento: window.history.back ainda presente no Superapp');
   }
