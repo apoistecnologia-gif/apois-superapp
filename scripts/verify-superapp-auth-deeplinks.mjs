@@ -9,7 +9,10 @@ const targets = [
 let failed = false;
 for (const relative of targets) {
   const source = readFileSync(resolve(relative), 'utf8');
-  if (!source.includes('Date.now() - Number(previous?.at || 0) < 5000')) {
+  const hasTemporaryWindow =
+    source.includes('Date.now() - Number(previous?.at || 0) < 5000') ||
+    source.includes('Date.now()-Number(previous?.at||0)<5000');
+  if (!hasTemporaryWindow) {
     console.error(`[FAIL] ${relative}: deep-link dedup não possui janela temporária`);
     failed = true;
   }
@@ -17,6 +20,6 @@ for (const relative of targets) {
     console.error(`[FAIL] ${relative}: callback idêntico continuaria bloqueado por toda a sessão`);
     failed = true;
   }
-  if (!failed) console.log(`[OK] ${relative}: repetição de callback só é bloqueada durante corrida curta`);
+  if (hasTemporaryWindow) console.log(`[OK] ${relative}: repetição de callback só é bloqueada durante janela curta`);
 }
 process.exit(failed ? 1 : 0);
