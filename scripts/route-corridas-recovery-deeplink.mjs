@@ -39,8 +39,14 @@ replaceRequired(
 // appUrlOpen ocorre apenas uma vez; guarde a URL completa antes de trocar o HTML.
 replaceRequired(
   'superapp/shell/dist/modules/corridas/index.html',
-  "  function routeAuthDeepLink(rawUrl) {\n    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;\n    try {\n      const incoming = new URL(rawUrl);\n      const path = incoming.pathname.replace(/^\\\\//, '');",
-  `  function routeAuthDeepLink(rawUrl) {\n    if (typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;\n    try {\n      const incoming = new URL(rawUrl);\n      const path = incoming.pathname.replace(/^\\\\//, '');\n      if (moduleName === 'corridas') {\n        if (path === 'reset' || path === 'callback' || path === 'email-change') {\n          try { sessionStorage.setItem(${JSON.stringify(ENTREGAS_AUTH_FORWARD_KEY)}, rawUrl); } catch {}\n          window.location.replace('../entregas/index.html');\n          return true;\n        }\n        return false;\n      }`,
+  "    if (moduleName !== 'entregas' || typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;",
+  "    if (typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;",
+  'corridas: bridge passa a reconhecer callbacks globais do package unificado',
+);
+replaceRequired(
+  'superapp/shell/dist/modules/corridas/index.html',
+  '      const params = new URLSearchParams(incoming.search);',
+  `      if (moduleName === 'corridas') {\n        if (path === 'reset' || path === 'callback' || path === 'email-change') {\n          try { sessionStorage.setItem(${JSON.stringify(ENTREGAS_AUTH_FORWARD_KEY)}, rawUrl); } catch {}\n          window.location.replace('../entregas/index.html');\n          return true;\n        }\n        return false;\n      }\n      const params = new URLSearchParams(incoming.search);`,
   'corridas: callbacks de Entregas são preservados antes da troca de módulo',
 );
 
