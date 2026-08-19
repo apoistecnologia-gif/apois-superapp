@@ -66,6 +66,16 @@ if (!failed) {
     console.log('[OK] artes de Carro/Moto/Fretes/Guincho/Envios usam caminho relativo do módulo');
   }
 
+  if (corridasHomeSource.includes('const navItems = [') || corridasHomeSource.includes('{navItems.map(')) {
+    console.error('[FAIL] Home de Corridas ainda contém uma segunda navegação inferior');
+    failed = true;
+  } else if (!corridasHomeSource.includes('absolute inset-x-0 bottom-0 z-30 max-h-[54dvh]')) {
+    console.error('[FAIL] Home ainda reserva espaço do rodapé antigo dentro da própria rota');
+    failed = true;
+  } else {
+    console.log('[OK] Home usa somente o rodapé global, sem duplicidade ou faixa vazia');
+  }
+
   const corridasAppShell = readFileSync(
     resolve(root, '.work/corridas/src/components/layout/AppShell.tsx'),
     'utf8',
@@ -73,8 +83,10 @@ if (!failed) {
   const bottomNavMarkers = [
     'aria-label="Navegação inferior"',
     'const showBottomNavigation',
-    'pathname !== "/inicio"',
+    '!superappJourneyRoutesWithoutBottomNav.includes(pathname)',
+    '!pathname.startsWith("/corrida/")',
     'pathname.startsWith("/corridas/")',
+    'pathname.startsWith("/perfil/")',
     '{ label: "Carteira", icon: WalletCards, to: "/carteira" }',
     '{ label: "Notificações", icon: Bell, to: "/notificacoes" }',
   ];
@@ -82,8 +94,11 @@ if (!failed) {
   if (missingBottomNav.length) {
     console.error(`[FAIL] rodapé persistente de Corridas incompleto: ${missingBottomNav.join(', ')}`);
     failed = true;
+  } else if (corridasAppShell.includes('pathname !== "/inicio"')) {
+    console.error('[FAIL] AppShell ainda desativa o rodapé na Home');
+    failed = true;
   } else {
-    console.log('[OK] rodapé persiste nas telas normais e fica fora somente da jornada ativa');
+    console.log('[OK] rodapé único persiste na Home e telas normais; some apenas na jornada ativa');
   }
 
   const entregas = readFileSync(resolve(dist, 'modules/entregas/index.html'), 'utf8');
