@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for dir in apps/corridas-passageiro apps/corridas-motorista-admin apps/entregas; do
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+for dir in sources/apois-corridas-passageiro sources/apois-corridas-motorista-admin sources/apois-entregas; do
   echo "== $dir =="
-  if [ ! -d "$dir/.git" ]; then
-    echo "não copiado"
+  if [ ! -e "$dir/.git" ] && ! git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "não inicializado"
     echo
     continue
   fi
   git -C "$dir" rev-parse HEAD
-  git -C "$dir" branch --show-current
-  git -C "$dir" remote -v
+  git -C "$dir" status --short
   echo
  done
+
+npm run verify:pins

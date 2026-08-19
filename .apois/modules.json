@@ -3,14 +3,14 @@
     "corridas": {
       "source": "sources/apois-corridas-passageiro",
       "workspace": ".work/corridas",
-      "install": ["bun", "install"],
+      "install": ["bun", "install", "--frozen-lockfile"],
       "build": ["bun", "run", "build:capacitor"],
       "purpose": "APOIS Corridas - passageiro"
     },
     "entregas": {
       "source": "sources/apois-entregas",
       "workspace": ".work/entregas",
-      "install": ["bun", "install"],
+      "install": ["bun", "install", "--frozen-lockfile"],
       "build": ["bun", "run", "build:customer"],
       "env": {
         "APOIS_MOBILE_BUILD": "1",
