@@ -60,4 +60,33 @@ forbidMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
   'toast.error(error?.message || "Não foi possível cancelar este pedido.")',
 ], 'cancelamento de pedido não expõe erro técnico do RPC');
 
+for (const [path, label] of [
+  ['.work/entregas/src/routes/perfil/pagamentos.tsx', 'Pagamentos'],
+  ['.work/entregas/src/routes/perfil/notificacoes.tsx', 'Notificações'],
+  ['.work/entregas/src/routes/perfil/legal.tsx', 'Legal'],
+  ['.work/entregas/src/routes/perfil/ajuda.tsx', 'Ajuda'],
+]) {
+  requireMarkers(path, [
+    '<AppBottomNav activeTab="perfil" />',
+    'pb-32',
+  ], `${label} mantém rodapé e espaço inferior`);
+}
+
+requireMarkers('.work/entregas/src/routes/perfil/notificacoes.tsx', [
+  'pt-[max(env(safe-area-inset-top),1rem)]',
+], 'Notificações respeita safe area superior');
+requireMarkers('.work/entregas/src/routes/perfil/legal.tsx', [
+  'pt-[max(env(safe-area-inset-top),1rem)]',
+], 'Legal respeita safe area superior');
+requireMarkers('.work/entregas/src/routes/perfil/ajuda.tsx', [
+  'pt-[max(env(safe-area-inset-top),1rem)]',
+], 'Ajuda respeita safe area superior');
+requireMarkers('.work/entregas/src/routes/perfil/pagamentos.tsx', [
+  'No momento, os pedidos são pagos somente por PIX.',
+  'O pedido só é confirmado depois que',
+], 'Pagamentos mantém PIX-only em linguagem simples');
+forbidMarkers('.work/entregas/src/routes/perfil/pagamentos.tsx', [
+  'provedor de pagamentos integrado',
+], 'Pagamentos não exibe detalhe técnico do gateway');
+
 process.exit(failed ? 1 : 0);
