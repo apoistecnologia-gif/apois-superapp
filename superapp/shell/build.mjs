@@ -4,9 +4,19 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
+const officialBranding = resolve(root, '../branding/apois-launcher.png');
+
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 cpSync(resolve(root, 'index.html'), resolve(dist, 'index.html'));
+
+if (!existsSync(officialBranding)) {
+  console.error(`[FAIL] arte oficial APOIS não existe em ${officialBranding}`);
+  process.exit(1);
+}
+mkdirSync(resolve(dist, 'assets'), { recursive: true });
+cpSync(officialBranding, resolve(dist, 'assets/apois-brand.png'));
+console.log('[OK] arte oficial APOIS copiada para o shell');
 
 const modules = [
   ['corridas', resolve(root, '../../.work/corridas/dist')],
