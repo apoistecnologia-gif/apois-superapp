@@ -181,4 +181,18 @@ replaceRequired(
   'entregas: checkout falha de modo seguro se o provedor PIX estiver inconsistente',
 );
 
-console.log('[OK] entregas: OAuth, sessão Hash, push compartilhado, rodapé, PIX-only e erros de checkout respeitam o Superapp sem alterar o app original');
+replaceRequired(
+  '.work/entregas/src/routes/auth.callback.tsx',
+  '      const providerError = params.get("error_description") || params.get("error");\n      if (providerError) {\n        if (!cancelled) setErrorMessage(providerError);\n        return;\n      }',
+  '      const providerError = params.get("error_description") || params.get("error");\n      if (providerError) {\n        if (!cancelled) setErrorMessage("Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.");\n        return;\n      }',
+  'entregas: callback de autenticação não exibe erro bruto do provedor ao usuário',
+);
+
+replaceRequired(
+  '.work/entregas/src/routes/redefinir-senha.tsx',
+  '    if (error) {\n      toast.error(error.message || "Não foi possível atualizar sua senha.");\n      setSaving(false);\n      return;\n    }',
+  '    if (error) {\n      console.error("password update failed", error);\n      toast.error("Não foi possível atualizar sua senha. Tente novamente.");\n      setSaving(false);\n      return;\n    }',
+  'entregas: redefinição de senha não exibe erro técnico bruto do provedor',
+);
+
+console.log('[OK] entregas: OAuth, sessão Hash, push compartilhado, rodapé, PIX-only e erros públicos respeitam o Superapp sem alterar o app original');
