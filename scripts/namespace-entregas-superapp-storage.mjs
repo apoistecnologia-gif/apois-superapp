@@ -6,6 +6,10 @@ const extensions = new Set(['.ts', '.tsx', '.js', '.jsx']);
 
 const replacements = new Map([
   ['apois_cart_owner_id', 'apois-superapp-entregas:cart-owner-id'],
+  ['apois_checkout_owner_id', 'apois-superapp-entregas:checkout-owner-id'],
+  ['apois_active_pix', 'apois-superapp-entregas:active-pix'],
+  ['apois_checkout_attempt', 'apois-superapp-entregas:checkout-attempt'],
+  ['apois_persisted_', 'apois-superapp-entregas:persisted:'],
   ['apois_cart', 'apois-superapp-entregas:cart'],
   ['apois_merchant', 'apois-superapp-entregas:merchant'],
   ['apois_selected_address_id', 'apois-superapp-entregas:selected-address-id'],
@@ -14,6 +18,10 @@ const replacements = new Map([
   ['apois_payment_method', 'apois-superapp-entregas:payment-method'],
   ['apois:customer:bound_user_id', 'apois-superapp-entregas:bound-user-id'],
 ]);
+
+const dynamicBoundUserPattern = 'const boundUserKey = `apois:${product}:bound_user_id`;';
+const dynamicBoundUserReplacement =
+  'const boundUserKey = product === "customer" ? "apois-superapp-entregas:bound-user-id" : `apois:${product}:bound_user_id`;';
 
 function filesUnder(path) {
   const output = [];
@@ -31,6 +39,12 @@ let replacementsApplied = 0;
 for (const file of filesUnder(root)) {
   const before = readFileSync(file, 'utf8');
   let after = before;
+
+  if (after.includes(dynamicBoundUserPattern)) {
+    after = after.replace(dynamicBoundUserPattern, dynamicBoundUserReplacement);
+    replacementsApplied += 1;
+  }
+
   for (const [legacy, scoped] of replacements) {
     if (!after.includes(legacy)) continue;
     const count = after.split(legacy).length - 1;
@@ -46,6 +60,11 @@ for (const file of filesUnder(root)) {
 const required = [
   ['contexts/CartContext.tsx', 'apois-superapp-entregas:cart'],
   ['contexts/CartContext.tsx', 'apois-superapp-entregas:merchant'],
+  ['contexts/CartContext.tsx', 'apois-superapp-entregas:bound-user-id'],
+  ['components/AuthSessionIsolation.tsx', 'apois-superapp-entregas:bound-user-id'],
+  ['components/AuthSessionIsolation.tsx', 'apois-superapp-entregas:checkout-owner-id'],
+  ['components/AuthSessionIsolation.tsx', 'apois-superapp-entregas:active-pix'],
+  ['components/AuthSessionIsolation.tsx', 'apois-superapp-entregas:checkout-attempt'],
   ['routes/inicio.tsx', 'apois-superapp-entregas:checkout-address-changed'],
   ['routes/enderecos/novo.tsx', 'apois-superapp-entregas:auto-locate-new-address'],
 ];
@@ -55,6 +74,12 @@ for (const [relative, marker] of required) {
     console.error(`[FAIL] Entregas: storage esperado não foi isolado em ${relative}: ${marker}`);
     process.exit(1);
   }
+}
+
+const authIsolation = readFileSync(join(root, 'components/AuthSessionIsolation.tsx'), 'utf8');
+if (!authIsolation.includes(dynamicBoundUserReplacement)) {
+  console.error('[FAIL] Entregas: AuthSessionIsolation não usa a mesma chave bound-user do CartContext no Superapp');
+  process.exit(1);
 }
 
 for (const file of filesUnder(root)) {
