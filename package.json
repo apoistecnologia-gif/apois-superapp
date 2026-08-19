@@ -14,6 +14,7 @@
     "audit:static": "node scripts/audit-superapp-static.mjs",
     "audit:hardening": "node scripts/audit-superapp-hardening.mjs",
     "audit:play-store": "node scripts/audit-superapp-play-store.mjs",
+    "audit:release-integrity": "node scripts/audit-superapp-release-integrity.mjs",
     "verify:pins": "node scripts/verify-module-pins.mjs",
     "verify:rides-push-firebase": "node scripts/validate-rides-push-firebase.mjs",
     "prepare:modules": "node scripts/prepare-workspace.mjs",
@@ -23,6 +24,6 @@
     "harden:auth-deeplinks": "node scripts/harden-superapp-auth-deeplink-dedup.mjs",
     "inject:push-routing": "node scripts/inject-superapp-push-routing.mjs",
     "verify:dist": "node scripts/verify-superapp-dist.mjs && node scripts/verify-superapp-policy.mjs && node scripts/verify-superapp-storage-isolation.mjs && node scripts/verify-superapp-auth-deeplinks.mjs && node scripts/verify-superapp-customer-security.mjs && node scripts/verify-superapp-address-runtime.mjs && node scripts/verify-superapp-notification-assets.mjs",
-    "build:superapp": "npm run audit:static && npm run verify:pins && npm run audit:hardening && npm run audit:play-store && npm run verify:rides-push-firebase && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run harden:auth-deeplinks && npm run inject:push-routing && npm run verify:dist"
+    "build:superapp": "npm run audit:static && npm run verify:pins && npm run audit:hardening && npm run audit:play-store && npm run audit:release-integrity && npm run verify:rides-push-firebase && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run harden:auth-deeplinks && npm run inject:push-routing && npm run verify:dist"
   }
 }
