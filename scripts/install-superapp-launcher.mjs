@@ -13,10 +13,9 @@ if (!existsSync(resRoot)) {
   throw new Error(`Recursos Android não encontrados: ${resRoot}`);
 }
 
-// The checked-in artwork may arrive as an indexed/palette PNG. AAPT2 can abort
-// while crunching some palette encodings. Re-encode it with macOS CoreGraphics
-// before copying it into Android resources, producing a conventional PNG that
-// is safe for the release resource pipeline.
+// A arte versionada é imutável durante o build. Normalizamos somente uma cópia
+// temporária para evitar que Codemagic altere o checkout e torne o build
+// dependente do encoder PNG usado em uma execução anterior.
 const normalizedSource = '/tmp/apois-launcher-normalized.png';
 const normalize = spawnSync(
   'sips',
@@ -28,7 +27,6 @@ if (normalize.error || normalize.status !== 0 || !existsSync(normalizedSource)) 
     `Falha ao normalizar launcher com sips: ${normalize.error?.message || normalize.stderr || normalize.stdout || 'erro desconhecido'}`,
   );
 }
-copyFileSync(normalizedSource, source);
 
 const densityDirs = [
   'mipmap-mdpi',
@@ -41,9 +39,9 @@ const densityDirs = [
 for (const dirName of densityDirs) {
   const dir = join(resRoot, dirName);
   mkdirSync(dir, { recursive: true });
-  copyFileSync(source, join(dir, 'ic_launcher.png'));
-  copyFileSync(source, join(dir, 'ic_launcher_round.png'));
-  copyFileSync(source, join(dir, 'ic_launcher_foreground.png'));
+  copyFileSync(normalizedSource, join(dir, 'ic_launcher.png'));
+  copyFileSync(normalizedSource, join(dir, 'ic_launcher_round.png'));
+  copyFileSync(normalizedSource, join(dir, 'ic_launcher_foreground.png'));
 }
 
 // Legacy launchers must resolve to the real raster artwork instead of the
@@ -72,4 +70,4 @@ if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) {
   throw new Error('AndroidManifest não aponta para @mipmap/ic_launcher_round.');
 }
 
-console.log('[OK] Launcher APOIS Brasil normalizado para PNG compatível com AAPT2 e instalado em todas as densidades.');
+console.log('[OK] Launcher APOIS Brasil normalizado sem alterar a arte versionada e instalado em todas as densidades.');
