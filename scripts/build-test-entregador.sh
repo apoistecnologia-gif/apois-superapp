@@ -52,12 +52,16 @@ npm install --no-save \
 npx cap add android
 printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > android/local.properties
 
-if [ -z "${FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
-  echo '[FAIL] FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64 é necessário para testar Push do entregador.'
+# O google-services.json unificado que já alimenta o Superapp contém também
+# br.com.apois.entregador. Se existir uma variável específica do Courier,
+# ela tem prioridade; caso contrário reutilizamos a configuração unificada.
+FIREBASE_B64="${FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64:-${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:-}}"
+if [ -z "$FIREBASE_B64" ]; then
+  echo '[FAIL] Firebase ausente: configure FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64 ou mantenha FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64 no grupo apois_android.'
   exit 1
 fi
-printf '%s' "$FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
-grep -Fq "$APP_PACKAGE" android/app/google-services.json
+printf '%s' "$FIREBASE_B64" | base64 --decode > android/app/google-services.json
+grep -Fq '"package_name": "br.com.apois.entregador"' android/app/google-services.json
 
 npx cap sync android
 bun run android:configure
