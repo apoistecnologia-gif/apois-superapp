@@ -50,10 +50,23 @@ for (const path of [
 }
 
 patch('.work/entregas/src/routes/privacidade.tsx', (source) => {
-  return replaceRequired(
+  source = replaceRequired(
     source,
     'mapas e geolocalização Google Maps e processamento de PIX Mercado Pago, dentro da finalidade de cada integração.',
     'mapas e geolocalização e processamento de PIX por fornecedores integrados, dentro da finalidade de cada integração.',
     'Privacidade: política não fixa provedor financeiro diferente do configurado em produção',
   );
-}, 'Entregas: política de privacidade não cita gateway financeiro obsoleto');
+  source = replaceRequired(
+    source,
+    'A desativação da conta interrompe o acesso e as novas operações da conta, mas não implica apagamento automático de registros que devam ser conservados legitimamente. Solicitações relacionadas a eliminação ou outros direitos podem ser encaminhadas pelo suporte.',
+    'O cliente pode solicitar a exclusão da própria conta em Perfil > Dados pessoais > Excluir minha conta. A solicitação abrange a conta e os dados pessoais associados, ressalvados somente os registros que precisem ser conservados por obrigação legal ou regulatória, segurança, prevenção de fraude, auditoria, solução de disputas ou exercício regular de direitos.',
+    'Privacidade: política descreve caminho interno de exclusão',
+  );
+  source = replaceRequired(
+    source,
+    'O canal operacional disponível é Ajuda e Suporte dentro da plataforma. O pedido deve identificar de forma suficiente a conta e o direito que se pretende exercer. O atendimento poderá solicitar informações adicionais estritamente necessárias para confirmar a identidade do titular.',
+    'Além do caminho de exclusão disponível em Perfil > Dados pessoais, o canal Ajuda e Suporte pode ser usado para exercer direitos de privacidade. O atendimento poderá solicitar informações adicionais estritamente necessárias para confirmar a identidade do titular e proteger a conta contra solicitações fraudulentas.',
+    'Privacidade: direitos apontam para exclusão no app e suporte',
+  );
+  return source;
+}, 'Entregas: política de privacidade alinhada a gateway e exclusão de conta');
