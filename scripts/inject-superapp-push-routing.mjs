@@ -28,9 +28,19 @@ for (const target of targets) {
   const pushPlugin = window.Capacitor?.Plugins?.PushNotifications;
   if (!pushPlugin) return;
 
-  function orderTarget(notification) {
+  function deliveryTarget(notification) {
     const data = notification?.data || {};
     const orderId = data.orderId || data.order_id || data.orderID;
+    const notificationType = data.notificationType || data.notification_type;
+
+    // O dispatch de Entregas sempre inclui notificationType e os eventos de
+    // pedido incluem orderId. Sem um desses marcadores, o push pertence a outro
+    // módulo (por exemplo Corridas) e este bridge não deve navegar.
+    const isDeliveryPush =
+      (typeof notificationType === 'string' && notificationType.trim().length > 0) ||
+      (typeof orderId === 'string' && orderId.trim().length > 0);
+    if (!isDeliveryPush) return null;
+
     if (typeof orderId === 'string' && orderId.trim()) {
       return targetBase + '#/pedido/' + encodeURIComponent(orderId.trim());
     }
@@ -38,7 +48,8 @@ for (const target of targets) {
   }
 
   pushPlugin.addListener('pushNotificationActionPerformed', (action) => {
-    const destination = orderTarget(action?.notification);
+    const destination = deliveryTarget(action?.notification);
+    if (!destination) return;
     window.location.replace(destination);
   }).catch(() => undefined);
 })();
@@ -48,5 +59,5 @@ for (const target of targets) {
     ? html.replace('</body>', `${script}\n</body>`)
     : `${html}\n${script}\n`;
   writeFileSync(target.path, html);
-  console.log(`[OK] ${target.moduleName}: Push de Entregas roteado para o módulo correto`);
+  console.log(`[OK] ${target.moduleName}: Push de Entregas roteado sem interceptar outros módulos`);
 }
