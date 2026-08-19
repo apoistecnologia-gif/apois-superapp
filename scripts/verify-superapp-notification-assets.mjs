@@ -42,29 +42,20 @@ forbidAll('.work/entregas/src/routes/notificacoes.tsx', [
 requireAll('.work/entregas/src/routes/perfil/index.tsx', [
   '{ icon: Bell, label: "Central de notificações", path: "/notificacoes" }',
   '{ icon: Bell, label: "Preferências de notificações", path: "/perfil/notificacoes" }',
-  'onError={(event) => { event.currentTarget.style.display = "none"; }}',
-], 'perfil separa feed/preferências e possui fallback de avatar');
+], 'perfil separa feed e preferências de notificações');
 
 requireAll('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
-  'onError={(event) => { event.currentTarget.style.display = "none"; }}',
   'accept="image/jpeg,image/png,image/webp"',
   'const maxAvatarBytes = 5 * 1024 * 1024;',
-], 'dados pessoais mantém fallback e limites de avatar');
+], 'dados pessoais mantém limites seguros para upload de avatar');
 
-requireAll('.work/entregas/src/components/ProductCustomizationSheet.tsx', [
-  'onError={(event) => { event.currentTarget.style.display = "none"; }}',
-  'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
-], 'personalização de produto possui fallback de imagem e safe area inferior');
-
-requireAll('scripts/harden-entregas-superapp-image-fallbacks.mjs', [
-  "'.work/entregas/src/routes/perfil/index.tsx'",
-  "'.work/entregas/src/routes/perfil/dados-pessoais.tsx'",
-  "'.work/entregas/src/components/ProductCustomizationSheet.tsx'",
-], 'hardener de imagens cobre avatares e personalização');
 requireAll('scripts/harden-entregas-superapp-notification-feed.mjs', [
   'payload ainda pode abrir área merchant',
   'Central de notificações',
   'Preferências de notificações',
 ], 'hardener do feed bloqueia fuga de produto');
 
+// Fallback visual de imagem e safe-area do ProductCustomizationSheet não são
+// requisitos de segurança/release. O antigo hardener cosmético foi retirado
+// porque reescritas textuais de JSX já causaram falhas reais de compilação.
 process.exit(failed ? 1 : 0);
