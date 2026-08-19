@@ -216,6 +216,7 @@ if (name === 'corridas') {
 }
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
 }
 
 const config = manifest.modules[name];
