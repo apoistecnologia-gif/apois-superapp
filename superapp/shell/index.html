@@ -38,6 +38,8 @@
   <script>
     const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html'};
     const LAST_MODULE_KEY='apois-superapp:last-module';
+    const AUTH_DEEP_LINK_KEY='apois-superapp:last-auth-deeplink';
+    const CORRIDAS_RECOVERY_KEY='apois-superapp:corridas-recovery-url';
 
     function authStorageKey(moduleName){
       return moduleName==='corridas'?'apois-superapp-corridas-auth-v1':'apois-superapp-entregas-auth-v1';
@@ -81,8 +83,6 @@
       if(!destination)return;
       try{localStorage.setItem(LAST_MODULE_KEY,moduleName);}catch{}
       window.dispatchEvent(new CustomEvent('apois:module-selected',{detail:{module:moduleName}}));
-      // Replace instead of pushing a new history entry. The module bridge is
-      // responsible for returning to the shell, preventing shell/module loops.
       window.location.replace(destination);
     }
 
@@ -91,6 +91,12 @@
     function relayAuthDeepLink(rawUrl){
       if(typeof rawUrl!=='string'||!rawUrl.startsWith('br.com.apois.app://auth/'))return false;
       try{
+        try{
+          const previous=sessionStorage.getItem(AUTH_DEEP_LINK_KEY);
+          if(previous===rawUrl)return true;
+          sessionStorage.setItem(AUTH_DEEP_LINK_KEY,rawUrl);
+        }catch{}
+
         const incoming=new URL(rawUrl);
         const path=incoming.pathname.replace(/^\//,'');
         const params=new URLSearchParams(incoming.search);
@@ -101,6 +107,16 @@
         }
         const query=params.toString();
         const suffix=query?`?${query}`:'';
+
+        if(path==='corridas-reset'){
+          try{sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl);}catch{}
+          window.location.replace('./modules/corridas/index.html');
+          return true;
+        }
+        if(path==='email-change'){
+          window.location.replace(`./modules/entregas/index.html#/perfil/dados-pessoais${suffix}`);
+          return true;
+        }
         if(path==='reset'){
           window.location.replace(`./modules/entregas/index.html#/redefinir-senha${suffix}`);
           return true;
