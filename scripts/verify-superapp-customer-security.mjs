@@ -184,4 +184,22 @@ forbidMarkers('.work/entregas/src/lib/lovable-error-reporting.ts', [
   '__lovableReportRuntimeError',
 ], 'bundle do cliente não mantém hooks de telemetria Lovable');
 
+for (const path of [
+  '.work/entregas/src/routes/inicio.tsx',
+  '.work/entregas/src/routes/buscar.tsx',
+  '.work/entregas/src/routes/favoritos.tsx',
+  '.work/entregas/src/routes/sacola.tsx',
+  '.work/entregas/src/routes/estabelecimento.$merchantId.tsx',
+]) {
+  requireMarkers(path, [
+    'onError={(event) => { event.currentTarget.style.display = "none"; }}',
+  ], `${path}: imagens remotas possuem fallback visual`);
+}
+requireMarkers('.work/entregas/src/routes/estabelecimento.$merchantId.tsx', [
+  'onClick={() => void navigate({ to: "/inicio", replace: true })}',
+], 'estabelecimento retorna para o início do módulo com navegação segura');
+forbidMarkers('.work/entregas/src/routes/estabelecimento.$merchantId.tsx', [
+  'window.history.back()',
+], 'estabelecimento não depende do histórico físico do WebView');
+
 process.exit(failed ? 1 : 0);
