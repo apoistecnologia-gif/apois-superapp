@@ -79,3 +79,55 @@ patch('.work/entregas/src/components/CustomerLocationAddressSelector.tsx', (sour
   }
   return source;
 }, 'Entregas: localização de endereço usa plugin nativo e mensagens seguras');
+
+patch('.work/entregas/src/components/GoogleMapsAddressSelector.tsx', (source) => {
+  source = source.replace('import { useServerFn } from "@tanstack/react-start";\n', '');
+  source = source.replace(
+    'import { autocompleteAddress, geocodeAddress, getPlaceDetails } from "@/lib/google-maps.functions";\n',
+    '',
+  );
+  if (!source.includes('import { Geolocation } from "@capacitor/geolocation";')) {
+    source = `import { Geolocation } from "@capacitor/geolocation";\n${source}`;
+  }
+
+  const serverFnBlock = `  const geocodeFn = useServerFn(geocodeAddress);\n  const autocompleteFn = useServerFn(autocompleteAddress);\n  const detailsFn = useServerFn(getPlaceDetails);\n\n  const getAccessToken = async () => {\n    const {\n      data: { session },\n      error,\n    } = await supabase.auth.getSession();\n    if (error || !session?.access_token) throw new Error("Sessão expirada");\n    return session.access_token;\n  };`;
+  const edgeBlock = `  const invokeMaps = async (body: Record<string, unknown>) => {\n    const { data, error } = await supabase.functions.invoke("google-maps-address", { body });\n    if (error) throw error;\n    if (data?.error) throw new Error(String(data.error));\n    return data;\n  };`;
+  source = replaceRequired(
+    source,
+    serverFnBlock,
+    edgeBlock,
+    'Mapa de edição usa Edge Function em vez de TanStack Server Functions',
+  );
+
+  source = source.replace(
+    '      const accessToken = await getAccessToken();\n      const data = await geocodeFn({ data: { lat, lng, accessToken } });',
+    '      const data = await invokeMaps({ action: "reverse_geocode", lat, lng });',
+  );
+  source = source.replace(
+    '      const accessToken = await getAccessToken();\n      const data = await autocompleteFn({ data: { input: value, accessToken } });',
+    '      const data = await invokeMaps({ action: "autocomplete", input: value.trim() });',
+  );
+  source = source.replace(
+    '      const accessToken = await getAccessToken();\n      const data = await detailsFn({ data: { placeId: suggestion.place_id, accessToken } });',
+    '      const data = await invokeMaps({ action: "place_details", placeId: suggestion.place_id });',
+  );
+
+  const startMarker = '  const handleGetCurrentLocation = () => {';
+  const endMarker = '\n\n  const handleSearch = async';
+  const start = source.indexOf(startMarker);
+  const end = source.indexOf(endMarker, start);
+  if (start < 0 || end < 0) throw new Error('Mapa de edição: handleGetCurrentLocation não encontrado');
+  const nativeLocation = `  const handleGetCurrentLocation = async () => {\n    if (isMerchantProduct) {\n      toast.error("No painel do estabelecimento, pesquise o endereço real da loja no mapa.");\n      return;\n    }\n    if (isLocating) return;\n    setIsLocating(true);\n    try {\n      let permission = await Geolocation.checkPermissions();\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        permission = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });\n      }\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        toast.error("Permita o acesso à localização para confirmar o ponto da entrega.");\n        return;\n      }\n      const position = await Geolocation.getCurrentPosition({\n        enableHighAccuracy: true,\n        timeout: 15000,\n        maximumAge: 30000,\n      });\n      const { latitude: lat, longitude: lng } = position.coords;\n      await confirmCoordinates(lat, lng, "Localização atual confirmada!");\n    } catch (error) {\n      console.error("customer mapped location failed", error);\n      toast.error("Não foi possível obter sua localização. Verifique a permissão do aplicativo.");\n    } finally {\n      setIsLocating(false);\n    }\n  };`;
+  source = `${source.slice(0, start)}${nativeLocation}${source.slice(end)}`;
+
+  source = source.replace('onClick={handleGetCurrentLocation}', 'onClick={() => void handleGetCurrentLocation()}');
+  source = source.replace('                  handleGetCurrentLocation();', '                  void handleGetCurrentLocation();');
+
+  if (source.includes('useServerFn(') || source.includes('google-maps.functions')) {
+    throw new Error('Mapa de edição: TanStack Server Functions ainda presentes no bundle mobile');
+  }
+  if (source.includes('navigator.geolocation')) {
+    throw new Error('Mapa de edição: navigator.geolocation legado ainda presente');
+  }
+  return source;
+}, 'Entregas: mapa de edição funciona no APK sem servidor TanStack e usa GPS nativo');
