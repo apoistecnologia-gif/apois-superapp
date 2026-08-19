@@ -13,39 +13,46 @@ if (!existsSync(resRoot)) {
   throw new Error(`Recursos Android não encontrados: ${resRoot}`);
 }
 
-// A arte versionada é imutável durante o build. Normalizamos somente uma cópia
-// temporária para evitar que Codemagic altere o checkout e torne o build
-// dependente do encoder PNG usado em uma execução anterior.
-const normalizedSource = '/tmp/apois-launcher-normalized.png';
-const normalize = spawnSync(
-  'sips',
-  ['-s', 'format', 'png', '-z', '192', '192', source, '--out', normalizedSource],
-  { encoding: 'utf8' },
-);
-if (normalize.error || normalize.status !== 0 || !existsSync(normalizedSource)) {
-  throw new Error(
-    `Falha ao normalizar launcher com sips: ${normalize.error?.message || normalize.stderr || normalize.stdout || 'erro desconhecido'}`,
+function renderPng(size, output) {
+  const result = spawnSync(
+    'sips',
+    ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', output],
+    { encoding: 'utf8' },
   );
+  if (result.error || result.status !== 0 || !existsSync(output)) {
+    throw new Error(
+      `Falha ao gerar launcher ${size}x${size}: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`,
+    );
+  }
 }
 
-const densityDirs = [
-  'mipmap-mdpi',
-  'mipmap-hdpi',
-  'mipmap-xhdpi',
-  'mipmap-xxhdpi',
-  'mipmap-xxxhdpi',
+// Android usa tamanhos físicos diferentes por densidade. Copiar o mesmo PNG
+// 192x192 para todas as pastas faz launchers de baixa densidade ficarem
+// superdimensionados e pode provocar recorte/blur no ícone final.
+const densities = [
+  { dir: 'mipmap-mdpi', legacy: 48, foreground: 108 },
+  { dir: 'mipmap-hdpi', legacy: 72, foreground: 162 },
+  { dir: 'mipmap-xhdpi', legacy: 96, foreground: 216 },
+  { dir: 'mipmap-xxhdpi', legacy: 144, foreground: 324 },
+  { dir: 'mipmap-xxxhdpi', legacy: 192, foreground: 432 },
 ];
 
-for (const dirName of densityDirs) {
-  const dir = join(resRoot, dirName);
+for (const density of densities) {
+  const dir = join(resRoot, density.dir);
   mkdirSync(dir, { recursive: true });
-  copyFileSync(normalizedSource, join(dir, 'ic_launcher.png'));
-  copyFileSync(normalizedSource, join(dir, 'ic_launcher_round.png'));
-  copyFileSync(normalizedSource, join(dir, 'ic_launcher_foreground.png'));
+
+  const legacyTmp = `/tmp/apois-launcher-${density.legacy}.png`;
+  const foregroundTmp = `/tmp/apois-launcher-foreground-${density.foreground}.png`;
+  renderPng(density.legacy, legacyTmp);
+  renderPng(density.foreground, foregroundTmp);
+
+  copyFileSync(legacyTmp, join(dir, 'ic_launcher.png'));
+  copyFileSync(legacyTmp, join(dir, 'ic_launcher_round.png'));
+  copyFileSync(foregroundTmp, join(dir, 'ic_launcher_foreground.png'));
 }
 
-// Legacy launchers must resolve to the real raster artwork instead of the
-// generic vector/fallback generated during cap add android.
+// Legacy launchers devem apontar para o raster oficial, nunca para o fallback
+// genérico criado por `cap add android`.
 const legacyAnyDpi = join(resRoot, 'mipmap-anydpi');
 rmSync(join(legacyAnyDpi, 'ic_launcher.xml'), { force: true });
 rmSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), { force: true });
@@ -70,4 +77,4 @@ if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) {
   throw new Error('AndroidManifest não aponta para @mipmap/ic_launcher_round.');
 }
 
-console.log('[OK] Launcher APOIS Brasil normalizado sem alterar a arte versionada e instalado em todas as densidades.');
+console.log('[OK] Launcher APOIS Brasil gerado nas dimensões corretas para todas as densidades Android.');
