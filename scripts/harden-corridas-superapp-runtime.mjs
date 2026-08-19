@@ -156,4 +156,53 @@ replaceRequired(
   'corridas: pagamento mostra mapa real escuro com rota enquadrada',
 );
 
-console.log('[OK] corridas: lifecycle, PIN, retomada e mapa compacto do pagamento endurecidos apenas em .work');
+replaceRequired(
+  '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
+  '            <p className="mt-1 text-[11px] text-zinc-500">Nenhum motorista será chamado enquanto o Pix estiver pendente.</p>',
+  '            <p className="mt-1 text-[11px] text-zinc-500">Pague por Pix para iniciar a busca do motorista.</p>',
+  'corridas: pagamento usa orientação curta e clara',
+);
+
+replaceRequired(
+  '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
+  '            <button\n              type="button"\n              onClick={() => void refreshRide()}\n              disabled={isRefreshing}\n              className="app-pressable flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] text-xs font-black text-zinc-300 disabled:opacity-60"\n            >\n              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />\n              Atualizar status da corrida\n            </button>\n\n',
+  '',
+  'corridas: pagamento remove ação de atualização redundante',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
+  '<p className="text-sm font-black text-white">Pague por Pix para chamar o motorista</p>',
+  '<p className="text-sm font-black text-white">Pagamento por Pix</p>',
+  'corridas: card Pix simplifica título',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
+  '            A corrida só entra na busca de motorista depois que o Asaas confirmar o pagamento ao backend.',
+  '            Assim que o pagamento for confirmado, a busca do motorista começa automaticamente.',
+  'corridas: card Pix remove texto técnico do provedor',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
+  '          <p className="mt-1 text-[10px] leading-4 text-zinc-500">Valor calculado e persistido pelo backend.</p>',
+  '          <p className="mt-1 text-[10px] leading-4 text-zinc-500">Valor total desta corrida.</p>',
+  'corridas: valor Pix usa linguagem para cliente',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
+  '            className="h-48 w-48"',
+  '            className="h-44 w-44"',
+  'corridas: QR Code fica proporcional à tela móvel',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
+  '            <p className="mt-2 max-h-20 overflow-hidden break-all font-mono text-[10px] leading-4 text-zinc-300">',
+  '            <p className="mt-2 max-h-12 overflow-hidden break-all font-mono text-[9px] leading-4 text-zinc-400">',
+  'corridas: Pix copia e cola ocupa menos espaço visual',
+);
+
+console.log('[OK] corridas: lifecycle, PIN, retomada, mapa compacto e tela Pix refinados apenas em .work');
