@@ -103,6 +103,34 @@ requireAll('.env.example', [
   'APP_VERSION_NAME=1.0.0',
 ], 'ambiente de produção documenta todos os gates externos relevantes');
 
+requireAll('scripts/harden-entregas-superapp-account-deletion.mjs', [
+  'request_own_account_deletion',
+  'Excluir minha conta',
+  'Solicitar exclusão da conta',
+], 'cliente possui caminho explícito de solicitação de exclusão');
+requireAll('supabase/migrations/20260819143000_account_deletion_requests.sql', [
+  'account_deletion_requests',
+  'request_own_account_deletion',
+  'revoke all on function public.request_own_account_deletion() from public, anon',
+], 'backend registra solicitação autenticada de exclusão');
+requireAll('supabase/functions/account-deletion/index.ts', [
+  'Solicitar exclusão da conta',
+  'external_account_deletion_requests',
+  'Se houver uma conta associada ao e-mail informado',
+  'verify',
+], 'recurso público de exclusão é versionado sem revelar existência da conta');
+requireAll('supabase/migrations/20260819144000_external_account_deletion_requests.sql', [
+  'external_account_deletion_requests',
+  'revoke all on table public.external_account_deletion_requests from public, anon, authenticated',
+  'grant all on table public.external_account_deletion_requests to service_role',
+], 'fila pública de exclusão não é legível pelo cliente');
+requireAll('supabase/functions/privacy-policy/index.ts', [
+  'Política de Privacidade | APOIS',
+  'Retenção e exclusão',
+  'Perfil → Dados pessoais → Excluir minha conta',
+  'LGPD',
+], 'política de privacidade pública está versionada em HTML');
+
 requireAll('supabase/functions/google-maps-address/index.ts', [
   'consume_google_maps_lookup_quota',
   'status: 429',
