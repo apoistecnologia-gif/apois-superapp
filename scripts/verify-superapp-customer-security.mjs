@@ -1,0 +1,63 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+let failed = false;
+function read(path) {
+  const full = resolve(path);
+  if (!existsSync(full)) {
+    console.error(`[FAIL] arquivo ausente: ${path}`);
+    failed = true;
+    return '';
+  }
+  return readFileSync(full, 'utf8');
+}
+function requireMarkers(path, markers, label) {
+  const source = read(path);
+  if (!source) return;
+  const missing = markers.filter((marker) => !source.includes(marker));
+  if (missing.length) {
+    console.error(`[FAIL] ${label}: ${missing.join(' | ')}`);
+    failed = true;
+  } else console.log(`[OK] ${label}`);
+}
+function forbidMarkers(path, markers, label) {
+  const source = read(path);
+  if (!source) return;
+  const found = markers.filter((marker) => source.includes(marker));
+  if (found.length) {
+    console.error(`[FAIL] ${label}: ${found.join(' | ')}`);
+    failed = true;
+  } else console.log(`[OK] ${label}`);
+}
+
+requireMarkers('.work/entregas/src/lib/customer-push.ts', [
+  'remove_superapp_customer_push_devices',
+  'Não foi possível encerrar o vínculo de notificações deste aparelho.',
+], 'logout de Entregas exige remoção segura do vínculo Push do Superapp');
+
+requireMarkers('.work/entregas/src/routes/perfil/index.tsx', [
+  'await removeCustomerPushRegistration(true);',
+  'Não foi possível sair com segurança. Verifique sua conexão e tente novamente.',
+], 'perfil Entregas não encerra sessão silenciosamente com Push antigo');
+
+requireMarkers('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
+  'await removeCustomerPushRegistration(true);',
+  '<AppBottomNav activeTab="perfil" />',
+  'pb-[calc(env(safe-area-inset-bottom)+7rem)]',
+  'Não foi possível desativar sua conta com segurança. Tente novamente.',
+], 'Dados Pessoais mantém rodapé, safe area e desativação segura');
+forbidMarkers('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
+  'toast.error(error?.message || "Não foi possível salvar as alterações.")',
+  'toast.error(error?.message || "Não foi possível desativar sua conta.")',
+], 'Dados Pessoais não expõe erros técnicos do backend');
+
+requireMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
+  '<AppBottomNav activeTab="pedidos" />',
+  'overflow-y-auto p-4 pb-32',
+  'Não foi possível cancelar este pedido. Tente novamente.',
+], 'detalhes do pedido preservam rodapé e espaço inferior');
+forbidMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
+  'toast.error(error?.message || "Não foi possível cancelar este pedido.")',
+], 'cancelamento de pedido não expõe erro técnico do RPC');
+
+process.exit(failed ? 1 : 0);
