@@ -212,12 +212,16 @@ workflows:
           : "${CORRIDAS_WEB_MAPS_API_KEY:?CORRIDAS_WEB_MAPS_API_KEY is required}"
           : "${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required for Entregas}"
           : "${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY is required for Entregas}"
-          : "${FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64:?FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64 is required for Entregador push}"
+          FIREBASE_FIELD_B64="${FIREBASE_COURIER_GOOGLE_SERVICES_JSON_BASE64:-${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:-}}"
+          : "${FIREBASE_FIELD_B64:?Firebase google-services.json is required for Entregador push}"
+          printf '%s' "$FIREBASE_FIELD_B64" | base64 --decode > /tmp/apois-field-google-services.json
+          grep -Fq '"package_name": "br.com.apois.entregador"' /tmp/apois-field-google-services.json
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
           : "${CM_KEY_PASSWORD:?Codemagic key password is missing}"
           test -s "$CM_KEYSTORE_PATH"
+          echo '[OK] Ambiente Motorista/Entregador validado; Firebase contém br.com.apois.entregador.'
 
       - name: Build signed Motorista APK
         script: |
