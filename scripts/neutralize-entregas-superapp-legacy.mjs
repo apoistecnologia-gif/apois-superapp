@@ -39,3 +39,15 @@ const splash = requireSnapshotFile(
 const splashReplacement = `export function ApoisLaunchSplash() {\n  return null;\n}\n`;
 writeFileSync(splash.target, splashReplacement, 'utf8');
 console.log('[OK] Entregas: splash duplicada removida dentro do módulo do Superapp');
+
+const landing = requireSnapshotFile(
+  '.work/entregas/src/routes/index.tsx',
+  ['src="/apois-logo.svg"', 'alt="APOIS Entregas"'],
+  'logo da landing do cliente',
+);
+writeFileSync(
+  landing.target,
+  landing.before.replace('src="/apois-logo.svg"', 'src="./apois-logo.svg"'),
+  'utf8',
+);
+console.log('[OK] Entregas: logo pública usa caminho relativo ao módulo aninhado');
