@@ -53,4 +53,20 @@ forbidAll('.work/entregas/src/components/GoogleMapsAddressSelector.tsx', [
   'getAccessToken()',
 ], 'mapa de edição não depende de servidor TanStack inexistente no APK');
 
+requireAll('supabase/functions/google-maps-address/index.ts', [
+  'consume_google_maps_lookup_quota',
+  'const quota = await consumeLookupQuota(req);',
+  'if (!quota.allowed) return json({ error: quota.error }, quota.status);',
+  'status: 429',
+  'action === "reverse_geocode"',
+  'action === "autocomplete"',
+  'action === "place_details"',
+], 'Edge Function versionada aplica quota e preserva todas as ações de endereço');
+
+requireAll('supabase/migrations/20260819141500_google_maps_lookup_quota.sql', [
+  'request_count < 120',
+  'revoke all on function public.consume_google_maps_lookup_quota() from anon',
+  'grant execute on function public.consume_google_maps_lookup_quota() to authenticated',
+], 'RPC versionada limita 120/min por usuário e não concede execução ao anon');
+
 process.exit(failed ? 1 : 0);
