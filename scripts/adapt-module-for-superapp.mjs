@@ -9,6 +9,25 @@ const name = process.argv[2];
 function replaceRequired(path, search, replacement, label) {
   const full = resolve(root, path);
   const before = readFileSync(full, 'utf8');
+
+  const modernCorridasRideRequest =
+    path === '.work/corridas/src/hooks/rides/use-ride-request.tsx' &&
+    before.includes('const payload: RideRequestPayload = {') &&
+    before.includes('payment_method: selectedMethod,') &&
+    before.includes('service_details: toServiceDetails(serviceDetails),') &&
+    before.includes('encoded_polyline: route.encodedPolyline || null,') &&
+    before.includes('client_estimated_price: checkout.finalTotal,');
+
+  if (modernCorridasRideRequest) {
+    console.log(`[OK] ${label} (já nativo no snapshot fixado de Corridas)`);
+    return;
+  }
+
+  if (before.includes(replacement)) {
+    console.log(`[OK] ${label} (já aplicado)`);
+    return;
+  }
+
   if (!before.includes(search)) {
     console.error(`[FAIL] ${label}: padrão esperado não encontrado em ${path}`);
     process.exit(1);
@@ -33,8 +52,8 @@ if (name === 'corridas') {
   );
   replaceRequired(
     '.work/corridas/src/hooks/use-location.tsx',
-    '  }, [checkPermissions, refreshLocation, updateLocationState]);',
-    '  }, [checkPermissions, permissionState, refreshLocation, updateLocationState]);',
+    '  }, [checkPermissions, refreshLocation, requestPermission, updateLocationState]);',
+    '  }, [checkPermissions, permissionState, refreshLocation, requestPermission, updateLocationState]);',
     'corridas: watcher de localização reinicia após mudança de permissão',
   );
   replaceRequired(
@@ -63,14 +82,14 @@ if (name === 'corridas') {
   );
   replaceRequired(
     '.work/corridas/src/components/map/PassengerMap.tsx',
-    '  }, [destination, orderedStops, origin, route?.decodedPoints, status]);',
-    '  }, [destination, displayedRoutePoints, orderedStops, origin, status]);',
+    '  }, [compact, destination, emitMapCenter, orderedStops, origin, route?.decodedPoints, selectionMode, status, validDriverLocation]);',
+    '  }, [compact, destination, displayedRoutePoints, emitMapCenter, orderedStops, origin, selectionMode, status, validDriverLocation]);',
     'corridas: atualização do mapa acompanha rota persistida',
   );
   replaceRequired(
     '.work/corridas/src/hooks/rides/use-active-ride.tsx',
-    '      !userId ||\n      screenState !== "active" ||\n      isRealtimeConnected ||\n      !currentRideIdRef.current',
-    '      !userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
+    '      !passengerId ||\n      screenState !== "active" ||\n      isRealtimeConnected ||\n      !currentRideIdRef.current',
+    '      !passengerId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
     'corridas: polling de segurança continua mesmo com Realtime conectado',
   );
   replaceRequired(
