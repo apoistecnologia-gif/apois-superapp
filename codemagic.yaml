@@ -267,6 +267,7 @@ workflows:
             --out "$SIGNED_APK" \
             "$ALIGNED"
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED_APK" | tee /tmp/apois-superapp-signing.txt
+          "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED_APK"
           EXPECTED_NORMALIZED="$(printf '%s' "$EXPECTED_SIGNING_SHA1" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           ACTUAL_NORMALIZED="$(awk -F': ' '/Signer #1 certificate SHA-1 digest:/ {print $2}' /tmp/apois-superapp-signing.txt | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           test -n "$ACTUAL_NORMALIZED"
@@ -283,7 +284,7 @@ workflows:
           rm -f "$ALIGNED"
           test -s "$SIGNED_APK"
           test -s "$SIGNED_AAB"
-          echo "[OK] APK e AAB release assinados e verificados"
+          echo "[OK] APK e AAB release assinados, verificados e compatíveis com empacotamento 16 KB"
     artifacts:
       - APOIS-Superapp.apk
       - APOIS-Superapp.aab
