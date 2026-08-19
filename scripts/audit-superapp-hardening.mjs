@@ -65,6 +65,11 @@ check('supabase/migrations/20260819022000_harden_entregas_admin_rpc_privileges.s
   "guard_merchant_delivery_location() set search_path = ''",
 ], 'hardening de privilégios do backend Entregas está rastreado por migration');
 
+check('supabase/migrations/20260819023900_harden_entregas_trigger_execute.sql', [
+  'revoke execute on function public.guard_merchant_delivery_location() from public, anon, authenticated',
+  'grant execute on function public.guard_merchant_delivery_location() to service_role',
+], 'função de trigger de Entregas não fica diretamente exposta aos papéis do app');
+
 check('.env.example', [
   'CORRIDAS_FIREBASE_PROJECT_ID=',
   'APOIS_SUPERAPP_RIDES_PUSH_ENABLED=0',
