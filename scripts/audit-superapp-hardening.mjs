@@ -95,6 +95,24 @@ check('scripts/harden-entregas-superapp-legal-routes.mjs', [
   'gateway financeiro obsoleto',
 ], 'rotas legais têm navegação/safe areas e texto financeiro atualizado');
 
+check('scripts/harden-superapp-android-security.mjs', [
+  "['compileSdkVersion', 36]",
+  "['targetSdkVersion', 36]",
+  "process.env.APP_VERSION_CODE?.trim() || '1'",
+  "process.env.APP_VERSION_NAME?.trim() || '1.0.0'",
+  "setApplicationAttribute('allowBackup', 'false')",
+  "setApplicationAttribute('usesCleartextTraffic', 'false')",
+  'android.permission.ACCESS_BACKGROUND_LOCATION',
+  'android:windowSoftInputMode=\\"adjustResize\\"',
+  'android.permission.REQUEST_INSTALL_PACKAGES',
+], 'Android fixa API 36/versionamento e reduz superfície de permissões para Play Store');
+
+check('scripts/install-superapp-launcher.mjs', [
+  "import './harden-superapp-android-security.mjs';",
+  'android:allowBackup="false"',
+  'android:usesCleartextTraffic="false"',
+], 'hardening Android é executado no projeto nativo antes do release');
+
 check('supabase/migrations/20260819022000_harden_entregas_admin_rpc_privileges.sql', [
   'admin_create_merchant', 'admin_delete_merchant', 'admin_suspend_merchant', 'from public, anon',
 ], 'privilégios de RPC admin estão rastreados');
