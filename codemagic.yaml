@@ -12,21 +12,24 @@ workflows:
       vars:
         APP_PACKAGE: "br.com.apois.app"
         APP_LABEL: "APOIS"
+        BUN_VERSION: "1.3.14"
         EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"
         APOIS_STRICT_NATIVE_CONFIG: "1"
     scripts:
-      - name: Install Bun
+      - name: Install pinned Bun
         script: |
           set -euo pipefail
-          curl -fsSL https://bun.sh/install | bash
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
           bun --version
           java -version
 
       - name: Initialize protected source snapshots
         script: |
           set -euo pipefail
+          git submodule sync --recursive
           git submodule update --init --recursive
           npm run verify:pins
 
@@ -52,6 +55,7 @@ workflows:
           set -euo pipefail
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
           if ! npm run build:superapp 2>&1 | tee /tmp/apois-superapp-build.log; then
             echo "===== ÚLTIMAS LINHAS DO BUILD SUPERAPP ====="
             tail -n 160 /tmp/apois-superapp-build.log || true
@@ -104,6 +108,12 @@ workflows:
           grep -Fq 'VITE_APOIS_SUPERAPP_PUSH_ENABLED' .work/entregas/src/lib/customer-push.ts
           grep -Fq 'register_superapp_customer_push_device' .work/entregas/src/lib/customer-push.ts
           grep -Fq 'remove_superapp_customer_push_devices' .work/entregas/src/lib/customer-push.ts
+          grep -Fq 'const isDeliveryPush =' .work/entregas/src/lib/customer-push.ts
+          grep -Fq 'if (!target) return;' .work/entregas/src/lib/customer-push.ts
+          if grep -Fq 'PushNotifications.unregister()' .work/entregas/src/lib/customer-push.ts; then
+            echo '[FAIL] logout de Entregas ainda invalida o token FCM nativo compartilhado'
+            exit 1
+          fi
           grep -Fq 'data-apois-superapp-bridge' .work/corridas/dist/index.html
           grep -Fq 'data-apois-superapp-bridge' .work/entregas/.output/public/index.html
           grep -Fq "appPlugin.addListener('backButton'" .work/entregas/.output/public/index.html
@@ -127,6 +137,7 @@ workflows:
           set -euo pipefail
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
           cd superapp/shell
           bun install
           rm -rf android
@@ -151,8 +162,8 @@ workflows:
           test -s superapp/shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           test -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          cmp -s superapp/branding/apois-launcher.png superapp/shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          cmp -s superapp/branding/apois-launcher.png superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cmp -s superapp/shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cmp -s superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png superapp/shell/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
           test ! -e superapp/shell/android/app/src/main/res/mipmap-anydpi/ic_launcher.xml
           grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           grep -Fq '#050505' superapp/shell/android/app/src/main/res/values/ic_launcher_background.xml
