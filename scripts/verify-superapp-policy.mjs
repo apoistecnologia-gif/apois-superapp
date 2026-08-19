@@ -77,21 +77,22 @@ if (legacyTelemetry) {
   }
 }
 
-for (const [path, label] of [
-  ['.work/entregas/src/routes/auth.callback.tsx', 'callback OAuth/e-mail'],
-  ['.work/entregas/src/routes/redefinir-senha.tsx', 'recuperação de senha'],
+for (const [path, label, variable] of [
+  ['.work/entregas/src/routes/auth.callback.tsx', 'callback OAuth/e-mail', 'params'],
+  ['.work/entregas/src/routes/redefinir-senha.tsx', 'recuperação de senha', 'params'],
+  ['.work/entregas/src/routes/login.tsx', 'redirect pós-login', 'searchParams'],
 ]) {
   const authRoute = requireFile(path);
   if (!authRoute) continue;
-  if (authRoute.includes('const params = new URLSearchParams(window.location.search);')) {
+  if (authRoute.includes(`const ${variable} = new URLSearchParams(window.location.search);`)) {
     fail(`Entregas ${label} ainda ignora query dentro do Hash Router`);
   } else if (
     !authRoute.includes('window.location.hash.includes("?")') ||
-    !authRoute.includes('new URLSearchParams(hashQuery || window.location.search)')
+    !authRoute.includes(`new URLSearchParams(hashQuery || window.location.search)`)
   ) {
-    fail(`Entregas ${label} não possui leitura Hash-aware dos parâmetros Supabase`);
+    fail(`Entregas ${label} não possui leitura Hash-aware dos parâmetros`);
   } else {
-    ok(`Entregas ${label} lê code/error/next de #/rota?...`);
+    ok(`Entregas ${label} lê parâmetros de #/rota?...`);
   }
 }
 
