@@ -52,10 +52,11 @@ forbidMarkers('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
 ], 'Dados Pessoais não expõe erros técnicos do backend');
 
 requireMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
+  'relative flex h-screen w-full flex-col overflow-hidden',
   '<AppBottomNav activeTab="pedidos" />',
   'overflow-y-auto p-4 pb-32',
   'Não foi possível cancelar este pedido. Tente novamente.',
-], 'detalhes do pedido preservam rodapé e espaço inferior');
+], 'detalhes do pedido preservam rodapé ancorado e espaço inferior');
 forbidMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
   'toast.error(error?.message || "Não foi possível cancelar este pedido.")',
 ], 'cancelamento de pedido não expõe erro técnico do RPC');
@@ -88,5 +89,14 @@ requireMarkers('.work/entregas/src/routes/perfil/pagamentos.tsx', [
 forbidMarkers('.work/entregas/src/routes/perfil/pagamentos.tsx', [
   'provedor de pagamentos integrado',
 ], 'Pagamentos não exibe detalhe técnico do gateway');
+
+requireMarkers('.work/entregas/src/components/CustomerDeliveryMap.tsx', [
+  'Acompanhe seu entregador',
+], 'mapa do pedido mantém rastreamento do entregador');
+forbidMarkers('.work/entregas/src/components/CustomerDeliveryMap.tsx', [
+  'confirmationPin',
+  'setConfirmationPin',
+  'KeyRound',
+], 'mapa não duplica o PIN que já existe nos detalhes do pedido');
 
 process.exit(failed ? 1 : 0);
