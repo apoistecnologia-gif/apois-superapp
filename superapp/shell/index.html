@@ -36,11 +36,48 @@
     </div>
   </main>
   <script>
-    const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html#/'};
+    const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html'};
     const LAST_MODULE_KEY='apois-superapp:last-module';
 
+    function authStorageKey(moduleName){
+      return moduleName==='corridas'?'apois-superapp-corridas-auth-v1':'apois-superapp-entregas-auth-v1';
+    }
+
+    function routeStorageKey(moduleName){
+      return 'apois-superapp:last-route:'+moduleName;
+    }
+
+    function hasPersistedSession(moduleName){
+      try{
+        const raw=localStorage.getItem(authStorageKey(moduleName));
+        if(!raw)return false;
+        const parsed=JSON.parse(raw);
+        return Boolean(parsed?.access_token||parsed?.currentSession?.access_token||parsed?.session?.access_token);
+      }catch{
+        try{return Boolean(localStorage.getItem(authStorageKey(moduleName)));}catch{return false;}
+      }
+    }
+
+    function resumableRoute(moduleName){
+      if(!hasPersistedSession(moduleName))return null;
+      try{
+        const route=localStorage.getItem(routeStorageKey(moduleName));
+        if(!route||!route.startsWith('#/'))return null;
+        if(route.includes('/login')||route.includes('/register')||route.includes('/auth/callback')||route.includes('/redefinir-senha'))return null;
+        return route;
+      }catch{return null;}
+    }
+
+    function moduleDestination(moduleName){
+      const base=moduleUrls[moduleName];
+      if(!base)return null;
+      const route=resumableRoute(moduleName);
+      if(route)return base+route;
+      return moduleName==='entregas'?base+'#/':base;
+    }
+
     function openModule(moduleName){
-      const destination=moduleUrls[moduleName];
+      const destination=moduleDestination(moduleName);
       if(!destination)return;
       try{localStorage.setItem(LAST_MODULE_KEY,moduleName);}catch{}
       window.dispatchEvent(new CustomEvent('apois:module-selected',{detail:{module:moduleName}}));
