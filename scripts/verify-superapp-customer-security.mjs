@@ -97,6 +97,19 @@ forbidMarkers('.work/entregas/src/routes/enderecos/editar/$addressId.tsx', [
   '...(locationFields.has(name) ? { latitude: null, longitude: null } : {})',
 ], 'edição não perde GPS ao completar campo ausente nem expõe erro técnico');
 
+requireMarkers('.work/entregas/src/components/CustomerLocationAddressSelector.tsx', [
+  'import { Geolocation } from "@capacitor/geolocation";',
+  'await Geolocation.checkPermissions()',
+  'await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] })',
+  'await Geolocation.getCurrentPosition({',
+  'Localização obtida. Complete manualmente os dados do endereço que não puderam ser identificados.',
+], 'localização de endereço usa plugin nativo do Capacitor e fallback seguro');
+forbidMarkers('.work/entregas/src/components/CustomerLocationAddressSelector.tsx', [
+  'navigator.geolocation',
+  'Localização obtida, mas não foi possível buscar o endereço: ${error.message}',
+  'toast.error(error instanceof Error ? error.message',
+], 'localização não depende da API Web nem mostra erro técnico ao cliente');
+
 for (const [path, label] of [
   ['.work/entregas/src/routes/perfil/pagamentos.tsx', 'Pagamentos'],
   ['.work/entregas/src/routes/perfil/notificacoes.tsx', 'Notificações'],
