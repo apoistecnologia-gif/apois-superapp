@@ -8,6 +8,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 function replaceRequired(path, search, replacement, label) {
   const full = resolve(root, path);
   const before = readFileSync(full, 'utf8');
+  if (before.includes(replacement)) {
+    console.log(`[OK] ${label} (já aplicado)`);
+    return;
+  }
   if (!before.includes(search)) {
     console.error(`[FAIL] ${label}: padrão esperado não encontrado em ${path}`);
     process.exit(1);
@@ -37,4 +41,18 @@ replaceRequired(
   'entregas: confirmação de troca de e-mail retorna ao package unificado',
 );
 
-console.log('[OK] entregas: OAuth, sessão Hash e retorno de troca de e-mail respeitam o Superapp sem alterar o app original');
+replaceRequired(
+  '.work/entregas/src/lib/customer-push.ts',
+  '    _platform: "android",\n  });',
+  '    _platform: "android",\n    _app_package: "br.com.apois.app",\n  });',
+  'entregas: registro FCM declara explicitamente o package unificado',
+);
+
+replaceRequired(
+  '.work/entregas/src/lib/customer-push.ts',
+  '      const { error } = await (supabase.rpc as any)("remove_superapp_customer_push_devices");',
+  '      const { error } = await (supabase.rpc as any)("remove_superapp_customer_push_devices", {\n        _app_package: "br.com.apois.app",\n      });',
+  'entregas: logout remove somente dispositivos do package unificado',
+);
+
+console.log('[OK] entregas: OAuth, sessão Hash, e-mail e Push respeitam o Superapp sem alterar o app original');
