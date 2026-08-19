@@ -19,7 +19,7 @@
     "verify:rides-push-firebase": "node scripts/validate-rides-push-firebase.mjs",
     "prepare:modules": "node scripts/prepare-workspace.mjs",
     "build:corridas": "node scripts/build-isolated-module.mjs corridas",
-    "build:entregas": "node scripts/normalize-entregas-auth-runtime-targets.mjs && node scripts/build-isolated-module.mjs entregas",
+    "build:entregas": "node scripts/build-isolated-module.mjs entregas",
     "build:shell": "node scripts/harden-superapp-shell-auth-deeplink-source.mjs && node superapp/shell/build.mjs",
     "harden:auth-deeplinks": "node scripts/harden-superapp-auth-deeplink-dedup.mjs",
     "inject:push-routing": "node scripts/inject-superapp-push-routing.mjs",
