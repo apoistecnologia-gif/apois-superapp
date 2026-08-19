@@ -5,7 +5,7 @@ const path = resolve('.work/entregas/src/lib/customer-push.ts');
 let source = readFileSync(path, 'utf8');
 
 const oldFallback = '  return orderId ? `/pedido/${encodeURIComponent(orderId)}` : "/notificacoes";';
-const newFallback = '  return orderId ? `#/pedido/${encodeURIComponent(orderId)}` : "#/perfil/notificacoes";';
+const newFallback = '  return orderId ? `#/pedido/${encodeURIComponent(orderId)}` : "#/notificacoes";';
 if (!source.includes(newFallback)) {
   if (!source.includes(oldFallback)) {
     throw new Error('Entregas Push: fallback pós-adaptação esperado não encontrado.');
@@ -24,13 +24,13 @@ for (const marker of [
   'const isDeliveryPush =',
   'if (!target) return;',
   '`#/pedido/${encodeURIComponent(orderId)}`',
-  '"#/perfil/notificacoes"',
+  '"#/notificacoes"',
   'window.location.hash !== target',
 ]) {
   if (!source.includes(marker)) throw new Error(`Entregas Push: hardening ausente: ${marker}`);
 }
 for (const forbidden of [
-  ': "/notificacoes";',
+  '"#/perfil/notificacoes"',
   'window.location.pathname !== target',
   'const targetHash = `#${target}`;',
 ]) {
@@ -38,4 +38,4 @@ for (const forbidden of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregas: toque em Push usa apenas rotas Hash válidas do módulo.');
+console.log('[OK] Entregas: toque em Push abre pedido ou central de notificações pelo Hash Router.');
