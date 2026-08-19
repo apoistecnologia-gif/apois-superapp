@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const strictNativeConfig = process.env.APOIS_STRICT_NATIVE_CONFIG === '1';
+const corridasPublicAppUrl = process.env.CORRIDAS_PUBLIC_APP_URL?.trim() || '';
 
 function replaceRequired(path, search, replacement, label) {
   const full = resolve(root, path);
@@ -16,12 +18,52 @@ function replaceRequired(path, search, replacement, label) {
   console.log(`[OK] ${label}`);
 }
 
+function validatePublicAppUrl(value) {
+  if (!value) {
+    if (strictNativeConfig) {
+      console.error('[FAIL] corridas: CORRIDAS_PUBLIC_APP_URL é obrigatório na homologação final para compartilhamento de corrida');
+      process.exit(1);
+    }
+    console.warn('[WARN] corridas: CORRIDAS_PUBLIC_APP_URL ausente; compartilhamento público continuará indisponível em build não estrito');
+    return '';
+  }
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    console.error('[FAIL] corridas: CORRIDAS_PUBLIC_APP_URL não é uma URL válida');
+    process.exit(1);
+  }
+  if (!['https:', 'http:'].includes(parsed.protocol)) {
+    console.error('[FAIL] corridas: CORRIDAS_PUBLIC_APP_URL deve usar http/https');
+    process.exit(1);
+  }
+  if (strictNativeConfig && parsed.protocol !== 'https:') {
+    console.error('[FAIL] corridas: CORRIDAS_PUBLIC_APP_URL deve usar HTTPS em homologação final');
+    process.exit(1);
+  }
+  const normalized = value.replace(/\/#\/?$/, '').replace(/\/+$/, '');
+  console.log(`[OK] corridas: acompanhamento público configurado em ${parsed.hostname}`);
+  return normalized;
+}
+
+const normalizedPublicAppUrl = validatePublicAppUrl(corridasPublicAppUrl);
+
 replaceRequired(
   '.work/corridas/src/routes/_authenticated.inicio.tsx',
   'const categoryArtwork: Record<RideCategoryCode, string> = {\n  carros: "/assets/ride-categories/carros.svg",\n  motos: "/assets/ride-categories/motos.svg",\n  fretes: "/assets/ride-categories/fretes.svg",\n  guincho: "/assets/ride-categories/guincho.svg",\n  envios: "/assets/ride-categories/envios.svg",\n};',
   'const categoryArtwork: Record<RideCategoryCode, string> = {\n  carros: "./assets/ride-categories/carros.svg",\n  motos: "./assets/ride-categories/motos.svg",\n  fretes: "./assets/ride-categories/fretes.svg",\n  guincho: "./assets/ride-categories/guincho.svg",\n  envios: "./assets/ride-categories/envios.svg",\n};',
   'corridas: artes de categorias usam caminho relativo ao módulo do Superapp',
 );
+
+if (normalizedPublicAppUrl) {
+  replaceRequired(
+    '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
+    '  const configuredBase = String(import.meta.env.VITE_PUBLIC_APP_URL ?? "").trim();',
+    `  const configuredBase = ${JSON.stringify(normalizedPublicAppUrl)};`,
+    'corridas: link público de acompanhamento usa base HTTPS configurada no Superapp',
+  );
+}
 
 replaceRequired(
   '.work/corridas/src/lib/auth/native-password-recovery.ts',
@@ -98,4 +140,4 @@ replaceRequired(
   'corridas: rodapé único permanece em todas as telas normais e detalhes',
 );
 
-console.log('[OK] corridas: assets, recuperação nativa encaminhável e rodapé global único corrigidos apenas em .work');
+console.log('[OK] corridas: assets, compartilhamento, recuperação nativa encaminhável e rodapé global único corrigidos apenas em .work');
