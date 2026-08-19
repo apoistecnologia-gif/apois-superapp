@@ -41,6 +41,14 @@ patch('.work/entregas/src/routes/notificacoes.tsx', (source) => {
     'className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto p-4 pb-32"',
     'Central de notificações: espaço para rodapé fixo',
   );
+
+  source = replaceRequired(
+    source,
+    '    const orderId = typeof data?.["orderId"] === "string" ? data["orderId"] : null;\n    const type = notificationType(notification);\n\n    if (orderId && type === "new_order") {\n      setBusyId(null);\n      await navigate({ to: "/merchant" });\n      return;\n    }\n    if (orderId) {',
+    '    const rawOrderId = data?.["orderId"] ?? data?.["order_id"] ?? data?.["orderID"];\n    const orderId = typeof rawOrderId === "string" && rawOrderId.trim() ? rawOrderId.trim() : null;\n\n    // Este bundle é exclusivamente do cliente. Nenhum payload recebido pode abrir\n    // painel de estabelecimento, mesmo que traga um tipo administrativo/merchant.\n    if (orderId) {',
+    'Central de notificações: payload nunca escapa para rota merchant',
+  );
+
   if (!source.includes('<AppBottomNav activeTab="perfil" />')) {
     const closing = '\n    </div>\n  );\n}';
     const index = source.lastIndexOf(closing);
@@ -50,8 +58,11 @@ patch('.work/entregas/src/routes/notificacoes.tsx', (source) => {
   if (source.includes('window.history.back()')) {
     throw new Error('Central de notificações: histórico físico ainda presente');
   }
+  if (source.includes('navigate({ to: "/merchant" })')) {
+    throw new Error('Central de notificações: payload ainda pode abrir área merchant');
+  }
   return source;
-}, 'Entregas: central de notificações pronta para Push e navegação no APK');
+}, 'Entregas: central de notificações restrita às rotas do cliente');
 
 patch('.work/entregas/src/routes/perfil/index.tsx', (source) => {
   source = replaceRequired(
