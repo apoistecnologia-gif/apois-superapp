@@ -78,8 +78,8 @@ replaceRequired(
 
 replaceRequired(
   '.work/entregas/src/components/AppBottomNav.tsx',
-  'className="h-7 w-7 transition-colors ${active ? "text-primary" : "text-zinc-500"}"',
-  'className="h-8 w-8 transition-colors ${active ? "text-primary" : "text-zinc-500"}"',
+  'className={`h-7 w-7 transition-colors ${active ? "text-primary" : "text-zinc-500"}`}',
+  'className={`h-8 w-8 transition-colors ${active ? "text-primary" : "text-zinc-500"}`}',
   'entregas: ícones do rodapé ficam maiores',
 );
 
