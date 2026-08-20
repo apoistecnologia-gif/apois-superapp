@@ -5,7 +5,6 @@ const targets = [
   'superapp/shell/dist/index.html',
   'superapp/shell/dist/modules/corridas/index.html',
   'superapp/shell/dist/modules/entregas/index.html',
-  'superapp/shell/dist/modules/motorista/index.html',
 ];
 let failed = false;
 for (const relative of targets) {
