@@ -5,6 +5,7 @@ const targets = [
   'superapp/shell/dist/index.html',
   'superapp/shell/dist/modules/corridas/index.html',
   'superapp/shell/dist/modules/entregas/index.html',
+  'superapp/shell/dist/modules/motorista/index.html',
 ];
 
 const oldBlock = `          const previous=sessionStorage.getItem(AUTH_DEEP_LINK_KEY);\n          if(previous===rawUrl)return true;\n          sessionStorage.setItem(AUTH_DEEP_LINK_KEY,rawUrl);`;
