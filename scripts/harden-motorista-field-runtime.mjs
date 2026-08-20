@@ -31,9 +31,7 @@ patch('src/lib/googleMaps.ts', (source) => {
   if (commentStart < 0) commentStart = exportStart;
   else commentStart += 1;
 
-  const beforeBlock = source.slice(0, commentStart);
-  const afterBlock = source.slice(statementEnd + 1);
-  return `${beforeBlock}${replacement}${afterBlock}`;
+  return `${source.slice(0, commentStart)}${replacement}${source.slice(statementEnd + 1)}`;
 }, 'motorista: Google Maps usa chave APOIS do Codemagic');
 
 patch('vite.mobile.config.ts', (source) => {
@@ -43,12 +41,42 @@ patch('vite.mobile.config.ts', (source) => {
   return source.replace(marker, '  return {\n    base: "./",\n    appType: "spa",');
 }, 'motorista: assets relativos para APK/Superapp Parceiro');
 
+patch('src/mobile.tsx', (source) => {
+  let next = source;
+  if (!next.includes('createHashHistory')) {
+    next = next.replace(
+      'import { createRouter, RouterProvider } from "@tanstack/react-router";',
+      'import { createHashHistory, createRouter, RouterProvider } from "@tanstack/react-router";',
+    );
+  }
+  if (!next.includes('history: createHashHistory()')) {
+    const marker = '  const router = createRouter({\n';
+    if (!next.includes(marker)) throw new Error('mobile.tsx: createRouter não encontrado');
+    next = next.replace(marker, '  const router = createRouter({\n    history: createHashHistory(),\n');
+  }
+  return next;
+}, 'motorista: Hash History no APOIS Parceiro');
+
 patch('src/components/AuthShell.tsx', (source) => {
   let next = source;
   next = next.replace('<DSCardHeader>', '<DSCardHeader className="text-center">');
   next = next.replace('<DSCardTitle className="text-2xl">{title}</DSCardTitle>', '<DSCardTitle className="text-center text-2xl">{title}</DSCardTitle>');
   next = next.replace('<DSCardDescription>{description}</DSCardDescription>', '<DSCardDescription className="text-center">{description}</DSCardDescription>');
+
+  if (!next.includes('Voltar para escolher perfil')) {
+    const marker = '        <div className="flex w-full flex-col space-y-6">';
+    if (!next.includes(marker)) throw new Error('AuthShell.tsx: container principal não encontrado');
+    next = next.replace(marker, `${marker}\n          <button\n            type="button"\n            onClick={() => window.location.replace('../../index.html')}\n            className="mx-auto inline-flex min-h-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-4 text-xs font-bold text-muted-foreground"\n          >\n            ← Voltar para escolher perfil\n          </button>`);
+  }
   return next;
-}, 'motorista: cabeçalho do login centralizado');
+}, 'motorista: login centralizado e retorno ao seletor');
+
+patch('src/components/DriverSideMenu.tsx', (source) => {
+  if (source.includes('Trocar perfil de parceiro')) return source;
+  const marker = `              {onLogout ? (\n                <button`;
+  if (!source.includes(marker)) throw new Error('DriverSideMenu.tsx: botão de logout não encontrado');
+  const chooser = `              <button\n                type="button"\n                onClick={() => window.location.replace('../../index.html')}\n                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 px-4 text-[12px] font-black uppercase tracking-[0.12em] text-[#F6BE1C] transition active:scale-[0.99]"\n              >\n                Trocar perfil de parceiro\n              </button>\n\n`;
+  return source.replace(marker, chooser + marker);
+}, 'motorista: menu permite voltar ao seletor Motorista/Entregador');
 
 console.log(`[OK] hardening de campo concluído em ${workspace}`);
