@@ -193,6 +193,7 @@ workflows:
           bunx cap sync android
           cd ../..
           node scripts/configure-partner-android.mjs
+          node scripts/install-partner-launcher.mjs
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/partner-shell/android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:scheme="br.com.apois.app"' superapp/partner-shell/android/app/src/main/AndroidManifest.xml
       - name: Build and sign APOIS Parceiro APK
