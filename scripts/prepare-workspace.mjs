@@ -57,5 +57,16 @@ for (const name of names) {
       '      const data = (await paymentService.getPaymentMethods()).filter(\n        (method) => method.isActive && method.enabled && method.code === "pix",\n      );',
       'corridas: Superapp oferece somente PIX mesmo se a fonte mantiver métodos legados ativos',
     );
+
+    // O snapshot protegido ainda invoca passenger-ride-request diretamente.
+    // No Superapp a criação deve passar pelo roteador request-ride, que escolhe
+    // o provider financeiro ativo e, no Mercado Pago marketplace, busca/reserva
+    // o motorista antes de liberar a cobrança Pix.
+    replaceWorkspaceRequired(
+      '.work/corridas/src/hooks/rides/use-ride-request.tsx',
+      '        const { data, error } = await supabase.functions.invoke("passenger-ride-request", {',
+      '        const { data, error } = await supabase.functions.invoke("request-ride", {',
+      'corridas: solicitação passa pelo roteador financeiro request-ride',
+    );
   }
 }
