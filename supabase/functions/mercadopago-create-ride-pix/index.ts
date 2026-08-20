@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
   if (!Number.isSafeInteger(fareCents) || fareCents <= 0) return json({ error: "invalid_ride_amount" }, 500);
   const { data: attemptRows } = await admin.from("ride_pix_payments").select("attempt_number").eq("ride_id", rideId).order("attempt_number", { ascending: false }).limit(1);
   const attemptNumber = Number(attemptRows?.[0]?.attempt_number ?? 0) + 1;
-  const externalReference = `apois-ride:${rideId}:attempt:${attemptNumber}`;
+  const externalReference = `apois-ride-${rideId}-attempt-${attemptNumber}`.replace(/[^A-Za-z0-9_-]/g, "-");
   const { data: paymentRow, error: insertError } = await admin.from("ride_pix_payments").insert({ ride_id: rideId, passenger_id: passenger.id, driver_id: driverId, provider: "mercadopago", amount_cents: fareCents, status: "creating", attempt_number: attemptNumber, external_reference: externalReference, provider_seller_id: seller.mercadopago_user_id, application_fee_cents: 0 }).select("id").single();
   if (insertError || !paymentRow) return json({ error: "payment_attempt_create_failed" }, 500);
 
