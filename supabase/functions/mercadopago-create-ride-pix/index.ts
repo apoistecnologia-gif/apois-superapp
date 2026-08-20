@@ -4,8 +4,10 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MP_CLIENT_ID = Deno.env.get("MERCADOPAGO_CLIENT_ID") ?? "";
 const MP_CLIENT_SECRET = Deno.env.get("MERCADOPAGO_CLIENT_SECRET") ?? "";
+const MP_TEST_ACCESS_TOKEN = Deno.env.get("MERCADOPAGO_TEST_ACCESS_TOKEN") ?? "";
 const TOKEN_KEY_B64 = Deno.env.get("MERCADOPAGO_TOKEN_ENCRYPTION_KEY") ?? "";
 const MP_WEBHOOK_URL = Deno.env.get("MERCADOPAGO_WEBHOOK_URL") || `${SUPABASE_URL}/functions/v1/mercadopago-webhook`;
+const HOMOLOGATION_ONLY = (Deno.env.get("MERCADOPAGO_HOMOLOGATION_ONLY") ?? "true").trim().toLowerCase() !== "false";
 
 type TokenBundle = { accessToken: string; refreshToken: string; expiresAt: string | null };
 function json(body: unknown, status = 200) { return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }); }
@@ -42,9 +44,25 @@ async function loadSellerToken(admin: ReturnType<typeof createClient>, driverId:
   return { accessToken, refreshToken, expiresAt };
 }
 
+function providerError(body: Record<string, any>, status: number) {
+  const parts = [body.message, body.error, body.code, body.status, body.status_detail];
+  if (Array.isArray(body.errors)) parts.push(JSON.stringify(body.errors));
+  if (Array.isArray(body.cause)) parts.push(JSON.stringify(body.cause));
+  const fallback = JSON.stringify(body);
+  return [...parts.filter(Boolean), fallback !== "{}" ? fallback : null, `http_${status}`].filter(Boolean).join(" | ").slice(0, 4000);
+}
+
+async function fetchTestOrder(orderId: string) {
+  const response = await fetch(`https://api.mercadopago.com/v1/orders/${encodeURIComponent(orderId)}`, {
+    headers: { accept: "application/json", Authorization: `Bearer ${MP_TEST_ACCESS_TOKEN}` },
+  });
+  const body = await response.json().catch(() => ({})) as Record<string, any>;
+  return { response, body };
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-  if (!SUPABASE_URL || !SERVICE_ROLE || !MP_CLIENT_ID || !MP_CLIENT_SECRET || !TOKEN_KEY_B64 || !MP_WEBHOOK_URL) return json({ error: "mercadopago_configuration_missing" }, 503);
+  if (!SUPABASE_URL || !SERVICE_ROLE || !MP_CLIENT_ID || !MP_CLIENT_SECRET || !TOKEN_KEY_B64) return json({ error: "mercadopago_configuration_missing" }, 503);
   const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
   if (!token) return json({ error: "unauthorized" }, 401);
   const input = await req.json().catch(() => ({})) as { rideId?: string; action?: string };
@@ -64,42 +82,104 @@ Deno.serve(async (req) => {
   if (!driverId) return json({ error: "driver_must_be_reserved_before_pix" }, 409);
   if (ride.status !== "aguardando_pagamento") return json({ error: "ride_not_awaiting_payment", status: ride.status }, 409);
 
-  const existing = await admin.from("ride_pix_payments").select("id,provider_payment_id,status,pix_payload,pix_qr_code_base64,pix_expiration_at,amount_cents,provider_seller_id").eq("ride_id", rideId).eq("provider", "mercadopago").in("status", ["creating", "pending"]).order("attempt_number", { ascending: false }).limit(1).maybeSingle();
-  if (existing.data?.provider_payment_id && input.action !== "retry") return json({ provider: "mercadopago", paymentId: existing.data.provider_payment_id, status: existing.data.status, qrCode: existing.data.pix_payload, qrCodeBase64: existing.data.pix_qr_code_base64, expiresAt: existing.data.pix_expiration_at, amountCents: existing.data.amount_cents, sellerId: existing.data.provider_seller_id, applicationFeeCents: 0, reused: true });
-
-  const { data: seller } = await admin.from("driver_mercadopago_accounts").select("mercadopago_user_id,status").eq("driver_id", driverId).maybeSingle();
+  const { data: seller } = await admin.from("driver_mercadopago_accounts").select("mercadopago_user_id,status,live_mode").eq("driver_id", driverId).maybeSingle();
   if (!seller || seller.status !== "connected" || !seller.mercadopago_user_id) return json({ error: "driver_mercadopago_not_connected" }, 409);
-  const { accessToken } = await loadSellerToken(admin, driverId);
+  if (HOMOLOGATION_ONLY && seller.live_mode === true) return json({ error: "mercadopago_live_account_blocked_in_homologation" }, 409);
+  const isTestSeller = seller.live_mode !== true;
+  if (isTestSeller && !MP_TEST_ACCESS_TOKEN) return json({ error: "mercadopago_test_access_token_missing" }, 503);
+
+  const existing = await admin.from("ride_pix_payments").select("id,provider_payment_id,status,pix_payload,pix_qr_code_base64,pix_expiration_at,amount_cents,provider_seller_id").eq("ride_id", rideId).eq("provider", "mercadopago").in("status", ["creating", "pending", "confirmed"]).order("attempt_number", { ascending: false }).limit(1).maybeSingle();
+  if (existing.data?.provider_payment_id && input.action !== "retry") {
+    if (isTestSeller && String(existing.data.provider_payment_id).startsWith("ORD")) {
+      const { response, body } = await fetchTestOrder(String(existing.data.provider_payment_id));
+      if (response.ok && body.id) {
+        const payment = body.transactions?.payments?.[0] ?? {};
+        const pm = payment.payment_method ?? {};
+        const approved = payment.status === "approved" || body.status === "processed";
+        const mappedStatus = approved ? "confirmed" : "pending";
+        await admin.from("ride_pix_payments").update({ status: mappedStatus, provider_status_detail: String(payment.status_detail || body.status_detail || "waiting_transfer"), pix_payload: typeof pm.qr_code === "string" ? pm.qr_code : existing.data.pix_payload, pix_qr_code_base64: typeof pm.qr_code_base64 === "string" ? pm.qr_code_base64 : existing.data.pix_qr_code_base64, paid_at: approved ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq("id", existing.data.id);
+        if (approved) await admin.from("rides").update({ payment_status: "paid", payment_confirmed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", rideId);
+        return json({ provider: "mercadopago", paymentId: existing.data.provider_payment_id, status: mappedStatus, qrCode: pm.qr_code ?? existing.data.pix_payload, qrCodeBase64: pm.qr_code_base64 ?? existing.data.pix_qr_code_base64, ticketUrl: pm.ticket_url ?? null, amountCents: existing.data.amount_cents, sellerId: seller.mercadopago_user_id, applicationFeeCents: 0, homologation: true, reused: true });
+      }
+    }
+    return json({ provider: "mercadopago", paymentId: existing.data.provider_payment_id, status: existing.data.status, qrCode: existing.data.pix_payload, qrCodeBase64: existing.data.pix_qr_code_base64, expiresAt: existing.data.pix_expiration_at, amountCents: existing.data.amount_cents, sellerId: existing.data.provider_seller_id, applicationFeeCents: 0, reused: true });
+  }
+
   const fareCents = Number.isSafeInteger(Number(ride.fare_amount_cents)) && Number(ride.fare_amount_cents) > 0 ? Number(ride.fare_amount_cents) : Math.round(Number(ride.estimated_price) * 100);
   if (!Number.isSafeInteger(fareCents) || fareCents <= 0) return json({ error: "invalid_ride_amount" }, 500);
-
   const { data: attemptRows } = await admin.from("ride_pix_payments").select("attempt_number").eq("ride_id", rideId).order("attempt_number", { ascending: false }).limit(1);
   const attemptNumber = Number(attemptRows?.[0]?.attempt_number ?? 0) + 1;
   const externalReference = `apois-ride:${rideId}:attempt:${attemptNumber}`;
   const { data: paymentRow, error: insertError } = await admin.from("ride_pix_payments").insert({ ride_id: rideId, passenger_id: passenger.id, driver_id: driverId, provider: "mercadopago", amount_cents: fareCents, status: "creating", attempt_number: attemptNumber, external_reference: externalReference, provider_seller_id: seller.mercadopago_user_id, application_fee_cents: 0 }).select("id").single();
   if (insertError || !paymentRow) return json({ error: "payment_attempt_create_failed" }, 500);
-  await admin.from("rides").update({ payment_provider: "mercadopago", fare_amount_cents: fareCents, processing_fee_cents: 0, passenger_charge_cents: fareCents, updated_at: new Date().toISOString() }).eq("id", rideId);
 
-  const payerEmail = String(passenger.email || authData.user.email || "").trim();
-  if (!payerEmail) return json({ error: "payer_email_required" }, 422);
-  const payer: Record<string, unknown> = { email: payerEmail };
-  const cpf = String(passenger.cpf ?? "").replace(/\D/g, "");
-  if (cpf.length === 11) payer.identification = { type: "CPF", number: cpf };
+  let providerId = "";
+  let mappedStatus = "pending";
+  let providerStatusDetail: string | null = null;
+  let qrCode: string | null = null;
+  let qrCodeBase64: string | null = null;
+  let ticketUrl: string | null = null;
+  let expiresAt: string | null = null;
 
-  const response = await fetch("https://api.mercadopago.com/v1/payments", {
-    method: "POST",
-    headers: { accept: "application/json", "content-type": "application/json", Authorization: `Bearer ${accessToken}`, "X-Idempotency-Key": paymentRow.id },
-    body: JSON.stringify({ transaction_amount: fareCents / 100, description: `APOIS Corrida ${rideId.slice(0, 8)}`, payment_method_id: "pix", payer, external_reference: externalReference, application_fee: 0, notification_url: MP_WEBHOOK_URL, metadata: { ride_id: rideId, payment_attempt_id: paymentRow.id, apois_marketplace_fee_cents: 0 } }),
-  });
-  const body = await response.json().catch(() => ({})) as Record<string, any>;
-  if (!response.ok || body.id == null) {
-    console.error("[mercadopago-create-ride-pix] create failed", response.status, body);
-    await admin.from("ride_pix_payments").update({ status: "failed", provider_status_detail: String(body.message ?? body.error ?? `http_${response.status}`), updated_at: new Date().toISOString() }).eq("id", paymentRow.id);
-    return json({ error: "mercadopago_payment_create_failed" }, 502);
+  if (isTestSeller) {
+    const amount = (fareCents / 100).toFixed(2);
+    const response = await fetch("https://api.mercadopago.com/v1/orders", {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json", Authorization: `Bearer ${MP_TEST_ACCESS_TOKEN}`, "X-Idempotency-Key": paymentRow.id },
+      body: JSON.stringify({
+        type: "online",
+        processing_mode: "automatic",
+        external_reference: externalReference,
+        total_amount: amount,
+        payer: { email: "test_user_br@testuser.com", first_name: "APRO" },
+        transactions: { payments: [{ amount, payment_method: { id: "pix", type: "bank_transfer" } }] },
+      }),
+    });
+    const body = await response.json().catch(() => ({})) as Record<string, any>;
+    if (!response.ok || !body.id) {
+      const detail = providerError(body, response.status);
+      console.error("[mercadopago-create-ride-pix] test order failed", response.status, body);
+      await admin.from("ride_pix_payments").update({ status: "failed", provider_status_detail: detail, updated_at: new Date().toISOString() }).eq("id", paymentRow.id);
+      return json({ error: "mercadopago_payment_create_failed", provider_status_detail: detail }, 502);
+    }
+    const payment = body.transactions?.payments?.[0] ?? {};
+    const pm = payment.payment_method ?? {};
+    providerId = String(body.id);
+    mappedStatus = payment.status === "approved" || body.status === "processed" ? "confirmed" : "pending";
+    providerStatusDetail = String(payment.status_detail || body.status_detail || "waiting_transfer");
+    qrCode = typeof pm.qr_code === "string" ? pm.qr_code : null;
+    qrCodeBase64 = typeof pm.qr_code_base64 === "string" ? pm.qr_code_base64 : null;
+    ticketUrl = typeof pm.ticket_url === "string" ? pm.ticket_url : null;
+  } else {
+    const accessToken = (await loadSellerToken(admin, driverId)).accessToken;
+    const payerEmail = String(passenger.email || authData.user.email || "").trim();
+    if (!payerEmail) return json({ error: "payer_email_required" }, 422);
+    const payer: Record<string, unknown> = { email: payerEmail };
+    const cpf = String(passenger.cpf ?? "").replace(/\D/g, "");
+    if (cpf.length === 11) payer.identification = { type: "CPF", number: cpf };
+    const response = await fetch("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json", Authorization: `Bearer ${accessToken}`, "X-Idempotency-Key": paymentRow.id },
+      body: JSON.stringify({ transaction_amount: fareCents / 100, description: `APOIS Corrida ${rideId.slice(0, 8)}`, payment_method_id: "pix", payer, external_reference: externalReference, notification_url: MP_WEBHOOK_URL, metadata: { ride_id: rideId, payment_attempt_id: paymentRow.id, apois_marketplace_fee_cents: 0 } }),
+    });
+    const body = await response.json().catch(() => ({})) as Record<string, any>;
+    if (!response.ok || body.id == null) {
+      const detail = providerError(body, response.status);
+      console.error("[mercadopago-create-ride-pix] production payment failed", response.status, body);
+      await admin.from("ride_pix_payments").update({ status: "failed", provider_status_detail: detail, updated_at: new Date().toISOString() }).eq("id", paymentRow.id);
+      return json({ error: "mercadopago_payment_create_failed", provider_status_detail: detail }, 502);
+    }
+    const tx = body.point_of_interaction?.transaction_data ?? {};
+    providerId = String(body.id);
+    mappedStatus = body.status === "approved" ? "confirmed" : body.status === "cancelled" ? "cancelled" : body.status === "rejected" ? "failed" : "pending";
+    providerStatusDetail = body.status_detail ? String(body.status_detail) : null;
+    qrCode = typeof tx.qr_code === "string" ? tx.qr_code : null;
+    qrCodeBase64 = typeof tx.qr_code_base64 === "string" ? tx.qr_code_base64 : null;
+    ticketUrl = typeof tx.ticket_url === "string" ? tx.ticket_url : null;
+    expiresAt = body.date_of_expiration || null;
   }
-  const tx = body.point_of_interaction?.transaction_data ?? {};
-  const mappedStatus = body.status === "approved" ? "confirmed" : body.status === "cancelled" ? "cancelled" : body.status === "rejected" ? "failed" : "pending";
-  await admin.from("ride_pix_payments").update({ provider_payment_id: String(body.id), status: mappedStatus, provider_status_detail: body.status_detail ? String(body.status_detail) : null, pix_payload: typeof tx.qr_code === "string" ? tx.qr_code : null, pix_qr_code_base64: typeof tx.qr_code_base64 === "string" ? tx.qr_code_base64 : null, pix_expiration_at: body.date_of_expiration || null, paid_at: body.status === "approved" ? (body.date_approved || new Date().toISOString()) : null, updated_at: new Date().toISOString() }).eq("id", paymentRow.id);
-  await admin.from("rides").update({ provider_payment_id: String(body.id), payment_status: body.status === "approved" ? "paid" : "pending", payment_confirmed_at: body.status === "approved" ? (body.date_approved || new Date().toISOString()) : null, updated_at: new Date().toISOString() }).eq("id", rideId);
-  return json({ provider: "mercadopago", paymentId: String(body.id), status: mappedStatus, qrCode: tx.qr_code ?? null, qrCodeBase64: tx.qr_code_base64 ?? null, ticketUrl: tx.ticket_url ?? null, expiresAt: body.date_of_expiration ?? null, amountCents: fareCents, fareCents, processingFeeCents: 0, passengerChargeCents: fareCents, sellerId: seller.mercadopago_user_id, applicationFeeCents: 0 });
+
+  await admin.from("ride_pix_payments").update({ provider_payment_id: providerId, status: mappedStatus, provider_status_detail: providerStatusDetail, pix_payload: qrCode, pix_qr_code_base64: qrCodeBase64, pix_expiration_at: expiresAt, paid_at: mappedStatus === "confirmed" ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq("id", paymentRow.id);
+  await admin.from("rides").update({ provider_payment_id: providerId, payment_status: mappedStatus === "confirmed" ? "paid" : "pending", payment_confirmed_at: mappedStatus === "confirmed" ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq("id", rideId);
+  return json({ provider: "mercadopago", paymentId: providerId, status: mappedStatus, qrCode, qrCodeBase64, ticketUrl, expiresAt, amountCents: fareCents, fareCents, processingFeeCents: 0, passengerChargeCents: fareCents, sellerId: seller.mercadopago_user_id, applicationFeeCents: 0, homologation: isTestSeller });
 });
