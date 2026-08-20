@@ -17,11 +17,23 @@ function patch(relativePath, transform, label) {
 }
 
 patch('src/lib/googleMaps.ts', (source) => {
-  const legacy = `// Chave do Google Maps fornecida pelo conector Lovable (referrer-restricted: *.lovable.app).\nexport const GOOGLE_MAPS_API_KEY =\n  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ?? "";`;
-  const replacement = `// No APK/Superapp usamos a chave browser configurada no ambiente APOIS.\n// Mantemos o conector legado apenas como último fallback para preservar compatibilidade web.\nexport const GOOGLE_MAPS_API_KEY =\n  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ??\n  (import.meta.env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??\n  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??\n  "";`;
+  const replacement = `// No APK/Superapp usamos primeiro a chave browser configurada no ambiente APOIS.\n// Mantemos as variáveis legadas apenas como fallback para preservar compatibilidade web.\nexport const GOOGLE_MAPS_API_KEY =\n  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ??\n  (import.meta.env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??\n  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??\n  \"\";`;
+
   if (source.includes(replacement)) return source;
-  if (!source.includes(legacy)) throw new Error('googleMaps.ts: padrão de chave legado não encontrado');
-  return source.replace(legacy, replacement);
+
+  const exportStart = source.indexOf('export const GOOGLE_MAPS_API_KEY =');
+  if (exportStart < 0) throw new Error('googleMaps.ts: export GOOGLE_MAPS_API_KEY não encontrado');
+
+  const statementEnd = source.indexOf(';', exportStart);
+  if (statementEnd < 0) throw new Error('googleMaps.ts: fim do export GOOGLE_MAPS_API_KEY não encontrado');
+
+  let commentStart = source.lastIndexOf('\n//', exportStart);
+  if (commentStart < 0) commentStart = exportStart;
+  else commentStart += 1;
+
+  const beforeBlock = source.slice(0, commentStart);
+  const afterBlock = source.slice(statementEnd + 1);
+  return `${beforeBlock}${replacement}${afterBlock}`;
 }, 'motorista: Google Maps usa chave APOIS do Codemagic');
 
 patch('vite.mobile.config.ts', (source) => {
