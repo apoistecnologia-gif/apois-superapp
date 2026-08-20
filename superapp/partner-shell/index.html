@@ -9,14 +9,14 @@
     :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;background:#050505;--gold:#f2b414;--teal:#15d5ca}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}body{min-height:100dvh}
     .screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),28px) 18px max(env(safe-area-inset-bottom),24px);display:flex;flex-direction:column;justify-content:center;background:radial-gradient(circle at 50% 18%,rgba(242,180,20,.18),transparent 25%),#050505}
-    .brand{text-align:center}.logo{width:96px;height:96px;margin:0 auto 14px;border-radius:28px;overflow:hidden;border:1px solid rgba(242,180,20,.32);box-shadow:0 0 30px rgba(242,180,20,.18)}.logo img{width:100%;height:100%;object-fit:cover}.brand h1{margin:0;font-size:34px;line-height:1;font-weight:950}.brand p{margin:10px auto 0;color:#b8b8b8;font-size:14px;max-width:330px;line-height:1.45}
+    .brand{text-align:center}.logo{width:106px;height:106px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center}.logo img{display:block;width:100%;height:100%;object-fit:contain}.brand h1{margin:0;font-size:34px;line-height:1;font-weight:950}.brand p{margin:10px auto 0;color:#b8b8b8;font-size:14px;max-width:330px;line-height:1.45}
     .choices{display:grid;gap:14px;margin-top:34px}.card{width:100%;border:1px solid #2b2b2b;border-radius:26px;background:linear-gradient(180deg,#111,#090909);padding:20px;text-align:left;color:white}.card strong{display:block;font-size:22px}.card span{display:block;margin-top:6px;font-size:13px;color:#b9b9b9;line-height:1.4}.card button{margin-top:18px;width:100%;height:50px;border:0;border-radius:16px;font:inherit;font-weight:900}.motorista{border-color:rgba(242,180,20,.48)}.motorista button{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}.entregador{border-color:rgba(21,213,202,.42)}.entregador button{background:linear-gradient(135deg,#1ee1d4,#09b8b0);color:#04100f}.foot{text-align:center;margin-top:28px;color:#777;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
   </style>
 </head>
 <body>
   <main class="screen">
     <section class="brand">
-      <div class="logo"><img src="./assets/apois-brand.png" alt="APOIS" /></div>
+      <div class="logo"><img src="data:image/png;base64,__APOIS_BRAND_BASE64__" alt="APOIS" /></div>
       <h1>APOIS Parceiro</h1>
       <p>Escolha como você trabalha na APOIS. Motoristas e entregadores usam este aplicativo.</p>
     </section>
@@ -24,14 +24,14 @@
       <article class="card motorista"><strong>Sou Motorista</strong><span>Fique online, receba corridas, acompanhe ganhos e conecte sua conta Mercado Pago.</span><button data-module="motorista" type="button">Entrar como motorista →</button></article>
       <article class="card entregador"><strong>Sou Entregador</strong><span>Fique disponível, receba entregas e acompanhe suas rotas e pedidos.</span><button data-module="entregador" type="button">Entrar como entregador →</button></article>
     </section>
-    <div class="foot">APOIS • Parceiros</div>
+    <div class="foot">APOIS • PARCEIROS</div>
   </main>
   <script>
     const urls={motorista:'./modules/motorista/index.html#/motorista/login',entregador:'./modules/entregador/index.html'};
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
       const moduleName=button.dataset.module;
       try{localStorage.setItem('apois-parceiro:last-module',moduleName);}catch{}
-      window.location.replace(urls[moduleName]);
+      window.location.assign(urls[moduleName]);
     }));
 
     function relayDeepLink(rawUrl){
@@ -45,7 +45,7 @@
           const params=new URLSearchParams(incoming.search);
           const suffix=params.toString()?('?'+params.toString()):'';
           void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
-          window.location.replace('./modules/motorista/index.html#/motorista/assinatura'+suffix);
+          window.location.assign('./modules/motorista/index.html#/motorista/assinatura'+suffix);
           return true;
         }
       }catch(error){console.error('[APOIS Parceiro] deep link inválido',error);}
