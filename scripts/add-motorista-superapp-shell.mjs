@@ -38,7 +38,7 @@ replaceOnce(
 
 replaceOnce(
   "      return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';",
-  "      if(moduleName==='motorista')return hasPersistedSession(moduleName)?base+'#/motorista/app':base+'#/motorista/login';\n      return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';",
+  "      if(moduleName==='motorista')return hasPersistedSession(moduleName)?base+'#/motorista/app':base+'#/motorista/login';\n      // invariant: return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';\n      return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';",
   'shell: rota inicial Motorista',
 );
 
