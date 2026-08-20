@@ -44,7 +44,13 @@ for (const [name, path, corridasBase, entregasBase] of htmlTargets) {
   const html = requireFile(path);
   if (!html) continue;
   if (!html.includes('data-apois-superapp-push-routing')) { fail(`${name}: bridge global de Push não foi injetado`); continue; }
-  if (!html.includes('const rideEvents = new Set') || !html.includes('const isDeliveryPush =')) { fail(`${name}: bridge global não diferencia Corridas de Entregas`); continue; }
+  const hasCurrentClassifier =
+    html.includes('const rideEvents = new Set') &&
+    html.includes('function deliveryMarker(data)') &&
+    html.includes('function rideMarker(data)') &&
+    html.includes('const delivery = deliveryMarker(data);') &&
+    html.includes('const ride = rideMarker(data);');
+  if (!hasCurrentClassifier) { fail(`${name}: bridge global não diferencia Corridas de Entregas`); continue; }
   if (!html.includes('if (delivery.isDelivery && ride.isRide) return null;')) { fail(`${name}: payload de Push ambíguo não é bloqueado`); continue; }
   if (corridasBase && !html.includes(`const corridasBase = ${JSON.stringify(corridasBase)};`)) { fail(`${name}: destino cruzado para Corridas está ausente`); continue; }
   if (entregasBase && !html.includes(`const entregasBase = ${JSON.stringify(entregasBase)};`)) { fail(`${name}: destino cruzado para Entregas está ausente`); continue; }
