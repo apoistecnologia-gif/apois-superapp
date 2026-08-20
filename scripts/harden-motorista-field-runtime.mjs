@@ -24,6 +24,13 @@ patch('src/lib/googleMaps.ts', (source) => {
   return source.replace(legacy, replacement);
 }, 'motorista: Google Maps usa chave APOIS do Codemagic');
 
+patch('vite.mobile.config.ts', (source) => {
+  if (source.includes('base: "./"')) return source;
+  const marker = '  return {\n    appType: "spa",';
+  if (!source.includes(marker)) throw new Error('vite.mobile.config.ts: marcador appType não encontrado');
+  return source.replace(marker, '  return {\n    base: "./",\n    appType: "spa",');
+}, 'motorista: assets relativos para APK/Superapp Parceiro');
+
 patch('src/components/AuthShell.tsx', (source) => {
   let next = source;
   next = next.replace('<DSCardHeader>', '<DSCardHeader className="text-center">');
