@@ -59,13 +59,28 @@ patch('src/mobile.tsx', (source) => {
 
 patch('src/components/AuthShell.tsx', (source) => {
   let next = source;
-  next = next.replace('<DSCardHeader>', '<DSCardHeader className="text-center">');
-  next = next.replace('<DSCardTitle className="text-2xl">{title}</DSCardTitle>', '<DSCardTitle className="text-center text-2xl">{title}</DSCardTitle>');
-  next = next.replace('<DSCardDescription>{description}</DSCardDescription>', '<DSCardDescription className="text-center">{description}</DSCardDescription>');
+
+  // Snapshot atual já possui classes responsivas; apenas acrescentamos centralização.
+  next = next.replace(
+    '<DSCardHeader className="min-w-0">',
+    '<DSCardHeader className="min-w-0 text-center">',
+  );
+  next = next.replace(
+    '<DSCardTitle className="break-words text-2xl leading-tight">{title}</DSCardTitle>',
+    '<DSCardTitle className="break-words text-center text-2xl leading-tight">{title}</DSCardTitle>',
+  );
+  next = next.replace(
+    '<DSCardDescription className="break-words text-sm leading-5">{description}</DSCardDescription>',
+    '<DSCardDescription className="break-words text-center text-sm leading-5">{description}</DSCardDescription>',
+  );
 
   if (!next.includes('Voltar para escolher perfil')) {
-    const marker = '        <div className="flex w-full flex-col space-y-6">';
-    if (!next.includes(marker)) throw new Error('AuthShell.tsx: container principal não encontrado');
+    const markers = [
+      '        <main className="flex w-full min-w-0 flex-col space-y-6">',
+      '        <div className="flex w-full flex-col space-y-6">',
+    ];
+    const marker = markers.find((candidate) => next.includes(candidate));
+    if (!marker) throw new Error('AuthShell.tsx: container principal não encontrado');
     next = next.replace(marker, `${marker}\n          <button\n            type="button"\n            onClick={() => window.location.replace('../../index.html')}\n            className="mx-auto inline-flex min-h-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-4 text-xs font-bold text-muted-foreground"\n          >\n            ← Voltar para escolher perfil\n          </button>`);
   }
   return next;
@@ -73,10 +88,10 @@ patch('src/components/AuthShell.tsx', (source) => {
 
 patch('src/components/DriverSideMenu.tsx', (source) => {
   if (source.includes('Trocar perfil de parceiro')) return source;
-  const marker = `              {onLogout ? (\n                <button`;
-  if (!source.includes(marker)) throw new Error('DriverSideMenu.tsx: botão de logout não encontrado');
-  const chooser = `              <button\n                type="button"\n                onClick={() => window.location.replace('../../index.html')}\n                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 px-4 text-[12px] font-black uppercase tracking-[0.12em] text-[#F6BE1C] transition active:scale-[0.99]"\n              >\n                Trocar perfil de parceiro\n              </button>\n\n`;
-  return source.replace(marker, chooser + marker);
+  const logoutIndex = source.indexOf('{onLogout ? (');
+  if (logoutIndex < 0) throw new Error('DriverSideMenu.tsx: bloco de logout não encontrado');
+  const chooser = `              <button\n                type="button"\n                onClick={() => window.location.replace('../../index.html')}\n                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-[#F6BE1C]/20 bg-[#F6BE1C]/8 px-4 text-[12px] font-black uppercase tracking-[0.12em] text-[#F6BE1C] transition active:scale-[0.99]"\n              >\n                Trocar perfil de parceiro\n              </button>\n\n              `;
+  return source.slice(0, logoutIndex) + chooser + source.slice(logoutIndex);
 }, 'motorista: menu permite voltar ao seletor Motorista/Entregador');
 
 console.log(`[OK] hardening de campo concluído em ${workspace}`);
