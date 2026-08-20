@@ -51,4 +51,21 @@ patch('src/routes/motorista.app.tsx', (source) => {
   return next;
 }, 'motorista: estado aguardando pagamento sem liberar deslocamento');
 
+patch('src/components/payments/MercadoPagoSellerCard.tsx', (source) => {
+  if (source.includes('Desconectar Mercado Pago')) return source;
+  let next = source.replace(
+    '  const [connecting, setConnecting] = useState(false);',
+    '  const [connecting, setConnecting] = useState(false);\n  const [disconnecting, setDisconnecting] = useState(false);',
+  );
+  next = next.replace(
+    '  const connected = status?.connected === true; const connectedAt = dateLabel(status?.connectedAt);',
+    `  async function disconnect() {\n    if (disconnecting) return;\n    if (!window.confirm("Desconectar esta conta Mercado Pago da APOIS?")) return;\n    setDisconnecting(true);\n    try {\n      const { error } = await supabase.rpc("disconnect_my_mercadopago_driver");\n      if (error) throw error;\n      toast.success("Conta Mercado Pago desconectada.");\n      await refresh();\n    } catch (error) {\n      console.error("[MercadoPagoSellerCard] disconnect failed", error);\n      toast.error("Não foi possível desconectar a conta Mercado Pago agora.");\n    } finally {\n      setDisconnecting(false);\n    }\n  }\n  const connected = status?.connected === true; const connectedAt = dateLabel(status?.connectedAt);`,
+  );
+  next = next.replace(
+    '    <button type="button" onClick={() => void refresh()} disabled={loading} className="mt-2 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/8 bg-white/[0.02] text-[11px] font-black text-zinc-400 disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Atualizar status</button>',
+    '    {connected ? <button type="button" onClick={() => void disconnect()} disabled={disconnecting} className="mt-2 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 bg-red-400/[0.06] text-[11px] font-black text-red-300 disabled:opacity-50">{disconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}{disconnecting ? "Desconectando…" : "Desconectar Mercado Pago"}</button> : null}\n    <button type="button" onClick={() => void refresh()} disabled={loading} className="mt-2 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/8 bg-white/[0.02] text-[11px] font-black text-zinc-400 disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Atualizar status</button>',
+  );
+  return next;
+}, 'motorista: permitir desconectar conta Mercado Pago');
+
 console.log(`[OK] fluxo Motorista aguardando Pix aplicado em ${workspace}`);
