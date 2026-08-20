@@ -61,6 +61,18 @@ cleanup_server
 trap - EXIT
 test -s .output/public/index.html
 
+# O HTML renderizado pelo servidor usa URLs absolutas. Dentro do shell Parceiro
+# ele vive em modules/entregador, então os assets precisam ser relativos.
+node --input-type=module - <<'NODE'
+import { readFileSync, writeFileSync } from 'node:fs';
+const path = '.output/public/index.html';
+let html = readFileSync(path, 'utf8');
+html = html
+  .replace(/(src|href)="\/(?!\/)/g, '$1="./')
+  .replace(/(src|href)='\/(?!\/)/g, "$1='./");
+writeFileSync(path, html, 'utf8');
+NODE
+
 cd "$ROOT"
 node superapp/partner-shell/build.mjs
 test -s superapp/partner-shell/dist/index.html
