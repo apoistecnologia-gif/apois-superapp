@@ -4,7 +4,7 @@
       "source": "sources/apois-corridas-passageiro",
       "workspace": ".work/corridas",
       "install": ["bun", "install"],
-      "build": ["bash", "-c", "cd ../.. && node scripts/harden-corridas-superapp-searching-asset.mjs && node scripts/harden-corridas-superapp-cancellation-errors.mjs && node scripts/harden-corridas-superapp-storage.mjs && node scripts/harden-corridas-superapp-error-page.mjs && node scripts/harden-corridas-superapp-mercadopago.mjs && node scripts/harden-corridas-superapp-passenger-trip.mjs && grep -R -Fq 'ride-pix-checkout' .work/corridas/src && if grep -R -Fq 'asaas-create-ride-pix' .work/corridas/src; then echo '[FAIL] fonte Corridas ainda chama Asaas diretamente'; exit 1; fi && cd .work/corridas && bun run build:capacitor"],
+      "build": ["bash", "-c", "cd ../.. && node scripts/harden-corridas-superapp-searching-asset.mjs && node scripts/harden-corridas-superapp-cancellation-errors.mjs && node scripts/harden-corridas-superapp-storage.mjs && node scripts/harden-corridas-superapp-error-page.mjs && node scripts/harden-corridas-marketplace-status-order.mjs && node scripts/harden-corridas-superapp-mercadopago.mjs && node scripts/harden-corridas-superapp-passenger-trip.mjs && grep -R -Fq 'ride-pix-checkout' .work/corridas/src && grep -R -Fq 'procurar_motorista: 1' .work/corridas/src/hooks/rides/use-active-ride.tsx && grep -R -Fq 'aguardando_pagamento: 2' .work/corridas/src/hooks/rides/use-active-ride.tsx && if grep -R -Fq 'asaas-create-ride-pix' .work/corridas/src; then echo '[FAIL] fonte Corridas ainda chama Asaas diretamente'; exit 1; fi && cd .work/corridas && bun run build:capacitor"],
       "purpose": "APOIS Corridas - passageiro"
     },
     "entregas": {
