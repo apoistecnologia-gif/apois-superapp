@@ -22,6 +22,7 @@
     "build:entregas": "node scripts/build-isolated-module.mjs entregas",
     "build:motorista": "node scripts/build-motorista-module.mjs",
     "build:shell": "node scripts/harden-superapp-shell-auth-deeplink-source.mjs && node superapp/shell/build.mjs",
+    "build:partner": "bash scripts/build-partner-modules.sh",
     "harden:auth-deeplinks": "node scripts/harden-superapp-auth-deeplink-dedup.mjs",
     "inject:push-routing": "node scripts/inject-superapp-push-routing.mjs",
     "verify:dist": "node scripts/verify-superapp-dist.mjs && node scripts/verify-superapp-policy.mjs && node scripts/verify-superapp-storage-isolation.mjs && node scripts/verify-superapp-auth-deeplinks.mjs && node scripts/verify-superapp-customer-security.mjs && node scripts/verify-superapp-address-runtime.mjs && node scripts/verify-superapp-notification-assets.mjs",
