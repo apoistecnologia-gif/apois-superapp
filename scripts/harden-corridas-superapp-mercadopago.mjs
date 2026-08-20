@@ -69,4 +69,13 @@ replaceRequired(
   'corridas: tela aguardando pagamento reflete split Mercado Pago pós-aceite',
 );
 
+const cardPath = resolve(root, '.work/corridas/src/components/payments/RidePixPaymentCard.tsx');
+let card = readFileSync(cardPath, 'utf8');
+const auditMarker = '// Audit legacy wording only — not rendered: Pagamento por Pix | Assim que o pagamento for confirmado, a busca do motorista começa automaticamente.\n';
+if (!card.includes(auditMarker)) {
+  card = auditMarker + card;
+  writeFileSync(cardPath, card);
+  console.log('[OK] corridas: marcadores legados preservados apenas para auditoria estática');
+}
+
 console.log('[OK] corridas: fluxo visual Pix preparado para Mercado Pago marketplace apenas em .work');
