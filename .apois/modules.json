@@ -24,6 +24,13 @@
         "output": ".output/public/index.html"
       },
       "purpose": "APOIS Entregas - cliente"
+    },
+    "motorista": {
+      "source": "sources/apois-corridas-motorista-admin",
+      "workspace": ".work/motorista",
+      "install": ["bun", "install"],
+      "build": ["bun", "run", "build:motorista"],
+      "purpose": "APOIS Corridas - motorista"
     }
   },
   "rule": "Never patch source submodules. Copy to .work first and patch/build only there."
