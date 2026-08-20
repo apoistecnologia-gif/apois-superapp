@@ -40,6 +40,7 @@ if (!html.includes('data-apois-superapp-bridge')) {
   const shellUrl='../../index.html';
   const routeStorageKey='apois-superapp:last-route:motorista';
   const authStorageKey='apois-superapp-motorista-auth-v1';
+  const authDeepLinkKey='apois-superapp:motorista-last-auth-deeplink';
   const appPlugin=window.Capacitor?.Plugins?.App;
   const browserPlugin=window.Capacitor?.Plugins?.Browser;
   function route(){return window.location.hash||'#/motorista/app';}
@@ -50,6 +51,9 @@ if (!html.includes('data-apois-superapp-bridge')) {
   function handleDeepLink(rawUrl){
     if(typeof rawUrl!=='string'||!rawUrl.startsWith('br.com.apois.app://auth/mercadopago'))return false;
     try{
+        const previous = sessionStorage.getItem(authDeepLinkKey);
+        if (previous === rawUrl) return true;
+        sessionStorage.setItem(authDeepLinkKey, rawUrl);
       const incoming=new URL(rawUrl);const params=new URLSearchParams(incoming.search);const suffix=params.toString()?('?'+params.toString()):'';
       void browserPlugin?.close?.().catch(()=>undefined);
       window.location.replace('#/motorista/assinatura'+suffix);return true;
