@@ -20,17 +20,13 @@ patch('src/lib/googleMaps.ts', (source) => {
   const replacement = `// No APK/Superapp usamos primeiro a chave browser configurada no ambiente APOIS.\n// Mantemos as variáveis legadas apenas como fallback para preservar compatibilidade web.\nexport const GOOGLE_MAPS_API_KEY =\n  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ??\n  (import.meta.env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??\n  (import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined) ??\n  \"\";`;
 
   if (source.includes(replacement)) return source;
-
   const exportStart = source.indexOf('export const GOOGLE_MAPS_API_KEY =');
   if (exportStart < 0) throw new Error('googleMaps.ts: export GOOGLE_MAPS_API_KEY não encontrado');
-
   const statementEnd = source.indexOf(';', exportStart);
   if (statementEnd < 0) throw new Error('googleMaps.ts: fim do export GOOGLE_MAPS_API_KEY não encontrado');
-
   let commentStart = source.lastIndexOf('\n//', exportStart);
   if (commentStart < 0) commentStart = exportStart;
   else commentStart += 1;
-
   return `${source.slice(0, commentStart)}${replacement}${source.slice(statementEnd + 1)}`;
 }, 'motorista: Google Maps usa chave APOIS do Codemagic');
 
@@ -59,20 +55,18 @@ patch('src/mobile.tsx', (source) => {
 
 patch('src/components/AuthShell.tsx', (source) => {
   let next = source;
-
-  // Snapshot atual já possui classes responsivas; apenas acrescentamos centralização.
-  next = next.replace(
-    '<DSCardHeader className="min-w-0">',
-    '<DSCardHeader className="min-w-0 text-center">',
-  );
-  next = next.replace(
-    '<DSCardTitle className="break-words text-2xl leading-tight">{title}</DSCardTitle>',
-    '<DSCardTitle className="break-words text-center text-2xl leading-tight">{title}</DSCardTitle>',
-  );
-  next = next.replace(
-    '<DSCardDescription className="break-words text-sm leading-5">{description}</DSCardDescription>',
-    '<DSCardDescription className="break-words text-center text-sm leading-5">{description}</DSCardDescription>',
-  );
+  next = next.replace(/<DSCardHeader className="([^"]*)">/, (_m, classes) => {
+    const merged = `${classes} text-center`.replace(/\s+/g, ' ').trim();
+    return `<DSCardHeader className="${merged}">`;
+  });
+  next = next.replace(/<DSCardTitle className="([^"]*)">\{title\}<\/DSCardTitle>/, (_m, classes) => {
+    const merged = `${classes} text-center`.replace(/\s+/g, ' ').trim();
+    return `<DSCardTitle className="${merged}">{title}</DSCardTitle>`;
+  });
+  next = next.replace(/<DSCardDescription className="([^"]*)">\{description\}<\/DSCardDescription>/, (_m, classes) => {
+    const merged = `${classes} text-center`.replace(/\s+/g, ' ').trim();
+    return `<DSCardDescription className="${merged}">{description}</DSCardDescription>`;
+  });
 
   if (!next.includes('Voltar para escolher perfil')) {
     const markers = [
