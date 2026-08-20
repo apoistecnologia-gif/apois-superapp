@@ -16,12 +16,13 @@ if (!existsSync(officialBranding)) {
 }
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
 cpSync(officialBranding, resolve(dist, 'assets/apois-brand.png'));
-console.log('[OK] arte oficial APOIS copiada para o shell');
+console.log('[OK] arte oficial APOIS copiada para o shell cliente');
 
+// Arquitetura oficial: este APK é exclusivamente do cliente.
+// Motorista e Entregador pertencem ao Superapp Parceiro e não entram aqui.
 const modules = [
   ['corridas', resolve(root, '../../.work/corridas/dist')],
   ['entregas', resolve(root, '../../.work/entregas/.output/public')],
-  ['motorista', resolve(root, '../../.work/motorista/dist/client')],
 ];
 
 for (const [name, source] of modules) {
@@ -35,4 +36,4 @@ for (const [name, source] of modules) {
   console.log(`[OK] ${name} copiado para dist/modules/${name}`);
 }
 
-console.log(`[OK] shell gerado em ${dist}`);
+console.log(`[OK] shell cliente gerado em ${dist}: Corridas + Entregas`);
