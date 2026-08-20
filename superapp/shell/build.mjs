@@ -21,6 +21,7 @@ console.log('[OK] arte oficial APOIS copiada para o shell');
 const modules = [
   ['corridas', resolve(root, '../../.work/corridas/dist')],
   ['entregas', resolve(root, '../../.work/entregas/.output/public')],
+  ['motorista', resolve(root, '../../.work/motorista/dist/client')],
 ];
 
 for (const [name, source] of modules) {
