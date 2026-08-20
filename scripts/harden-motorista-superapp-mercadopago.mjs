@@ -41,6 +41,13 @@ replaceRequired(
 );
 
 replaceRequired(
+  '.work/motorista/vite.mobile.config.ts',
+  '  return {\n    appType: "spa",',
+  '  return {\n    base: "./",\n    appType: "spa",',
+  'motorista: assets relativos ao módulo do Superapp',
+);
+
+replaceRequired(
   '.work/motorista/src/routes/motorista.assinatura.tsx',
   'import { MovviLogo } from "@/components/MovviLogo";',
   'import { MovviLogo } from "@/components/MovviLogo";\nimport { MercadoPagoSellerCard } from "@/components/payments/MercadoPagoSellerCard";',
