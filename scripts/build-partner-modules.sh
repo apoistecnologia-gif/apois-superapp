@@ -17,6 +17,7 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 export APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
+node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 
 cd "$MOTORISTA"
 {
@@ -31,6 +32,11 @@ bun install
 npm run build:motorista
 grep -R -Fq 'Conectar Mercado Pago' dist/client
 grep -R -Fq 'mercadopago-oauth-start' dist/client
+grep -R -Fq 'Recebimento direto' dist/client
+if grep -R -Fq 'Solicitar saque' dist/client; then
+  echo '[FAIL] fluxo antigo de saque ainda presente no bundle Motorista'
+  exit 1
+fi
 
 # ---------------- Entregador ----------------
 cd "$ENTREGADOR"
