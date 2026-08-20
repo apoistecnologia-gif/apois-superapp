@@ -53,10 +53,11 @@ patch(
       '{ride.driver_photo ? (\n                <img src={ride.driver_photo} alt="Foto do motorista" className="h-full w-full object-cover" />',
       '{driverPhotoUrl ? (\n                <img src={driverPhotoUrl} onError={() => setDriverPhotoUrl(null)} alt="Foto do motorista" className="h-full w-full object-cover" />',
     );
+    out = out.replace('src="/favicon.png"', 'src="./favicon.png"');
     return out;
   },
-  (source) => source.includes('driverPhotoUrl') && source.includes('createSignedUrl(raw, 60 * 60)') && source.includes('get_passenger_ride_security_code') === false,
-  'corridas passageiro: resolve foto privada do motorista por URL assinada',
+  (source) => source.includes('driverPhotoUrl') && source.includes('createSignedUrl(raw, 60 * 60)') && source.includes('src="./favicon.png"'),
+  'corridas passageiro: resolve foto privada e branding relativo na corrida ativa',
 );
 
-console.log('[OK] corridas passageiro: foto do motorista e PIN protegidos corrigidos em .work');
+console.log('[OK] corridas passageiro: foto do motorista, PIN protegido e branding corrigidos em .work');
