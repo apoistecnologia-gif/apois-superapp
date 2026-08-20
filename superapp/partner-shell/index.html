@@ -35,7 +35,9 @@
     }));
 
     function relayDeepLink(rawUrl){
-      if(typeof rawUrl!=='string'||!rawUrl.startsWith('br.com.apois.parceiro://auth/'))return false;
+      const isLegacy=typeof rawUrl==='string'&&rawUrl.startsWith('br.com.apois.app://auth/');
+      const isPartner=typeof rawUrl==='string'&&rawUrl.startsWith('br.com.apois.parceiro://auth/');
+      if(!isLegacy&&!isPartner)return false;
       try{
         const incoming=new URL(rawUrl);
         const path=incoming.pathname.replace(/^\//,'');
