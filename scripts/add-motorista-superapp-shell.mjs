@@ -43,9 +43,8 @@ replaceOnce(
 );
 
 replaceOnce(
-  "        if(path==='corridas-reset'){
-",
-  "        if(path==='mercadopago'){\n          try{localStorage.setItem(LAST_MODULE_KEY,'motorista');}catch{}\n          void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);\n          window.location.replace(`./modules/motorista/index.html#/motorista/assinatura${suffix()}`);\n          return true;\n        }\n        if(path==='corridas-reset'){\n",
+  "        if(path==='corridas-reset'){",
+  "        if(path==='mercadopago'){\n          try{localStorage.setItem(LAST_MODULE_KEY,'motorista');}catch{}\n          void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);\n          window.location.replace(`./modules/motorista/index.html#/motorista/assinatura${suffix()}`);\n          return true;\n        }\n        if(path==='corridas-reset'){",
   'shell: retorno OAuth Mercado Pago',
 );
 
