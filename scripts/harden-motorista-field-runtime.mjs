@@ -80,6 +80,35 @@ patch('src/components/AuthShell.tsx', (source) => {
   return next;
 }, 'motorista: login centralizado e retorno ao seletor');
 
+patch('src/routes/motorista.login.tsx', (source) => {
+  let next = source;
+
+  next = next.replace(
+    '<section className="mt-5 min-w-0">',
+    '<section className="mt-5 min-w-0 text-center">',
+  );
+  next = next.replace(
+    '<h1 className="break-words text-[clamp(27px,9vw,31px)] font-black leading-[1.08] tracking-[-0.04em]">',
+    '<h1 className="mx-auto break-words text-center text-[clamp(27px,9vw,31px)] font-black leading-[1.08] tracking-[-0.04em]">',
+  );
+  next = next.replace(
+    '<p className="mt-3 break-words text-[13px] font-medium leading-5 text-zinc-500">Faça login para começar a receber corridas.</p>',
+    '<p className="mx-auto mt-3 break-words text-center text-[13px] font-medium leading-5 text-zinc-500">Faça login para começar a receber corridas.</p>',
+  );
+
+  next = next.replaceAll(
+    'focus-within:border-[#F6BE1C]/55 focus-within:ring-1 focus-within:ring-[#F6BE1C]/20',
+    'focus-within:border-white/20 focus-within:ring-0',
+  );
+
+  next = next.replaceAll(
+    'className="h-full min-w-0 flex-1 bg-transparent text-base font-semibold text-white outline-none placeholder:text-zinc-600"',
+    'className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent text-base font-semibold text-white outline-none ring-0 placeholder:text-zinc-600 focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0" style={{ WebkitTapHighlightColor: "transparent", boxShadow: "none" }}',
+  );
+
+  return next;
+}, 'motorista: cabeçalho centralizado e campos sem quadrado de foco amarelo');
+
 patch('src/components/DriverSideMenu.tsx', (source) => {
   if (source.includes('Trocar perfil de parceiro')) return source;
   const logoutIndex = source.indexOf('{onLogout ? (');
