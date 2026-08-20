@@ -8,7 +8,6 @@ OUT="$ROOT/build/APOIS-Motorista.apk"
 rm -rf "$WORK"
 mkdir -p "$ROOT/.work" "$ROOT/build"
 cp -R "$ROOT/sources/apois-corridas-motorista-admin" "$WORK"
-cd "$WORK"
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
@@ -16,9 +15,17 @@ export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
 export APOIS_VERSION_CODE="${APOIS_MOTORISTA_VERSION_CODE:-1}"
 export APOIS_VERSION_NAME="${APOIS_MOTORISTA_VERSION_NAME:-1.0.0}"
+export APOIS_MOTORISTA_WORKSPACE=".work/motorista-test"
 
-# O build mobile lê .env.mobile/.env.mobile.local. Sobrescrevemos apenas dados
-# browser-safe vindos do mesmo grupo Codemagic usado pelo Superapp.
+# Todo hardening acontece somente na cópia .work. Os repositórios-fonte
+# permanecem protegidos e intocados.
+node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
+node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
+
+cd "$WORK"
+
+# O build mobile lê .env.mobile/.env.mobile.local. Sobrescrevemos somente
+# dados browser-safe vindos do grupo Codemagic do APOIS.
 {
   if [ -n "${CORRIDAS_VITE_SUPABASE_URL:-}" ]; then
     printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
@@ -27,6 +34,9 @@ export APOIS_VERSION_NAME="${APOIS_MOTORISTA_VERSION_NAME:-1.0.0}"
     printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
   fi
   if [ -n "${CORRIDAS_WEB_MAPS_API_KEY:-}" ]; then
+    # googleMaps.ts agora aceita esta chave oficial do build, sem depender
+    # do conector Lovable/referrer *.lovable.app.
+    printf 'VITE_GOOGLE_MAPS_API_KEY=%s\n' "$CORRIDAS_WEB_MAPS_API_KEY"
     printf 'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY=%s\n' "$CORRIDAS_WEB_MAPS_API_KEY"
   fi
 } > .env.mobile.local
@@ -39,6 +49,12 @@ printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > android/local.properties
 # O snapshot protegido já contém google-services.json para com.apois.motorista.
 test -s android/app/google-services.json
 grep -Fq 'com.apois.motorista' android/app/google-services.json
+
+# Falhar cedo se o bundle final não contém os recursos que estamos homologando.
+grep -R -Fq 'Conectar Mercado Pago' dist/client
+grep -R -Fq 'mercadopago-oauth-start' dist/client
+grep -R -Fq 'VITE_GOOGLE_MAPS_API_KEY' src/lib/googleMaps.ts
+
 node scripts/verify-mobile-native.mjs motorista --live
 
 cd android
@@ -70,4 +86,4 @@ ALIGNED="$ROOT/build/APOIS-Motorista-aligned.apk"
 rm -f "$ALIGNED"
 test -s "$OUT"
 
-echo "[OK] APOIS Motorista gerado em $OUT"
+echo "[OK] APOIS Motorista gerado em $OUT com Maps + Mercado Pago homologáveis"
