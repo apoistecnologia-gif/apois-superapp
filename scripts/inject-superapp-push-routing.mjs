@@ -7,18 +7,21 @@ const targets = [
     moduleName: 'shell',
     entregasBase: './modules/entregas/index.html',
     corridasBase: './modules/corridas/index.html',
+    motoristaBase: './modules/motorista/index.html',
   },
   {
     path: resolve('superapp/shell/dist/modules/corridas/index.html'),
     moduleName: 'corridas',
     entregasBase: '../entregas/index.html',
     corridasBase: null,
+    motoristaBase: '../motorista/index.html',
   },
   {
     path: resolve('superapp/shell/dist/modules/entregas/index.html'),
     moduleName: 'entregas',
     entregasBase: null,
     corridasBase: '../corridas/index.html',
+    motoristaBase: '../motorista/index.html',
   },
 ];
 
@@ -34,6 +37,7 @@ for (const target of targets) {
 (() => {
   const entregasBase = ${JSON.stringify(target.entregasBase)};
   const corridasBase = ${JSON.stringify(target.corridasBase)};
+  const motoristaBase = ${JSON.stringify(target.motoristaBase)};
   const pushPlugin = window.Capacitor?.Plugins?.PushNotifications;
   if (!pushPlugin) return;
 
@@ -115,6 +119,11 @@ for (const target of targets) {
         : entregasBase + '#/notificacoes';
     }
 
+    if (ride.event === 'driver.new_ride_request') {
+      if (!motoristaBase) return null;
+      return motoristaBase + '#/motorista/app';
+    }
+
     if (ride.isRide) {
       if (!corridasBase) return null;
       return corridasBase + '#' + safeRidePath(data, ride);
@@ -134,6 +143,6 @@ for (const target of targets) {
   html = html.includes('</body>')
     ? html.replace('</body>', `${script}\n</body>`)
     : `${html}\n${script}\n`;
-  writeFileSync(target.path, html);
-  console.log(`[OK] ${target.moduleName}: Push cruzado Corridas/Entregas roteado apenas para payload reconhecido`);
+  writeFileSync(target.path, html, 'utf8');
+  console.log(`[OK] ${target.moduleName}: Push cruzado roteado por produto`);
 }
