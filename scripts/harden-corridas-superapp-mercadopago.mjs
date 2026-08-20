@@ -41,16 +41,19 @@ replaceRequired(
   'corridas: comprovante Pix usa texto neutro do gateway',
 );
 
+// O hardening de runtime roda antes deste arquivo e já transforma o título
+// legado em "Pagamento por Pix". A partir daqui ajustamos o texto para o
+// fluxo marketplace correto: motorista reservado primeiro, Pix depois.
 replaceRequired(
   '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
-  '          <p className="text-sm font-black text-white">Pague por Pix para chamar o motorista</p>',
+  '          <p className="text-sm font-black text-white">Pagamento por Pix</p>',
   '          <p className="text-sm font-black text-white">Pague por Pix para confirmar a corrida</p>',
   'corridas: título do Pix reflete motorista já reservado',
 );
 
 replaceRequired(
   '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
-  '            A corrida só entra na busca de motorista depois que o Asaas confirmar o pagamento ao backend.',
+  '            Assim que o pagamento for confirmado, a busca do motorista começa automaticamente.',
   '            Seu motorista já está reservado. Ele só seguirá para o embarque após a confirmação oficial do Pix.',
   'corridas: explicação do Pix segue fluxo marketplace pós-aceite',
 );
@@ -64,7 +67,7 @@ replaceRequired(
 
 replaceRequired(
   '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
-  '            <p className="mt-1 text-[11px] text-zinc-500">Nenhum motorista será chamado enquanto o Pix estiver pendente.</p>',
+  '            <p className="mt-1 text-[11px] text-zinc-500">Pague por Pix para iniciar a busca do motorista.</p>',
   '            <p className="mt-1 text-[11px] text-zinc-500">Seu motorista está reservado. A corrida avança após a confirmação do Pix.</p>',
   'corridas: tela aguardando pagamento reflete split Mercado Pago pós-aceite',
 );
