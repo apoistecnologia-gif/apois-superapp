@@ -24,16 +24,29 @@ source = source.replaceAll('{browserKey && mapId\n            ? "Aguardando o GP
 source = source.replaceAll('browserKey && mapId ? (', 'browserKey ? (');
 source = source.replaceAll('shadow-[0_8px_22px_rgba(106,27,154,0.24)]', 'shadow-[0_8px_22px_rgba(246,190,28,0.20)]');
 
+// O mapa de espera não deve ser controlado pela posição GPS a cada render.
+// Com `center`, qualquer atualização de localização puxava a câmera de volta e
+// impedia o entregador de explorar o mapa. O botão de recentralizar já existe.
+source = source.replace(
+  '              center={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              zoom={14}',
+  '              defaultCenter={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              defaultZoom={14}',
+);
+
 for (const marker of [
   'const APOIS_GOLD = "#F6BE1C";',
   'VITE_GOOGLE_MAPS_API_KEY',
   'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY',
   '"DEMO_MAP_ID"',
   'strokeColor: APOIS_GOLD',
+  'defaultCenter={{ lat: currentPosition.lat, lng: currentPosition.lng }}',
+  'defaultZoom={14}',
 ]) {
   if (!source.includes(marker)) throw new Error(`Entregador Parceiro: hardening do mapa incompleto (${marker}).`);
 }
 if (source.includes('const BRAND_PURPLE')) throw new Error('Entregador Parceiro: rota roxa antiga permaneceu no mapa.');
+if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              zoom={14}')) {
+  throw new Error('Entregador Parceiro: mapa de espera ainda força a câmera em cada atualização do GPS.');
+}
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: jornada nativa, mapa com chave APOIS, Map ID resiliente, tema escuro e rota dourada.');
+console.log('[OK] Entregador Parceiro: jornada nativa, mapa dourado e câmera livre durante atualizações do GPS.');
