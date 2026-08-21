@@ -38,12 +38,15 @@ requireAll('scripts/build-partner-modules.sh', [
   'VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"',
   'harden-partner-mercadopago-callback.mjs',
   'harden-motorista-mercadopago-disconnect.mjs',
+  'harden-partner-entregador-push.mjs',
+  'register_courier_push_device_v2',
+  '_app_package: "br.com.apois.parceiro"',
   'appTarget: "partner"',
   'Conectar Mercado Pago',
   'mercadopago-oauth-start',
   'Siga a rota até o ponto de embarque',
   'Como foi o passageiro?',
-], 'build Parceiro preserva lockfiles, auth isolado, Mercado Pago e jornada do motorista');
+], 'build Parceiro preserva lockfiles, auth isolado, FCM por package, Mercado Pago e jornada');
 
 requireAll('scripts/configure-partner-android.mjs', [
   "ensurePermission('android.permission.ACCESS_FINE_LOCATION')",
@@ -80,14 +83,30 @@ requireAll('scripts/harden-partner-mercadopago-callback.mjs', [
   'android:scheme="br.com.apois.parceiro"',
 ], 'Parceiro migra OAuth Mercado Pago para callback próprio e remove registro legado no Android');
 
+requireAll('scripts/harden-partner-entregador-push.mjs', [
+  'register_courier_push_device_v2',
+  '_app_package: "br.com.apois.parceiro"',
+  'window.location.assign("/courier")',
+  'apois:courier-push-open',
+], 'Entregador Parceiro registra FCM no package próprio e remove navegação absoluta quebrada');
+
+requireAll('scripts/configure-partner-firebase.mjs', [
+  'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64',
+  'br.com.apois.parceiro',
+  "apply plugin: 'com.google.gms.google-services'",
+  'google-services.json',
+], 'Firebase do Parceiro é obrigatório e validado pelo package antes do release');
+
 requireAll('scripts/install-partner-launcher.mjs', [
   "import './harden-partner-mercadopago-callback.mjs';",
   "import './harden-partner-android-security.mjs';",
+  "import './configure-partner-firebase.mjs';",
   'android:allowBackup="false"',
   'android:usesCleartextTraffic="false"',
   'android:scheme="br.com.apois.parceiro"',
+  'Firebase do APOIS Parceiro não foi materializado.',
   'Manifest Parceiro ainda registra callback Mercado Pago do app cliente.',
-], 'launcher Parceiro valida isolamento OAuth antes de finalizar recursos Android');
+], 'launcher Parceiro valida OAuth, segurança e Firebase antes de finalizar recursos Android');
 
 requireAll('codemagic.yaml', [
   'android-partner-superapp:',
@@ -96,6 +115,11 @@ requireAll('codemagic.yaml', [
   'npm run build:partner',
   'APOIS-Parceiro.apk',
 ], 'Codemagic possui workflow separado e assinado do APOIS Parceiro');
+
+requireAll('.env.example', [
+  'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64=',
+  'PARTNER_APP_PACKAGE=br.com.apois.parceiro',
+], 'ambiente documenta Firebase/package exclusivos do APOIS Parceiro');
 
 requireAll('scripts/harden-motorista-field-mercadopago.mjs', [
   'mercadopago-driver-status',
