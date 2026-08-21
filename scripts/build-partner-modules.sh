@@ -18,12 +18,12 @@ require_contains() {
   local target="$2"
   local label="$3"
   if ! grep -R -Fq "$needle" "$target"; then
-    echo "[FAIL] validação Motorista: $label"
+    echo "[FAIL] validação Parceiro: $label"
     echo "       esperado: $needle"
     echo "       em: $target"
     exit 1
   fi
-  echo "[OK] validação Motorista: $label"
+  echo "[OK] validação Parceiro: $label"
 }
 
 # ---------------- Motorista ----------------
@@ -95,10 +95,13 @@ export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
 node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
+node "$ROOT/scripts/harden-partner-entregador-map.mjs"
 
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'registro Push v2 do Entregador presente'
 require_contains '_app_package: "br.com.apois.parceiro"' src/lib/courier-push.ts 'token Push vinculado ao package do Parceiro'
+require_contains 'const APOIS_GOLD = "#F6BE1C"' src/components/CourierRouteMap.tsx 'mapa do Entregador usa rota dourada APOIS'
+require_contains '"DEMO_MAP_ID"' src/components/CourierRouteMap.tsx 'mapa possui Map ID de fallback para não desaparecer'
 if grep -Fq 'window.location.assign("/courier")' src/lib/courier-push.ts; then
   echo '[FAIL] Entregador ainda tenta abrir rota absoluta /courier dentro do bundle aninhado'
   exit 1
@@ -110,6 +113,13 @@ export VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"
 export APP_ROUTE="/courier"
 export APP_PACKAGE="br.com.apois.parceiro"
 export APP_LABEL="APOIS Parceiro"
+# O módulo Entregador espera VITE_GOOGLE_MAPS_BROWSER_KEY. Reutilizamos a chave
+# web de Maps já validada para o ecossistema e aceitamos Map ID dedicado quando
+# fornecido; sem ele, o componente usa DEMO_MAP_ID para não ficar sem mapa.
+export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
+export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
+export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
+export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 bun install --frozen-lockfile
 bun run build
 
@@ -146,5 +156,7 @@ node superapp/partner-shell/build.mjs
 test -s superapp/partner-shell/dist/index.html
 test -s superapp/partner-shell/dist/modules/motorista/index.html
 test -s superapp/partner-shell/dist/modules/entregador/index.html
+grep -R -Fq '#F6BE1C' superapp/partner-shell/dist/modules/entregador
+grep -R -Fq 'DEMO_MAP_ID' superapp/partner-shell/dist/modules/entregador
 
-echo '[OK] módulos do APOIS Parceiro compilados: Motorista + Entregador'
+echo '[OK] módulos do APOIS Parceiro compilados: Motorista + Entregador com mapa operacional'
