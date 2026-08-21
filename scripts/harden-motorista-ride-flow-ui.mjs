@@ -113,6 +113,21 @@ patch('src/routes/motorista.app.tsx', (source) => {
     'bg-[#080B11]/[.97] backdrop-blur-xl',
   );
 
+  const requiredMarkers = [
+    'lastRouteFailureAtRef',
+    'pos.lat.toFixed(3)',
+    'route_polyline_empty',
+    'nearDestination',
+    'Pagamento confirmado. Siga até o ponto de embarque.',
+    'bg-[#080B11]/95',
+    'Siga a rota até o ponto de embarque',
+  ];
+  for (const marker of requiredMarkers) {
+    if (!next.includes(marker)) {
+      throw new Error(`motorista.app.tsx: hardening crítico não aplicado (${marker})`);
+    }
+  }
+
   return next;
 }, 'motorista: fluxo pós-Pix, rota dinâmica e UI de navegação premium');
 
