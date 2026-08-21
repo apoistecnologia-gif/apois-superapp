@@ -26,6 +26,7 @@ node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
 node "$ROOT/scripts/harden-motorista-finalize-feedback.mjs"
+node "$ROOT/scripts/harden-motorista-self-rating.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
@@ -69,6 +70,7 @@ grep -R -Fq 'Corrida iniciada. Siga a rota até' dist/client
 grep -R -Fq 'toque em finalizar corrida' dist/client
 grep -R -Fq 'Como foi o passageiro?' dist/client
 grep -R -Fq 'Pular avaliação' dist/client
+grep -R -Fq 'Avaliação de teste concluída' dist/client
 grep -Fq 'VOICE_PREF_MIGRATION_KEY' src/lib/voiceNav.ts
 grep -Fq 'migrateVoicePreferenceOnce();' src/lib/voiceNav.ts
 grep -Fq 'cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts
