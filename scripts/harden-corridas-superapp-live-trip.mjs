@@ -16,11 +16,24 @@ function patch(relativePath, transform, verify, label) {
 
 patch(
   '.work/corridas/src/services/rides/active-ride-service.ts',
-  (source) => source.replace(
-    'if (!["motorista_a_caminho", "motorista_chegou"].includes(ride.status)) return ride;',
-    'if (ride.status !== "motorista_chegou") return { ...ride, security_code: null };',
-  ),
-  (source) => source.includes('if (ride.status !== "motorista_chegou") return { ...ride, security_code: null };'),
+  (source) => {
+    let next = source;
+
+    // Snapshot atual consulta o PIN por PIN_VISIBLE_STATUSES. A regra do
+    // Superapp é mais restrita: o passageiro só recebe o PIN depois que o
+    // motorista confirmou a chegada ao embarque.
+    next = next.replace(
+      'if (!["motorista_a_caminho", "motorista_chegou"].includes(ride.status)) return ride;',
+      'if (ride.status !== "motorista_chegou") return { ...ride, security_code: null };',
+    );
+    next = next.replace(
+      '    if (!PIN_VISIBLE_STATUSES.includes(ride.status)) {',
+      '    if (ride.status !== "motorista_chegou") {',
+    );
+
+    return next;
+  },
+  (source) => source.includes('if (ride.status !== "motorista_chegou")'),
   'passageiro: PIN só é consultado depois que o motorista confirma a chegada',
 );
 
@@ -80,7 +93,7 @@ patch(
     if (!next.includes('const approachRouteKey')) {
       next = next.replace(
         '  const routePoints = useMemo<Coordinate[]>(() => {',
-        `  const approachRouteKey = driverLocation\n    ? \`${'${driverLocation.lat.toFixed(3)}:${driverLocation.lng.toFixed(3)}'}\`\n    : "";\n\n  useEffect(() => {\n    if (!isApproach || !driverLocation || status !== "ready") {\n      if (!isApproach) setApproachRoutePoints([]);\n      return;\n    }\n\n    let cancelled = false;\n    const maps = (window as any).google?.maps;\n    const fallback = [driverLocation, origin];\n    if (!maps?.DirectionsService || !maps?.TravelMode) {\n      setApproachRoutePoints(fallback);\n      return;\n    }\n\n    const service = new maps.DirectionsService();\n    service.route(\n      { origin: driverLocation, destination: origin, travelMode: maps.TravelMode.DRIVING },\n      (result: any) => {\n        if (cancelled) return;\n        const overview = result?.routes?.[0]?.overview_path ?? [];\n        const points = overview\n          .map((point: any) => ({ lat: point.lat(), lng: point.lng() }))\n          .filter(validCoordinate);\n        setApproachRoutePoints(points.length > 1 ? points : fallback);\n      },\n    ).catch?.(() => { if (!cancelled) setApproachRoutePoints(fallback); });\n\n    return () => { cancelled = true; };\n  }, [approachRouteKey, isApproach, origin.lat, origin.lng, status]);\n\n  const routePoints = useMemo<Coordinate[]>(() => {`,
+        `  const approachRouteKey = driverLocation\n    ? driverLocation.lat.toFixed(3) + ":" + driverLocation.lng.toFixed(3)\n    : "";\n\n  useEffect(() => {\n    if (!isApproach || !driverLocation || status !== "ready") {\n      if (!isApproach) setApproachRoutePoints([]);\n      return;\n    }\n\n    let cancelled = false;\n    const maps = (window as any).google?.maps;\n    const fallback = [driverLocation, origin];\n    if (!maps?.DirectionsService || !maps?.TravelMode) {\n      setApproachRoutePoints(fallback);\n      return;\n    }\n\n    const service = new maps.DirectionsService();\n    service.route(\n      { origin: driverLocation, destination: origin, travelMode: maps.TravelMode.DRIVING },\n      (result: any) => {\n        if (cancelled) return;\n        const overview = result?.routes?.[0]?.overview_path ?? [];\n        const points = overview\n          .map((point: any) => ({ lat: point.lat(), lng: point.lng() }))\n          .filter(validCoordinate);\n        setApproachRoutePoints(points.length > 1 ? points : fallback);\n      },\n    ).catch?.(() => { if (!cancelled) setApproachRoutePoints(fallback); });\n\n    return () => { cancelled = true; };\n  }, [approachRouteKey, isApproach, origin.lat, origin.lng, status]);\n\n  const routePoints = useMemo<Coordinate[]>(() => {`,
       );
     }
 
