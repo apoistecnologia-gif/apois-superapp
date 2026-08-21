@@ -25,6 +25,7 @@ node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
+node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
 cd "$WORK"
@@ -70,6 +71,7 @@ grep -R -Fq 'Pular avaliação' dist/client
 grep -Fq 'VOICE_PREF_MIGRATION_KEY' src/lib/voiceNav.ts
 grep -Fq 'migrateVoicePreferenceOnce();' src/lib/voiceNav.ts
 grep -Fq 'cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts
+grep -Fq 'instructionKey = cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts
 grep -Fq 'Em ${meters} metros' src/lib/voiceNav.ts
 grep -Fq 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx
 grep -Fq 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx
