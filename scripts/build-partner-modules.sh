@@ -13,6 +13,19 @@ cp -R "$ROOT/sources/apois-entregas" "$ENTREGADOR"
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
+require_contains() {
+  local needle="$1"
+  local target="$2"
+  local label="$3"
+  if ! grep -R -Fq "$needle" "$target"; then
+    echo "[FAIL] validação Motorista: $label"
+    echo "       esperado: $needle"
+    echo "       em: $target"
+    exit 1
+  fi
+  echo "[OK] validação Motorista: $label"
+}
+
 # ---------------- Motorista ----------------
 export APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
@@ -33,23 +46,30 @@ export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
 bun install
 npm run build:motorista
-grep -R -Fq 'Conectar Mercado Pago' dist/client
-grep -R -Fq 'mercadopago-oauth-start' dist/client
-grep -R -Fq 'Recebimento direto' dist/client
-grep -R -Fq 'Aguardando pagamento do passageiro' dist/client
-grep -R -Fq 'Siga a rota até o ponto de embarque' dist/client
-grep -R -Fq 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client
-grep -R -Fq 'Como foi o passageiro?' dist/client
-grep -R -Fq 'Pular avaliação' dist/client
-grep -R -Fq 'Nova corrida' dist/client
-grep -R -Fq 'Viagem iniciada. Boa viagem.' dist/client
-grep -Fq 'let voiceEnabled = true' src/lib/voiceNav.ts
-grep -Fq 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx
-grep -Fq 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx
+
+require_contains 'Conectar Mercado Pago' dist/client 'conexão Mercado Pago presente'
+require_contains 'mercadopago-oauth-start' dist/client 'OAuth Mercado Pago presente'
+require_contains 'Recebimento direto' dist/client 'recebimento direto presente'
+require_contains 'Aguardando pagamento do passageiro' dist/client 'espera de pagamento presente'
+require_contains 'Siga a rota até o ponto de embarque' dist/client 'orientação até embarque presente'
+require_contains 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client 'transição pós-Pix presente'
+require_contains 'Como foi o passageiro?' dist/client 'avaliação final presente'
+require_contains 'Pular avaliação' dist/client 'saída segura da avaliação presente'
+require_contains 'Nova corrida' dist/client 'voz de nova corrida presente'
+require_contains 'Viagem iniciada. Boa viagem.' dist/client 'voz de início da viagem presente'
+
+# voiceNav.ts não usa uma variável chamada voiceEnabled. O comportamento real é:
+# sem preferência salva => true; depois a preferência do motorista é respeitada.
+require_contains 'let enabled = readStoredVoicePreference();' src/lib/voiceNav.ts 'estado de voz carregado no início'
+require_contains 'return stored === null ? true : stored !== "false";' src/lib/voiceNav.ts 'voz ativa por padrão na primeira execução'
+require_contains 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx 'marcador APOIS com A presente'
+require_contains 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx 'rota dourada APOIS presente'
+
 if grep -R -Fq 'Solicitar saque' dist/client; then
   echo '[FAIL] fluxo antigo de saque ainda presente no bundle Motorista'
   exit 1
 fi
+echo '[OK] validação Motorista: opção Solicitar saque ausente'
 
 # ---------------- Entregador ----------------
 cd "$ENTREGADOR"
