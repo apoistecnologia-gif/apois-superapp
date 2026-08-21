@@ -45,6 +45,20 @@ requireAll('scripts/harden-partner-motorista-active-resume.mjs', [
   'removeEventListener',
 ], 'Motorista ressincroniza corrida/oferta imediatamente após Push');
 
+requireAll('scripts/harden-partner-motorista-native-watch.mjs', [
+  'useRef<number | string | null>(null)',
+  'Geolocation.watchPosition(',
+  'Geolocation.clearWatch({ id })',
+  'watchStopRequestedRef',
+  'stopDriverWatch();',
+], 'Motorista usa watcher GPS nativo contínuo e o encerra com segurança ao ficar offline');
+
+requireAll('scripts/build-partner-modules.sh', [
+  'harden-partner-motorista-native-watch.mjs',
+  "require_contains 'Geolocation.watchPosition('",
+  "require_contains 'stopDriverWatch();'",
+], 'build Parceiro aplica e valida o watcher GPS nativo do Motorista');
+
 requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
   "import './harden-partner-motorista-history-receipt.mjs';",
   'case "credit":',
