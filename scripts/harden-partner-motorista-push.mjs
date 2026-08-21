@@ -1,5 +1,6 @@
 import './harden-partner-motorista-payment-policy.mjs';
 import './harden-partner-motorista-finish-authority.mjs';
+import './harden-partner-motorista-post-finish.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -138,4 +139,4 @@ if (source.includes('return "/motorista/app";\n  }\n\n  if (APP_ROLE') && !sourc
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Motorista Parceiro: pagamento direto preservado (Dinheiro/PIX/Cartão); finalização fica sob autoridade do backend; Push de corrida usa Hash interno e Push de Entregas vai ao shell.');
+console.log('[OK] Motorista Parceiro: pagamento direto preservado (Dinheiro/PIX/Cartão); finalização fica sob autoridade do backend; estado pós-corrida é aplicado imediatamente; Push de corrida usa Hash interno e Push de Entregas vai ao shell.');
