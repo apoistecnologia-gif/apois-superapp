@@ -108,13 +108,36 @@ requireAll('scripts/install-partner-launcher.mjs', [
   'Manifest Parceiro ainda registra callback Mercado Pago do app cliente.',
 ], 'launcher Parceiro valida OAuth, segurança e Firebase antes de finalizar recursos Android');
 
+requireAll('superapp/partner-shell/index.html', [
+  'pushNotificationActionPerformed',
+  'relayPartnerPush',
+  './modules/entregador/index.html',
+  './modules/motorista/index.html#/motorista/app',
+], 'shell Parceiro encaminha toque de Push ao módulo correto em vez de parar no seletor');
+
+requireAll('supabase/migrations/20260821164500_partner_courier_push_package.sql', [
+  'register_courier_push_device_v2',
+  "'br.com.apois.entregador','br.com.apois.parceiro'",
+  'app_package = excluded.app_package',
+  'revoke all on function public.register_courier_push_device_v2(text,text,text) from public, anon',
+], 'registro FCM do Entregador por package está versionado e restrito a authenticated');
+
+requireAll('supabase/functions/dispatch-push-outbox/index.ts', [
+  'LEGACY_COURIER_PACKAGE',
+  'PARTNER_PACKAGE',
+  'requestedPackage === PARTNER_PACKAGE ? PARTNER_PACKAGE : LEGACY_COURIER_PACKAGE',
+  'restricted_package_name: target.packageName',
+], 'dispatcher Push Entregas respeita package do APK Entregador legado ou Parceiro');
+
 requireAll('codemagic.yaml', [
   'android-partner-superapp:',
   'PARTNER_APP_PACKAGE: "br.com.apois.parceiro"',
   'PARTNER_APP_LABEL: "APOIS Parceiro"',
-  'npm run build:partner',
+  'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64',
+  'register_courier_push_device_v2',
+  'test -s superapp/partner-shell/android/app/google-services.json',
   'APOIS-Parceiro.apk',
-], 'Codemagic possui workflow separado e assinado do APOIS Parceiro');
+], 'Codemagic bloqueia release Parceiro sem Firebase/package/Push coerentes');
 
 requireAll('.env.example', [
   'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64=',
