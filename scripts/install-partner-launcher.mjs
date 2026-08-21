@@ -1,3 +1,4 @@
+import './harden-partner-android-security.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -49,5 +50,7 @@ writeFileSync(join(adaptiveDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
 const manifest = readFileSync(manifestPath, 'utf8');
 if (!manifest.includes('android:icon="@mipmap/ic_launcher"')) throw new Error('Manifest Parceiro não aponta para @mipmap/ic_launcher');
 if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) throw new Error('Manifest Parceiro não aponta para @mipmap/ic_launcher_round');
+if (!manifest.includes('android:allowBackup="false"')) throw new Error('Manifest Parceiro ainda permite backup de sessão.');
+if (!manifest.includes('android:usesCleartextTraffic="false"')) throw new Error('Manifest Parceiro ainda permite tráfego HTTP cleartext.');
 
-console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro em todas as densidades.');
+console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro em todas as densidades, após hardening Android.');
