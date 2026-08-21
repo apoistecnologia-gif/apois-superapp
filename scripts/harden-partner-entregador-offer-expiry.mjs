@@ -36,7 +36,7 @@ patch(
     ? "Tempo limitado"
     : expired
       ? "Expirada"
-      : `${String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:${String(remainingSeconds % 60).padStart(2, "0")}`;
+      : String(Math.floor(remainingSeconds / 60)).padStart(2, "0") + ":" + String(remainingSeconds % 60).padStart(2, "0");
 
   useEffect(() => {
     if (!Number.isFinite(expiresAtMs)) return;
@@ -56,8 +56,8 @@ patch(
     }
 
     next = next.replace(
-      `<Clock3 className="h-3.5 w-3.5 text-primary" /> Chegou agora`,
-      `<Clock3 className="h-3.5 w-3.5 text-primary" /> {expired ? "Oferta expirada" : `Expira em ${countdownLabel}`}`,
+      '<Clock3 className="h-3.5 w-3.5 text-primary" /> Chegou agora',
+      '<Clock3 className="h-3.5 w-3.5 text-primary" /> {expired ? "Oferta expirada" : "Expira em " + countdownLabel}',
     );
     next = next.replaceAll(
       'disabled={busy}\n            onClick={() => void onAccept(offer.id)}',
@@ -76,7 +76,7 @@ patch(
   (source) =>
     source.includes('useEffect, useRef, useState') &&
     source.includes('remainingSeconds') &&
-    source.includes('Expira em ${countdownLabel}') &&
+    source.includes('"Expira em " + countdownLabel') &&
     source.includes('onExpire?.(offer.id)') &&
     source.includes('busy || expired'),
   'entregador: oferta mostra contagem regressiva real e bloqueia aceite após expirar',
