@@ -52,11 +52,11 @@ patch('src/routes/motorista.app.tsx', (source) => {
   );
   next = next.replace(
     '        zoom: NAVIGATION_ZOOM,\n        heading: heading ?? undefined,\n        tilt: heading == null ? 0 : 45,',
-    '        zoom: targetZoom,\n        heading: nearDestination ? undefined : (heading ?? undefined),\n        tilt: nearDestination || heading == null ? 0 : 45,',
+    '        zoom: targetZoom,\n        heading: nearDestination ? 0 : (heading ?? undefined),\n        tilt: nearDestination || heading == null ? 0 : 45,',
   );
   next = next.replace(
     '    if ((map.getZoom() ?? 0) < 17) map.setZoom(NAVIGATION_ZOOM);\n    if (heading != null) {',
-    '    if ((map.getZoom() ?? 0) < 17 || nearDestination) map.setZoom(targetZoom);\n    if (!nearDestination && heading != null) {',
+    '    if ((map.getZoom() ?? 0) < 17 || nearDestination) map.setZoom(targetZoom);\n    if (nearDestination) {\n      navMap.setHeading?.(0);\n      navMap.setTilt?.(0);\n    } else if (heading != null) {',
   );
 
   // A transição depois do Pix deve ser inequívoca para o motorista.
