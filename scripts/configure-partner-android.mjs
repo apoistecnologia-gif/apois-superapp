@@ -36,6 +36,14 @@ if (!manifest.includes('android:scheme="br.com.apois.parceiro"')) {
   manifest = manifest.replace('</activity>', `${filter}\n        </activity>`);
 }
 
+// O módulo Motorista continua usando seu scheme histórico para recuperação de
+// senha e para o retorno do Google. O host nativo do APOIS Parceiro precisa
+// declarar o mesmo scheme para receber esses callbacks e repassá-los ao módulo.
+if (!manifest.includes('android:scheme="apoismotorista"')) {
+  const filter = `\n            <intent-filter android:autoVerify="false">\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="apoismotorista" android:host="auth" />\n            </intent-filter>`;
+  manifest = manifest.replace('</activity>', `${filter}\n        </activity>`);
+}
+
 writeFileSync(manifestPath, manifest, 'utf8');
 
 // ---------------------------------------------------------------------------
@@ -80,96 +88,53 @@ public class DriverVoicePlugin extends Plugin implements TextToSpeech.OnInitList
         initTts();
     }
 
-    private boolean hasGoogleTts() {
-        try {
-            getContext().getPackageManager().getPackageInfo(GOOGLE_TTS_ENGINE, 0);
-            return true;
-        } catch (PackageManager.NameNotFoundException ignored) {
-            return false;
-        }
-    }
-
     private void initTts() {
-        if (tts != null) return;
-        getActivity().runOnUiThread(() -> {
-            if (tts != null) return;
-            if (hasGoogleTts()) {
-                activeEngine = GOOGLE_TTS_ENGINE;
+        try {
+            if (getContext().getPackageManager().getApplicationInfo(GOOGLE_TTS_ENGINE, 0) != null) {
                 tts = new TextToSpeech(getContext(), this, GOOGLE_TTS_ENGINE);
-            } else {
-                activeEngine = "default";
-                tts = new TextToSpeech(getContext(), this);
+                activeEngine = GOOGLE_TTS_ENGINE;
+                return;
             }
-        });
+        } catch (PackageManager.NameNotFoundException ignored) {
+            // fallback abaixo
+        }
+        tts = new TextToSpeech(getContext(), this);
+        activeEngine = "default";
     }
 
     @Override
     public void onInit(int status) {
-        if (status != TextToSpeech.SUCCESS || tts == null) {
-            ready = false;
-            return;
-        }
-        int language = tts.setLanguage(PT_BR);
-        ready = language != TextToSpeech.LANG_MISSING_DATA && language != TextToSpeech.LANG_NOT_SUPPORTED;
-        tts.setSpeechRate(0.98f);
+        ready = status == TextToSpeech.SUCCESS;
+        if (!ready || tts == null) return;
+        tts.setLanguage(PT_BR);
+        tts.setSpeechRate(0.96f);
         tts.setPitch(1.0f);
-        tts.setAudioAttributes(
-            new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build()
-        );
-    }
-
-    private void resolvePrime(PluginCall call) {
-        JSObject result = new JSObject();
-        result.put("ready", ready);
-        result.put("engine", activeEngine);
-        result.put("language", "pt-BR");
-        call.resolve(result);
-    }
-
-    @PluginMethod
-    public void prime(PluginCall call) {
-        initTts();
-        if (ready) {
-            resolvePrime(call);
-            return;
-        }
-        new Handler(Looper.getMainLooper()).postDelayed(() -> resolvePrime(call), 2200L);
-    }
-
-    private void performSpeak(PluginCall call, String text, boolean interrupt) {
-        if (!ready || tts == null) {
-            call.reject("Voz de navegação pt-BR indisponível no aparelho.");
-            return;
-        }
-        int queueMode = interrupt ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD;
-        int result = tts.speak(text, queueMode, null, "apois-nav-" + UUID.randomUUID());
-        if (result == TextToSpeech.ERROR) {
-            call.reject("Falha ao reproduzir voz de navegação.");
-            return;
-        }
-        JSObject response = new JSObject();
-        response.put("spoken", true);
-        response.put("engine", activeEngine);
-        call.resolve(response);
+        tts.setAudioAttributes(new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build());
     }
 
     @PluginMethod
     public void speak(PluginCall call) {
         String text = call.getString("text", "").trim();
-        boolean interrupt = Boolean.TRUE.equals(call.getBoolean("interrupt", false));
         if (text.isEmpty()) {
-            call.resolve();
+            call.reject("Texto vazio");
             return;
         }
-        initTts();
-        if (ready) {
-            performSpeak(call, text, interrupt);
+        if (!ready || tts == null) {
+            call.reject("TTS ainda não está pronto");
             return;
         }
-        new Handler(Looper.getMainLooper()).postDelayed(() -> performSpeak(call, text, interrupt), 2200L);
+        String utteranceId = "apois-" + UUID.randomUUID();
+        int result = tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+        if (result == TextToSpeech.ERROR) {
+            call.reject("Falha ao iniciar fala");
+            return;
+        }
+        JSObject response = new JSObject();
+        response.put("engine", activeEngine);
+        call.resolve(response);
     }
 
     @PluginMethod
@@ -177,45 +142,27 @@ public class DriverVoicePlugin extends Plugin implements TextToSpeech.OnInitList
         if (tts != null) tts.stop();
         call.resolve();
     }
+
+    @Override
+    protected void handleOnDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+            tts = null;
+        }
+        ready = false;
+        super.handleOnDestroy();
+    }
 }
 `;
+
 writeFileSync(voicePluginPath, voicePluginJava, 'utf8');
 
-if (!existsSync(mainActivityPath)) {
-  throw new Error(`MainActivity do APOIS Parceiro não encontrada: ${mainActivityPath}`);
-}
-let mainActivity = readFileSync(mainActivityPath, 'utf8');
-if (!mainActivity.includes('import android.os.Bundle;')) {
-  mainActivity = mainActivity.replace(
-    'package br.com.apois.parceiro;',
-    'package br.com.apois.parceiro;\n\nimport android.os.Bundle;',
-  );
-}
+let mainActivity = existsSync(mainActivityPath)
+  ? readFileSync(mainActivityPath, 'utf8')
+  : `package br.com.apois.parceiro;\n\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {}\n`;
 if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) {
-  if (/public class MainActivity extends BridgeActivity\s*\{\s*\}/s.test(mainActivity)) {
-    mainActivity = mainActivity.replace(
-      /public class MainActivity extends BridgeActivity\s*\{\s*\}/s,
-      `public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(DriverVoicePlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}`,
-    );
-  } else if (mainActivity.includes('public void onCreate(Bundle savedInstanceState)')) {
-    mainActivity = mainActivity.replace(
-      'super.onCreate(savedInstanceState);',
-      'registerPlugin(DriverVoicePlugin.class);\n        super.onCreate(savedInstanceState);',
-    );
-  } else {
-    const lastBrace = mainActivity.lastIndexOf('}');
-    if (lastBrace < 0) throw new Error('MainActivity do Parceiro inválida');
-    const method = `\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(DriverVoicePlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n`;
-    mainActivity = mainActivity.slice(0, lastBrace) + method + mainActivity.slice(lastBrace);
-  }
+  mainActivity = `package br.com.apois.parceiro;\n\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(DriverVoicePlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}\n`;
 }
 writeFileSync(mainActivityPath, mainActivity, 'utf8');
-
-if (!readFileSync(voicePluginPath, 'utf8').includes('@CapacitorPlugin(name = "DriverVoice")')) {
-  throw new Error('DriverVoicePlugin não foi instalado no APK Parceiro');
-}
-if (!readFileSync(mainActivityPath, 'utf8').includes('registerPlugin(DriverVoicePlugin.class)')) {
-  throw new Error('DriverVoicePlugin não foi registrado na MainActivity do APK Parceiro');
-}
-
-console.log('[OK] APOIS Parceiro Android: localização, notificações, OAuth e voz nativa pt-BR configurados');
+console.log('[OK] Android do APOIS Parceiro configurado: permissões, deep links e DriverVoice.');
