@@ -1,6 +1,6 @@
 workflows:
   android-superapp-experimental:
-    name: APOIS Superapp Cliente - Android Release
+    name: APOIS Superapp - Android Release
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -111,10 +111,12 @@ workflows:
           set -euo pipefail
           BUILD_TOOLS="$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
           ALIGNED="build/APOIS-Superapp-aligned.apk"
+          SIGNED_APK="build/APOIS-Superapp.apk"
           "$BUILD_TOOLS/zipalign" -f -P 16 4 build/APOIS-Superapp-unsigned.apk "$ALIGNED"
-          "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out build/APOIS-Superapp.apk "$ALIGNED"
+          "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out "$SIGNED_APK" "$ALIGNED"
           jarsigner -keystore "$CM_KEYSTORE_PATH" -storepass "$CM_KEYSTORE_PASSWORD" -keypass "$CM_KEY_PASSWORD" -signedjar build/APOIS-Superapp.aab build/APOIS-Superapp-unsigned.aab "$CM_KEY_ALIAS"
-          "$BUILD_TOOLS/apksigner" verify --verbose build/APOIS-Superapp.apk
+          "$BUILD_TOOLS/apksigner" verify --verbose "$SIGNED_APK"
+          "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED_APK"
           rm -f "$ALIGNED"
     artifacts:
       - build/APOIS-Superapp.apk
