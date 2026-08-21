@@ -44,7 +44,7 @@ for (const required of [
   'const [tripRoutePoints',
   'const isTrip = ride.status === "em_viagem"',
   'request.waypoints = orderedStops.map',
-  'polyline persistida',
+  'if (isTrip) {',
   'tripRoutePoints.length > 1',
 ]) {
   if (!source.includes(required)) throw new Error(`[FAIL] mapa de passageiro incompleto: ${required}`);
