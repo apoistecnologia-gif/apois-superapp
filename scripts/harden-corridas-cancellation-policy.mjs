@@ -8,15 +8,19 @@ function fail(message) {
 const servicePath = resolve('.work/corridas/src/services/rides/active-ride-service.ts');
 let service = readFileSync(servicePath, 'utf8');
 
-const oldAvailability = 'canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status),';
-const newAvailability = 'canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou"].includes(status),';
-if (service.includes(oldAvailability)) {
-  service = service.replace(oldAvailability, newAvailability);
+const legacyAvailability = 'canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status),';
+const currentSourceAvailability = 'canCancel: ["aguardando_pagamento", "procurar_motorista", "motorista_a_caminho"].includes(status),';
+const hardenedAvailability = 'canCancel: ["aguardando_pagamento", "procurar_motorista", "motorista_a_caminho", "motorista_chegou"].includes(status),';
+
+if (service.includes(legacyAvailability)) {
+  service = service.replace(legacyAvailability, hardenedAvailability);
+} else if (service.includes(currentSourceAvailability)) {
+  service = service.replace(currentSourceAvailability, hardenedAvailability);
 }
-if (!service.includes(newAvailability)) {
+if (!service.includes(hardenedAvailability)) {
   fail('regra de disponibilidade do cancelamento não encontrada');
 }
-if (service.includes('canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"')) {
+if (service.includes('canCancel: ["aguardando_pagamento", "procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"')) {
   fail('em_viagem não pode permitir cancelamento');
 }
 writeFileSync(servicePath, service, 'utf8');
@@ -42,11 +46,11 @@ const routePath = resolve('.work/corridas/src/routes/_authenticated.corrida.$rid
 let route = readFileSync(routePath, 'utf8');
 const openNeedle = 'isOpen={isCancelDialogOpen}';
 if (route.includes(openNeedle)) {
-  route = route.replace(openNeedle, 'isOpen={Boolean(actionAvailability?.canCancel && isCancelDialogOpen)}');
+  route = route.split(openNeedle).join('isOpen={Boolean(actionAvailability?.canCancel && isCancelDialogOpen)}');
 }
 if (!route.includes('isOpen={Boolean(actionAvailability?.canCancel && isCancelDialogOpen)}')) {
   fail('diálogo não está protegido pelo status atual');
 }
 writeFileSync(routePath, route, 'utf8');
 
-console.log('[OK] Passageiro: cancelamento permitido até motorista_chegou, bloqueado em em_viagem e política progressiva exibida.');
+console.log('[OK] Passageiro: cancelamento permitido de aguardando_pagamento até motorista_chegou, bloqueado em em_viagem e política progressiva exibida.');
