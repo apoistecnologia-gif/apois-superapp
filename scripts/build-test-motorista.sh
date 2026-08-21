@@ -19,6 +19,7 @@ export APOIS_MOTORISTA_WORKSPACE=".work/motorista-test"
 
 # Todo hardening acontece somente na cópia .work. Os repositórios-fonte
 # permanecem protegidos e intocados.
+node "$ROOT/scripts/harden-motorista-auth.mjs"
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
@@ -57,6 +58,8 @@ test -s android/app/google-services.json
 grep -Fq 'com.apois.motorista' android/app/google-services.json
 
 # Falhar cedo se o bundle final não contém o fluxo completo homologado.
+grep -R -Fq 'Continuar com Google' dist/client
+grep -R -Fq 'Esqueci minha senha' dist/client
 grep -R -Fq 'Conectar Mercado Pago' dist/client
 grep -R -Fq 'mercadopago-oauth-start' dist/client
 grep -R -Fq 'Recebimento direto' dist/client
@@ -119,4 +122,4 @@ ALIGNED="$ROOT/build/APOIS-Motorista-aligned.apk"
 rm -f "$ALIGNED"
 test -s "$OUT"
 
-echo "[OK] APOIS Motorista gerado em $OUT com voz nativa + navegação guiada + avaliação + recebimento direto"
+echo "[OK] APOIS Motorista gerado em $OUT com voz nativa + navegação guiada + avaliação + recebimento direto + Google + recuperação de senha"
