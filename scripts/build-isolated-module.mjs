@@ -213,6 +213,7 @@ run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), n
 if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
 }
 if (name === 'entregas') {
   // scripts/normalize-entregas-adaptation-handoff.mjs é executado pelo import no
