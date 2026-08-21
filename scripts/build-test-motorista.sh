@@ -25,6 +25,7 @@ node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
+node "$ROOT/scripts/harden-motorista-finalize-feedback.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
@@ -76,6 +77,8 @@ grep -Fq 'Em ${meters} metros' src/lib/voiceNav.ts
 grep -Fq 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx
 grep -Fq 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx
 grep -Fq 'tickNavigation' src/routes/motorista.app.tsx
+grep -Fq 'readableFunctionInvokeError' src/lib/driverRideLifecycle.mobile.ts
+grep -Fq 'Não foi possível finalizar a corrida.' src/routes/motorista.app.tsx
 grep -Fq 'registerPlugin(DriverVoicePlugin.class)' android/app/src/main/java/com/apois/motorista/MainActivity.java
 grep -Fq '@CapacitorPlugin(name = "DriverVoice")' android/app/src/main/java/com/apois/motorista/DriverVoicePlugin.java
 if grep -R -Fq 'Solicitar saque' dist/client; then
