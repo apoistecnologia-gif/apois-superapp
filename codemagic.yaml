@@ -162,6 +162,7 @@ workflows:
           : "${CORRIDAS_WEB_MAPS_API_KEY:?CORRIDAS_WEB_MAPS_API_KEY is required}"
           : "${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required for Entregas}"
           : "${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY is required for Entregas}"
+          : "${FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64:?Add Firebase google-services.json with br.com.apois.parceiro to Codemagic}"
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
@@ -175,6 +176,8 @@ workflows:
           npm run build:partner
           grep -R -Fq 'Conectar Mercado Pago' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'mercadopago-oauth-start' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'register_courier_push_device_v2' superapp/partner-shell/dist/modules/entregador
+          grep -R -Fq 'br.com.apois.parceiro' superapp/partner-shell/dist/modules/entregador
       - name: Create APOIS Parceiro Android project
         script: |
           set -euo pipefail
@@ -189,8 +192,15 @@ workflows:
           cd ../..
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
-          grep -Fq 'android.permission.ACCESS_FINE_LOCATION' superapp/partner-shell/android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:scheme="br.com.apois.app"' superapp/partner-shell/android/app/src/main/AndroidManifest.xml
+          MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
+          grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
+          grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
+          test -s superapp/partner-shell/android/app/google-services.json
+          if grep -Fq 'android:scheme="br.com.apois.app"' "$MANIFEST" && grep -Fq 'android:pathPrefix="/mercadopago"' "$MANIFEST"; then
+            echo '[FAIL] APOIS Parceiro ainda registra callback Mercado Pago do app cliente'
+            exit 1
+          fi
+          echo '[OK] Android Parceiro possui scheme próprio, Firebase e nenhum callback Mercado Pago legado'
       - name: Build and sign APOIS Parceiro APK
         script: |
           set -euo pipefail
@@ -202,11 +212,13 @@ workflows:
           test -s "$UNSIGNED"
           BUILD_TOOLS="$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
           ALIGNED="build/APOIS-Parceiro-aligned.apk"
+          SIGNED="build/APOIS-Parceiro.apk"
           "$BUILD_TOOLS/zipalign" -f -P 16 4 "$UNSIGNED" "$ALIGNED"
-          "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out build/APOIS-Parceiro.apk "$ALIGNED"
-          "$BUILD_TOOLS/apksigner" verify --verbose build/APOIS-Parceiro.apk
+          "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out "$SIGNED" "$ALIGNED"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$SIGNED"
+          "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED"
           rm -f "$ALIGNED"
-          test -s build/APOIS-Parceiro.apk
+          test -s "$SIGNED"
     artifacts:
       - build/APOIS-Parceiro.apk
 
