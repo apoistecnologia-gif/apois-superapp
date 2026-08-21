@@ -1,3 +1,4 @@
+import './harden-entregas-auth-entry.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
