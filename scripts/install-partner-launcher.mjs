@@ -1,5 +1,6 @@
 import './harden-partner-mercadopago-callback.mjs';
 import './harden-partner-android-security.mjs';
+import './configure-partner-firebase.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -55,5 +56,6 @@ if (!manifest.includes('android:allowBackup="false"')) throw new Error('Manifest
 if (!manifest.includes('android:usesCleartextTraffic="false"')) throw new Error('Manifest Parceiro ainda permite tráfego HTTP cleartext.');
 if (!manifest.includes('android:scheme="br.com.apois.parceiro"')) throw new Error('Manifest Parceiro não registra o scheme próprio.');
 if (manifest.includes('android:scheme="br.com.apois.app"') && manifest.includes('android:pathPrefix="/mercadopago"')) throw new Error('Manifest Parceiro ainda registra callback Mercado Pago do app cliente.');
+if (!existsSync(resolve('superapp/partner-shell/android/app/google-services.json'))) throw new Error('Firebase do APOIS Parceiro não foi materializado.');
 
-console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro em todas as densidades, após hardening Android e isolamento OAuth.');
+console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro em todas as densidades, após hardening Android, Firebase e isolamento OAuth.');
