@@ -34,6 +34,7 @@ node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
+node "$ROOT/scripts/harden-motorista-finalize-feedback.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
@@ -72,6 +73,8 @@ require_contains 'Em ${meters} metros' src/lib/voiceNav.ts 'navegação curva a 
 require_contains 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx 'marcador APOIS com A presente'
 require_contains 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx 'rota dourada APOIS presente'
 require_contains 'tickNavigation' src/routes/motorista.app.tsx 'motorista recebe orientação por voz durante deslocamento'
+require_contains 'readableFunctionInvokeError' src/lib/driverRideLifecycle.mobile.ts 'erro real da Edge Function é traduzido'
+require_contains 'Não foi possível finalizar a corrida.' src/routes/motorista.app.tsx 'falha de finalização é visível ao motorista'
 
 if grep -R -Fq 'Solicitar saque' dist/client; then
   echo '[FAIL] fluxo antigo de saque ainda presente no bundle Motorista'
