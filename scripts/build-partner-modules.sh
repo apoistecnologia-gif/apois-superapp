@@ -49,7 +49,7 @@ cd "$MOTORISTA"
 } > .env.mobile.local
 export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
-bun install
+bun install --frozen-lockfile
 npm run build:motorista
 
 require_contains 'Continuar com Google' dist/client 'login Google presente'
@@ -102,7 +102,7 @@ export VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"
 export APP_ROUTE="/courier"
 export APP_PACKAGE="br.com.apois.parceiro"
 export APP_LABEL="APOIS Parceiro"
-bun install
+bun install --frozen-lockfile
 bun run build
 
 HOST=127.0.0.1 PORT=4173 node .output/server/index.mjs >/tmp/apois-parceiro-entregador.log 2>&1 &
