@@ -46,3 +46,5 @@ const landing = requireSnapshotFile(
 );
 writeFileSync(landing.target, landing.before, 'utf8');
 console.log('[OK] Entregas: logo pública permanece relativa ao módulo aninhado');
+
+await import('./harden-entregas-merchant-mercadopago.mjs');
