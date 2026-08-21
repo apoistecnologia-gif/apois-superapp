@@ -28,24 +28,55 @@
   </main>
   <script>
     const urls={motorista:'./modules/motorista/index.html#/motorista/login',entregador:'./modules/entregador/index.html'};
+    const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
+    const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
+    const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
       const moduleName=button.dataset.module;
       try{localStorage.setItem('apois-parceiro:last-module',moduleName);}catch{}
       window.location.assign(urls[moduleName]);
     }));
 
+    function authParams(incoming){
+      const params=new URLSearchParams(incoming.search);
+      const fragment=incoming.hash.replace(/^#/,'');
+      if(fragment){
+        const fragmentParams=new URLSearchParams(fragment);
+        fragmentParams.forEach((value,key)=>{if(!params.has(key))params.set(key,value);});
+      }
+      return params;
+    }
+
     function relayDeepLink(rawUrl){
       const isLegacy=typeof rawUrl==='string'&&rawUrl.startsWith('br.com.apois.app://auth/');
       const isPartner=typeof rawUrl==='string'&&rawUrl.startsWith('br.com.apois.parceiro://auth/');
-      if(!isLegacy&&!isPartner)return false;
+      const isDriver=typeof rawUrl==='string'&&rawUrl.startsWith('apoismotorista://auth/');
+      if(!isLegacy&&!isPartner&&!isDriver)return false;
       try{
         const incoming=new URL(rawUrl);
         const path=incoming.pathname.replace(/^\//,'');
+        const params=authParams(incoming);
+        const suffix=params.toString()?('?'+params.toString()):'';
+        void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
+
         if(path==='mercadopago'){
-          const params=new URLSearchParams(incoming.search);
-          const suffix=params.toString()?('?'+params.toString()):'';
-          void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
           window.location.assign('./modules/motorista/index.html#/motorista/assinatura'+suffix);
+          return true;
+        }
+        if(isDriver && path==='redefinir-senha'){
+          try{sessionStorage.setItem(DRIVER_RECOVERY_KEY,rawUrl);}catch{}
+          window.location.assign('./modules/motorista/index.html#/motorista/login');
+          return true;
+        }
+        if(isDriver && path==='google'){
+          try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
+          window.location.assign('./modules/motorista/index.html#/motorista/login');
+          return true;
+        }
+        if(isPartner && (path==='callback'||path==='reset')){
+          try{sessionStorage.setItem(COURIER_AUTH_KEY,rawUrl);}catch{}
+          const target=path==='reset'?'#/redefinir-senha'+suffix:'#/auth/callback'+suffix;
+          window.location.assign('./modules/entregador/index.html'+target);
           return true;
         }
       }catch(error){console.error('[APOIS Parceiro] deep link inválido',error);}
