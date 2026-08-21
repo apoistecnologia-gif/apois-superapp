@@ -89,10 +89,19 @@ requireAll('scripts/harden-partner-entregador-push.mjs', [
   'PushNotifications.unregister()',
 ], 'Entregador registra package correto, encaminha Push cruzado e remove unregister compartilhado');
 
+requireAll('scripts/harden-partner-entregador-journey.mjs', [
+  'import { Geolocation } from "@capacitor/geolocation";',
+  'Geolocation.checkPermissions()', 'Geolocation.requestPermissions({', 'Geolocation.getCurrentPosition({',
+  'coords = nativePosition.coords;', 'coords = webPosition.coords;',
+  'const courierReadableError =', 'fresh accurate courier location required',
+  'Esta chamada expirou ou já foi aceita por outro entregador.',
+], 'Entregador usa GPS nativo para ficar online e traduz falhas operacionais');
+
 requireAll('scripts/harden-partner-entregador-map.mjs', [
+  "import './harden-partner-entregador-journey.mjs';",
   'const APOIS_GOLD = "#F6BE1C";', 'VITE_GOOGLE_MAPS_API_KEY',
   'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY', '"DEMO_MAP_ID"', 'strokeColor: APOIS_GOLD',
-], 'mapa Entregador tem chave resiliente, fallback de Map ID e rota dourada');
+], 'mapa Entregador tem jornada nativa, chave resiliente, fallback de Map ID e rota dourada');
 
 requireAll('scripts/configure-partner-firebase.mjs', [
   'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64', 'PARTNER_FIREBASE_PROJECT_ID',
