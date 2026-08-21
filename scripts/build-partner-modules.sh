@@ -71,9 +71,6 @@ require_contains 'toque em finalizar corrida' dist/client 'voz de chegada ao des
 require_contains 'Como foi o passageiro?' dist/client 'avaliação final presente'
 require_contains 'Pular avaliação' dist/client 'saída segura da avaliação presente'
 require_contains 'Avaliação de teste concluída' dist/client 'autoavaliação de homologação não quebra o fluxo'
-
-# A voz é reativada uma única vez nesta versão para corrigir preferências antigas
-# gravadas como false; depois o botão de voz continua respeitando a escolha.
 require_contains 'VOICE_PREF_MIGRATION_KEY' src/lib/voiceNav.ts 'migração de voz presente'
 require_contains 'migrateVoicePreferenceOnce();' src/lib/voiceNav.ts 'voz reativada na migração'
 require_contains 'cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts 'instruções de rua normalizadas para TTS'
@@ -97,8 +94,15 @@ export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
 export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
 node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
+node "$ROOT/scripts/harden-partner-entregador-push.mjs"
 
 cd "$ENTREGADOR"
+require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'registro Push v2 do Entregador presente'
+require_contains '_app_package: "br.com.apois.parceiro"' src/lib/courier-push.ts 'token Push vinculado ao package do Parceiro'
+if grep -Fq 'window.location.assign("/courier")' src/lib/courier-push.ts; then
+  echo '[FAIL] Entregador ainda tenta abrir rota absoluta /courier dentro do bundle aninhado'
+  exit 1
+fi
 export APOIS_MOBILE_PRODUCT="courier"
 export APOIS_MOBILE_BUILD="1"
 export VITE_APOIS_PRODUCT_MODE="courier"
@@ -127,8 +131,6 @@ cleanup_server
 trap - EXIT
 test -s .output/public/index.html
 
-# O HTML renderizado pelo servidor usa URLs absolutas. Dentro do shell Parceiro
-# ele vive em modules/entregador, então os assets precisam ser relativos.
 node --input-type=module - <<'NODE'
 import { readFileSync, writeFileSync } from 'node:fs';
 const path = '.output/public/index.html';
