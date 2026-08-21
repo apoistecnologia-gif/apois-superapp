@@ -39,6 +39,7 @@ requireAll('scripts/build-partner-modules.sh', [
   'harden-partner-mercadopago-callback.mjs',
   'harden-motorista-mercadopago-disconnect.mjs',
   'harden-partner-motorista-push.mjs',
+  'harden-partner-motorista-native-gps.mjs',
   'harden-partner-entregador-push.mjs',
   'harden-partner-entregador-map.mjs',
   'register_courier_push_device_v2',
@@ -49,7 +50,7 @@ requireAll('scripts/build-partner-modules.sh', [
   'Conectar Mercado Pago',
   'Siga a rota até o ponto de embarque',
   'Como foi o passageiro?',
-], 'build Parceiro preserva lockfiles, OAuth, Push cruzado, mapas, Mercado Pago e jornada');
+], 'build Parceiro preserva lockfiles, OAuth, Push cruzado, GPS, mapas, Mercado Pago e jornada');
 
 requireAll('scripts/configure-partner-android.mjs', [
   "ensurePermission('android.permission.ACCESS_FINE_LOCATION')",
@@ -82,6 +83,15 @@ requireAll('scripts/harden-partner-motorista-push.mjs', [
   'PARTNER_PENDING_PUSH_KEY', 'isDeliveryPush(data)', 'isRidePush(data)',
   'forwardPushToPartnerShell(data)', 'window.location.hash = "#/motorista/app"',
 ], 'Motorista não captura Push de Entregas e não usa rota absoluta quebrada');
+
+requireAll('scripts/harden-partner-motorista-native-gps.mjs', [
+  'import { Geolocation } from "@capacitor/geolocation";',
+  'import { Capacitor } from "@capacitor/core";',
+  'Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] })',
+  'Geolocation.getCurrentPosition({',
+  'restauração do GPS nativo falhou',
+  'Não conseguimos restaurar sua localização. Toque em Ficar online para tentar novamente.',
+], 'Motorista usa GPS nativo e não restaura ONLINE fantasma após reabrir o app');
 
 requireAll('scripts/harden-partner-entregador-push.mjs', [
   'register_courier_push_device_v2', '_app_package: "br.com.apois.parceiro"',
