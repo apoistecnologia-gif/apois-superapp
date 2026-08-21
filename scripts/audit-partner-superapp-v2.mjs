@@ -82,10 +82,38 @@ requireAll('scripts/harden-partner-entregador-map-camera.mjs', [
   'if (shouldFitCamera)',
 ], 'Mapa ativo do Entregador não sequestra câmera após pan manual');
 
+requireAll('scripts/harden-partner-entregador-finance.mjs', [
+  'Ganhos registrados',
+  'Total registrado',
+  'Recebimento direto em homologação',
+  'A APOIS não libera saque manual',
+  'Nenhuma chave PIX ou valor de saque é solicitado nesta fase.',
+], 'Entregador não oferece saque sem lastro antes do marketplace direto');
+forbidAll('scripts/harden-partner-entregador-finance.mjs', [
+  '<h2 className="font-black">Solicitar saque</h2>',
+  '>Salvar chave PIX<',
+], 'hardening financeiro não preserva CTA legado de saque/PIX');
+
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-offer-expiry.mjs';",
   "import './harden-partner-entregador-map-camera.mjs';",
-], 'Build do Entregador aplica expiração de oferta e câmera estável');
+  "import './harden-partner-entregador-finance.mjs';",
+], 'Build do Entregador aplica expiração, câmera estável e proteção financeira');
+
+requireAll('supabase/migrations/20260821233000_disable_legacy_courier_payout_until_marketplace_direct_live.sql', [
+  "'courier_payout_mode'",
+  "'\"marketplace_direct_pending\"'::jsonb",
+  'revoke execute on function public.request_payout(uuid,numeric,text) from authenticated;',
+  'get_courier_payout_readiness',
+  "'marketplace_direct_live'",
+], 'backend bloqueia saque legado e expõe estado explícito do repasse do Entregador');
+
+requireAll('supabase/migrations/20260821233200_guard_delivery_orders_until_courier_marketplace_live.sql', [
+  'enforce_delivery_financial_readiness',
+  "new.fulfillment_type = 'delivery'",
+  "v_mode <> 'marketplace_direct_live'",
+  'orders_require_delivery_financial_readiness',
+], 'pedido com entrega não nasce antes do repasse direto estar homologado');
 
 forbidAll('scripts/harden-partner-motorista-push.mjs', [
   'política Pix-only aplicada',
