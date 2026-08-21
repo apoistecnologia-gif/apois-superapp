@@ -36,11 +36,11 @@ patch('src/components/map/ActiveRideMap.tsx', (source) => {
       marker,
       '',
       'function buildApoisDriverLocationIcon(maps: any) {',
-      '  const svg = \'<svg xmlns="http://www.w3.org/2000/svg" width="54" height="64" viewBox="0 0 54 64" aria-hidden="true"><g id="APOIS_DRIVER_LOCATION_A"><path d="M27 2C14.3 2 4 12.3 4 25c0 17.1 23 37 23 37s23-19.9 23-37C50 12.3 39.7 2 27 2Z" fill="#080B11" stroke="#F6BE1C" stroke-width="3"/><circle cx="27" cy="25" r="14" fill="#F6BE1C"/><text x="27" y="32" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="900" fill="#080B11">A</text></g></svg>\';',
+      '  const svg = \'<svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52" aria-hidden="true"><g id="APOIS_DRIVER_LOCATION_A"><path d="M22 2C11.5 2 3 10.5 3 21c0 14.5 19 29 19 29s19-14.5 19-29C41 10.5 32.5 2 22 2Z" fill="#080B11" stroke="#F6BE1C" stroke-width="2.5"/><circle cx="22" cy="21" r="11" fill="#F6BE1C"/><text x="22" y="27" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="#080B11">A</text></g></svg>\';',
       '  return {',
       '    url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),',
-      '    scaledSize: new maps.Size(54, 64),',
-      '    anchor: new maps.Point(27, 62),',
+      '    scaledSize: new maps.Size(44, 52),',
+      '    anchor: new maps.Point(22, 50),',
       '  };',
       '}',
     ].join('\n');
@@ -61,6 +61,7 @@ patch('src/components/map/ActiveRideMap.tsx', (source) => {
     'featureType: "water"',
     'strokeColor: "#F6BE1C"',
     'APOIS_DRIVER_LOCATION_A',
+    'new maps.Size(44, 52)',
     'driverMarkerRef.current.setPosition(driverLocation)',
   ];
   for (const required of requiredMarkers) {
@@ -68,6 +69,6 @@ patch('src/components/map/ActiveRideMap.tsx', (source) => {
   }
 
   return next;
-}, 'passageiro: rota dourada, água visível e marcador APOIS em tempo real');
+}, 'passageiro: rota dourada, água visível e marcador APOIS compacto em tempo real');
 
 console.log(`[OK] branding de mapa do Passageiro concluído em ${workspace}`);
