@@ -33,6 +33,7 @@ node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
+node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
 cd "$MOTORISTA"
@@ -51,19 +52,24 @@ require_contains 'Conectar Mercado Pago' dist/client 'conexão Mercado Pago pres
 require_contains 'mercadopago-oauth-start' dist/client 'OAuth Mercado Pago presente'
 require_contains 'Recebimento direto' dist/client 'recebimento direto presente'
 require_contains 'Aguardando pagamento do passageiro' dist/client 'espera de pagamento presente'
-require_contains 'Siga a rota até o ponto de embarque' dist/client 'orientação até embarque presente'
-require_contains 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client 'transição pós-Pix presente'
+require_contains 'Siga a rota até o ponto de embarque' dist/client 'orientação visual até embarque presente'
+require_contains 'Nova corrida. Embarque em' dist/client 'voz de nova corrida presente'
+require_contains 'Pagamento efetuado. Siga até o embarque' dist/client 'voz pós-Pix presente'
+require_contains 'Chegada informada. Aguarde o passageiro e solicite o PIN' dist/client 'voz de chegada e PIN presente'
+require_contains 'Corrida iniciada. Siga a rota até' dist/client 'voz de início com destino presente'
+require_contains 'toque em finalizar corrida' dist/client 'voz de chegada ao destino presente'
 require_contains 'Como foi o passageiro?' dist/client 'avaliação final presente'
 require_contains 'Pular avaliação' dist/client 'saída segura da avaliação presente'
-require_contains 'Nova corrida' dist/client 'voz de nova corrida presente'
-require_contains 'Viagem iniciada. Boa viagem.' dist/client 'voz de início da viagem presente'
 
-# voiceNav.ts não usa uma variável chamada voiceEnabled. O comportamento real é:
-# sem preferência salva => true; depois a preferência do motorista é respeitada.
-require_contains 'let enabled = readStoredVoicePreference();' src/lib/voiceNav.ts 'estado de voz carregado no início'
-require_contains 'return stored === null ? true : stored !== "false";' src/lib/voiceNav.ts 'voz ativa por padrão na primeira execução'
+# A voz é reativada uma única vez nesta versão para corrigir preferências antigas
+# gravadas como false; depois o botão de voz continua respeitando a escolha.
+require_contains 'VOICE_PREF_MIGRATION_KEY' src/lib/voiceNav.ts 'migração de voz presente'
+require_contains 'migrateVoicePreferenceOnce();' src/lib/voiceNav.ts 'voz reativada na migração'
+require_contains 'cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts 'instruções de rua normalizadas para TTS'
+require_contains 'Em ${meters} metros' src/lib/voiceNav.ts 'navegação curva a curva presente'
 require_contains 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx 'marcador APOIS com A presente'
 require_contains 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx 'rota dourada APOIS presente'
+require_contains 'tickNavigation' src/routes/motorista.app.tsx 'motorista recebe orientação por voz durante deslocamento'
 
 if grep -R -Fq 'Solicitar saque' dist/client; then
   echo '[FAIL] fluxo antigo de saque ainda presente no bundle Motorista'
