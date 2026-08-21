@@ -97,11 +97,14 @@ patch('src/routes/motorista.app.tsx', (source) => {
   );
 
   // Fase "indo até o passageiro" fica explícita e não parece que o motorista
-  // já está na etapa seguinte. O CTA continua sendo a ação futura correta.
+  // já está na etapa seguinte. O CTA é uma confirmação, não o status atual.
   next = next.replaceAll(
     '<span className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Indo até o passageiro</span>',
     '<div className="min-w-0"><div className="truncate text-[11px] font-black uppercase tracking-[0.16em] text-primary">Indo até o passageiro</div><div className="mt-0.5 truncate text-[10px] font-medium text-zinc-400">Siga a rota até o ponto de embarque</div></div>',
   );
+  next = next
+    .replaceAll('Cheguei no embarque', 'Confirmar chegada')
+    .replaceAll('CHEGUEI NO EMBARQUE', 'CONFIRMAR CHEGADA');
 
   next = next.replaceAll(
     'className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#F6BE1C] text-[15px] font-bold uppercase tracking-[0.06em] text-black shadow-[0_10px_22px_-14px_rgba(246,190,28,0.45)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"',
@@ -121,6 +124,7 @@ patch('src/routes/motorista.app.tsx', (source) => {
     'Pagamento confirmado. Siga até o ponto de embarque.',
     'bg-[#080B11]/95',
     'Siga a rota até o ponto de embarque',
+    'Confirmar chegada',
   ];
   for (const marker of requiredMarkers) {
     if (!next.includes(marker)) {
