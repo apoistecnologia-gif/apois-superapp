@@ -1,4 +1,3 @@
-import './harden-motorista-route-integrity.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
