@@ -1,3 +1,4 @@
+import './harden-partner-mercadopago-callback.mjs';
 import './harden-partner-android-security.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -52,5 +53,7 @@ if (!manifest.includes('android:icon="@mipmap/ic_launcher"')) throw new Error('M
 if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) throw new Error('Manifest Parceiro não aponta para @mipmap/ic_launcher_round');
 if (!manifest.includes('android:allowBackup="false"')) throw new Error('Manifest Parceiro ainda permite backup de sessão.');
 if (!manifest.includes('android:usesCleartextTraffic="false"')) throw new Error('Manifest Parceiro ainda permite tráfego HTTP cleartext.');
+if (!manifest.includes('android:scheme="br.com.apois.parceiro"')) throw new Error('Manifest Parceiro não registra o scheme próprio.');
+if (manifest.includes('android:scheme="br.com.apois.app"') && manifest.includes('android:pathPrefix="/mercadopago"')) throw new Error('Manifest Parceiro ainda registra callback Mercado Pago do app cliente.');
 
-console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro em todas as densidades, após hardening Android.');
+console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro em todas as densidades, após hardening Android e isolamento OAuth.');
