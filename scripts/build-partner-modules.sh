@@ -20,6 +20,7 @@ node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
+node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
 cd "$MOTORISTA"
 {
@@ -38,6 +39,13 @@ grep -R -Fq 'Recebimento direto' dist/client
 grep -R -Fq 'Aguardando pagamento do passageiro' dist/client
 grep -R -Fq 'Siga a rota até o ponto de embarque' dist/client
 grep -R -Fq 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client
+grep -R -Fq 'Como foi o passageiro?' dist/client
+grep -R -Fq 'Pular avaliação' dist/client
+grep -R -Fq 'Nova corrida' dist/client
+grep -R -Fq 'Viagem iniciada. Boa viagem.' dist/client
+grep -Fq 'let voiceEnabled = true' src/lib/voiceNav.ts
+grep -Fq 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx
+grep -Fq 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx
 if grep -R -Fq 'Solicitar saque' dist/client; then
   echo '[FAIL] fluxo antigo de saque ainda presente no bundle Motorista'
   exit 1
