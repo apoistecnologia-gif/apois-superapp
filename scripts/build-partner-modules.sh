@@ -35,6 +35,7 @@ node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
 node "$ROOT/scripts/harden-motorista-finalize-feedback.mjs"
+node "$ROOT/scripts/harden-motorista-self-rating.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
@@ -62,6 +63,7 @@ require_contains 'Corrida iniciada. Siga a rota até' dist/client 'voz de iníci
 require_contains 'toque em finalizar corrida' dist/client 'voz de chegada ao destino presente'
 require_contains 'Como foi o passageiro?' dist/client 'avaliação final presente'
 require_contains 'Pular avaliação' dist/client 'saída segura da avaliação presente'
+require_contains 'Avaliação de teste concluída' dist/client 'autoavaliação de homologação não quebra o fluxo'
 
 # A voz é reativada uma única vez nesta versão para corrigir preferências antigas
 # gravadas como false; depois o botão de voz continua respeitando a escolha.
