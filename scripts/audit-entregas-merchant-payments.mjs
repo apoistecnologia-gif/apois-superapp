@@ -93,6 +93,12 @@ check('supabase/migrations/20260821233500_expose_delivery_checkout_readiness.sql
   'delivery_available',
 ], 'estado seguro de disponibilidade da entrega está versionado');
 
+check('supabase/migrations/20260821234500_select_merchant_mercadopago_as_order_payment_provider.sql', [
+  "'order_payment_provider'",
+  "'\"mercadopago_merchant\"'::jsonb",
+  'Fluxos OpenPix/Asaas legados não devem criar novas cobranças de pedido.',
+], 'provedor oficial de novos pedidos é Mercado Pago da conta do estabelecimento');
+
 check('scripts/harden-entregas-superapp-refunds.mjs', [
   'process-superapp-refund',
   'src/routes/pedido/$orderId/index.tsx',
