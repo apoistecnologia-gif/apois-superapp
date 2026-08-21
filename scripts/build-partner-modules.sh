@@ -31,6 +31,8 @@ export APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"
 node "$ROOT/scripts/harden-motorista-auth.mjs"
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
+node "$ROOT/scripts/harden-partner-mercadopago-callback.mjs"
+node "$ROOT/scripts/harden-motorista-mercadopago-disconnect.mjs"
 node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
@@ -41,6 +43,8 @@ node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
 cd "$MOTORISTA"
+require_contains 'appTarget: "partner"' src/components/payments/MercadoPagoSellerCard.tsx 'OAuth Mercado Pago usa callback exclusivo do APOIS Parceiro'
+require_contains 'Desconectar Mercado Pago' src/components/payments/MercadoPagoSellerCard.tsx 'desconexão segura do Mercado Pago presente'
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
