@@ -110,7 +110,7 @@ function injectSuperappBridge(indexPath, moduleName) {
 
   function parseAuthDeepLink(rawUrl) {
     const incoming = new URL(rawUrl);
-    const path = incoming.pathname.replace(/^\\//, '');
+    const path = incoming.pathname.replace(/^\//, '');
     const params = new URLSearchParams(incoming.search);
     const fragment = incoming.hash.replace(/^#/, '');
     if (fragment) {
@@ -215,6 +215,9 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
 }
 if (name === 'entregas') {
+  // scripts/normalize-entregas-adaptation-handoff.mjs é executado pelo import no
+  // início de harden-entregas-superapp-auth-runtime.mjs, imediatamente após o
+  // adaptador base e antes dos hardeners especializados.
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
