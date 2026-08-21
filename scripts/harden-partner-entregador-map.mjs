@@ -1,4 +1,5 @@
 import './harden-partner-entregador-theme.mjs';
+import './harden-partner-entregador-journey.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -35,4 +36,4 @@ for (const marker of [
 if (source.includes('const BRAND_PURPLE')) throw new Error('Entregador Parceiro: rota roxa antiga permaneceu no mapa.');
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: mapa usa chave APOIS disponível, Map ID resiliente, tema escuro e rota dourada.');
+console.log('[OK] Entregador Parceiro: jornada nativa, mapa com chave APOIS, Map ID resiliente, tema escuro e rota dourada.');
