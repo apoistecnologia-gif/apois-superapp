@@ -1,5 +1,6 @@
 import './harden-partner-entregador-theme.mjs';
 import './harden-partner-entregador-journey.mjs';
+import './harden-partner-entregador-resume.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -49,4 +50,4 @@ if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.ln
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: jornada nativa, mapa dourado e câmera livre durante atualizações do GPS.');
+console.log('[OK] Entregador Parceiro: restauração em segundo plano, jornada nativa, mapa dourado e câmera livre durante atualizações do GPS.');
