@@ -24,7 +24,7 @@ if (!source.includes('await callComplete({ data: {')) {
   throw new Error('[FAIL] motorista: chamada de finalização não encontrada');
 }
 
-const completeCalls = source.match(/await callComplete\(\{ data: \{[\s\S]{0,220?}?\}\s*\}\);/g) ?? [];
+const completeCalls = source.match(/await callComplete\(\{ data: \{[\s\S]{0,220}?\}\s*\}\);/g) ?? [];
 if (completeCalls.length === 0) {
   throw new Error('[FAIL] motorista: não foi possível auditar payload de finalização');
 }
