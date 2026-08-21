@@ -41,10 +41,13 @@ node "$ROOT/scripts/harden-motorista-finalize-feedback.mjs"
 node "$ROOT/scripts/harden-motorista-self-rating.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
+node "$ROOT/scripts/harden-partner-motorista-push.mjs"
 
 cd "$MOTORISTA"
 require_contains 'appTarget: "partner"' src/components/payments/MercadoPagoSellerCard.tsx 'OAuth Mercado Pago usa callback exclusivo do APOIS Parceiro'
 require_contains 'Desconectar Mercado Pago' src/components/payments/MercadoPagoSellerCard.tsx 'desconexão segura do Mercado Pago presente'
+require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha Push de outro módulo ao shell'
+require_contains 'window.location.hash = "#/motorista/app"' src/lib/nativeBridge.ts 'Push de corrida navega por Hash dentro do módulo Motorista'
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
@@ -100,10 +103,15 @@ node "$ROOT/scripts/harden-partner-entregador-map.mjs"
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'registro Push v2 do Entregador presente'
 require_contains '_app_package: "br.com.apois.parceiro"' src/lib/courier-push.ts 'token Push vinculado ao package do Parceiro'
+require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/courier-push.ts 'Entregador encaminha Push de corrida ao shell'
 require_contains 'const APOIS_GOLD = "#F6BE1C"' src/components/CourierRouteMap.tsx 'mapa do Entregador usa rota dourada APOIS'
 require_contains '"DEMO_MAP_ID"' src/components/CourierRouteMap.tsx 'mapa possui Map ID de fallback para não desaparecer'
 if grep -Fq 'window.location.assign("/courier")' src/lib/courier-push.ts; then
   echo '[FAIL] Entregador ainda tenta abrir rota absoluta /courier dentro do bundle aninhado'
+  exit 1
+fi
+if grep -Fq 'PushNotifications.unregister()' src/lib/courier-push.ts; then
+  echo '[FAIL] logout do Entregador ainda desregistra o token FCM compartilhado do APOIS Parceiro'
   exit 1
 fi
 export APOIS_MOBILE_PRODUCT="courier"
@@ -113,9 +121,6 @@ export VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"
 export APP_ROUTE="/courier"
 export APP_PACKAGE="br.com.apois.parceiro"
 export APP_LABEL="APOIS Parceiro"
-# O módulo Entregador espera VITE_GOOGLE_MAPS_BROWSER_KEY. Reutilizamos a chave
-# web de Maps já validada para o ecossistema e aceitamos Map ID dedicado quando
-# fornecido; sem ele, o componente usa DEMO_MAP_ID para não ficar sem mapa.
 export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
 export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
 export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
@@ -158,5 +163,6 @@ test -s superapp/partner-shell/dist/modules/motorista/index.html
 test -s superapp/partner-shell/dist/modules/entregador/index.html
 grep -R -Fq '#F6BE1C' superapp/partner-shell/dist/modules/entregador
 grep -R -Fq 'DEMO_MAP_ID' superapp/partner-shell/dist/modules/entregador
+grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
 
-echo '[OK] módulos do APOIS Parceiro compilados: Motorista + Entregador com mapa operacional'
+echo '[OK] módulos do APOIS Parceiro compilados: Push cruzado isolado e mapa do Entregador operacional'
