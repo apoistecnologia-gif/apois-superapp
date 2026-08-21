@@ -85,10 +85,17 @@ fi
 echo '[OK] validação Motorista: opção Solicitar saque ausente'
 
 # ---------------- Entregador ----------------
+cd "$ROOT"
+export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
+export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
+export APOIS_ENTREGAS_AUTH_HOME="/courier"
+node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
+
 cd "$ENTREGADOR"
 export APOIS_MOBILE_PRODUCT="courier"
 export APOIS_MOBILE_BUILD="1"
 export VITE_APOIS_PRODUCT_MODE="courier"
+export VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"
 export APP_ROUTE="/courier"
 export APP_PACKAGE="br.com.apois.parceiro"
 export APP_LABEL="APOIS Parceiro"
