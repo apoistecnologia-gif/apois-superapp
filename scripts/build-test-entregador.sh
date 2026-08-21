@@ -8,19 +8,29 @@ OUT="$ROOT/build/APOIS-Entregador.apk"
 rm -rf "$WORK"
 mkdir -p "$ROOT/.work" "$ROOT/build"
 cp -R "$ROOT/sources/apois-entregas" "$WORK"
-cd "$WORK"
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export APOIS_MOBILE_PRODUCT="courier"
 export APOIS_MOBILE_BUILD="1"
 export VITE_APOIS_PRODUCT_MODE="courier"
+export VITE_APOIS_NATIVE_SCHEME="br.com.apois.entregador"
 export APP_ROUTE="/courier"
 export APP_PACKAGE="br.com.apois.entregador"
 export APP_LABEL="APOIS Entregador"
+export APOIS_ENTREGAS_WORKSPACE=".work/entregador-test"
+export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.entregador"
+export APOIS_ENTREGAS_AUTH_HOME="/courier"
+
+cd "$ROOT"
+node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
+cd "$WORK"
 
 bun install
 bun run build
+
+grep -R -Fq 'Continuar com Google' .output
+grep -R -Fq 'Esqueci minha senha' .output
 
 HOST=127.0.0.1 PORT=4173 node .output/server/index.mjs >/tmp/apois-entregador-mobile-server.log 2>&1 &
 SERVER_PID=$!
@@ -69,6 +79,7 @@ node scripts/apply-android-branding.mjs
 
 grep -Fq 'android.permission.ACCESS_FINE_LOCATION' android/app/src/main/AndroidManifest.xml
 grep -Fq 'android.permission.ACCESS_COARSE_LOCATION' android/app/src/main/AndroidManifest.xml
+grep -Fq 'android:scheme="br.com.apois.entregador"' android/app/src/main/AndroidManifest.xml
 grep -Fq '@drawable/apois_launcher' android/app/src/main/AndroidManifest.xml
 
 cd android
@@ -100,4 +111,4 @@ ALIGNED="$ROOT/build/APOIS-Entregador-aligned.apk"
 rm -f "$ALIGNED"
 test -s "$OUT"
 
-echo "[OK] APOIS Entregador gerado em $OUT"
+echo "[OK] APOIS Entregador gerado em $OUT com Google + recuperação de senha"
