@@ -35,8 +35,10 @@ requireAll('scripts/harden-partner-motorista-push-runtime.mjs', [
   'if (delivery && ride) return;',
   'apois:driver-push',
   'apois:driver-push-open',
-  'PushNotifications.unregister()',
 ], 'Motorista isola Push ambíguo e trata foreground/tap sem perder token compartilhado');
+forbidAll('scripts/harden-partner-motorista-push-runtime.mjs', [
+  'await PushNotifications.unregister();',
+], 'Motorista não invalida o token FCM compartilhado do APOIS Parceiro');
 
 requireAll('scripts/harden-partner-motorista-active-resume.mjs', [
   'resyncDriverRides()',
@@ -44,6 +46,18 @@ requireAll('scripts/harden-partner-motorista-active-resume.mjs', [
   'apois:driver-push-open',
   'removeEventListener',
 ], 'Motorista ressincroniza corrida/oferta imediatamente após Push');
+
+requireAll('scripts/harden-partner-motorista-post-finish.mjs', [
+  'const completedRide = await callComplete',
+  'setActive(null);',
+  'setRatingRide(completedRide);',
+  'event: "ride.completed"',
+  'window.dispatchEvent(new CustomEvent("apois:driver-push"',
+], 'Motorista aplica encerramento local imediatamente e força promoção/ressincronização da próxima corrida');
+
+requireAll('scripts/harden-partner-motorista-push.mjs', [
+  "import './harden-partner-motorista-post-finish.mjs';",
+], 'pipeline do Motorista executa o hardening pós-finalização');
 
 requireAll('scripts/harden-partner-motorista-native-watch.mjs', [
   'useRef<number | string | null>(null)',
