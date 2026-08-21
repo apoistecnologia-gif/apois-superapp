@@ -43,6 +43,7 @@ node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
+node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 
 cd "$MOTORISTA"
 require_contains 'appTarget: "partner"' src/components/payments/MercadoPagoSellerCard.tsx 'OAuth Mercado Pago usa callback exclusivo do APOIS Parceiro'
@@ -51,6 +52,8 @@ require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista e
 require_contains 'window.location.hash = "#/motorista/app"' src/lib/nativeBridge.ts 'Push de corrida navega por Hash dentro do módulo Motorista'
 require_contains 'import { Geolocation } from "@capacitor/geolocation";' src/routes/motorista.app.tsx 'Motorista usa GPS nativo no Android'
 require_contains 'restauração do GPS nativo falhou' src/routes/motorista.app.tsx 'Motorista reidrata presença ONLINE após reabrir o app'
+require_contains 'Geolocation.watchPosition(' src/routes/motorista.app.tsx 'Motorista acompanha GPS continuamente pela API nativa Android'
+require_contains 'stopDriverWatch();' src/routes/motorista.app.tsx 'Motorista encerra watcher GPS ao ficar offline'
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
