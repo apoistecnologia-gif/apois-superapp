@@ -34,6 +34,7 @@ node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
+node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
 cd "$MOTORISTA"
@@ -66,6 +67,7 @@ require_contains 'Pular avaliação' dist/client 'saída segura da avaliação p
 require_contains 'VOICE_PREF_MIGRATION_KEY' src/lib/voiceNav.ts 'migração de voz presente'
 require_contains 'migrateVoicePreferenceOnce();' src/lib/voiceNav.ts 'voz reativada na migração'
 require_contains 'cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts 'instruções de rua normalizadas para TTS'
+require_contains 'instructionKey = cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts 'falas por rua/manobra são deduplicadas'
 require_contains 'Em ${meters} metros' src/lib/voiceNav.ts 'navegação curva a curva presente'
 require_contains 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx 'marcador APOIS com A presente'
 require_contains 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx 'rota dourada APOIS presente'
