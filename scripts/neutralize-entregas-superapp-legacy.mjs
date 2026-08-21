@@ -48,3 +48,4 @@ writeFileSync(landing.target, landing.before, 'utf8');
 console.log('[OK] Entregas: logo pública permanece relativa ao módulo aninhado');
 
 await import('./harden-entregas-merchant-mercadopago-v2.mjs');
+await import('./harden-entregas-superapp-refunds.mjs');
