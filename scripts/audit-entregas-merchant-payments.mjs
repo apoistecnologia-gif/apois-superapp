@@ -57,6 +57,31 @@ check('scripts/harden-entregas-merchant-mercadopago-v2.mjs', [
   'A APOIS não recebe o valor da venda e não cobra percentual por pedido.',
 ], 'Entregas direciona PIX ao Mercado Pago do estabelecimento com taxa APOIS zero');
 
+check('supabase/functions/merchant-mercadopago-oauth/index.ts', [
+  'scope","offline_access"',
+  'code_challenge_method","S256"',
+  'MERCADO_PAGO_OAUTH_CLIENT_SECRET',
+  'encrypted_access_token:null',
+  'status:"revoked"',
+  'refresh_token_missing',
+], 'OAuth do estabelecimento usa state+PKCE+offline_access, renova e apaga tokens na revogação');
+forbid('supabase/functions/merchant-mercadopago-oauth/index.ts', [
+  'VITE_MERCADO_PAGO',
+  'console.log(accessToken',
+  'console.log(refreshToken',
+], 'serviço OAuth não expõe credenciais em variáveis públicas ou logs');
+
+check('supabase/functions/merchant-mercadopago-callback/index.ts', [
+  'state_hash',
+  '.is("used_at",null)',
+  'code_verifier',
+  'merchant_members',
+  'refreshToken',
+  'providerUserId',
+  'encrypted_access_token:access.value',
+  'requested_scope:"offline_access"',
+], 'callback OAuth valida state de uso único, vínculo do estabelecimento e persiste seller criptografado');
+
 check('scripts/harden-entregas-delivery-readiness.mjs', [
   'get_delivery_checkout_readiness',
   'deliveryFinancialReady',
@@ -98,6 +123,27 @@ check('supabase/migrations/20260821234500_select_merchant_mercadopago_as_order_p
   "'\"mercadopago_merchant\"'::jsonb",
   'Fluxos OpenPix/Asaas legados não devem criar novas cobranças de pedido.',
 ], 'provedor oficial de novos pedidos é Mercado Pago da conta do estabelecimento');
+
+check('supabase/migrations/20260822000000_allow_secure_mercadopago_token_purge_on_disconnect.sql', [
+  'alter column encrypted_access_token drop not null',
+  'alter column token_iv drop not null',
+  'Null after disconnect/revocation',
+], 'revogação pode apagar material secreto sem excluir o histórico da conexão');
+
+check('supabase/migrations/20260822000500_record_mercadopago_split_1n_external_dependency.sql', [
+  'mercadopago_marketplace_oauth_enabled',
+  'mercadopago_split_1n_mode',
+  'commercial_enablement_pending',
+  'não fazer a APOIS custodiar o total do pedido',
+], 'Split 1:N fica explicitamente bloqueado por dependência comercial externa');
+
+check('docs/MERCADO_PAGO_ENTREGAS_MARKETPLACE.md', [
+  'R$ 69,90',
+  'Split Mercado Pago 1:N',
+  'commercial_enablement_pending',
+  'não fazer a APOIS receber o total',
+  'scope=offline_access',
+], 'documentação separa OAuth disponível agora da dependência externa do Split 1:N');
 
 check('scripts/harden-entregas-superapp-refunds.mjs', [
   'process-superapp-refund',
