@@ -36,6 +36,9 @@ requireAll('scripts/build-partner-modules.sh', [
   'APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"',
   'APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"',
   'VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"',
+  'harden-partner-mercadopago-callback.mjs',
+  'harden-motorista-mercadopago-disconnect.mjs',
+  'appTarget: "partner"',
   'Conectar Mercado Pago',
   'mercadopago-oauth-start',
   'Siga a rota até o ponto de embarque',
@@ -69,11 +72,22 @@ requireAll('scripts/harden-partner-android-security.mjs', [
   'android.permission.WRITE_EXTERNAL_STORAGE',
 ], 'Parceiro fixa API 36, versão e reduz superfície de dados/permissões');
 
+requireAll('scripts/harden-partner-mercadopago-callback.mjs', [
+  'appTarget: "partner"',
+  'legacyFilterPattern',
+  'android:scheme="br.com.apois.app"',
+  'android:pathPrefix="/mercadopago"',
+  'android:scheme="br.com.apois.parceiro"',
+], 'Parceiro migra OAuth Mercado Pago para callback próprio e remove registro legado no Android');
+
 requireAll('scripts/install-partner-launcher.mjs', [
+  "import './harden-partner-mercadopago-callback.mjs';",
   "import './harden-partner-android-security.mjs';",
   'android:allowBackup="false"',
   'android:usesCleartextTraffic="false"',
-], 'launcher Parceiro só é instalado após hardening Android');
+  'android:scheme="br.com.apois.parceiro"',
+  'Manifest Parceiro ainda registra callback Mercado Pago do app cliente.',
+], 'launcher Parceiro valida isolamento OAuth antes de finalizar recursos Android');
 
 requireAll('codemagic.yaml', [
   'android-partner-superapp:',
@@ -89,14 +103,9 @@ requireAll('scripts/harden-motorista-field-mercadopago.mjs', [
   'Conectar Mercado Pago',
 ], 'Motorista possui vínculo Mercado Pago direto');
 
-// O callback legado br.com.apois.app://auth/mercadopago ainda é aceito pelo host
-// Parceiro para compatibilidade com o backend atual. Isso é uma pendência controlada:
-// não bloquear o release até o backend emitir br.com.apois.parceiro, mas manter o
-// marcador explícito para que a dívida não desapareça silenciosamente.
-requireAll('scripts/configure-partner-android.mjs', [
-  'android:scheme="br.com.apois.app"',
-  'android:pathPrefix="/mercadopago"',
-  'retorno legado',
-], 'callback Mercado Pago legado permanece explicitamente documentado até migração do backend');
+requireAll('scripts/harden-motorista-mercadopago-disconnect.mjs', [
+  'disconnect_my_mercadopago_driver',
+  'Desconectar Mercado Pago',
+], 'Motorista pode trocar conta Mercado Pago sem fluxo antigo de saque');
 
 process.exit(failed ? 1 : 0);
