@@ -31,6 +31,7 @@
     const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
     const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
     const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
+    const PARTNER_PENDING_PUSH_KEY='apois-parceiro:pending-push';
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
       const moduleName=button.dataset.module;
       try{localStorage.setItem('apois-parceiro:last-module',moduleName);}catch{}
@@ -90,13 +91,14 @@
       const rideId=String(payload.ride_id||payload.rideId||'').trim();
       const event=String(payload.event||'').toLowerCase();
       const isDelivery=Boolean(orderId)||notificationType.includes('delivery')||notificationType.includes('order');
-      const isRide=Boolean(rideId)||event.includes('ride')||event.includes('driver')||event.includes('corrida');
-      if(isDelivery&&!isRide){
+      const isRide=Boolean(rideId)||event.startsWith('ride.')||event.startsWith('driver.')||event.includes('corrida');
+      if(isDelivery&&isRide)return false;
+      if(isDelivery){
         try{localStorage.setItem('apois-parceiro:last-module','entregador');}catch{}
         window.location.assign('./modules/entregador/index.html');
         return true;
       }
-      if(isRide&&!isDelivery){
+      if(isRide){
         try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
         window.location.assign('./modules/motorista/index.html#/motorista/app');
         return true;
@@ -104,16 +106,32 @@
       return false;
     }
 
-    const appPlugin=window.Capacitor?.Plugins?.App;
-    if(appPlugin){
-      appPlugin.addListener('appUrlOpen',({url})=>{relayDeepLink(url);}).catch(()=>undefined);
-      appPlugin.getLaunchUrl().then((result)=>{if(result?.url)relayDeepLink(result.url);}).catch(()=>undefined);
+    function consumePendingPartnerPush(){
+      try{
+        const raw=sessionStorage.getItem(PARTNER_PENDING_PUSH_KEY);
+        if(!raw)return false;
+        sessionStorage.removeItem(PARTNER_PENDING_PUSH_KEY);
+        const parsed=JSON.parse(raw);
+        return relayPartnerPush(parsed);
+      }catch(error){
+        try{sessionStorage.removeItem(PARTNER_PENDING_PUSH_KEY);}catch{}
+        console.error('[APOIS Parceiro] push encaminhado inválido',error);
+        return false;
+      }
     }
-    const pushPlugin=window.Capacitor?.Plugins?.PushNotifications;
-    if(pushPlugin){
-      pushPlugin.addListener('pushNotificationActionPerformed',(action)=>{
-        relayPartnerPush(action?.notification?.data||{});
-      }).catch(()=>undefined);
+
+    if(!consumePendingPartnerPush()){
+      const appPlugin=window.Capacitor?.Plugins?.App;
+      if(appPlugin){
+        appPlugin.addListener('appUrlOpen',({url})=>{relayDeepLink(url);}).catch(()=>undefined);
+        appPlugin.getLaunchUrl().then((result)=>{if(result?.url)relayDeepLink(result.url);}).catch(()=>undefined);
+      }
+      const pushPlugin=window.Capacitor?.Plugins?.PushNotifications;
+      if(pushPlugin){
+        pushPlugin.addListener('pushNotificationActionPerformed',(action)=>{
+          relayPartnerPush(action?.notification?.data||{});
+        }).catch(()=>undefined);
+      }
     }
   </script>
 </body>
