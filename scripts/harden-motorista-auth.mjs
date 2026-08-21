@@ -13,6 +13,21 @@ pkg.dependencies = { ...(pkg.dependencies || {}), '@capacitor/browser': pkg.depe
 writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
 console.log('[OK] motorista: Browser nativo disponível para OAuth Google');
 
+// O projeto nativo do Motorista já registra apoismotorista://auth/redefinir-senha.
+// O Google usa o mesmo scheme, mas outro path; portanto o snapshot Android da
+// cópia .work também precisa receber /google antes do cap sync.
+const nativeManifestPath = file('android-motorista/app/src/main/AndroidManifest.xml');
+if (existsSync(nativeManifestPath)) {
+  let manifest = readFileSync(nativeManifestPath, 'utf8');
+  if (!manifest.includes('android:pathPrefix="/google"')) {
+    const filter = `\n            <intent-filter android:autoVerify="false">\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="apoismotorista" android:host="auth" android:pathPrefix="/google" />\n            </intent-filter>`;
+    manifest = manifest.replace('</activity>', `${filter}\n        </activity>`);
+    writeFileSync(nativeManifestPath, manifest, 'utf8');
+  }
+  if (!manifest.includes('android:pathPrefix="/google"')) throw new Error('[FAIL] motorista: intent-filter Google não aplicado');
+  console.log('[OK] motorista: Android recebe apoismotorista://auth/google');
+}
+
 if (isPartner) {
   const recoveryPath = file('src/lib/auth/driverPasswordRecovery.ts');
   let recovery = readFileSync(recoveryPath, 'utf8');
