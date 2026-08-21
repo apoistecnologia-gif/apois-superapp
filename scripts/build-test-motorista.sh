@@ -21,8 +21,10 @@ export APOIS_MOTORISTA_WORKSPACE=".work/motorista-test"
 # permanecem protegidos e intocados.
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
+node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
+node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
 cd "$WORK"
 
@@ -55,10 +57,22 @@ grep -Fq 'com.apois.motorista' android/app/google-services.json
 # Falhar cedo se o bundle final não contém os recursos que estamos homologando.
 grep -R -Fq 'Conectar Mercado Pago' dist/client
 grep -R -Fq 'mercadopago-oauth-start' dist/client
+grep -R -Fq 'Recebimento direto' dist/client
 grep -R -Fq 'VITE_GOOGLE_MAPS_API_KEY' src/lib/googleMaps.ts
 grep -R -Fq 'Aguardando pagamento do passageiro' dist/client
 grep -R -Fq 'Siga a rota até o ponto de embarque' dist/client
 grep -R -Fq 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client
+grep -R -Fq 'Como foi o passageiro?' dist/client
+grep -R -Fq 'Pular avaliação' dist/client
+grep -R -Fq 'Nova corrida' dist/client
+grep -R -Fq 'Viagem iniciada. Boa viagem.' dist/client
+grep -Fq 'let voiceEnabled = true' src/lib/voiceNav.ts
+grep -Fq 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx
+grep -Fq 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx
+if grep -R -Fq 'Solicitar saque' dist/client; then
+  echo '[FAIL] fluxo antigo de solicitar saque ainda presente no bundle Motorista'
+  exit 1
+fi
 
 node scripts/verify-mobile-native.mjs motorista --live
 
@@ -91,4 +105,4 @@ ALIGNED="$ROOT/build/APOIS-Motorista-aligned.apk"
 rm -f "$ALIGNED"
 test -s "$OUT"
 
-echo "[OK] APOIS Motorista gerado em $OUT com Maps + Mercado Pago + fluxo de corrida homologáveis"
+echo "[OK] APOIS Motorista gerado em $OUT com voz + avaliação + recebimento direto + mapa/rota homologáveis"
