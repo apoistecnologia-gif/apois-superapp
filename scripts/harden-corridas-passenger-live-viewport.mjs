@@ -4,58 +4,155 @@ import { resolve } from 'node:path';
 const path = resolve('.work/corridas/src/components/map/ActiveRideMap.tsx');
 let source = readFileSync(path, 'utf8');
 
-function replaceRequired(search, replacement, label) {
-  if (source.includes(replacement)) {
-    console.log(`[OK] ${label} (já aplicado)`);
-    return;
-  }
-  if (!source.includes(search)) {
-    throw new Error(`[FAIL] ${label}: padrão não encontrado em ActiveRideMap.tsx`);
-  }
-  source = source.replace(search, replacement);
+function fail(message) {
+  throw new Error(`[FAIL] passageiro viewport: ${message}`);
+}
+
+function replaceRegex(pattern, replacement, label) {
+  if (!pattern.test(source)) fail(`${label}: padrão não encontrado em ActiveRideMap.tsx`);
+  source = source.replace(pattern, replacement);
   console.log(`[OK] ${label}`);
 }
 
-replaceRequired(
-  `    if (!bounds.isEmpty()) {\n      mapRef.current.fitBounds(bounds, {\n        top: 132,\n        right: 36,\n        bottom: 265,\n        left: 36,\n      });\n    }`,
-  `    if (!bounds.isEmpty()) {\n      if ((isApproach || isTrip) && driverLocation) {\n        if (isTrip) {\n          // Durante a viagem o passageiro acompanha o carro, e não o planeta\n          // inteiro. A rota continua desenhada até o destino, mas a câmera\n          // permanece numa escala de navegação útil ao redor do motorista.\n          mapRef.current.setCenter(driverLocation);\n          const currentZoom = mapRef.current.getZoom?.();\n          if (typeof currentZoom !== "number" || currentZoom < 13 || currentZoom > 17) {\n            mapRef.current.setZoom(14);\n          }\n        } else {\n          const liveBounds = new maps.LatLngBounds();\n          liveBounds.extend(driverLocation);\n          liveBounds.extend(origin);\n          mapRef.current.fitBounds(liveBounds, {\n            top: 76,\n            right: 24,\n            bottom: 92,\n            left: 24,\n          });\n          maps.event.addListenerOnce(mapRef.current, "idle", () => {\n            const zoom = mapRef.current?.getZoom?.();\n            if (typeof zoom !== "number") return;\n            if (zoom < 8) mapRef.current.setZoom(8);\n            if (zoom > 17) mapRef.current.setZoom(17);\n          });\n        }\n      } else {\n        mapRef.current.fitBounds(bounds, {\n          top: 64,\n          right: 24,\n          bottom: 84,\n          left: 24,\n        });\n        maps.event.addListenerOnce(mapRef.current, "idle", () => {\n          const zoom = mapRef.current?.getZoom?.();\n          if (typeof zoom === "number" && zoom < 6) mapRef.current.setZoom(6);\n        });\n      }\n    }`,
-  'passageiro: fitBounds deixa de usar padding que causava zoom mundial',
-);
+if (!source.includes('const isTrip = ride.status === "em_viagem";')) {
+  fail('fase em_viagem não foi criada pelo hardener de rota anterior');
+}
+if (!source.includes('const isApproach = ride.status === "motorista_a_caminho" || ride.status === "motorista_chegou";')) {
+  fail('fase de aproximação não foi criada pelo hardener anterior');
+}
 
-replaceRequired(
-  `  }, [destination, isApproach, orderedStops, origin, routePoints, status]);`,
-  `  }, [destination, driverLocation, isApproach, isTrip, orderedStops, origin, routePoints, status]);`,
-  'passageiro: câmera reage corretamente à fase e à posição real do motorista',
-);
+// A linha já vem calculada pela Directions API; geodesic=true cria arco visual
+// desnecessário em trechos longos.
+if (source.includes('geodesic: true,')) {
+  source = source.replace('geodesic: true,', 'geodesic: false,');
+  console.log('[OK] passageiro: polyline segue geometria viária');
+} else if (!source.includes('geodesic: false,')) {
+  fail('configuração geodesic da polyline não encontrada');
+}
 
-replaceRequired(
-  `        geodesic: true,`,
-  `        geodesic: false,`,
-  'passageiro: linha da rota segue geometria viária em vez de arco geodésico',
-);
+// O snapshot antigo usava 132/36/265/36 de padding. Em um card de mapa baixo,
+// isso forçava o Google Maps a reduzir o zoom até escala continental/mundial.
+// O regex abaixo é propositalmente tolerante a espaçamento para não quebrar o
+// build quando outro hardener acrescenta dependências ou comentários.
+const staticBoundsPattern = /    if \(!bounds\.isEmpty\(\)\) \{\s*mapRef\.current\.fitBounds\(bounds, \{\s*top:\s*\d+,\s*right:\s*\d+,\s*bottom:\s*\d+,\s*left:\s*\d+,\s*\}\);\s*\}/m;
+const staticBoundsReplacement = `    if (!bounds.isEmpty()) {
+      if ((isApproach || isTrip) && driverLocation) {
+        if (isTrip) {
+          // Durante a viagem, a rota inteira permanece desenhada, mas a câmera
+          // acompanha o carro em escala de navegação útil.
+          mapRef.current.setCenter(driverLocation);
+          const currentZoom = mapRef.current.getZoom?.();
+          if (typeof currentZoom !== "number" || currentZoom < 13 || currentZoom > 17) {
+            mapRef.current.setZoom(14);
+          }
+        } else {
+          const liveBounds = new maps.LatLngBounds();
+          liveBounds.extend(driverLocation);
+          liveBounds.extend(origin);
+          mapRef.current.fitBounds(liveBounds, {
+            top: 76,
+            right: 24,
+            bottom: 92,
+            left: 24,
+          });
+          maps.event.addListenerOnce(mapRef.current, "idle", () => {
+            const zoom = mapRef.current?.getZoom?.();
+            if (typeof zoom !== "number") return;
+            if (zoom < 8) mapRef.current.setZoom(8);
+            if (zoom > 17) mapRef.current.setZoom(17);
+          });
+        }
+      } else {
+        mapRef.current.fitBounds(bounds, {
+          top: 64,
+          right: 24,
+          bottom: 84,
+          left: 24,
+        });
+        maps.event.addListenerOnce(mapRef.current, "idle", () => {
+          const zoom = mapRef.current?.getZoom?.();
+          if (typeof zoom === "number" && zoom < 6) mapRef.current.setZoom(6);
+        });
+      }
+    }`;
 
-replaceRequired(
-  `    // Apenas na primeira coordenada real: se o motorista estiver fora da área\n    // atualmente visível, enquadra embarque + motorista uma única vez. Depois\n    // disso o mapa nunca é recentralizado por updates de GPS.\n    if (!firstDriverViewportRef.current) {\n      firstDriverViewportRef.current = true;\n      const currentBounds = mapRef.current.getBounds?.();\n      if (currentBounds && !currentBounds.contains(driverLocation)) {\n        const approachBounds = new maps.LatLngBounds();\n        approachBounds.extend(origin);\n        approachBounds.extend(driverLocation);\n        mapRef.current.fitBounds(approachBounds, {\n          top: 132,\n          right: 36,\n          bottom: 265,\n          left: 36,\n        });\n      }\n    }`,
-  `    // Câmera viva por fase. Durante a viagem acompanha suavemente o motorista;\n    // durante a aproximação enquadra motorista + embarque sem abrir o mapa\n    // para uma escala continental.\n    if (isTrip) {\n      firstDriverViewportRef.current = true;\n      mapRef.current.panTo(driverLocation);\n      const zoom = mapRef.current.getZoom?.();\n      if (typeof zoom !== "number" || zoom < 13 || zoom > 17) mapRef.current.setZoom(14);\n    } else if (isApproach && !firstDriverViewportRef.current) {\n      firstDriverViewportRef.current = true;\n      const approachBounds = new maps.LatLngBounds();\n      approachBounds.extend(origin);\n      approachBounds.extend(driverLocation);\n      mapRef.current.fitBounds(approachBounds, {\n        top: 76,\n        right: 24,\n        bottom: 92,\n        left: 24,\n      });\n      maps.event.addListenerOnce(mapRef.current, "idle", () => {\n        const nextZoom = mapRef.current?.getZoom?.();\n        if (typeof nextZoom !== "number") return;\n        if (nextZoom < 8) mapRef.current.setZoom(8);\n        if (nextZoom > 17) mapRef.current.setZoom(17);\n      });\n    }`,
-  'passageiro: câmera acompanha motorista durante a viagem e enquadra a coleta na aproximação',
-);
+if (!source.includes('mapRef.current.setCenter(driverLocation)')) {
+  replaceRegex(staticBoundsPattern, staticBoundsReplacement, 'passageiro: remove zoom mundial do fitBounds');
+} else {
+  console.log('[OK] passageiro: remove zoom mundial do fitBounds (já aplicado)');
+}
 
-replaceRequired(
-  `  }, [driverLocation, origin, ride.driver_heading, status]);`,
-  `  }, [driverLocation, isApproach, isTrip, origin, ride.driver_heading, status]);`,
-  'passageiro: tracking da câmera depende da fase viva da corrida',
-);
+// O efeito da geometria estática precisa reagir à posição viva quando estamos
+// em aproximação/viagem. Aceita a forma antiga ou uma forma parcialmente
+// endurecida para evitar dependência frágil de texto exato.
+if (!source.includes('}, [destination, driverLocation, isApproach, isTrip, orderedStops, origin, routePoints, status]);')) {
+  const depsPattern = /\}, \[destination,\s*(?:driverLocation,\s*)?isApproach,\s*(?:isTrip,\s*)?orderedStops, origin, routePoints, status\]\);/;
+  replaceRegex(
+    depsPattern,
+    '}, [destination, driverLocation, isApproach, isTrip, orderedStops, origin, routePoints, status]);',
+    'passageiro: geometria reage à fase e GPS real',
+  );
+}
+
+// Em vez de substituir um bloco inteiro por correspondência textual, injeta a
+// câmera por fase no ponto de decisão já existente. Assim comentários ou
+// pequenas mudanças de formatação não derrubam o Codemagic.
+if (!source.includes('mapRef.current.panTo(driverLocation)')) {
+  const viewportNeedle = '    if (!firstDriverViewportRef.current) {';
+  if (!source.includes(viewportNeedle)) fail('bloco de primeiro viewport do motorista não encontrado');
+
+  const phaseViewport = `    if (isTrip) {
+      firstDriverViewportRef.current = true;
+      mapRef.current.panTo(driverLocation);
+      const liveZoom = mapRef.current.getZoom?.();
+      if (typeof liveZoom !== "number" || liveZoom < 13 || liveZoom > 17) {
+        mapRef.current.setZoom(14);
+      }
+    } else if (isApproach && !firstDriverViewportRef.current) {
+      firstDriverViewportRef.current = true;
+      const approachBounds = new maps.LatLngBounds();
+      approachBounds.extend(origin);
+      approachBounds.extend(driverLocation);
+      mapRef.current.fitBounds(approachBounds, {
+        top: 76,
+        right: 24,
+        bottom: 92,
+        left: 24,
+      });
+      maps.event.addListenerOnce(mapRef.current, "idle", () => {
+        const nextZoom = mapRef.current?.getZoom?.();
+        if (typeof nextZoom !== "number") return;
+        if (nextZoom < 8) mapRef.current.setZoom(8);
+        if (nextZoom > 17) mapRef.current.setZoom(17);
+      });
+    } else if (!firstDriverViewportRef.current) {`;
+
+  source = source.replace(viewportNeedle, phaseViewport);
+  console.log('[OK] passageiro: câmera acompanha motorista em viagem e coleta');
+} else {
+  console.log('[OK] passageiro: câmera acompanha motorista em viagem e coleta (já aplicado)');
+}
+
+if (!source.includes('}, [driverLocation, isApproach, isTrip, origin, ride.driver_heading, status]);')) {
+  const trackingDeps = /\}, \[driverLocation,\s*(?:isApproach,\s*)?(?:isTrip,\s*)?origin, ride\.driver_heading, status\]\);/;
+  replaceRegex(
+    trackingDeps,
+    '}, [driverLocation, isApproach, isTrip, origin, ride.driver_heading, status]);',
+    'passageiro: tracking depende da fase viva',
+  );
+}
 
 for (const required of [
   'mapRef.current.panTo(driverLocation)',
+  'mapRef.current.setCenter(driverLocation)',
   'mapRef.current.setZoom(14)',
   'top: 76',
   'bottom: 92',
   'geodesic: false',
-  'if (isTrip)',
+  'const isTrip = ride.status === "em_viagem"',
 ]) {
-  if (!source.includes(required)) throw new Error(`[FAIL] viewport vivo incompleto: ${required}`);
+  if (!source.includes(required)) fail(`viewport final incompleto: ${required}`);
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Passageiro: mapa vivo sem zoom mundial, seguindo o motorista e mantendo a rota dourada até o destino.');
+console.log('[OK] Passageiro: mapa vivo sem zoom mundial, seguindo o motorista e mantendo a rota APOIS até o destino.');
