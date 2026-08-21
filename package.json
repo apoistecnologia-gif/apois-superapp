@@ -13,7 +13,7 @@
     "status:modules": "node scripts/status-modules.mjs",
     "audit:static": "node scripts/audit-superapp-static.mjs",
     "audit:hardening": "node scripts/audit-superapp-hardening.mjs && node scripts/audit-entregas-merchant-payments.mjs",
-    "audit:partner": "node scripts/audit-partner-superapp.mjs",
+    "audit:partner": "node scripts/audit-partner-superapp.mjs && node scripts/audit-partner-superapp-v2.mjs",
     "audit:play-store": "node scripts/audit-superapp-play-store.mjs",
     "audit:release-integrity": "node scripts/audit-superapp-release-integrity.mjs",
     "verify:pins": "node scripts/verify-module-pins.mjs",
