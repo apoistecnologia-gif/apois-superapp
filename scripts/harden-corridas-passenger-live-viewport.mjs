@@ -15,46 +15,133 @@ if (!source.includes('const isApproach = ride.status === "motorista_a_caminho" |
   fail('fase de aproximação não foi criada pelo hardener anterior');
 }
 
-// A rota já é devolvida pela Directions API. Nunca usar arco geodésico numa
-// rota rodoviária longa.
+// A rota já é devolvida pela Directions API; linha geodésica cria arcos visuais
+// incorretos em trajetos rodoviários longos.
 source = source.replaceAll('geodesic: true,', 'geodesic: false,');
-if (!source.includes('geodesic: false,')) {
-  fail('configuração da polyline não encontrada');
-}
+if (!source.includes('geodesic: false,')) fail('configuração da polyline não encontrada');
 
-// Elimina o padding antigo que fazia um card baixo abrir em escala continental.
-// Estas substituições são deliberadamente simples e idempotentes para não
-// depender da formatação produzida pelos hardeners anteriores.
+// Remove o padding antigo exagerado sem depender da formatação dos hardeners anteriores.
 source = source
   .replaceAll('top: 132,', 'top: 76,')
   .replaceAll('right: 36,', 'right: 24,')
   .replaceAll('bottom: 265,', 'bottom: 92,')
   .replaceAll('left: 36,', 'left: 24,');
 
-// Em vez de reescrever efeitos existentes por correspondência textual frágil,
-// acrescentamos um efeito final de câmera. Como ele aparece depois dos efeitos
-// originais, sempre corrige o enquadramento após qualquer fitBounds anterior.
-const liveViewportMarker = 'APOIS_LIVE_VIEWPORT_V3';
-if (!source.includes(liveViewportMarker)) {
+const refsNeedle = '  const firstDriverViewportRef = useRef(false);';
+if (!source.includes('stablePassengerViewportKeyRef')) {
+  if (!source.includes(refsNeedle)) fail('ref de viewport original não encontrada');
+  source = source.replace(
+    refsNeedle,
+    `${refsNeedle}\n  const stablePassengerViewportKeyRef = useRef<string | null>(null);\n  const stablePassengerCameraLocationRef = useRef<Coordinate | null>(null);`,
+  );
+}
+
+const marker = 'APOIS_STABLE_PASSENGER_CAMERA_V4';
+if (!source.includes(marker)) {
   const retryNeedle = '  const retry = () => {';
-  if (!source.includes(retryNeedle)) fail('ponto de inserção do viewport vivo não encontrado');
+  if (!source.includes(retryNeedle)) fail('ponto de inserção do viewport estável não encontrado');
 
-  const liveViewportEffect = `  // APOIS_LIVE_VIEWPORT_V3\n  useEffect(() => {\n    if (status !== "ready" || !mapRef.current || !driverLocation) return;\n    const maps = (window as any).google?.maps;\n    if (!maps) return;\n\n    if (isTrip) {\n      firstDriverViewportRef.current = true;\n      mapRef.current.panTo(driverLocation);\n      const zoom = mapRef.current.getZoom?.();\n      if (typeof zoom !== "number" || zoom < 13 || zoom > 17) {\n        mapRef.current.setZoom(14);\n      }\n      return;\n    }\n\n    if (isApproach) {\n      const bounds = new maps.LatLngBounds();\n      bounds.extend(driverLocation);\n      bounds.extend(origin);\n      mapRef.current.fitBounds(bounds, {\n        top: 76,\n        right: 24,\n        bottom: 92,\n        left: 24,\n      });\n      maps.event.addListenerOnce(mapRef.current, "idle", () => {\n        const zoom = mapRef.current?.getZoom?.();\n        if (typeof zoom !== "number") return;\n        if (zoom < 8) mapRef.current.setZoom(8);\n        if (zoom > 17) mapRef.current.setZoom(17);\n      });\n      firstDriverViewportRef.current = true;\n    }\n  }, [driverLocation, isApproach, isTrip, origin, status]);\n\n`;
-
-  source = source.replace(retryNeedle, `${liveViewportEffect}${retryNeedle}`);
+  const lines = [
+    `  // ${marker}`,
+    '  useEffect(() => {',
+    '    if (status !== "ready" || !mapRef.current || !driverLocation) return;',
+    '    const maps = (window as any).google?.maps;',
+    '    if (!maps) return;',
+    '',
+    '    const navMap = mapRef.current as any;',
+    '    navMap.setHeading?.(0);',
+    '    navMap.setTilt?.(0);',
+    '',
+    '    const metersBetween = (a: Coordinate, b: Coordinate) => {',
+    '      const toRad = (value: number) => (value * Math.PI) / 180;',
+    '      const dLat = toRad(b.lat - a.lat);',
+    '      const dLng = toRad(b.lng - a.lng);',
+    '      const lat1 = toRad(a.lat);',
+    '      const lat2 = toRad(b.lat);',
+    '      const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;',
+    '      return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));',
+    '    };',
+    '',
+    '    const cameraKey = ride.id + ":" + (isApproach ? "approach" : isTrip ? "trip" : "other");',
+    '    const phaseChanged = stablePassengerViewportKeyRef.current !== cameraKey;',
+    '    const lastCameraLocation = stablePassengerCameraLocationRef.current;',
+    '    const driverMovedMeters = lastCameraLocation ? metersBetween(lastCameraLocation, driverLocation) : Number.POSITIVE_INFINITY;',
+    '    const center = mapRef.current.getCenter?.();',
+    '    const currentCenter = center ? { lat: center.lat(), lng: center.lng() } : null;',
+    '    const currentZoom = mapRef.current.getZoom?.();',
+    '',
+    '    if (isTrip) {',
+    '      const centerDriftMeters = currentCenter ? metersBetween(currentCenter, driverLocation) : Number.POSITIVE_INFINITY;',
+    '      const zoomInvalid = typeof currentZoom !== "number" || currentZoom < 13 || currentZoom > 18;',
+    '      if (phaseChanged || driverMovedMeters >= 18 || centerDriftMeters >= 35 || zoomInvalid) {',
+    '        mapRef.current.panTo(driverLocation);',
+    '        if (phaseChanged || zoomInvalid) mapRef.current.setZoom(15);',
+    '        stablePassengerCameraLocationRef.current = driverLocation;',
+    '      }',
+    '      stablePassengerViewportKeyRef.current = cameraKey;',
+    '      firstDriverViewportRef.current = true;',
+    '      return;',
+    '    }',
+    '',
+    '    if (isApproach) {',
+    '      const pickupDistanceMeters = metersBetween(driverLocation, origin);',
+    '      if (pickupDistanceMeters <= 120) {',
+    '        const desiredCenter = {',
+    '          lat: (driverLocation.lat + origin.lat) / 2,',
+    '          lng: (driverLocation.lng + origin.lng) / 2,',
+    '        };',
+    '        const centerDriftMeters = currentCenter ? metersBetween(currentCenter, desiredCenter) : Number.POSITIVE_INFINITY;',
+    '        const zoomInvalid = typeof currentZoom !== "number" || currentZoom < 16 || currentZoom > 18;',
+    '        if (phaseChanged || driverMovedMeters >= 12 || centerDriftMeters >= 25 || zoomInvalid) {',
+    '          mapRef.current.panTo(desiredCenter);',
+    '          if (phaseChanged || zoomInvalid) mapRef.current.setZoom(17);',
+    '          stablePassengerCameraLocationRef.current = driverLocation;',
+    '        }',
+    '      } else if (phaseChanged) {',
+    '        const bounds = new maps.LatLngBounds();',
+    '        bounds.extend(driverLocation);',
+    '        bounds.extend(origin);',
+    '        mapRef.current.fitBounds(bounds, { top: 76, right: 24, bottom: 92, left: 24 });',
+    '        maps.event.addListenerOnce(mapRef.current, "idle", () => {',
+    '          const zoom = mapRef.current?.getZoom?.();',
+    '          if (typeof zoom === "number" && zoom > 16) mapRef.current.setZoom(16);',
+    '        });',
+    '        stablePassengerCameraLocationRef.current = driverLocation;',
+    '      } else {',
+    '        const currentBounds = mapRef.current.getBounds?.();',
+    '        if (driverMovedMeters >= 40 && currentBounds && !currentBounds.contains(driverLocation)) {',
+    '          const bounds = new maps.LatLngBounds();',
+    '          bounds.extend(driverLocation);',
+    '          bounds.extend(origin);',
+    '          mapRef.current.fitBounds(bounds, { top: 76, right: 24, bottom: 92, left: 24 });',
+    '          stablePassengerCameraLocationRef.current = driverLocation;',
+    '        }',
+    '      }',
+    '      stablePassengerViewportKeyRef.current = cameraKey;',
+    '      firstDriverViewportRef.current = true;',
+    '      return;',
+    '    }',
+    '',
+    '    stablePassengerViewportKeyRef.current = null;',
+    '    stablePassengerCameraLocationRef.current = null;',
+    '  }, [driverLocation, isApproach, isTrip, origin, ride.id, status]);',
+    '',
+  ];
+  source = source.replace(retryNeedle, `${lines.join('\n')}${retryNeedle}`);
 }
 
 for (const required of [
-  liveViewportMarker,
-  'mapRef.current.panTo(driverLocation)',
-  'mapRef.current.setZoom(14)',
-  'top: 76',
-  'bottom: 92',
+  marker,
+  'stablePassengerViewportKeyRef',
+  'pickupDistanceMeters',
+  'navMap.setHeading?.(0)',
+  'mapRef.current.setZoom(17)',
+  'mapRef.current.setZoom(15)',
+  'driverMovedMeters >= 12',
   'geodesic: false',
-  'const isTrip = ride.status === "em_viagem"',
 ]) {
-  if (!source.includes(required)) fail(`viewport final incompleto: ${required}`);
+  if (!source.includes(required)) fail(`viewport estável incompleto: ${required}`);
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Passageiro: viewport vivo aplicado sem regex frágil; viagem segue o motorista e aproximação enquadra a coleta.');
+console.log('[OK] Passageiro: câmera estável por fase, sem fitBounds a cada atualização GPS e sem jitter na coleta.');
