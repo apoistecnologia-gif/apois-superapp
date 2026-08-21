@@ -21,6 +21,8 @@ export APOIS_MOTORISTA_WORKSPACE=".work/motorista-test"
 # permanecem protegidos e intocados.
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
+node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
+node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 
 cd "$WORK"
 
@@ -54,6 +56,9 @@ grep -Fq 'com.apois.motorista' android/app/google-services.json
 grep -R -Fq 'Conectar Mercado Pago' dist/client
 grep -R -Fq 'mercadopago-oauth-start' dist/client
 grep -R -Fq 'VITE_GOOGLE_MAPS_API_KEY' src/lib/googleMaps.ts
+grep -R -Fq 'Aguardando pagamento do passageiro' dist/client
+grep -R -Fq 'Siga a rota até o ponto de embarque' dist/client
+grep -R -Fq 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client
 
 node scripts/verify-mobile-native.mjs motorista --live
 
@@ -86,4 +91,4 @@ ALIGNED="$ROOT/build/APOIS-Motorista-aligned.apk"
 rm -f "$ALIGNED"
 test -s "$OUT"
 
-echo "[OK] APOIS Motorista gerado em $OUT com Maps + Mercado Pago homologáveis"
+echo "[OK] APOIS Motorista gerado em $OUT com Maps + Mercado Pago + fluxo de corrida homologáveis"
