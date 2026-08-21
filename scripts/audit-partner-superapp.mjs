@@ -57,6 +57,24 @@ forbidAll('scripts/configure-partner-android.mjs', [
   'android.permission.WRITE_EXTERNAL_STORAGE',
 ], 'Parceiro não solicita permissões Android de instalação/armazenamento desnecessárias');
 
+requireAll('scripts/harden-partner-android-security.mjs', [
+  "['compileSdkVersion', 36]",
+  "['targetSdkVersion', 36]",
+  "setApplicationAttribute('allowBackup', 'false')",
+  "setApplicationAttribute('usesCleartextTraffic', 'false')",
+  'PARTNER_VERSION_CODE',
+  'PARTNER_VERSION_NAME',
+  'android.permission.ACCESS_BACKGROUND_LOCATION',
+  'android.permission.REQUEST_INSTALL_PACKAGES',
+  'android.permission.WRITE_EXTERNAL_STORAGE',
+], 'Parceiro fixa API 36, versão e reduz superfície de dados/permissões');
+
+requireAll('scripts/install-partner-launcher.mjs', [
+  "import './harden-partner-android-security.mjs';",
+  'android:allowBackup="false"',
+  'android:usesCleartextTraffic="false"',
+], 'launcher Parceiro só é instalado após hardening Android');
+
 requireAll('codemagic.yaml', [
   'android-partner-superapp:',
   'PARTNER_APP_PACKAGE: "br.com.apois.parceiro"',
