@@ -19,6 +19,7 @@ node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
+node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 
 cd "$MOTORISTA"
 {
@@ -35,6 +36,8 @@ grep -R -Fq 'Conectar Mercado Pago' dist/client
 grep -R -Fq 'mercadopago-oauth-start' dist/client
 grep -R -Fq 'Recebimento direto' dist/client
 grep -R -Fq 'Aguardando pagamento do passageiro' dist/client
+grep -R -Fq 'Siga a rota até o ponto de embarque' dist/client
+grep -R -Fq 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client
 if grep -R -Fq 'Solicitar saque' dist/client; then
   echo '[FAIL] fluxo antigo de saque ainda presente no bundle Motorista'
   exit 1
