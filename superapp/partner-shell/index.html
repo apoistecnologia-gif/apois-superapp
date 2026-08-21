@@ -82,10 +82,38 @@
       }catch(error){console.error('[APOIS Parceiro] deep link inválido',error);}
       return false;
     }
+
+    function relayPartnerPush(data){
+      const payload=data&&typeof data==='object'?data:{};
+      const notificationType=String(payload.notificationType||payload.notification_type||'').toLowerCase();
+      const orderId=String(payload.orderId||payload.order_id||payload.orderID||'').trim();
+      const rideId=String(payload.ride_id||payload.rideId||'').trim();
+      const event=String(payload.event||'').toLowerCase();
+      const isDelivery=Boolean(orderId)||notificationType.includes('delivery')||notificationType.includes('order');
+      const isRide=Boolean(rideId)||event.includes('ride')||event.includes('driver')||event.includes('corrida');
+      if(isDelivery&&!isRide){
+        try{localStorage.setItem('apois-parceiro:last-module','entregador');}catch{}
+        window.location.assign('./modules/entregador/index.html');
+        return true;
+      }
+      if(isRide&&!isDelivery){
+        try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
+        window.location.assign('./modules/motorista/index.html#/motorista/app');
+        return true;
+      }
+      return false;
+    }
+
     const appPlugin=window.Capacitor?.Plugins?.App;
     if(appPlugin){
       appPlugin.addListener('appUrlOpen',({url})=>{relayDeepLink(url);}).catch(()=>undefined);
       appPlugin.getLaunchUrl().then((result)=>{if(result?.url)relayDeepLink(result.url);}).catch(()=>undefined);
+    }
+    const pushPlugin=window.Capacitor?.Plugins?.PushNotifications;
+    if(pushPlugin){
+      pushPlugin.addListener('pushNotificationActionPerformed',(action)=>{
+        relayPartnerPush(action?.notification?.data||{});
+      }).catch(()=>undefined);
     }
   </script>
 </body>
