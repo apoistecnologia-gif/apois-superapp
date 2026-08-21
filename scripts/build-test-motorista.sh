@@ -66,7 +66,10 @@ grep -R -Fq 'Como foi o passageiro?' dist/client
 grep -R -Fq 'Pular avaliação' dist/client
 grep -R -Fq 'Nova corrida' dist/client
 grep -R -Fq 'Viagem iniciada. Boa viagem.' dist/client
-grep -Fq 'let voiceEnabled = true' src/lib/voiceNav.ts
+# Sem preferência salva, readStoredVoicePreference() retorna true. Esta é a
+# implementação real da voz ativa por padrão; o nome voiceEnabled nunca existiu.
+grep -Fq 'let enabled = readStoredVoicePreference();' src/lib/voiceNav.ts
+grep -Fq 'return stored === null ? true : stored !== "false";' src/lib/voiceNav.ts
 grep -Fq 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx
 grep -Fq 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx
 if grep -R -Fq 'Solicitar saque' dist/client; then
