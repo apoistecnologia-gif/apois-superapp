@@ -42,12 +42,15 @@ node "$ROOT/scripts/harden-motorista-self-rating.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push.mjs"
+node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 
 cd "$MOTORISTA"
 require_contains 'appTarget: "partner"' src/components/payments/MercadoPagoSellerCard.tsx 'OAuth Mercado Pago usa callback exclusivo do APOIS Parceiro'
 require_contains 'Desconectar Mercado Pago' src/components/payments/MercadoPagoSellerCard.tsx 'desconexão segura do Mercado Pago presente'
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha Push de outro módulo ao shell'
 require_contains 'window.location.hash = "#/motorista/app"' src/lib/nativeBridge.ts 'Push de corrida navega por Hash dentro do módulo Motorista'
+require_contains 'import { Geolocation } from "@capacitor/geolocation";' src/routes/motorista.app.tsx 'Motorista usa GPS nativo no Android'
+require_contains 'restauração do GPS nativo falhou' src/routes/motorista.app.tsx 'Motorista reidrata presença ONLINE após reabrir o app'
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
@@ -165,4 +168,4 @@ grep -R -Fq '#F6BE1C' superapp/partner-shell/dist/modules/entregador
 grep -R -Fq 'DEMO_MAP_ID' superapp/partner-shell/dist/modules/entregador
 grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
 
-echo '[OK] módulos do APOIS Parceiro compilados: Push cruzado isolado e mapa do Entregador operacional'
+echo '[OK] módulos do APOIS Parceiro compilados: Push cruzado isolado, GPS nativo e mapa do Entregador operacional'
