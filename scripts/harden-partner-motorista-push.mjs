@@ -1,3 +1,4 @@
+import './harden-partner-motorista-payment-policy.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -136,4 +137,4 @@ if (source.includes('return "/motorista/app";\n  }\n\n  if (APP_ROLE') && !sourc
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Motorista Parceiro: Push de corrida usa Hash interno; Push de Entregas é encaminhado ao shell, desconhecidos são ignorados.');
+console.log('[OK] Motorista Parceiro: política Pix-only aplicada; Push de corrida usa Hash interno e Push de Entregas vai ao shell.');
