@@ -3,6 +3,7 @@ import './harden-partner-entregador-journey.mjs';
 import './harden-partner-entregador-resume.mjs';
 import './harden-partner-entregador-active-delivery.mjs';
 import './harden-partner-entregador-offer-expiry.mjs';
+import './harden-partner-entregador-map-camera.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
