@@ -24,6 +24,7 @@ node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
+node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 
 cd "$WORK"
@@ -38,8 +39,6 @@ cd "$WORK"
     printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
   fi
   if [ -n "${CORRIDAS_WEB_MAPS_API_KEY:-}" ]; then
-    # googleMaps.ts agora aceita esta chave oficial do build, sem depender
-    # do conector Lovable/referrer *.lovable.app.
     printf 'VITE_GOOGLE_MAPS_API_KEY=%s\n' "$CORRIDAS_WEB_MAPS_API_KEY"
     printf 'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY=%s\n' "$CORRIDAS_WEB_MAPS_API_KEY"
   fi
@@ -54,24 +53,29 @@ printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > android/local.properties
 test -s android/app/google-services.json
 grep -Fq 'com.apois.motorista' android/app/google-services.json
 
-# Falhar cedo se o bundle final não contém os recursos que estamos homologando.
+# Falhar cedo se o bundle final não contém o fluxo completo homologado.
 grep -R -Fq 'Conectar Mercado Pago' dist/client
 grep -R -Fq 'mercadopago-oauth-start' dist/client
 grep -R -Fq 'Recebimento direto' dist/client
 grep -R -Fq 'VITE_GOOGLE_MAPS_API_KEY' src/lib/googleMaps.ts
 grep -R -Fq 'Aguardando pagamento do passageiro' dist/client
 grep -R -Fq 'Siga a rota até o ponto de embarque' dist/client
-grep -R -Fq 'Pagamento confirmado. Siga até o ponto de embarque.' dist/client
+grep -R -Fq 'Nova corrida. Embarque em' dist/client
+grep -R -Fq 'Pagamento efetuado. Siga até o embarque' dist/client
+grep -R -Fq 'Chegada informada. Aguarde o passageiro e solicite o PIN' dist/client
+grep -R -Fq 'Corrida iniciada. Siga a rota até' dist/client
+grep -R -Fq 'toque em finalizar corrida' dist/client
 grep -R -Fq 'Como foi o passageiro?' dist/client
 grep -R -Fq 'Pular avaliação' dist/client
-grep -R -Fq 'Nova corrida' dist/client
-grep -R -Fq 'Viagem iniciada. Boa viagem.' dist/client
-# Sem preferência salva, readStoredVoicePreference() retorna true. Esta é a
-# implementação real da voz ativa por padrão; o nome voiceEnabled nunca existiu.
-grep -Fq 'let enabled = readStoredVoicePreference();' src/lib/voiceNav.ts
-grep -Fq 'return stored === null ? true : stored !== "false";' src/lib/voiceNav.ts
+grep -Fq 'VOICE_PREF_MIGRATION_KEY' src/lib/voiceNav.ts
+grep -Fq 'migrateVoicePreferenceOnce();' src/lib/voiceNav.ts
+grep -Fq 'cleanVoiceInstruction(step.instruction)' src/lib/voiceNav.ts
+grep -Fq 'Em ${meters} metros' src/lib/voiceNav.ts
 grep -Fq 'APOIS_DRIVER_LOCATION_A_PATH' src/components/mapMarkers.tsx
 grep -Fq 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx
+grep -Fq 'tickNavigation' src/routes/motorista.app.tsx
+grep -Fq 'registerPlugin(DriverVoicePlugin.class)' android/app/src/main/java/com/apois/motorista/MainActivity.java
+grep -Fq '@CapacitorPlugin(name = "DriverVoice")' android/app/src/main/java/com/apois/motorista/DriverVoicePlugin.java
 if grep -R -Fq 'Solicitar saque' dist/client; then
   echo '[FAIL] fluxo antigo de solicitar saque ainda presente no bundle Motorista'
   exit 1
@@ -108,4 +112,4 @@ ALIGNED="$ROOT/build/APOIS-Motorista-aligned.apk"
 rm -f "$ALIGNED"
 test -s "$OUT"
 
-echo "[OK] APOIS Motorista gerado em $OUT com voz + avaliação + recebimento direto + mapa/rota homologáveis"
+echo "[OK] APOIS Motorista gerado em $OUT com voz nativa + navegação guiada + avaliação + recebimento direto"
