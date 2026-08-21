@@ -28,6 +28,7 @@ require_contains() {
 
 # ---------------- Motorista ----------------
 export APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"
+node "$ROOT/scripts/harden-motorista-auth.mjs"
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
 node "$ROOT/scripts/harden-motorista-direct-mercadopago.mjs"
@@ -51,6 +52,8 @@ export VITE_ENABLE_NATIVE_PUSH="true"
 bun install
 npm run build:motorista
 
+require_contains 'Continuar com Google' dist/client 'login Google presente'
+require_contains 'Esqueci minha senha' dist/client 'recuperação de senha presente'
 require_contains 'Conectar Mercado Pago' dist/client 'conexão Mercado Pago presente'
 require_contains 'mercadopago-oauth-start' dist/client 'OAuth Mercado Pago presente'
 require_contains 'Recebimento direto' dist/client 'recebimento direto presente'
