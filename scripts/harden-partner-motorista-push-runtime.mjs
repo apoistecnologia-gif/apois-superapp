@@ -1,3 +1,4 @@
+import './harden-partner-motorista-active-resume.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
