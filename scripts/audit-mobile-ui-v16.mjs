@@ -55,8 +55,13 @@ requireAll('scripts/harden-entregas-superapp-secondary-mobile-ui.mjs', [
   'O Pix é apresentado automaticamente',
   '!source.includes(\'Cartões salvos\')',
   'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]',
+  "patch('src/routes/enderecos.tsx'",
+  '<AppBottomNav activeTab="inicio" />',
+  'bottom-[calc(7rem+env(safe-area-inset-bottom))]',
+  'grid h-12 w-12 place-items-center rounded-full',
+  '!source.includes(\'window.history.back()\')',
   'pb-32',
-], 'Entregas mantém rodapé também em Pagamentos/Notificações/Legal/Ajuda e remove cartão inexistente');
+], 'Entregas mantém rodapé em Perfil/Endereços/Estabelecimento, evita sobreposição e remove pagamento inexistente');
 
 requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'min-h-[82px]',
@@ -66,6 +71,17 @@ requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'text-xs font-extrabold',
   'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
 ], 'Motorista usa rodapé maior, legível e afastado da barra de gestos');
+
+requireAll('scripts/harden-partner-entregador-touch-safearea.mjs', [
+  "patch(\n  'src/components/CourierPanels.tsx'",
+  'label: "Entregas"',
+  '<PanelHeader title="Entregas"',
+  'min-h-[82px]',
+  'min-h-[64px]',
+  'h-9 w-11',
+  'h-6 w-6',
+  'pt-[max(env(safe-area-inset-top),0.65rem)]',
+], 'Entregador usa nomenclatura Entregas e rodapé grande com safe-area');
 
 requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs corridas',
@@ -95,5 +111,5 @@ requireAll('scripts/fix-corridas-superapp-ui.mjs', [
   'aria-label="Navegação inferior"',
 ], 'Corridas mantém rodapé nas telas comuns e oculta apenas jornada operacional');
 
-if (!failed) console.log('[OK] Mobile UI v16: seletores, Cliente, Passageiro e Parceiro têm safe-area, rolagem, logomarca sem corte, navegação inferior consistente e opções visíveis apenas quando realmente disponíveis.');
+if (!failed) console.log('[OK] Mobile UI v16: seletores, Cliente, Passageiro e Parceiro têm safe-area, rolagem, logomarca sem corte, navegação consistente, nomenclatura correta e opções visíveis apenas quando disponíveis.');
 process.exit(failed ? 1 : 0);
