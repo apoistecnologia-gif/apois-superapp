@@ -21,13 +21,28 @@ function requireAll(path, markers, label) {
   } else console.log(`[OK] ${label}`);
 }
 
-requireAll('scripts/harden-partner-motorista-operational-lock.mjs', [
+const driverLock = read('scripts/harden-partner-motorista-operational-lock.mjs');
+for (const marker of [
   'apois-parceiro:operational-role',
-  'localStorage.setItem("apois-parceiro:operational-role", "motorista")',
-  'localStorage.removeItem("apois-parceiro:operational-role")',
+  'if (value) localStorage.setItem("apois-parceiro:operational-role", "motorista")',
+  'if (publishOnline) window.localStorage.setItem("apois-parceiro:operational-role", "motorista")',
+  'window.localStorage.removeItem("apois-parceiro:operational-role")',
+  'return false;',
+  'return true;',
   'apois:driver:online',
   'SIGNED_OUT',
-], 'Motorista grava trava operacional quando ONLINE e limpa somente na reconciliação de saída');
+]) {
+  if (!driverLock.includes(marker)) {
+    console.error(`[FAIL] Motorista trava operacional: proteção ausente ${marker}`);
+    failed = true;
+  }
+}
+if (driverLock.includes('else if (localStorage.getItem("apois-parceiro:operational-role") === "motorista") localStorage.removeItem("apois-parceiro:operational-role");\n      window.dispatchEvent')) {
+  console.error('[FAIL] Motorista trava operacional: intenção OFFLINE ainda libera shell antes da RPC');
+  failed = true;
+} else {
+  console.log('[OK] Motorista só libera trava após confirmação de driver_set_presence OFFLINE.');
+}
 
 requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
   "import './harden-partner-motorista-operational-lock.mjs';",
@@ -87,5 +102,5 @@ requireAll('superapp/partner-shell/index.html', [
   "if(isRide)return routeRole('motorista'",
 ], 'Shell redireciona relançamento, seletor, push e deep links para a função que continua operacional');
 
-if (!failed) console.log('[OK] Partner operational role v10: shell e módulos preservam uma única função operacional sem apagar trava por refresh parcial.');
+if (!failed) console.log('[OK] Partner operational role v10: shell e módulos preservam uma única função operacional e só destravam após backend confirmado.');
 process.exit(failed ? 1 : 0);
