@@ -109,4 +109,5 @@ if (moduleName === 'entregas') {
   console.log('[OK] Entregas: rodapé fixo permanece grande, legível, sem ícone ambíguo e fora da barra de gestos do Android.');
 
   await import('./harden-entregas-superapp-cart-mobile-ui.mjs');
+  await import('./harden-entregas-superapp-viewport.mjs');
 }
