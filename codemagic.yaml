@@ -192,15 +192,19 @@ workflows:
           cd ../..
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
+          node scripts/install-partner-splash.mjs
           MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
           grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
           test -s superapp/partner-shell/android/app/google-services.json
+          test -s superapp/partner-shell/android/app/src/main/res/drawable/apois_partner_splash.xml
+          grep -R -Fq 'windowSplashScreenBackground">#050505<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
+          grep -R -Fq 'windowSplashScreenAnimatedIcon">@mipmap/ic_launcher<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
           if grep -Fq 'android:scheme="br.com.apois.app"' "$MANIFEST" && grep -Fq 'android:pathPrefix="/mercadopago"' "$MANIFEST"; then
             echo '[FAIL] APOIS Parceiro ainda registra callback Mercado Pago do app cliente'
             exit 1
           fi
-          echo '[OK] Android Parceiro possui scheme próprio, Firebase e nenhum callback Mercado Pago legado'
+          echo '[OK] Android Parceiro possui scheme próprio, Firebase, splash APOIS e nenhum callback Mercado Pago legado'
       - name: Build and sign APOIS Parceiro APK
         script: |
           set -euo pipefail
