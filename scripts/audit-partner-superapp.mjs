@@ -58,13 +58,25 @@ requireAll('scripts/configure-partner-android.mjs', [
   "ensurePermission('android.permission.POST_NOTIFICATIONS')",
   'android:scheme="br.com.apois.parceiro"',
   'android:scheme="apoismotorista"',
+  'legacyPartnerMpFilterPattern',
+  'callback Mercado Pago legado do app cliente permaneceu',
   'registerPlugin(DriverVoicePlugin.class)',
   'com.google.android.tts',
-], 'Android Parceiro possui localização, notificações, deep links e voz nativa');
+], 'Android Parceiro possui localização, notificações, deep links próprios, isolamento OAuth e voz nativa');
 forbidAll('scripts/configure-partner-android.mjs', [
   'android.permission.REQUEST_INSTALL_PACKAGES',
   'android.permission.WRITE_EXTERNAL_STORAGE',
-], 'Parceiro não solicita permissões Android de instalação/armazenamento desnecessárias');
+  'if (!manifest.includes(\'android:scheme="br.com.apois.app"\'))',
+], 'Parceiro não solicita permissões desnecessárias nem recria callback Mercado Pago do app cliente');
+
+requireAll('superapp/partner-shell/capacitor.config.ts', [
+  "appId: 'br.com.apois.parceiro'",
+  "style: 'LIGHT'",
+  "backgroundColor: '#050505'",
+], 'Host Android Parceiro usa package próprio e barra de status legível');
+forbidAll('superapp/partner-shell/capacitor.config.ts', [
+  "style: 'DARK'",
+], 'Parceiro não usa ícones escuros sobre barra de status preta');
 
 requireAll('scripts/harden-partner-android-security.mjs', [
   "['compileSdkVersion', 36]",
