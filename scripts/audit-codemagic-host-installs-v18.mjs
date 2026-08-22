@@ -76,9 +76,27 @@ for (let i = 0; i < workflows.length; i += 1) {
   else ok(`${key}: instalação do host é compatível com a ausência de lockfile`);
 }
 
-const modules = read('.apois/modules.json');
-if (!modules.includes('"install": ["bun", "install", "--frozen-lockfile"]')) {
-  fail('módulos protegidos deixaram de exigir os próprios lockfiles');
-} else ok('módulos protegidos continuam com --frozen-lockfile onde há lockfiles versionados');
+const modulesRaw = read('.apois/modules.json');
+if (modulesRaw) {
+  const modules = JSON.parse(modulesRaw).modules ?? {};
+  const corridasInstall = JSON.stringify(modules.corridas?.install ?? []);
+  const entregasInstall = JSON.stringify(modules.entregas?.install ?? []);
+  const motoristaInstall = JSON.stringify(modules.motorista?.install ?? []);
+
+  if (corridasInstall !== JSON.stringify(['bun', 'install', '--frozen-lockfile'])) {
+    fail('Corridas deve continuar exigindo o lockfile protegido válido');
+  } else ok('Corridas continua com --frozen-lockfile');
+
+  // O snapshot protegido de Entregas possui package.json mais novo que seu bun.lock:
+  // @capacitor/app e @capacitor/browser estão no package.json e não no lock versionado.
+  // Como a cópia .work é descartável, permitimos ao Bun reconciliar o lock somente nela.
+  if (entregasInstall !== JSON.stringify(['bun', 'install'])) {
+    fail('Entregas deve reconciliar o lockfile inconsistente somente na cópia .work');
+  } else ok('Entregas instala sem --frozen-lockfile apenas na cópia isolada .work');
+
+  if (motoristaInstall !== JSON.stringify(['bun', 'install', '--frozen-lockfile'])) {
+    fail('Motorista deve continuar exigindo o lockfile protegido válido');
+  } else ok('Motorista continua com --frozen-lockfile');
+}
 
 process.exit(failed ? 1 : 0);
