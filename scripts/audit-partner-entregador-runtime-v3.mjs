@@ -99,6 +99,18 @@ requireAll('scripts/harden-partner-entregador-profile.mjs', [
   "window.location.replace('../../index.html')",
 ], 'Perfil do Entregador remove linguagem de saque e permite voltar ao seletor Parceiro');
 
+requireAll('scripts/harden-partner-entregador-privacy.mjs', [
+  'registros necessários à conciliação de ganhos e repasses',
+  'Chave PIX e solicitação manual de saque também não são coletadas',
+  'nos fluxos financeiros efetivamente habilitados',
+], 'Privacidade do Entregador não declara carteira/saque/PIX-only que não estejam habilitados');
+
+requireAll('scripts/harden-partner-entregador-terms.mjs', [
+  'As formas de pagamento e os fluxos financeiros disponíveis dependem das funcionalidades efetivamente habilitadas',
+  'O aplicativo não oferece saque manual nem coleta chave PIX',
+  'registros financeiros ou áreas administrativas de terceiros',
+], 'Termos do Entregador refletem homologação real e não prometem funcionalidades financeiras antigas');
+
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-online-bootstrap.mjs';",
   "import './harden-partner-entregador-gps-resume.mjs';",
@@ -106,7 +118,9 @@ requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-push-runtime.mjs';",
   "import './harden-partner-entregador-state-handoff.mjs';",
   "import './harden-partner-entregador-profile.mjs';",
-], 'Umbrella real do Entregador executa bootstrap, GPS resume, quiet refresh, Push, perfil e handoff');
+  "import './harden-partner-entregador-privacy.mjs';",
+  "import './harden-partner-entregador-terms.mjs';",
+], 'Umbrella real do Entregador executa bootstrap, GPS, Push, perfil, legal e handoff');
 
 requireAll('superapp/partner-shell/index.html', [
   'const isDelivery=Boolean(orderId)',
