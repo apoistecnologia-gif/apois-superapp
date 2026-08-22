@@ -4,6 +4,7 @@ import './configure-partner-firebase.mjs';
 import './install-partner-driver-location.mjs';
 import './install-partner-courier-location.mjs';
 import './harden-partner-location-startup-ack.mjs';
+import './harden-partner-location-session-sync.mjs';
 import './harden-partner-location-notification-routing.mjs';
 import './verify-partner-native-plugins.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
@@ -89,10 +90,16 @@ for (const [label, plugin, service, key] of [
   if (!service.includes('setStartupConfirmed(true);') || !service.includes('setStartupConfirmed(false);')) {
     throw new Error(`${label}: serviço de localização não publica confirmação real de start/stop.`);
   }
+  if (!plugin.includes('public void session(PluginCall call)') || !plugin.includes('apois_partner_location_session')) {
+    throw new Error(`${label}: plugin de localização não expõe a sessão nativa mais recente para reconciliação segura da WebView.`);
+  }
+  if (!service.includes('private void persistSessionTokens()') || !service.includes('persistSessionTokens();')) {
+    throw new Error(`${label}: serviço de localização não persiste tokens renovados para evitar divergência de sessão.`);
+  }
 }
 const mainActivity = readFileSync(mainActivityPath, 'utf8');
 if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) throw new Error('DriverVoicePlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(DriverLocationPlugin.class)')) throw new Error('DriverLocationPlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(CourierLocationPlugin.class)')) throw new Error('CourierLocationPlugin não registrado no host Parceiro.');
 
-console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro; GPS só confirma ONLINE após ACK real dos serviços e notificações retornam ao módulo operacional correto.');
+console.log('[OK] Ícone oficial APOIS aplicado; GPS só confirma ONLINE após ACK real, tokens nativos renovados ficam reconciliáveis e notificações retornam ao módulo correto.');
