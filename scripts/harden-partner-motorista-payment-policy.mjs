@@ -3,6 +3,7 @@ import './harden-partner-motorista-direct-earnings.mjs';
 import './harden-partner-motorista-release-surface.mjs';
 import './harden-partner-motorista-native-utilities.mjs';
 import './harden-partner-motorista-native-session-sync.mjs';
+import './harden-partner-motorista-native-token-forward.mjs';
 import './harden-partner-motorista-session-hygiene.mjs';
 import './harden-partner-motorista-profile-switch.mjs';
 import './harden-partner-motorista-operational-lock.mjs';
