@@ -92,13 +92,21 @@ requireAll('scripts/harden-partner-entregador-action-timeouts.mjs', [
   'current === "support" ? null : current',
 ], 'Aceitar, recusar, transicionar, concluir e suporte não ficam presos em busy infinito');
 
+requireAll('scripts/harden-partner-entregador-profile.mjs', [
+  "replaceAll('Carteira e saques', 'Ganhos e repasses')",
+  "replaceAll('Disponível {money(wallet?.available_balance)}', 'Registrado {money(wallet?.available_balance)}')",
+  'Trocar perfil de parceiro',
+  "window.location.replace('../../index.html')",
+], 'Perfil do Entregador remove linguagem de saque e permite voltar ao seletor Parceiro');
+
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-online-bootstrap.mjs';",
   "import './harden-partner-entregador-gps-resume.mjs';",
   "import './harden-partner-entregador-quiet-refresh.mjs';",
   "import './harden-partner-entregador-push-runtime.mjs';",
   "import './harden-partner-entregador-state-handoff.mjs';",
-], 'Umbrella real do Entregador executa bootstrap, GPS resume, quiet refresh, Push e handoff');
+  "import './harden-partner-entregador-profile.mjs';",
+], 'Umbrella real do Entregador executa bootstrap, GPS resume, quiet refresh, Push, perfil e handoff');
 
 requireAll('superapp/partner-shell/index.html', [
   'const isDelivery=Boolean(orderId)',
@@ -125,6 +133,22 @@ requireAll('scripts/verify-partner-native-plugins.mjs', [
 requireAll('scripts/install-partner-launcher.mjs', [
   "import './verify-partner-native-plugins.mjs';",
 ], 'Launcher só é aplicado depois da validação dos plugins nativos');
+
+requireAll('scripts/install-partner-splash.mjs', [
+  'apois_partner_splash.xml',
+  'windowSplashScreenBackground',
+  'windowSplashScreenAnimatedIcon',
+  '@mipmap/ic_launcher',
+  '#050505',
+  'Splash padrão do template Android permaneceu ativo no Parceiro.',
+], 'Splash nativo do Parceiro usa fundo preto e identidade APOIS em vez do template Android');
+
+requireAll('codemagic.yaml', [
+  'node scripts/install-partner-splash.mjs',
+  'drawable/apois_partner_splash.xml',
+  'windowSplashScreenBackground">#050505<',
+  'windowSplashScreenAnimatedIcon">@mipmap/ic_launcher<',
+], 'Codemagic instala e valida splash APOIS antes de compilar o APK Parceiro');
 
 requireAll('scripts/harden-partner-entregador-finance.mjs', [
   'Recebimento direto em homologação',
