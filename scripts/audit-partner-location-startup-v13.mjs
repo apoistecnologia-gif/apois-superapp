@@ -30,7 +30,7 @@ requireAll('scripts/install-partner-driver-location.mjs', [
   'private void setStartupConfirmed(boolean running)',
   'setStartupConfirmed(true);',
   'setStartupConfirmed(false);',
-], 'DriverLocation não confunde pedido de startForegroundService com Service realmente ativo');
+], 'DriverLocation instala ACK real antes do hardening de retry');
 
 requireAll('scripts/harden-partner-location-startup-ack.mjs', [
   'STARTUP_KEY = "courier_running"',
@@ -39,14 +39,26 @@ requireAll('scripts/harden-partner-location-startup-ack.mjs', [
   'startup.getBoolean(STARTUP_KEY, false)',
   'O serviço de localização do entregador não confirmou a inicialização.',
   'private void setStartupConfirmed(boolean running)',
-  'DriverLocation e CourierLocation só retornam started=true após confirmação real',
-], 'CourierLocation recebe ACK real e o hardener valida também o DriverLocation final');
+  "await import('./harden-partner-location-startup-retry.mjs');",
+  'com retry antes do fail-safe',
+], 'CourierLocation recebe ACK real e depois aplica retry resiliente nos dois plugins');
+
+requireAll('scripts/harden-partner-location-startup-retry.mjs', [
+  "{ file: 'DriverLocationPlugin.java', label: 'Motorista'",
+  "{ file: 'CourierLocationPlugin.java', label: 'Entregador'",
+  'STARTUP_ACK_MAX_ATTEMPTS = 4',
+  'resolveStartup(call, startup, 1);',
+  'private void resolveStartup(PluginCall call, SharedPreferences startup, int attempt)',
+  'attempt >= STARTUP_ACK_MAX_ATTEMPTS',
+  '() -> resolveStartup(call, startup, attempt + 1)',
+], 'Motorista e Entregador toleram startup lento antes de declarar falha do serviço');
 
 const launcher = read('scripts/install-partner-launcher.mjs');
 for (const marker of [
   "import './install-partner-driver-location.mjs';",
   "import './install-partner-courier-location.mjs';",
   "import './harden-partner-location-startup-ack.mjs';",
+  "import './harden-partner-location-session-sync.mjs';",
   "import './harden-partner-location-notification-routing.mjs';",
   'driver_running',
   'courier_running',
@@ -61,11 +73,18 @@ for (const marker of [
 const driverIndex = launcher.indexOf("import './install-partner-driver-location.mjs';");
 const courierIndex = launcher.indexOf("import './install-partner-courier-location.mjs';");
 const ackIndex = launcher.indexOf("import './harden-partner-location-startup-ack.mjs';");
+const sessionIndex = launcher.indexOf("import './harden-partner-location-session-sync.mjs';");
 const routingIndex = launcher.indexOf("import './harden-partner-location-notification-routing.mjs';");
-if (!(driverIndex >= 0 && courierIndex > driverIndex && ackIndex > courierIndex && routingIndex > ackIndex)) {
-  console.error('[FAIL] Ordem Android incorreta: ACK precisa rodar depois dos dois serviços e antes do roteamento/validação final.');
+if (!(driverIndex >= 0 && courierIndex > driverIndex && ackIndex > courierIndex && sessionIndex > ackIndex && routingIndex > sessionIndex)) {
+  console.error('[FAIL] Ordem Android incorreta: ACK/retry precisa rodar depois dos serviços e antes de sessão/roteamento.');
   failed = true;
-} else console.log('[OK] Ordem Android do startup ACK está protegida.');
+} else console.log('[OK] Ordem Android do startup ACK/retry está protegida.');
+
+requireAll('scripts/verify-partner-native-plugins.mjs', [
+  'STARTUP_ACK_MAX_ATTEMPTS = 4',
+  'private void resolveStartup(PluginCall call, SharedPreferences startup, int attempt)',
+  'attempt >= STARTUP_ACK_MAX_ATTEMPTS',
+], 'Validação pós-cap sync rejeita APK sem retry de startup nativo');
 
 requireAll('scripts/harden-partner-motorista-background-failsafe.mjs', [
   'background_location_unavailable',
@@ -77,5 +96,5 @@ requireAll('scripts/harden-partner-entregador-background-location.mjs', [
   'Não foi possível ativar a localização em segundo plano.',
 ], 'Entregador reage ao started=false sem manter disponibilidade falsa');
 
-if (!failed) console.log('[OK] Partner location startup v13: Motorista e Entregador só consideram o FGS iniciado após confirmação real do Service/LocationUpdates.');
+if (!failed) console.log('[OK] Partner location startup v13: GPS só confirma FGS após ACK real e tolera aparelhos lentos antes do fail-safe.');
 process.exit(failed ? 1 : 0);
