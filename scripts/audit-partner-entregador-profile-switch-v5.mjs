@@ -23,14 +23,23 @@ for (const marker of [
   'switchingProfile={busy === "profile-switch"}',
   'onClick={onSwitchProfile}',
   'disabled={switchingProfile}',
+  "if (panels.includes(`onClick={() => window.location.replace('../../index.html')}`))",
+  "throw new Error('[FAIL] Entregador Parceiro: perfil ainda troca de módulo sem confirmar OFFLINE')",
 ]) {
   if (!hardener.includes(marker)) {
     console.error(`[FAIL] Entregador profile switch v5: proteção ausente ${marker}`);
     failed = true;
   }
 }
-if (hardener.includes(`onClick={() => window.location.replace('../../index.html')}`)) {
-  console.error('[FAIL] Entregador profile switch v5: troca ainda pode abandonar o módulo sem confirmar OFFLINE');
+
+// O texto do CTA inseguro aparece legitimamente dentro do hardener como padrão de
+// entrada e dentro da guarda que impede sua permanência no CourierPanels final.
+// Portanto, a auditoria do script-fonte deve exigir a guarda, não reprovar a mera
+// presença textual desse padrão dentro do próprio mecanismo de proteção.
+const unsafePattern = "onClick={() => window.location.replace('../../index.html')}";
+const guardMarker = 'if (panels.includes(`onClick={() => window.location.replace(\'../../index.html\')}`))';
+if (!hardener.includes(unsafePattern) || !hardener.includes(guardMarker)) {
+  console.error('[FAIL] Entregador profile switch v5: hardener não comprova bloqueio do CTA direto ao seletor');
   failed = true;
 }
 
