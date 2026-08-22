@@ -17,6 +17,7 @@ for (const marker of [
   'const switchPartnerProfile = async () => {',
   'Conclua a entrega ativa antes de trocar de perfil.',
   'rpc("set_courier_online", { _is_online: false })',
+  'await removeCourierPushRegistration()',
   'window.location.replace("../../index.html")',
   'onSwitchProfile={() => void switchPartnerProfile()}',
   'switchingProfile={busy === "profile-switch"}',
@@ -39,5 +40,5 @@ if (!umbrella.includes("import './harden-partner-entregador-profile-switch.mjs';
   failed = true;
 }
 
-if (!failed) console.log('[OK] Entregador profile switch v5: troca para Motorista só ocorre após OFFLINE confirmado e fica bloqueada durante entrega/ação ativa.');
+if (!failed) console.log('[OK] Entregador profile switch v5: troca para Motorista só ocorre após OFFLINE confirmado, com registro Push do Entregador desativado e bloqueio durante entrega/ação ativa.');
 process.exit(failed ? 1 : 0);
