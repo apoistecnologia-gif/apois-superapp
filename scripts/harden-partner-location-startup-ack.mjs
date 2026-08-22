@@ -110,4 +110,9 @@ for (const marker of [
 
 writeFileSync(courierPluginPath, courierPlugin, 'utf8');
 writeFileSync(courierServicePath, courierService, 'utf8');
-console.log('[OK] APOIS Parceiro: DriverLocation e CourierLocation só retornam started=true após confirmação real do Foreground Service e do LocationUpdates.');
+
+// Uma única leitura em 900 ms podia gerar falso negativo em aparelhos lentos.
+// O retry é aplicado somente depois que os dois plugins/Services existem.
+await import('./harden-partner-location-startup-retry.mjs');
+
+console.log('[OK] APOIS Parceiro: DriverLocation e CourierLocation só retornam started=true após confirmação real do Service/LocationUpdates, com retry antes do fail-safe.');
