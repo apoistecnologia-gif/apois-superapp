@@ -127,6 +127,10 @@ require_contains '_app_package: "br.com.apois.parceiro"' src/lib/courier-push.ts
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/courier-push.ts 'Entregador encaminha Push de corrida ao shell'
 require_contains 'const APOIS_GOLD = "#F6BE1C"' src/components/CourierRouteMap.tsx 'mapa do Entregador usa rota dourada APOIS'
 require_contains '"DEMO_MAP_ID"' src/components/CourierRouteMap.tsx 'mapa possui Map ID de fallback para não desaparecer'
+require_contains 'const COURIER_ACTION_TIMEOUT_MS = 20_000;' src/routes/courier.tsx 'ações de entrega possuem limite para não girar indefinidamente'
+require_contains 'const transitionJobId = activeJob.id;' src/routes/courier.tsx 'mudança de etapa reconcilia a entrega correta'
+require_contains 'setCompletedJob({ ...deliveredJob, status: "delivered" });' src/routes/courier.tsx 'conclusão remove entrega ativa e abre resumo imediatamente'
+require_contains 'Atualização temporariamente indisponível' src/routes/courier.tsx 'falha de refresh preserva estado e mostra recuperação'
 if grep -Fq 'window.location.assign("/courier")' src/lib/courier-push.ts; then
   echo '[FAIL] Entregador ainda tenta abrir rota absoluta /courier dentro do bundle aninhado'
   exit 1
@@ -186,4 +190,4 @@ grep -R -Fq '#F6BE1C' superapp/partner-shell/dist/modules/entregador
 grep -R -Fq 'DEMO_MAP_ID' superapp/partner-shell/dist/modules/entregador
 grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
 
-echo '[OK] módulos do APOIS Parceiro compilados: Push cruzado isolado, GPS nativo e mapa do Entregador operacional'
+echo '[OK] módulos do APOIS Parceiro compilados: Push cruzado isolado, GPS nativo, ações resilientes e mapa do Entregador operacional'
