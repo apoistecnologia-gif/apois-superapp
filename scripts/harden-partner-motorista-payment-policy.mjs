@@ -5,6 +5,7 @@ import './harden-partner-motorista-native-utilities.mjs';
 import './harden-partner-motorista-session-hygiene.mjs';
 import './harden-partner-motorista-navigation.mjs';
 import './harden-partner-motorista-legal-navigation.mjs';
+import './harden-partner-motorista-settings-cleanup.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
