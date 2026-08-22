@@ -38,10 +38,16 @@ node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
 node "$ROOT/scripts/harden-motorista-finalize-feedback.mjs"
+node "$ROOT/scripts/harden-partner-motorista-finish-authority.mjs"
 node "$ROOT/scripts/harden-motorista-self-rating.mjs"
+node "$ROOT/scripts/harden-partner-motorista-post-finish.mjs"
+node "$ROOT/scripts/harden-partner-motorista-rating-handoff.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
+node "$ROOT/scripts/harden-partner-motorista-payment-policy.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push.mjs"
+node "$ROOT/scripts/harden-partner-motorista-push-runtime.mjs"
+node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 
@@ -54,6 +60,15 @@ require_contains 'import { Geolocation } from "@capacitor/geolocation";' src/rou
 require_contains 'restauração do GPS nativo falhou' src/routes/motorista.app.tsx 'Motorista reidrata presença ONLINE após reabrir o app'
 require_contains 'Geolocation.watchPosition(' src/routes/motorista.app.tsx 'Motorista acompanha GPS continuamente pela API nativa Android'
 require_contains 'stopDriverWatch();' src/routes/motorista.app.tsx 'Motorista encerra watcher GPS ao ficar offline'
+require_contains 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.ts 'finalização chama redispatch canônico da próxima corrida'
+require_contains 'const completedRide = await callComplete' src/routes/motorista.app.tsx 'finalização limpa corrida sem depender de eco Realtime'
+require_contains 'setRouteSteps([]);' src/routes/motorista.app.tsx 'finalização encerra navegação da corrida anterior'
+require_contains 'ratingRef.current = completedRide;' src/routes/motorista.app.tsx 'avaliação bloqueia race de ofertas durante abertura'
+require_contains 'event: "rating.closed"' src/routes/motorista.app.tsx 'fechamento da avaliação força ressincronização da próxima corrida'
+require_contains 'ratedRidesRef.current.add(ratedRideId);' src/routes/motorista.app.tsx 'avaliação enviada é marcada contra duplicidade'
+require_contains 'window.addEventListener("apois:driver-push", onDriverPush);' src/routes/motorista.app.tsx 'push/resume força resync sem depender somente de Realtime'
+require_contains 'settlement?.driver_earning ?? settlement?.passenger_charge' 'src/routes/motorista.corridas.$id.tsx' 'histórico usa ganho do motorista e não saldo APOIS'
+require_contains 'A APOIS não retém comissão nem recebe o valor da corrida.' src/lib/rideReceipt.ts 'recibo deixa recebimento direto explícito'
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
