@@ -120,12 +120,14 @@ requireMarker(finalShell, 'function routeRole(requestedRole,target)', 'shell fin
 requireMarker(finalShell, 'async function bootPartnerShell()', 'shell final usa bootstrap assíncrono para callbacks nativos');
 requireMarker(finalShell, 'const launch=await appPlugin.getLaunchUrl();', 'shell final consulta deep link de lançamento antes do redirect operacional');
 requireMarker(finalShell, 'if(launch?.url&&relayDeepLink(launch.url))return;', 'shell final consome callback de lançamento antes da trava local');
-requireMarker(finalShell, 'const lockedOnLaunch=operationalRole();', 'relançar o app sem callback volta à função operacional ativa');
+requireMarker(finalShell, 'if(consumePendingPartnerPush())return;', 'shell final consome Push pendente antes da trava para não deixá-lo reaparecer depois');
+requireMarker(finalShell, 'const lockedOnLaunch=operationalRole();', 'relançar o app sem callback/push volta à função operacional ativa');
 const launchIndex = finalShell.indexOf('const launch=await appPlugin.getLaunchUrl();');
+const pendingIndex = finalShell.indexOf('if(consumePendingPartnerPush())return;');
 const lockIndex = finalShell.indexOf('const lockedOnLaunch=operationalRole();');
-if (!(launchIndex >= 0 && lockIndex > launchIndex)) {
-  console.error('[FAIL] bundle Parceiro: redirect operacional ainda pode descartar deep link que lançou o app');
+if (!(launchIndex >= 0 && pendingIndex > launchIndex && lockIndex > pendingIndex)) {
+  console.error('[FAIL] bundle Parceiro: ordem de bootstrap deve ser deep link -> Push pendente -> trava operacional');
   process.exit(1);
 }
 
-console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, callbacks de lançamento, saídas secundárias protegidas, back guards e trava cruzada de função operacional.');
+console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, callbacks/Push de lançamento consumidos, saídas secundárias protegidas, back guards e trava cruzada de função operacional.');
