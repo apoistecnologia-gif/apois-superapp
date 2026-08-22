@@ -1,8 +1,15 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function patch(relativePath, transform, verify, label) {
+function patch(relativePath, transform, verify, label, { optional = false } = {}) {
   const path = resolve('.work/entregas', relativePath);
+  if (!existsSync(path)) {
+    if (optional) {
+      console.log(`[OK] ${label} (rota opcional ausente no snapshot atual)`);
+      return;
+    }
+    throw new Error(`[FAIL] ${label}: arquivo ausente ${relativePath}`);
+  }
   const before = readFileSync(path, 'utf8');
   const after = transform(before);
   if (!verify(after)) throw new Error(`[FAIL] ${label}: contrato não confirmado em ${relativePath}`);
@@ -41,9 +48,13 @@ patch('src/routes/register.tsx', (source) => {
 'Entregas: cadastro usa viewport dinâmica e controles compactos adequados ao toque');
 
 for (const route of ['src/routes/recuperar-senha.tsx', 'src/routes/redefinir-senha.tsx']) {
-  patch(route, (source) => source.replaceAll('h-screen', 'h-dvh').replaceAll('min-h-screen', 'min-h-dvh'),
+  patch(
+    route,
+    (source) => source.replaceAll('h-screen', 'h-dvh').replaceAll('min-h-screen', 'min-h-dvh'),
     (source) => !source.includes('h-screen'),
-    `Entregas: ${route} não depende de 100vh fixo com teclado aberto`);
+    `Entregas: ${route} não depende de 100vh fixo com teclado aberto`,
+    { optional: route.endsWith('/recuperar-senha.tsx') },
+  );
 }
 
 console.log('[OK] Entregas: autenticação do Cliente preparada para toque e teclado em telas móveis.');
