@@ -28,14 +28,35 @@
   </main>
   <script>
     const urls={motorista:'./modules/motorista/index.html#/motorista/login',entregador:'./modules/entregador/index.html'};
+    const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html'};
     const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
     const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
     const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
     const PARTNER_PENDING_PUSH_KEY='apois-parceiro:pending-push';
+    const PARTNER_OPERATIONAL_ROLE_KEY='apois-parceiro:operational-role';
+
+    function operationalRole(){
+      try{
+        const value=localStorage.getItem(PARTNER_OPERATIONAL_ROLE_KEY);
+        return value==='motorista'||value==='entregador'?value:null;
+      }catch{return null;}
+    }
+    function operationalHome(role){return role==='motorista'?operationalUrls.motorista:operationalUrls.entregador;}
+    function routeRole(requestedRole,target){
+      const locked=operationalRole();
+      if(locked&&locked!==requestedRole){
+        window.location.replace(operationalHome(locked));
+        return false;
+      }
+      try{localStorage.setItem('apois-parceiro:last-module',requestedRole);}catch{}
+      window.location.assign(locked===requestedRole?operationalHome(requestedRole):target);
+      return true;
+    }
+
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
       const moduleName=button.dataset.module;
-      try{localStorage.setItem('apois-parceiro:last-module',moduleName);}catch{}
-      window.location.assign(urls[moduleName]);
+      if(moduleName!=='motorista'&&moduleName!=='entregador')return;
+      routeRole(moduleName,urls[moduleName]);
     }));
 
     function authParams(incoming){
@@ -61,30 +82,48 @@
         void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
 
         if(isPartner&&incoming.host==='module'&&path==='motorista'){
-          try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
-          window.location.assign('./modules/motorista/index.html#/motorista/app');
+          routeRole('motorista',operationalUrls.motorista);
           return true;
         }
         if(isPartner&&incoming.host==='module'&&path==='entregador'){
-          try{localStorage.setItem('apois-parceiro:last-module','entregador');}catch{}
-          window.location.assign('./modules/entregador/index.html');
+          routeRole('entregador',operationalUrls.entregador);
           return true;
         }
         if(path==='mercadopago'){
+          const locked=operationalRole();
+          if(locked&&locked!=='motorista'){
+            window.location.replace(operationalHome(locked));
+            return true;
+          }
           window.location.assign('./modules/motorista/index.html#/motorista/assinatura'+suffix);
           return true;
         }
         if(isDriver && path==='redefinir-senha'){
+          const locked=operationalRole();
+          if(locked&&locked!=='motorista'){
+            window.location.replace(operationalHome(locked));
+            return true;
+          }
           try{sessionStorage.setItem(DRIVER_RECOVERY_KEY,rawUrl);}catch{}
           window.location.assign('./modules/motorista/index.html#/motorista/login');
           return true;
         }
         if(isDriver && path==='google'){
+          const locked=operationalRole();
+          if(locked&&locked!=='motorista'){
+            window.location.replace(operationalHome(locked));
+            return true;
+          }
           try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
           window.location.assign('./modules/motorista/index.html#/motorista/login');
           return true;
         }
         if(isPartner && incoming.host==='auth' && (path==='callback'||path==='reset')){
+          const locked=operationalRole();
+          if(locked&&locked!=='entregador'){
+            window.location.replace(operationalHome(locked));
+            return true;
+          }
           try{sessionStorage.setItem(COURIER_AUTH_KEY,rawUrl);}catch{}
           const target=path==='reset'?'#/redefinir-senha'+suffix:'#/auth/callback'+suffix;
           window.location.assign('./modules/entregador/index.html'+target);
@@ -103,16 +142,8 @@
       const isDelivery=Boolean(orderId)||notificationType.includes('delivery')||notificationType.includes('order');
       const isRide=Boolean(rideId)||event.startsWith('ride.')||event.startsWith('driver.')||event.includes('corrida');
       if(isDelivery&&isRide)return false;
-      if(isDelivery){
-        try{localStorage.setItem('apois-parceiro:last-module','entregador');}catch{}
-        window.location.assign('./modules/entregador/index.html');
-        return true;
-      }
-      if(isRide){
-        try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
-        window.location.assign('./modules/motorista/index.html#/motorista/app');
-        return true;
-      }
+      if(isDelivery)return routeRole('entregador',operationalUrls.entregador);
+      if(isRide)return routeRole('motorista',operationalUrls.motorista);
       return false;
     }
 
@@ -130,7 +161,10 @@
       }
     }
 
-    if(!consumePendingPartnerPush()){
+    const lockedOnLaunch=operationalRole();
+    if(lockedOnLaunch){
+      window.location.replace(operationalHome(lockedOnLaunch));
+    }else if(!consumePendingPartnerPush()){
       const appPlugin=window.Capacitor?.Plugins?.App;
       if(appPlugin){
         appPlugin.addListener('appUrlOpen',({url})=>{relayDeepLink(url);}).catch(()=>undefined);
