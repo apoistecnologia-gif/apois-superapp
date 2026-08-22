@@ -34,8 +34,8 @@ check('scripts/namespace-entregas-superapp-storage.mjs', [
 check('scripts/harden-corridas-superapp-storage.mjs', [
   'apois-superapp-corridas-auth-v1',
   'apois-superapp-corridas:push-device-id',
-  'favorites',
-  'recent-destinations',
+  '.work/corridas/src/services/destinations/destination-storage.ts',
+  'favoritos e recentes ficam vinculados ao usuário autenticado do Superapp',
 ], 'Corridas usa storage operacional isolado');
 
 check('scripts/harden-superapp-shell-auth-deeplink-source.mjs', [
