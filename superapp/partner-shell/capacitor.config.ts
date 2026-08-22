@@ -16,7 +16,9 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     StatusBar: {
-      style: 'DARK',
+      // Fundo quase preto exige ícones claros. DARK deixava hora/bateria com
+      // baixo contraste no Android e fazia o topo parecer quebrado.
+      style: 'LIGHT',
       backgroundColor: '#050505',
     },
   },
