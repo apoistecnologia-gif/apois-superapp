@@ -12,7 +12,6 @@ function fail(message) {
   failed = true;
 }
 function ok(message) { console.log(`[OK] ${message}`); }
-function read(path) { return readFileSync(resolve(root, path), 'utf8'); }
 function requireFile(path) {
   const full = resolve(root, path);
   if (!existsSync(full)) { fail(`arquivo obrigatório ausente: ${path}`); return null; }
@@ -83,8 +82,22 @@ requireMarkers(
 );
 requireMarkers(
   '.work/corridas/src/hooks/use-payment-methods.tsx',
-  ['method.isActive && method.enabled && method.code === "pix"'],
-  'Corridas final permanece PIX-only',
+  ['(method) => method.isActive && method.enabled'],
+  'Corridas mantém os meios ativos para a política financeira final',
+);
+forbidMarkers(
+  '.work/corridas/src/hooks/use-payment-methods.tsx',
+  ['method.code === "pix"'],
+  'Corridas não regrediu para filtro PIX-only',
+);
+requireMarkers(
+  '.work/corridas/src/services/payments/payment-service.ts',
+  [
+    'const isDirectToDriver = code === "cash" || code === "credit";',
+    'Pague diretamente ao motorista ao final da corrida.',
+    'Pague diretamente ao motorista com cartão de crédito.',
+  ],
+  'Corridas preserva PIX digital e Dinheiro/Cartão direto ao motorista',
 );
 requireMarkers(
   '.work/corridas/src/routes/_authenticated.inicio.tsx',
@@ -93,6 +106,7 @@ requireMarkers(
     '"./assets/ride-categories/motos.svg"',
     '"./assets/ride-categories/fretes.svg"',
     '"./assets/ride-categories/guincho.svg"',
+    '"./assets/ride-categories/envios.svg"',
     'absolute inset-x-0 bottom-0 z-30 max-h-[54dvh]',
   ],
   'Home Corridas usa categorias relativas e não reserva rodapé duplicado',
@@ -109,10 +123,27 @@ requireMarkers(
     'const showBottomNavigation',
     '!superappJourneyRoutesWithoutBottomNav.includes(pathname)',
     '!pathname.startsWith("/corrida/")',
+    'min-h-[64px]',
+    '<Icon size={24} strokeWidth={2.2} />',
     '{ label: "Carteira", icon: WalletCards, to: "/carteira" }',
     '{ label: "Notificações", icon: Bell, to: "/notificacoes" }',
   ],
-  'rodapé global de Corridas permanece nas telas normais',
+  'rodapé global de Corridas permanece legível nas telas normais',
+);
+forbidMarkers(
+  '.work/corridas/src/components/layout/AppShell.tsx',
+  ['MainHamburgerMenu'],
+  'Corridas não recompila menu hambúrguer duplicado',
+);
+requireMarkers(
+  '.work/corridas/src/components/profile/PassengerProfileCenter.tsx',
+  ['title="Termos de Uso"', 'title="Política de Privacidade"', 'Suporte e informações'],
+  'Perfil Passageiro mantém suporte e documentos legais acessíveis',
+);
+forbidMarkers(
+  '.work/corridas/src/components/profile/PassengerProfileCenter.tsx',
+  ['title="Carteira e pagamentos"', 'title="Central de notificações"', 'title="Termos e privacidade"'],
+  'Perfil Passageiro não duplica o rodapé nem agrupa documentos de forma ambígua',
 );
 requireMarkers(
   '.work/corridas/src/lib/auth/native-password-recovery.ts',
@@ -212,15 +243,70 @@ requireMarkers(
 );
 requireMarkers(
   '.work/entregas/src/components/AppBottomNav.tsx',
-  ['<nav className="fixed bottom-0', 'min-h-[88px]', 'pb-[max(env(safe-area-inset-bottom),1.25rem)]', 'h-8 w-8'],
-  'rodapé Entregas é fixo, legível e respeita safe area',
+  [
+    '<nav className="fixed bottom-0',
+    'min-h-[88px]',
+    'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+    'h-8 w-8',
+    'aria-label="Buscar"',
+    '<Search className="h-8 w-8" />',
+  ],
+  'rodapé Entregas é fixo, legível, explícito e respeita safe area',
+);
+forbidMarkers(
+  '.work/entregas/src/components/AppBottomNav.tsx',
+  ['<Bike className='],
+  'ação central Buscar não usa ícone ambíguo de motocicleta',
 );
 for (const [path, marker, label] of [
   ['.work/entregas/src/routes/inicio.tsx', 'overflow-y-auto px-4 pb-32 pt-5', 'Home Entregas'],
   ['.work/entregas/src/routes/buscar.tsx', 'overflow-y-auto px-4 pb-32 pt-2', 'Busca Entregas'],
   ['.work/entregas/src/routes/pedidos.tsx', 'overflow-y-auto p-4 pb-32', 'Pedidos Entregas'],
   ['.work/entregas/src/routes/perfil/index.tsx', 'overflow-y-auto p-4 pb-32 pt-5', 'Perfil Entregas'],
-]) requireMarkers(path, [marker], `${label} reserva área do rodapé`);
+  ['.work/entregas/src/routes/enderecos.tsx', '<AppBottomNav activeTab="perfil" />', 'Endereços Entregas'],
+  ['.work/entregas/src/routes/estabelecimento.$merchantId.tsx', '<AppBottomNav activeTab="inicio" />', 'Estabelecimento Entregas'],
+  ['.work/entregas/src/routes/perfil/pagamentos.tsx', '<AppBottomNav activeTab="perfil" />', 'Pagamentos Entregas'],
+  ['.work/entregas/src/routes/perfil/notificacoes.tsx', '<AppBottomNav activeTab="perfil" />', 'Preferências Entregas'],
+  ['.work/entregas/src/routes/perfil/legal.tsx', '<AppBottomNav activeTab="perfil" />', 'Legal Entregas'],
+  ['.work/entregas/src/routes/perfil/ajuda.tsx', '<AppBottomNav activeTab="perfil" />', 'Ajuda Entregas'],
+]) requireMarkers(path, [marker], `${label} mantém navegação/área inferior esperada`);
+requireMarkers(
+  '.work/entregas/src/routes/perfil/pagamentos.tsx',
+  ['Forma disponível', 'O Pix é apresentado automaticamente'],
+  'Pagamentos Entregas mostra somente o meio realmente disponível',
+);
+forbidMarkers(
+  '.work/entregas/src/routes/perfil/pagamentos.tsx',
+  ['Cartões salvos', 'Cartão de Crédito/Débito'],
+  'Pagamentos Entregas não exibe opção indisponível',
+);
+requireMarkers(
+  '.work/entregas/src/routes/sacola.tsx',
+  ['min-h-dvh', 'grid h-10 w-10 place-items-center rounded-xl bg-zinc-800'],
+  'Sacola Entregas usa viewport dinâmica e controles de quantidade tocáveis',
+);
+requireMarkers(
+  '.work/entregas/src/components/CustomerDeliveryMap.tsx',
+  ['center={', 'zoom={14}', 'h-[clamp(15rem,34dvh,20rem)]'],
+  'mapa do pedido acompanha entregador e adapta altura ao celular',
+);
+forbidMarkers(
+  '.work/entregas/src/components/CustomerDeliveryMap.tsx',
+  ['defaultCenter=', 'defaultZoom='],
+  'mapa do pedido não mantém câmera presa na posição inicial',
+);
+
+const viewportFiles = [
+  '.work/entregas/src/routes/inicio.tsx',
+  '.work/entregas/src/routes/pedidos.tsx',
+  '.work/entregas/src/routes/favoritos.tsx',
+  '.work/entregas/src/routes/buscar.tsx',
+  '.work/entregas/src/routes/perfil/index.tsx',
+  '.work/entregas/src/routes/perfil/ajuda.tsx',
+  '.work/entregas/src/routes/pedido/$orderId/index.tsx',
+];
+for (const path of viewportFiles) forbidMarkers(path, ['h-screen', 'min-h-screen'], `${path} usa viewport dinâmica`);
+
 requireMarkers(
   '.work/entregas/src/lib/lovable-error-reporting.ts',
   ['[APOIS Superapp] erro capturado pelo boundary'],
