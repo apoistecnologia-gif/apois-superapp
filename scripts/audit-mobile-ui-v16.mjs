@@ -43,7 +43,10 @@ requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   'text-xs font-semibold text-zinc-300',
   'min-h-[88px]',
   'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
-], 'Módulos Cliente mantêm rodapés tocáveis e cabeçalho/categorias legíveis');
+  'label: "Meus pedidos"',
+  'label: "Favoritos"',
+  'Perfil remove atalhos duplicados do rodapé',
+], 'Módulos Cliente mantêm rodapés tocáveis, cabeçalhos legíveis e removem atalhos duplicados do Perfil');
 
 requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs corridas',
@@ -72,5 +75,5 @@ requireAll('scripts/fix-corridas-superapp-ui.mjs', [
   'aria-label="Navegação inferior"',
 ], 'Corridas mantém rodapé nas telas comuns e oculta apenas jornada operacional');
 
-if (!failed) console.log('[OK] Mobile UI v16: seletores e módulos unificados têm safe-area, rolagem, logomarca sem corte e navegação inferior consistente.');
+if (!failed) console.log('[OK] Mobile UI v16: seletores e módulos unificados têm safe-area, rolagem, logomarca sem corte, navegação inferior consistente e menos duplicidade visual.');
 process.exit(failed ? 1 : 0);
