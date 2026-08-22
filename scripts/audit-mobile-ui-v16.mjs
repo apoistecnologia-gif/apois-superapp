@@ -58,6 +58,15 @@ requireAll('scripts/harden-entregas-superapp-secondary-mobile-ui.mjs', [
   'pb-32',
 ], 'Entregas mantém rodapé também em Pagamentos/Notificações/Legal/Ajuda e remove cartão inexistente');
 
+requireAll('scripts/harden-partner-motorista-navigation.mjs', [
+  'min-h-[82px]',
+  'min-h-[60px]',
+  'h-9 w-11',
+  'h-6 w-6',
+  'text-xs font-extrabold',
+  'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
+], 'Motorista usa rodapé maior, legível e afastado da barra de gestos');
+
 requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs corridas',
   'node scripts/harden-superapp-module-mobile-ui.mjs entregas',
@@ -86,5 +95,5 @@ requireAll('scripts/fix-corridas-superapp-ui.mjs', [
   'aria-label="Navegação inferior"',
 ], 'Corridas mantém rodapé nas telas comuns e oculta apenas jornada operacional');
 
-if (!failed) console.log('[OK] Mobile UI v16: seletores e módulos unificados têm safe-area, rolagem, logomarca sem corte, navegação inferior consistente e opções visíveis apenas quando realmente disponíveis.');
+if (!failed) console.log('[OK] Mobile UI v16: seletores, Cliente, Passageiro e Parceiro têm safe-area, rolagem, logomarca sem corte, navegação inferior consistente e opções visíveis apenas quando realmente disponíveis.');
 process.exit(failed ? 1 : 0);
