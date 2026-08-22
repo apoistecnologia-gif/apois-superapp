@@ -21,12 +21,15 @@ function requireAll(path, markers, label) {
   } else console.log(`[OK] ${label}`);
 }
 
+// O hardener gera os dois deep links a partir do campo `module`, portanto os
+// literais finais não aparecem juntos no script-fonte. Validamos a lista de
+// serviços/funções e a montagem do URI que será gravado em cada Java Service.
 requireAll('scripts/harden-partner-location-notification-routing.mjs', [
-  'DriverLocationService.java',
-  'CourierLocationService.java',
-  'br.com.apois.parceiro://module/motorista',
-  'br.com.apois.parceiro://module/entregador',
-  'openApp.setData(Uri.parse(',
+  "{ file: 'DriverLocationService.java', module: 'motorista' }",
+  "{ file: 'CourierLocationService.java', module: 'entregador' }",
+  'const marker = `br.com.apois.parceiro://module/${module}`;',
+  'openApp.setData(Uri.parse("${marker}"));',
+  "source.includes('openApp.setData(Uri.parse(')",
 ], 'Notificações persistentes de GPS recebem deep links por função');
 
 requireAll('scripts/install-partner-launcher.mjs', [
@@ -35,12 +38,16 @@ requireAll('scripts/install-partner-launcher.mjs', [
   'br.com.apois.parceiro://module/entregador',
 ], 'Launcher bloqueia Android se notificações de GPS não retornarem ao módulo correto');
 
+// O shell atual centraliza a navegação operacional em routeRole/operationalUrls,
+// que também respeita o lock de função. Não exigir window.location.assign direto,
+// pois isso ignoraria justamente a proteção contra troca indevida de função.
 requireAll('superapp/partner-shell/index.html', [
   "rawUrl.startsWith('br.com.apois.parceiro://')",
   "incoming.host==='module'&&path==='motorista'",
+  "routeRole('motorista',operationalUrls.motorista)",
   "incoming.host==='module'&&path==='entregador'",
-  "window.location.assign('./modules/motorista/index.html#/motorista/app')",
-  "window.location.assign('./modules/entregador/index.html')",
+  "routeRole('entregador',operationalUrls.entregador)",
+  "const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html'};",
   "incoming.host==='auth' && (path==='callback'||path==='reset')",
 ], 'Shell trata deep links operacionais sem confundi-los com OAuth/reset');
 
