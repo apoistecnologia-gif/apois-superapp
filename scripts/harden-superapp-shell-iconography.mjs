@@ -1,3 +1,4 @@
+import './harden-superapp-shell-copy.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -19,9 +20,9 @@ source = source.replace('<div class="badge">🛍</div><div class="delivery">🛵
 if (/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)) {
   throw new Error('[FAIL] Shell Cliente: emoji de serviço variável por dispositivo ainda está presente.');
 }
-for (const marker of ['.vehicle svg,.delivery svg', '<svg viewBox="0 0 24 24" aria-hidden="true">']) {
-  if (!source.includes(marker)) throw new Error(`[FAIL] Shell Cliente: iconografia SVG ausente (${marker})`);
+for (const marker of ['.vehicle svg,.delivery svg', '<svg viewBox="0 0 24 24" aria-hidden="true">', 'Carro • Moto • Fretes • Guincho • Envios', '<strong>Apois, <span>vamos?</span></strong>']) {
+  if (!source.includes(marker)) throw new Error(`[FAIL] Shell Cliente: iconografia/texto oficial ausente (${marker})`);
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Shell Cliente: Corridas e Entregas usam ícones SVG consistentes em vez de emojis do sistema.');
+console.log('[OK] Shell Cliente: categorias, slogan e ícones ficam consistentes em todos os dispositivos.');
