@@ -139,7 +139,7 @@ check('supabase/migrations/20260822000500_record_mercadopago_split_1n_external_d
 
 check('docs/MERCADO_PAGO_ENTREGAS_MARKETPLACE.md', [
   'R$ 69,90',
-  'Split Mercado Pago 1:N',
+  'Split 1:N',
   'commercial_enablement_pending',
   'não fazer a APOIS receber o total',
   'scope=offline_access',
