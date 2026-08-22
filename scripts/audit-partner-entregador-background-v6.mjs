@@ -66,14 +66,23 @@ requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-background-location.mjs';",
 ], 'Pipeline aplica rearm da WebView antes do serviço de background');
 
+requireAll('scripts/harden-partner-location-notification-routing.mjs', [
+  "{ file: 'CourierLocationService.java', module: 'entregador' }",
+  'import android.net.Uri;',
+  'openApp.setData(Uri.parse(',
+  'br.com.apois.parceiro://module/',
+], 'Notificação persistente do GPS possui deep link explícito de retorno ao módulo operacional');
+
 requireAll('scripts/install-partner-launcher.mjs', [
   "import './install-partner-driver-location.mjs';",
   "import './install-partner-courier-location.mjs';",
+  "import './harden-partner-location-notification-routing.mjs';",
   'android:name=".DriverLocationService"',
   'android:name=".CourierLocationService"',
   'registerPlugin(DriverLocationPlugin.class)',
   'registerPlugin(CourierLocationPlugin.class)',
-], 'Launcher exige os dois serviços de localização do APOIS Parceiro');
+  'br.com.apois.parceiro://module/entregador',
+], 'Launcher instala os dois serviços e valida que a notificação do Entregador retorna ao módulo correto');
 
-if (!failed) console.log('[OK] Entregador background v6: GPS continua em Foreground Service durante background/tela bloqueada, ONLINE falha fechado se o FGS não iniciar e o serviço encerra de forma reconciliada ao sair da operação.');
+if (!failed) console.log('[OK] Entregador background v6: GPS continua em Foreground Service durante background/tela bloqueada, ONLINE falha fechado se o FGS não iniciar e a notificação retorna ao Entregador sem expor o seletor.');
 process.exit(failed ? 1 : 0);
