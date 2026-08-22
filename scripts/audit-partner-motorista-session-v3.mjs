@@ -18,6 +18,8 @@ for (const marker of [
   'Finalize a corrida ativa antes de sair da conta.',
   'rpc("driver_set_presence"',
   '_online: false, _lat: null, _lng: null',
+  'if (presenceError) throw presenceError;',
+  'Não foi possível confirmar que você ficou offline.',
   "patch('src/components/MovviHeader.tsx'",
   "patch('src/routes/motorista.perfil.tsx'",
   "patch('src/routes/motorista.configuracoes.tsx'",
@@ -33,12 +35,17 @@ if (source.includes('PushNotifications.unregister()')) {
   console.error('[FAIL] Motorista sessão v3: FCM nativo compartilhado não pode ser invalidado no logout do módulo');
   failed = true;
 }
+if (source.includes('driver_set_presence\", {\\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\\n      }).catch(() => undefined)')) {
+  console.error('[FAIL] Motorista sessão v3: saída ainda ignora falha ao confirmar OFFLINE');
+  failed = true;
+}
 
 const profileSwitch = read('scripts/harden-partner-motorista-profile-switch.mjs');
 for (const marker of [
   'Conclua a corrida ativa antes de trocar de perfil.',
   'rpc("driver_set_presence"',
   '_online: false,',
+  'if (presenceError) throw presenceError;',
   'await stopNativeDriverLocation()',
   'localStorage.setItem("apois:driver:online", "0")',
   'onClick={() => void handleSwitchPartnerProfile()}',
@@ -59,5 +66,5 @@ if (!policy.includes("import './harden-partner-motorista-profile-switch.mjs';"))
   failed = true;
 }
 
-if (!failed) console.log('[OK] Motorista sessão v3: logout e troca de perfil bloqueiam corrida ativa, confirmam OFFLINE, encerram GPS do módulo e preservam a sessão apropriada.');
+if (!failed) console.log('[OK] Motorista sessão v3: logout e troca só prosseguem após OFFLINE confirmado, encerram GPS do módulo e preservam o FCM compartilhado.');
 process.exit(failed ? 1 : 0);
