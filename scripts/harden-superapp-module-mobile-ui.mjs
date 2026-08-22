@@ -68,6 +68,16 @@ if (moduleName === 'entregas') {
     return next;
   }, 'Entregas: Perfil remove atalhos duplicados do rodapé e alinha o cabeçalho');
 
+  patch('.work/entregas/src/components/AppBottomNav.tsx', (source) => {
+    let next = source;
+    next = next.replace(
+      'import { Home, Compass, Heart, User, Bike } from "lucide-react";',
+      'import { Home, Compass, Heart, User, Search } from "lucide-react";',
+    );
+    next = next.replace('<Bike className="h-7 w-7" />', '<Search className="h-8 w-8" />');
+    return next;
+  }, 'Entregas: ação central do rodapé usa ícone de Busca em vez de motocicleta ambígua');
+
   const home = readFileSync(resolve('.work/entregas/src/routes/inicio.tsx'), 'utf8');
   for (const marker of ['pt-[max(env(safe-area-inset-top),0.75rem)]', 'pb-2.5', 'text-xs font-semibold text-zinc-300']) {
     if (!home.includes(marker)) throw new Error(`[FAIL] Entregas: ajuste visual da Home incompleto (${marker})`);
@@ -90,10 +100,13 @@ if (moduleName === 'entregas') {
     'min-w-[72px]',
     'h-8 w-8',
     'text-xs leading-none',
+    'aria-label="Buscar"',
+    '<Search className="h-8 w-8" />',
   ]) {
     if (!bottomNav.includes(marker)) throw new Error(`[FAIL] Entregas: rodapé mobile regrediu (${marker})`);
   }
-  console.log('[OK] Entregas: rodapé fixo permanece grande, legível e fora da barra de gestos do Android.');
+  if (bottomNav.includes('<Bike className=')) throw new Error('[FAIL] Entregas: ação Buscar voltou a usar ícone de motocicleta.');
+  console.log('[OK] Entregas: rodapé fixo permanece grande, legível, sem ícone ambíguo e fora da barra de gestos do Android.');
 
   await import('./harden-entregas-superapp-cart-mobile-ui.mjs');
 }
