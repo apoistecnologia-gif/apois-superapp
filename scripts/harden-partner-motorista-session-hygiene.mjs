@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 const root = process.cwd();
 const workspace = process.env.APOIS_MOTORISTA_WORKSPACE || '.work/partner-motorista';
+const offlineRpc = `await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      }).catch(() => undefined);`;
 
 function patch(relativePath, transform, label) {
   const path = resolve(root, workspace, relativePath);
@@ -51,12 +52,13 @@ patch('src/components/MovviHeader.tsx', (source) => {
   }
   next = next.replace(
     '      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      await navigate({ to: logoutRedirect as "/", replace: true });',
-    '      await unregisterCurrentDevice();\n      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      if (logoutRedirect === "/") {\n        window.location.replace("../../index.html");\n        return;\n      }\n      await navigate({ to: logoutRedirect as "/", replace: true });',
+    `      ${offlineRpc}\n      await unregisterCurrentDevice();\n      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      if (logoutRedirect === "/") {\n        window.location.replace("../../index.html");\n        return;\n      }\n      await navigate({ to: logoutRedirect as "/", replace: true });`,
   );
-  if (!next.includes('await unregisterCurrentDevice();')) throw new Error('[FAIL] MovviHeader.tsx: logout não desativa registro Push do Motorista');
-  if (!next.includes('window.location.replace("../../index.html")')) throw new Error('[FAIL] MovviHeader.tsx: logout não retorna ao seletor Parceiro');
+  for (const marker of ['driver_set_presence', 'await unregisterCurrentDevice();', 'window.location.replace("../../index.html")']) {
+    if (!next.includes(marker)) throw new Error(`[FAIL] MovviHeader.tsx: logout incompleto (${marker})`);
+  }
   return next;
-}, 'motorista: logout do cabeçalho desativa Push do módulo e retorna ao seletor');
+}, 'motorista: logout do cabeçalho confirma OFFLINE, desativa Push do módulo e retorna ao seletor');
 
 patch('src/routes/motorista.perfil.tsx', (source) => {
   let next = source;
@@ -68,14 +70,23 @@ patch('src/routes/motorista.perfil.tsx', (source) => {
   }
   next = next.replace(
     '      const { error: signOutError } = await supabase.auth.signOut();\n      if (signOutError) throw signOutError;\n      toast.success("Sessão encerrada.");\n      await navigate({ to: "/", replace: true });',
-    '      await unregisterCurrentDevice();\n      const { error: signOutError } = await supabase.auth.signOut();\n      if (signOutError) throw signOutError;\n      toast.success("Sessão do Motorista encerrada.");\n      window.location.replace("../../index.html");',
+    `      ${offlineRpc}\n      await unregisterCurrentDevice();\n      const { error: signOutError } = await supabase.auth.signOut();\n      if (signOutError) throw signOutError;\n      toast.success("Sessão do Motorista encerrada.");\n      window.location.replace("../../index.html");`,
   );
-  if (!next.includes('Sessão do Motorista encerrada.')) throw new Error('[FAIL] motorista.perfil.tsx: logout Parceiro não aplicado');
+  for (const marker of ['driver_set_presence', 'Sessão do Motorista encerrada.', 'window.location.replace("../../index.html")']) {
+    if (!next.includes(marker)) throw new Error(`[FAIL] motorista.perfil.tsx: logout Parceiro incompleto (${marker})`);
+  }
   return next;
-}, 'motorista: logout do perfil encerra somente Motorista e retorna ao seletor');
+}, 'motorista: logout do perfil confirma OFFLINE, encerra somente Motorista e retorna ao seletor');
 
 patch('src/routes/motorista.configuracoes.tsx', (source) => {
   let next = source;
+  const logoutMarker = '      // O token FCM pertence ao usuário no backend. Ele precisa ser desativado';
+  if (next.includes(logoutMarker) && !next.slice(next.indexOf('async function handleLogout'), next.indexOf('async function handleDeleteAccount')).includes('driver_set_presence')) {
+    const insertionPoint = next.indexOf('      if (scope === "global") await unregisterAllDevices();', next.indexOf('async function handleLogout'));
+    if (insertionPoint < 0) throw new Error('[FAIL] motorista.configuracoes.tsx: ponto de logout não encontrado');
+    const indentRpc = `      await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      }).catch(() => undefined);\n\n`;
+    next = next.slice(0, insertionPoint) + indentRpc + next.slice(insertionPoint);
+  }
   next = next.replace(
     '      await navigate({ to: "/motorista/login", replace: true });\n    } catch (error) {',
     '      window.location.replace("../../index.html");\n    } catch (error) {',
@@ -84,8 +95,13 @@ patch('src/routes/motorista.configuracoes.tsx', (source) => {
     '      toast.success("Conta excluída com sucesso.");\n      await navigate({ to: "/motorista/login", replace: true });',
     '      toast.success("Conta excluída com sucesso.");\n      window.location.replace("../../index.html");',
   );
-  if (!next.includes('window.location.replace("../../index.html")')) throw new Error('[FAIL] motorista.configuracoes.tsx: retorno ao seletor não aplicado');
+  const logoutBlockStart = next.indexOf('async function handleLogout');
+  const logoutBlockEnd = next.indexOf('async function handleDeleteAccount', logoutBlockStart);
+  const logoutBlock = logoutBlockStart >= 0 && logoutBlockEnd > logoutBlockStart ? next.slice(logoutBlockStart, logoutBlockEnd) : '';
+  for (const marker of ['driver_set_presence', 'unregisterCurrentDevice', 'window.location.replace("../../index.html")']) {
+    if (!logoutBlock.includes(marker)) throw new Error(`[FAIL] motorista.configuracoes.tsx: logout não confirma limpeza (${marker})`);
+  }
   return next;
-}, 'motorista: logout/exclusão em configurações retornam ao seletor Parceiro');
+}, 'motorista: logout em configurações confirma OFFLINE, remove Push e retorna ao seletor; exclusão também retorna ao seletor');
 
 console.log(`[OK] higiene de sessão do Motorista endurecida em ${workspace}`);
