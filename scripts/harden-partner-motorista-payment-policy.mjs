@@ -1,6 +1,7 @@
 import './harden-partner-motorista-history-receipt.mjs';
 import './harden-partner-motorista-direct-earnings.mjs';
 import './harden-partner-motorista-release-surface.mjs';
+import './harden-partner-motorista-native-utilities.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
