@@ -57,8 +57,10 @@ requireAll('scripts/harden-partner-entregador-gps-resume.mjs', [
 requireAll('scripts/harden-partner-entregador-active-tracking.mjs', [
   'const online = Boolean(availability?.is_online) || Boolean(activeJob);',
   '<CourierLocationTracker enabled={online} onPosition={setCurrentPosition} />',
+  'disabled={Boolean(activeJob || completedJob)}',
+  'Perfil indisponível durante a entrega',
   '{!activeJob && !completedJob ? (',
-], 'Entrega ativa mantém rastreamento e impede navegação para fora da jornada');
+], 'Entrega ativa mantém rastreamento e trava perfil/rodapé para não abandonar a jornada');
 
 requireAll('scripts/harden-partner-entregador-quiet-refresh.mjs', [
   'if (quiet) {',
