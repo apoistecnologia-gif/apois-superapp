@@ -26,18 +26,20 @@ patch('src/routes/motorista.app.tsx', (source) => {
   }
   next = next.replace(
     '  async function handleLogout() {\n    await supabase.auth.signOut();\n    navigate({ to: "/" });\n  }',
-    `  async function handleLogout() {\n    if (activeRef.current) {\n      toast.error(\"Finalize a corrida ativa antes de sair da conta.\");\n      return;\n    }\n    try {\n      setDesiredOnline(false);\n      await unregisterCurrentDevice();\n      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      window.location.replace(\"../../index.html\");\n    } catch (error) {\n      if (import.meta.env.DEV) console.warn(\"[APOIS Motorista] falha ao sair\", error);\n      toast.error(\"Não foi possível sair da conta agora. Tente novamente.\");\n    }\n  }`,
+    `  async function handleLogout() {\n    if (activeRef.current) {\n      toast.error(\"Finalize a corrida ativa antes de sair da conta.\");\n      return;\n    }\n    try {\n      setDesiredOnline(false);\n      const { error: presenceError } = await (supabase as any).rpc(\"driver_set_presence\", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError && import.meta.env.DEV) console.warn(\"[APOIS Motorista] falha ao confirmar offline no logout\", presenceError);\n      await unregisterCurrentDevice();\n      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      window.location.replace(\"../../index.html\");\n    } catch (error) {\n      if (import.meta.env.DEV) console.warn(\"[APOIS Motorista] falha ao sair\", error);\n      toast.error(\"Não foi possível sair da conta agora. Tente novamente.\");\n    }\n  }`,
   );
   for (const marker of [
     'Finalize a corrida ativa antes de sair da conta.',
     'setDesiredOnline(false);',
+    'rpc("driver_set_presence"',
+    '_online: false, _lat: null, _lng: null',
     'await unregisterCurrentDevice();',
     'window.location.replace("../../index.html")',
   ]) {
     if (!next.includes(marker)) throw new Error(`[FAIL] motorista.app.tsx: logout principal incompleto (${marker})`);
   }
   return next;
-}, 'motorista: logout principal bloqueia corrida ativa, fica offline, desativa Push do módulo e retorna ao seletor');
+}, 'motorista: logout principal bloqueia corrida ativa, confirma OFFLINE no backend, desativa Push do módulo e retorna ao seletor');
 
 patch('src/components/MovviHeader.tsx', (source) => {
   let next = source;
