@@ -7,6 +7,7 @@ const appPath = resolve(root, workspace, 'src/routes/motorista.app.tsx');
 const hookPath = resolve(root, workspace, 'src/hooks/useDriverBroadcast.ts');
 const menuPath = resolve(root, workspace, 'src/components/DriverSideMenu.tsx');
 const ROLE_KEY = 'apois-parceiro:operational-role';
+const SIGNOUT_MARKER = '// APOIS_PARTNER_DRIVER_OPERATIONAL_LOCK_SIGNOUT';
 
 // A intenção local ONLINE pode gravar a trava imediatamente. A intenção OFFLINE
 // NÃO pode apagá-la aqui: primeiro o backend precisa confirmar driver_set_presence(false).
@@ -37,17 +38,22 @@ if (!hook.includes('return false;\n  }\n  try {\n    if (publishOnline) window.l
 }
 
 // SIGNED_OUT é uma saída de sessão já protegida pelos fluxos normais de logout.
-// Mantemos a limpeza como última defesa para não deixar lock órfão após sessão destruída.
+// A limpeza abaixo é uma última defesa para não deixar lock órfão quando a sessão
+// for destruída externamente. O marcador evita confundir este removeItem com o da RPC.
 const signoutAnchor = `        window.localStorage.setItem(DRIVER_ONLINE_STORAGE_KEY, "0");`;
-if (hook.includes(signoutAnchor) && !hook.includes(`window.localStorage.removeItem("${ROLE_KEY}")`)) {
+if (!hook.includes(SIGNOUT_MARKER)) {
+  if (!hook.includes(signoutAnchor)) {
+    throw new Error('[FAIL] Motorista Parceiro: callback SIGNED_OUT não encontrado para limpeza defensiva da trava');
+  }
   hook = hook.replace(
     signoutAnchor,
-    `${signoutAnchor}\n        if (window.localStorage.getItem("${ROLE_KEY}") === "motorista") window.localStorage.removeItem("${ROLE_KEY}");`,
+    `${signoutAnchor}\n        ${SIGNOUT_MARKER}\n        if (window.localStorage.getItem("${ROLE_KEY}") === "motorista") window.localStorage.removeItem("${ROLE_KEY}");`,
   );
 }
 for (const marker of [
   `if (publishOnline) window.localStorage.setItem("${ROLE_KEY}", "motorista")`,
   `window.localStorage.getItem("${ROLE_KEY}") === "motorista"`,
+  SIGNOUT_MARKER,
   'return false;',
   'return true;',
   'SIGNED_OUT',
@@ -70,4 +76,4 @@ if (!menu.includes(`localStorage.removeItem("${ROLE_KEY}")`)) {
 }
 writeFileSync(menuPath, menu, 'utf8');
 
-console.log('[OK] Motorista Parceiro: ONLINE trava o shell imediatamente; OFFLINE libera a função somente após driver_set_presence confirmar sucesso.');
+console.log('[OK] Motorista Parceiro: ONLINE trava o shell; OFFLINE libera somente após RPC confirmada e SIGNED_OUT possui limpeza defensiva explícita.');
