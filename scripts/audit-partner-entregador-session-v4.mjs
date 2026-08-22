@@ -31,11 +31,14 @@ function forbidAll(path, markers, label) {
 }
 
 requireAll('scripts/harden-partner-entregador-session-hygiene.mjs', [
+  'courier?.status === "approved" && courier?.is_active',
+  'const { error: offlineError } = await rpc("set_courier_online", { _is_online: false });',
+  'Não foi possível confirmar que você ficou offline antes de sair.',
   'await removeCourierPushRegistration();',
   'await supabase.auth.signOut();',
   'window.location.replace("../../index.html")',
-  'logout explícito ainda cai no login interno',
-], 'logout do Entregador encerra o módulo e retorna ao seletor');
+  'logout ainda depende de availability possivelmente stale',
+], 'logout do Entregador confirma OFFLINE por backend mesmo com disponibilidade local stale');
 forbidAll('scripts/harden-partner-entregador-session-hygiene.mjs', [
   'PushNotifications.unregister()',
 ], 'logout do Entregador não invalida FCM nativo compartilhado');
