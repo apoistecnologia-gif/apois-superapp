@@ -99,6 +99,13 @@ requireAll('scripts/harden-partner-entregador-profile.mjs', [
   "window.location.replace('../../index.html')",
 ], 'Perfil do Entregador remove linguagem de saque e permite voltar ao seletor Parceiro');
 
+requireAll('scripts/harden-partner-entregador-finance-runtime.mjs', [
+  'Recebimento direto ainda está em homologação.',
+  'Saque manual está desativado.',
+  'rpc("request_payout"',
+  'await from("payout_accounts").insert(row)',
+], 'Runtime do Entregador remove execução de payout/chave PIX e deixa apenas bloqueio explícito');
+
 requireAll('scripts/harden-partner-entregador-privacy.mjs', [
   'registros necessários à conciliação de ganhos e repasses',
   'Chave PIX e solicitação manual de saque também não são coletadas',
@@ -118,9 +125,10 @@ requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-push-runtime.mjs';",
   "import './harden-partner-entregador-state-handoff.mjs';",
   "import './harden-partner-entregador-profile.mjs';",
+  "import './harden-partner-entregador-finance-runtime.mjs';",
   "import './harden-partner-entregador-privacy.mjs';",
   "import './harden-partner-entregador-terms.mjs';",
-], 'Umbrella real do Entregador executa bootstrap, GPS, Push, perfil, legal e handoff');
+], 'Umbrella real do Entregador executa bootstrap, GPS, Push, perfil, payout lockdown, legal e handoff');
 
 requireAll('superapp/partner-shell/index.html', [
   'const isDelivery=Boolean(orderId)',
