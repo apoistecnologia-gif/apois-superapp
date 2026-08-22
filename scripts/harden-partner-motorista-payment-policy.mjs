@@ -4,6 +4,7 @@ import './harden-partner-motorista-release-surface.mjs';
 import './harden-partner-motorista-native-utilities.mjs';
 import './harden-partner-motorista-session-hygiene.mjs';
 import './harden-partner-motorista-profile-switch.mjs';
+import './harden-partner-motorista-operational-lock.mjs';
 import './harden-partner-motorista-back-navigation.mjs';
 import './harden-partner-motorista-navigation.mjs';
 import './harden-partner-motorista-legal-navigation.mjs';
