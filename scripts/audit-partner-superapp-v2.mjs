@@ -50,10 +50,26 @@ requireAll('scripts/harden-partner-motorista-active-resume.mjs', [
 requireAll('scripts/harden-partner-motorista-post-finish.mjs', [
   'const completedRide = await callComplete',
   'setActive(null);',
+  'setPolyline([]);',
+  'setRouteSteps([]);',
+  'setEtaSeconds(null);',
+  'setLegKm(null);',
+  'resetSpokenCache();',
+  'ratingRef.current = completedRide;',
   'setRatingRide(completedRide);',
   'event: "ride.completed"',
   'window.dispatchEvent(new CustomEvent("apois:driver-push"',
-], 'Motorista aplica encerramento local imediatamente e força promoção/ressincronização da próxima corrida');
+], 'Motorista encerra rota/voz localmente, abre avaliação sem race e força promoção da próxima corrida');
+
+requireAll('scripts/harden-partner-motorista-rating-handoff.mjs', [
+  'ratingRef.current = null;',
+  'event: "rating.closed"',
+  'const ratedRideId = ratingRide.id;',
+  'ratedRidesRef.current.add(ratedRideId);',
+  'dismissRating();',
+  'Tentar novamente',
+  'Pular avaliação',
+], 'Motorista fecha avaliação após sucesso e libera resync sem prender o motorista em erro');
 
 requireAll('scripts/harden-partner-motorista-push.mjs', [
   "import './harden-partner-motorista-post-finish.mjs';",
@@ -68,10 +84,19 @@ requireAll('scripts/harden-partner-motorista-native-watch.mjs', [
 ], 'Motorista usa watcher GPS nativo contínuo e o encerra com segurança ao ficar offline');
 
 requireAll('scripts/build-partner-modules.sh', [
+  'harden-partner-motorista-finish-authority.mjs',
+  'harden-partner-motorista-post-finish.mjs',
+  'harden-partner-motorista-rating-handoff.mjs',
+  'harden-partner-motorista-payment-policy.mjs',
+  'harden-partner-motorista-push-runtime.mjs',
+  'harden-partner-motorista-active-resume.mjs',
   'harden-partner-motorista-native-watch.mjs',
+  "require_contains 'driver-finish-redispatch'",
+  "require_contains 'setRouteSteps([]);'",
+  "require_contains 'event: \"rating.closed\"'",
   "require_contains 'Geolocation.watchPosition('",
   "require_contains 'stopDriverWatch();'",
-], 'build Parceiro aplica e valida o watcher GPS nativo do Motorista');
+], 'build Parceiro aplica o conjunto completo de finalização, avaliação, push/resume, financeiro e GPS do Motorista');
 
 requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
   "import './harden-partner-motorista-history-receipt.mjs';",
@@ -122,11 +147,25 @@ forbidAll('scripts/harden-partner-entregador-finance.mjs', [
   '>Salvar chave PIX<',
 ], 'hardening financeiro não preserva CTA legado de saque/PIX');
 
+requireAll('scripts/harden-partner-entregador-operation-states.mjs', [
+  'operationsError',
+  'criticalOperationErrors',
+  'Seus dados anteriores foram mantidos.',
+  'if (!jobsRes.error) setActiveJob',
+  'if (!offersRes.error) setOffers',
+  'Atualização temporariamente indisponível',
+  'Tentar novamente',
+], 'Entregador não transforma falha de refresh em entrega/oferta vazia e exibe recuperação acionável');
+
 requireAll('scripts/harden-partner-entregador-map.mjs', [
+  "import './harden-partner-entregador-resume.mjs';",
+  "import './harden-partner-entregador-active-delivery.mjs';",
   "import './harden-partner-entregador-offer-expiry.mjs';",
   "import './harden-partner-entregador-map-camera.mjs';",
+  "import './harden-partner-entregador-touch-safearea.mjs';",
   "import './harden-partner-entregador-finance.mjs';",
-], 'Build do Entregador aplica expiração, câmera estável e proteção financeira');
+  "import './harden-partner-entregador-operation-states.mjs';",
+], 'Build do Entregador aplica resume, entrega ativa, expiração, câmera, safe-area, finanças e estados operacionais');
 
 requireAll('supabase/migrations/20260821233000_disable_legacy_courier_payout_until_marketplace_direct_live.sql', [
   "'courier_payout_mode'",
