@@ -50,7 +50,7 @@
 
     function relayDeepLink(rawUrl){
       const isLegacy=typeof rawUrl==='string'&&rawUrl.startsWith('br.com.apois.app://auth/');
-      const isPartner=typeof rawUrl==='string'&&rawUrl.startsWith('br.com.apois.parceiro://auth/');
+      const isPartner=typeof rawUrl==='string'&&rawUrl.startsWith('br.com.apois.parceiro://');
       const isDriver=typeof rawUrl==='string'&&rawUrl.startsWith('apoismotorista://auth/');
       if(!isLegacy&&!isPartner&&!isDriver)return false;
       try{
@@ -60,6 +60,16 @@
         const suffix=params.toString()?('?'+params.toString()):'';
         void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
 
+        if(isPartner&&incoming.host==='module'&&path==='motorista'){
+          try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
+          window.location.assign('./modules/motorista/index.html#/motorista/app');
+          return true;
+        }
+        if(isPartner&&incoming.host==='module'&&path==='entregador'){
+          try{localStorage.setItem('apois-parceiro:last-module','entregador');}catch{}
+          window.location.assign('./modules/entregador/index.html');
+          return true;
+        }
         if(path==='mercadopago'){
           window.location.assign('./modules/motorista/index.html#/motorista/assinatura'+suffix);
           return true;
@@ -74,7 +84,7 @@
           window.location.assign('./modules/motorista/index.html#/motorista/login');
           return true;
         }
-        if(isPartner && (path==='callback'||path==='reset')){
+        if(isPartner && incoming.host==='auth' && (path==='callback'||path==='reset')){
           try{sessionStorage.setItem(COURIER_AUTH_KEY,rawUrl);}catch{}
           const target=path==='reset'?'#/redefinir-senha'+suffix:'#/auth/callback'+suffix;
           window.location.assign('./modules/entregador/index.html'+target);
