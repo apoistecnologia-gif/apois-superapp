@@ -57,5 +57,17 @@ requireAll('scripts/install-partner-driver-location.mjs', [
   'registerPlugin(DriverLocationPlugin.class)',
 ], 'Host Android contém serviço nativo real do Motorista');
 
-if (!failed) console.log('[OK] Motorista background v8: presença/GPS de background e ordem de imports estão protegidos contra regressão de compilação.');
+requireAll('scripts/harden-partner-location-notification-routing.mjs', [
+  "{ file: 'DriverLocationService.java', module: 'motorista' }",
+  'import android.net.Uri;',
+  'openApp.setData(Uri.parse(',
+  'br.com.apois.parceiro://module/',
+], 'Notificação persistente do Motorista possui deep link explícito para o módulo correto');
+
+requireAll('scripts/install-partner-launcher.mjs', [
+  "import './harden-partner-location-notification-routing.mjs';",
+  'br.com.apois.parceiro://module/motorista',
+], 'Launcher valida retorno da notificação de GPS diretamente ao Motorista');
+
+if (!failed) console.log('[OK] Motorista background v8: presença/GPS, ordem de imports e retorno da notificação persistente estão protegidos contra regressão.');
 process.exit(failed ? 1 : 0);
