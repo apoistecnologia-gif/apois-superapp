@@ -71,6 +71,7 @@ const courierPipeline = read('scripts/harden-partner-entregador-map.mjs');
 for (const marker of [
   "import './harden-partner-entregador-operation-states.mjs';",
   "import './harden-partner-entregador-background-location.mjs';",
+  "import './harden-partner-entregador-background-reconciliation.mjs';",
   "import './harden-partner-entregador-operational-lock.mjs';",
   "import './harden-partner-entregador-back-navigation.mjs';",
 ]) {
@@ -81,13 +82,14 @@ for (const marker of [
 }
 const stateIndex = courierPipeline.indexOf("import './harden-partner-entregador-operation-states.mjs';");
 const backgroundIndex = courierPipeline.indexOf("import './harden-partner-entregador-background-location.mjs';");
+const reconciliationIndex = courierPipeline.indexOf("import './harden-partner-entregador-background-reconciliation.mjs';");
 const lockIndex = courierPipeline.indexOf("import './harden-partner-entregador-operational-lock.mjs';");
 const backIndex = courierPipeline.indexOf("import './harden-partner-entregador-back-navigation.mjs';");
-if (!(stateIndex >= 0 && backgroundIndex > stateIndex && lockIndex > backgroundIndex && backIndex > lockIndex)) {
-  console.error('[FAIL] Pipeline Entregador: operational-lock precisa rodar após operation-states/background-location e antes do back guard.');
+if (!(stateIndex >= 0 && backgroundIndex > stateIndex && reconciliationIndex > backgroundIndex && lockIndex > reconciliationIndex && backIndex > lockIndex)) {
+  console.error('[FAIL] Pipeline Entregador: reconciliação/background/trava/back guard estão fora da ordem segura.');
   failed = true;
 } else {
-  console.log('[OK] Pipeline Entregador aplica trava na ordem compatível com estados e Foreground Service.');
+  console.log('[OK] Pipeline Entregador aplica reconciliação e trava na ordem segura.');
 }
 
 requireAll('superapp/partner-shell/index.html', [
@@ -97,11 +99,23 @@ requireAll('superapp/partner-shell/index.html', [
   'function routeRole(requestedRole,target)',
   'if(locked&&locked!==requestedRole)',
   'window.location.replace(operationalHome(locked))',
-  'const lockedOnLaunch=operationalRole();',
-  'if(lockedOnLaunch)',
   "if(isDelivery)return routeRole('entregador'",
   "if(isRide)return routeRole('motorista'",
-], 'Shell redireciona relançamento, seletor, push e deep links para a função que continua operacional');
+], 'Shell possui roteamento base protegido por função operacional');
 
-if (!failed) console.log('[OK] Partner operational role v10: shell e módulos preservam uma única função operacional e só destravam após backend confirmado.');
+requireAll('scripts/harden-partner-shell-startup.mjs', [
+  'async function bootPartnerShell()',
+  'const launch=await appPlugin.getLaunchUrl();',
+  'if(launch?.url&&relayDeepLink(launch.url))return;',
+  'const lockedOnLaunch=operationalRole();',
+  'consumePendingPartnerPush();',
+  'trava operacional ainda executa antes do deep link de lançamento',
+], 'Bootstrap processa callback que lançou o app antes do redirect operacional');
+requireAll('superapp/partner-shell/build.mjs', [
+  "import '../../scripts/harden-partner-shell-startup.mjs';",
+  'const launch=await appPlugin.getLaunchUrl();',
+  'redirect operacional ainda pode descartar deep link',
+], 'Build aplica e valida bootstrap seguro do shell');
+
+if (!failed) console.log('[OK] Partner operational role v10: uma única função operacional é preservada sem descartar callbacks nativos de lançamento.');
 process.exit(failed ? 1 : 0);
