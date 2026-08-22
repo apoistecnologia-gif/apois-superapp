@@ -108,6 +108,24 @@ requireAll('superapp/partner-shell/index.html', [
   "localStorage.setItem('apois-parceiro:last-module','motorista')",
 ], 'Shell do Parceiro não decide payload ambíguo e roteia por produto explícito');
 
+requireAll('superapp/partner-shell/package.json', [
+  '"@capacitor/app"',
+  '"@capacitor/browser"',
+  '"@capacitor/geolocation"',
+  '"@capacitor/push-notifications": "8.1.2"',
+], 'Host nativo do Parceiro instala App, Browser, GPS e Push usados pelos módulos');
+
+requireAll('scripts/verify-partner-native-plugins.mjs', [
+  "'@capacitor/push-notifications'",
+  "'PushNotificationsPlugin'",
+  "'GeolocationPlugin'",
+  'capacitor.plugins.json',
+], 'Empacotamento valida que Push/GPS foram registrados pelo cap sync');
+
+requireAll('scripts/install-partner-launcher.mjs', [
+  "import './verify-partner-native-plugins.mjs';",
+], 'Launcher só é aplicado depois da validação dos plugins nativos');
+
 requireAll('scripts/harden-partner-entregador-finance.mjs', [
   'Recebimento direto em homologação',
   'Nenhuma chave PIX ou valor de saque é solicitado nesta fase.',
