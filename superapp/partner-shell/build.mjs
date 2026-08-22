@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,6 +6,37 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
 const branding = resolve(root, '../branding/apois-launcher.png');
 const driverLogoSource = resolve(root, '../../.work/partner-motorista/src/assets/apoisLogoData.ts');
+
+function readTextTree(directory) {
+  let output = '';
+  for (const entry of readdirSync(directory)) {
+    const path = resolve(directory, entry);
+    const stat = statSync(path);
+    if (stat.isDirectory()) {
+      output += readTextTree(path);
+      continue;
+    }
+    if (!/\.(?:html|js|css|json|txt)$/i.test(entry)) continue;
+    try { output += `\n${readFileSync(path, 'utf8')}`; } catch { /* ignora binários inesperados */ }
+  }
+  return output;
+}
+
+function requireMarker(source, marker, label) {
+  if (!source.includes(marker)) {
+    console.error(`[FAIL] bundle Parceiro: ${label} — ausente: ${marker}`);
+    process.exit(1);
+  }
+  console.log(`[OK] bundle Parceiro: ${label}`);
+}
+
+function forbidMarker(source, marker, label) {
+  if (source.includes(marker)) {
+    console.error(`[FAIL] bundle Parceiro: ${label} — encontrado: ${marker}`);
+    process.exit(1);
+  }
+  console.log(`[OK] bundle Parceiro: ${label}`);
+}
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
@@ -55,4 +86,21 @@ for (const [name, source] of modules) {
   console.log(`[OK] ${name} copiado para o APOIS Parceiro`);
 }
 
-console.log('[OK] APOIS Parceiro gerado: Motorista + Entregador');
+const driverBundle = readTextTree(resolve(dist, 'modules/motorista'));
+requireMarker(driverBundle, 'Ganhos', 'Motorista exibe área de Ganhos');
+requireMarker(driverBundle, 'Recebimento direto ao motorista', 'Motorista explica recebimento direto');
+requireMarker(driverBundle, '100% do valor da corrida', 'Motorista preserva valor integral da corrida');
+forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque legado ao APK');
+forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
+forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
+
+const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
+requireMarker(courierBundle, 'Entregas', 'Entregador usa nomenclatura correta de Entregas');
+forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saque legado ao APK');
+forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
+
+const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
+requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
+requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
+
+console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador');
