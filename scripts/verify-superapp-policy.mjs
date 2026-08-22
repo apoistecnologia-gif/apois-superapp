@@ -14,8 +14,25 @@ function requireFile(path) {
 
 const paymentMethods = requireFile('.work/corridas/src/hooks/use-payment-methods.tsx');
 if (paymentMethods) {
-  if (!paymentMethods.includes('method.isActive && method.enabled && method.code === "pix"')) fail('Corridas Superapp não está restringindo as formas de pagamento a PIX');
-  else ok('Corridas Superapp é PIX-only mesmo se a fonte compartilhada mantiver método legado ativo');
+  if (paymentMethods.includes('method.code === "pix"')) {
+    fail('Corridas Superapp regrediu para PIX-only; Dinheiro e Cartão direto ao motorista devem continuar disponíveis');
+  } else if (!paymentMethods.includes('method.isActive && method.enabled')) {
+    fail('Corridas Superapp não preserva a filtragem canônica dos métodos ativos');
+  } else {
+    ok('Corridas preserva PIX + Dinheiro + Cartão conforme política do Superapp');
+  }
+}
+
+const paymentService = requireFile('.work/corridas/src/services/payments/payment-service.ts');
+if (paymentService) {
+  for (const marker of [
+    'const isDirectToDriver = code === "cash" || code === "credit";',
+    'Pague diretamente ao motorista ao final da corrida.',
+    'Pague diretamente ao motorista com cartão de crédito.',
+  ]) {
+    if (!paymentService.includes(marker)) fail(`Corridas não confirmou recebimento direto de Dinheiro/Cartão: ${marker}`);
+  }
+  if (!failed) ok('Corridas mantém recebimentos diretos fora da custódia da APOIS');
 }
 
 const customerPush = requireFile('.work/entregas/src/lib/customer-push.ts');
@@ -101,10 +118,7 @@ for (const [path, label, variable] of [
   if (!authRoute) continue;
   if (authRoute.includes(`const ${variable} = new URLSearchParams(window.location.search);`)) {
     fail(`Entregas ${label} ainda ignora query dentro do Hash Router`);
-  } else if (
-    !authRoute.includes('window.location.hash.includes("?")') ||
-    !authRoute.includes(`new URLSearchParams(hashQuery || window.location.search)`)
-  ) {
+  } else if (!authRoute.includes('window.location.hash.includes("?")') || !authRoute.includes(`new URLSearchParams(hashQuery || window.location.search)`)) {
     fail(`Entregas ${label} não possui leitura Hash-aware dos parâmetros`);
   } else {
     ok(`Entregas ${label} lê parâmetros de #/rota?...`);
@@ -136,12 +150,14 @@ if (checkout) {
   } else {
     ok('checkout Entregas exibe somente mensagens seguras ao cliente');
   }
-  if (!checkout.includes('new Set(["openpix", "asaas"]).has(configuredProvider)')) {
-    fail('checkout Entregas ainda escolhe função PIX por fallback permissivo');
-  } else if (!checkout.includes('O pagamento PIX está temporariamente indisponível. Tente novamente em instantes.')) {
-    fail('checkout Entregas não possui erro seguro para provedor PIX inconsistente');
+  if (!checkout.includes('merchant-payment-readiness')) {
+    fail('checkout Entregas não valida a conta Mercado Pago do estabelecimento antes de criar o pedido');
+  } else if (!checkout.includes('const pixFunction = "create-merchant-mercadopago-pix";')) {
+    fail('checkout Entregas não está apontando exclusivamente para o PIX Mercado Pago do estabelecimento');
+  } else if (/create-(?:asaas-)?pix-charge/.test(checkout) || checkout.includes('new Set(["openpix", "asaas"])')) {
+    fail('checkout Entregas ainda contém caminho legado OpenPix/Asaas para novos pedidos');
   } else {
-    ok('checkout Entregas valida explicitamente o provedor PIX antes de gerar cobrança');
+    ok('checkout Entregas usa somente Mercado Pago direto do estabelecimento para novos pedidos');
   }
   if (checkout.includes('if (!payment?.qrCodeText || !payment?.qrCodeImageUrl)')) {
     fail('checkout Entregas ainda rejeita PIX válido quando o provedor não fornece imagem QR');
@@ -149,6 +165,11 @@ if (checkout) {
     fail('checkout Entregas não possui fallback de QR local para brCode sem imagem do provedor');
   } else {
     ok('checkout Entregas aceita brCode válido e gera QR local quando necessário');
+  }
+  if (!checkout.includes('get_delivery_checkout_readiness')) {
+    fail('checkout Entregas não consulta readiness do repasse direto do entregador');
+  } else {
+    ok('checkout Entregas bloqueia entrega quando o repasse direto ao entregador ainda não está homologado');
   }
 }
 
