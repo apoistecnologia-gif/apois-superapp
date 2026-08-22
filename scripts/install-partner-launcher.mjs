@@ -3,6 +3,7 @@ import './harden-partner-android-security.mjs';
 import './configure-partner-firebase.mjs';
 import './install-partner-driver-location.mjs';
 import './install-partner-courier-location.mjs';
+import './harden-partner-location-startup-ack.mjs';
 import './harden-partner-location-notification-routing.mjs';
 import './verify-partner-native-plugins.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
@@ -72,13 +73,26 @@ if (manifest.includes('android:scheme="br.com.apois.app"') && manifest.includes(
 if (!existsSync(resolve('superapp/partner-shell/android/app/google-services.json'))) throw new Error('Firebase do APOIS Parceiro não foi materializado.');
 if (!existsSync(driverLocationPluginPath) || !existsSync(driverLocationServicePath)) throw new Error('Runtime nativo de localização do Motorista não foi instalado.');
 if (!existsSync(courierLocationPluginPath) || !existsSync(courierLocationServicePath)) throw new Error('Runtime nativo de localização do Entregador não foi instalado.');
+const driverPlugin = readFileSync(driverLocationPluginPath, 'utf8');
 const driverService = readFileSync(driverLocationServicePath, 'utf8');
+const courierPlugin = readFileSync(courierLocationPluginPath, 'utf8');
 const courierService = readFileSync(courierLocationServicePath, 'utf8');
 if (!driverService.includes('br.com.apois.parceiro://module/motorista')) throw new Error('Notificação de GPS do Motorista não retorna ao módulo Motorista.');
 if (!courierService.includes('br.com.apois.parceiro://module/entregador')) throw new Error('Notificação de GPS do Entregador não retorna ao módulo Entregador.');
+for (const [label, plugin, service, key] of [
+  ['Motorista', driverPlugin, driverService, 'driver_running'],
+  ['Entregador', courierPlugin, courierService, 'courier_running'],
+]) {
+  if (!plugin.includes(`STARTUP_KEY = "${key}"`) || !plugin.includes('STARTUP_ACK_DELAY_MS = 900L') || !plugin.includes('startup.getBoolean(STARTUP_KEY, false)')) {
+    throw new Error(`${label}: plugin de localização ainda pode confirmar started=true antes do Foreground Service.`);
+  }
+  if (!service.includes('setStartupConfirmed(true);') || !service.includes('setStartupConfirmed(false);')) {
+    throw new Error(`${label}: serviço de localização não publica confirmação real de start/stop.`);
+  }
+}
 const mainActivity = readFileSync(mainActivityPath, 'utf8');
 if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) throw new Error('DriverVoicePlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(DriverLocationPlugin.class)')) throw new Error('DriverLocationPlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(CourierLocationPlugin.class)')) throw new Error('CourierLocationPlugin não registrado no host Parceiro.');
 
-console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro; notificações de GPS retornam ao módulo operacional correto sem abrir o seletor.');
+console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro; GPS só confirma ONLINE após ACK real dos serviços e notificações retornam ao módulo operacional correto.');
