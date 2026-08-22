@@ -1,3 +1,4 @@
+import '../../scripts/harden-partner-shell-startup.mjs';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -103,6 +104,7 @@ const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
 requireMarker(courierBundle, 'Entregas', 'Entregador usa nomenclatura correta de Entregas');
 requireMarker(courierBundle, 'CourierLocation', 'Entregador leva ponte para Foreground Service nativo ao bundle final');
 requireMarker(courierBundle, 'Não foi possível ativar a localização em segundo plano', 'Entregador falha fechado se o serviço de background não iniciar');
+requireMarker(courierBundle, 'não foi possível confirmar que você ficou offline', 'Entregador preserva trava se rollback OFFLINE falhar');
 requireMarker(courierBundle, 'backButton', 'Entregador leva proteção do botão Voltar para o bundle final');
 requireMarker(courierBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Entregador não permite sair do módulo enquanto permanece ONLINE');
 requireMarker(courierBundle, 'apois-parceiro:operational-role', 'Entregador grava trava operacional do shell');
@@ -114,6 +116,15 @@ requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parc
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 requireMarker(finalShell, 'apois-parceiro:operational-role', 'shell final mantém trava de função operacional');
 requireMarker(finalShell, 'function routeRole(requestedRole,target)', 'shell final protege seletor, push e deep link contra troca de função ativa');
-requireMarker(finalShell, 'const lockedOnLaunch=operationalRole();', 'relançar o app volta à função operacional ativa');
+requireMarker(finalShell, 'async function bootPartnerShell()', 'shell final usa bootstrap assíncrono para callbacks nativos');
+requireMarker(finalShell, 'const launch=await appPlugin.getLaunchUrl();', 'shell final consulta deep link de lançamento antes do redirect operacional');
+requireMarker(finalShell, 'if(launch?.url&&relayDeepLink(launch.url))return;', 'shell final consome callback de lançamento antes da trava local');
+requireMarker(finalShell, 'const lockedOnLaunch=operationalRole();', 'relançar o app sem callback volta à função operacional ativa');
+const launchIndex = finalShell.indexOf('const launch=await appPlugin.getLaunchUrl();');
+const lockIndex = finalShell.indexOf('const lockedOnLaunch=operationalRole();');
+if (!(launchIndex >= 0 && lockIndex > launchIndex)) {
+  console.error('[FAIL] bundle Parceiro: redirect operacional ainda pode descartar deep link que lançou o app');
+  process.exit(1);
+}
 
-console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, back guards e trava cruzada de função operacional.');
+console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, callbacks de lançamento, back guards e trava cruzada de função operacional.');
