@@ -37,7 +37,10 @@ requireAll('scripts/harden-partner-location-session-sync.mjs', [
   'public void session(PluginCall call)',
   'private void persistSessionTokens()',
   'persistSessionTokens();',
-], 'Android persiste refresh token rotacionado e o expõe sem logs para a WebView');
+  'remove(SESSION_ACCESS_KEY)',
+  'remove(SESSION_REFRESH_KEY)',
+  'sessão do GPS é reconciliada durante operação e removida do storage nativo no stop explícito',
+], 'Android persiste refresh token enquanto operacional e remove as credenciais nativas no stop explícito');
 
 requireAll('scripts/harden-partner-motorista-native-session-sync.mjs', [
   'session(): Promise<NativeSessionResult>',
@@ -87,9 +90,15 @@ const ackIndex = launcher.indexOf("import './harden-partner-location-startup-ack
 const nativeSyncIndex = launcher.indexOf("import './harden-partner-location-session-sync.mjs';");
 const routingIndex = launcher.indexOf("import './harden-partner-location-notification-routing.mjs';");
 if (!(ackIndex >= 0 && nativeSyncIndex > ackIndex && routingIndex > nativeSyncIndex)) {
-  console.error('[FAIL] Android: session-sync precisa rodar após startup ACK e antes da validação final/roteamento.');
+  console.error('[FAIL] Android: session-sync precisa rodar após startup ACK/retry e antes da validação final/roteamento.');
   failed = true;
 } else console.log('[OK] Ordem Android da coordenação de sessão está protegida.');
 
-if (!failed) console.log('[OK] Partner native session v15: rotação de refresh_token pelo GPS nativo é reconciliada com a WebView da mesma conta antes do auto-refresh, reduzindo quedas de sessão em jornadas longas.');
+requireAll('scripts/verify-partner-native-plugins.mjs', [
+  'remove(SESSION_ACCESS_KEY)',
+  'remove(SESSION_REFRESH_KEY)',
+  'mantém tokens nativos depois do stop explícito',
+], 'Validação final rejeita runtime que deixa refresh token persistido após OFFLINE explícito');
+
+if (!failed) console.log('[OK] Partner native session v15: refresh_token nativo é reconciliado durante a jornada e removido no stop explícito.');
 process.exit(failed ? 1 : 0);
