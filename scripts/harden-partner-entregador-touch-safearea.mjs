@@ -36,6 +36,35 @@ patch(
 );
 
 patch(
+  'src/components/CourierPanels.tsx',
+  (source) => {
+    let next = source;
+    next = next.replace('{ id: "history", label: "Corridas", icon: Bike, onClick: onHistory },', '{ id: "history", label: "Entregas", icon: Bike, onClick: onHistory },');
+    next = next.replace('      <PanelHeader title="Corridas" onClose={onClose} />', '      <PanelHeader title="Entregas" onClose={onClose} />');
+    next = next.replace('          <h1 className="mt-1 text-2xl font-black">Corridas</h1>', '          <h1 className="mt-1 text-2xl font-black">Entregas</h1>');
+    next = next
+      .replace('pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2', 'pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-2.5')
+      .replace('className="mx-auto grid max-w-lg grid-cols-4 gap-1"', 'className="mx-auto grid min-h-[82px] max-w-lg grid-cols-4 gap-1"')
+      .replace('relative flex min-h-[3.7rem] flex-col items-center justify-center gap-1 rounded-2xl text-[10px] font-bold', 'relative flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-xs font-bold')
+      .replace('className={`grid h-8 w-10 place-items-center rounded-xl transition ${', 'className={`grid h-9 w-11 place-items-center rounded-xl transition ${')
+      .replace('className={`h-5 w-5 ${selected ? "stroke-[2.5]" : "stroke-2"}`}', 'className={`h-6 w-6 ${selected ? "stroke-[2.5]" : "stroke-2"}`}');
+    next = next.replace(
+      'className="sticky top-0 z-40 grid min-h-20 grid-cols-[2.75rem_1fr_2.75rem] items-center border-b border-accent/15 bg-black/92 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl"',
+      'className="sticky top-0 z-40 grid min-h-[5.25rem] grid-cols-[2.75rem_1fr_2.75rem] items-center border-b border-accent/15 bg-black/92 px-4 pb-2 pt-[max(env(safe-area-inset-top),0.65rem)] backdrop-blur-2xl"',
+    );
+    return next;
+  },
+  (source) =>
+    source.includes('label: "Entregas"') &&
+    source.includes('<PanelHeader title="Entregas"') &&
+    source.includes('>Entregas</h1>') &&
+    source.includes('min-h-[82px]') && source.includes('min-h-[64px]') &&
+    source.includes('h-9 w-11') && source.includes('h-6 w-6') &&
+    source.includes('pt-[max(env(safe-area-inset-top),0.65rem)]'),
+  'entregador: rodapé usa nomenclatura Entregas, alvos confortáveis e safe-area correta',
+);
+
+patch(
   'src/routes/courier.tsx',
   (source) => source
     .replaceAll(
@@ -48,4 +77,4 @@ patch(
   'entregador: loading e erro respeitam áreas seguras do Android',
 );
 
-console.log(`[OK] ergonomia e safe-area do Entregador Parceiro endurecidas em ${workspace}`);
+console.log(`[OK] ergonomia, nomenclatura e safe-area do Entregador Parceiro endurecidas em ${workspace}`);
