@@ -39,10 +39,12 @@ for (const audit of [
   'audit-entregas-order-finish-ui-v19.mjs',
   'audit-entregas-auth-mobile-ui-v20.mjs',
   'audit-shell-branding-v21.mjs',
+  'audit-final-integration-v22.mjs',
+  'audit-unified-brand-theme-v23.mjs',
 ]) {
   if (!uiAudit.includes(audit)) fail(`audit:ui não encadeia ${audit}`);
 }
-if (!failed) ok('audit:ui encadeia toda a revisão visual/integrada v16-v21');
+if (!failed) ok('audit:ui encadeia toda a revisão visual/integrada v16-v23');
 
 const buildSuperapp = String(packageJson.scripts?.['build:superapp'] ?? '');
 const buildPartner = String(packageJson.scripts?.['build:partner'] ?? '');
@@ -102,6 +104,15 @@ requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   '<strong>Apois, <span>vamos?</span></strong>',
 ], 'copy e iconografia oficiais são aplicadas antes do mobile hardening');
 
+requireAll('scripts/harden-entregas-superapp-customer-ux.mjs', [
+  "import './harden-entregas-superapp-brand-theme.mjs';",
+], 'Entregas aplica identidade preto/dourado antes da UX interna');
+requireAll('scripts/harden-entregas-superapp-brand-theme.mjs', [
+  'APOIS_CUSTOMER_GOLD_V1',
+  '--primary: oklch(0.82 0.16 84)',
+  "replaceAll('#35A9C9', '#F6BE1C')",
+], 'Cliente Entregas converte tema e logomarca antiga para identidade APOIS');
+
 requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
   "import './harden-entregas-customer-auth-mobile-ui.mjs';",
   "patch('src/routes/perfil/ajuda.tsx'",
@@ -131,6 +142,11 @@ requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   '@media(max-height:700px)',
   '@media(max-width:360px)',
 ], 'seletor Parceiro está protegido para telas baixas/estreitas');
+requireAll('scripts/harden-partner-entregador-theme.mjs', [
+  'APOIS_PARTNER_COURIER_GOLD_V1',
+  '--primary: oklch(0.82 0.16 84)',
+  '#f6be1c',
+], 'Entregador preserva a mesma identidade preto/dourado do ecossistema APOIS');
 
 const workflowsDir = resolve('.github/workflows');
 if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
