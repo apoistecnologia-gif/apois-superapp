@@ -1,3 +1,4 @@
+import './reconcile-partner-entregador-lockfile.mjs';
 import './harden-partner-entregador-theme.mjs';
 import './harden-partner-entregador-journey.mjs';
 import './harden-partner-entregador-online-bootstrap.mjs';
