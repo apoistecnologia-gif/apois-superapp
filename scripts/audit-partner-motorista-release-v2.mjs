@@ -98,7 +98,11 @@ requireAll('scripts/harden-partner-motorista-settings-cleanup.mjs', [
   'Biometria em breve.',
   'PIN em breve.',
   'aria-label="Idioma preferido"',
-], 'configurações removem atalhos incompletos, corrigem Segurança e preservam logout global');
+  'const protectedOperationalKeys = new Set([',
+  '"apois:driver:online"',
+  '"apois-parceiro:operational-role"',
+  '!protectedOperationalKeys.has(key)',
+], 'configurações removem atalhos incompletos e limpar cache não apaga presença/trava operacional');
 
 const routeTreePath = 'sources/apois-corridas-motorista-admin/src/mobile-route-tree.motorista.ts';
 requireAll(routeTreePath, [
