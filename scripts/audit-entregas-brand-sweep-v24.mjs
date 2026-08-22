@@ -13,20 +13,19 @@ function read(path) {
 
 const sweep = read('scripts/harden-entregas-brand-sweep.mjs');
 for (const marker of [
+  "legacyGreenHex = ['#39B54A', '#39b54a']",
   "legacyPurpleHex = ['#6A1B9A', '#6a1b9a']",
   "legacyTealHex = ['#35A9C9', '#35a9c9', '#1F7894', '#1f7894']",
-  ".replaceAll('rgba(106,27,154,', 'rgba(246,190,28,')",
+  ".replaceAll('rgba(57,181,74,', 'rgba(246,190,28,')",
+  ".replaceAll('rgba(106,27,154,', 'rgba(200,138,8,')",
   ".replaceAll('rgba(53,169,201,', 'rgba(246,190,28,')",
   "/apois.*logo.*\\.svg$/i",
   ".replaceAll('#39B54A', '#F6BE1C')",
-  'Verde funcional preservado fora das logos',
+  'Estados semânticos continuam livres para green/red/amber',
 ]) {
   if (!sweep.includes(marker)) fail(`sweep incompleto: ${marker}`);
 }
-if (sweep.includes("legacyGreenHex = ['#39B54A', '#39b54a']")) {
-  fail('verde funcional não deve ser tratado como cor global legada da interface');
-}
-if (!failed) ok('varredura remove roxo/ciano de marca, converte logos antigas e preserva verde funcional');
+if (!failed) ok('varredura remove cores explícitas da marca antiga, converte logos e preserva classes semânticas de estado');
 
 const customerUx = read('scripts/harden-entregas-superapp-customer-ux.mjs');
 if (!customerUx.includes("import './harden-entregas-brand-sweep.mjs';")) fail('Cliente Entregas não executa brand sweep no pipeline');
