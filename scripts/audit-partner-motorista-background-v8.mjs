@@ -23,14 +23,17 @@ function requireAll(path, markers, label) {
 
 requireAll('scripts/harden-partner-motorista-background-failsafe.mjs', [
   'src/hooks/useDriverBroadcast.ts',
-  'await setPresence(false, null);',
+  'const offlineConfirmed = await setPresence(false, null);',
+  'if (!offlineConfirmed)',
+  'background_location_unavailable_offline_unconfirmed',
   'reason: "background_location_unavailable"',
   '.catch(async (error: unknown) =>',
+  'Não foi possível confirmar o modo offline. Não troque de perfil ainda.',
   'detail?.reason !== "background_location_unavailable"',
   'stopDriverWatch();',
   'setDesiredOnline(false);',
   'Modo online desativado porque a localização em segundo plano não iniciou.',
-], 'Motorista volta backend/UI para OFFLINE se o serviço de background falhar');
+], 'Motorista só assume OFFLINE após confirmação backend; falha de reconciliação mantém trava operacional');
 
 requireAll('scripts/harden-partner-motorista-native-watch.mjs', [
   "await import('./harden-partner-motorista-background-failsafe.mjs');",
@@ -69,5 +72,5 @@ requireAll('scripts/install-partner-launcher.mjs', [
   'br.com.apois.parceiro://module/motorista',
 ], 'Launcher valida retorno da notificação de GPS diretamente ao Motorista');
 
-if (!failed) console.log('[OK] Motorista background v8: presença/GPS, ordem de imports e retorno da notificação persistente estão protegidos contra regressão.');
+if (!failed) console.log('[OK] Motorista background v8: presença/GPS, confirmação OFFLINE, imports e retorno da notificação persistente estão protegidos.');
 process.exit(failed ? 1 : 0);
