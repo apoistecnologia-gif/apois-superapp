@@ -47,8 +47,9 @@ requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   'label: "Favoritos"',
   "await import('./harden-corridas-superapp-profile-ui.mjs')",
   "await import('./harden-entregas-superapp-cart-mobile-ui.mjs')",
+  "await import('./harden-entregas-superapp-viewport.mjs')",
   'Perfil remove atalhos duplicados do rodapé',
-], 'Módulos Cliente executam hardening dos rodapés, Perfil e Sacola');
+], 'Módulos Cliente executam hardening dos rodapés, Perfil, Sacola e viewport');
 
 requireAll('scripts/harden-corridas-superapp-profile-ui.mjs', [
   'title="Carteira e pagamentos"',
@@ -81,6 +82,26 @@ requireAll('scripts/harden-entregas-superapp-cart-mobile-ui.mjs', [
   'pb-[max(env(safe-area-inset-bottom),1rem)]',
 ], 'Sacola usa controles de quantidade e exclusão tocáveis em celular');
 
+requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
+  'h-[min(68vw,16rem)]',
+  'grid h-11 w-11 shrink-0 place-items-center',
+  'break-all font-mono text-[11px]',
+  'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+  'pt-[max(env(safe-area-inset-top),1rem)]',
+  'touchRoutes',
+], 'Checkout Pix e controles secundários de Entregas se adaptam a telas estreitas e toque mínimo');
+
+requireAll('scripts/harden-entregas-superapp-viewport.mjs', [
+  "'src/routes/checkout.tsx'",
+  "'src/routes/sacola.tsx'",
+  "'src/routes/pedido/confirmado.tsx'",
+  "'src/routes/enderecos.tsx'",
+  "'src/routes/login.tsx'",
+  "'src/routes/register.tsx'",
+  'checked < 20',
+  ".replaceAll('h-screen', 'h-dvh')",
+], 'Viewport Entregas cobre autenticação, compra, endereços, pedido e telas principais');
+
 requireAll('scripts/harden-entregas-superapp-delivery-map.mjs', [
   'center={',
   'zoom={14}',
@@ -110,9 +131,10 @@ requireAll('scripts/harden-partner-entregador-touch-safearea.mjs', [
 
 requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs corridas',
+  'node scripts/harden-entregas-superapp-checkout-mobile-ui.mjs',
   'node scripts/harden-superapp-module-mobile-ui.mjs entregas',
   'node scripts/harden-entregas-superapp-secondary-mobile-ui.mjs',
-], 'Hardening visual principal e secundário roda antes da compilação real de Corridas e Entregas');
+], 'Hardening visual principal, checkout e secundário roda antes da compilação real de Corridas e Entregas');
 
 requireAll('superapp/shell/build.mjs', [
   "import '../../scripts/harden-superapp-shell-mobile-ui.mjs';",
