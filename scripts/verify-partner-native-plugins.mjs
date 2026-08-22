@@ -3,6 +3,12 @@ import { resolve } from 'node:path';
 
 const packagePath = resolve('superapp/partner-shell/package.json');
 const registryPath = resolve('superapp/partner-shell/android/app/src/main/assets/capacitor.plugins.json');
+const javaRoot = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro');
+const mainActivityPath = resolve(javaRoot, 'MainActivity.java');
+const driverPluginPath = resolve(javaRoot, 'DriverLocationPlugin.java');
+const driverServicePath = resolve(javaRoot, 'DriverLocationService.java');
+const courierPluginPath = resolve(javaRoot, 'CourierLocationPlugin.java');
+const courierServicePath = resolve(javaRoot, 'CourierLocationService.java');
 
 if (!existsSync(packagePath)) throw new Error('package.json do host APOIS Parceiro não encontrado.');
 const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
@@ -35,4 +41,32 @@ for (const marker of [
   }
 }
 
-console.log('[OK] APOIS Parceiro: App, Browser, Geolocation e PushNotifications estão instalados no host e registrados no Android.');
+for (const path of [mainActivityPath, driverPluginPath, driverServicePath, courierPluginPath, courierServicePath]) {
+  if (!existsSync(path)) throw new Error(`APOIS Parceiro: runtime nativo customizado ausente após instalação: ${path}`);
+}
+const mainActivity = readFileSync(mainActivityPath, 'utf8');
+for (const marker of [
+  'registerPlugin(DriverVoicePlugin.class)',
+  'registerPlugin(DriverLocationPlugin.class)',
+  'registerPlugin(CourierLocationPlugin.class)',
+]) {
+  if (!mainActivity.includes(marker)) throw new Error(`APOIS Parceiro: MainActivity não registrou plugin customizado (${marker}).`);
+}
+
+const customRuntimes = [
+  ['Motorista', readFileSync(driverPluginPath, 'utf8'), readFileSync(driverServicePath, 'utf8'), 'driver_running'],
+  ['Entregador', readFileSync(courierPluginPath, 'utf8'), readFileSync(courierServicePath, 'utf8'), 'courier_running'],
+];
+for (const [label, plugin, service, startupKey] of customRuntimes) {
+  if (!plugin.includes(`STARTUP_KEY = "${startupKey}"`) || !plugin.includes('startup.getBoolean(STARTUP_KEY, false)')) {
+    throw new Error(`APOIS Parceiro: ${label} pode confirmar localização em background antes do Service iniciar.`);
+  }
+  if (!service.includes('setStartupConfirmed(true);') || !service.includes('setStartupConfirmed(false);')) {
+    throw new Error(`APOIS Parceiro: ${label} não publica corretamente o estado real do Foreground Service.`);
+  }
+  if (!service.includes('FOREGROUND_SERVICE_TYPE_LOCATION')) {
+    throw new Error(`APOIS Parceiro: ${label} não usa foregroundServiceType location.`);
+  }
+}
+
+console.log('[OK] APOIS Parceiro: plugins Capacitor e plugins customizados de voz/GPS estão registrados; serviços de localização só confirmam start após ACK real.');
