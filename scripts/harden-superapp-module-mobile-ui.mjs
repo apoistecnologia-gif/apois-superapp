@@ -34,6 +34,11 @@ if (moduleName === 'corridas') {
   for (const marker of ['min-h-[64px]', 'text-[11px]', '<Icon size={24} strokeWidth={2.2} />', 'pt-2.5']) {
     if (!appShell.includes(marker)) throw new Error(`[FAIL] Corridas: rodapé mobile incompleto (${marker})`);
   }
+  if (appShell.includes('MainHamburgerMenu')) {
+    throw new Error('[FAIL] Corridas: menu hambúrguer duplicado voltou ao AppShell.');
+  }
+
+  await import('./harden-corridas-superapp-profile-ui.mjs');
 }
 
 if (moduleName === 'entregas') {
