@@ -39,9 +39,15 @@ requireAll('scripts/harden-partner-entregador-session-hygiene.mjs', [
   'window.location.replace("../../index.html")',
   'logout ainda depende de availability possivelmente stale',
 ], 'logout do Entregador confirma OFFLINE por backend mesmo com disponibilidade local stale');
-forbidAll('scripts/harden-partner-entregador-session-hygiene.mjs', [
-  'PushNotifications.unregister()',
-], 'logout do Entregador não invalida FCM nativo compartilhado');
+
+// O texto PushNotifications.unregister() existe neste hardener somente dentro da
+// própria proteção que faz o build falhar caso a chamada sobreviva no courier.tsx.
+// Auditar a mera presença textual aqui gera falso positivo; valide a guarda real.
+requireAll('scripts/harden-partner-entregador-session-hygiene.mjs', [
+  "if (source.includes('PushNotifications.unregister()')) {",
+  'logout ainda invalida token FCM nativo compartilhado',
+  'remove apenas seu registro Push',
+], 'logout do Entregador protege o FCM nativo compartilhado contra unregister');
 
 requireAll('scripts/harden-partner-entregador-active-tracking.mjs', [
   'const online = Boolean(availability?.is_online) || Boolean(activeJob);',
