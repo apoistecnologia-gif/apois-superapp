@@ -7,6 +7,7 @@ import './harden-partner-motorista-navigation.mjs';
 import './harden-partner-motorista-legal-navigation.mjs';
 import './harden-partner-motorista-settings-cleanup.mjs';
 import './harden-partner-motorista-brand-theme.mjs';
+import './harden-partner-motorista-external-links.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
