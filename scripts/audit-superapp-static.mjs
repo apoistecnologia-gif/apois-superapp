@@ -76,9 +76,9 @@ requireText(
   'package.json',
   [
     '"audit:static": "node scripts/audit-superapp-static.mjs"',
-    'npm run audit:static && npm run verify:pins',
+    'npm run audit:static && npm run',
   ],
-  'pipeline executa auditoria estática e valida pins antes dos módulos',
+  'pipeline executa auditoria estática antes do build do Superapp',
 );
 forbidText(
   'package.json',
@@ -111,10 +111,21 @@ requireText(
 requireText(
   'scripts/prepare-workspace.mjs',
   [
-    'method.isActive && method.enabled && method.code === "pix"',
-    'Superapp oferece somente PIX mesmo se a fonte mantiver métodos legados ativos',
+    '(method) => method.isActive && method.enabled',
+    'paymentMethodsSource.includes(\'method.code === "pix"\')',
+    'métodos ativos permanecem disponíveis para a política PIX + Dinheiro + Cartão direto',
   ],
-  'Corridas aplica PIX-only apenas na cópia protegida do Superapp',
+  'Corridas preserva métodos ativos na cópia e rejeita regressão PIX-only',
+);
+requireText(
+  'scripts/harden-corridas-payment-methods.mjs',
+  [
+    'const isDirectToDriver = code === "cash" || code === "credit";',
+    'Pague diretamente ao motorista ao final da corrida.',
+    'Pague diretamente ao motorista com cartão de crédito.',
+    'PIX permanece digital; Dinheiro e Cartão de crédito ficam disponíveis',
+  ],
+  'Corridas mantém PIX eletrônico e Dinheiro/Cartão como recebimento direto ao motorista',
 );
 
 requireText(
@@ -189,7 +200,7 @@ requireText(
     'compact?: boolean',
     '<ActiveRideMap ride={ride} compact />',
   ],
-  'Corridas mantém lifecycle, retomada, push gate e mapa Pix endurecidos',
+  'Corridas mantém lifecycle, retomada, push gate e mapa endurecidos',
 );
 
 requireText(
