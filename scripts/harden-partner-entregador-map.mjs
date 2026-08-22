@@ -10,6 +10,7 @@ import './harden-partner-entregador-operation-states.mjs';
 import './harden-partner-entregador-action-timeouts.mjs';
 import './harden-partner-entregador-gps-resume.mjs';
 import './harden-partner-entregador-quiet-refresh.mjs';
+import './harden-partner-entregador-push-runtime.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -59,4 +60,4 @@ if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.ln
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: restauração em segundo plano, GPS rearmado no retorno, refresh silencioso preserva a entrega, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ações sem spinner infinito, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
+console.log('[OK] Entregador Parceiro: restauração em segundo plano, GPS rearmado no retorno, refresh silencioso preserva a entrega, Push isolado por produto, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ações sem spinner infinito, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
