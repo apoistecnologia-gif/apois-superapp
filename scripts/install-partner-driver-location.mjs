@@ -25,7 +25,12 @@ function adaptJava(source) {
   return source
     .replaceAll('package com.apois.motorista;', 'package br.com.apois.parceiro;')
     .replaceAll('com.apois.motorista.action.START_LOCATION', 'br.com.apois.parceiro.action.START_DRIVER_LOCATION')
-    .replaceAll('com.apois.motorista.action.STOP_LOCATION', 'br.com.apois.parceiro.action.STOP_DRIVER_LOCATION');
+    .replaceAll('com.apois.motorista.action.STOP_LOCATION', 'br.com.apois.parceiro.action.STOP_DRIVER_LOCATION')
+    .replace('import android.location.Location;\n', 'import android.location.Location;\nimport android.net.Uri;\n')
+    .replace(
+      '        openApp.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);',
+      '        openApp.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);\n        openApp.setData(Uri.parse("br.com.apois.parceiro://module/motorista"));',
+    );
 }
 
 const plugin = adaptJava(readFileSync(sourcePlugin, 'utf8'));
@@ -35,6 +40,9 @@ if (!plugin.includes('@CapacitorPlugin(name = "DriverLocation")')) {
 }
 if (!service.includes('FOREGROUND_SERVICE_TYPE_LOCATION') || !service.includes('driver_set_presence')) {
   throw new Error('APOIS Parceiro: serviço protegido de localização do Motorista está incompleto.');
+}
+if (!service.includes('br.com.apois.parceiro://module/motorista')) {
+  throw new Error('APOIS Parceiro: notificação persistente do Motorista não retorna ao módulo correto.');
 }
 writeFileSync(resolve(javaRoot, 'DriverLocationPlugin.java'), plugin, 'utf8');
 writeFileSync(resolve(javaRoot, 'DriverLocationService.java'), service, 'utf8');
@@ -69,9 +77,6 @@ if (!manifest.includes('android:name=".DriverLocationService"')) {
   const serviceXml = `\n        <service\n            android:name=".DriverLocationService"\n            android:exported="false"\n            android:foregroundServiceType="location"\n            android:stopWithTask="false" />\n`;
   manifest = manifest.replace('</application>', `${serviceXml}    </application>`);
 }
-// O serviço é iniciado somente com a Activity visível e permanece como Foreground Service.
-// Por isso o APK Parceiro NÃO solicita ACCESS_BACKGROUND_LOCATION, evitando uma permissão
-// de alto risco desnecessária para este contrato operacional.
 manifest = manifest.replace(/\s*<uses-permission\s+android:name="android\.permission\.ACCESS_BACKGROUND_LOCATION"\s*\/?>\s*/g, '\n');
 writeFileSync(manifestPath, manifest, 'utf8');
 
@@ -114,4 +119,4 @@ if (!existsSync(resolve(resDrawable, 'ic_stat_apois_notification.xml'))) {
   throw new Error('APOIS Parceiro: ícone da notificação de localização ausente.');
 }
 
-console.log('[OK] APOIS Parceiro: DriverLocation nativo instalado com Foreground Service, heartbeat Supabase, refresh de sessão e ícone APOIS também aplicado ao FCM.');
+console.log('[OK] APOIS Parceiro: DriverLocation nativo instalado; notificação persistente retorna ao módulo Motorista, com heartbeat Supabase e ícone APOIS.');
