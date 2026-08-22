@@ -48,20 +48,24 @@ for (const name of names) {
   console.log(`[OK] ${name}: snapshot copiado para ${config.workspace}`);
 
   if (name === 'corridas') {
-    // O banco compartilhado da fonte ainda mantém Dinheiro ativo para o app
-    // original. No Superapp do passageiro a regra comercial é PIX-only; por
-    // isso a restrição é aplicada somente na cópia .work, sem tocar a fonte.
-    replaceWorkspaceRequired(
-      '.work/corridas/src/hooks/use-payment-methods.tsx',
-      '      const data = (await paymentService.getPaymentMethods()).filter(\n        (method) => method.isActive && method.enabled,\n      );',
-      '      const data = (await paymentService.getPaymentMethods()).filter(\n        (method) => method.isActive && method.enabled && method.code === "pix",\n      );',
-      'corridas: Superapp oferece somente PIX mesmo se a fonte mantiver métodos legados ativos',
-    );
+    // As formas ativas da fonte são preservadas na cópia de trabalho. O hardener
+    // específico de pagamentos decide disponibilidade: PIX é eletrônico;
+    // Dinheiro e Cartão de crédito são recebimentos diretos ao motorista.
+    const paymentMethodsPath = resolve(root, '.work/corridas/src/hooks/use-payment-methods.tsx');
+    const paymentMethodsSource = readFileSync(paymentMethodsPath, 'utf8');
+    if (!paymentMethodsSource.includes('(method) => method.isActive && method.enabled')) {
+      console.error('[FAIL] corridas: filtro base de formas de pagamento não foi encontrado');
+      process.exit(1);
+    }
+    if (paymentMethodsSource.includes('method.code === "pix"')) {
+      console.error('[FAIL] corridas: cópia de trabalho voltou a restringir o passageiro somente a PIX');
+      process.exit(1);
+    }
+    console.log('[OK] corridas: métodos ativos permanecem disponíveis para a política PIX + Dinheiro + Cartão direto');
 
     // O snapshot protegido ainda invoca passenger-ride-request diretamente.
     // No Superapp a criação deve passar pelo roteador request-ride, que escolhe
-    // o provider financeiro ativo e, no Mercado Pago marketplace, busca/reserva
-    // o motorista antes de liberar a cobrança Pix.
+    // a política financeira conforme a forma de pagamento selecionada.
     replaceWorkspaceRequired(
       '.work/corridas/src/hooks/rides/use-ride-request.tsx',
       '        const { data, error } = await supabase.functions.invoke("passenger-ride-request", {',
