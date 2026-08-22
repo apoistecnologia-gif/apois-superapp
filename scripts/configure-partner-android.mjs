@@ -23,13 +23,12 @@ if (!manifest.includes('android:name="com.google.android.tts"')) {
   manifest = manifest.replace('<application', `${queries}    <application`);
 }
 
-// OAuth do Mercado Pago já está configurado no backend com o retorno legado
-// br.com.apois.app://auth/mercadopago. O APK Parceiro registra esse scheme para
-// permitir a homologação sem mudar a configuração financeira antes da hora.
-if (!manifest.includes('android:scheme="br.com.apois.app"')) {
-  const filter = `\n            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="br.com.apois.app" android:host="auth" android:pathPrefix="/mercadopago" />\n            </intent-filter>`;
-  manifest = manifest.replace('</activity>', `${filter}\n        </activity>`);
-}
+// O APK Parceiro usa callback OAuth próprio. NÃO registre br.com.apois.app aqui:
+// esse scheme pertence ao app cliente e, além de criar colisão entre aplicativos,
+// faria o próprio workflow do Codemagic reprovar o Manifest. O backend do
+// Motorista já recebe appTarget="partner" e retorna por br.com.apois.parceiro.
+const legacyPartnerMpFilterPattern = /\s*<intent-filter>\s*<action android:name="android\.intent\.action\.VIEW"\s*\/>\s*<category android:name="android\.intent\.category\.DEFAULT"\s*\/>\s*<category android:name="android\.intent\.category\.BROWSABLE"\s*\/>\s*<data android:scheme="br\.com\.apois\.app" android:host="auth" android:pathPrefix="\/mercadopago"\s*\/>\s*<\/intent-filter>/g;
+manifest = manifest.replace(legacyPartnerMpFilterPattern, '\n');
 
 if (!manifest.includes('android:scheme="br.com.apois.parceiro"')) {
   const filter = `\n            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="br.com.apois.parceiro" android:host="auth" />\n            </intent-filter>`;
@@ -42,6 +41,10 @@ if (!manifest.includes('android:scheme="br.com.apois.parceiro"')) {
 if (!manifest.includes('android:scheme="apoismotorista"')) {
   const filter = `\n            <intent-filter android:autoVerify="false">\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="apoismotorista" android:host="auth" />\n            </intent-filter>`;
   manifest = manifest.replace('</activity>', `${filter}\n        </activity>`);
+}
+
+if (manifest.includes('android:scheme="br.com.apois.app"') && manifest.includes('android:pathPrefix="/mercadopago"')) {
+  throw new Error('APOIS Parceiro: callback Mercado Pago legado do app cliente permaneceu no Manifest.');
 }
 
 writeFileSync(manifestPath, manifest, 'utf8');
@@ -60,8 +63,6 @@ const voicePluginJava = `package br.com.apois.parceiro;
 
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
-import android.os.Handler;
-import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 
 import com.getcapacitor.JSObject;
@@ -165,4 +166,4 @@ if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) {
   mainActivity = `package br.com.apois.parceiro;\n\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(DriverVoicePlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}\n`;
 }
 writeFileSync(mainActivityPath, mainActivity, 'utf8');
-console.log('[OK] Android do APOIS Parceiro configurado: permissões, deep links e DriverVoice.');
+console.log('[OK] Android do APOIS Parceiro configurado: permissões, deep links próprios e DriverVoice.');
