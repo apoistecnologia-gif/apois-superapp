@@ -44,6 +44,7 @@ requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
   "import './harden-partner-motorista-session-hygiene.mjs';",
   "import './harden-partner-motorista-navigation.mjs';",
   "import './harden-partner-motorista-legal-navigation.mjs';",
+  "import './harden-partner-motorista-settings-cleanup.mjs';",
 ], 'pipeline financeiro do Motorista carrega todas as proteções de release');
 
 requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
@@ -88,6 +89,16 @@ requireAll('scripts/harden-partner-motorista-legal-navigation.mjs', [
   'await Browser.open({ url });',
   'setChecking(false)',
 ], 'termos públicos abrem fora do WebView do módulo e preservam retorno ao APOIS Parceiro');
+
+requireAll('scripts/harden-partner-motorista-settings-cleanup.mjs', [
+  'title="Segurança e emergência"',
+  'SOS e contatos de emergência',
+  'Sair de todos os dispositivos',
+  'Sessões ativas em breve.',
+  'Biometria em breve.',
+  'PIN em breve.',
+  'aria-label="Idioma preferido"',
+], 'configurações removem atalhos incompletos, corrigem Segurança e preservam logout global');
 
 const routeTreePath = 'sources/apois-corridas-motorista-admin/src/mobile-route-tree.motorista.ts';
 requireAll(routeTreePath, [
