@@ -96,6 +96,8 @@ requireMarker(driverBundle, 'Fique offline ou use Trocar perfil de parceiro', 'M
 requireMarker(driverBundle, 'Fique offline no mapa antes de sair, trocar de conta ou excluir seu cadastro.', 'Motorista bloqueia saídas secundárias enquanto a função permanece operacional');
 requireMarker(driverBundle, 'background_location_unavailable', 'Motorista leva fail-safe do Foreground Service ao bundle final');
 requireMarker(driverBundle, 'Modo online desativado porque a localização em segundo plano não iniciou', 'Motorista informa falha de background e volta para OFFLINE');
+requireMarker(driverBundle, 'TOKEN_REFRESHED', 'Motorista repassa renovação de sessão WebView ao GPS nativo');
+requireMarker(driverBundle, 'sessão renovada não foi repassada ao GPS nativo', 'Motorista inclui diagnóstico do sync WebView/FGS');
 requireMarker(driverBundle, 'apois-parceiro:operational-role', 'Motorista grava trava operacional do shell');
 forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque legado ao APK');
 forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
@@ -108,6 +110,8 @@ requireMarker(courierBundle, 'Não foi possível ativar a localização em segun
 requireMarker(courierBundle, 'não foi possível confirmar que você ficou offline', 'Entregador preserva trava se rollback OFFLINE falhar');
 requireMarker(courierBundle, 'backButton', 'Entregador leva proteção do botão Voltar para o bundle final');
 requireMarker(courierBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Entregador não permite sair do módulo enquanto permanece ONLINE');
+requireMarker(courierBundle, 'TOKEN_REFRESHED', 'Entregador repassa renovação de sessão WebView ao GPS nativo');
+requireMarker(courierBundle, 'sessão renovada não foi repassada ao GPS nativo', 'Entregador inclui diagnóstico do sync WebView/FGS');
 requireMarker(courierBundle, 'apois-parceiro:operational-role', 'Entregador grava trava operacional do shell');
 forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saque legado ao APK');
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
@@ -130,4 +134,4 @@ if (!(launchIndex >= 0 && pendingIndex > launchIndex && lockIndex > pendingIndex
   process.exit(1);
 }
 
-console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, callbacks/Push de lançamento consumidos, saídas secundárias protegidas, back guards e trava cruzada de função operacional.');
+console.log('[OK] APOIS Parceiro gerado e validado: finanças, GPS/background, sessão WebView/FGS, callbacks/Push, saídas secundárias, back guards e trava cruzada protegidos.');
