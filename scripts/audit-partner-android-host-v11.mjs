@@ -103,13 +103,24 @@ requireAll('superapp/partner-shell/package.json', [
 ], 'Host mantém plugins Capacitor necessários ao runtime nativo');
 
 const codemagic = read('codemagic.yaml');
+if (codemagic.includes('android-field-apps-test:') || codemagic.includes('APOIS-Motorista.apk') || codemagic.includes('APOIS-Entregador.apk')) {
+  console.error('[FAIL] Partner Android host v11: workflow legado de APKs separados voltou ao Codemagic');
+  failed = true;
+} else {
+  console.log('[OK] Codemagic mantém somente os aplicativos unificados Cliente e Parceiro.');
+}
 const partnerStart = codemagic.indexOf('  android-partner-superapp:');
-const partnerEnd = codemagic.indexOf('\n  android-field-apps-test:', partnerStart);
-const partnerWorkflow = partnerStart >= 0 && partnerEnd > partnerStart ? codemagic.slice(partnerStart, partnerEnd) : '';
+const nextWorkflow = partnerStart >= 0 ? codemagic.indexOf('\n  android-', partnerStart + 4) : -1;
+const partnerEnd = nextWorkflow > partnerStart ? nextWorkflow : codemagic.length;
+const partnerWorkflow = partnerStart >= 0 ? codemagic.slice(partnerStart, partnerEnd) : '';
 if (!partnerWorkflow) {
   console.error('[FAIL] Partner Android host v11: workflow android-partner-superapp não encontrado');
   failed = true;
 } else {
+  if (!partnerWorkflow.includes('npm run verify:pins')) {
+    console.error('[FAIL] Partner Android host v11: workflow Parceiro não valida snapshots protegidos');
+    failed = true;
+  }
   if (!partnerWorkflow.includes('cd superapp/partner-shell\n          # Este host não possui bun.lock próprio.')) {
     console.error('[FAIL] Partner Android host v11: etapa de instalação do host Parceiro não documenta ausência de lockfile');
     failed = true;
@@ -126,5 +137,5 @@ if (!partnerWorkflow) {
   }
 }
 
-if (!failed) console.log('[OK] Partner Android host v11: pré-release protege Manifest/API 36, callbacks, plugins, GPS com ACK real, notificações, splash compilável e instalação do host no Codemagic.');
+if (!failed) console.log('[OK] Partner Android host v11: pré-release protege Manifest/API 36, callbacks, plugins, GPS com ACK real, notificações, splash compilável e somente o workflow unificado no Codemagic.');
 process.exit(failed ? 1 : 0);
