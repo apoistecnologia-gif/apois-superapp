@@ -73,4 +73,32 @@ for (const relativePath of touchRoutes) {
   `Entregas: ${relativePath} não mantém controles circulares abaixo de 44px`);
 }
 
-console.log('[OK] Entregas: checkout e controles circulares do cliente foram endurecidos para toque, safe-area e telas estreitas.');
+patch('src/routes/perfil/ajuda.tsx', (source) => source
+  .replace(
+    'className="flex items-center gap-1 text-xs font-bold text-primary"',
+    'className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-xs font-bold text-primary"',
+  )
+  .replaceAll(
+    'className="mt-3 text-xs font-black text-primary"',
+    'className="mt-2 inline-flex min-h-11 items-center rounded-xl px-3 text-xs font-black text-primary"',
+  ),
+(source) =>
+  source.includes('inline-flex min-h-11 items-center gap-1') &&
+  source.includes('inline-flex min-h-11 items-center rounded-xl px-3 text-xs font-black'),
+'Entregas: Ajuda transforma Novo e Ver conversa em alvos de toque reais');
+
+patch('src/routes/perfil/ajuda/chamado/$ticketId.tsx', (source) => source
+  .replace(
+    'className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-black/40 px-3 py-2 text-xs font-bold text-zinc-300 disabled:opacity-50"',
+    'className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-zinc-800 bg-black/40 px-3 py-2 text-xs font-bold text-zinc-300 disabled:opacity-50"',
+  )
+  .replace(
+    'className="text-zinc-600 hover:text-white"',
+    'className="-mr-2 grid h-11 w-11 shrink-0 place-items-center rounded-xl text-zinc-600 hover:bg-zinc-900 hover:text-white"',
+  ),
+(source) =>
+  source.includes('inline-flex min-h-11 items-center gap-2') &&
+  source.includes('grid h-11 w-11 shrink-0 place-items-center rounded-xl text-zinc-600'),
+'Entregas: conversa de suporte amplia anexos e remoção de arquivo para toque seguro');
+
+console.log('[OK] Entregas: checkout, Ajuda, conversa de suporte e controles circulares do cliente foram endurecidos para toque, safe-area e telas estreitas.');
