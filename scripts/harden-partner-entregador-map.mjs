@@ -9,6 +9,7 @@ import './harden-partner-entregador-touch-safearea.mjs';
 import './harden-partner-entregador-finance.mjs';
 import './harden-partner-entregador-finance-runtime.mjs';
 import './harden-partner-entregador-profile.mjs';
+import './harden-partner-entregador-selector-access.mjs';
 import './harden-partner-entregador-privacy.mjs';
 import './harden-partner-entregador-terms.mjs';
 import './harden-partner-entregador-operation-states.mjs';
@@ -63,4 +64,4 @@ if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.ln
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: bootstrap GPS corrige entrada online, restauração em segundo plano, GPS rearmado no retorno, refresh silencioso preserva a entrega, Push isolado por produto, perfil/privacidade/termos alinhados ao modelo atual, payout legado neutralizado no runtime, handoff limpa estado antigo, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ações sem spinner infinito, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
+console.log('[OK] Entregador Parceiro: bootstrap GPS corrige entrada online, restauração em segundo plano, GPS rearmado no retorno, refresh silencioso preserva a entrega, Push isolado por produto, seletor acessível em todo onboarding, perfil/privacidade/termos alinhados ao modelo atual, payout legado neutralizado no runtime, handoff limpa estado antigo, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ações sem spinner infinito, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
