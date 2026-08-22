@@ -94,6 +94,7 @@ requireMarker(driverBundle, 'backButton', 'Motorista leva proteção do botão V
 requireMarker(driverBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Motorista não permite sair do módulo enquanto permanece ONLINE');
 requireMarker(driverBundle, 'background_location_unavailable', 'Motorista leva fail-safe do Foreground Service ao bundle final');
 requireMarker(driverBundle, 'Modo online desativado porque a localização em segundo plano não iniciou', 'Motorista informa falha de background e volta para OFFLINE');
+requireMarker(driverBundle, 'apois-parceiro:operational-role', 'Motorista grava trava operacional do shell');
 forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque legado ao APK');
 forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
@@ -104,11 +105,15 @@ requireMarker(courierBundle, 'CourierLocation', 'Entregador leva ponte para Fore
 requireMarker(courierBundle, 'Não foi possível ativar a localização em segundo plano', 'Entregador falha fechado se o serviço de background não iniciar');
 requireMarker(courierBundle, 'backButton', 'Entregador leva proteção do botão Voltar para o bundle final');
 requireMarker(courierBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Entregador não permite sair do módulo enquanto permanece ONLINE');
+requireMarker(courierBundle, 'apois-parceiro:operational-role', 'Entregador grava trava operacional do shell');
 forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saque legado ao APK');
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
 
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
+requireMarker(finalShell, 'apois-parceiro:operational-role', 'shell final mantém trava de função operacional');
+requireMarker(finalShell, 'function routeRole(requestedRole,target)', 'shell final protege seletor, push e deep link contra troca de função ativa');
+requireMarker(finalShell, 'const lockedOnLaunch=operationalRole();', 'relançar o app volta à função operacional ativa');
 
-console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, back guards e fail-safe de GPS em background.');
+console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, back guards e trava cruzada de função operacional.');
