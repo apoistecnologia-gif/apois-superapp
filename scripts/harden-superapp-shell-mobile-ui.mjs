@@ -1,3 +1,4 @@
+import './harden-superapp-shell-iconography.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -17,9 +18,6 @@ source = source.replace(
   '.logo-mark img{display:block;width:100%;height:100%;object-fit:contain;padding:6px}',
 );
 
-// O Superapp inteiro usa a identidade APOIS preto/dourado. O antigo teal da
-// coluna Entregas vinha de uma experiência visual anterior e fazia o seletor
-// parecer dois aplicativos sem relação entre si.
 source = source
   .replace('--teal:#15d5ca;', '--teal:#f2b414;')
   .replaceAll('rgba(21,213,202,.1)', 'rgba(242,180,20,.10)')
@@ -45,6 +43,7 @@ for (const marker of [
   '.service{min-height:265px}',
   '--teal:#f2b414;',
   '.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}',
+  '.vehicle svg,.delivery svg',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Shell cliente: ajuste mobile/identidade ausente (${marker})`);
 }
@@ -53,4 +52,4 @@ if (source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes(
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Shell cliente: seletor preto/dourado rola em telas baixas, logo não é cortada e layout compacta sem esconder conteúdo.');
+console.log('[OK] Shell cliente: seletor preto/dourado, ícones consistentes, logo sem corte e layout responsivo.');
