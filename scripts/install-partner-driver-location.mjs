@@ -60,6 +60,11 @@ function ensurePermission(name) {
 ensurePermission('android.permission.FOREGROUND_SERVICE');
 ensurePermission('android.permission.FOREGROUND_SERVICE_LOCATION');
 
+if (!manifest.includes('android:name="com.google.firebase.messaging.default_notification_icon"')) {
+  const iconMeta = `\n        <meta-data\n            android:name="com.google.firebase.messaging.default_notification_icon"\n            android:resource="@drawable/ic_stat_apois_notification" />\n`;
+  manifest = manifest.replace('</application>', `${iconMeta}    </application>`);
+}
+
 if (!manifest.includes('android:name=".DriverLocationService"')) {
   const serviceXml = `\n        <service\n            android:name=".DriverLocationService"\n            android:exported="false"\n            android:foregroundServiceType="location"\n            android:stopWithTask="false" />\n`;
   manifest = manifest.replace('</application>', `${serviceXml}    </application>`);
@@ -91,8 +96,10 @@ for (const marker of [
   'android.permission.FOREGROUND_SERVICE_LOCATION',
   'android:name=".DriverLocationService"',
   'android:foregroundServiceType="location"',
+  'android:name="com.google.firebase.messaging.default_notification_icon"',
+  'android:resource="@drawable/ic_stat_apois_notification"',
 ]) {
-  if (!finalManifest.includes(marker)) throw new Error(`APOIS Parceiro: localização nativa incompleta no Manifest (${marker}).`);
+  if (!finalManifest.includes(marker)) throw new Error(`APOIS Parceiro: localização/notificação nativa incompleta no Manifest (${marker}).`);
 }
 if (finalManifest.includes('android.permission.ACCESS_BACKGROUND_LOCATION')) {
   throw new Error('APOIS Parceiro: ACCESS_BACKGROUND_LOCATION reapareceu indevidamente.');
@@ -107,4 +114,4 @@ if (!existsSync(resolve(resDrawable, 'ic_stat_apois_notification.xml'))) {
   throw new Error('APOIS Parceiro: ícone da notificação de localização ausente.');
 }
 
-console.log('[OK] APOIS Parceiro: DriverLocation nativo do Motorista instalado com Foreground Service, heartbeat Supabase, refresh de sessão e ícone de notificação.');
+console.log('[OK] APOIS Parceiro: DriverLocation nativo instalado com Foreground Service, heartbeat Supabase, refresh de sessão e ícone APOIS também aplicado ao FCM.');
