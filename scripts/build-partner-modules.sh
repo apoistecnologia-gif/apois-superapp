@@ -30,6 +30,7 @@ require_contains() {
 export APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"
 node "$ROOT/scripts/harden-motorista-auth.mjs"
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
+node "$ROOT/scripts/harden-partner-motorista-onboarding.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
 node "$ROOT/scripts/harden-partner-mercadopago-callback.mjs"
 node "$ROOT/scripts/harden-motorista-mercadopago-disconnect.mjs"
@@ -69,6 +70,9 @@ require_contains 'ratedRidesRef.current.add(ratedRideId);' src/routes/motorista.
 require_contains 'window.addEventListener("apois:driver-push", onDriverPush);' src/routes/motorista.app.tsx 'push/resume força resync sem depender somente de Realtime'
 require_contains 'settlement?.driver_earning ?? settlement?.passenger_charge' 'src/routes/motorista.corridas.$id.tsx' 'histórico usa ganho do motorista e não saldo APOIS'
 require_contains 'A APOIS não retém comissão nem recebe o valor da corrida.' src/lib/rideReceipt.ts 'recibo deixa recebimento direto explícito'
+require_contains 'Trocar perfil de parceiro' src/routes/motorista.cadastro.tsx 'sucesso do cadastro permite voltar ao seletor sem encerrar sessão'
+require_contains 'window.location.replace("../../index.html")' src/routes/motorista.cadastro.tsx 'cadastro retorna ao seletor Parceiro na primeira etapa'
+require_contains 'window.location.replace("../../index.html")' src/routes/motorista.status.tsx 'status possui fallback ao seletor Parceiro'
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
