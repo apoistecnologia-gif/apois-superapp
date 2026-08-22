@@ -61,10 +61,31 @@ requireAll('scripts/harden-partner-entregador-background-location.mjs', [
   'removeCourierPushRegistration',
 ], 'Bundle Entregador só mantém ONLINE no Android se o FGS iniciar e o encerra após OFFLINE/logout/troca de perfil');
 
+requireAll('scripts/harden-partner-entregador-background-reconciliation.mjs', [
+  'const { error: rollbackError } = await rpc("set_courier_online", { _is_online: false });',
+  'if (rollbackError)',
+  'apois-parceiro:operational-role',
+  'não foi possível confirmar que você ficou offline',
+  'A localização foi perdida e não foi possível confirmar que você ficou offline.',
+  'return false;',
+  'return true;',
+], 'Falha do FGS/perda de GPS preserva a trava Entregador até OFFLINE realmente ser confirmado');
+
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-gps-resume.mjs';",
   "import './harden-partner-entregador-background-location.mjs';",
-], 'Pipeline aplica rearm da WebView antes do serviço de background');
+  "import './harden-partner-entregador-background-reconciliation.mjs';",
+  "import './harden-partner-entregador-operational-lock.mjs';",
+], 'Pipeline aplica reconciliação do background antes de liberar/atualizar a trava operacional');
+
+const pipeline = read('scripts/harden-partner-entregador-map.mjs');
+const backgroundIndex = pipeline.indexOf("import './harden-partner-entregador-background-location.mjs';");
+const reconciliationIndex = pipeline.indexOf("import './harden-partner-entregador-background-reconciliation.mjs';");
+const lockIndex = pipeline.indexOf("import './harden-partner-entregador-operational-lock.mjs';");
+if (!(backgroundIndex >= 0 && reconciliationIndex > backgroundIndex && lockIndex > reconciliationIndex)) {
+  console.error('[FAIL] Entregador background v6: reconciliação precisa rodar depois do FGS e antes da trava operacional');
+  failed = true;
+}
 
 requireAll('scripts/harden-partner-location-notification-routing.mjs', [
   "{ file: 'CourierLocationService.java', module: 'entregador' }",
@@ -84,5 +105,5 @@ requireAll('scripts/install-partner-launcher.mjs', [
   'br.com.apois.parceiro://module/entregador',
 ], 'Launcher instala os dois serviços e valida que a notificação do Entregador retorna ao módulo correto');
 
-if (!failed) console.log('[OK] Entregador background v6: GPS continua em Foreground Service durante background/tela bloqueada, ONLINE falha fechado se o FGS não iniciar e a notificação retorna ao Entregador sem expor o seletor.');
+if (!failed) console.log('[OK] Entregador background v6: GPS/FGS, rollback OFFLINE, trava operacional e notificação estão protegidos contra estado online fantasma.');
 process.exit(failed ? 1 : 0);
