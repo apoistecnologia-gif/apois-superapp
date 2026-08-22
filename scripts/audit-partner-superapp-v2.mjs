@@ -157,6 +157,16 @@ requireAll('scripts/harden-partner-entregador-operation-states.mjs', [
   'Tentar novamente',
 ], 'Entregador não transforma falha de refresh em entrega/oferta vazia e exibe recuperação acionável');
 
+requireAll('scripts/harden-partner-entregador-action-timeouts.mjs', [
+  'COURIER_ACTION_TIMEOUT_MS = 20_000',
+  'courierActionWithTimeout',
+  'const transitionJobId = activeJob.id;',
+  'setActiveJob((current: any) =>',
+  'const completionJobId = activeJob.id;',
+  'setCompletedJob({ ...deliveredJob, status: "delivered" });',
+  'current === "delivery" ? null : current',
+], 'Entregador não fica em spinner infinito ao mudar etapa/concluir e reconcilia o estado com o backend');
+
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-resume.mjs';",
   "import './harden-partner-entregador-active-delivery.mjs';",
@@ -165,7 +175,8 @@ requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-touch-safearea.mjs';",
   "import './harden-partner-entregador-finance.mjs';",
   "import './harden-partner-entregador-operation-states.mjs';",
-], 'Build do Entregador aplica resume, entrega ativa, expiração, câmera, safe-area, finanças e estados operacionais');
+  "import './harden-partner-entregador-action-timeouts.mjs';",
+], 'Build do Entregador aplica resume, entrega ativa, expiração, câmera, safe-area, finanças, estados operacionais e timeout das ações');
 
 requireAll('supabase/migrations/20260821233000_disable_legacy_courier_payout_until_marketplace_direct_live.sql', [
   "'courier_payout_mode'",
