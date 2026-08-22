@@ -6,6 +6,7 @@ import './harden-partner-entregador-offer-expiry.mjs';
 import './harden-partner-entregador-map-camera.mjs';
 import './harden-partner-entregador-touch-safearea.mjs';
 import './harden-partner-entregador-finance.mjs';
+import './harden-partner-entregador-operation-states.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -55,4 +56,4 @@ if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.ln
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: restauração em segundo plano, jornada nativa, entrega ativa resiliente, finanças protegidas, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
+console.log('[OK] Entregador Parceiro: restauração em segundo plano, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
