@@ -52,13 +52,14 @@ forbidAll('scripts/install-partner-courier-location.mjs', [
 requireAll('scripts/harden-partner-entregador-background-location.mjs', [
   'src/lib/courierNativeLocation.ts',
   'registerPlugin<CourierLocationPlugin>("CourierLocation")',
-  'startCourierNativeLocation()',
-  'stopCourierNativeLocation()',
+  'isNativeCourierLocation, startCourierNativeLocation, stopCourierNativeLocation',
+  'backgroundStarted = await startCourierNativeLocation();',
+  'await rpc("set_courier_online", { _is_online: false });',
+  'Não foi possível ativar a localização em segundo plano.',
   'await startCourierNativeLocation();',
   'await stopCourierNativeLocation().catch(() => undefined);',
   'removeCourierPushRegistration',
-  'set_courier_online',
-], 'Bundle Entregador inicia FGS quando online e o encerra após OFFLINE/logout/troca de perfil');
+], 'Bundle Entregador só mantém ONLINE no Android se o FGS iniciar e o encerra após OFFLINE/logout/troca de perfil');
 
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-gps-resume.mjs';",
@@ -74,5 +75,5 @@ requireAll('scripts/install-partner-launcher.mjs', [
   'registerPlugin(CourierLocationPlugin.class)',
 ], 'Launcher exige os dois serviços de localização do APOIS Parceiro');
 
-if (!failed) console.log('[OK] Entregador background v6: GPS continua em Foreground Service durante background/tela bloqueada e encerra de forma reconciliada ao sair da operação.');
+if (!failed) console.log('[OK] Entregador background v6: GPS continua em Foreground Service durante background/tela bloqueada, ONLINE falha fechado se o FGS não iniciar e o serviço encerra de forma reconciliada ao sair da operação.');
 process.exit(failed ? 1 : 0);
