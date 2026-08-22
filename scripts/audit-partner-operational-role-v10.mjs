@@ -27,6 +27,7 @@ for (const marker of [
   'if (value) localStorage.setItem("apois-parceiro:operational-role", "motorista")',
   'if (publishOnline) window.localStorage.setItem("apois-parceiro:operational-role", "motorista")',
   'window.localStorage.removeItem("apois-parceiro:operational-role")',
+  'APOIS_PARTNER_DRIVER_OPERATIONAL_LOCK_SIGNOUT',
   'return false;',
   'return true;',
   'apois:driver:online',
