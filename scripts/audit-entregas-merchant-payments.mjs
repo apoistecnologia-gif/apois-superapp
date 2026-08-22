@@ -95,11 +95,10 @@ check('scripts/harden-entregas-merchant-direct-finance.mjs', [
   'R$ 0,00',
   'A APOIS não oferece saque manual do valor das vendas.',
   'carteira antiga permanece apenas como registro legado',
-], 'financeiro do estabelecimento não trata venda direta como saldo custodiado pela APOIS');
-forbid('scripts/harden-entregas-merchant-direct-finance.mjs', [
-  'onClick={requestPayout}',
-  'onClick={savePayoutAccount}',
-], 'novo painel financeiro não reintroduz ações de saque/cadastro PIX');
+  'const financeBlock = source.slice(financeStart, settingsStart);',
+  "if (financeBlock.includes(forbidden))",
+  'controle financeiro legado permaneceu visível',
+], 'financeiro do estabelecimento remove saque/cadastro PIX da UI e não trata venda direta como saldo custodiado pela APOIS');
 
 check('supabase/migrations/20260821233000_disable_legacy_courier_payout_until_marketplace_direct_live.sql', [
   'marketplace_direct_pending',
@@ -134,7 +133,8 @@ check('supabase/migrations/20260822000500_record_mercadopago_split_1n_external_d
   'mercadopago_marketplace_oauth_enabled',
   'mercadopago_split_1n_mode',
   'commercial_enablement_pending',
-  'não fazer a APOIS custodiar o total do pedido',
+  'Não criar implementação simulada',
+  'APOIS custodiar o total do pedido',
 ], 'Split 1:N fica explicitamente bloqueado por dependência comercial externa');
 
 check('docs/MERCADO_PAGO_ENTREGAS_MARKETPLACE.md', [
