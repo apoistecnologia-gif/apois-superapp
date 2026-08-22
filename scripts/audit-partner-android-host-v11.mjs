@@ -1,0 +1,95 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+let failed = false;
+function read(path) {
+  const full = resolve(path);
+  if (!existsSync(full)) {
+    console.error(`[FAIL] Partner Android host v11: arquivo ausente ${path}`);
+    failed = true;
+    return '';
+  }
+  return readFileSync(full, 'utf8');
+}
+function requireAll(path, markers, label) {
+  const source = read(path);
+  if (!source) return;
+  const missing = markers.filter((marker) => !source.includes(marker));
+  if (missing.length) {
+    console.error(`[FAIL] ${label}: ${missing.join(' | ')}`);
+    failed = true;
+  } else console.log(`[OK] ${label}`);
+}
+function forbidAll(path, markers, label) {
+  const source = read(path);
+  if (!source) return;
+  const found = markers.filter((marker) => source.includes(marker));
+  if (found.length) {
+    console.error(`[FAIL] ${label}: ${found.join(' | ')}`);
+    failed = true;
+  } else console.log(`[OK] ${label}`);
+}
+
+requireAll('scripts/harden-partner-android-security.mjs', [
+  "setApplicationAttribute('allowBackup', 'false')",
+  "setApplicationAttribute('usesCleartextTraffic', 'false')",
+  "['compileSdkVersion', 36]",
+  "['targetSdkVersion', 36]",
+  'PARTNER_VERSION_CODE',
+  'PARTNER_VERSION_NAME',
+  'android:windowSoftInputMode="adjustResize"',
+], 'Host Android aplica segurança, API 36, versionamento e teclado ajustável');
+
+requireAll('scripts/configure-partner-android.mjs', [
+  "ensurePermission('android.permission.ACCESS_FINE_LOCATION')",
+  "ensurePermission('android.permission.ACCESS_COARSE_LOCATION')",
+  "ensurePermission('android.permission.POST_NOTIFICATIONS')",
+  'android:scheme="br.com.apois.parceiro"',
+  'android:scheme="apoismotorista"',
+  'legacyPartnerMpFilterPattern',
+  'registerPlugin(DriverVoicePlugin.class)',
+], 'Host Android registra permissões, callbacks próprios e voz nativa');
+forbidAll('scripts/configure-partner-android.mjs', [
+  'android:scheme="br.com.apois.app" android:host="auth" android:pathPrefix="/mercadopago"',
+], 'Host Parceiro não recria callback Mercado Pago legado do app cliente');
+
+requireAll('scripts/install-partner-splash.mjs', [
+  '<shape android:shape="rectangle">',
+  '<solid android:color="#050505" />',
+  '@mipmap/ic_launcher',
+  'windowSplashScreenBackground',
+  'windowSplashScreenAnimatedIcon',
+  "finalSplash.includes('android:drawable=\"#050505\"')",
+], 'Splash usa drawable XML válido e identidade APOIS');
+forbidAll('scripts/install-partner-splash.mjs', [
+  '<item android:drawable="#050505" />',
+], 'Splash não usa literal de cor inválido no atributo drawable');
+
+requireAll('scripts/harden-partner-location-notification-routing.mjs', [
+  "{ file: 'DriverLocationService.java', module: 'motorista' }",
+  "{ file: 'CourierLocationService.java', module: 'entregador' }",
+  'openApp.setData(Uri.parse(',
+  'br.com.apois.parceiro://module/',
+], 'Notificações persistentes retornam diretamente ao módulo operacional');
+
+requireAll('scripts/install-partner-launcher.mjs', [
+  "import './harden-partner-android-security.mjs';",
+  "import './configure-partner-firebase.mjs';",
+  "import './install-partner-driver-location.mjs';",
+  "import './install-partner-courier-location.mjs';",
+  "import './harden-partner-location-notification-routing.mjs';",
+  "import './verify-partner-native-plugins.mjs';",
+  'br.com.apois.parceiro://module/motorista',
+  'br.com.apois.parceiro://module/entregador',
+], 'Launcher encadeia segurança, Firebase, GPS, roteamento e verificação nativa');
+
+requireAll('superapp/partner-shell/package.json', [
+  '"@capacitor/android": "8.5.0"',
+  '"@capacitor/core": "8.5.0"',
+  '"@capacitor/app": "8.1.1"',
+  '"@capacitor/geolocation": "8.2.0"',
+  '"@capacitor/push-notifications": "8.1.2"',
+], 'Host mantém plugins Capacitor necessários ao runtime nativo');
+
+if (!failed) console.log('[OK] Partner Android host v11: pré-release protege Manifest/API 36, callbacks, plugins, GPS/notificações e splash compilável.');
+process.exit(failed ? 1 : 0);
