@@ -20,6 +20,7 @@ import './harden-partner-entregador-action-timeouts.mjs';
 import './harden-partner-entregador-state-handoff.mjs';
 import './harden-partner-entregador-gps-resume.mjs';
 import './harden-partner-entregador-background-location.mjs';
+import './harden-partner-entregador-native-session-sync.mjs';
 import './harden-partner-entregador-background-reconciliation.mjs';
 import './harden-partner-entregador-operational-lock.mjs';
 import './harden-partner-entregador-back-navigation.mjs';
@@ -71,4 +72,4 @@ if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.ln
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: operação online fica travada na função Entregador, GPS/heartbeat seguem em background, botão Voltar não abandona a operação, Push permanece isolado, finanças/payout legado ficam neutralizados e mapa/entrega ativa permanecem resilientes.');
+console.log('[OK] Entregador Parceiro: operação online fica travada na função Entregador, sessão do GPS nativo é reconciliada, heartbeat segue em background, botão Voltar não abandona a operação, Push permanece isolado e mapa/entrega ativa permanecem resilientes.');
