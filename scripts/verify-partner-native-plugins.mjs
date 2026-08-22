@@ -61,6 +61,16 @@ for (const [label, plugin, service, startupKey] of customRuntimes) {
   if (!plugin.includes(`STARTUP_KEY = "${startupKey}"`) || !plugin.includes('startup.getBoolean(STARTUP_KEY, false)')) {
     throw new Error(`APOIS Parceiro: ${label} pode confirmar localização em background antes do Service iniciar.`);
   }
+  for (const marker of [
+    'STARTUP_ACK_MAX_ATTEMPTS = 4',
+    'private void resolveStartup(PluginCall call, SharedPreferences startup, int attempt)',
+    'attempt >= STARTUP_ACK_MAX_ATTEMPTS',
+    '() -> resolveStartup(call, startup, attempt + 1)',
+  ]) {
+    if (!plugin.includes(marker)) {
+      throw new Error(`APOIS Parceiro: ${label} não tolera startup lento do Foreground Service (${marker}).`);
+    }
+  }
   if (!service.includes('setStartupConfirmed(true);') || !service.includes('setStartupConfirmed(false);')) {
     throw new Error(`APOIS Parceiro: ${label} não publica corretamente o estado real do Foreground Service.`);
   }
@@ -73,6 +83,9 @@ for (const [label, plugin, service, startupKey] of customRuntimes) {
   if (!service.includes('private void persistSessionTokens()') || !service.includes('persistSessionTokens();')) {
     throw new Error(`APOIS Parceiro: ${label} não persiste refresh_token rotacionado pelo serviço nativo.`);
   }
+  if (!plugin.includes('remove(SESSION_ACCESS_KEY)') || !plugin.includes('remove(SESSION_REFRESH_KEY)')) {
+    throw new Error(`APOIS Parceiro: ${label} mantém tokens nativos depois do stop explícito.`);
+  }
 }
 
-console.log('[OK] APOIS Parceiro: plugins Capacitor/customizados estão registrados; GPS confirma start real e mantém refresh_token nativo reconciliável com a WebView.');
+console.log('[OK] APOIS Parceiro: plugins Capacitor/customizados registrados; GPS confirma start real com retry e limpa sessão nativa no stop explícito.');
