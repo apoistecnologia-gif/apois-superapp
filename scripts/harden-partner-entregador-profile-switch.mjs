@@ -13,7 +13,7 @@ if (!route.includes('const switchPartnerProfile = async () => {')) {
   if (start < 0) throw new Error('[FAIL] Entregador Parceiro: função logout não encontrada para inserir troca segura');
   const nextFunction = route.indexOf('\n\n  const submitApplication', start);
   if (nextFunction < 0) throw new Error('[FAIL] Entregador Parceiro: fim do logout não encontrado');
-  const handler = `\n\n  const switchPartnerProfile = async () => {\n    if (busy) {\n      toast.error(\"Aguarde a ação atual terminar antes de trocar de perfil.\");\n      return;\n    }\n    if (activeJob) {\n      toast.error(\"Conclua a entrega ativa antes de trocar de perfil.\");\n      return;\n    }\n    setBusy(\"profile-switch\");\n    try {\n      const { error } = await rpc(\"set_courier_online\", { _is_online: false });\n      if (error) throw error;\n      setAvailability((current: any) => current ? { ...current, is_online: false } : current);\n      setCurrentPosition(null);\n      window.location.replace(\"../../index.html\");\n    } catch (error: any) {\n      toast.error(error?.message || \"Não foi possível ficar offline para trocar de perfil.\");\n    } finally {\n      setBusy((current) => current === \"profile-switch\" ? null : current);\n    }\n  };`;
+  const handler = `\n\n  const switchPartnerProfile = async () => {\n    if (busy) {\n      toast.error(\"Aguarde a ação atual terminar antes de trocar de perfil.\");\n      return;\n    }\n    if (activeJob) {\n      toast.error(\"Conclua a entrega ativa antes de trocar de perfil.\");\n      return;\n    }\n    setBusy(\"profile-switch\");\n    try {\n      const { error } = await rpc(\"set_courier_online\", { _is_online: false });\n      if (error) throw error;\n      await removeCourierPushRegistration().catch((pushError) => {\n        if (import.meta.env.DEV) console.warn(\"courier push cleanup on profile switch failed\", pushError);\n      });\n      setAvailability((current: any) => current ? { ...current, is_online: false } : current);\n      setCurrentPosition(null);\n      window.location.replace(\"../../index.html\");\n    } catch (error: any) {\n      toast.error(error?.message || \"Não foi possível ficar offline para trocar de perfil.\");\n    } finally {\n      setBusy((current) => current === \"profile-switch\" ? null : current);\n    }\n  };`;
   route = route.slice(0, nextFunction) + handler + route.slice(nextFunction);
 }
 
@@ -28,6 +28,7 @@ for (const marker of [
   'const switchPartnerProfile = async () => {',
   'Conclua a entrega ativa antes de trocar de perfil.',
   'rpc("set_courier_online", { _is_online: false })',
+  'await removeCourierPushRegistration()',
   'window.location.replace("../../index.html")',
   'onSwitchProfile={() => void switchPartnerProfile()}',
   'switchingProfile={busy === "profile-switch"}',
@@ -64,4 +65,4 @@ if (panels.includes(`onClick={() => window.location.replace('../../index.html')}
 }
 writeFileSync(panelsPath, panels, 'utf8');
 
-console.log('[OK] Entregador Parceiro: troca para Motorista confirma OFFLINE no backend antes de sair do módulo e bloqueia a troca durante entrega/ação ativa.');
+console.log('[OK] Entregador Parceiro: troca para Motorista confirma OFFLINE, desativa o registro Push do Entregador e bloqueia a troca durante entrega/ação ativa.');
