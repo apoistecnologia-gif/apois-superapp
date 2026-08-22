@@ -27,6 +27,7 @@ import './harden-partner-entregador-operational-lock.mjs';
 import './harden-partner-entregador-back-navigation.mjs';
 import './harden-partner-entregador-quiet-refresh.mjs';
 import './harden-partner-entregador-push-runtime.mjs';
+import './harden-entregas-brand-sweep.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -37,6 +38,7 @@ let source = readFileSync(path, 'utf8');
 
 source = source.replace('const BRAND_GREEN = "#39B54A";\nconst BRAND_PURPLE = "#6A1B9A";', 'const APOIS_GOLD = "#F6BE1C";');
 source = source.replaceAll('BRAND_PURPLE', 'APOIS_GOLD');
+source = source.replace('const BRAND_GREEN = "#39B54A";\n', '');
 
 const oldBrowserKey = 'const browserKey = (import.meta as any).env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined;';
 const newBrowserKey = 'const browserKey = ((import.meta as any).env.VITE_GOOGLE_MAPS_BROWSER_KEY || (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || (import.meta as any).env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY) as string | undefined;';
@@ -67,10 +69,10 @@ for (const marker of [
 ]) {
   if (!source.includes(marker)) throw new Error(`Entregador Parceiro: hardening do mapa incompleto (${marker}).`);
 }
-if (source.includes('const BRAND_PURPLE')) throw new Error('Entregador Parceiro: rota roxa antiga permaneceu no mapa.');
+if (source.includes('const BRAND_PURPLE') || source.includes('const BRAND_GREEN')) throw new Error('Entregador Parceiro: constantes de marca verde/roxa antigas permaneceram no mapa.');
 if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              zoom={14}')) {
   throw new Error('Entregador Parceiro: mapa de espera ainda força a câmera em cada atualização do GPS.');
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: operação online fica travada na função Entregador, sessão WebView/GPS nativo permanece coordenada, heartbeat segue em background e mapa/entrega ativa permanecem resilientes.');
+console.log('[OK] Entregador Parceiro: branding residual removido, operação online travada na função Entregador, sessão WebView/GPS nativo coordenada e mapa resiliente.');
