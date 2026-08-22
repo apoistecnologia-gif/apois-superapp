@@ -142,10 +142,18 @@ requireAll('scripts/harden-partner-entregador-finance.mjs', [
   'A APOIS não libera saque manual',
   'Nenhuma chave PIX ou valor de saque é solicitado nesta fase.',
 ], 'Entregador não oferece saque sem lastro antes do marketplace direto');
-forbidAll('scripts/harden-partner-entregador-finance.mjs', [
+
+// As strings legadas aparecem propositalmente dentro da lista de bloqueio do hardener.
+// Portanto, não podemos proibi-las no código do próprio script. O que importa aqui é
+// confirmar que o hardener contém uma verificação explícita que falha caso essas CTAs
+// permaneçam na UI transformada do Entregador.
+requireAll('scripts/harden-partner-entregador-finance.mjs', [
+  'for (const forbidden of [',
   '<h2 className="font-black">Solicitar saque</h2>',
   '>Salvar chave PIX<',
-], 'hardening financeiro não preserva CTA legado de saque/PIX');
+  'if (source.includes(forbidden))',
+  'UI financeira legada permaneceu',
+], 'hardening financeiro bloqueia CTA legado de saque/PIX na UI transformada');
 
 requireAll('scripts/harden-partner-entregador-operation-states.mjs', [
   'operationsError',
