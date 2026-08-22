@@ -65,6 +65,32 @@ patch(
 );
 
 patch(
+  'src/components/CourierRouteMap.tsx',
+  (source) => {
+    let next = source;
+    next = next.replace(
+      'className="absolute right-3 top-3 z-20 inline-flex h-10 items-center gap-1.5 rounded-full border border-white/10 bg-black/75 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-lg backdrop-blur-md active:scale-95"',
+      'className="absolute right-3 top-3 z-20 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/10 bg-black/75 px-3.5 text-xs font-black uppercase tracking-[0.08em] text-white shadow-lg backdrop-blur-md active:scale-95"',
+    );
+    next = next.replace(
+      'expanded ? "h-[36rem] min-h-[72vh] max-h-[44rem]" : "h-[29rem] min-h-[62vh] max-h-[36rem]"',
+      'expanded ? "h-[clamp(24rem,62dvh,36rem)]" : "h-[clamp(21rem,54dvh,31rem)]"',
+    );
+    next = next.replace(
+      'className="absolute bottom-3 right-3 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/75 text-white shadow-lg backdrop-blur-md active:scale-95"',
+      'className="absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-black/75 text-white shadow-lg backdrop-blur-md active:scale-95"',
+    );
+    return next;
+  },
+  (source) =>
+    source.includes('min-h-11 items-center') &&
+    source.includes('h-[clamp(24rem,62dvh,36rem)]') &&
+    source.includes('h-[clamp(21rem,54dvh,31rem)]') &&
+    source.includes('grid h-11 w-11 place-items-center rounded-full'),
+  'entregador: mapa de rota adapta altura à tela e controles de rota/recentralizar têm alvo tocável',
+);
+
+patch(
   'src/routes/courier.tsx',
   (source) => {
     let next = source.replaceAll(
@@ -111,4 +137,4 @@ patch(
   'entregador: tela principal respeita safe-area e não abre painéis/rodapé durante entrega ativa',
 );
 
-console.log(`[OK] ergonomia, foco operacional, nomenclatura e safe-area do Entregador Parceiro endurecidas em ${workspace}`);
+console.log(`[OK] ergonomia, foco operacional, mapas, nomenclatura e safe-area do Entregador Parceiro endurecidas em ${workspace}`);
