@@ -54,6 +54,12 @@ requireAll('scripts/harden-partner-entregador-gps-resume.mjs', [
   'void appStateHandle?.remove();',
 ], 'GPS do Entregador é rearmado ao voltar do background sem desmontar rota por falha transitória');
 
+requireAll('scripts/harden-partner-entregador-active-tracking.mjs', [
+  'const online = Boolean(availability?.is_online) || Boolean(activeJob);',
+  '<CourierLocationTracker enabled={online} onPosition={setCurrentPosition} />',
+  '{!activeJob && !completedJob ? (',
+], 'Entrega ativa mantém rastreamento e impede navegação para fora da jornada');
+
 requireAll('scripts/harden-partner-entregador-quiet-refresh.mjs', [
   'if (quiet) {',
   'setOperationsError',
@@ -120,6 +126,7 @@ requireAll('scripts/harden-partner-entregador-terms.mjs', [
 
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-online-bootstrap.mjs';",
+  "import './harden-partner-entregador-active-tracking.mjs';",
   "import './harden-partner-entregador-gps-resume.mjs';",
   "import './harden-partner-entregador-quiet-refresh.mjs';",
   "import './harden-partner-entregador-push-runtime.mjs';",
@@ -128,7 +135,7 @@ requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-finance-runtime.mjs';",
   "import './harden-partner-entregador-privacy.mjs';",
   "import './harden-partner-entregador-terms.mjs';",
-], 'Umbrella real do Entregador executa bootstrap, GPS, Push, perfil, payout lockdown, legal e handoff');
+], 'Umbrella real do Entregador executa bootstrap, tracking ativo, GPS, Push, perfil, payout lockdown, legal e handoff');
 
 requireAll('superapp/partner-shell/index.html', [
   'const isDelivery=Boolean(orderId)',
