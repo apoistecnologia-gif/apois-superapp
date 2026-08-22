@@ -17,6 +17,20 @@ source = source.replace(
   '.logo-mark img{display:block;width:100%;height:100%;object-fit:contain;padding:6px}',
 );
 
+// O Superapp inteiro usa a identidade APOIS preto/dourado. O antigo teal da
+// coluna Entregas vinha de uma experiência visual anterior e fazia o seletor
+// parecer dois aplicativos sem relação entre si.
+source = source
+  .replace('--teal:#15d5ca;', '--teal:#f2b414;')
+  .replaceAll('rgba(21,213,202,.1)', 'rgba(242,180,20,.10)')
+  .replaceAll('rgba(21,213,202,.88)', 'rgba(242,180,20,.88)')
+  .replaceAll('rgba(21,213,202,.07)', 'rgba(242,180,20,.07)')
+  .replaceAll('rgba(21,213,202,.08)', 'rgba(242,180,20,.08)')
+  .replaceAll('rgba(23,220,209,.7)', 'rgba(242,180,20,.68)')
+  .replace('linear-gradient(145deg,#0d2f32,#080808 62%)', 'linear-gradient(145deg,#2b2110,#080808 62%)')
+  .replace('linear-gradient(135deg,#1ee1d4,#09b8b0)', 'linear-gradient(135deg,#f7c847,#e9a90e)')
+  .replace('.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#04100f}', '.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}');
+
 if (!source.includes('@media(max-height:720px)')) {
   source = source.replace(
     '    @media(max-width:380px){',
@@ -29,9 +43,14 @@ for (const marker of [
   'object-fit:contain;padding:6px',
   '@media(max-height:720px)',
   '.service{min-height:265px}',
+  '--teal:#f2b414;',
+  '.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}',
 ]) {
-  if (!source.includes(marker)) throw new Error(`[FAIL] Shell cliente: ajuste mobile ausente (${marker})`);
+  if (!source.includes(marker)) throw new Error(`[FAIL] Shell cliente: ajuste mobile/identidade ausente (${marker})`);
+}
+if (source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes('#09b8b0')) {
+  throw new Error('[FAIL] Shell cliente: cor teal antiga ainda aparece no seletor unificado.');
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Shell cliente: seletor rola em telas baixas, logo não é cortada e layout compacta sem esconder conteúdo.');
+console.log('[OK] Shell cliente: seletor preto/dourado rola em telas baixas, logo não é cortada e layout compacta sem esconder conteúdo.');
