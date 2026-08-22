@@ -77,15 +77,29 @@ for (const [label, plugin, service, startupKey] of customRuntimes) {
   if (!service.includes('FOREGROUND_SERVICE_TYPE_LOCATION')) {
     throw new Error(`APOIS Parceiro: ${label} não usa foregroundServiceType location.`);
   }
-  if (!plugin.includes('public void session(PluginCall call)') || !plugin.includes('apois_partner_location_session')) {
-    throw new Error(`APOIS Parceiro: ${label} não expõe a sessão renovada do serviço para reconciliação da WebView.`);
+  for (const marker of [
+    'public void session(PluginCall call)',
+    'public void updateSession(PluginCall call)',
+    'result.put("updated", true)',
+    'apois_partner_location_session',
+  ]) {
+    if (!plugin.includes(marker)) {
+      throw new Error(`APOIS Parceiro: ${label} não permite reconciliar/atualizar a sessão nativa (${marker}).`);
+    }
   }
-  if (!service.includes('private void persistSessionTokens()') || !service.includes('persistSessionTokens();')) {
-    throw new Error(`APOIS Parceiro: ${label} não persiste refresh_token rotacionado pelo serviço nativo.`);
+  for (const marker of [
+    'private void persistSessionTokens()',
+    'private void loadPersistedSessionTokens()',
+    'loadPersistedSessionTokens();',
+    'persistSessionTokens();',
+  ]) {
+    if (!service.includes(marker)) {
+      throw new Error(`APOIS Parceiro: ${label} não recarrega/persiste tokens atuais antes das RPCs (${marker}).`);
+    }
   }
   if (!plugin.includes('remove(SESSION_ACCESS_KEY)') || !plugin.includes('remove(SESSION_REFRESH_KEY)')) {
     throw new Error(`APOIS Parceiro: ${label} mantém tokens nativos depois do stop explícito.`);
   }
 }
 
-console.log('[OK] APOIS Parceiro: plugins Capacitor/customizados registrados; GPS confirma start real com retry e limpa sessão nativa no stop explícito.');
+console.log('[OK] APOIS Parceiro: plugins nativos registrados; GPS confirma start com retry, atualiza sessão sem reiniciar FGS e limpa credenciais no stop.');
