@@ -94,4 +94,6 @@ if (moduleName === 'entregas') {
     if (!bottomNav.includes(marker)) throw new Error(`[FAIL] Entregas: rodapé mobile regrediu (${marker})`);
   }
   console.log('[OK] Entregas: rodapé fixo permanece grande, legível e fora da barra de gestos do Android.');
+
+  await import('./harden-entregas-superapp-cart-mobile-ui.mjs');
 }
