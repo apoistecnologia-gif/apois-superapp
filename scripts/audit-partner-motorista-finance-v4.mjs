@@ -32,10 +32,11 @@ function forbidAll(path, markers, label) {
 
 requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
   "import './harden-partner-motorista-direct-earnings.mjs';",
-  'case "cash":',
+  "import './harden-partner-motorista-release-surface.mjs';",
   'case "credit":',
+  'case "credit_card":',
   'return "Cartão";',
-], 'política financeira do Motorista aplica hardening de ganhos diretos');
+], 'política financeira do Motorista aplica ganhos diretos e normaliza cartão');
 
 requireAll('scripts/harden-partner-motorista-direct-earnings.mjs', [
   'PartnerDirectEarningsRedirect',
@@ -45,6 +46,12 @@ requireAll('scripts/harden-partner-motorista-direct-earnings.mjs', [
   'false ? (',
   'sem saldo custodial da APOIS',
 ], 'carteira legada é desviada e ganhos exibem recebimento direto sem saque manual');
+
+requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
+  'requestDriverWithdrawal(_amountCents: number)',
+  'Saque manual não está disponível no APOIS Parceiro',
+  "next.includes('request-driver-payout')",
+], 'runtime de saque é neutralizado mesmo se uma tela legada tentar chamá-lo');
 
 forbidAll('scripts/harden-partner-motorista-direct-earnings.mjs', [
   "replaceAll('Solicitar saque', 'Solicitar saque')",
