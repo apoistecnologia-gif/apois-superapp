@@ -92,6 +92,8 @@ requireMarker(driverBundle, 'Recebimento direto ao motorista', 'Motorista explic
 requireMarker(driverBundle, '100% do valor da corrida', 'Motorista preserva valor integral da corrida');
 requireMarker(driverBundle, 'backButton', 'Motorista leva proteção do botão Voltar para o bundle final');
 requireMarker(driverBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Motorista não permite sair do módulo enquanto permanece ONLINE');
+requireMarker(driverBundle, 'background_location_unavailable', 'Motorista leva fail-safe do Foreground Service ao bundle final');
+requireMarker(driverBundle, 'Modo online desativado porque a localização em segundo plano não iniciou', 'Motorista informa falha de background e volta para OFFLINE');
 forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque legado ao APK');
 forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
@@ -109,4 +111,4 @@ const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 
-console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, back guards e GPS de background do Entregador.');
+console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, back guards e fail-safe de GPS em background.');
