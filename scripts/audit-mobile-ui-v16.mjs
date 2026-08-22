@@ -48,10 +48,21 @@ requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   'Perfil remove atalhos duplicados do rodapé',
 ], 'Módulos Cliente mantêm rodapés tocáveis, cabeçalhos legíveis e removem atalhos duplicados do Perfil');
 
+requireAll('scripts/harden-entregas-superapp-secondary-mobile-ui.mjs', [
+  'addProfileBottomNav',
+  '<AppBottomNav activeTab="perfil" />',
+  'Forma disponível',
+  'O Pix é apresentado automaticamente',
+  '!source.includes(\'Cartões salvos\')',
+  'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]',
+  'pb-32',
+], 'Entregas mantém rodapé também em Pagamentos/Notificações/Legal/Ajuda e remove cartão inexistente');
+
 requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs corridas',
   'node scripts/harden-superapp-module-mobile-ui.mjs entregas',
-], 'Hardening visual roda antes da compilação real de Corridas e Entregas');
+  'node scripts/harden-entregas-superapp-secondary-mobile-ui.mjs',
+], 'Hardening visual principal e secundário roda antes da compilação real de Corridas e Entregas');
 
 requireAll('superapp/shell/build.mjs', [
   "import '../../scripts/harden-superapp-shell-mobile-ui.mjs';",
@@ -75,5 +86,5 @@ requireAll('scripts/fix-corridas-superapp-ui.mjs', [
   'aria-label="Navegação inferior"',
 ], 'Corridas mantém rodapé nas telas comuns e oculta apenas jornada operacional');
 
-if (!failed) console.log('[OK] Mobile UI v16: seletores e módulos unificados têm safe-area, rolagem, logomarca sem corte, navegação inferior consistente e menos duplicidade visual.');
+if (!failed) console.log('[OK] Mobile UI v16: seletores e módulos unificados têm safe-area, rolagem, logomarca sem corte, navegação inferior consistente e opções visíveis apenas quando realmente disponíveis.');
 process.exit(failed ? 1 : 0);
