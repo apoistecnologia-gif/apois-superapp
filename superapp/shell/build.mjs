@@ -1,4 +1,5 @@
 import '../../scripts/harden-superapp-shell-auth.mjs';
+import '../../scripts/harden-superapp-shell-mobile-ui.mjs';
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
