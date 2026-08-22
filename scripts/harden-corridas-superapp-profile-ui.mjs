@@ -1,3 +1,4 @@
+import './harden-corridas-superapp-legal-profile-ui.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -15,12 +16,14 @@ source = source
 for (const forbidden of [
   'title="Carteira e pagamentos"',
   'title="Central de notificações"',
+  'title="Termos e privacidade"',
   'MainHamburgerMenu',
 ]) {
-  if (source.includes(forbidden)) throw new Error(`[FAIL] Passageiro: navegação duplicada permaneceu no Perfil (${forbidden})`);
+  if (source.includes(forbidden)) throw new Error(`[FAIL] Passageiro: navegação duplicada/ambígua permaneceu no Perfil (${forbidden})`);
 }
 for (const marker of [
-  'title="Termos e privacidade"',
+  'title="Termos de Uso"',
+  'title="Política de Privacidade"',
   'Suporte e informações',
   'h-11 w-11',
   'line-clamp-2 text-[11px] leading-4',
@@ -30,4 +33,4 @@ for (const marker of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Passageiro: Perfil sem atalhos duplicados, botões tocáveis e diálogos adaptados à viewport móvel.');
+console.log('[OK] Passageiro: Perfil sem atalhos duplicados, documentos legais acessíveis, botões tocáveis e diálogos adaptados à viewport móvel.');
