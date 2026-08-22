@@ -1,0 +1,67 @@
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const root = process.cwd();
+const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/entregas';
+const srcRoot = resolve(root, workspace, 'src');
+
+if (!existsSync(srcRoot)) throw new Error(`Brand sweep: workspace ausente ${srcRoot}`);
+
+const textualExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.css', '.mjs']);
+const legacyPurpleHex = ['#6A1B9A', '#6a1b9a'];
+const legacyTealHex = ['#35A9C9', '#35a9c9', '#1F7894', '#1f7894'];
+
+function ext(path) {
+  const match = path.match(/\.[^.]+$/);
+  return match?.[0] ?? '';
+}
+
+function walk(directory, files = []) {
+  for (const name of readdirSync(directory)) {
+    const path = resolve(directory, name);
+    const info = statSync(path);
+    if (info.isDirectory()) walk(path, files);
+    else if (textualExtensions.has(ext(path))) files.push(path);
+  }
+  return files;
+}
+
+let changedFiles = 0;
+for (const path of walk(srcRoot)) {
+  const before = readFileSync(path, 'utf8');
+  let after = before;
+
+  // Roxo/ciano eram cores de marca antigas, nunca estados funcionais. Podem ser
+  // convertidos globalmente dentro dos bundles Cliente/Entregador.
+  for (const value of legacyPurpleHex) after = after.replaceAll(value, '#F6BE1C');
+  for (const value of legacyTealHex) after = after.replaceAll(value, '#F6BE1C');
+  after = after
+    .replaceAll('rgba(106,27,154,', 'rgba(246,190,28,')
+    .replaceAll('rgba(106, 27, 154,', 'rgba(246, 190, 28,')
+    .replaceAll('rgba(53,169,201,', 'rgba(246,190,28,')
+    .replaceAll('rgba(31,120,148,', 'rgba(200,138,8,');
+
+  // Mantemos verde para sucesso/online. Apenas nomes de constante de marca
+  // legados são normalizados quando existirem.
+  after = after
+    .replace('const BRAND_GREEN = "#39B54A";\nconst APOIS_GOLD = "#F6BE1C";', 'const APOIS_GOLD = "#F6BE1C";')
+    .replace('const BRAND_GREEN = "#39B54A";\n', '');
+
+  if (after !== before) {
+    writeFileSync(path, after, 'utf8');
+    changedFiles += 1;
+  }
+}
+
+const leftovers = [];
+for (const path of walk(srcRoot)) {
+  const source = readFileSync(path, 'utf8');
+  for (const marker of [...legacyPurpleHex, ...legacyTealHex, 'rgba(106,27,154,', 'rgba(106, 27, 154,']) {
+    if (source.includes(marker)) leftovers.push(`${path}: ${marker}`);
+  }
+}
+if (leftovers.length) {
+  throw new Error(`Brand sweep: identidade antiga ainda presente:\n${leftovers.slice(0, 40).join('\n')}`);
+}
+
+console.log(`[OK] Brand sweep ${workspace}: ${changedFiles} arquivo(s) normalizado(s); roxo/ciano de marca removidos. Verde funcional preservado.`);
