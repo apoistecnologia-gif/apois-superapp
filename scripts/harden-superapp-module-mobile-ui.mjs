@@ -50,9 +50,30 @@ if (moduleName === 'entregas') {
     return next;
   }, 'Entregas: cabeçalho da Home desce para área útil e categorias ficam mais legíveis');
 
+  patch('.work/entregas/src/routes/perfil/index.tsx', (source) => {
+    let next = source;
+    next = next.replace(
+      'pt-[max(env(safe-area-inset-top),1.25rem)]',
+      'pt-[max(env(safe-area-inset-top),0.75rem)]',
+    );
+    next = next.replace('      { icon: ClipboardList, label: "Meus pedidos", path: "/pedidos" },\n', '');
+    next = next.replace('      { icon: Heart, label: "Favoritos", path: "/favoritos" },\n', '');
+    next = next.replace('  ClipboardList,\n', '');
+    next = next.replace('  Heart,\n', '');
+    return next;
+  }, 'Entregas: Perfil remove atalhos duplicados do rodapé e alinha o cabeçalho');
+
   const home = readFileSync(resolve('.work/entregas/src/routes/inicio.tsx'), 'utf8');
   for (const marker of ['pt-[max(env(safe-area-inset-top),0.75rem)]', 'pb-2.5', 'text-xs font-semibold text-zinc-300']) {
     if (!home.includes(marker)) throw new Error(`[FAIL] Entregas: ajuste visual da Home incompleto (${marker})`);
+  }
+
+  const profile = readFileSync(resolve('.work/entregas/src/routes/perfil/index.tsx'), 'utf8');
+  if (profile.includes('label: "Meus pedidos"') || profile.includes('label: "Favoritos"')) {
+    throw new Error('[FAIL] Entregas: Perfil ainda repete atalhos já existentes no rodapé.');
+  }
+  if (!profile.includes('pt-[max(env(safe-area-inset-top),0.75rem)]')) {
+    throw new Error('[FAIL] Entregas: cabeçalho do Perfil ainda está excessivamente afastado do topo útil.');
   }
 
   const bottomNav = readFileSync(resolve('.work/entregas/src/components/AppBottomNav.tsx'), 'utf8');
