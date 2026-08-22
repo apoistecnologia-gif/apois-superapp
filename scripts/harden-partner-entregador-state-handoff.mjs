@@ -36,6 +36,7 @@ if (source.includes(oldDone)) source = source.replace(oldDone, newDone);
 
 for (const marker of [
   'const activeJobIdentity = activeJob?.id ?? null;',
+  'setPin("");',
   'if (activeJobIdentity) setOffers([]);',
   'setSupportDescription("");',
   'if (courier?.id) void loadCourierOperations(courier.id);',
