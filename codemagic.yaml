@@ -86,7 +86,10 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           cd superapp/shell
-          bun install --frozen-lockfile
+          # O shell Cliente também não possui bun.lock próprio. As versões diretas
+          # do Capacitor estão fixadas no package.json; o lockfile dos módulos
+          # protegidos continua sendo respeitado separadamente.
+          bun install
           rm -rf android
           bunx cap add android
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
