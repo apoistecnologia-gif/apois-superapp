@@ -66,15 +66,49 @@ patch(
 
 patch(
   'src/routes/courier.tsx',
-  (source) => source
-    .replaceAll(
+  (source) => {
+    let next = source.replaceAll(
       'className="grid min-h-dvh place-items-center bg-black p-5 text-white"',
       'className="grid min-h-dvh place-items-center bg-black px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-[max(env(safe-area-inset-top),1.25rem)] text-white"',
-    ),
+    );
+    next = next.replace(
+      'className="sticky top-0 z-40 grid min-h-20 grid-cols-[3rem_1fr_3rem] items-center border-b border-primary/10 bg-black/92 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl"',
+      'className="sticky top-0 z-40 grid min-h-[5.25rem] grid-cols-[3rem_1fr_3rem] items-center border-b border-primary/10 bg-black/92 px-4 pb-2 pt-[max(env(safe-area-inset-top),0.65rem)] backdrop-blur-2xl"',
+    );
+    next = next.replace(
+      '          onClick={() => setProfileOpen(true)}\n          aria-label="Abrir perfil"',
+      '          onClick={() => !activeJob && setProfileOpen(true)}\n          disabled={Boolean(activeJob)}\n          aria-label={activeJob ? "Perfil indisponível durante entrega ativa" : "Abrir perfil"}',
+    );
+    next = next.replace(
+      'className="relative grid h-11 w-11 place-items-center justify-self-end rounded-full border border-zinc-800 bg-zinc-950 text-zinc-300 shadow-[0_8px_24px_rgba(0,0,0,0.4)] active:scale-95"',
+      'className="relative grid h-11 w-11 place-items-center justify-self-end rounded-full border border-zinc-800 bg-zinc-950 text-zinc-300 shadow-[0_8px_24px_rgba(0,0,0,0.4)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"',
+    );
+    next = next.replace(
+      '      <CourierBottomNav\n        active="home"',
+      '      {!activeJob ? (\n        <CourierBottomNav\n        active="home"',
+    );
+    next = next.replace(
+      '        onProfile={() => setProfileOpen(true)}\n      />\n    </div>',
+      '        onProfile={() => setProfileOpen(true)}\n        />\n      ) : null}\n    </div>',
+    );
+    next = next.replace(
+      'pb-[calc(7.7rem+env(safe-area-inset-bottom))]',
+      'pb-[calc(7.7rem+env(safe-area-inset-bottom))] data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+    );
+    next = next.replace(
+      '<main className="mx-auto w-full max-w-lg space-y-4 overflow-x-hidden p-4 pb-[calc(7.7rem+env(safe-area-inset-bottom))] data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]">',
+      '<main data-active-job={activeJob ? "true" : "false"} className="mx-auto w-full max-w-lg space-y-4 overflow-x-hidden p-4 pb-[calc(7.7rem+env(safe-area-inset-bottom))] data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]">',
+    );
+    return next;
+  },
   (source) =>
     source.includes('pb-[max(env(safe-area-inset-bottom),1.25rem)]') &&
-    source.includes('pt-[max(env(safe-area-inset-top),1.25rem)]'),
-  'entregador: loading e erro respeitam áreas seguras do Android',
+    source.includes('pt-[max(env(safe-area-inset-top),1.25rem)]') &&
+    source.includes('pt-[max(env(safe-area-inset-top),0.65rem)]') &&
+    source.includes('disabled={Boolean(activeJob)}') &&
+    source.includes('{!activeJob ? (') &&
+    source.includes('data-active-job={activeJob ? "true" : "false"}'),
+  'entregador: tela principal respeita safe-area e não abre painéis/rodapé durante entrega ativa',
 );
 
-console.log(`[OK] ergonomia, nomenclatura e safe-area do Entregador Parceiro endurecidas em ${workspace}`);
+console.log(`[OK] ergonomia, foco operacional, nomenclatura e safe-area do Entregador Parceiro endurecidas em ${workspace}`);
