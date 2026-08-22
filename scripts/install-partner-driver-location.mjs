@@ -33,13 +33,84 @@ function adaptJava(source) {
     );
 }
 
-const plugin = adaptJava(readFileSync(sourcePlugin, 'utf8'));
-const service = adaptJava(readFileSync(sourceService, 'utf8'));
+let plugin = adaptJava(readFileSync(sourcePlugin, 'utf8'));
+let service = adaptJava(readFileSync(sourceService, 'utf8'));
+
+// O plugin protegido original resolvia started=true imediatamente após pedir
+// startForegroundService(). Isso não prova que o Service conseguiu entrar em
+// foreground nem registrar LocationUpdates. O host Parceiro exige ACK real do
+// próprio Service antes de dizer ao JS que pode permanecer ONLINE.
+plugin = plugin
+  .replace(
+    'import android.content.Intent;\n',
+    'import android.content.Intent;\nimport android.content.SharedPreferences;\nimport android.os.Handler;\nimport android.os.Looper;\n',
+  )
+  .replace(
+    'public class DriverLocationPlugin extends Plugin {',
+    'public class DriverLocationPlugin extends Plugin {\n    private static final String STARTUP_PREFS = "apois_partner_location_service_status";\n    private static final String STARTUP_KEY = "driver_running";\n    private static final long STARTUP_ACK_DELAY_MS = 900L;',
+  )
+  .replace(
+    `        ContextCompat.startForegroundService(getContext(), intent);\n\n        JSObject result = new JSObject();\n        result.put("started", true);\n        call.resolve(result);`,
+    `        SharedPreferences startup = getContext().getSharedPreferences(STARTUP_PREFS, android.content.Context.MODE_PRIVATE);\n        startup.edit().putBoolean(STARTUP_KEY, false).commit();\n        try {\n            ContextCompat.startForegroundService(getContext(), intent);\n        } catch (Exception startError) {\n            call.reject("Não foi possível iniciar a localização do motorista em segundo plano.", startError);\n            return;\n        }\n\n        new Handler(Looper.getMainLooper()).postDelayed(() -> {\n            boolean started = startup.getBoolean(STARTUP_KEY, false);\n            if (!started) {\n                call.reject("O serviço de localização do motorista não confirmou a inicialização.");\n                return;\n            }\n            JSObject result = new JSObject();\n            result.put("started", true);\n            call.resolve(result);\n        }, STARTUP_ACK_DELAY_MS);`,
+  );
+
+service = service
+  .replace(
+    'public class DriverLocationService extends Service {',
+    'public class DriverLocationService extends Service {\n    private static final String STARTUP_PREFS = "apois_partner_location_service_status";\n    private static final String STARTUP_KEY = "driver_running";',
+  )
+  .replace(
+    `        if (supabaseUrl.isEmpty() || publishableKey.isEmpty() || accessToken.isEmpty()) {\n            stopSelf();`,
+    `        if (supabaseUrl.isEmpty() || publishableKey.isEmpty() || accessToken.isEmpty()) {\n            setStartupConfirmed(false);\n            stopSelf();`,
+  )
+  .replace(
+    '    private void startLocationUpdates() {\n        if (tracking) return;',
+    '    private void startLocationUpdates() {\n        if (tracking) { setStartupConfirmed(true); return; }',
+  )
+  .replace(
+    `        if (!fine && !coarse) {\n            stopSelf();`,
+    `        if (!fine && !coarse) {\n            setStartupConfirmed(false);\n            stopSelf();`,
+  )
+  .replace(
+    `            fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper());\n            mainHandler.removeCallbacks(heartbeat);`,
+    `            fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper());\n            setStartupConfirmed(true);\n            mainHandler.removeCallbacks(heartbeat);`,
+  )
+  .replace(
+    `        } catch (SecurityException securityException) {\n            tracking = false;\n            stopSelf();`,
+    `        } catch (SecurityException securityException) {\n            tracking = false;\n            setStartupConfirmed(false);\n            stopSelf();`,
+  )
+  .replace(
+    '    private void clearPendingLocation() {',
+    '    private void setStartupConfirmed(boolean running) {\n        getSharedPreferences(STARTUP_PREFS, MODE_PRIVATE).edit().putBoolean(STARTUP_KEY, running).commit();\n    }\n\n    private void clearPendingLocation() {',
+  )
+  .replace(
+    '    private void stopFromDriverAction() {\n        tracking = false;',
+    '    private void stopFromDriverAction() {\n        setStartupConfirmed(false);\n        tracking = false;',
+  )
+  .replace(
+    '    @Override\n    public void onDestroy() {',
+    '    @Override\n    public void onDestroy() {\n        setStartupConfirmed(false);',
+  );
+
 if (!plugin.includes('@CapacitorPlugin(name = "DriverLocation")')) {
   throw new Error('APOIS Parceiro: plugin DriverLocation protegido não foi reconhecido.');
 }
-if (!service.includes('FOREGROUND_SERVICE_TYPE_LOCATION') || !service.includes('driver_set_presence')) {
-  throw new Error('APOIS Parceiro: serviço protegido de localização do Motorista está incompleto.');
+for (const marker of [
+  'STARTUP_ACK_DELAY_MS = 900L',
+  'startup.edit().putBoolean(STARTUP_KEY, false).commit()',
+  'boolean started = startup.getBoolean(STARTUP_KEY, false)',
+  'O serviço de localização do motorista não confirmou a inicialização.',
+]) {
+  if (!plugin.includes(marker)) throw new Error(`APOIS Parceiro: ACK real do DriverLocationPlugin incompleto (${marker}).`);
+}
+for (const marker of [
+  'FOREGROUND_SERVICE_TYPE_LOCATION',
+  'driver_set_presence',
+  'private void setStartupConfirmed(boolean running)',
+  'setStartupConfirmed(true);',
+  'setStartupConfirmed(false);',
+]) {
+  if (!service.includes(marker)) throw new Error(`APOIS Parceiro: serviço protegido de localização do Motorista está incompleto (${marker}).`);
 }
 if (!service.includes('br.com.apois.parceiro://module/motorista')) {
   throw new Error('APOIS Parceiro: notificação persistente do Motorista não retorna ao módulo correto.');
@@ -119,4 +190,4 @@ if (!existsSync(resolve(resDrawable, 'ic_stat_apois_notification.xml'))) {
   throw new Error('APOIS Parceiro: ícone da notificação de localização ausente.');
 }
 
-console.log('[OK] APOIS Parceiro: DriverLocation nativo instalado; notificação persistente retorna ao módulo Motorista, com heartbeat Supabase e ícone APOIS.');
+console.log('[OK] APOIS Parceiro: DriverLocation só confirma started após ACK real do Service; notificação persistente retorna ao Motorista, com heartbeat Supabase e ícone APOIS.');
