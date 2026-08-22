@@ -90,12 +90,18 @@ const driverBundle = readTextTree(resolve(dist, 'modules/motorista'));
 requireMarker(driverBundle, 'Ganhos', 'Motorista exibe área de Ganhos');
 requireMarker(driverBundle, 'Recebimento direto ao motorista', 'Motorista explica recebimento direto');
 requireMarker(driverBundle, '100% do valor da corrida', 'Motorista preserva valor integral da corrida');
+requireMarker(driverBundle, 'backButton', 'Motorista leva proteção do botão Voltar para o bundle final');
+requireMarker(driverBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Motorista não permite sair do módulo enquanto permanece ONLINE');
 forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque legado ao APK');
 forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
 
 const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
 requireMarker(courierBundle, 'Entregas', 'Entregador usa nomenclatura correta de Entregas');
+requireMarker(courierBundle, 'CourierLocation', 'Entregador leva ponte para Foreground Service nativo ao bundle final');
+requireMarker(courierBundle, 'Não foi possível ativar a localização em segundo plano', 'Entregador falha fechado se o serviço de background não iniciar');
+requireMarker(courierBundle, 'backButton', 'Entregador leva proteção do botão Voltar para o bundle final');
+requireMarker(courierBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Entregador não permite sair do módulo enquanto permanece ONLINE');
 forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saque legado ao APK');
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
 
@@ -103,4 +109,4 @@ const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 
-console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador');
+console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, back guards e GPS de background do Entregador.');
