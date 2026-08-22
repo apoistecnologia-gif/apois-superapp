@@ -7,9 +7,11 @@ const path = resolve(root, workspace, 'src/components/CourierPremiumViews.tsx');
 let source = readFileSync(path, 'utf8');
 
 source = source
-  .replace('Saldo disponível', 'Ganhos registrados')
-  .replace('Saldo total', 'Total registrado')
-  .replace('Reservado', 'Em processamento')
+  .replaceAll('Saldo disponível', 'Ganhos registrados')
+  .replaceAll('Saldo total', 'Total registrado')
+  .replaceAll('Reservado', 'Em processamento')
+  .replaceAll('Histórico de saques', 'Histórico de repasses')
+  .replaceAll('Nenhum saque solicitado ainda.', 'Nenhum repasse registrado ainda.')
   .replace(
     'Ela será criada automaticamente após a primeira entrega liquidada.',
     'Seus ganhos serão registrados automaticamente após a primeira entrega concluída.',
@@ -20,7 +22,7 @@ const startMarker = `            <section className="rounded-[1.6rem] border bor
                 <CircleDollarSign className="h-5 w-5 text-primary" />
                 <h2 className="font-black">Recebimento via PIX</h2>`;
 const endMarker = `            <FinanceList
-              title="Histórico de saques"`;
+              title="Histórico de repasses"`;
 
 if (!source.includes('Recebimento direto em homologação')) {
   const start = source.indexOf(startMarker);
@@ -49,6 +51,8 @@ for (const marker of [
   'Ganhos registrados',
   'Total registrado',
   'Em processamento',
+  'Histórico de repasses',
+  'Nenhum repasse registrado ainda.',
   'Recebimento direto em homologação',
   'A APOIS não libera saque manual',
   'Nenhuma chave PIX ou valor de saque é solicitado nesta fase.',
@@ -62,6 +66,9 @@ for (const forbidden of [
   '<h2 className="font-black">Recebimento via PIX</h2>',
   '<h2 className="font-black">Solicitar saque</h2>',
   '>Salvar chave PIX<',
+  'Histórico de saques',
+  'Nenhum saque solicitado ainda.',
+  'Saldo disponível',
 ]) {
   if (source.includes(forbidden)) {
     throw new Error(`[FAIL] Entregador Parceiro: UI financeira legada permaneceu (${forbidden}).`);
@@ -69,4 +76,4 @@ for (const forbidden of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: carteira virou registro de ganhos; chave PIX e saque manual ficam ocultos até o marketplace direto estar homologado.');
+console.log('[OK] Entregador Parceiro: carteira virou registro de ganhos; chave PIX, saque manual e linguagem de saldo/saque ficam ocultos até o marketplace direto estar homologado.');
