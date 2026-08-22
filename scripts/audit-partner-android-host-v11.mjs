@@ -72,16 +72,27 @@ requireAll('scripts/harden-partner-location-notification-routing.mjs', [
   'br.com.apois.parceiro://module/',
 ], 'Notificações persistentes retornam diretamente ao módulo operacional');
 
+requireAll('scripts/harden-partner-location-startup-ack.mjs', [
+  'driver_running',
+  'courier_running',
+  'STARTUP_ACK_DELAY_MS = 900L',
+  'startup.getBoolean(STARTUP_KEY, false)',
+  'setStartupConfirmed(true);',
+], 'Host exige confirmação real do Foreground Service antes de considerar GPS de background iniciado');
+
 requireAll('scripts/install-partner-launcher.mjs', [
   "import './harden-partner-android-security.mjs';",
   "import './configure-partner-firebase.mjs';",
   "import './install-partner-driver-location.mjs';",
   "import './install-partner-courier-location.mjs';",
+  "import './harden-partner-location-startup-ack.mjs';",
   "import './harden-partner-location-notification-routing.mjs';",
   "import './verify-partner-native-plugins.mjs';",
   'br.com.apois.parceiro://module/motorista',
   'br.com.apois.parceiro://module/entregador',
-], 'Launcher encadeia segurança, Firebase, GPS, roteamento e verificação nativa');
+  'driver_running',
+  'courier_running',
+], 'Launcher encadeia segurança, Firebase, GPS, ACK real, roteamento e verificação nativa');
 
 requireAll('superapp/partner-shell/package.json', [
   '"@capacitor/android": "8.5.0"',
@@ -115,5 +126,5 @@ if (!partnerWorkflow) {
   }
 }
 
-if (!failed) console.log('[OK] Partner Android host v11: pré-release protege Manifest/API 36, callbacks, plugins, GPS/notificações, splash compilável e instalação do host no Codemagic.');
+if (!failed) console.log('[OK] Partner Android host v11: pré-release protege Manifest/API 36, callbacks, plugins, GPS com ACK real, notificações, splash compilável e instalação do host no Codemagic.');
 process.exit(failed ? 1 : 0);
