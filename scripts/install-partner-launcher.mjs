@@ -3,6 +3,7 @@ import './harden-partner-android-security.mjs';
 import './configure-partner-firebase.mjs';
 import './install-partner-driver-location.mjs';
 import './install-partner-courier-location.mjs';
+import './harden-partner-location-notification-routing.mjs';
 import './verify-partner-native-plugins.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -71,9 +72,13 @@ if (manifest.includes('android:scheme="br.com.apois.app"') && manifest.includes(
 if (!existsSync(resolve('superapp/partner-shell/android/app/google-services.json'))) throw new Error('Firebase do APOIS Parceiro não foi materializado.');
 if (!existsSync(driverLocationPluginPath) || !existsSync(driverLocationServicePath)) throw new Error('Runtime nativo de localização do Motorista não foi instalado.');
 if (!existsSync(courierLocationPluginPath) || !existsSync(courierLocationServicePath)) throw new Error('Runtime nativo de localização do Entregador não foi instalado.');
+const driverService = readFileSync(driverLocationServicePath, 'utf8');
+const courierService = readFileSync(courierLocationServicePath, 'utf8');
+if (!driverService.includes('br.com.apois.parceiro://module/motorista')) throw new Error('Notificação de GPS do Motorista não retorna ao módulo Motorista.');
+if (!courierService.includes('br.com.apois.parceiro://module/entregador')) throw new Error('Notificação de GPS do Entregador não retorna ao módulo Entregador.');
 const mainActivity = readFileSync(mainActivityPath, 'utf8');
 if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) throw new Error('DriverVoicePlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(DriverLocationPlugin.class)')) throw new Error('DriverLocationPlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(CourierLocationPlugin.class)')) throw new Error('CourierLocationPlugin não registrado no host Parceiro.');
 
-console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro após hardening Android, Firebase, Push/GPS Capacitor, DriverVoice, DriverLocation, CourierLocation e isolamento OAuth.');
+console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro; notificações de GPS retornam ao módulo operacional correto sem abrir o seletor.');
