@@ -42,6 +42,7 @@ requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
   "import './harden-partner-motorista-release-surface.mjs';",
   "import './harden-partner-motorista-native-utilities.mjs';",
   "import './harden-partner-motorista-session-hygiene.mjs';",
+  "import './harden-partner-motorista-navigation.mjs';",
 ], 'pipeline financeiro do Motorista carrega todas as proteções de release');
 
 requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
@@ -74,6 +75,12 @@ requireAll('scripts/harden-partner-motorista-session-hygiene.mjs', [
   'Sessão do Motorista encerrada.',
   "patch('src/routes/motorista.configuracoes.tsx'",
 ], 'logout do Motorista limpa registro Push do módulo e retorna ao seletor Parceiro');
+
+requireAll('scripts/harden-partner-motorista-navigation.mjs', [
+  'to: "/motorista/ganhos", label: "Ganhos"',
+  'Recebimentos das corridas',
+  "next.includes('to: \"/motorista/carteira\"')",
+], 'navegação do Motorista aponta para Ganhos e elimina carteira duplicada');
 
 const routeTreePath = 'sources/apois-corridas-motorista-admin/src/mobile-route-tree.motorista.ts';
 requireAll(routeTreePath, [
