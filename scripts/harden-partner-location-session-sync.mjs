@@ -16,11 +16,11 @@ function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
   const refreshKey = `${roleKey}_refresh_token`;
 
   if (!plugin.includes('SESSION_PREFS = "apois_partner_location_session"')) {
-    const startupConstant = `    private static final long STARTUP_ACK_DELAY_MS = 900L;`;
-    if (!plugin.includes(startupConstant)) throw new Error(`APOIS Parceiro: ${label} sem startup ACK antes da coordenação de sessão.`);
+    const startupConstant = /    private static final long STARTUP_ACK_DELAY_MS = \d+L;/;
+    if (!startupConstant.test(plugin)) throw new Error(`APOIS Parceiro: ${label} sem startup ACK antes da coordenação de sessão.`);
     plugin = plugin.replace(
       startupConstant,
-      `${startupConstant}\n    private static final String SESSION_PREFS = "apois_partner_location_session";\n    private static final String SESSION_ACCESS_KEY = "${accessKey}";\n    private static final String SESSION_REFRESH_KEY = "${refreshKey}";`,
+      (value) => `${value}\n    private static final String SESSION_PREFS = "apois_partner_location_session";\n    private static final String SESSION_ACCESS_KEY = "${accessKey}";\n    private static final String SESSION_REFRESH_KEY = "${refreshKey}";`,
     );
   }
 
@@ -41,6 +41,18 @@ function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
     if (!plugin.includes(stopAnchor)) throw new Error(`APOIS Parceiro: stop de ${label} não encontrado para expor sessão nativa.`);
     const method = `    @PluginMethod\n    public void session(PluginCall call) {\n        SharedPreferences prefs = getContext().getSharedPreferences(SESSION_PREFS, android.content.Context.MODE_PRIVATE);\n        JSObject result = new JSObject();\n        result.put("accessToken", prefs.getString(SESSION_ACCESS_KEY, ""));\n        result.put("refreshToken", prefs.getString(SESSION_REFRESH_KEY, ""));\n        call.resolve(result);\n    }\n\n`;
     plugin = plugin.replace(stopAnchor, `${method}${stopAnchor}`);
+  }
+
+  // Tokens são necessários enquanto o FGS está ativo (inclusive para recuperar
+  // rotação de refresh token após horas em background), mas não devem permanecer
+  // no SharedPreferences depois de um OFFLINE/stop explícito.
+  if (!plugin.includes('remove(SESSION_ACCESS_KEY)')) {
+    const stopIntentAnchor = `        Intent intent = new Intent(getContext(), ${className}Service.class);\n        intent.setAction(${className}Service.ACTION_STOP);`;
+    if (!plugin.includes(stopIntentAnchor)) throw new Error(`APOIS Parceiro: stop de ${label} não encontrado para limpar sessão nativa.`);
+    plugin = plugin.replace(
+      stopIntentAnchor,
+      `        getContext().getSharedPreferences(SESSION_PREFS, android.content.Context.MODE_PRIVATE)\n            .edit()\n            .remove(SESSION_ACCESS_KEY)\n            .remove(SESSION_REFRESH_KEY)\n            .commit();\n${stopIntentAnchor}`,
+    );
   }
 
   if (!service.includes('SESSION_PREFS = "apois_partner_location_session"')) {
@@ -81,8 +93,10 @@ function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
     'public void session(PluginCall call)',
     'putString(SESSION_ACCESS_KEY, accessToken)',
     'putString(SESSION_REFRESH_KEY, refreshToken)',
+    'remove(SESSION_ACCESS_KEY)',
+    'remove(SESSION_REFRESH_KEY)',
   ]) {
-    if (!plugin.includes(marker)) throw new Error(`APOIS Parceiro: plugin ${label} sem coordenação de sessão (${marker}).`);
+    if (!plugin.includes(marker)) throw new Error(`APOIS Parceiro: plugin ${label} sem coordenação/higiene de sessão (${marker}).`);
   }
   for (const marker of [
     'private void persistSessionTokens()',
@@ -112,4 +126,4 @@ patchRuntime({
   label: 'Entregador',
 });
 
-console.log('[OK] APOIS Parceiro: refresh token usado pelos serviços de GPS é persistido e pode ser reconciliado pela WebView da mesma conta, evitando sessão divergente após longos períodos em background.');
+console.log('[OK] APOIS Parceiro: sessão do GPS é reconciliada durante operação e removida do storage nativo no stop explícito.');
