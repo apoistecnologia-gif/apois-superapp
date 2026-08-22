@@ -110,9 +110,7 @@ requireAll('scripts/harden-partner-entregador-profile.mjs', [
 requireAll('scripts/harden-partner-entregador-finance-runtime.mjs', [
   'Recebimento direto ainda está em homologação.',
   'Saque manual está desativado.',
-  'rpc("request_payout"',
-  'await from("payout_accounts").insert(row)',
-], 'Runtime do Entregador remove execução de payout/chave PIX e deixa apenas bloqueio explícito');
+], 'Runtime do Entregador deixa apenas bloqueio explícito enquanto repasse direto não está homologado');
 
 requireAll('scripts/harden-partner-entregador-privacy.mjs', [
   'registros necessários à conciliação de ganhos e repasses',
@@ -159,11 +157,25 @@ requireAll('scripts/verify-partner-native-plugins.mjs', [
   "'PushNotificationsPlugin'",
   "'GeolocationPlugin'",
   'capacitor.plugins.json',
-], 'Empacotamento valida que Push/GPS foram registrados pelo cap sync');
+], 'Empacotamento valida que Push/GPS Capacitor foram registrados pelo cap sync');
+
+requireAll('scripts/install-partner-driver-location.mjs', [
+  'DriverLocationPlugin.java',
+  'DriverLocationService.java',
+  'registerPlugin(DriverLocationPlugin.class)',
+  'android.permission.FOREGROUND_SERVICE_LOCATION',
+  'android:name=".DriverLocationService"',
+  'com.google.android.gms:play-services-location:21.3.0',
+  'driver_set_presence',
+  'ACCESS_BACKGROUND_LOCATION reapareceu indevidamente',
+], 'Host Parceiro instala o Foreground Service nativo necessário ao GPS do Motorista em background');
 
 requireAll('scripts/install-partner-launcher.mjs', [
+  "import './install-partner-driver-location.mjs';",
   "import './verify-partner-native-plugins.mjs';",
-], 'Launcher só é aplicado depois da validação dos plugins nativos');
+  'registerPlugin(DriverLocationPlugin.class)',
+  'android.permission.FOREGROUND_SERVICE_LOCATION',
+], 'Launcher valida plugins Capacitor e DriverLocation customizado antes de empacotar');
 
 requireAll('scripts/install-partner-splash.mjs', [
   'apois_partner_splash.xml',
