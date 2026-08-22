@@ -8,6 +8,7 @@ let source = readFileSync(path, 'utf8');
 
 source = source.replace('  Bell, Info, KeyRound, Languages, LifeBuoy, Loader2,\n', '  Bell, Info, LifeBuoy, Loader2,\n');
 source = source.replace('  LockKeyhole, LogOut, MapPin, Moon, Navigation, Palette,\n', '  LogOut, MapPin, Moon, Navigation, Palette,\n');
+source = source.replace('  Save, Settings as SettingsIcon, Shield, ShieldCheck, Smartphone,\n', '  Save, Settings as SettingsIcon, ShieldCheck, Smartphone,\n');
 source = source.replace('  Sun, Trash2, User, Vibrate, Volume2, FileText, Fingerprint,\n', '  Sun, Trash2, User, Vibrate, Volume2, FileText,\n');
 
 source = source.replace(
@@ -32,6 +33,7 @@ for (const forbidden of [
   'Biometria em breve.',
   'PIN em breve.',
   'aria-label="Idioma preferido"',
+  'SettingsLinkRow icon={Shield} title="Sessões ativas"',
 ]) {
   if (source.includes(forbidden)) throw new Error(`[FAIL] Motorista Parceiro: configuração incompleta permaneceu (${forbidden})`);
 }
@@ -44,4 +46,4 @@ if (!source.includes('Sair de todos os dispositivos')) {
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Motorista Parceiro: configurações removem recursos falsos/em breve, escondem idioma sem i18n aplicada e corrigem o link de Segurança.');
+console.log('[OK] Motorista Parceiro: configurações removem recursos falsos/em breve, escondem idioma sem i18n aplicada, limpam imports mortos e corrigem o link de Segurança.');
