@@ -8,6 +8,7 @@ import './harden-partner-entregador-touch-safearea.mjs';
 import './harden-partner-entregador-finance.mjs';
 import './harden-partner-entregador-operation-states.mjs';
 import './harden-partner-entregador-action-timeouts.mjs';
+import './harden-partner-entregador-state-handoff.mjs';
 import './harden-partner-entregador-gps-resume.mjs';
 import './harden-partner-entregador-quiet-refresh.mjs';
 import './harden-partner-entregador-push-runtime.mjs';
@@ -35,9 +36,6 @@ source = source.replaceAll('{browserKey && mapId\n            ? "Aguardando o GP
 source = source.replaceAll('browserKey && mapId ? (', 'browserKey ? (');
 source = source.replaceAll('shadow-[0_8px_22px_rgba(106,27,154,0.24)]', 'shadow-[0_8px_22px_rgba(246,190,28,0.20)]');
 
-// O mapa de espera não deve ser controlado pela posição GPS a cada render.
-// Com `center`, qualquer atualização de localização puxava a câmera de volta e
-// impedia o entregador de explorar o mapa. O botão de recentralizar já existe.
 source = source.replace(
   '              center={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              zoom={14}',
   '              defaultCenter={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              defaultZoom={14}',
@@ -60,4 +58,4 @@ if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.ln
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: restauração em segundo plano, GPS rearmado no retorno, refresh silencioso preserva a entrega, Push isolado por produto, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ações sem spinner infinito, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
+console.log('[OK] Entregador Parceiro: restauração em segundo plano, GPS rearmado no retorno, refresh silencioso preserva a entrega, Push isolado por produto, handoff limpa estado antigo, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ações sem spinner infinito, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
