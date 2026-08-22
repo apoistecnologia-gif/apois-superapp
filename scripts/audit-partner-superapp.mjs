@@ -69,6 +69,23 @@ forbidAll('scripts/configure-partner-android.mjs', [
   'if (!manifest.includes(\'android:scheme="br.com.apois.app"\'))',
 ], 'Parceiro não solicita permissões desnecessárias nem recria callback Mercado Pago do app cliente');
 
+requireAll('scripts/install-partner-driver-location.mjs', [
+  'sources/apois-corridas-motorista-admin/android-motorista',
+  'DriverLocationPlugin.java',
+  'DriverLocationService.java',
+  'registerPlugin(DriverLocationPlugin.class)',
+  'android.permission.FOREGROUND_SERVICE',
+  'android.permission.FOREGROUND_SERVICE_LOCATION',
+  'android:name=".DriverLocationService"',
+  'android:foregroundServiceType="location"',
+  'com.google.android.gms:play-services-location:21.3.0',
+  'ic_stat_apois_notification.xml',
+  'driver_set_presence',
+], 'Host Android Parceiro incorpora o serviço nativo real que mantém presença do Motorista em background');
+forbidAll('scripts/install-partner-driver-location.mjs', [
+  "ensurePermission('android.permission.ACCESS_BACKGROUND_LOCATION')",
+], 'DriverLocation do Parceiro não introduz permissão Android de localização em background desnecessária');
+
 requireAll('superapp/partner-shell/capacitor.config.ts', [
   "appId: 'br.com.apois.parceiro'",
   "style: 'LIGHT'",
@@ -134,8 +151,11 @@ requireAll('scripts/install-partner-launcher.mjs', [
   "import './harden-partner-mercadopago-callback.mjs';",
   "import './harden-partner-android-security.mjs';",
   "import './configure-partner-firebase.mjs';",
+  "import './install-partner-driver-location.mjs';",
+  'registerPlugin(DriverLocationPlugin.class)',
+  'android.permission.FOREGROUND_SERVICE_LOCATION',
   'Firebase do APOIS Parceiro não foi materializado.',
-], 'launcher valida OAuth, segurança e Firebase');
+], 'launcher valida OAuth, segurança, Firebase e serviço de localização do Motorista');
 
 requireAll('superapp/partner-shell/index.html', [
   'PARTNER_PENDING_PUSH_KEY', 'consumePendingPartnerPush', 'pushNotificationActionPerformed',
