@@ -150,3 +150,7 @@ for (const marker of [
 
 writeFileSync(path, source, 'utf8');
 console.log('[OK] Motorista Parceiro: acompanhamento contínuo usa Geolocation nativo no Android e encerra o watcher ao ficar offline.');
+
+// Este hardener depende de stopDriverWatch criado acima, então precisa executar
+// depois da gravação do watcher, não como import ESM estático (que seria hoisted).
+await import('./harden-partner-motorista-background-failsafe.mjs');
