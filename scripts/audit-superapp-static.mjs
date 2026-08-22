@@ -77,8 +77,9 @@ requireText(
   [
     '"audit:static": "node scripts/audit-superapp-static.mjs"',
     'npm run audit:static && npm run',
+    'node scripts/verify-final-finance-policy.mjs',
   ],
-  'pipeline executa auditoria estática antes do build do Superapp',
+  'pipeline executa auditoria estática e guarda financeira final antes da liberação',
 );
 forbidText(
   'package.json',
@@ -180,14 +181,43 @@ requireText(
     'overflow-y-auto p-4 pb-32 pt-5',
     'const paymentMethod = "pix";',
     'return fallback;',
-    'new Set(["openpix", "asaas"]).has(configuredProvider)',
-    'O pagamento PIX está temporariamente indisponível.',
     'if (!payment?.qrCodeText)',
     'typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : ""',
     'Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.',
     'toast.error("Não foi possível atualizar sua senha. Tente novamente.")',
   ],
   'Entregas mantém auth/push isolados, token compartilhado, rodapé seguro, checkout PIX resiliente e erros públicos sanitizados',
+);
+
+requireText(
+  'scripts/harden-entregas-merchant-mercadopago-v2.mjs',
+  [
+    'merchant-payment-readiness',
+    'const pixFunction = "create-merchant-mercadopago-pix";',
+    'O PIX da venda é criado diretamente na sua conta Mercado Pago.',
+    'A APOIS não recebe o valor da venda e não cobra percentual por pedido.',
+  ],
+  'Entregas converte o checkout final para Mercado Pago direto do estabelecimento',
+);
+requireText(
+  'scripts/harden-entregas-delivery-readiness.mjs',
+  [
+    'get_delivery_checkout_readiness',
+    'deliveryFinancialReady',
+    'deliveryFinancialLoading',
+    'checkout desabilita Entrega antes do pedido quando repasse direto do entregador ainda não está homologado',
+  ],
+  'Entregas bloqueia delivery enquanto payout direto do entregador não estiver homologado',
+);
+requireText(
+  'scripts/verify-final-finance-policy.mjs',
+  [
+    'Corridas voltou a PIX-only',
+    'create-merchant-mercadopago-pix',
+    'caminho legado OpenPix/Asaas permaneceu no checkout final',
+    'get_delivery_checkout_readiness',
+  ],
+  'guarda final rejeita regressões financeiras antes da liberação',
 );
 
 requireText(
