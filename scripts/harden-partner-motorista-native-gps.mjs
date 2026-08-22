@@ -10,10 +10,22 @@ let source = readFileSync(path, 'utf8');
 const routerImport = 'import { createFileRoute, useNavigate } from "@tanstack/react-router";';
 if (!source.includes('import { Geolocation } from "@capacitor/geolocation";')) {
   if (!source.includes(routerImport)) throw new Error('Motorista Parceiro: import principal não encontrado.');
-  source = source.replace(
-    routerImport,
-    `${routerImport}\nimport { Geolocation } from "@capacitor/geolocation";\nimport { Capacitor } from "@capacitor/core";`,
-  );
+  const additions = ['import { Geolocation } from "@capacitor/geolocation";'];
+  // back-navigation roda antes deste hardener e já pode ter inserido Capacitor.
+  // Nunca duplique o mesmo binding ES module, pois isso quebra a compilação TS/Vite.
+  if (!source.includes('import { Capacitor } from "@capacitor/core";')) {
+    additions.push('import { Capacitor } from "@capacitor/core";');
+  }
+  source = source.replace(routerImport, `${routerImport}\n${additions.join('\n')}`);
+}
+if (!source.includes('import { Capacitor } from "@capacitor/core";')) {
+  if (!source.includes(routerImport)) throw new Error('Motorista Parceiro: import principal ausente para Capacitor.');
+  source = source.replace(routerImport, `${routerImport}\nimport { Capacitor } from "@capacitor/core";`);
+}
+
+const capacitorImportCount = (source.match(/import \{ Capacitor \} from "@capacitor\/core";/g) || []).length;
+if (capacitorImportCount !== 1) {
+  throw new Error(`[FAIL] Motorista Parceiro: esperado exatamente 1 import de Capacitor; encontrados ${capacitorImportCount}.`);
 }
 
 const gpsTypeAnchor = '  type GpsStatus = "prompt" | "loading" | "granted" | "denied" | "timeout" | "unavailable" | "error";';
@@ -199,4 +211,4 @@ for (const marker of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Motorista Parceiro: entrada ONLINE usa GPS nativo no Android e restaura presença após reabertura sem estado ONLINE fantasma.');
+console.log('[OK] Motorista Parceiro: entrada ONLINE usa GPS nativo no Android, sem import Capacitor duplicado, e restaura presença após reabertura sem estado ONLINE fantasma.');
