@@ -20,6 +20,7 @@ import './harden-partner-entregador-action-timeouts.mjs';
 import './harden-partner-entregador-state-handoff.mjs';
 import './harden-partner-entregador-gps-resume.mjs';
 import './harden-partner-entregador-background-location.mjs';
+import './harden-partner-entregador-background-reconciliation.mjs';
 import './harden-partner-entregador-operational-lock.mjs';
 import './harden-partner-entregador-back-navigation.mjs';
 import './harden-partner-entregador-quiet-refresh.mjs';
