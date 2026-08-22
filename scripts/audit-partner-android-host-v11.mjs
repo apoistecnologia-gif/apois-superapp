@@ -91,5 +91,29 @@ requireAll('superapp/partner-shell/package.json', [
   '"@capacitor/push-notifications": "8.1.2"',
 ], 'Host mantém plugins Capacitor necessários ao runtime nativo');
 
-if (!failed) console.log('[OK] Partner Android host v11: pré-release protege Manifest/API 36, callbacks, plugins, GPS/notificações e splash compilável.');
+const codemagic = read('codemagic.yaml');
+const partnerStart = codemagic.indexOf('  android-partner-superapp:');
+const partnerEnd = codemagic.indexOf('\n  android-field-apps-test:', partnerStart);
+const partnerWorkflow = partnerStart >= 0 && partnerEnd > partnerStart ? codemagic.slice(partnerStart, partnerEnd) : '';
+if (!partnerWorkflow) {
+  console.error('[FAIL] Partner Android host v11: workflow android-partner-superapp não encontrado');
+  failed = true;
+} else {
+  if (!partnerWorkflow.includes('cd superapp/partner-shell\n          # Este host não possui bun.lock próprio.')) {
+    console.error('[FAIL] Partner Android host v11: etapa de instalação do host Parceiro não documenta ausência de lockfile');
+    failed = true;
+  }
+  if (!partnerWorkflow.includes('\n          bun install\n          rm -rf android')) {
+    console.error('[FAIL] Partner Android host v11: host Parceiro não instala dependências antes do cap add');
+    failed = true;
+  }
+  if (partnerWorkflow.includes('cd superapp/partner-shell\n          bun install --frozen-lockfile')) {
+    console.error('[FAIL] Partner Android host v11: --frozen-lockfile reapareceu no host sem bun.lock e bloquearia o Codemagic');
+    failed = true;
+  } else {
+    console.log('[OK] Codemagic Parceiro não exige lockfile inexistente antes de criar o Android.');
+  }
+}
+
+if (!failed) console.log('[OK] Partner Android host v11: pré-release protege Manifest/API 36, callbacks, plugins, GPS/notificações, splash compilável e instalação do host no Codemagic.');
 process.exit(failed ? 1 : 0);
