@@ -95,11 +95,11 @@ requireMarkers('supabase/migrations/20260819143000_account_deletion_requests.sql
 ], 'backend versiona solicitação de exclusão com privilégio mínimo');
 
 requireMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
-  'relative flex h-screen w-full flex-col overflow-hidden',
+  'relative flex h-dvh w-full flex-col overflow-hidden',
   '<AppBottomNav activeTab="pedidos" />',
   'overflow-y-auto p-4 pb-32',
   'Não foi possível cancelar este pedido. Tente novamente.',
-], 'detalhes do pedido preservam rodapé, espaço inferior e erro seguro');
+], 'detalhes do pedido preservam rodapé, espaço inferior, viewport dinâmica e erro seguro');
 forbidMarkers('.work/entregas/src/routes/pedido/$orderId/index.tsx', [
   'toast.error(error?.message || "Não foi possível cancelar este pedido.")',
 ], 'cancelamento de pedido não expõe erro técnico do RPC');
@@ -163,9 +163,9 @@ forbidMarkers('.work/entregas/src/components/CustomerDeliveryMap.tsx', ['confirm
 
 requireMarkers('.work/entregas/src/routes/register.tsx', [
   'Não foi possível criar sua conta agora. Confira os dados e tente novamente.',
-  '<Link to="/termos" className="font-bold text-primary">',
-  '<Link to="/privacidade" className="font-bold text-primary">',
-], 'cadastro usa mensagens seguras e documentos internos');
+  '<Link to="/termos" className="inline-flex min-h-11 items-center rounded-lg px-1 font-bold text-primary">',
+  '<Link to="/privacidade" className="inline-flex min-h-11 items-center rounded-lg px-1 font-bold text-primary">',
+], 'cadastro usa mensagens seguras, documentos internos e links tocáveis');
 forbidMarkers('.work/entregas/src/routes/register.tsx', [
   '`Erro ao criar conta: ${error.message}`',
   'to="/termos" target="_blank"',
