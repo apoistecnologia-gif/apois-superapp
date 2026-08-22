@@ -35,18 +35,44 @@ requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
 
 requireAll('scripts/harden-partner-entregador-operational-lock.mjs', [
   'apois-parceiro:operational-role',
+  'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_RECONCILED',
+  'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_ONLINE',
+  'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_OFFLINE',
+  'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_LOGOUT',
+  'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_SWITCH',
+  'if (!availabilityRes.error) setAvailability(availabilityRes.data ?? null);',
+  'if (!jobsRes.error) setActiveJob(jobsRes.data ?? null);',
+  'const availabilityConfirmedActive = !availabilityRes.error',
+  'const jobConfirmedActive = !jobsRes.error',
+  'const bothConfirmedInactive = !availabilityRes.error && !jobsRes.error',
   'localStorage.setItem("apois-parceiro:operational-role", "entregador")',
-  'availabilityRes.data?.is_online || jobsRes.data',
   'localStorage.removeItem("apois-parceiro:operational-role")',
   'stopCourierNativeLocation',
   'removeCourierPushRegistration',
-], 'Entregador reafirma trava por estado backend/entrega ativa e limpa após OFFLINE/logout/troca');
+], 'Entregador reconcilia trava com a forma pós-operation-states sem limpar estado válido em falha de refresh');
 
-requireAll('scripts/harden-partner-entregador-map.mjs', [
+const courierPipeline = read('scripts/harden-partner-entregador-map.mjs');
+for (const marker of [
+  "import './harden-partner-entregador-operation-states.mjs';",
   "import './harden-partner-entregador-background-location.mjs';",
   "import './harden-partner-entregador-operational-lock.mjs';",
   "import './harden-partner-entregador-back-navigation.mjs';",
-], 'Pipeline Entregador aplica trava depois do ciclo de background e antes do guard de navegação');
+]) {
+  if (!courierPipeline.includes(marker)) {
+    console.error(`[FAIL] Pipeline Entregador sem etapa obrigatória: ${marker}`);
+    failed = true;
+  }
+}
+const stateIndex = courierPipeline.indexOf("import './harden-partner-entregador-operation-states.mjs';");
+const backgroundIndex = courierPipeline.indexOf("import './harden-partner-entregador-background-location.mjs';");
+const lockIndex = courierPipeline.indexOf("import './harden-partner-entregador-operational-lock.mjs';");
+const backIndex = courierPipeline.indexOf("import './harden-partner-entregador-back-navigation.mjs';");
+if (!(stateIndex >= 0 && backgroundIndex > stateIndex && lockIndex > backgroundIndex && backIndex > lockIndex)) {
+  console.error('[FAIL] Pipeline Entregador: operational-lock precisa rodar após operation-states/background-location e antes do back guard.');
+  failed = true;
+} else {
+  console.log('[OK] Pipeline Entregador aplica trava na ordem compatível com estados e Foreground Service.');
+}
 
 requireAll('superapp/partner-shell/index.html', [
   "const PARTNER_OPERATIONAL_ROLE_KEY='apois-parceiro:operational-role';",
@@ -61,5 +87,5 @@ requireAll('superapp/partner-shell/index.html', [
   "if(isRide)return routeRole('motorista'",
 ], 'Shell redireciona relançamento, seletor, push e deep links para a função que continua operacional');
 
-if (!failed) console.log('[OK] Partner operational role v10: nenhuma entrada normal do shell permite iniciar a outra função enquanto Motorista/Entregador permanece operacional.');
+if (!failed) console.log('[OK] Partner operational role v10: shell e módulos preservam uma única função operacional sem apagar trava por refresh parcial.');
 process.exit(failed ? 1 : 0);
