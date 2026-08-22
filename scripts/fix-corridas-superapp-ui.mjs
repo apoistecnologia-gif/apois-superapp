@@ -81,18 +81,8 @@ replaceRequired(
   'corridas: recuperação encaminhada pelo shell é consumida após troca de módulo',
 );
 
-replaceRequired(
-  '.work/corridas/src/routes/_authenticated.inicio.tsx',
-  '  Bell,\n',
-  '',
-  'corridas: Home não importa sino apenas para rodapé duplicado',
-);
-replaceRequired(
-  '.work/corridas/src/routes/_authenticated.inicio.tsx',
-  '  User,\n',
-  '',
-  'corridas: Home não importa perfil apenas para rodapé duplicado',
-);
+replaceRequired('.work/corridas/src/routes/_authenticated.inicio.tsx', '  Bell,\n', '', 'corridas: Home não importa sino apenas para rodapé duplicado');
+replaceRequired('.work/corridas/src/routes/_authenticated.inicio.tsx', '  User,\n', '', 'corridas: Home não importa perfil apenas para rodapé duplicado');
 replaceRequired(
   '.work/corridas/src/routes/_authenticated.inicio.tsx',
   '  const navItems = [\n    { label: "Início", icon: Home, to: "/inicio" },\n    { label: "Corridas", icon: Clock3, to: "/corridas" },\n    { label: "Carteira", icon: WalletCards, to: "/carteira" },\n    { label: "Notificações", icon: Bell, to: "/notificacoes" },\n    { label: "Perfil", icon: User, to: "/perfil" },\n  ] as const;\n\n',
@@ -118,33 +108,23 @@ replaceRequired(
   'import type { PropsWithChildren } from "react";\nimport { Bell, Clock3, Home, User, WalletCards } from "lucide-react";\nimport { useLocation, useNavigate } from "@tanstack/react-router";\nimport { cn } from "@/lib/utils";\n\nconst superappBottomNavItems = [\n  { label: "Início", icon: Home, to: "/inicio" },\n  { label: "Corridas", icon: Clock3, to: "/corridas" },\n  { label: "Carteira", icon: WalletCards, to: "/carteira" },\n  { label: "Notificações", icon: Bell, to: "/notificacoes" },\n  { label: "Perfil", icon: User, to: "/perfil" },\n] as const;\n\nconst superappJourneyRoutesWithoutBottomNav = ["/buscar-destino", "/revisar-solicitacao"];',
   'corridas: AppShell recebe navegação inferior persistente sem menu hambúrguer duplicado',
 );
-
 replaceRequired(
   '.work/corridas/src/components/layout/AppShell.tsx',
   '}: AppShellProps) {\n  return (',
   '}: AppShellProps) {\n  const pathname = useLocation().pathname;\n  const navigate = useNavigate();\n  const showBottomNavigation =\n    !superappJourneyRoutesWithoutBottomNav.includes(pathname) &&\n    !pathname.startsWith("/corrida/");\n\n  return (',
   'corridas: AppShell mantém rodapé inclusive na Home e oculta apenas jornada ativa',
 );
-
 replaceRequired(
   '.work/corridas/src/components/layout/AppShell.tsx',
   '        <MainHamburgerMenu />\n        <main',
   '        <main',
   'corridas: remove menu lateral que duplicava todas as opções do rodapé',
 );
-
 replaceRequired(
   '.work/corridas/src/components/layout/AppShell.tsx',
   '        </main>\n      </div>',
-  '        </main>\n        {showBottomNavigation ? (\n          <nav\n            aria-label="Navegação inferior"\n            className="app-safe-x shrink-0 border-t border-white/10 bg-black/98 pt-2 shadow-[0_-12px_30px_rgba(0,0,0,.55)]"\n            style={{ paddingBottom: "max(8px, var(--app-safe-bottom))" }}\n          >\n            <div className="grid grid-cols-5 gap-1">\n              {superappBottomNavItems.map(({ label, icon: Icon, to }) => {\n                const isActive =\n                  pathname === to ||\n                  (to === "/corridas" && pathname.startsWith("/corridas/")) ||\n                  (to === "/perfil" && pathname.startsWith("/perfil/"));\n                return (\n                  <button\n                    key={label}\n                    type="button"\n                    onClick={() => void navigate({ to })}\n                    aria-current={isActive ? "page" : undefined}\n                    className={cn(\n                      "app-pressable flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-xl text-[9px] font-bold",\n                      isActive ? "text-apois-yellow" : "text-zinc-500",\n                    )}\n                  >\n                    <Icon size={21} />\n                    {label}\n                  </button>\n                );\n              })}\n            </div>\n          </nav>\n        ) : null}\n      </div>',
+  '        </main>\n        {showBottomNavigation ? (\n          <nav\n            aria-label="Navegação inferior"\n            className="app-safe-x shrink-0 border-t border-white/10 bg-black/98 pt-2 shadow-[0_-12px_30px_rgba(0,0,0,.55)]"\n            style={{ paddingBottom: "max(8px, var(--app-safe-bottom))" }}\n          >\n            <div className="grid grid-cols-5 gap-1">\n              {superappBottomNavItems.map(({ label, icon: Icon, to }) => {\n                const isActive = pathname === to || (to === "/corridas" && pathname.startsWith("/corridas/")) || (to === "/perfil" && pathname.startsWith("/perfil/"));\n                return (\n                  <button\n                    key={label}\n                    type="button"\n                    onClick={() => void navigate({ to })}\n                    aria-current={isActive ? "page" : undefined}\n                    className={cn(\n                      "app-pressable flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-xl text-[9px] font-bold",\n                      isActive ? "text-apois-yellow" : "text-zinc-500",\n                    )}\n                  >\n                    <Icon size={21} />\n                    {label}\n                  </button>\n                );\n              })}\n            </div>\n          </nav>\n        ) : null}\n      </div>',
   'corridas: rodapé único permanece em todas as telas normais e detalhes',
-);
-
-replaceRequired(
-  '.work/corridas/src/components/profile/PassengerProfileCenter.tsx',
-  '  FileText,\n',
-  '',
-  'corridas: normaliza import legado de FileText quando presente somente no menu antigo',
 );
 
 replaceRequired(
@@ -153,7 +133,6 @@ replaceRequired(
   '',
   'corridas: Perfil não repete Carteira e Notificações que já estão no rodapé',
 );
-
 replaceRequired(
   '.work/corridas/src/components/profile/PassengerProfileCenter.tsx',
   '        <MenuSection title="Suporte">\n          <MenuButton\n            icon={CircleHelp}\n            title="Ajuda e atendimento"\n            description="Abra um protocolo e acompanhe pela central"\n            onClick={() => {\n              setSupportDraft(emptySupportDraft);\n              setDialog("support");\n            }}\n          />\n        </MenuSection>',
