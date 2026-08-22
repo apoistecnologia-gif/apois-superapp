@@ -82,7 +82,12 @@ requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'to: "/motorista/ganhos", label: "Ganhos"',
   'Recebimentos das corridas',
   "next.includes('to: \"/motorista/carteira\"')",
-], 'navegação do Motorista aponta para Ganhos e elimina carteira duplicada');
+  'min-h-[82px]',
+  'min-h-[60px]',
+  'h-6 w-6',
+  'text-xs font-extrabold',
+  'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
+], 'navegação do Motorista aponta para Ganhos, elimina carteira duplicada e usa alvos confortáveis no celular');
 
 requireAll('scripts/harden-partner-motorista-legal-navigation.mjs', [
   'Capacitor.isNativePlatform()',
