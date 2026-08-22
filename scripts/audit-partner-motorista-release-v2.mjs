@@ -43,6 +43,7 @@ requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
   "import './harden-partner-motorista-native-utilities.mjs';",
   "import './harden-partner-motorista-session-hygiene.mjs';",
   "import './harden-partner-motorista-navigation.mjs';",
+  "import './harden-partner-motorista-legal-navigation.mjs';",
 ], 'pipeline financeiro do Motorista carrega todas as proteções de release');
 
 requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
@@ -81,6 +82,12 @@ requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'Recebimentos das corridas',
   "next.includes('to: \"/motorista/carteira\"')",
 ], 'navegação do Motorista aponta para Ganhos e elimina carteira duplicada');
+
+requireAll('scripts/harden-partner-motorista-legal-navigation.mjs', [
+  'Capacitor.isNativePlatform()',
+  'await Browser.open({ url });',
+  'setChecking(false)',
+], 'termos públicos abrem fora do WebView do módulo e preservam retorno ao APOIS Parceiro');
 
 const routeTreePath = 'sources/apois-corridas-motorista-admin/src/mobile-route-tree.motorista.ts';
 requireAll(routeTreePath, [
