@@ -20,6 +20,7 @@ import './harden-partner-entregador-action-timeouts.mjs';
 import './harden-partner-entregador-state-handoff.mjs';
 import './harden-partner-entregador-gps-resume.mjs';
 import './harden-partner-entregador-background-location.mjs';
+import './harden-partner-entregador-operational-lock.mjs';
 import './harden-partner-entregador-back-navigation.mjs';
 import './harden-partner-entregador-quiet-refresh.mjs';
 import './harden-partner-entregador-push-runtime.mjs';
@@ -69,4 +70,4 @@ if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.ln
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: bootstrap GPS corrige entrada online, entrega ativa mantém rastreamento mesmo com disponibilidade stale, Foreground Service mantém GPS/heartbeat em tela bloqueada ou background, GPS da WebView é rearmado no retorno, botão Voltar não abandona operação online, refresh silencioso preserva a entrega, Push isolado por produto, seletor acessível em todo onboarding, troca de perfil confirma OFFLINE, logout retorna ao seletor sem afetar o FCM compartilhado, perfil/privacidade/termos alinhados ao modelo atual, payout legado neutralizado no runtime, handoff limpa estado antigo, jornada nativa, entrega ativa resiliente, finanças protegidas, estados operacionais explícitos, ações sem spinner infinito, ofertas com expiração visível, controles ampliados, mapa dourado e câmera livre durante atualizações do GPS.');
+console.log('[OK] Entregador Parceiro: operação online fica travada na função Entregador, GPS/heartbeat seguem em background, botão Voltar não abandona a operação, Push permanece isolado, finanças/payout legado ficam neutralizados e mapa/entrega ativa permanecem resilientes.');
