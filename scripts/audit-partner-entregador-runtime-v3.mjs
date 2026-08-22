@@ -118,4 +118,22 @@ forbidAll('scripts/harden-partner-entregador-finance.mjs', [
   '>Salvar chave PIX<',
 ], 'Financeiro do Entregador não preserva CTA legado de saque');
 
+requireAll('scripts/configure-partner-android.mjs', [
+  'android:scheme="br.com.apois.parceiro"',
+  'legacyPartnerMpFilterPattern',
+  'callback Mercado Pago legado do app cliente permaneceu',
+], 'Android Parceiro remove callback Mercado Pago do app cliente e mantém scheme próprio');
+forbidAll('scripts/configure-partner-android.mjs', [
+  'if (!manifest.includes(\'android:scheme="br.com.apois.app"\'))',
+], 'Configurador Android não recria callback legado br.com.apois.app');
+
+requireAll('superapp/partner-shell/capacitor.config.ts', [
+  "appId: 'br.com.apois.parceiro'",
+  "style: 'LIGHT'",
+  "backgroundColor: '#050505'",
+], 'Host Parceiro usa package correto e ícones claros na barra de status escura');
+forbidAll('superapp/partner-shell/capacitor.config.ts', [
+  "style: 'DARK'",
+], 'Barra de status do Parceiro não usa ícones escuros sobre fundo preto');
+
 process.exit(failed ? 1 : 0);
