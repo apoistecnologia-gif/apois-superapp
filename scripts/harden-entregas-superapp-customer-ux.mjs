@@ -1,4 +1,5 @@
 import './harden-entregas-superapp-brand-theme.mjs';
+import './harden-entregas-brand-sweep.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
