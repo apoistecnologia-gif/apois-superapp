@@ -1,6 +1,11 @@
 # APOIS Superapp
 
-Aplicativo Android unificado da APOIS que reúne **Corridas** e **Entregas** em um único package (`br.com.apois.app`) sem reescrever nem alterar diretamente os projetos de origem.
+Aplicativos Android unificados da APOIS, construídos sem alterar diretamente os projetos de origem protegidos.
+
+Existem somente duas superfícies móveis oficiais:
+
+- **APOIS Superapp** (`br.com.apois.app`): Passageiro de Corridas + Cliente de Entregas.
+- **APOIS Parceiro** (`br.com.apois.parceiro`): Motorista de Corridas + Entregador de Entregas.
 
 ## Arquitetura atual
 
@@ -15,85 +20,104 @@ sources/
 .work/
   corridas/                    # cópia descartável adaptada no build
   entregas/                    # cópia descartável adaptada no build
+  partner-motorista/
+  partner-entregador/
 
 superapp/
-  branding/                    # arte oficial do launcher
-  shell/                       # shell único Capacitor / Android
-    dist/
-      modules/
-        corridas/
-        entregas/
-
-scripts/
-  prepare-workspace.mjs
-  adapt-module-for-superapp.mjs
-  build-isolated-module.mjs
-  inject-superapp-push-routing.mjs
-  audit-superapp-static.mjs
-  audit-superapp-hardening.mjs
-  audit-superapp-play-store.mjs
-  verify-superapp-dist.mjs
-  verify-superapp-policy.mjs
-  configure-superapp-android.mjs
-  install-superapp-launcher.mjs
+  branding/
+  shell/                       # APOIS Superapp
+  partner-shell/               # APOIS Parceiro
 ```
 
-A regra principal é: **nunca adaptar os submodules em `sources/` diretamente**. Cada módulo é copiado para `.work/`, adaptado, compilado e somente o bundle final entra no shell.
+A regra principal é: **nunca adaptar os submodules em `sources/` diretamente**. Cada módulo é copiado para `.work/`, adaptado, auditado e compilado. Os projetos-fonte permanecem protegidos.
 
 ## Fontes protegidas
 
-- Entregas: `franciel046631/apois-entregas` (`main`)
-- Corridas / Passageiro: `franciel046631/say-hello-buddy-23-84b5dcbf` (`feat/apois-passageiro-completo`)
-- Corridas / Motorista/Admin: `franciel046631/movvi-go-connect` (`fix/apois-corridas-consolidacao`)
+- Entregas: `franciel046631/apois-entregas`
+- Corridas / Passageiro: `franciel046631/say-hello-buddy-23-84b5dcbf`
+- Corridas / Motorista/Admin: `franciel046631/movvi-go-connect`
 
-Os commits efetivamente usados são os commits dos submodules registrados neste repositório. `npm run verify:pins` impede que o build use uma fonte diferente da fixada.
+Os commits efetivamente usados ficam fixados em `.apois/source-lock.json`. `npm run verify:pins` impede que um build consuma fonte diferente da homologada.
 
-## Shell e navegação
+## Navegação unificada
 
-Ao abrir o app, o shell mostra dois produtos:
+### APOIS Superapp
+
+Ao abrir o app, o shell permite entrar em:
 
 - **Corridas**
 - **Entregas**
 
-Cada produto mantém sua sessão isolada, sua última rota válida e seu backend atual. O botão Voltar do Android retorna ao shell quando o usuário chega à raiz do módulo.
+Cada produto mantém sessão e rota isoladas. O botão Voltar do Android retorna ao shell quando o usuário chega à raiz do módulo. Rotas autenticadas não são retomadas sem sessão válida.
 
-As rotas autenticadas não são retomadas sem uma sessão persistida válida. Rotas públicas de login, cadastro, recuperação e callback permanecem acessíveis.
+### APOIS Parceiro
+
+O shell oferece:
+
+- **Motorista**
+- **Entregador**
+
+A troca de função é bloqueada enquanto houver operação ativa ou presença ONLINE. O app preserva a função operacional em reinício, Push e deep link até o backend confirmar que a operação foi encerrada.
+
+Não existem mais workflows oficiais para APKs separados de Motorista e Entregador.
 
 ## Autenticação e deep links
 
-O package nativo unificado usa o esquema:
+O Superapp usa:
 
 ```text
 br.com.apois.app://auth/...
 ```
 
-O shell distribui os callbacks para o módulo correto. Entregas usa callback, redefinição de senha e confirmação de alteração de e-mail. Corridas possui fluxo próprio de recuperação encaminhado pelo bridge do Superapp.
+O Parceiro usa:
 
-A confirmação de alteração de e-mail de Entregas passa primeiro por `#/auth/callback`, onde a sessão é efetivamente trocada, antes de retornar aos dados pessoais.
+```text
+br.com.apois.parceiro://...
+```
 
-## Pagamentos no Superapp
+Os shells distribuem callbacks para o módulo correto e evitam que um callback ou Push da outra função rompa uma jornada ativa.
 
-No cliente, os módulos Corridas e Entregas são **PIX-only**. Qualquer método legado existente nas fontes protegidas é filtrado somente na cópia `.work`, sem modificar os aplicativos originais.
+## Política financeira final
 
-O backend continua sendo a fonte confiável do pagamento e do despacho. Uma corrida PIX não deve entrar em despacho antes da confirmação de pagamento.
+### Corridas
+
+Corridas **não é PIX-only**.
+
+O passageiro pode usar os meios ativos previstos pela política final:
+
+- **PIX**: fluxo eletrônico integrado;
+- **Dinheiro**: pagamento direto ao motorista;
+- **Cartão de crédito**: pagamento direto ao motorista, sem custódia da APOIS.
+
+A APOIS não retém comissão por corrida. A monetização do Motorista é feita pela mensalidade da plataforma.
+
+### Entregas
+
+Pedidos do Cliente permanecem **PIX-only**. Para pedidos novos:
+
+- o estabelecimento precisa estar conectado ao Mercado Pago via OAuth;
+- o checkout valida `merchant-payment-readiness` antes de criar a cobrança;
+- a cobrança usa `create-merchant-mercadopago-pix` diretamente para a conta Mercado Pago do estabelecimento;
+- OpenPix/Asaas não podem reaparecer como caminho de novos pedidos;
+- a APOIS não recebe o valor integral da venda para repassar depois.
+
+Enquanto o repasse direto do Entregador não estiver homologado como `marketplace_direct_live`, a opção **Entrega** permanece bloqueada pelo readiness financeiro. Esse bloqueio é proposital e não deve ser contornado.
 
 ## Push unificado
 
-Corridas e Entregas compartilham o mesmo package Android e, consequentemente, o mesmo token FCM nativo. Por isso o Superapp aplica isolamento adicional:
+Corridas e Entregas compartilham o package do Superapp e o mesmo token FCM nativo. Motorista e Entregador fazem o mesmo dentro do APOIS Parceiro. Por isso os runtimes:
 
-- o payload é classificado por produto;
-- payload ambíguo é ignorado;
-- push de Corridas recebido dentro de Entregas é encaminhado para Corridas;
-- push de Entregas recebido dentro de Corridas é encaminhado para Entregas;
-- logout de Entregas remove o vínculo de Entregas no backend sem executar `PushNotifications.unregister()`, preservando o token nativo compartilhado.
+- classificam o payload por produto/função;
+- ignoram payload ambíguo;
+- encaminham Push para o módulo correto;
+- não executam `PushNotifications.unregister()` apenas porque um módulo foi encerrado;
+- preservam a trava da função operacional quando necessário.
 
-O Push próprio de Corridas permanece **desabilitado por padrão** (`APOIS_SUPERAPP_RIDES_PUSH_ENABLED=0`) até a identidade do Firebase server-side ser comprovadamente compatível com o Firebase do package unificado.
+## Endereço, GPS e mapas
 
-## Endereço e Google Maps
+Entregas usa Geolocation nativo do Capacitor no APK. Reverse geocode, autocomplete e place details passam pela Edge Function autenticada `google-maps-address`.
 
-Entregas usa Geolocation nativo do Capacitor no APK. Reverse geocode, autocomplete e place details passam pela Edge Function `google-maps-address` autenticada.
-
-A função consome `consume_google_maps_lookup_quota()` antes da consulta e limita a operação a 120 consultas por minuto por usuário ativo. `anon` não possui execução da RPC.
+Motorista e Entregador utilizam serviços nativos de localização em foreground durante operação ONLINE. O app só considera o serviço iniciado depois de ACK real do Foreground Service e mantém sincronização de sessão entre WebView e serviço Android.
 
 O build exige chaves separadas para os contextos Android e Web/JavaScript:
 
@@ -102,115 +126,79 @@ CORRIDAS_ANDROID_MAPS_API_KEY
 CORRIDAS_WEB_MAPS_API_KEY
 ```
 
-Em produção elas devem ter restrições adequadas ao respectivo uso.
+## UI móvel
+
+Os builds executam auditorias de interface para impedir regressões conhecidas:
+
+- logo sem corte (`object-fit: contain`);
+- seletores roláveis em telas baixas;
+- uso de `100dvh` em vez de `100vh` fixo nas telas do Cliente;
+- safe-area superior e inferior;
+- rodapés persistentes onde devem existir;
+- rodapé oculto durante jornadas operacionais quando necessário;
+- alvos de toque mínimos nos principais controles;
+- QR Pix responsivo em telas estreitas;
+- remoção de menus/atalhos duplicados;
+- remoção de opções desabilitadas que não representam funcionalidade real;
+- mapas e cards dimensionados para viewport móvel.
 
 ## Privacidade e exclusão de conta
 
-O cliente de Entregas possui caminho interno de solicitação de exclusão em **Perfil → Dados pessoais → Excluir minha conta**. A solicitação é registrada no backend e o token Push vinculado ao usuário é removido antes do logout.
-
-Também existem recursos públicos no Supabase Entregas para configuração da ficha da Google Play:
-
-```text
-https://sbvhdgyuuperszlsllji.supabase.co/functions/v1/privacy-policy
-https://sbvhdgyuuperszlsllji.supabase.co/functions/v1/account-deletion
-```
-
-A segunda URL permite solicitar exclusão mesmo sem acesso ao aplicativo e não revela se o e-mail informado possui conta.
-
-## Branding Android
-
-O launcher usa `superapp/branding/apois-launcher.png` como fonte oficial. O build gera tamanhos Android corretos por densidade:
-
-| Densidade | Launcher legacy | Foreground adaptive |
-|---|---:|---:|
-| mdpi | 48×48 | 108×108 |
-| hdpi | 72×72 | 162×162 |
-| xhdpi | 96×96 | 216×216 |
-| xxhdpi | 144×144 | 324×324 |
-| xxxhdpi | 192×192 | 432×432 |
-
-A splash nativa usa a mesma arte oficial sobre fundo preto. Bitmaps padrão do Capacitor/Android são removidos antes do build para evitar reaparecimento do ícone padrão.
+O cliente de Entregas possui caminho interno de solicitação de exclusão em **Perfil → Dados pessoais → Excluir minha conta**. A solicitação é registrada no backend e o vínculo Push do módulo é removido sem invalidar o token compartilhado de outros módulos.
 
 ## Android / Google Play
 
-O projeto nativo é recriado pelo Capacitor no Codemagic e recebe hardening determinístico antes do release:
+Os projetos nativos são recriados pelo Capacitor no Codemagic e recebem hardening determinístico antes do release:
 
-- `applicationId`: `br.com.apois.app`;
-- label: `APOIS`;
-- `compileSdk` e `targetSdk`: API 36;
+- `br.com.apois.app` para Cliente;
+- `br.com.apois.parceiro` para Parceiro;
+- API 36;
 - `allowBackup=false`;
 - cleartext HTTP bloqueado;
-- sem `ACCESS_BACKGROUND_LOCATION`;
 - teclado com `adjustResize`;
-- versionamento por `APP_VERSION_CODE` e `APP_VERSION_NAME`;
-- launcher/adaptive icon e splash validados;
-- assinatura final comparada com o SHA-1 esperado.
+- launcher/adaptive icon e splash APOIS;
+- validação de Firebase e Maps;
+- assinatura e `zipalign` verificados.
 
-O release também executa `zipalign -v -c -P 16 4` no APK assinado para validar o empacotamento exigido em dispositivos com páginas de memória de 16 KB.
+O Parceiro não solicita `ACCESS_BACKGROUND_LOCATION`; o rastreamento operacional usa Foreground Services de localização.
 
-## Build do bundle unificado
+## Builds oficiais
 
-Com os submodules inicializados e as variáveis necessárias disponíveis:
-
-```bash
-npm run verify:pins
-npm run build:superapp
-```
-
-`build:superapp` executa, nesta ordem:
-
-1. auditoria estática;
-2. validação dos pins protegidos;
-3. auditoria de hardening;
-4. auditoria de produção/Google Play;
-5. gate de compatibilidade Firebase do Push Corridas;
-6. build isolado de Corridas;
-7. build isolado de Entregas;
-8. montagem do shell;
-9. hardening de deep links;
-10. injeção do roteamento global de Push;
-11. validações pós-build de estrutura, políticas, storage, auth/deep links, segurança do cliente, endereço e assets de notificações.
-
-O shell falha o build se qualquer bundle ou contrato obrigatório estiver ausente.
-
-## Verificações disponíveis
-
-```bash
-npm run sources:status
-npm run status:modules
-npm run audit:static
-npm run audit:hardening
-npm run audit:play-store
-npm run verify:pins
-npm run verify:dist
-```
-
-## Codemagic
-
-Workflow configurado:
+Os únicos workflows móveis oficiais em `codemagic.yaml` são:
 
 ```text
 android-superapp-experimental
+android-partner-superapp
 ```
 
-O workflow:
+Artefatos:
 
-- fixa Bun em `1.3.14`;
-- inicializa e valida os submodules protegidos;
-- valida variáveis externas com mensagens explícitas;
-- compila Corridas + Entregas + shell;
-- cria o projeto Capacitor Android;
-- configura Maps, deep links, Firebase e permissões;
-- fixa API 36 e versionamento;
-- gera launcher por densidade e valida dimensões PNG;
-- compila `assembleRelease` e `bundleRelease`;
-- assina e valida o APK;
-- valida SHA-1 da assinatura;
-- valida o empacotamento 16 KB do APK;
-- assina e verifica o AAB;
-- publica `APOIS-Superapp.apk` e `APOIS-Superapp.aab` como artefatos.
+```text
+APOIS-Superapp.apk
+APOIS-Superapp.aab
+APOIS-Parceiro.apk
+```
 
-## Variáveis externas obrigatórias para release Android
+Não há workflow oficial para `APOIS-Motorista.apk` ou `APOIS-Entregador.apk` separados.
+
+## Validações
+
+```bash
+npm run verify:pins
+npm run audit:static
+npm run audit:ui
+npm run audit:hardening
+npm run audit:partner
+npm run audit:play-store
+npm run audit:release-integrity
+npm run verify:dist
+```
+
+`build:superapp` executa os gates do Cliente antes e depois da compilação. `build:partner` executa auditorias de Motorista/Entregador, UI e pins antes de montar o shell Parceiro.
+
+## Variáveis externas de release
+
+Cliente:
 
 ```text
 CORRIDAS_VITE_SUPABASE_URL
@@ -223,6 +211,12 @@ CORRIDAS_ANDROID_MAPS_API_KEY
 FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64
 ```
 
+Parceiro também exige:
+
+```text
+FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64
+```
+
 Além das variáveis de assinatura fornecidas pelo Codemagic:
 
 ```text
@@ -232,23 +226,6 @@ CM_KEY_ALIAS
 CM_KEY_PASSWORD
 ```
 
-`CORRIDAS_PUBLIC_APP_URL` precisa ser uma URL pública **HTTPS** em modo de release estrito.
-
-`FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64` precisa representar um `google-services.json` que contenha o cliente Android compatível com `br.com.apois.app`.
-
 ## Gate antes do release
 
-O artefato só deve ser liberado quando:
-
-- `verify:pins` estiver verde;
-- `build:superapp` estiver verde;
-- configuração nativa estiver verde em modo estrito;
-- Firebase mobile estiver confirmado para `br.com.apois.app`;
-- Maps Android/Web estiverem configurados;
-- `CORRIDAS_PUBLIC_APP_URL` estiver definida em HTTPS;
-- launcher/splash passarem pelas validações de densidade;
-- assinatura final corresponder ao SHA-1 esperado;
-- APK passar pelo check de empacotamento 16 KB;
-- AAB estiver assinado e verificado.
-
-Enquanto algum desses itens depender de credencial externa ainda não confirmada, o repositório deve continuar sendo corrigido e validado sem fingir que o release já está homologado.
+Um artefato só deve ser tratado como validado depois que o respectivo workflow real do Codemagic concluir sem falhas. Auditoria estática não substitui compilação Android nem teste físico em aparelho.
