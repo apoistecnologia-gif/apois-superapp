@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const javaRoot = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro');
 
-function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
+function patchRuntime({ pluginFile, serviceFile, roleKey, className, syncMethod, label }) {
   const pluginPath = resolve(javaRoot, pluginFile);
   const servicePath = resolve(javaRoot, serviceFile);
   if (!existsSync(pluginPath) || !existsSync(servicePath)) {
@@ -36,16 +36,19 @@ function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
     );
   }
 
+  const stopAnchor = `    @PluginMethod\n    public void stop(PluginCall call) {`;
   if (!plugin.includes('public void session(PluginCall call)')) {
-    const stopAnchor = `    @PluginMethod\n    public void stop(PluginCall call) {`;
     if (!plugin.includes(stopAnchor)) throw new Error(`APOIS Parceiro: stop de ${label} não encontrado para expor sessão nativa.`);
     const method = `    @PluginMethod\n    public void session(PluginCall call) {\n        SharedPreferences prefs = getContext().getSharedPreferences(SESSION_PREFS, android.content.Context.MODE_PRIVATE);\n        JSObject result = new JSObject();\n        result.put("accessToken", prefs.getString(SESSION_ACCESS_KEY, ""));\n        result.put("refreshToken", prefs.getString(SESSION_REFRESH_KEY, ""));\n        call.resolve(result);\n    }\n\n`;
     plugin = plugin.replace(stopAnchor, `${method}${stopAnchor}`);
   }
 
-  // Tokens são necessários enquanto o FGS está ativo (inclusive para recuperar
-  // rotação de refresh token após horas em background), mas não devem permanecer
-  // no SharedPreferences depois de um OFFLINE/stop explícito.
+  if (!plugin.includes('public void updateSession(PluginCall call)')) {
+    if (!plugin.includes(stopAnchor)) throw new Error(`APOIS Parceiro: stop de ${label} não encontrado para inserir updateSession.`);
+    const method = `    @PluginMethod\n    public void updateSession(PluginCall call) {\n        String accessToken = call.getString("accessToken", "");\n        String refreshToken = call.getString("refreshToken", "");\n        if (accessToken.isEmpty() || refreshToken.isEmpty()) {\n            call.reject("Sessão inválida para atualizar o serviço de localização.");\n            return;\n        }\n        getContext().getSharedPreferences(SESSION_PREFS, android.content.Context.MODE_PRIVATE)\n            .edit()\n            .putString(SESSION_ACCESS_KEY, accessToken)\n            .putString(SESSION_REFRESH_KEY, refreshToken)\n            .commit();\n        JSObject result = new JSObject();\n        result.put("updated", true);\n        call.resolve(result);\n    }\n\n`;
+    plugin = plugin.replace(stopAnchor, `${method}${stopAnchor}`);
+  }
+
   if (!plugin.includes('remove(SESSION_ACCESS_KEY)')) {
     const stopIntentAnchor = `        Intent intent = new Intent(getContext(), ${className}Service.class);\n        intent.setAction(${className}Service.ACTION_STOP);`;
     if (!plugin.includes(stopIntentAnchor)) throw new Error(`APOIS Parceiro: stop de ${label} não encontrado para limpar sessão nativa.`);
@@ -64,17 +67,32 @@ function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
     );
   }
 
+  const refreshMethodAnchor = '    private boolean refreshSession() {';
   if (!service.includes('private void persistSessionTokens()')) {
-    const refreshMethodAnchor = '    private boolean refreshSession() {';
     if (!service.includes(refreshMethodAnchor)) throw new Error(`APOIS Parceiro: refreshSession de ${label} não encontrado.`);
-    const helper = `    private void persistSessionTokens() {\n        if (accessToken == null || accessToken.isEmpty()) return;\n        getSharedPreferences(SESSION_PREFS, MODE_PRIVATE)\n            .edit()\n            .putString(SESSION_ACCESS_KEY, accessToken)\n            .putString(SESSION_REFRESH_KEY, refreshToken == null ? "" : refreshToken)\n            .commit();\n    }\n\n`;
+    const helper = `    private void persistSessionTokens() {\n        if (accessToken == null || accessToken.isEmpty()) return;\n        getSharedPreferences(SESSION_PREFS, MODE_PRIVATE)\n            .edit()\n            .putString(SESSION_ACCESS_KEY, accessToken)\n            .putString(SESSION_REFRESH_KEY, refreshToken == null ? "" : refreshToken)\n            .commit();\n    }\n\n    private void loadPersistedSessionTokens() {\n        SharedPreferences prefs = getSharedPreferences(SESSION_PREFS, MODE_PRIVATE);\n        String storedAccess = prefs.getString(SESSION_ACCESS_KEY, "");\n        String storedRefresh = prefs.getString(SESSION_REFRESH_KEY, "");\n        if (storedAccess != null && !storedAccess.isEmpty()) accessToken = storedAccess;\n        if (storedRefresh != null && !storedRefresh.isEmpty()) refreshToken = storedRefresh;\n    }\n\n`;
     service = service.replace(refreshMethodAnchor, `${helper}${refreshMethodAnchor}`);
+  } else if (!service.includes('private void loadPersistedSessionTokens()')) {
+    const helperAnchor = '    private boolean refreshSession() {';
+    if (!service.includes(helperAnchor)) throw new Error(`APOIS Parceiro: refreshSession de ${label} não encontrado para leitura persistida.`);
+    const helper = `    private void loadPersistedSessionTokens() {\n        SharedPreferences prefs = getSharedPreferences(SESSION_PREFS, MODE_PRIVATE);\n        String storedAccess = prefs.getString(SESSION_ACCESS_KEY, "");\n        String storedRefresh = prefs.getString(SESSION_REFRESH_KEY, "");\n        if (storedAccess != null && !storedAccess.isEmpty()) accessToken = storedAccess;\n        if (storedRefresh != null && !storedRefresh.isEmpty()) refreshToken = storedRefresh;\n    }\n\n`;
+    service = service.replace(helperAnchor, `${helper}${helperAnchor}`);
   }
 
   const startTokenAnchor = `        refreshToken = safe(intent.getStringExtra(EXTRA_REFRESH_TOKEN));`;
   if (!service.includes('refreshToken = safe(intent.getStringExtra(EXTRA_REFRESH_TOKEN));\n        persistSessionTokens();')) {
     if (!service.includes(startTokenAnchor)) throw new Error(`APOIS Parceiro: leitura de sessão no start de ${label} não encontrada.`);
     service = service.replace(startTokenAnchor, `${startTokenAnchor}\n        persistSessionTokens();`);
+  }
+
+  const syncAnchor = `    private boolean ${syncMethod}(`;
+  const syncIndex = service.indexOf(syncAnchor);
+  if (syncIndex < 0) throw new Error(`APOIS Parceiro: método ${syncMethod} de ${label} não encontrado.`);
+  const bodyStart = service.indexOf('{', syncIndex);
+  if (bodyStart < 0) throw new Error(`APOIS Parceiro: corpo de ${syncMethod} de ${label} não encontrado.`);
+  const bodyPreview = service.slice(bodyStart, bodyStart + 220);
+  if (!bodyPreview.includes('loadPersistedSessionTokens();')) {
+    service = service.slice(0, bodyStart + 1) + '\n        loadPersistedSessionTokens();' + service.slice(bodyStart + 1);
   }
 
   const refreshAnchor = `            accessToken = nextAccess;\n            if (!nextRefresh.isEmpty()) refreshToken = nextRefresh;\n            return true;`;
@@ -91,8 +109,8 @@ function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
     `SESSION_ACCESS_KEY = "${accessKey}"`,
     `SESSION_REFRESH_KEY = "${refreshKey}"`,
     'public void session(PluginCall call)',
-    'putString(SESSION_ACCESS_KEY, accessToken)',
-    'putString(SESSION_REFRESH_KEY, refreshToken)',
+    'public void updateSession(PluginCall call)',
+    'result.put("updated", true)',
     'remove(SESSION_ACCESS_KEY)',
     'remove(SESSION_REFRESH_KEY)',
   ]) {
@@ -100,6 +118,8 @@ function patchRuntime({ pluginFile, serviceFile, roleKey, className, label }) {
   }
   for (const marker of [
     'private void persistSessionTokens()',
+    'private void loadPersistedSessionTokens()',
+    'loadPersistedSessionTokens();',
     'persistSessionTokens();',
     `SESSION_ACCESS_KEY = "${accessKey}"`,
     `SESSION_REFRESH_KEY = "${refreshKey}"`,
@@ -116,6 +136,7 @@ patchRuntime({
   serviceFile: 'DriverLocationService.java',
   roleKey: 'driver',
   className: 'DriverLocation',
+  syncMethod: 'syncPresence',
   label: 'Motorista',
 });
 patchRuntime({
@@ -123,7 +144,8 @@ patchRuntime({
   serviceFile: 'CourierLocationService.java',
   roleKey: 'courier',
   className: 'CourierLocation',
+  syncMethod: 'syncLocation',
   label: 'Entregador',
 });
 
-console.log('[OK] APOIS Parceiro: sessão do GPS é reconciliada durante operação e removida do storage nativo no stop explícito.');
+console.log('[OK] APOIS Parceiro: WebView atualiza tokens do GPS sem reiniciar FGS; services recarregam a sessão persistida antes das chamadas e limpam credenciais no stop.');
