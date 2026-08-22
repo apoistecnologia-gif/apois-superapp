@@ -73,6 +73,10 @@ require_contains 'A APOIS não retém comissão nem recebe o valor da corrida.' 
 require_contains 'Trocar perfil de parceiro' src/routes/motorista.cadastro.tsx 'sucesso do cadastro permite voltar ao seletor sem encerrar sessão'
 require_contains 'window.location.replace("../../index.html")' src/routes/motorista.cadastro.tsx 'cadastro retorna ao seletor Parceiro na primeira etapa'
 require_contains 'window.location.replace("../../index.html")' src/routes/motorista.status.tsx 'status possui fallback ao seletor Parceiro'
+require_contains 'APOIS_PARTNER_DRIVER_SETTINGS_OPERATIONAL_LOGOUT_GUARD' src/routes/motorista.configuracoes.tsx 'configurações bloqueiam logout enquanto Motorista está operacional'
+require_contains 'APOIS_PARTNER_DRIVER_SETTINGS_OPERATIONAL_DELETE_GUARD' src/routes/motorista.configuracoes.tsx 'configurações bloqueiam exclusão enquanto Motorista está operacional'
+require_contains 'Fique offline no mapa antes de sair, trocar de conta ou excluir seu cadastro.' src/routes/motorista.perfil.tsx 'perfil não encerra sessão operacional por rota secundária'
+require_contains 'APOIS_PARTNER_DRIVER_HEADER_OPERATIONAL_GUARD' src/components/MovviHeader.tsx 'cabeçalho não encerra sessão operacional por tela secundária'
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
@@ -109,6 +113,7 @@ require_contains 'strokeColor: "#F6BE1C"' src/routes/motorista.app.tsx 'rota dou
 require_contains 'tickNavigation' src/routes/motorista.app.tsx 'motorista recebe orientação por voz durante deslocamento'
 require_contains 'readableFunctionInvokeError' src/lib/driverRideLifecycle.mobile.ts 'erro real da Edge Function é traduzido'
 require_contains 'Não foi possível finalizar a corrida.' src/routes/motorista.app.tsx 'falha de finalização é visível ao motorista'
+require_contains 'Fique offline no mapa antes de sair, trocar de conta ou excluir seu cadastro.' dist/client 'bundle Motorista preserva guarda contra saída operacional por telas secundárias'
 
 if grep -R -Fq 'Solicitar saque' dist/client; then
   echo '[FAIL] fluxo antigo de saque ainda presente no bundle Motorista'
