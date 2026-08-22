@@ -1,3 +1,4 @@
+import './harden-entregas-customer-auth-mobile-ui.mjs';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -101,4 +102,4 @@ patch('src/routes/perfil/ajuda/chamado/$ticketId.tsx', (source) => source
   source.includes('grid h-11 w-11 shrink-0 place-items-center rounded-xl text-zinc-600'),
 'Entregas: conversa de suporte amplia anexos e remoção de arquivo para toque seguro');
 
-console.log('[OK] Entregas: checkout, Ajuda, conversa de suporte e controles circulares do cliente foram endurecidos para toque, safe-area e telas estreitas.');
+console.log('[OK] Entregas: autenticação, checkout, Ajuda, conversa de suporte e controles do cliente foram endurecidos para toque, safe-area e telas estreitas.');
