@@ -93,6 +93,7 @@ requireMarker(driverBundle, 'Recebimento direto ao motorista', 'Motorista explic
 requireMarker(driverBundle, '100% do valor da corrida', 'Motorista preserva valor integral da corrida');
 requireMarker(driverBundle, 'backButton', 'Motorista leva proteção do botão Voltar para o bundle final');
 requireMarker(driverBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Motorista não permite sair do módulo enquanto permanece ONLINE');
+requireMarker(driverBundle, 'Fique offline no mapa antes de sair, trocar de conta ou excluir seu cadastro.', 'Motorista bloqueia saídas secundárias enquanto a função permanece operacional');
 requireMarker(driverBundle, 'background_location_unavailable', 'Motorista leva fail-safe do Foreground Service ao bundle final');
 requireMarker(driverBundle, 'Modo online desativado porque a localização em segundo plano não iniciou', 'Motorista informa falha de background e volta para OFFLINE');
 requireMarker(driverBundle, 'apois-parceiro:operational-role', 'Motorista grava trava operacional do shell');
@@ -127,4 +128,4 @@ if (!(launchIndex >= 0 && lockIndex > launchIndex)) {
   process.exit(1);
 }
 
-console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, callbacks de lançamento, back guards e trava cruzada de função operacional.');
+console.log('[OK] APOIS Parceiro gerado e validado: Motorista + Entregador com finanças protegidas, GPS em background, callbacks de lançamento, saídas secundárias protegidas, back guards e trava cruzada de função operacional.');
