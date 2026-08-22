@@ -45,8 +45,19 @@ requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
   'label: "Meus pedidos"',
   'label: "Favoritos"',
+  "await import('./harden-corridas-superapp-profile-ui.mjs')",
+  "await import('./harden-entregas-superapp-cart-mobile-ui.mjs')",
   'Perfil remove atalhos duplicados do rodapé',
-], 'Módulos Cliente mantêm rodapés tocáveis, cabeçalhos legíveis e removem atalhos duplicados do Perfil');
+], 'Módulos Cliente executam hardening dos rodapés, Perfil e Sacola');
+
+requireAll('scripts/harden-corridas-superapp-profile-ui.mjs', [
+  'title="Carteira e pagamentos"',
+  'title="Central de notificações"',
+  'title="Termos e privacidade"',
+  'h-11 w-11',
+  'line-clamp-2 text-[11px] leading-4',
+  'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))]',
+], 'Passageiro remove atalhos redundantes do Perfil e ajusta diálogos à viewport');
 
 requireAll('scripts/harden-entregas-superapp-secondary-mobile-ui.mjs', [
   'addProfileBottomNav',
@@ -63,6 +74,20 @@ requireAll('scripts/harden-entregas-superapp-secondary-mobile-ui.mjs', [
   'pb-32',
 ], 'Entregas mantém rodapé em Perfil/Endereços/Estabelecimento, evita sobreposição e remove pagamento inexistente');
 
+requireAll('scripts/harden-entregas-superapp-cart-mobile-ui.mjs', [
+  'min-h-dvh',
+  'grid h-11 w-11 place-items-center rounded-xl',
+  'grid h-10 w-10 place-items-center rounded-xl bg-zinc-800',
+  'pb-[max(env(safe-area-inset-bottom),1rem)]',
+], 'Sacola usa controles de quantidade e exclusão tocáveis em celular');
+
+requireAll('scripts/harden-entregas-superapp-delivery-map.mjs', [
+  'center={',
+  'zoom={14}',
+  'h-[clamp(15rem,34dvh,20rem)]',
+  "forbidden of ['confirmationPin', 'setConfirmationPin', 'KeyRound', 'defaultCenter=', 'defaultZoom=']",
+], 'Mapa de entrega acompanha o entregador e adapta altura à viewport');
+
 requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'min-h-[82px]',
   'min-h-[60px]',
@@ -73,7 +98,7 @@ requireAll('scripts/harden-partner-motorista-navigation.mjs', [
 ], 'Motorista usa rodapé maior, legível e afastado da barra de gestos');
 
 requireAll('scripts/harden-partner-entregador-touch-safearea.mjs', [
-  "patch(\n  'src/components/CourierPanels.tsx'",
+  "'src/components/CourierPanels.tsx'",
   'label: "Entregas"',
   '<PanelHeader title="Entregas"',
   'min-h-[82px]',
@@ -109,7 +134,10 @@ requireAll('scripts/fix-corridas-superapp-ui.mjs', [
   'superappJourneyRoutesWithoutBottomNav',
   '!pathname.startsWith("/corrida/")',
   'aria-label="Navegação inferior"',
-], 'Corridas mantém rodapé nas telas comuns e oculta apenas jornada operacional');
+  'remove menu lateral que duplicava todas as opções do rodapé',
+  'Perfil não repete Carteira e Notificações',
+  'Termos e privacidade',
+], 'Corridas mantém rodapé único e elimina menu paralelo/atalhos duplicados');
 
-if (!failed) console.log('[OK] Mobile UI v16: seletores, Cliente, Passageiro e Parceiro têm safe-area, rolagem, logomarca sem corte, navegação consistente, nomenclatura correta e opções visíveis apenas quando disponíveis.');
+if (!failed) console.log('[OK] Mobile UI v16: seletores, Cliente, Passageiro e Parceiro têm safe-area, mapas responsivos, controles tocáveis, navegação consistente e sem atalhos redundantes.');
 process.exit(failed ? 1 : 0);
