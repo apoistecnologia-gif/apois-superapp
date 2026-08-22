@@ -2,6 +2,7 @@ import './harden-partner-mercadopago-callback.mjs';
 import './harden-partner-android-security.mjs';
 import './configure-partner-firebase.mjs';
 import './install-partner-driver-location.mjs';
+import './install-partner-courier-location.mjs';
 import './verify-partner-native-plugins.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -13,6 +14,8 @@ const manifestPath = resolve('superapp/partner-shell/android/app/src/main/Androi
 const mainActivityPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/MainActivity.java');
 const driverLocationPluginPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/DriverLocationPlugin.java');
 const driverLocationServicePath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/DriverLocationService.java');
+const courierLocationPluginPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationPlugin.java');
+const courierLocationServicePath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationService.java');
 
 if (!existsSync(source)) throw new Error(`Arte oficial APOIS não encontrada: ${source}`);
 if (!existsSync(resRoot)) throw new Error(`Recursos Android do APOIS Parceiro não encontrados: ${resRoot}`);
@@ -60,14 +63,17 @@ if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) throw n
 if (!manifest.includes('android:allowBackup="false"')) throw new Error('Manifest Parceiro ainda permite backup de sessão.');
 if (!manifest.includes('android:usesCleartextTraffic="false"')) throw new Error('Manifest Parceiro ainda permite tráfego HTTP cleartext.');
 if (!manifest.includes('android:scheme="br.com.apois.parceiro"')) throw new Error('Manifest Parceiro não registra o scheme próprio.');
-if (!manifest.includes('android.permission.FOREGROUND_SERVICE_LOCATION')) throw new Error('Manifest Parceiro não permite serviço de localização foreground do Motorista.');
+if (!manifest.includes('android.permission.FOREGROUND_SERVICE_LOCATION')) throw new Error('Manifest Parceiro não permite serviços de localização foreground.');
 if (!manifest.includes('android:name=".DriverLocationService"')) throw new Error('Manifest Parceiro não registra DriverLocationService.');
+if (!manifest.includes('android:name=".CourierLocationService"')) throw new Error('Manifest Parceiro não registra CourierLocationService.');
 if (manifest.includes('android.permission.ACCESS_BACKGROUND_LOCATION')) throw new Error('Manifest Parceiro não deve solicitar ACCESS_BACKGROUND_LOCATION.');
 if (manifest.includes('android:scheme="br.com.apois.app"') && manifest.includes('android:pathPrefix="/mercadopago"')) throw new Error('Manifest Parceiro ainda registra callback Mercado Pago do app cliente.');
 if (!existsSync(resolve('superapp/partner-shell/android/app/google-services.json'))) throw new Error('Firebase do APOIS Parceiro não foi materializado.');
 if (!existsSync(driverLocationPluginPath) || !existsSync(driverLocationServicePath)) throw new Error('Runtime nativo de localização do Motorista não foi instalado.');
+if (!existsSync(courierLocationPluginPath) || !existsSync(courierLocationServicePath)) throw new Error('Runtime nativo de localização do Entregador não foi instalado.');
 const mainActivity = readFileSync(mainActivityPath, 'utf8');
 if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) throw new Error('DriverVoicePlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(DriverLocationPlugin.class)')) throw new Error('DriverLocationPlugin não registrado no host Parceiro.');
+if (!mainActivity.includes('registerPlugin(CourierLocationPlugin.class)')) throw new Error('CourierLocationPlugin não registrado no host Parceiro.');
 
-console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro após hardening Android, Firebase, Push/GPS Capacitor, DriverVoice, DriverLocation e isolamento OAuth.');
+console.log('[OK] Ícone oficial APOIS aplicado ao APK Parceiro após hardening Android, Firebase, Push/GPS Capacitor, DriverVoice, DriverLocation, CourierLocation e isolamento OAuth.');
