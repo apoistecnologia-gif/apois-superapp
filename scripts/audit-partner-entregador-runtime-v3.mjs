@@ -76,13 +76,14 @@ requireAll('scripts/harden-partner-entregador-push-runtime.mjs', [
   'sessionStorage.setItem(PARTNER_PENDING_PUSH_KEY',
   'new CustomEvent("apois:courier-push-open"',
 ], 'Push do Entregador isola entrega/corrida, foreground e toque sem alternância indevida');
-forbidAll('scripts/harden-partner-entregador-push-runtime.mjs', [
-  'PushNotifications.unregister()',
-], 'Entregador não invalida token FCM compartilhado');
+requireAll('scripts/harden-partner-entregador-push-runtime.mjs', [
+  "if (source.includes('PushNotifications.unregister()'))",
+  'runtime não pode invalidar o token FCM compartilhado',
+], 'Entregador protege o token FCM compartilhado contra unregister');
 
 requireAll('scripts/harden-partner-entregador-state-handoff.mjs', [
   'const activeJobIdentity = activeJob?.id ?? null;',
-  'setPin("");',
+  '\'setPin("");\'',
   'setSupportOpen(false);',
   'setSupportDescription("");',
   'if (activeJobIdentity) setOffers([]);',
@@ -141,8 +142,9 @@ requireAll('superapp/partner-shell/index.html', [
   'const isDelivery=Boolean(orderId)',
   'const isRide=Boolean(rideId)',
   'if(isDelivery&&isRide)return false;',
-  "localStorage.setItem('apois-parceiro:last-module','entregador')",
-  "localStorage.setItem('apois-parceiro:last-module','motorista')",
+  "if(isDelivery)return routeRole('entregador',operationalUrls.entregador);",
+  "if(isRide)return routeRole('motorista',operationalUrls.motorista);",
+  "localStorage.setItem('apois-parceiro:last-module',requestedRole)",
 ], 'Shell do Parceiro não decide payload ambíguo e roteia por produto explícito');
 
 requireAll('superapp/partner-shell/package.json', [
@@ -198,10 +200,12 @@ requireAll('scripts/harden-partner-entregador-finance.mjs', [
   'Nenhuma chave PIX ou valor de saque é solicitado nesta fase.',
   'Histórico de repasses',
 ], 'Financeiro do Entregador não promete saque antes de marketplace direto');
-forbidAll('scripts/harden-partner-entregador-finance.mjs', [
-  '<h2 className="font-black">Solicitar saque</h2>',
-  '>Salvar chave PIX<',
-], 'Financeiro do Entregador não preserva CTA legado de saque');
+requireAll('scripts/harden-partner-entregador-finance.mjs', [
+  "'<h2 className=\"font-black\">Solicitar saque</h2>'",
+  "'>Salvar chave PIX<'",
+  'if (source.includes(forbidden))',
+  'UI financeira legada permaneceu',
+], 'Financeiro do Entregador bloqueia CTA legado de saque/PIX na UI transformada');
 
 requireAll('scripts/configure-partner-android.mjs', [
   'android:scheme="br.com.apois.parceiro"',
