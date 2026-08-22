@@ -17,21 +17,22 @@ function patch(relativePath, transform, label) {
 }
 
 patch('src/lib/driverFinance.mobile.ts', (source) => {
-  const marker = 'export async function requestDriverWithdrawal';
-  const start = source.indexOf(marker);
-  if (start < 0) throw new Error('[FAIL] driverFinance.mobile.ts: requestDriverWithdrawal não encontrado');
+  const withdrawalMarker = 'export async function requestDriverWithdrawal';
+  const withdrawalStart = source.indexOf(withdrawalMarker);
+  if (withdrawalStart < 0) throw new Error('[FAIL] driverFinance.mobile.ts: requestDriverWithdrawal não encontrado');
+  const helperStart = source.lastIndexOf('function secureUuid()', withdrawalStart);
+  const start = helperStart >= 0 ? helperStart : withdrawalStart;
 
   const safeStub = `export async function requestDriverWithdrawal(_amountCents: number): Promise<void> {\n  throw new Error(\n    \"Saque manual não está disponível no APOIS Parceiro. Os recebimentos das corridas são diretos ao motorista.\",\n  );\n}\n`;
 
   const next = source.slice(0, start) + safeStub;
-  if (next.includes('request-driver-payout')) {
-    throw new Error('[FAIL] driverFinance.mobile.ts: chamada legada request-driver-payout permaneceu');
-  }
-  if (/asaas|openpix|woovi/i.test(next.slice(start))) {
-    throw new Error('[FAIL] driverFinance.mobile.ts: provedor legado permaneceu no runtime de saque');
+  for (const forbidden of ['request-driver-payout', 'secureUuid()', 'asaas_subaccount', 'driver_wallet_debt', 'pix_payout_destination']) {
+    if (next.includes(forbidden)) {
+      throw new Error(`[FAIL] driverFinance.mobile.ts: resíduo legado de saque permaneceu (${forbidden})`);
+    }
   }
   return next;
-}, 'motorista: runtime legado de saque desativado no APK Parceiro');
+}, 'motorista: runtime legado de saque e helper de idempotência removidos do APK Parceiro');
 
 patch('src/components/notifications/NotificationPreferencesPage.tsx', (source) => {
   let next = source;
@@ -60,13 +61,12 @@ patch('src/routes/motorista.privacidade.tsx', (source) => {
     'Registros de corridas, pagamentos, liquidações, segurança, auditoria,',
   );
 
-  const anchor = 'com minimização ou anonimização quando aplicável.';
-  if (next.includes(anchor) && !next.includes('A APOIS não utiliza uma carteira custodial')) {
-    const dataSectionEnd = '</p>\n            </section>';
-    const first = next.indexOf(dataSectionEnd);
-    if (first < 0) throw new Error('[FAIL] motorista.privacidade.tsx: fim da seção de dados não encontrado');
-    const insert = '\n              <p className="mt-3 break-words text-zinc-400">A APOIS não utiliza uma carteira custodial do motorista para valores recebidos diretamente em dinheiro ou cartão.</p>';
-    next = next.slice(0, first) + insert + next.slice(first);
+  const firstDataSection = `              </p>\n            </section>`;
+  if (!next.includes('A APOIS não utiliza uma carteira custodial')) {
+    const first = next.indexOf(firstDataSection);
+    if (first < 0) throw new Error('[FAIL] motorista.privacidade.tsx: fim da seção Dados tratados não encontrado');
+    const insert = `              </p>\n              <p className="mt-3 break-words text-zinc-400">A APOIS não utiliza uma carteira custodial do motorista para valores recebidos diretamente em dinheiro ou cartão.</p>\n            </section>`;
+    next = next.slice(0, first) + insert + next.slice(first + firstDataSection.length);
   }
 
   if (next.includes('ganhos, carteira, pagamentos')) {
