@@ -67,6 +67,12 @@ for (const [label, plugin, service, startupKey] of customRuntimes) {
   if (!service.includes('FOREGROUND_SERVICE_TYPE_LOCATION')) {
     throw new Error(`APOIS Parceiro: ${label} não usa foregroundServiceType location.`);
   }
+  if (!plugin.includes('public void session(PluginCall call)') || !plugin.includes('apois_partner_location_session')) {
+    throw new Error(`APOIS Parceiro: ${label} não expõe a sessão renovada do serviço para reconciliação da WebView.`);
+  }
+  if (!service.includes('private void persistSessionTokens()') || !service.includes('persistSessionTokens();')) {
+    throw new Error(`APOIS Parceiro: ${label} não persiste refresh_token rotacionado pelo serviço nativo.`);
+  }
 }
 
-console.log('[OK] APOIS Parceiro: plugins Capacitor e plugins customizados de voz/GPS estão registrados; serviços de localização só confirmam start após ACK real.');
+console.log('[OK] APOIS Parceiro: plugins Capacitor/customizados estão registrados; GPS confirma start real e mantém refresh_token nativo reconciliável com a WebView.');
