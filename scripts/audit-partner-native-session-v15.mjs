@@ -35,11 +35,13 @@ requireAll('scripts/harden-partner-location-session-sync.mjs', [
   'courier_access_token',
   'courier_refresh_token',
   'public void session(PluginCall call)',
+  'public void updateSession(PluginCall call)',
   'private void persistSessionTokens()',
-  'persistSessionTokens();',
+  'private void loadPersistedSessionTokens()',
+  'loadPersistedSessionTokens();',
   'remove(SESSION_ACCESS_KEY)',
   'remove(SESSION_REFRESH_KEY)',
-], 'Android persiste token rotacionado durante operação e remove credenciais nativas no stop explícito');
+], 'Android permite atualizar credenciais do FGS sem reiniciá-lo, recarrega tokens antes das RPCs e limpa no stop');
 
 requireAll('scripts/harden-partner-motorista-native-session-sync.mjs', [
   'session(): Promise<NativeSessionResult>',
@@ -52,12 +54,14 @@ requireAll('scripts/harden-partner-motorista-native-session-sync.mjs', [
 ], 'Motorista adota sessão nativa mais nova da mesma conta antes de getSession');
 
 requireAll('scripts/harden-partner-motorista-native-token-forward.mjs', [
+  'updateSession(options: { accessToken: string; refreshToken: string })',
   'APOIS_PARTNER_DRIVER_NATIVE_TOKEN_FORWARD',
   'event !== "TOKEN_REFRESHED"',
   'apois-parceiro:operational-role',
-  'DriverLocation.start({',
+  'DriverLocation.updateSession({',
   'globalThis.setTimeout(() => forwardDriverSessionToNative(session), 0)',
-], 'Motorista repassa refresh da WebView ao DriverLocationService enquanto operacional');
+  'TOKEN_REFRESHED ainda tenta reiniciar Foreground Service',
+], 'Motorista repassa refresh da WebView ao DriverLocationService sem reiniciar Foreground Service');
 
 requireAll('scripts/harden-partner-entregador-native-session-sync.mjs', [
   'session(): Promise<NativeSessionResult>',
@@ -70,12 +74,14 @@ requireAll('scripts/harden-partner-entregador-native-session-sync.mjs', [
 ], 'Entregador adota sessão nativa mais nova da mesma conta antes de getSession');
 
 requireAll('scripts/harden-partner-entregador-native-token-forward.mjs', [
+  'updateSession(options: { accessToken: string; refreshToken: string })',
   'APOIS_PARTNER_COURIER_NATIVE_TOKEN_FORWARD',
   'event !== "TOKEN_REFRESHED"',
   'apois-parceiro:operational-role',
-  'CourierLocation.start({',
+  'CourierLocation.updateSession({',
   'globalThis.setTimeout(() => forwardCourierSessionToNative(session), 0)',
-], 'Entregador repassa refresh da WebView ao CourierLocationService enquanto operacional');
+  'TOKEN_REFRESHED ainda tenta reiniciar Foreground Service',
+], 'Entregador repassa refresh da WebView ao CourierLocationService sem reiniciar Foreground Service');
 
 const driverPipeline = read('scripts/harden-partner-motorista-payment-policy.mjs');
 const driverSyncIndex = driverPipeline.indexOf("import './harden-partner-motorista-native-session-sync.mjs';");
@@ -105,10 +111,11 @@ if (!(ackIndex >= 0 && nativeSyncIndex > ackIndex && routingIndex > nativeSyncIn
 } else console.log('[OK] Ordem Android da coordenação de sessão está protegida.');
 
 requireAll('scripts/verify-partner-native-plugins.mjs', [
+  'public void updateSession(PluginCall call)',
+  'private void loadPersistedSessionTokens()',
   'remove(SESSION_ACCESS_KEY)',
   'remove(SESSION_REFRESH_KEY)',
-  'mantém tokens nativos depois do stop explícito',
-], 'Validação final rejeita runtime que deixa refresh token persistido após OFFLINE explícito');
+], 'Validação final exige atualização de sessão sem restart, leitura de tokens atuais e limpeza no OFFLINE');
 
-if (!failed) console.log('[OK] Partner native session v15: sessão WebView e GPS nativo permanecem sincronizados nos dois sentidos durante jornadas longas e são limpos no stop explícito.');
+if (!failed) console.log('[OK] Partner native session v15: sessão WebView/FGS fica coordenada nos dois sentidos sem reiniciar serviço e credenciais são limpas no stop.');
 process.exit(failed ? 1 : 0);
