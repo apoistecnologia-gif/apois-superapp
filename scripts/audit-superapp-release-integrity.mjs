@@ -57,8 +57,9 @@ requireAll('.apois/modules.json', [
   'harden-entregas-superapp-account-deletion.mjs',
   'harden-entregas-superapp-address-ux.mjs',
   'harden-entregas-superapp-customer-ux.mjs',
-  '--frozen-lockfile',
-], 'Entregas executa hardeners críticos e preserva lockfile da fonte');
+  '"entregas": {',
+  '"install": ["bun", "install"]',
+], 'Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work');
 
 requireAll('codemagic.yaml', [
   'name: APOIS Superapp - Android Release',
