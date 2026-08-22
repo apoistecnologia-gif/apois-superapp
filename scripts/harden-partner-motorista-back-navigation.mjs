@@ -9,7 +9,9 @@ let source = readFileSync(path, 'utf8');
 if (!source.includes('import { App } from "@capacitor/app";')) {
   const anchor = 'import { createFileRoute, useNavigate } from "@tanstack/react-router";';
   if (!source.includes(anchor)) throw new Error('[FAIL] Motorista Parceiro: import TanStack não encontrado para adicionar App');
-  source = source.replace(anchor, `${anchor}\nimport { App } from "@capacitor/app";\nimport { Capacitor } from "@capacitor/core";`);
+  // O import de Capacitor é adicionado pelo hardener de GPS nativo, executado
+  // depois deste. Aqui adicionamos somente App para não gerar import duplicado.
+  source = source.replace(anchor, `${anchor}\nimport { App } from "@capacitor/app";`);
 }
 
 if (!source.includes('App.addListener("backButton"')) {
