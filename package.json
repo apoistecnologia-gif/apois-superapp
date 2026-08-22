@@ -13,7 +13,7 @@
     "status:modules": "node scripts/status-modules.mjs",
     "audit:static": "node scripts/audit-superapp-static.mjs",
     "audit:hardening": "node scripts/audit-superapp-hardening.mjs && node scripts/audit-entregas-merchant-payments.mjs",
-    "audit:ui": "node scripts/audit-mobile-ui-v16.mjs && node scripts/audit-unified-app-surfaces-v17.mjs",
+    "audit:ui": "node scripts/audit-mobile-ui-v16.mjs && node scripts/audit-unified-app-surfaces-v17.mjs && node scripts/audit-codemagic-host-installs-v18.mjs",
     "audit:partner": "node scripts/audit-partner-superapp.mjs && node scripts/audit-partner-superapp-v2.mjs && node scripts/audit-partner-entregador-runtime-v3.mjs && node scripts/audit-partner-entregador-session-v4.mjs && node scripts/audit-partner-entregador-profile-switch-v5.mjs && node scripts/audit-partner-entregador-background-v6.mjs && node scripts/audit-partner-back-navigation-v7.mjs && node scripts/audit-partner-motorista-background-v8.mjs && node scripts/audit-partner-notification-routing-v9.mjs && node scripts/audit-partner-operational-role-v10.mjs && node scripts/audit-partner-android-host-v11.mjs && node scripts/audit-partner-secondary-exits-v12.mjs && node scripts/audit-partner-location-startup-v13.mjs && node scripts/audit-partner-shell-pending-push-v14.mjs && node scripts/audit-partner-native-session-v15.mjs && node scripts/audit-partner-motorista-onboarding.mjs && node scripts/audit-partner-motorista-finance-v4.mjs && node scripts/audit-partner-motorista-release-v2.mjs && node scripts/audit-partner-motorista-session-v3.mjs && node scripts/audit-partner-motorista-brand-v4.mjs",
     "audit:play-store": "node scripts/audit-superapp-play-store.mjs",
     "audit:release-integrity": "node scripts/audit-superapp-release-integrity.mjs",
