@@ -63,8 +63,9 @@ check('.apois/modules.json', [
   'harden-entregas-superapp-image-fallbacks.mjs',
   'harden-entregas-superapp-legal-routes.mjs',
   'harden-entregas-superapp-customer-ux.mjs',
-  '--frozen-lockfile',
-], 'cadeia de build Entregas executa todos os hardeners antes da compilação');
+  '"entregas": {',
+  '"install": ["bun", "install"]',
+], 'cadeia de build Entregas executa todos os hardeners e reconcilia o lock somente na cópia .work');
 
 check('scripts/harden-entregas-superapp-account-security.mjs', [
   'await removeCustomerPushRegistration(true);',
