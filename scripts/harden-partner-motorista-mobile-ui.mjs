@@ -88,7 +88,7 @@ patch('src/routes/motorista.perfil.tsx', (source) => {
 }, (source) =>
   source.includes('label="Veículo e documentos"') &&
   !source.includes('label="Documentos"\n                sub="CNH, CRLV e selfie"') &&
-  source.match(/label="Mensalidade"/g)?.length === 0 &&
+  !source.includes('label="Mensalidade"') &&
   source.includes('label="Segurança"') &&
   source.includes('label="Status do cadastro"') &&
   source.includes('label="Configurações"') &&
