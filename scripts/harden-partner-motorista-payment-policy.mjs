@@ -1,5 +1,6 @@
 import './harden-partner-motorista-history-receipt.mjs';
 import './harden-partner-motorista-direct-earnings.mjs';
+import './harden-partner-motorista-release-surface.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -12,19 +13,13 @@ let source = readFileSync(appPath, 'utf8');
 // diretamente na maquininha do motorista. O app do Motorista antigo só
 // reconhecia aliases legados e acabava exibindo a palavra técnica "credit".
 if (!source.includes('case "credit":')) {
-  const legacyCardBlock = `    case "cartao_credito":
-    case "card":
-      return "Cartão de crédito";`;
+  const legacyCardBlock = `    case "cartao_credito":\n    case "card":\n      return "Cartão de crédito";`;
   if (!source.includes(legacyCardBlock)) {
     throw new Error('[FAIL] Motorista Parceiro: bloco legado de rótulo do cartão não encontrado.');
   }
   source = source.replace(
     legacyCardBlock,
-    `    case "credit":
-    case "credit_card":
-    case "cartao_credito":
-    case "card":
-      return "Cartão";`,
+    `    case "credit":\n    case "credit_card":\n    case "cartao_credito":\n    case "card":\n      return "Cartão";`,
   );
 }
 
