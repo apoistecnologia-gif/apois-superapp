@@ -65,7 +65,8 @@ requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
 requireAll('scripts/harden-partner-motorista-native-utilities.mjs', [
   'Capacitor.isNativePlatform()',
   'Geolocation.checkPermissions()',
-  'Geolocation.requestPermissions({ permissions: [\\"location\\", \\"coarseLocation\\"] })',
+  'Geolocation.requestPermissions({ permissions:',
+  'coarseLocation',
   'Geolocation.getCurrentPosition({',
   'getPartnerCurrentPosition(5000)',
   'getPartnerCurrentPosition(8000)',
@@ -83,7 +84,7 @@ requireAll('scripts/harden-partner-motorista-session-hygiene.mjs', [
 requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'to: "/motorista/ganhos", label: "Ganhos"',
   'Recebimentos das corridas',
-  "next.includes('to: \\"/motorista/carteira\\"')",
+  `if (next.includes('to: "/motorista/carteira"'))`,
   'min-h-[82px]',
   'min-h-[60px]',
   'h-6 w-6',
