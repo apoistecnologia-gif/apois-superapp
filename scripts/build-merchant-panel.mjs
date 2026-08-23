@@ -17,8 +17,10 @@ function run(bin, args, options = {}) {
 }
 
 if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
-  console.log('[INFO] Inicializando submódulo de Entregas para build do painel...');
-  run('git', ['submodule', 'update', '--init', '--recursive', 'sources/apois-entregas']);
+  console.error('[FAIL] sources/apois-entregas não foi inicializado no checkout.');
+  console.error('Confirme que o submódulo Git está habilitado no checkout da Vercel');
+  console.error('(Project Settings > Git) ou rode "git submodule update --init --recursive" antes do build.');
+  process.exit(1);
 }
 
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'entregas']);
