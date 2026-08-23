@@ -50,7 +50,7 @@ requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
 ], 'Pipeline oficial do Motorista aplica trava operacional');
 
 requireAll('scripts/harden-partner-entregador-operational-lock.mjs', [
-  'apois-parceiro:operational-role',
+  "const ROLE_KEY = 'apois-parceiro:operational-role';",
   'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_RECONCILED',
   'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_ONLINE',
   'APOIS_PARTNER_COURIER_OPERATIONAL_LOCK_OFFLINE',
@@ -61,8 +61,8 @@ requireAll('scripts/harden-partner-entregador-operational-lock.mjs', [
   'const availabilityConfirmedActive = !availabilityRes.error',
   'const jobConfirmedActive = !jobsRes.error',
   'const bothConfirmedInactive = !availabilityRes.error && !jobsRes.error',
-  'localStorage.setItem("apois-parceiro:operational-role", "entregador")',
-  'localStorage.removeItem("apois-parceiro:operational-role")',
+  'localStorage.setItem("${ROLE_KEY}", "entregador")',
+  'localStorage.removeItem("${ROLE_KEY}")',
   'stopCourierNativeLocation',
   'removeCourierPushRegistration',
 ], 'Entregador reconcilia trava com a forma pós-operation-states sem limpar estado válido em falha de refresh');
@@ -105,7 +105,7 @@ requireAll('superapp/partner-shell/index.html', [
 
 const shellStartup = read('scripts/harden-partner-shell-startup.mjs');
 for (const marker of [
-  'async function bootPartnerShell()',
+  'const newBlock = `    async function bootPartnerShell()',
   'const launch=await appPlugin.getLaunchUrl();',
   'if(launch?.url&&relayDeepLink(launch.url))return;',
   'if(consumePendingPartnerPush())return;',
@@ -117,9 +117,14 @@ for (const marker of [
     failed = true;
   }
 }
-const startupLaunchIndex = shellStartup.indexOf('const launch=await appPlugin.getLaunchUrl();');
-const startupPendingIndex = shellStartup.indexOf('if(consumePendingPartnerPush())return;');
-const startupLockIndex = shellStartup.indexOf('const lockedOnLaunch=operationalRole();');
+const newBlockStart = shellStartup.indexOf('const newBlock = `');
+const newBlockEnd = newBlockStart >= 0 ? shellStartup.indexOf('`;\n\nif (source.includes(oldBlock))', newBlockStart) : -1;
+const startupRuntime = newBlockStart >= 0 && newBlockEnd > newBlockStart
+  ? shellStartup.slice(newBlockStart, newBlockEnd)
+  : '';
+const startupLaunchIndex = startupRuntime.indexOf('const launch=await appPlugin.getLaunchUrl();');
+const startupPendingIndex = startupRuntime.indexOf('if(consumePendingPartnerPush())return;');
+const startupLockIndex = startupRuntime.indexOf('const lockedOnLaunch=operationalRole();');
 if (!(startupLaunchIndex >= 0 && startupPendingIndex > startupLaunchIndex && startupLockIndex > startupPendingIndex)) {
   console.error('[FAIL] Bootstrap processa callback que lançou o app antes do redirect operacional: ordem deve ser deep link -> Push pendente -> trava operacional');
   failed = true;
