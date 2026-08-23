@@ -8,31 +8,47 @@ let source = readFileSync(target, 'utf8');
 
 // A finalização é autoridade exclusiva do backend. O cliente envia somente o
 // rideId; preço final, liquidação e próxima corrida são definidos pelas RPCs /
-// Edge Functions canônicas. Isso evita que um payload legado volte a sugerir
-// que o aplicativo pode escolher o valor da corrida.
-source = source.replaceAll(
-  `await callComplete({ data: {\n              rideId: active.id,\n              final_price: active.estimated_price ? Number(active.estimated_price) : undefined,\n            } });`,
-  `await callComplete({ data: {\n              rideId: active.id,\n            } });`,
-);
+// Edge Functions canônicas. O hardening é estrutural para não depender de
+// indentação, quebra de linha ou type assertion introduzida por outros passos.
+const callPattern = /await\s+callComplete\s*\(\s*\{\s*data\s*:\s*\{([\s\S]*?)\}\s*\}\s*\)(?:\s+as\s+[A-Za-z_$][\w$.[\]<>| ]*)?\s*;?/g;
 
-source = source.replaceAll(
-  `await callComplete({ data: {\n                rideId: active.id,\n                final_price: active.estimated_price ? Number(active.estimated_price) : undefined,\n              } });`,
-  `await callComplete({ data: {\n                rideId: active.id,\n              } });`,
-);
+let found = 0;
+source = source.replace(callPattern, (full, body) => {
+  found += 1;
+  let hardenedBody = String(body);
 
-if (!source.includes('await callComplete({ data: {')) {
+  // Remove qualquer tentativa do cliente de determinar preço final. A linha é
+  // removida dentro do payload do callComplete, sem tocar em outros usos de
+  // estimated_price que ainda são legítimos para exibição da corrida.
+  hardenedBody = hardenedBody
+    .replace(/\n?\s*final_price\s*:\s*[^,\n}]+,?/g, '')
+    .replace(/\n?\s*estimated_price\s*:\s*[^,\n}]+,?/g, '');
+
+  if (!/\brideId\s*:\s*active\.id\b/.test(hardenedBody)) {
+    throw new Error('[FAIL] motorista: finalização sem rideId canônico');
+  }
+
+  const typeAssertion = full.match(/\)\s+(as\s+[A-Za-z_$][\w$.[\]<>| ]*)\s*;?$/)?.[1] ?? '';
+  const suffix = typeAssertion ? ` ${typeAssertion}` : '';
+  return `await callComplete({ data: {${hardenedBody}} })${suffix};`;
+});
+
+if (found === 0) {
   throw new Error('[FAIL] motorista: chamada de finalização não encontrada');
 }
 
-const completeCalls = source.match(/await callComplete\(\{ data: \{[\s\S]{0,220}?\}\s*\}\);/g) ?? [];
-if (completeCalls.length === 0) {
+// Auditoria final independente da formatação: todas as chamadas encontradas
+// precisam carregar somente o identificador canônico e jamais preço do cliente.
+const auditedCalls = [...source.matchAll(/await\s+callComplete\s*\(\s*\{\s*data\s*:\s*\{([\s\S]*?)\}\s*\}\s*\)(?:\s+as\s+[A-Za-z_$][\w$.[\]<>| ]*)?\s*;?/g)];
+if (auditedCalls.length === 0) {
   throw new Error('[FAIL] motorista: não foi possível auditar payload de finalização');
 }
-for (const call of completeCalls) {
-  if (call.includes('final_price') || call.includes('estimated_price')) {
+for (const match of auditedCalls) {
+  const body = match[1] ?? '';
+  if (/\bfinal_price\b|\bestimated_price\b/.test(body)) {
     throw new Error('[FAIL] motorista: payload de finalização ainda envia preço pelo cliente');
   }
-  if (!call.includes('rideId: active.id')) {
+  if (!/\brideId\s*:\s*active\.id\b/.test(body)) {
     throw new Error('[FAIL] motorista: finalização sem rideId canônico');
   }
 }
