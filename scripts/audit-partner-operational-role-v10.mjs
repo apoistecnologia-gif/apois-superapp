@@ -23,10 +23,10 @@ function requireAll(path, markers, label) {
 
 const driverLock = read('scripts/harden-partner-motorista-operational-lock.mjs');
 for (const marker of [
-  'apois-parceiro:operational-role',
-  'if (value) localStorage.setItem("apois-parceiro:operational-role", "motorista")',
-  'if (publishOnline) window.localStorage.setItem("apois-parceiro:operational-role", "motorista")',
-  'window.localStorage.removeItem("apois-parceiro:operational-role")',
+  "const ROLE_KEY = 'apois-parceiro:operational-role';",
+  'if (value) localStorage.setItem("${ROLE_KEY}", "motorista")',
+  'if (publishOnline) window.localStorage.setItem("${ROLE_KEY}", "motorista")',
+  'window.localStorage.removeItem("${ROLE_KEY}")',
   'APOIS_PARTNER_DRIVER_OPERATIONAL_LOCK_SIGNOUT',
   'return false;',
   'return true;',
@@ -38,7 +38,7 @@ for (const marker of [
     failed = true;
   }
 }
-if (driverLock.includes('else if (localStorage.getItem("apois-parceiro:operational-role") === "motorista") localStorage.removeItem("apois-parceiro:operational-role");\n      window.dispatchEvent')) {
+if (driverLock.includes('else if (localStorage.getItem("${ROLE_KEY}") === "motorista") localStorage.removeItem("${ROLE_KEY}");\\n      window.dispatchEvent')) {
   console.error('[FAIL] Motorista trava operacional: intenção OFFLINE ainda libera shell antes da RPC');
   failed = true;
 } else {
