@@ -28,6 +28,22 @@ function ensureClasses(classes, required) {
   return [...set].join(' ');
 }
 
+function replaceClassToken(classes, from, to) {
+  return normalizeClassList(classes)
+    .split(' ')
+    .filter(Boolean)
+    .map((token) => (token === from ? to : token))
+    .join(' ');
+}
+
+function removeClassTokens(classes, tokens) {
+  const blocked = new Set(tokens);
+  return normalizeClassList(classes)
+    .split(' ')
+    .filter((token) => token && !blocked.has(token))
+    .join(' ');
+}
+
 patch(
   'src/components/CourierPremiumViews.tsx',
   (source) => source
@@ -57,18 +73,44 @@ patch(
     next = next.replace('{ id: "history", label: "Corridas", icon: Bike, onClick: onHistory },', '{ id: "history", label: "Entregas", icon: Bike, onClick: onHistory },');
     next = next.replace('      <PanelHeader title="Corridas" onClose={onClose} />', '      <PanelHeader title="Entregas" onClose={onClose} />');
     next = next.replace('          <h1 className="mt-1 text-2xl font-black">Corridas</h1>', '          <h1 className="mt-1 text-2xl font-black">Entregas</h1>');
-    next = next
-      .replace('pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2', 'pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-2.5')
-      .replace('className="mx-auto grid max-w-lg grid-cols-4 gap-1"', 'className="mx-auto grid min-h-[82px] max-w-lg grid-cols-4 gap-1"')
-      .replace('relative flex min-h-[3.7rem] flex-col items-center justify-center gap-1 rounded-2xl text-[10px] font-bold', 'relative flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-xs font-bold')
-      .replace('className={`grid h-8 w-10 place-items-center rounded-xl transition ${', 'className={`grid h-9 w-11 place-items-center rounded-xl transition ${')
-      .replace('className={`h-5 w-5 ${selected ? "stroke-[2.5]" : "stroke-2"}`}', 'className={`h-6 w-6 ${selected ? "stroke-[2.5]" : "stroke-2"}`}');
+
+    next = next.replace(/<nav\b([\s\S]{0,900}?)className="([^"]*)"([\s\S]{0,200}?)>/g, (tag, before, classes, after) => {
+      if (!classes.includes('fixed') || !classes.includes('bottom-0') || !classes.includes('grid') && !classes.includes('border-t')) return tag;
+      let value = replaceClassToken(classes, 'pb-[max(0.65rem,env(safe-area-inset-bottom))]', 'pb-[max(0.85rem,env(safe-area-inset-bottom))]');
+      value = replaceClassToken(value, 'pt-2', 'pt-2.5');
+      return `<nav${before}className="${value}"${after}>`;
+    });
+
+    next = next.replace(/className="([^"]*mx-auto[^"]*grid-cols-4[^"]*)"/g, (_match, classes) => {
+      const value = ensureClasses(classes, ['min-h-[82px]']);
+      return `className="${value}"`;
+    });
+
+    next = next.replace(/className=\{`([^`]*relative flex[^`]*)`\}/g, (match, classes) => {
+      if (!classes.includes('flex-col') || !classes.includes('items-center')) return match;
+      let value = replaceClassToken(classes, 'min-h-[3.7rem]', 'min-h-[64px]');
+      value = replaceClassToken(value, 'text-[10px]', 'text-xs');
+      value = ensureClasses(value, ['min-w-0', 'px-1']);
+      return `className={\`${value}\`}`;
+    });
+
+    next = next.replace(/className=\{`([^`]*grid[^`]*place-items-center[^`]*)`\}/g, (match, classes) => {
+      if (!classes.includes('rounded-xl') || !classes.includes('transition')) return match;
+      let value = replaceClassToken(classes, 'h-8', 'h-9');
+      value = replaceClassToken(value, 'w-10', 'w-11');
+      return `className={\`${value}\`}`;
+    });
+
+    next = next.replace(/className=\{`([^`]*h-5[^`]*w-5[^`]*)`\}/g, (_match, classes) => {
+      let value = replaceClassToken(classes, 'h-5', 'h-6');
+      value = replaceClassToken(value, 'w-5', 'w-6');
+      return `className={\`${value}\`}`;
+    });
 
     next = next.replace(/className="([^"]*sticky\s+top-0\s+z-40[^"]*)"/g, (match, classes) => {
       if (!classes.includes('grid-cols-[2.75rem_1fr_2.75rem]')) return match;
-      let value = normalizeClassList(classes)
-        .replace(/\bmin-h-20\b/g, 'min-h-[5.25rem]')
-        .replace(/\bpt-\[env\(safe-area-inset-top\)\]\b/g, 'pt-[max(env(safe-area-inset-top),0.65rem)]');
+      let value = replaceClassToken(classes, 'min-h-20', 'min-h-[5.25rem]');
+      value = replaceClassToken(value, 'pt-[env(safe-area-inset-top)]', 'pt-[max(env(safe-area-inset-top),0.65rem)]');
       value = ensureClasses(value, ['pb-2']);
       return `className="${value}"`;
     });
@@ -80,9 +122,11 @@ patch(
     if (!/<PanelHeader\s+title="Entregas"/.test(source)) failures.push('cabeçalho Entregas');
     if (!/min-h-\[82px\]/.test(source)) failures.push('altura do rodapé');
     if (!/min-h-\[64px\]/.test(source)) failures.push('alvo dos itens');
-    if (!/h-9\s+w-11/.test(source)) failures.push('alvo do ícone');
-    if (!/h-6\s+w-6/.test(source)) failures.push('ícone do rodapé');
-    if (!/pt-\[max\(env\(safe-area-inset-top\),0\.65rem\)\]/.test(source)) failures.push('safe-area do painel');
+    if (!/h-9\s+w-11|w-11\s+h-9/.test(source)) failures.push('alvo do ícone');
+    if (!/h-6\s+w-6|w-6\s+h-6/.test(source)) failures.push('ícone do rodapé');
+    const panelHeader = source.match(/<header\b[\s\S]{0,900}?grid-cols-\[2\.75rem_1fr_2\.75rem\][\s\S]{0,900}?>/)?.[0] ?? '';
+    if (!panelHeader || !panelHeader.includes('pt-[max(env(safe-area-inset-top),0.65rem)]')) failures.push('safe-area do painel');
+    if (!/pb-\[max\(0\.85rem,env\(safe-area-inset-bottom\)\)\]/.test(source)) failures.push('safe-area do rodapé');
     return failures.length ? failures.join(', ') : true;
   },
   'entregador: rodapé usa nomenclatura Entregas, alvos confortáveis e safe-area correta',
@@ -101,7 +145,7 @@ patch(
           .replace(/\bh-10\b/g, '')
           .replace(/\bmin-h-10\b/g, '')
           .replace(/\bpx-3\b/g, 'px-3.5')
-          .replace(/\btext-\[11px\]\b/g, 'text-xs');
+          .replace(/text-\[11px\]/g, 'text-xs');
         value = normalizeClassList(value);
         if (!/\b(?:min-h-11|h-11|h-12)\b/.test(value)) value = ensureClasses(value, ['min-h-11']);
         if (!/\b(?:inline-flex|flex|grid)\b/.test(value)) value = ensureClasses(value, ['inline-flex']);
@@ -117,7 +161,8 @@ patch(
       )
       .replace(/grid h-10 w-10 place-items-center rounded-full border border-accent\/40/g, 'grid h-11 w-11 place-items-center rounded-full border border-accent/40')
       .replace(/className="([^"]*)"(?=[^>]*aria-label="Recentralizar mapa")/g, (_m, classes) => {
-        let value = normalizeClassList(classes).replace(/\bh-10\b/g, 'h-11').replace(/\bw-10\b/g, 'w-11');
+        let value = replaceClassToken(classes, 'h-10', 'h-11');
+        value = replaceClassToken(value, 'w-10', 'w-11');
         value = ensureClasses(value, ['h-11', 'w-11']);
         return `className="${value}"`;
       });
@@ -146,10 +191,11 @@ patch(
 
     // Loading/error/empty states: safe-area sem depender da ordem exata das classes.
     next = next.replace(/className="([^"]*\bmin-h-dvh\b[^"]*\bplace-items-center\b[^"]*)"/g, (_match, classes) => {
-      let value = normalizeClassList(classes)
-        .replace(/\bp-5\b/g, '')
-        .replace(/\bpt-\[max\(env\(safe-area-inset-top\),1\.25rem\)\]\b/g, '')
-        .replace(/\bpb-\[max\(env\(safe-area-inset-bottom\),1\.25rem\)\]\b/g, '');
+      let value = removeClassTokens(classes, [
+        'p-5',
+        'pt-[max(env(safe-area-inset-top),1.25rem)]',
+        'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+      ]);
       value = ensureClasses(value, [
         'px-5',
         'pt-[max(env(safe-area-inset-top),1.25rem)]',
@@ -161,9 +207,8 @@ patch(
     // Cabeçalho principal: safe-area estrutural, sem depender de uma string Tailwind inteira.
     next = next.replace(/className="([^"]*\bsticky\b[^\"]*\btop-0\b[^\"]*\bz-40\b[^\"]*)"/g, (match, classes) => {
       if (!classes.includes('grid-cols-[3rem_1fr_3rem]')) return match;
-      let value = normalizeClassList(classes)
-        .replace(/\bmin-h-20\b/g, 'min-h-[5.25rem]')
-        .replace(/\bpt-\[env\(safe-area-inset-top\)\]\b/g, 'pt-[max(env(safe-area-inset-top),0.65rem)]');
+      let value = replaceClassToken(classes, 'min-h-20', 'min-h-[5.25rem]');
+      value = replaceClassToken(value, 'pt-[env(safe-area-inset-top)]', 'pt-[max(env(safe-area-inset-top),0.65rem)]');
       value = ensureClasses(value, ['pb-2']);
       return `className="${value}"`;
     });
