@@ -65,32 +65,45 @@ patch('src/routes/motorista.carteira.tsx', (source) => {
 
 patch('src/routes/motorista.ganhos.tsx', (source) => {
   let next = source;
+
+  // Textos legados são normalizados sem depender da ordem dos hardeners.
   next = next.replaceAll('Carteira e corridas', 'Corridas e recebimentos');
   next = next.replaceAll('Saldo disponível', 'Ganhos registrados');
   next = next.replaceAll('Carteira APOIS', 'Crédito registrado');
   next = next.replaceAll('Solicitar saque', 'Fluxo legado indisponível');
-  next = next.replace('dashboard.payoutEnabled ? (', 'false ? (');
-  next = next.replace(
+  next = next.replaceAll(
     'As transferências ainda estão em homologação. Nenhum valor será reservado enquanto o saque não estiver liberado.',
     'Os recebimentos das corridas são diretos ao motorista. A APOIS não disponibiliza retirada manual desta tela.',
   );
 
-  const sectionMarker = '<section className="min-w-0 rounded-[28px] border border-[#F6BE1C]/20 bg-gradient-to-br from-[#2A2108] via-[#121416] to-[#090A0B] p-4 sm:p-5" aria-label="Saldo da carteira">';
-  if (next.includes(sectionMarker) && !next.includes('Recebimento direto ao motorista')) {
-    next = next.replace(
-      sectionMarker,
-      `${sectionMarker}\n              <div className="mb-4 rounded-2xl border border-[#F6BE1C]/15 bg-black/25 px-3 py-3">\n                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#F6BE1C]">Recebimento direto ao motorista</p>\n                <p className="mt-1 text-xs font-medium leading-5 text-zinc-400">Dinheiro e cartão são recebidos diretamente pelo motorista. Pagamentos digitais seguem o fluxo direto homologado, sem saldo custodial da APOIS.</p>\n              </div>`,
-    );
+  // Neutraliza qualquer CTA condicionado pelo payoutEnabled, mesmo que outro
+  // hardener tenha alterado espaços/quebras de linha do JSX.
+  next = next.replace(/\{\s*dashboard\.payoutEnabled\s*\?\s*\(/g, '{false ? (');
+
+  // O aviso de recebimento direto é uma regra funcional, não deve depender da
+  // classe exata da antiga seção "Saldo da carteira". Injeta no início do <main>
+  // caso ainda não exista, preservando qualquer layout intermediário.
+  if (!next.includes('Recebimento direto ao motorista')) {
+    const mainMatch = next.match(/<main\b[^>]*>/);
+    if (!mainMatch || mainMatch.index == null) {
+      throw new Error('[FAIL] motorista.ganhos.tsx: <main> não encontrado para inserir aviso de recebimento direto');
+    }
+    const insertAt = mainMatch.index + mainMatch[0].length;
+    const notice = `\n        <section className="min-w-0 rounded-2xl border border-[#F6BE1C]/15 bg-[#111315] p-4" aria-label="Recebimento direto ao motorista">\n          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#F6BE1C]">Recebimento direto ao motorista</p>\n          <p className="mt-1 text-xs font-medium leading-5 text-zinc-400">Dinheiro e cartão são recebidos diretamente pelo motorista. Pagamentos digitais seguem o fluxo direto homologado, sem saldo custodial da APOIS.</p>\n        </section>`;
+    next = next.slice(0, insertAt) + notice + next.slice(insertAt);
   }
 
   if (!next.includes('Recebimento direto ao motorista')) {
     throw new Error('[FAIL] motorista.ganhos.tsx: aviso de recebimento direto não foi aplicado');
   }
-  if (!next.includes('false ? (')) {
+  if (!next.includes('{false ? (')) {
     throw new Error('[FAIL] motorista.ganhos.tsx: formulário legado de retirada não foi neutralizado');
   }
   if (next.includes('Solicitar saque')) {
     throw new Error('[FAIL] motorista.ganhos.tsx: rótulo legado Solicitar saque permaneceu');
+  }
+  if (!next.includes('sem saldo custodial da APOIS')) {
+    throw new Error('[FAIL] motorista.ganhos.tsx: política de recebimento direto não ficou explícita');
   }
   return next;
 }, 'motorista: ganhos exibem recebimento direto e ocultam retirada legada');
