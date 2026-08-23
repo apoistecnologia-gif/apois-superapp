@@ -1,3 +1,4 @@
+import './harden-partner-motorista-mobile-base.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -23,4 +24,4 @@ if (result.status !== 0) {
   throw new Error(`[FAIL] Motorista Parceiro: reconciliação do bun.lock da cópia .work terminou com código ${result.status}`);
 }
 
-console.log('[OK] Motorista Parceiro: bun.lock reconciliado somente na cópia descartável .work; snapshot protegido permanece intacto.');
+console.log('[OK] Motorista Parceiro: base relativa aplicada e bun.lock reconciliado somente na cópia descartável .work; snapshot protegido permanece intacto.');
