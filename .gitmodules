@@ -1,12 +1,12 @@
 [submodule "sources/apois-entregas"]
 	path = sources/apois-entregas
-	url = ../apois-entregas.git
+	url = https://github.com/franciel046631/apois-entregas.git
 	branch = main
 [submodule "sources/apois-corridas-passageiro"]
 	path = sources/apois-corridas-passageiro
-	url = ../say-hello-buddy-23-84b5dcbf.git
+	url = https://github.com/franciel046631/say-hello-buddy-23-84b5dcbf.git
 	branch = feat/apois-passageiro-completo
 [submodule "sources/apois-corridas-motorista-admin"]
 	path = sources/apois-corridas-motorista-admin
-	url = ../movvi-go-connect.git
+	url = https://github.com/franciel046631/movvi-go-connect.git
 	branch = fix/apois-corridas-consolidacao
