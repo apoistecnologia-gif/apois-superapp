@@ -52,3 +52,4 @@ await import('./harden-entregas-merchant-mercadopago-v2.mjs');
 await import('./harden-entregas-delivery-readiness.mjs');
 await import('./harden-entregas-merchant-direct-finance.mjs');
 await import('./harden-entregas-superapp-refunds.mjs');
+await import('./harden-entregas-merchant-map-runtime.mjs');
