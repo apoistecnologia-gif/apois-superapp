@@ -85,4 +85,9 @@ if (!allStyles.includes('#050505')) throw new Error('Splash do Parceiro não fic
 if (!allStyles.includes('@mipmap/ic_launcher')) throw new Error('Splash do Parceiro não usa o ícone oficial APOIS.');
 if (allStyles.includes('@drawable/splash')) throw new Error('Splash padrão do template Android permaneceu ativo no Parceiro.');
 
+// Esta é a última transformação de recursos antes do Gradle no workflow Parceiro.
+// Saneia resíduos do template Capacitor e de scripts anteriores para impedir que
+// o AAPT2 encontre duas definições de color/ic_launcher_background.
+await import('./sanitize-partner-launcher-resources.mjs');
+
 console.log('[OK] Splash Android do APOIS Parceiro usa drawable XML válido, fundo preto e marca oficial centralizada, sem splash padrão/branco do template.');
