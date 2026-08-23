@@ -28,12 +28,18 @@ requireAll('sources/apois-entregas/src/integrations/supabase/client.ts', [
   'autoRefreshToken: true',
 ], 'Fonte Entregador usa auto-refresh WebView e precisa coordenação bidirecional com o refresh nativo');
 
+// O hardener é genérico para Motorista/Entregador: as chaves finais são montadas
+// por roleKey -> accessKey/refreshKey e só então gravadas nos Java gerados.
+// Portanto a auditoria valida o gerador real e as duas invocações, em vez de
+// exigir os quatro literais finais dentro do próprio script de transformação.
 requireAll('scripts/harden-partner-location-session-sync.mjs', [
   'apois_partner_location_session',
-  'driver_access_token',
-  'driver_refresh_token',
-  'courier_access_token',
-  'courier_refresh_token',
+  'const accessKey = `${roleKey}_access_token`;',
+  'const refreshKey = `${roleKey}_refresh_token`;',
+  "roleKey: 'driver'",
+  "roleKey: 'courier'",
+  'SESSION_ACCESS_KEY = "${accessKey}"',
+  'SESSION_REFRESH_KEY = "${refreshKey}"',
   'public void session(PluginCall call)',
   'public void updateSession(PluginCall call)',
   'private void persistSessionTokens()',
