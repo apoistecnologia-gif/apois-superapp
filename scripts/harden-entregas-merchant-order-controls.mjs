@@ -7,9 +7,13 @@ let source = readFileSync(path, 'utf8');
 // O atalho fixo "Solicitar entregador · Pedido #..." cobria qualquer tela do
 // painel (Financeiro, Configurações etc.). A solicitação continua existindo
 // dentro da Central de pedidos, junto do pedido correto, mas nunca como CTA
-// global. readyDeliveryOrder não tem nenhuma outra declaração neste arquivo
-// (confirmado varrendo todas as linhas em produção) — é código órfão restrito
-// a este bloco flutuante, então removê-lo inteiro basta.
+// global. Duas partes precisam ser removidas: o estado derivado (useMemo) e
+// o botão flutuante que o consome.
+const readyMemoPattern = /\n  const readyDeliveryOrder = useMemo\([\s\S]*?\n  \);\n\n  const transition/;
+if (readyMemoPattern.test(source)) {
+  source = source.replace(readyMemoPattern, '\n\n  const transition');
+}
+
 const floatingCourierBlock = `      {readyDeliveryOrder ? (
         <button
           type="button"
@@ -26,12 +30,8 @@ const floatingCourierBlock = `      {readyDeliveryOrder ? (
         </button>
       ) : null}
 `;
-
-const exactBlockMatched = source.includes(floatingCourierBlock);
-console.error('[DEBUG] exactBlockMatched:', exactBlockMatched);
-if (exactBlockMatched) {
+if (source.includes(floatingCourierBlock)) {
   source = source.replace(floatingCourierBlock, '');
-  console.error('[DEBUG] ocorrências de readyDeliveryOrder após replace:', (source.match(/readyDeliveryOrder/g) ?? []).length);
 } else if (source.includes('readyDeliveryOrder')) {
   throw new Error('[FAIL] Entregas: CTA global de solicitar entregador mudou de formato; hardener precisa ser atualizado.');
 }
@@ -40,12 +40,6 @@ if (source.includes('SOLICITAR ENTREGADOR') || source.includes('Solicitar entreg
   throw new Error('[FAIL] Entregas: CTA global de solicitar entregador ainda permanece no painel.');
 }
 if (source.includes('readyDeliveryOrder')) {
-  const lines = source.split('\n');
-  lines.forEach((line, index) => {
-    if (line.includes('readyDeliveryOrder')) {
-      console.error(`[DEBUG] linha remanescente ${index + 1}: ${line}`);
-    }
-  });
   throw new Error('[FAIL] Entregas: estado do atalho global de entregador ainda permanece.');
 }
 if (!source.includes('void requestCourier(order.id)')) {
