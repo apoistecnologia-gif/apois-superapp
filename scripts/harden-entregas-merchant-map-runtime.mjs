@@ -10,6 +10,11 @@ let source = readFileSync(path, 'utf8');
 // "Supabase server authentication is not configured" toast. Maps calls are
 // authenticated by the Supabase browser session and sent to our Edge Function.
 if (source.includes('useServerFn(') || source.includes('google-maps.functions')) {
+  source.split('\n').forEach((line, index) => {
+    if (line.includes('useServerFn(') || line.includes('google-maps.functions')) {
+      console.error(`[DEBUG] GoogleMapsAddressSelector.tsx:${index + 1}: ${line.trim()}`);
+    }
+  });
   throw new Error('Merchant map still contains TanStack server-function runtime');
 }
 if (!source.includes('supabase.functions.invoke("google-maps-address"')) {
