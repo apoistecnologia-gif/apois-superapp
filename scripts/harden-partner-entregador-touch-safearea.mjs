@@ -8,7 +8,11 @@ function patch(relativePath, transform, verify, label) {
   const path = resolve(root, workspace, relativePath);
   const before = readFileSync(path, 'utf8');
   const after = transform(before);
-  if (!verify(after)) throw new Error(`[FAIL] ${label}: contrato esperado não encontrado em ${relativePath}`);
+  const result = verify(after);
+  if (result !== true) {
+    const detail = typeof result === 'string' && result ? ` (${result})` : '';
+    throw new Error(`[FAIL] ${label}: contrato esperado não encontrado em ${relativePath}${detail}`);
+  }
   if (after !== before) writeFileSync(path, after, 'utf8');
   console.log(`[OK] ${label}${after === before ? ' (já aplicado)' : ''}`);
 }
@@ -68,25 +72,67 @@ patch(
   'src/components/CourierRouteMap.tsx',
   (source) => {
     let next = source;
+
+    // Compatibilidade com a forma histórica do botão flutuante.
     next = next.replace(
       'className="absolute right-3 top-3 z-20 inline-flex h-10 items-center gap-1.5 rounded-full border border-white/10 bg-black/75 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-lg backdrop-blur-md active:scale-95"',
       'className="absolute right-3 top-3 z-20 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/10 bg-black/75 px-3.5 text-xs font-black uppercase tracking-[0.08em] text-white shadow-lg backdrop-blur-md active:scale-95"',
     );
+
+    // Forma atual: o botão Rotas está no cabeçalho do card. Torne a alteração
+    // idempotente e independente do restante das classes/branding.
+    const routeButtonMatch = next.match(/<button\b[\s\S]{0,700}?onClick=\{openNavigation\}[\s\S]{0,700}?<\/button>/);
+    if (routeButtonMatch) {
+      const original = routeButtonMatch[0];
+      const updated = original.replace(/className="([^"]*)"/, (_m, classes) => {
+        let value = String(classes)
+          .replace(/\bh-10\b/g, '')
+          .replace(/\bmin-h-10\b/g, '')
+          .replace(/\bpx-3\b/g, 'px-3.5')
+          .replace(/\btext-\[11px\]\b/g, 'text-xs')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (!/\bmin-h-11\b/.test(value) && !/\bh-11\b/.test(value) && !/\bh-12\b/.test(value)) {
+          value = `min-h-11 ${value}`;
+        }
+        if (!/\binline-flex\b|\bflex\b|\bgrid\b/.test(value)) value = `inline-flex ${value}`;
+        return `className="${value}"`;
+      });
+      next = next.replace(original, updated);
+    }
+
+    // Aceite tanto a fonte histórica quanto a normalização já aplicada antes.
     next = next.replace(
       'expanded ? "h-[36rem] min-h-[72vh] max-h-[44rem]" : "h-[29rem] min-h-[62vh] max-h-[36rem]"',
       'expanded ? "h-[clamp(24rem,62dvh,36rem)]" : "h-[clamp(21rem,54dvh,31rem)]"',
     );
-    next = next.replace(
-      'className="absolute bottom-3 right-3 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/75 text-white shadow-lg backdrop-blur-md active:scale-95"',
-      'className="absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-black/75 text-white shadow-lg backdrop-blur-md active:scale-95"',
-    );
+
+    // RecenterControl: normalize variantes antigas; a forma atual já é 44x44.
+    next = next
+      .replace(
+        'className="absolute bottom-3 right-3 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/75 text-white shadow-lg backdrop-blur-md active:scale-95"',
+        'className="absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-black/75 text-white shadow-lg backdrop-blur-md active:scale-95"',
+      )
+      .replace(/grid h-10 w-10 place-items-center rounded-full border border-accent\/40/g, 'grid h-11 w-11 place-items-center rounded-full border border-accent/40');
+
     return next;
   },
-  (source) =>
-    source.includes('min-h-11 items-center') &&
-    source.includes('h-[clamp(24rem,62dvh,36rem)]') &&
-    source.includes('h-[clamp(21rem,54dvh,31rem)]') &&
-    source.includes('grid h-11 w-11 place-items-center rounded-full'),
+  (source) => {
+    const routeButton = source.match(/<button\b[\s\S]{0,700}?onClick=\{openNavigation\}[\s\S]{0,700}?<\/button>/)?.[0] ?? '';
+    const recenterButton = source.match(/<button\b[\s\S]{0,700}?aria-label="Recentralizar mapa"[\s\S]{0,700}?<\/button>/)?.[0] ?? '';
+    const failures = [];
+
+    if (!routeButton) failures.push('botão Rotas');
+    else if (!/\b(?:min-h-11|h-11|h-12)\b/.test(routeButton)) failures.push('alvo do botão Rotas');
+
+    if (!source.includes('h-[clamp(24rem,62dvh,36rem)]')) failures.push('altura expandida');
+    if (!source.includes('h-[clamp(21rem,54dvh,31rem)]')) failures.push('altura compacta');
+
+    if (!recenterButton) failures.push('botão Recentralizar');
+    else if (!/\bh-11\b/.test(recenterButton) || !/\bw-11\b/.test(recenterButton)) failures.push('alvo do Recentralizar');
+
+    return failures.length ? failures.join(', ') : true;
+  },
   'entregador: mapa de rota adapta altura à tela e controles de rota/recentralizar têm alvo tocável',
 );
 
