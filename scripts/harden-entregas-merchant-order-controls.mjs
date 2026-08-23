@@ -27,8 +27,11 @@ const floatingCourierBlock = `      {readyDeliveryOrder ? (
       ) : null}
 `;
 
-if (source.includes(floatingCourierBlock)) {
+const exactBlockMatched = source.includes(floatingCourierBlock);
+console.error('[DEBUG] exactBlockMatched:', exactBlockMatched);
+if (exactBlockMatched) {
   source = source.replace(floatingCourierBlock, '');
+  console.error('[DEBUG] ocorrências de readyDeliveryOrder após replace:', (source.match(/readyDeliveryOrder/g) ?? []).length);
 } else if (source.includes('readyDeliveryOrder')) {
   throw new Error('[FAIL] Entregas: CTA global de solicitar entregador mudou de formato; hardener precisa ser atualizado.');
 }
@@ -37,6 +40,12 @@ if (source.includes('SOLICITAR ENTREGADOR') || source.includes('Solicitar entreg
   throw new Error('[FAIL] Entregas: CTA global de solicitar entregador ainda permanece no painel.');
 }
 if (source.includes('readyDeliveryOrder')) {
+  const lines = source.split('\n');
+  lines.forEach((line, index) => {
+    if (line.includes('readyDeliveryOrder')) {
+      console.error(`[DEBUG] linha remanescente ${index + 1}: ${line}`);
+    }
+  });
   throw new Error('[FAIL] Entregas: estado do atalho global de entregador ainda permanece.');
 }
 if (!source.includes('void requestCourier(order.id)')) {
