@@ -1,16 +1,19 @@
 import './harden-superapp-android-security.mjs';
-import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const source = resolve('superapp/branding/apois-launcher.png');
+const legacySource = resolve('superapp/branding/apois-launcher.png');
+const foregroundSource = resolve('superapp/branding/apois-launcher-foreground.png');
 const resRoot = resolve('superapp/shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
 const stringsPath = resolve('superapp/shell/android/app/src/main/res/values/strings.xml');
 const APP_LABEL = 'APOIS Cliente';
 
-if (!existsSync(source)) {
-  throw new Error(`Arte oficial do launcher não encontrada: ${source}`);
+for (const source of [legacySource, foregroundSource]) {
+  if (!existsSync(source)) {
+    throw new Error(`Arte oficial do launcher não encontrada: ${source}`);
+  }
 }
 if (!existsSync(resRoot)) {
   throw new Error(`Recursos Android não encontrados: ${resRoot}`);
@@ -25,31 +28,27 @@ function runSips(args, label) {
   }
 }
 
-function renderPng(size, output, contentScale) {
-  // O launcher anterior ocupava praticamente todo o canvas. Em launchers Android
-  // com máscara adaptativa isso recortava o "A" nas bordas. A arte agora é
-  // reduzida e centralizada dentro de uma zona segura, preservando o símbolo inteiro.
-  const innerSize = Math.max(1, Math.round(size * contentScale));
-  const tmp = `/tmp/apois-launcher-inner-${size}-${innerSize}.png`;
-
+function resizePng(source, size, output) {
   runSips(
-    ['-s', 'format', 'png', '-z', String(innerSize), String(innerSize), source, '--out', tmp],
-    `redimensionar launcher para ${innerSize}x${innerSize}`,
+    ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', output],
+    `redimensionar launcher para ${size}x${size}`,
   );
-  runSips(
-    ['-p', String(size), String(size), '--padColor', '050505', tmp, '--out', output],
-    `centralizar launcher em canvas ${size}x${size}`,
-  );
-
   if (!existsSync(output)) {
     throw new Error(`Launcher não foi gerado: ${output}`);
   }
-  rmSync(tmp, { force: true });
 }
 
-// Android usa tamanhos físicos diferentes por densidade. Para o ícone legacy
-// usamos 70% do canvas; no foreground adaptativo, 62%, porque a máscara do
-// launcher pode recortar ainda mais as bordas dependendo do fabricante.
+function removeStaleLauncherBitmaps(dir) {
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir)) {
+    if (!/^ic_launcher(?:_round|_foreground|_background)?\.(?:png|webp|jpe?g)$/i.test(entry)) continue;
+    rmSync(join(dir, entry), { force: true });
+  }
+}
+
+// As duas artes oficiais têm exatamente o mesmo ÚNICO "A" dourado centralizado.
+// A legacy já contém o fundo #050505; o foreground adaptativo é transparente.
+// Assim o Android nunca empilha um "A" no background com outro no foreground.
 const densities = [
   { dir: 'mipmap-mdpi', legacy: 48, foreground: 108 },
   { dir: 'mipmap-hdpi', legacy: 72, foreground: 162 },
@@ -61,11 +60,12 @@ const densities = [
 for (const density of densities) {
   const dir = join(resRoot, density.dir);
   mkdirSync(dir, { recursive: true });
+  removeStaleLauncherBitmaps(dir);
 
   const legacyTmp = `/tmp/apois-launcher-${density.legacy}.png`;
   const foregroundTmp = `/tmp/apois-launcher-foreground-${density.foreground}.png`;
-  renderPng(density.legacy, legacyTmp, 0.70);
-  renderPng(density.foreground, foregroundTmp, 0.62);
+  resizePng(legacySource, density.legacy, legacyTmp);
+  resizePng(foregroundSource, density.foreground, foregroundTmp);
 
   copyFileSync(legacyTmp, join(dir, 'ic_launcher.png'));
   copyFileSync(legacyTmp, join(dir, 'ic_launcher_round.png'));
@@ -74,7 +74,29 @@ for (const density of densities) {
   rmSync(foregroundTmp, { force: true });
 }
 
-// Legacy launchers devem apontar para o raster oficial, nunca para o fallback
+const drawableDir = join(resRoot, 'drawable');
+mkdirSync(drawableDir, { recursive: true });
+rmSync(join(drawableDir, 'ic_launcher_foreground.xml'), { force: true });
+const monochromeXml = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="432"
+    android:viewportHeight="432">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M216,88 L92,344 L146,344 L176,278 L256,278 L286,344 L340,344 Z" />
+    <path
+        android:fillColor="#050505"
+        android:pathData="M198,228 L216,180 L234,228 Z" />
+    <path
+        android:fillColor="#050505"
+        android:pathData="M164,300 L268,300 L288,344 L144,344 Z" />
+</vector>
+`;
+writeFileSync(join(drawableDir, 'ic_launcher_monochrome.xml'), monochromeXml, 'utf8');
+
+// Legacy launchers devem apontar para os rasters oficiais, nunca para fallback
 // genérico criado por `cap add android`.
 const legacyAnyDpi = join(resRoot, 'mipmap-anydpi');
 rmSync(join(legacyAnyDpi, 'ic_launcher.xml'), { force: true });
@@ -127,4 +149,4 @@ if (!manifest.includes('android:usesCleartextTraffic="false"')) {
   throw new Error('AndroidManifest não bloqueia tráfego HTTP cleartext.');
 }
 
-console.log('[OK] Launcher APOIS Cliente centralizado na zona segura Android, rótulo validado e hardening mantido.');
+console.log('[OK] Launcher APOIS Cliente: um único A dourado, fundo #050505, safe area preservada e adaptive icon sem duplicação.');
