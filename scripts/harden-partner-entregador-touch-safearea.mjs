@@ -75,7 +75,7 @@ patch(
     next = next.replace('          <h1 className="mt-1 text-2xl font-black">Corridas</h1>', '          <h1 className="mt-1 text-2xl font-black">Entregas</h1>');
 
     next = next.replace(/<nav\b([\s\S]{0,900}?)className="([^"]*)"([\s\S]{0,200}?)>/g, (tag, before, classes, after) => {
-      if (!classes.includes('fixed') || !classes.includes('bottom-0') || !classes.includes('grid') && !classes.includes('border-t')) return tag;
+      if (!classes.includes('fixed') || !classes.includes('bottom-0') || (!classes.includes('grid') && !classes.includes('border-t'))) return tag;
       let value = replaceClassToken(classes, 'pb-[max(0.65rem,env(safe-area-inset-bottom))]', 'pb-[max(0.85rem,env(safe-area-inset-bottom))]');
       value = replaceClassToken(value, 'pt-2', 'pt-2.5');
       return `<nav${before}className="${value}"${after}>`;
@@ -136,7 +136,6 @@ patch(
   'src/components/CourierRouteMap.tsx',
   (source) => {
     let next = source;
-
     const routeButtonMatch = next.match(/<button\b[\s\S]{0,900}?onClick=\{openNavigation\}[\s\S]{0,900}?<\/button>/);
     if (routeButtonMatch) {
       const original = routeButtonMatch[0];
@@ -166,7 +165,6 @@ patch(
         value = ensureClasses(value, ['h-11', 'w-11']);
         return `className="${value}"`;
       });
-
     return next;
   },
   (source) => {
@@ -189,7 +187,6 @@ patch(
   (source) => {
     let next = source;
 
-    // Loading/error/empty states: safe-area sem depender da ordem exata das classes.
     next = next.replace(/className="([^"]*\bmin-h-dvh\b[^"]*\bplace-items-center\b[^"]*)"/g, (_match, classes) => {
       let value = removeClassTokens(classes, [
         'p-5',
@@ -204,7 +201,6 @@ patch(
       return `className="${value}"`;
     });
 
-    // Cabeçalho principal: safe-area estrutural, sem depender de uma string Tailwind inteira.
     next = next.replace(/className="([^"]*\bsticky\b[^\"]*\btop-0\b[^\"]*\bz-40\b[^\"]*)"/g, (match, classes) => {
       if (!classes.includes('grid-cols-[3rem_1fr_3rem]')) return match;
       let value = replaceClassToken(classes, 'min-h-20', 'min-h-[5.25rem]');
@@ -213,44 +209,55 @@ patch(
       return `className="${value}"`;
     });
 
-    // Painéis secundários nunca podem tomar o lugar da tela operacional durante uma entrega ativa.
     next = next
       .replace(/if\s*\(historyOpen\s*\)\s*\{/g, 'if (historyOpen && !activeJob) {')
       .replace(/if\s*\(financeOpen\s*\)\s*\{/g, 'if (financeOpen && !activeJob) {')
       .replace(/if\s*\(profileOpen\s*\)\s*\{/g, 'if (profileOpen && !activeJob) {');
 
-    // Botão de perfil do cabeçalho: bloqueie durante operação ativa. Não altera callbacks de rodapé.
     const mainIndex = next.indexOf('<main');
     if (mainIndex > 0) {
       const beforeMain = next.slice(0, mainIndex);
       const afterMain = next.slice(mainIndex);
-      const guardedBeforeMain = beforeMain.replace(
-        /<button\b([\s\S]{0,650}?)onClick=\{\(\) => setProfileOpen\(true\)\}([\s\S]{0,650}?)<\/button>/,
-        (button) => {
-          let updated = button.replace(
+      const profileButtonPattern = /<button\b[\s\S]{0,900}?(?:aria-label=(?:"Abrir perfil"|\{[^}]*Perfil[^}]*\})|onClick=\{\(\) =>[^}]*setProfileOpen\(true\)[^}]*\})[\s\S]{0,900}?<\/button>/;
+      const profileButton = beforeMain.match(profileButtonPattern)?.[0] ?? '';
+      let guardedBeforeMain = beforeMain;
+
+      if (profileButton) {
+        let updated = profileButton;
+        if (/onClick=\{\(\) => setProfileOpen\(true\)\}/.test(updated)) {
+          updated = updated.replace(
             'onClick={() => setProfileOpen(true)}',
-            'onClick={() => !activeJob && setProfileOpen(true)}',
+            'onClick={() => { if (!activeJob && !completedJob) setProfileOpen(true); }}',
           );
-          if (!/disabled=\{Boolean\(activeJob\)\}/.test(updated)) {
-            updated = updated.replace(/onClick=\{\(\) => !activeJob && setProfileOpen\(true\)\}/, '$&\n          disabled={Boolean(activeJob)}');
-          }
-          if (/aria-label="Abrir perfil"/.test(updated)) {
-            updated = updated.replace(
-              'aria-label="Abrir perfil"',
-              'aria-label={activeJob ? "Perfil indisponível durante entrega ativa" : "Abrir perfil"}',
-            );
-          }
-          updated = updated.replace(/className="([^"]*)"/, (_m, classes) => {
-            const value = ensureClasses(classes, ['disabled:cursor-not-allowed', 'disabled:opacity-35']);
-            return `className="${value}"`;
-          });
-          return updated;
-        },
-      );
+        } else if (/onClick=\{\(\) => !activeJob && setProfileOpen\(true\)\}/.test(updated)) {
+          updated = updated.replace(
+            'onClick={() => !activeJob && setProfileOpen(true)}',
+            'onClick={() => { if (!activeJob && !completedJob) setProfileOpen(true); }}',
+          );
+        }
+
+        if (/disabled=\{Boolean\(activeJob\)\}/.test(updated)) {
+          updated = updated.replace('disabled={Boolean(activeJob)}', 'disabled={Boolean(activeJob || completedJob)}');
+        } else if (!/disabled=\{Boolean\(activeJob\s*\|\|\s*completedJob\)\}/.test(updated)) {
+          updated = updated.replace(/onClick=\{[^\n]+\}/, '$&\n          disabled={Boolean(activeJob || completedJob)}');
+        }
+
+        if (/aria-label="Abrir perfil"/.test(updated)) {
+          updated = updated.replace(
+            'aria-label="Abrir perfil"',
+            'aria-label={activeJob || completedJob ? "Perfil indisponível durante a entrega" : "Abrir perfil"}',
+          );
+        }
+
+        updated = updated.replace(/className="([^"]*)"/, (_m, classes) => {
+          const value = ensureClasses(classes, ['disabled:cursor-not-allowed', 'disabled:opacity-40']);
+          return `className="${value}"`;
+        });
+        guardedBeforeMain = beforeMain.replace(profileButton, updated);
+      }
       next = guardedBeforeMain + afterMain;
     }
 
-    // Conteúdo principal reduz o padding reservado ao rodapé quando há entrega ativa.
     next = next.replace(/<main\b([^>]*)>/, (tag, attrs) => {
       let updatedAttrs = attrs;
       if (!/data-active-job=/.test(updatedAttrs)) {
@@ -266,11 +273,10 @@ patch(
       return `<main${updatedAttrs}>`;
     });
 
-    // Apenas o rodapé HOME é suprimido durante entrega ativa. Painéis acima já estão guardados por !activeJob.
     const homeNav = /\n\s*<CourierBottomNav\s+[\s\S]{0,1400}?active="home"[\s\S]{0,1800}?\/>/;
     const navMatch = next.match(homeNav)?.[0] ?? '';
-    if (navMatch && !navMatch.includes('{!activeJob ? (')) {
-      next = next.replace(navMatch, `\n      {!activeJob ? (${navMatch.trim()}\n      ) : null}`);
+    if (navMatch && !/\{!activeJob(?:\s*&&\s*!completedJob)?\s*\?\s*\(/.test(next.slice(Math.max(0, next.indexOf(navMatch) - 80), next.indexOf(navMatch) + navMatch.length + 80))) {
+      next = next.replace(navMatch, `\n      {!activeJob && !completedJob ? (${navMatch.trim()}\n      ) : null}`);
     }
 
     return next;
@@ -283,10 +289,12 @@ patch(
     if (!/if\s*\(historyOpen\s*&&\s*!activeJob\)/.test(source)) failures.push('guard do histórico');
     if (!/if\s*\(financeOpen\s*&&\s*!activeJob\)/.test(source)) failures.push('guard financeiro');
     if (!/if\s*\(profileOpen\s*&&\s*!activeJob\)/.test(source)) failures.push('guard do perfil');
-    if (!/disabled=\{Boolean\(activeJob\)\}/.test(source)) failures.push('bloqueio do perfil durante entrega');
+    const hasStrongProfileGuard = /disabled=\{Boolean\(activeJob\s*\|\|\s*completedJob\)\}/.test(source) && /if\s*\(!activeJob\s*&&\s*!completedJob\)\s*setProfileOpen\(true\)/.test(source);
+    const hasBasicProfileGuard = /disabled=\{Boolean\(activeJob\)\}/.test(source) && /!activeJob\s*&&\s*setProfileOpen\(true\)/.test(source);
+    if (!hasStrongProfileGuard && !hasBasicProfileGuard) failures.push('bloqueio do perfil durante entrega');
     if (!/data-active-job=\{activeJob\s*\?\s*"true"\s*:\s*"false"\}/.test(source)) failures.push('estado estrutural do main');
     if (!/data-\[active-job=true\]:pb-\[max\(env\(safe-area-inset-bottom\),1\.25rem\)\]/.test(source)) failures.push('safe-area inferior da entrega ativa');
-    if (!/\{!activeJob\s*\?\s*\([\s\S]{0,1600}?<CourierBottomNav[\s\S]{0,1200}?active="home"/.test(source)) failures.push('rodapé HOME condicionado à ausência de entrega ativa');
+    if (!/\{!activeJob(?:\s*&&\s*!completedJob)?\s*\?\s*\([\s\S]{0,1800}?<CourierBottomNav[\s\S]{0,1400}?active="home"/.test(source)) failures.push('rodapé HOME condicionado à ausência de entrega ativa');
     return failures.length ? failures.join(', ') : true;
   },
   'entregador: tela principal respeita safe-area e não abre painéis/rodapé durante entrega ativa',
