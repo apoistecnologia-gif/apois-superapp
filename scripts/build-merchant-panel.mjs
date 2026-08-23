@@ -86,6 +86,15 @@ const env = {
   APOIS_MOBILE_BUILD: '0',
 };
 
+// Vercel injects VERCEL=1 into every build, which makes Nitro auto-detect the
+// "vercel" preset and emit its Build Output API layout (.vercel/output/...)
+// instead of the plain .output/server + .output/public shape this script
+// pre-renders and republishes. Force the generic preset for this nested build.
+delete env.VERCEL;
+delete env.VERCEL_ENV;
+delete env.VERCEL_URL;
+env.NITRO_PRESET = 'node-server';
+
 run('bun', ['install'], { cwd: workspace, env });
 run('bun', ['run', 'build:merchant'], { cwd: workspace, env });
 
