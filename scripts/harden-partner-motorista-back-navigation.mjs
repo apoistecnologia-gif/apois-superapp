@@ -21,11 +21,21 @@ if (!source.includes('App.addListener("backButton"')) {
   source = source.replace(anchor, `${effect}${anchor}`);
 }
 
-// Migração defensiva: versões anteriores deste hardener ainda acoplavam o botão
-// Voltar ao side menu. O menu paralelo não faz parte da UI final do Parceiro.
-source = source
-  .replace(/\n\s*if \(sideMenuOpen\) \{\n\s*setSideMenuOpen\(false\);\n\s*return;\n\s*\}/g, '')
-  .replace(/\[online,\s*sideMenuOpen\]/g, '[online]');
+// Migração defensiva: versões anteriores deste hardener podiam ter injetado no
+// PRÓPRIO efeito do hardware back a dependência do side menu. Remova somente
+// esse acoplamento antigo; o side menu original da tela ainda pode existir neste
+// ponto do pipeline e será removido pelo hardener mobile-ui executado depois.
+const backStart = source.indexOf('App.addListener("backButton"');
+const backEnd = backStart >= 0 ? source.indexOf('  }, [online', backStart) : -1;
+if (backStart >= 0 && backEnd > backStart) {
+  const prefix = source.slice(0, backStart);
+  let backBlock = source.slice(backStart, backEnd + 32);
+  const suffix = source.slice(backEnd + 32);
+  backBlock = backBlock
+    .replace(/\n\s*if \(sideMenuOpen\) \{\n\s*setSideMenuOpen\(false\);\n\s*return;\n\s*\}/g, '')
+    .replace(/\[online,\s*sideMenuOpen\]/g, '[online]');
+  source = prefix + backBlock + suffix;
+}
 
 for (const marker of [
   'import { App } from "@capacitor/app";',
@@ -41,7 +51,19 @@ for (const marker of [
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Motorista Parceiro: proteção do botão Voltar incompleta (${marker})`);
 }
-if (/\bsideMenuOpen\b|\bsetSideMenuOpen\b/.test(source)) {
+
+// Valide apenas o efeito injetado pelo hardener. Não examine o arquivo inteiro:
+// neste estágio o componente original ainda contém sideMenuOpen e isso é esperado
+// até o hardener mobile-ui removê-lo na etapa seguinte.
+const finalBackStart = source.indexOf('App.addListener("backButton"');
+const finalBackEnd = finalBackStart >= 0 ? source.indexOf('  }, [online]);', finalBackStart) : -1;
+const finalBackBlock = finalBackStart >= 0 && finalBackEnd > finalBackStart
+  ? source.slice(finalBackStart, finalBackEnd + '  }, [online]);'.length)
+  : '';
+if (!finalBackBlock) {
+  throw new Error('[FAIL] Motorista Parceiro: bloco final do hardware back não pôde ser isolado');
+}
+if (/\bsideMenuOpen\b|\bsetSideMenuOpen\b/.test(finalBackBlock)) {
   throw new Error('[FAIL] Motorista Parceiro: proteção do botão Voltar ainda referencia o menu paralelo removido');
 }
 
