@@ -21,6 +21,11 @@ if (source.includes('SOLICITAR ENTREGADOR')) {
   throw new Error('[FAIL] Entregas: CTA global SOLICITAR ENTREGADOR ainda permanece no painel.');
 }
 if (source.includes('readyDeliveryOrder')) {
+  console.error('[DEBUG] readyMemoPattern.test:', readyMemoPattern.test(source));
+  console.error('[DEBUG] floatingCourierPattern.test:', floatingCourierPattern.test(source));
+  const idx = source.indexOf('readyDeliveryOrder');
+  console.error('[DEBUG] contexto ao redor de readyDeliveryOrder:');
+  console.error(source.slice(Math.max(0, idx - 200), idx + 500));
   throw new Error('[FAIL] Entregas: estado do atalho global de entregador ainda permanece.');
 }
 if (!source.includes('void requestCourier(order.id)')) {
