@@ -103,19 +103,45 @@ requireAll('superapp/partner-shell/index.html', [
   "if(isRide)return routeRole('motorista'",
 ], 'Shell possui roteamento base protegido por função operacional');
 
-requireAll('scripts/harden-partner-shell-startup.mjs', [
+const shellStartup = read('scripts/harden-partner-shell-startup.mjs');
+for (const marker of [
   'async function bootPartnerShell()',
   'const launch=await appPlugin.getLaunchUrl();',
   'if(launch?.url&&relayDeepLink(launch.url))return;',
+  'if(consumePendingPartnerPush())return;',
   'const lockedOnLaunch=operationalRole();',
-  'consumePendingPartnerPush();',
-  'trava operacional ainda executa antes do deep link de lançamento',
-], 'Bootstrap processa callback que lançou o app antes do redirect operacional');
-requireAll('superapp/partner-shell/build.mjs', [
+  'void bootPartnerShell();',
+]) {
+  if (!shellStartup.includes(marker)) {
+    console.error(`[FAIL] Bootstrap Parceiro: proteção ausente ${marker}`);
+    failed = true;
+  }
+}
+const startupLaunchIndex = shellStartup.indexOf('const launch=await appPlugin.getLaunchUrl();');
+const startupPendingIndex = shellStartup.indexOf('if(consumePendingPartnerPush())return;');
+const startupLockIndex = shellStartup.indexOf('const lockedOnLaunch=operationalRole();');
+if (!(startupLaunchIndex >= 0 && startupPendingIndex > startupLaunchIndex && startupLockIndex > startupPendingIndex)) {
+  console.error('[FAIL] Bootstrap processa callback que lançou o app antes do redirect operacional: ordem deve ser deep link -> Push pendente -> trava operacional');
+  failed = true;
+} else {
+  console.log('[OK] Bootstrap processa callback que lançou o app antes do redirect operacional');
+}
+
+const partnerBuild = read('superapp/partner-shell/build.mjs');
+for (const marker of [
   "import '../../scripts/harden-partner-shell-startup.mjs';",
   'const launch=await appPlugin.getLaunchUrl();',
-  'redirect operacional ainda pode descartar deep link',
-], 'Build aplica e valida bootstrap seguro do shell');
+  'if(launch?.url&&relayDeepLink(launch.url))return;',
+  'if(consumePendingPartnerPush())return;',
+  'const lockedOnLaunch=operationalRole();',
+  'ordem de bootstrap deve ser deep link -> Push pendente -> trava operacional',
+]) {
+  if (!partnerBuild.includes(marker)) {
+    console.error(`[FAIL] Build Parceiro bootstrap: validação ausente ${marker}`);
+    failed = true;
+  }
+}
+if (!failed) console.log('[OK] Build aplica e valida bootstrap seguro do shell');
 
 if (!failed) console.log('[OK] Partner operational role v10: uma única função operacional é preservada sem descartar callbacks nativos de lançamento.');
 process.exit(failed ? 1 : 0);
