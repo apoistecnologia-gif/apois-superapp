@@ -28,6 +28,10 @@ for (const marker of [
   'if (publishOnline) window.localStorage.setItem("${ROLE_KEY}", "motorista")',
   'window.localStorage.removeItem("${ROLE_KEY}")',
   'APOIS_PARTNER_DRIVER_OPERATIONAL_LOCK_SIGNOUT',
+  'const prematureSetter = `',
+  'if (app.includes(prematureSetter)) app = app.replace(prematureSetter, setterReplacement);',
+  'if (app.includes(`else if (localStorage.getItem("${ROLE_KEY}") === "motorista") localStorage.removeItem("${ROLE_KEY}")`))',
+  "throw new Error('[FAIL] Motorista Parceiro: intenção OFFLINE ainda limpa trava antes da confirmação do backend')",
   'return false;',
   'return true;',
   'apois:driver:online',
@@ -38,11 +42,15 @@ for (const marker of [
     failed = true;
   }
 }
-if (driverLock.includes('else if (localStorage.getItem("${ROLE_KEY}") === "motorista") localStorage.removeItem("${ROLE_KEY}");\\n      window.dispatchEvent')) {
-  console.error('[FAIL] Motorista trava operacional: intenção OFFLINE ainda libera shell antes da RPC');
-  failed = true;
-} else {
+if (
+  driverLock.includes('const prematureSetter = `') &&
+  driverLock.includes('if (app.includes(prematureSetter)) app = app.replace(prematureSetter, setterReplacement);') &&
+  driverLock.includes('intenção OFFLINE ainda limpa trava antes da confirmação do backend')
+) {
   console.log('[OK] Motorista só libera trava após confirmação de driver_set_presence OFFLINE.');
+} else {
+  console.error('[FAIL] Motorista trava operacional: guarda contra liberação prematura antes da RPC ausente');
+  failed = true;
 }
 
 requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
