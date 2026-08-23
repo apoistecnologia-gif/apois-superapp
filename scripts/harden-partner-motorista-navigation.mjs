@@ -23,9 +23,6 @@ patch('src/components/ApoisDriverBottomNav.tsx', (source) => {
     '{ to: "/motorista/ganhos", label: "Ganhos", icon: WalletCards },',
   );
 
-  // O rodapé original tinha links de 48px, ícones de 20px e pouco respiro da
-  // barra de gestos. No Parceiro os cinco destinos principais precisam ser
-  // confortáveis para uso com uma mão em telas Android pequenas.
   next = next
     .replace('paddingBottom: "max(env(safe-area-inset-bottom), 7px)"', 'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"')
     .replace('className="mx-auto grid min-h-[70px] w-full max-w-md grid-cols-5 gap-1"', 'className="mx-auto grid min-h-[82px] w-full max-w-md grid-cols-5 gap-1"')
@@ -62,18 +59,40 @@ patch('src/components/ApoisDriverBottomNav.tsx', (source) => {
 
 patch('src/components/DriverSideMenu.tsx', (source) => {
   let next = source;
-  const legacyWallet = `  {\n    to: \"/motorista/carteira\",\n    label: \"Carteira\",\n    description: \"Saldo e movimentações\",\n    icon: Coins,\n  },\n`;
-  next = next.replace(legacyWallet, '');
-  next = next.replace('  Coins,\n', '');
+
+  // Remove a entrada Carteira pelo destino da rota, sem depender de espaçamento,
+  // descrição, ícone ou formatação que hardeners anteriores possam ter alterado.
   next = next.replace(
-    `    label: "Financeiro",\n    description: "Ganhos e repasses",`,
-    `    label: "Ganhos",\n    description: "Recebimentos das corridas",`,
+    /\n\s*\{\s*\n\s*to:\s*["']\/motorista\/carteira["'],[\s\S]*?\n\s*\},/,
+    '',
   );
-  if (next.includes('to: "/motorista/carteira"')) {
+
+  // A entrada financeira canônica é a rota /motorista/ganhos. Normalize label e
+  // descrição dentro desse objeto, independentemente do wording anterior.
+  const gainsObject = /(\{\s*\n\s*to:\s*["']\/motorista\/ganhos["'],)([\s\S]*?)(\n\s*\},)/;
+  const gainsMatch = next.match(gainsObject);
+  if (!gainsMatch) {
+    throw new Error('[FAIL] DriverSideMenu.tsx: rota /motorista/ganhos não encontrada no menu');
+  }
+  let gainsBody = gainsMatch[2];
+  gainsBody = gainsBody
+    .replace(/label:\s*["'][^"']*["'],/, 'label: "Ganhos",')
+    .replace(/description:\s*["'][^"']*["'],/, 'description: "Recebimentos das corridas",');
+  next = next.replace(gainsObject, `${gainsMatch[1]}${gainsBody}${gainsMatch[3]}`);
+
+  // Coins só era usado pela carteira antiga. Remova o import se não houver outro uso.
+  const withoutImportBlock = next.replace(/\bCoins,\s*\n?/g, '');
+  if (!/\bCoins\b/.test(withoutImportBlock)) next = withoutImportBlock;
+
+  if (/to:\s*["']\/motorista\/carteira["']/.test(next)) {
     throw new Error('[FAIL] DriverSideMenu.tsx: rota de carteira legada permaneceu no menu');
   }
-  if (!next.includes('description: "Recebimentos das corridas"')) {
-    throw new Error('[FAIL] DriverSideMenu.tsx: menu de ganhos direto não foi aplicado');
+
+  const finalGains = next.match(gainsObject)?.[0] ?? '';
+  for (const marker of ['label: "Ganhos"', 'description: "Recebimentos das corridas"']) {
+    if (!finalGains.includes(marker)) {
+      throw new Error(`[FAIL] DriverSideMenu.tsx: menu de ganhos direto não foi aplicado (${marker})`);
+    }
   }
   return next;
 }, 'motorista: menu lateral remove carteira duplicada e usa Ganhos');
