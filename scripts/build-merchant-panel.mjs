@@ -15,8 +15,14 @@ function run(bin, args, options = {}) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+// A Vercel inicia com o repositório Superapp limpo. O workspace precisa ser
+// preparado antes de tentar compilar o painel merchant.
 if (!existsSync(resolve(workspace, 'package.json'))) {
-  console.error('[FAIL] Workspace merchant não encontrado. O build Vercel deve usar a fonte preparada do Superapp.');
+  run('node', ['scripts/prepare-workspace.mjs', 'entregas'], { cwd: root });
+}
+
+if (!existsSync(resolve(workspace, 'package.json'))) {
+  console.error('[FAIL] Comerciante do Workspace não encontrado após preparação.');
   process.exit(1);
 }
 
