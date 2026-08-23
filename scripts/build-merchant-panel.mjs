@@ -1,6 +1,6 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 
 const root = resolve('.');
 const workspace = resolve(root, '.work/entregas');
@@ -15,42 +15,9 @@ function run(bin, args, options = {}) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
-  console.log('[INFO] Inicializando submódulo de Entregas para build do painel...');
-  run('git', ['submodule', 'update', '--init', '--recursive', 'sources/apois-entregas']);
-}
-
-run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'entregas']);
-run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), 'entregas']);
-run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
-run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
-run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
-
-for (const script of [
-  'namespace-entregas-superapp-storage.mjs',
-  'harden-entregas-superapp-error-page.mjs',
-  'harden-entregas-superapp-account-security.mjs',
-  'harden-entregas-superapp-account-deletion.mjs',
-  'harden-entregas-superapp-order-details.mjs',
-  'harden-entregas-superapp-profile-navigation.mjs',
-  'harden-entregas-superapp-profile-details.mjs',
-  'harden-entregas-superapp-delivery-map.mjs',
-  'harden-entregas-superapp-push-navigation.mjs',
-  'harden-entregas-superapp-notification-feed.mjs',
-  'harden-entregas-superapp-address-confirmation.mjs',
-  'harden-entregas-superapp-address-ux.mjs',
-  'harden-entregas-superapp-image-fallbacks.mjs',
-  'harden-entregas-superapp-legal-routes.mjs',
-  'harden-entregas-superapp-customer-ux.mjs',
-  'harden-entregas-superapp-checkout-mobile-ui.mjs',
-  'harden-entregas-order-finish-mobile-ui.mjs',
-  'harden-superapp-module-mobile-ui.mjs',
-  'harden-entregas-superapp-secondary-mobile-ui.mjs',
-]) {
-  const args = script === 'harden-superapp-module-mobile-ui.mjs'
-    ? [resolve(root, `scripts/${script}`), 'entregas']
-    : [resolve(root, `scripts/${script}`)];
-  run(process.execPath, args);
+if (!existsSync(resolve(workspace, 'package.json'))) {
+  console.error('[FAIL] Workspace merchant não encontrado. O build Vercel deve usar a fonte preparada do Superapp.');
+  process.exit(1);
 }
 
 const env = {
@@ -62,46 +29,13 @@ const env = {
 run('bun', ['install'], { cwd: workspace, env });
 run('bun', ['run', 'build:merchant'], { cwd: workspace, env });
 
-const serverEntry = resolve(workspace, '.output/server/index.mjs');
 const publicIndex = resolve(workspace, '.output/public/index.html');
-if (!existsSync(serverEntry)) {
-  console.error('[FAIL] Painel merchant não gerou .output/server/index.mjs');
+if (!existsSync(publicIndex)) {
+  console.error('[FAIL] Painel merchant não gerou saída pública.');
   process.exit(1);
 }
 
-const host = '127.0.0.1';
-const port = '4175';
-const server = spawn('node', [serverEntry], {
-  cwd: workspace,
-  env: { ...env, HOST: host, PORT: port },
-  stdio: ['ignore', 'pipe', 'pipe'],
-});
-let logs = '';
-server.stdout?.on('data', (chunk) => { logs += chunk.toString(); });
-server.stderr?.on('data', (chunk) => { logs += chunk.toString(); });
-
-let html = null;
-try {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    try {
-      const response = await fetch(`http://${host}:${port}/`, { redirect: 'follow' });
-      if (response.ok) {
-        html = await response.text();
-        break;
-      }
-    } catch {}
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
-  }
-} finally {
-  server.kill('SIGTERM');
-}
-
-if (!html) {
-  console.error('[FAIL] Não foi possível renderizar o HTML inicial do painel merchant.');
-  if (logs) console.error(logs.slice(-5000));
-  process.exit(1);
-}
-
+let html = require('node:fs').readFileSync(publicIndex, 'utf8');
 html = html
   .replace(/(src|href)="\/(?!\/)/g, '$1="./')
   .replace(/(src|href)='\/(?!\/)/g, "$1='./");
@@ -114,9 +48,9 @@ for (const forbidden of [
   'SOLICITAR ENTREGADOR · PEDIDO',
 ]) {
   if (html.includes(forbidden)) {
-    console.error(`[FAIL] Painel merchant publicado ainda contém UI legada: ${forbidden}`);
+    console.error(`[FAIL] Painel merchant contém UI legada: ${forbidden}`);
     process.exit(1);
   }
 }
 
-console.log('[OK] Painel do estabelecimento pronto para Vercel em .work/entregas/.output/public');
+console.log('[OK] Painel merchant pronto para Vercel.');
