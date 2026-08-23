@@ -6,3 +6,7 @@
 	path = sources/apois-corridas-motorista-admin
 	url = https://github.com/franciel046631/movvi-go-connect.git
 	branch = fix/apois-corridas-consolidacao
+[submodule "sources/apois-entregas"]
+	path = sources/apois-entregas
+	url = https://github.com/franciel046631/apois-entregas.git
+	branch = main
