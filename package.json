@@ -22,6 +22,7 @@
     "prepare:modules": "node scripts/prepare-workspace.mjs",
     "build:corridas": "node scripts/build-isolated-module.mjs corridas",
     "build:entregas": "node scripts/build-isolated-module.mjs entregas",
+    "build:merchant": "node scripts/build-merchant-panel.mjs",
     "build:motorista": "node scripts/build-motorista-module.mjs",
     "build:shell": "node scripts/harden-superapp-shell-auth-deeplink-source.mjs && node superapp/shell/build.mjs",
     "build:partner": "npm run audit:partner && npm run audit:ui && npm run verify:pins && bash scripts/build-partner-modules.sh",
