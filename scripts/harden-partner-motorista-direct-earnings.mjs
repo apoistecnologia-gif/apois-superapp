@@ -66,7 +66,6 @@ patch('src/routes/motorista.carteira.tsx', (source) => {
 patch('src/routes/motorista.ganhos.tsx', (source) => {
   let next = source;
 
-  // Textos legados são normalizados sem depender da ordem dos hardeners.
   next = next.replaceAll('Carteira e corridas', 'Corridas e recebimentos');
   next = next.replaceAll('Saldo disponível', 'Ganhos registrados');
   next = next.replaceAll('Carteira APOIS', 'Crédito registrado');
@@ -76,13 +75,12 @@ patch('src/routes/motorista.ganhos.tsx', (source) => {
     'Os recebimentos das corridas são diretos ao motorista. A APOIS não disponibiliza retirada manual desta tela.',
   );
 
-  // Neutraliza qualquer CTA condicionado pelo payoutEnabled, mesmo que outro
-  // hardener tenha alterado espaços/quebras de linha do JSX.
-  next = next.replace(/\{\s*dashboard\.payoutEnabled\s*\?\s*\(/g, '{false ? (');
+  // Neutralização funcional, independente da forma do JSX. Tanto a condição
+  // visual quanto qualquer guarda no handler deixam de consultar payoutEnabled.
+  // Isso evita depender de "? (", "&& (" ou de espaços produzidos por outros hardeners.
+  next = next.replace(/dashboard\?\.payoutEnabled/g, 'false');
+  next = next.replace(/dashboard\.payoutEnabled/g, 'false');
 
-  // O aviso de recebimento direto é uma regra funcional, não deve depender da
-  // classe exata da antiga seção "Saldo da carteira". Injeta no início do <main>
-  // caso ainda não exista, preservando qualquer layout intermediário.
   if (!next.includes('Recebimento direto ao motorista')) {
     const mainMatch = next.match(/<main\b[^>]*>/);
     if (!mainMatch || mainMatch.index == null) {
@@ -96,8 +94,8 @@ patch('src/routes/motorista.ganhos.tsx', (source) => {
   if (!next.includes('Recebimento direto ao motorista')) {
     throw new Error('[FAIL] motorista.ganhos.tsx: aviso de recebimento direto não foi aplicado');
   }
-  if (!next.includes('{false ? (')) {
-    throw new Error('[FAIL] motorista.ganhos.tsx: formulário legado de retirada não foi neutralizado');
+  if (/dashboard\??\.payoutEnabled/.test(next)) {
+    throw new Error('[FAIL] motorista.ganhos.tsx: payoutEnabled legado ainda controla retirada');
   }
   if (next.includes('Solicitar saque')) {
     throw new Error('[FAIL] motorista.ganhos.tsx: rótulo legado Solicitar saque permaneceu');
