@@ -23,9 +23,25 @@ if (source.includes('SOLICITAR ENTREGADOR')) {
 if (source.includes('readyDeliveryOrder')) {
   console.error('[DEBUG] readyMemoPattern.test:', readyMemoPattern.test(source));
   console.error('[DEBUG] floatingCourierPattern.test:', floatingCourierPattern.test(source));
-  const idx = source.indexOf('readyDeliveryOrder');
-  console.error('[DEBUG] contexto ao redor de readyDeliveryOrder:');
-  console.error(source.slice(Math.max(0, idx - 200), idx + 500));
+  const allLines = source.split('\n');
+  const matchedLineNumbers = [];
+  console.error('[DEBUG] todas as linhas com readyDeliveryOrder:');
+  allLines.forEach((line, index) => {
+    if (line.includes('readyDeliveryOrder')) {
+      matchedLineNumbers.push(index + 1);
+      console.error(`[DEBUG] linha ${index + 1}: ${line.trim()}`);
+    }
+  });
+  const firstLine = matchedLineNumbers[0] ?? 1;
+  const windowStart = Math.max(0, firstLine - 10);
+  const windowEnd = Math.min(allLines.length, firstLine + 40);
+  console.error(`[DEBUG] bloco completo (linhas ${windowStart + 1}-${windowEnd}):`);
+  console.error(
+    allLines
+      .slice(windowStart, windowEnd)
+      .map((line, i) => `${windowStart + i + 1}: ${line}`)
+      .join('\n'),
+  );
   throw new Error('[FAIL] Entregas: estado do atalho global de entregador ainda permanece.');
 }
 if (!source.includes('void requestCourier(order.id)')) {
