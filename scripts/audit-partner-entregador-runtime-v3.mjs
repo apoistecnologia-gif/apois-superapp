@@ -174,10 +174,10 @@ requireAll('scripts/install-partner-driver-location.mjs', [
 
 requireAll('scripts/install-partner-launcher.mjs', [
   "import './install-partner-driver-location.mjs';",
-  "import './verify-partner-native-plugins.mjs';",
+  "await import('./verify-partner-native-plugins.mjs');",
   'registerPlugin(DriverLocationPlugin.class)',
   'android.permission.FOREGROUND_SERVICE_LOCATION',
-], 'Launcher valida plugins Capacitor e DriverLocation customizado antes de empacotar');
+], 'Launcher valida plugins Capacitor e DriverLocation customizado depois dos hardeners, antes de empacotar');
 
 requireAll('scripts/install-partner-splash.mjs', [
   'apois_partner_splash.xml',
