@@ -111,7 +111,7 @@ forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não pub
 
 const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
 requireMarker(courierBundle, 'Entregas', 'Entregador usa nomenclatura correta de Entregas');
-requireMarker(courierBundle, 'Perfil indisponível durante entrega ativa', 'Entregador mantém foco na operação durante entrega ativa');
+requireMarker(courierBundle, 'Perfil indisponível durante a entrega', 'Entregador mantém foco na operação durante entrega ativa');
 requireMarker(courierBundle, 'CourierLocation', 'Entregador leva ponte para Foreground Service nativo ao bundle final');
 requireMarker(courierBundle, 'Não foi possível ativar a localização em segundo plano', 'Entregador falha fechado se o serviço de background não iniciar');
 requireMarker(courierBundle, 'não foi possível confirmar que você ficou offline', 'Entregador preserva trava se rollback OFFLINE falhar');
