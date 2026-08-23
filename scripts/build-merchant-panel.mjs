@@ -17,10 +17,30 @@ function run(bin, args, options = {}) {
 }
 
 if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
-  console.error('[FAIL] sources/apois-entregas não foi inicializado no checkout.');
-  console.error('Confirme que o submódulo Git está habilitado no checkout da Vercel');
-  console.error('(Project Settings > Git) ou rode "git submodule update --init --recursive" antes do build.');
-  process.exit(1);
+  const token = process.env.APOIS_ENTREGAS_SUBMODULE_TOKEN?.trim();
+  if (!token) {
+    console.error('[FAIL] sources/apois-entregas não foi inicializado no checkout.');
+    console.error('Defina a variável de ambiente APOIS_ENTREGAS_SUBMODULE_TOKEN na Vercel');
+    console.error('(um GitHub token com leitura em apois-entregas) para inicializar o submódulo no build.');
+    process.exit(1);
+  }
+
+  console.log('[INFO] Inicializando submódulo de Entregas com token dedicado...');
+  const authHeader = `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`;
+  run('git', [
+    '-c',
+    `http.https://github.com/.extraheader=${authHeader}`,
+    'submodule',
+    'update',
+    '--init',
+    '--recursive',
+    'sources/apois-entregas',
+  ]);
+
+  if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
+    console.error('[FAIL] Falha ao inicializar sources/apois-entregas mesmo com token configurado.');
+    process.exit(1);
+  }
 }
 
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'entregas']);
