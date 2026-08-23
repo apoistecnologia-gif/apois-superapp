@@ -35,4 +35,29 @@ if (!finalLogo.includes('#F6BE1C') || !finalLogo.includes('#C88A08')) {
   throw new Error('Cliente Entregas: logo dourada não foi confirmada.');
 }
 
+// __root.tsx applies only the "apois-system-theme" class to <html> for every
+// product (customer, courier, merchant, admin) — "apois-customer-theme" above
+// is never actually present on any element, so patching customer-theme.css
+// alone never reached the real page. system-theme.css is the file that's
+// actually imported and applied; it still carries the old petrol-blue
+// palette this hardener was supposed to replace. Apply the same proven
+// preto+dourado override used by harden-partner-entregador-theme.mjs.
+const systemThemePath = resolve(root, workspace, 'src/system-theme.css');
+if (!existsSync(systemThemePath)) throw new Error(`Tema global do Entregas ausente: ${systemThemePath}`);
+
+const systemMarker = '/* APOIS_ENTREGAS_SYSTEM_GOLD_V1 */';
+let systemTheme = readFileSync(systemThemePath, 'utf8');
+if (!systemTheme.includes(systemMarker)) {
+  systemTheme += `\n\n${systemMarker}\n/* .apois-system-theme é a classe realmente aplicada ao <html> em __root.tsx.\n * Sobrescreve a identidade petrol-blue antiga do arquivo por preto + dourado. */\n.apois-system-theme {\n  --primary: oklch(0.82 0.16 84);\n  --primary-foreground: oklch(0.11 0.006 85);\n  --accent: oklch(0.72 0.145 78);\n  --accent-foreground: oklch(0.11 0.006 85);\n  --ring: oklch(0.82 0.16 84);\n  --sidebar-primary: oklch(0.82 0.16 84);\n  --sidebar-primary-foreground: oklch(0.11 0.006 85);\n  --sidebar-ring: oklch(0.82 0.16 84);\n}\n.apois-system-theme [class*="from-primary"][class*="to-accent"],\n.apois-system-theme [class*="from-primary"][class*="via-primary"][class*="to-accent"] {\n  background-image: linear-gradient(135deg, #f6be1c, #c88a08) !important;\n  color: #070707 !important;\n}\n.apois-system-theme [class*="rgba(57,181,74"],\n.apois-system-theme [class*="rgba(106,27,154"] {\n  --tw-shadow-color: rgba(246,190,28,.26) !important;\n}\n.apois-system-theme [class~="text-[#39B54A]"],\n.apois-system-theme [class~="text-[#6A1B9A]"],\n.apois-system-theme [class~="text-[#FFD700]"],\n.apois-system-theme [class~="text-[#F6B900]"],\n.apois-system-theme [class~="text-[#FACC15]"] { color: #f6be1c !important; }\n.apois-system-theme [class~="bg-[#39B54A]"],\n.apois-system-theme [class~="bg-[#6A1B9A]"],\n.apois-system-theme [class~="bg-[#FFD700]"],\n.apois-system-theme [class~="bg-[#F6B900]"],\n.apois-system-theme [class~="bg-[#FACC15]"] { background-color: #f6be1c !important; color: #070707 !important; }\n.apois-system-theme [class~="border-[#39B54A]"],\n.apois-system-theme [class~="border-[#6A1B9A]"],\n.apois-system-theme [class~="border-[#FFD700]"],\n.apois-system-theme [class~="border-[#F6B900]"],\n.apois-system-theme [class~="border-[#FACC15]"] { border-color: #f6be1c !important; }\n.apois-system-theme input:focus,\n.apois-system-theme textarea:focus,\n.apois-system-theme select:focus { border-color: #f6be1c; }\n`;
+}
+writeFileSync(systemThemePath, systemTheme, 'utf8');
+
+const finalSystemTheme = readFileSync(systemThemePath, 'utf8');
+for (const required of [systemMarker, '--primary: oklch(0.82 0.16 84)', '#f6be1c']) {
+  if (!finalSystemTheme.includes(required)) {
+    throw new Error(`Entregas: identidade preto/dourado do tema global incompleta (${required})`);
+  }
+}
+
 console.log('[OK] Cliente Entregas: telas internas, componentes, sombras e logo seguem identidade APOIS preto + dourado.');
+console.log('[OK] Entregas: system-theme.css (classe realmente aplicada ao <html>) segue identidade APOIS preto + dourado.');
