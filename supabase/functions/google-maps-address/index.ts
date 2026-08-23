@@ -82,6 +82,11 @@ function toGoogleLikeComponents(address: Record<string, unknown>) {
   return components;
 }
 
+const nominatimHeaders = {
+  Accept: "application/json",
+  "User-Agent": "APOIS-Entregas/1.0 (address lookup; apoisbrasil.com.br)",
+};
+
 async function nominatimReverse(lat: number, lng: number) {
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
   url.searchParams.set("lat", String(lat));
@@ -90,17 +95,54 @@ async function nominatimReverse(lat: number, lng: number) {
   url.searchParams.set("addressdetails", "1");
   url.searchParams.set("accept-language", "pt-BR,pt");
   url.searchParams.set("zoom", "18");
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "APOIS-Entregas/1.0 (address lookup)",
-    },
-  });
+  const response = await fetch(url, { headers: nominatimHeaders });
   if (!response.ok) throw new Error(`Reverse geocoding fallback HTTP ${response.status}`);
   const payload = await response.json();
   const address = (payload?.address ?? {}) as Record<string, unknown>;
   const components = toGoogleLikeComponents(address);
   return components.length ? [{ address_components: components }] : [];
+}
+
+async function nominatimSearch(input: string) {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", input);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("countrycodes", "br");
+  url.searchParams.set("accept-language", "pt-BR,pt");
+  url.searchParams.set("limit", "6");
+  const response = await fetch(url, { headers: nominatimHeaders });
+  if (!response.ok) throw new Error(`Address search fallback HTTP ${response.status}`);
+  const payload = await response.json();
+  if (!Array.isArray(payload)) return [];
+  return payload
+    .map((item: any) => {
+      const lat = Number(item?.lat);
+      const lng = Number(item?.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      const description = String(item?.display_name ?? "").trim();
+      if (!description) return null;
+      const mainText = String(item?.name ?? item?.address?.road ?? item?.address?.amenity ?? description.split(",")[0] ?? description).trim();
+      const secondary = description.startsWith(mainText) ? description.slice(mainText.length).replace(/^,\s*/, "") : description;
+      return {
+        place_id: `nominatim:${lat},${lng}`,
+        description,
+        structured_formatting: {
+          main_text: mainText,
+          secondary_text: secondary || null,
+        },
+      };
+    })
+    .filter(Boolean);
+}
+
+function parseNominatimPlaceId(placeId: string) {
+  const match = /^nominatim:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(placeId);
+  if (!match) return null;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 }
 
 Deno.serve(async (req: Request) => {
@@ -128,47 +170,67 @@ Deno.serve(async (req: Request) => {
           url.searchParams.set("region", "br");
           url.searchParams.set("key", apiKey);
           const payload = await googleJson(url);
-          if ((payload.results ?? []).length > 0) return json({ results: payload.results });
+          if ((payload.results ?? []).length > 0) return json({ results: payload.results, provider: "google" });
         } catch (googleError) {
           console.error("Google reverse geocode failed; using fallback", googleError);
         }
       }
 
       const fallbackResults = await nominatimReverse(lat, lng);
-      return json({ results: fallbackResults, provider: "fallback" });
-    }
-
-    if (!apiKey) {
-      return json({ error: "Busca textual indisponível no momento. Use sua localização atual." }, 503);
+      return json({ results: fallbackResults, provider: "nominatim" });
     }
 
     if (action === "autocomplete") {
       const input = String(body?.input ?? "").trim();
       if (input.length < 3) return json({ predictions: [] });
-      const url = new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json");
-      url.searchParams.set("input", input);
-      url.searchParams.set("components", "country:br");
-      url.searchParams.set("language", "pt-BR");
-      url.searchParams.set("key", apiKey);
-      const payload = await googleJson(url);
-      return json({ predictions: payload.predictions ?? [] });
+
+      if (apiKey) {
+        try {
+          const url = new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json");
+          url.searchParams.set("input", input);
+          url.searchParams.set("components", "country:br");
+          url.searchParams.set("language", "pt-BR");
+          url.searchParams.set("key", apiKey);
+          const payload = await googleJson(url);
+          if ((payload.predictions ?? []).length > 0) return json({ predictions: payload.predictions, provider: "google" });
+        } catch (googleError) {
+          console.error("Google autocomplete failed; using fallback", googleError);
+        }
+      }
+
+      const predictions = await nominatimSearch(input);
+      return json({ predictions, provider: "nominatim" });
     }
 
     if (action === "place_details") {
       const placeId = String(body?.placeId ?? "").trim();
       if (!placeId) return json({ error: "placeId obrigatório" }, 400);
+
+      const fallbackPoint = parseNominatimPlaceId(placeId);
+      if (fallbackPoint) {
+        const results = await nominatimReverse(fallbackPoint.lat, fallbackPoint.lng);
+        return json({
+          result: {
+            geometry: { location: fallbackPoint },
+            address_components: results[0]?.address_components ?? [],
+          },
+          provider: "nominatim",
+        });
+      }
+
+      if (!apiKey) return json({ error: "Não foi possível abrir os detalhes deste endereço." }, 503);
       const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
       url.searchParams.set("place_id", placeId);
       url.searchParams.set("fields", "address_components,geometry");
       url.searchParams.set("language", "pt-BR");
       url.searchParams.set("key", apiKey);
       const payload = await googleJson(url);
-      return json({ result: payload.result ?? null });
+      return json({ result: payload.result ?? null, provider: "google" });
     }
 
     return json({ error: "Ação inválida" }, 400);
   } catch (error) {
     console.error("google-maps-address error", error);
-    return json({ error: error instanceof Error ? error.message : "Erro ao consultar endereço" }, 500);
+    return json({ error: "Não foi possível consultar o endereço agora. Tente novamente." }, 500);
   }
 });
