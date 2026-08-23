@@ -50,7 +50,9 @@ requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
 requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
   'requestDriverWithdrawal(_amountCents: number)',
   'Saque manual não está disponível no APOIS Parceiro',
-  "next.includes('request-driver-payout')",
+  "for (const forbidden of ['request-driver-payout', 'secureUuid()', 'asaas_subaccount', 'driver_wallet_debt', 'pix_payout_destination'])",
+  'if (next.includes(forbidden))',
+  'resíduo legado de saque permaneceu',
   'Avisos sobre mensalidade, pagamentos e registros dos seus recebimentos.',
   'ganhos registrados, pagamentos, liquidações',
   'A APOIS não utiliza uma carteira custodial',
@@ -63,7 +65,7 @@ requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
 requireAll('scripts/harden-partner-motorista-native-utilities.mjs', [
   'Capacitor.isNativePlatform()',
   'Geolocation.checkPermissions()',
-  'Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] })',
+  'Geolocation.requestPermissions({ permissions: [\\"location\\", \\"coarseLocation\\"] })',
   'Geolocation.getCurrentPosition({',
   'getPartnerCurrentPosition(5000)',
   'getPartnerCurrentPosition(8000)',
@@ -81,7 +83,7 @@ requireAll('scripts/harden-partner-motorista-session-hygiene.mjs', [
 requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'to: "/motorista/ganhos", label: "Ganhos"',
   'Recebimentos das corridas',
-  "next.includes('to: \"/motorista/carteira\"')",
+  "next.includes('to: \\"/motorista/carteira\\"')",
   'min-h-[82px]',
   'min-h-[60px]',
   'h-6 w-6',
