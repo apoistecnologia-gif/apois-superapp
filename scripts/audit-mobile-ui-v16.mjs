@@ -20,6 +20,17 @@ function requireAll(path, markers, label) {
     failed = true;
   } else console.log(`[OK] ${label}`);
 }
+function requirePatterns(path, contracts, label) {
+  const source = read(path);
+  if (!source) return;
+  const missing = contracts
+    .filter(({ pattern }) => !pattern.test(source))
+    .map(({ name }) => name);
+  if (missing.length) {
+    console.error(`[FAIL] ${label}: ${missing.join(' | ')}`);
+    failed = true;
+  } else console.log(`[OK] ${label}`);
+}
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
@@ -118,15 +129,16 @@ requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
 ], 'Motorista usa rodapé maior, legível e afastado da barra de gestos');
 
-requireAll('scripts/harden-partner-entregador-touch-safearea.mjs', [
-  "'src/components/CourierPanels.tsx'",
-  'label: "Entregas"',
-  '<PanelHeader title="Entregas"',
-  'min-h-[82px]',
-  'min-h-[64px]',
-  'h-9 w-11',
-  'h-6 w-6',
-  'pt-[max(env(safe-area-inset-top),0.65rem)]',
+requirePatterns('scripts/harden-partner-entregador-touch-safearea.mjs', [
+  { name: 'alvo CourierPanels', pattern: /patch\(\s*['"]src\/components\/CourierPanels\.tsx['"]/ },
+  { name: 'nomenclatura Entregas', pattern: /label:[^\n]*Entregas/ },
+  { name: 'cabeçalho Entregas', pattern: /PanelHeader[^\n]*title=[^\n]*Entregas/ },
+  { name: 'altura estrutural do rodapé', pattern: /ensureClasses\(classes,\s*\[['"]min-h-\[82px\]['"]\]\)/ },
+  { name: 'alvo mínimo dos itens', pattern: /replaceClassToken\(classes,\s*['"]min-h-\[3\.7rem\]['"],\s*['"]min-h-\[64px\]['"]\)/ },
+  { name: 'wrapper de ícone 44px', pattern: /replaceClassToken\(classes,\s*['"]h-8['"],\s*['"]h-9['"]\)[\s\S]{0,180}?replaceClassToken\(value,\s*['"]w-10['"],\s*['"]w-11['"]\)/ },
+  { name: 'ícone legível', pattern: /replaceClassToken\(classes,\s*['"]h-5['"],\s*['"]h-6['"]\)[\s\S]{0,180}?replaceClassToken\(value,\s*['"]w-5['"],\s*['"]w-6['"]\)/ },
+  { name: 'safe-area superior do painel', pattern: /replaceClassToken\(value,\s*['"]pt-\[env\(safe-area-inset-top\)\]['"],\s*['"]pt-\[max\(env\(safe-area-inset-top\),0\.65rem\)\]['"]\)/ },
+  { name: 'safe-area inferior do rodapé', pattern: /replaceClassToken\(classes,\s*['"]pb-\[max\(0\.65rem,env\(safe-area-inset-bottom\)\)\]['"],\s*['"]pb-\[max\(0\.85rem,env\(safe-area-inset-bottom\)\)\]['"]\)/ },
 ], 'Entregador usa nomenclatura Entregas e rodapé grande com safe-area');
 
 requireAll('.apois/modules.json', [
