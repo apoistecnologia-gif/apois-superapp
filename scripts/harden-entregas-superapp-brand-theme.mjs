@@ -61,3 +61,79 @@ for (const required of [systemMarker, '--primary: oklch(0.82 0.16 84)', '#f6be1c
 
 console.log('[OK] Cliente Entregas: telas internas, componentes, sombras e logo seguem identidade APOIS preto + dourado.');
 console.log('[OK] Entregas: system-theme.css (classe realmente aplicada ao <html>) segue identidade APOIS preto + dourado.');
+
+function replaceRequired(source, search, replacement, label) {
+  if (source.includes(replacement)) return source;
+  if (!source.includes(search)) throw new Error(`${label}: padrão esperado não encontrado`);
+  return source.replaceAll(search, replacement);
+}
+
+// Tela transitória de "sessão expirada" do Painel do Estabelecimento (servida
+// como HTML bruto por server.ts, fora do bundle React) ainda usava as cores
+// antigas roxo/verde da marca, sem passar por nenhum tema CSS.
+const serverPath = resolve(root, workspace, 'src/server.ts');
+if (!existsSync(serverPath)) throw new Error(`server.ts do Entregas ausente: ${serverPath}`);
+let serverSource = readFileSync(serverPath, 'utf8');
+serverSource = replaceRequired(
+  serverSource,
+  '.brand{color:#6A1B9A;',
+  '.brand{color:#f6be1c;',
+  'server.ts: marca do Estabelecimento (tela de sessão expirada) usa dourado',
+);
+serverSource = replaceRequired(
+  serverSource,
+  'margin:10px auto 0;background:#39B54A}',
+  'margin:10px auto 0;background:#c88a08}',
+  'server.ts: sublinhado da marca (tela de sessão expirada) usa dourado',
+);
+writeFileSync(serverPath, serverSource, 'utf8');
+
+const finalServerSource = readFileSync(serverPath, 'utf8');
+for (const forbidden of ['#6A1B9A', '#39B54A']) {
+  if (finalServerSource.includes(forbidden)) {
+    throw new Error(`server.ts: identidade antiga ainda presente na tela de sessão expirada (${forbidden})`);
+  }
+}
+
+// Login do Painel do Estabelecimento/Admin (branch padrão de Login(), não a
+// branch "courier"): o brilho atrás do botão "Entrar" usava um rgba() verde
+// literal, que não é afetado pela troca de --primary/--accent porque o valor
+// já vem hardcoded dentro do shadow arbitrário do Tailwind.
+const loginPath = resolve(root, workspace, 'src/routes/login.tsx');
+if (!existsSync(loginPath)) throw new Error(`login.tsx do Entregas ausente: ${loginPath}`);
+let loginSource = readFileSync(loginPath, 'utf8');
+loginSource = replaceRequired(
+  loginSource,
+  'shadow-[0_12px_35px_rgba(57,181,74,0.18)]',
+  'shadow-[0_12px_35px_rgba(200,138,8,0.18)]',
+  'login.tsx: brilho do botão Entrar (Estabelecimento/Admin) usa dourado',
+);
+writeFileSync(loginPath, loginSource, 'utf8');
+
+const finalLoginSource = readFileSync(loginPath, 'utf8');
+if (finalLoginSource.includes('rgba(57,181,74,0.18)')) {
+  throw new Error('login.tsx: brilho verde do botão Entrar (Estabelecimento/Admin) ainda presente');
+}
+
+// Badge de status "Em atendimento" do painel Admin (chamados de suporte)
+// era o único estado fora da paleta preto/dourado/âmbar/esmeralda já usada
+// pelos demais estados (open/resolved/closed).
+const adminSupportPath = resolve(root, workspace, 'src/components/AdminSupportPanel.tsx');
+if (!existsSync(adminSupportPath)) throw new Error(`AdminSupportPanel.tsx do Entregas ausente: ${adminSupportPath}`);
+let adminSupportSource = readFileSync(adminSupportPath, 'utf8');
+adminSupportSource = replaceRequired(
+  adminSupportSource,
+  'in_progress: "bg-blue-500/10 text-blue-300",',
+  'in_progress: "bg-primary/10 text-primary",',
+  'AdminSupportPanel.tsx: badge "Em atendimento" usa identidade APOIS',
+);
+writeFileSync(adminSupportPath, adminSupportSource, 'utf8');
+
+const finalAdminSupportSource = readFileSync(adminSupportPath, 'utf8');
+if (finalAdminSupportSource.includes('text-blue-300') || finalAdminSupportSource.includes('bg-blue-500')) {
+  throw new Error('AdminSupportPanel.tsx: badge "Em atendimento" ainda usa azul');
+}
+
+console.log('[OK] Estabelecimento: tela de sessão expirada (server.ts) segue identidade APOIS preto + dourado.');
+console.log('[OK] Estabelecimento/Admin: brilho do botão Entrar em login.tsx segue identidade APOIS preto + dourado.');
+console.log('[OK] Admin: badge "Em atendimento" do painel de suporte segue identidade APOIS.');
