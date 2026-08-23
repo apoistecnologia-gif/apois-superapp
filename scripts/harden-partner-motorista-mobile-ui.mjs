@@ -13,74 +13,114 @@ function patch(relativePath, transform, verify, label) {
   console.log(`[OK] ${label}${after === before ? ' (já aplicado)' : ''}`);
 }
 
+function removeElementContaining(source, openTag, closeTag, marker) {
+  let next = source;
+  let searchFrom = 0;
+  while (true) {
+    const markerAt = next.indexOf(marker, searchFrom);
+    if (markerAt < 0) break;
+    const openAt = next.lastIndexOf(openTag, markerAt);
+    const closeAt = next.indexOf(closeTag, markerAt);
+    if (openAt < 0 || closeAt < 0 || closeAt < openAt) {
+      searchFrom = markerAt + marker.length;
+      continue;
+    }
+    next = next.slice(0, openAt) + next.slice(closeAt + closeTag.length);
+    searchFrom = Math.max(0, openAt - 1);
+  }
+  return next;
+}
+
+function removeSelfClosingContaining(source, tagName, markers) {
+  let next = source;
+  let cursor = 0;
+  while (true) {
+    const start = next.indexOf(`<${tagName}`, cursor);
+    if (start < 0) break;
+    const end = next.indexOf('/>', start);
+    if (end < 0) break;
+    const block = next.slice(start, end + 2);
+    if (markers.some((marker) => block.includes(marker))) {
+      next = next.slice(0, start) + next.slice(end + 2);
+      cursor = Math.max(0, start - 1);
+    } else {
+      cursor = end + 2;
+    }
+  }
+  return next;
+}
+
 patch('src/routes/motorista.app.tsx', (source) => {
   let next = source;
 
-  // Remova imports/estado por identidade, sem depender da posição exata na lista.
+  // Limpeza de imports/estado por linha inteira. Isso tolera alterações anteriores
+  // de espaçamento e evita depender da posição dos símbolos no import lucide.
   next = next
-    .replace(/^\s*Menu,\s*\n/m, '')
-    .replace(/^\s*MessageCircle,\s*\n/m, '')
-    .replace(/^import\s+\{\s*DriverSideMenu\s*\}\s+from\s+["']@\/components\/DriverSideMenu["'];?\s*\n/m, '')
-    .replace(/^import\s+\{\s*BrandSplash\s*\}\s+from\s+["']@\/components\/BrandSplash["'];?\s*\n/m, '')
-    .replace(/^\s*const\s+\[sideMenuOpen,\s*setSideMenuOpen\]\s*=\s*useState\(false\);\s*\n/m, '');
+    .replace(/^.*\bDriverSideMenu\b.*(?:\r?\n|$)/gm, (line) => line.includes('import') ? '' : line)
+    .replace(/^.*\bBrandSplash\b.*(?:\r?\n|$)/gm, (line) => line.includes('import') ? '' : line)
+    .replace(/^\s*Menu,\s*(?:\r?\n|$)/gm, '')
+    .replace(/^\s*MessageCircle,\s*(?:\r?\n|$)/gm, '')
+    .replace(/^\s*const\s+\[sideMenuOpen,\s*setSideMenuOpen\]\s*=\s*useState\(false\);\s*(?:\r?\n|$)/gm, '');
 
-  // A splash do shell Parceiro já é a única splash oficial. Normalize o wrapper
-  // da rota por estrutura em vez de exigir o bloco histórico byte a byte.
-  next = next.replace(
-    /function\s+MotoristaAppRoute\(\)\s*\{\s*return\s*\(\s*<>\s*<BrandSplash\b[^>]*\/>\s*<MotoristaApp\s*\/>\s*<\/\>\s*\);?\s*\}/m,
-    'function MotoristaAppRoute() {\n  return <MotoristaApp />;\n}',
-  );
+  // O wrapper da rota fica determinístico. Tudo entre MotoristaAppRoute e o tipo
+  // LatLng pertence somente à splash interna histórica, então pode ser substituído
+  // de uma vez sem depender da formatação produzida por hardeners anteriores.
+  const routeStart = next.indexOf('function MotoristaAppRoute()');
+  const typeAnchor = next.indexOf('type LatLng =', routeStart);
+  if (routeStart >= 0 && typeAnchor > routeStart) {
+    next = next.slice(0, routeStart)
+      + 'function MotoristaAppRoute() {\n  return <MotoristaApp />;\n}\n\n'
+      + next.slice(typeAnchor);
+  }
 
-  // Caso o wrapper já tenha sido parcialmente reescrito, remova somente a splash
-  // interna e preserve MotoristaApp.
+  // Remova qualquer splash interna remanescente.
   next = next.replace(/\s*<BrandSplash\b[^>]*\/>\s*/g, '\n');
 
-  // Remova qualquer botão cuja ação seja abrir o menu paralelo. O match é
-  // limitado ao próprio <button> para não afetar outros controles do cabeçalho.
-  next = next.replace(
-    /\s*<button\b(?=[\s\S]*?onClick=\{\(\)\s*=>\s*setSideMenuOpen\(true\)\})(?=[\s\S]*?aria-label=["']Abrir menu["'])[^>]*>[\s\S]*?<\/button>\s*/g,
-    '\n',
-  );
+  // Remova o botão de menu pelo conteúdo do próprio elemento, sem regex gulosa
+  // que possa atravessar outros botões do cabeçalho.
+  next = removeElementContaining(next, '<button', '</button>', 'aria-label="Abrir menu"');
+  next = removeElementContaining(next, '<button', '</button>', "aria-label='Abrir menu'");
+  next = removeElementContaining(next, '<button', '</button>', 'setSideMenuOpen(true)');
 
-  // Remova a montagem do menu lateral independentemente de quebra de linha/ordem
-  // das props.
-  next = next.replace(/\s*<DriverSideMenu\b[\s\S]*?\/>\s*/g, '\n');
+  // Remova a montagem do menu lateral de forma limitada ao componente self-closing.
+  next = removeSelfClosingContaining(next, 'DriverSideMenu', ['DriverSideMenu']);
 
-  // Chat ainda incompleto não pode ocupar ação primária. Remova qualquer
-  // CircleAction cujo label seja Chat ou cujo onClick apenas informe "Chat em breve".
-  next = next.replace(
-    /\s*<CircleAction\b(?=[\s\S]*?(?:label=["']Chat["']|Chat em breve))[\s\S]*?\/>\s*/g,
-    '\n',
-  );
+  // Chat ainda não implementado não deve ocupar ação principal.
+  next = removeSelfClosingContaining(next, 'CircleAction', ['label="Chat"', "label='Chat'", 'Chat em breve', 'icon={MessageCircle}']);
 
-  // Amplie controles essenciais sem depender do restante da classe.
+  // Se algum import ficou órfão após a remoção dos elementos, retire os símbolos.
+  next = next
+    .replace(/^\s*Menu,\s*(?:\r?\n|$)/gm, '')
+    .replace(/^\s*MessageCircle,\s*(?:\r?\n|$)/gm, '');
+
+  // Amplie controles essenciais. A transformação é idempotente.
   next = next
     .replace(/\bh-10\s+w-10\b/g, 'h-11 w-11')
     .replace(/\bh-9\s+w-9\b/g, 'h-11 w-11')
     .replace(/\bh-8\s+w-8\b/g, 'h-11 w-11')
     .replace('<LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />', '<LogOut className="h-[18px] w-[18px]" strokeWidth={1.75} />');
 
-  // Se o wrapper ficou como fragmento sem splash, simplifique-o de forma segura.
-  next = next.replace(
-    /function\s+MotoristaAppRoute\(\)\s*\{\s*return\s*\(\s*<>\s*<MotoristaApp\s*\/>\s*<\/\>\s*\);?\s*\}/m,
-    'function MotoristaAppRoute() {\n  return <MotoristaApp />;\n}',
-  );
-
   return next;
 }, (source) => {
-  const routeBlockMatch = source.match(/function\s+MotoristaAppRoute\(\)[\s\S]*?\n\}/);
-  const routeBlock = routeBlockMatch?.[0] ?? '';
-  const hasLargeTouchTarget = /\bh-11\s+w-11\b/.test(source) || /\bmin-h-11\b/.test(source);
+  const routeStart = source.indexOf('function MotoristaAppRoute()');
+  const typeAnchor = source.indexOf('type LatLng =', routeStart);
+  const routeBlock = routeStart >= 0 && typeAnchor > routeStart ? source.slice(routeStart, typeAnchor) : '';
+  const forbiddenRuntime = [
+    'DriverSideMenu',
+    'sideMenuOpen',
+    'setSideMenuOpen',
+    'BrandSplash',
+    'Chat em breve',
+    'icon={MessageCircle}',
+    'aria-label="Abrir menu"',
+    "aria-label='Abrir menu'",
+  ];
+  const hasLargeTouchTarget = /\bh-11\s+w-11\b/.test(source) || /\bmin-h-11\b/.test(source) || /\bh-12\s+w-12\b/.test(source);
   return (
-    !source.includes('DriverSideMenu') &&
-    !source.includes('sideMenuOpen') &&
-    !source.includes('BrandSplash') &&
-    !source.includes('Chat em breve') &&
-    !source.includes('icon={MessageCircle}') &&
-    !source.includes('aria-label="Abrir menu"') &&
+    routeBlock.includes('return <MotoristaApp />;') &&
+    forbiddenRuntime.every((marker) => !source.includes(marker)) &&
     hasLargeTouchTarget &&
-    routeBlock.includes('<MotoristaApp />') &&
-    !routeBlock.includes('BrandSplash')
+    source.includes('<ApoisDriverBottomNav')
   );
 },
 'Motorista: remove menu paralelo, splash duplicada, Chat incompleto e amplia controles essenciais');
