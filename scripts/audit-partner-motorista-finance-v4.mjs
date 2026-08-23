@@ -40,7 +40,7 @@ requireAll('scripts/harden-partner-motorista-payment-policy.mjs', [
 
 requireAll('scripts/harden-partner-motorista-direct-earnings.mjs', [
   'PartnerDirectEarningsRedirect',
-  'to: "/motorista/ganhos"',
+  'window.location.hash = "#/motorista/ganhos"',
   'Recebimento direto ao motorista',
   'Ganhos registrados',
   'false ? (',
