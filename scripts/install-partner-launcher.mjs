@@ -6,7 +6,8 @@ import './install-partner-courier-location.mjs';
 import './harden-partner-location-startup-ack.mjs';
 import './harden-partner-location-session-sync.mjs';
 import './harden-partner-location-notification-routing.mjs';
-import './verify-partner-native-plugins.mjs';
+// Ordem intencional: import './verify-partner-native-plugins.mjs'; é executado abaixo via await,
+// somente depois que ACK/retry, sessão e roteamento terminaram de materializar o Java final.
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -101,5 +102,10 @@ const mainActivity = readFileSync(mainActivityPath, 'utf8');
 if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) throw new Error('DriverVoicePlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(DriverLocationPlugin.class)')) throw new Error('DriverLocationPlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(CourierLocationPlugin.class)')) throw new Error('CourierLocationPlugin não registrado no host Parceiro.');
+
+// A verificação precisa enxergar o estado final. Como harden-partner-location-startup-ack
+// usa top-level await para aplicar o retry, importá-la estaticamente ao lado dos hardeners
+// criava uma corrida e podia validar o DriverLocation antes de STARTUP_ACK_MAX_ATTEMPTS existir.
+await import('./verify-partner-native-plugins.mjs');
 
 console.log('[OK] Ícone oficial APOIS aplicado; GPS só confirma ONLINE após ACK real, tokens nativos renovados ficam reconciliáveis e notificações retornam ao módulo correto.');
