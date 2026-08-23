@@ -8,7 +8,11 @@ function patch(relativePath, transform, verify, label) {
   const path = resolve(root, workspace, relativePath);
   const before = readFileSync(path, 'utf8');
   const after = transform(before);
-  if (!verify(after)) throw new Error(`[FAIL] ${label}: contrato visual não confirmado em ${relativePath}`);
+  const result = verify(after);
+  if (result !== true) {
+    const detail = typeof result === 'string' && result ? ` (${result})` : '';
+    throw new Error(`[FAIL] ${label}: contrato visual não confirmado em ${relativePath}${detail}`);
+  }
   if (after !== before) writeFileSync(path, after, 'utf8');
   console.log(`[OK] ${label}${after === before ? ' (já aplicado)' : ''}`);
 }
@@ -53,18 +57,16 @@ function removeSelfClosingContaining(source, tagName, markers) {
 patch('src/routes/motorista.app.tsx', (source) => {
   let next = source;
 
-  // Limpeza de imports/estado por linha inteira. Isso tolera alterações anteriores
-  // de espaçamento e evita depender da posição dos símbolos no import lucide.
+  // Limpeza de imports/estado por assinatura real de código, não por comentários.
   next = next
-    .replace(/^.*\bDriverSideMenu\b.*(?:\r?\n|$)/gm, (line) => line.includes('import') ? '' : line)
-    .replace(/^.*\bBrandSplash\b.*(?:\r?\n|$)/gm, (line) => line.includes('import') ? '' : line)
+    .replace(/^import\s+\{\s*DriverSideMenu\s*\}\s+from\s+["']@\/components\/DriverSideMenu["'];?\s*(?:\r?\n|$)/gm, '')
+    .replace(/^import\s+\{\s*BrandSplash\s*\}\s+from\s+["']@\/components\/BrandSplash["'];?\s*(?:\r?\n|$)/gm, '')
     .replace(/^\s*Menu,\s*(?:\r?\n|$)/gm, '')
     .replace(/^\s*MessageCircle,\s*(?:\r?\n|$)/gm, '')
     .replace(/^\s*const\s+\[sideMenuOpen,\s*setSideMenuOpen\]\s*=\s*useState\(false\);\s*(?:\r?\n|$)/gm, '');
 
-  // O wrapper da rota fica determinístico. Tudo entre MotoristaAppRoute e o tipo
-  // LatLng pertence somente à splash interna histórica, então pode ser substituído
-  // de uma vez sem depender da formatação produzida por hardeners anteriores.
+  // Wrapper determinístico: a splash interna é removida porque o shell Parceiro
+  // já possui a splash oficial.
   const routeStart = next.indexOf('function MotoristaAppRoute()');
   const typeAnchor = next.indexOf('type LatLng =', routeStart);
   if (routeStart >= 0 && typeAnchor > routeStart) {
@@ -73,27 +75,24 @@ patch('src/routes/motorista.app.tsx', (source) => {
       + next.slice(typeAnchor);
   }
 
-  // Remova qualquer splash interna remanescente.
   next = next.replace(/\s*<BrandSplash\b[^>]*\/>\s*/g, '\n');
 
-  // Remova o botão de menu pelo conteúdo do próprio elemento, sem regex gulosa
-  // que possa atravessar outros botões do cabeçalho.
+  // Menu paralelo: remover o botão e a montagem do componente por assinatura.
   next = removeElementContaining(next, '<button', '</button>', 'aria-label="Abrir menu"');
   next = removeElementContaining(next, '<button', '</button>', "aria-label='Abrir menu'");
   next = removeElementContaining(next, '<button', '</button>', 'setSideMenuOpen(true)');
-
-  // Remova a montagem do menu lateral de forma limitada ao componente self-closing.
   next = removeSelfClosingContaining(next, 'DriverSideMenu', ['DriverSideMenu']);
 
-  // Chat ainda não implementado não deve ocupar ação principal.
+  // Chat incompleto não ocupa ação primária.
   next = removeSelfClosingContaining(next, 'CircleAction', ['label="Chat"', "label='Chat'", 'Chat em breve', 'icon={MessageCircle}']);
 
-  // Se algum import ficou órfão após a remoção dos elementos, retire os símbolos.
+  // Limpeza final de resíduos de código que só pertenciam ao menu/chat removidos.
   next = next
+    .replace(/^\s*const\s+\[sideMenuOpen,\s*setSideMenuOpen\][^\n]*(?:\r?\n|$)/gm, '')
     .replace(/^\s*Menu,\s*(?:\r?\n|$)/gm, '')
     .replace(/^\s*MessageCircle,\s*(?:\r?\n|$)/gm, '');
 
-  // Amplie controles essenciais. A transformação é idempotente.
+  // Amplie controles essenciais; transformação idempotente.
   next = next
     .replace(/\bh-10\s+w-10\b/g, 'h-11 w-11')
     .replace(/\bh-9\s+w-9\b/g, 'h-11 w-11')
@@ -105,23 +104,18 @@ patch('src/routes/motorista.app.tsx', (source) => {
   const routeStart = source.indexOf('function MotoristaAppRoute()');
   const typeAnchor = source.indexOf('type LatLng =', routeStart);
   const routeBlock = routeStart >= 0 && typeAnchor > routeStart ? source.slice(routeStart, typeAnchor) : '';
-  const forbiddenRuntime = [
-    'DriverSideMenu',
-    'sideMenuOpen',
-    'setSideMenuOpen',
-    'BrandSplash',
-    'Chat em breve',
-    'icon={MessageCircle}',
-    'aria-label="Abrir menu"',
-    "aria-label='Abrir menu'",
-  ];
-  const hasLargeTouchTarget = /\bh-11\s+w-11\b/.test(source) || /\bmin-h-11\b/.test(source) || /\bh-12\s+w-12\b/.test(source);
-  return (
-    routeBlock.includes('return <MotoristaApp />;') &&
-    forbiddenRuntime.every((marker) => !source.includes(marker)) &&
-    hasLargeTouchTarget &&
-    source.includes('<ApoisDriverBottomNav')
-  );
+
+  const failures = [];
+  if (!routeBlock.includes('return <MotoristaApp />;')) failures.push('wrapper MotoristaAppRoute');
+  if (/import\s+\{\s*DriverSideMenu\s*\}/.test(source) || /<DriverSideMenu\b/.test(source)) failures.push('DriverSideMenu');
+  if (/\bconst\s+\[sideMenuOpen,\s*setSideMenuOpen\]/.test(source) || /setSideMenuOpen\s*\(/.test(source)) failures.push('sideMenuOpen');
+  if (/import\s+\{\s*BrandSplash\s*\}/.test(source) || /<BrandSplash\b/.test(source)) failures.push('BrandSplash');
+  if (/Chat em breve/.test(source) || /<CircleAction\b[\s\S]*?icon=\{MessageCircle\}/.test(source)) failures.push('Chat incompleto');
+  if (/aria-label=["']Abrir menu["']/.test(source)) failures.push('botão Abrir menu');
+  if (!(/\bh-11\s+w-11\b/.test(source) || /\bmin-h-11\b/.test(source) || /\bh-12\s+w-12\b/.test(source))) failures.push('alvos de toque');
+  if (!source.includes('<ApoisDriverBottomNav')) failures.push('ApoisDriverBottomNav');
+
+  return failures.length ? failures.join(', ') : true;
 },
 'Motorista: remove menu paralelo, splash duplicada, Chat incompleto e amplia controles essenciais');
 
