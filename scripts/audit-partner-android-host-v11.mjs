@@ -87,12 +87,12 @@ requireAll('scripts/install-partner-launcher.mjs', [
   "import './install-partner-courier-location.mjs';",
   "import './harden-partner-location-startup-ack.mjs';",
   "import './harden-partner-location-notification-routing.mjs';",
-  "import './verify-partner-native-plugins.mjs';",
+  "await import('./verify-partner-native-plugins.mjs');",
   'br.com.apois.parceiro://module/motorista',
   'br.com.apois.parceiro://module/entregador',
   'driver_running',
   'courier_running',
-], 'Launcher encadeia segurança, Firebase, GPS, ACK real, roteamento e verificação nativa');
+], 'Launcher encadeia segurança, Firebase, GPS, ACK real, roteamento e verificação nativa na ordem final');
 
 requireAll('superapp/partner-shell/package.json', [
   '"@capacitor/android": "8.5.0"',
