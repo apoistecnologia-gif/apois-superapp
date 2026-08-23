@@ -99,7 +99,7 @@ requireMarker(driverBundle, 'Fique offline no mapa antes de sair, trocar de cont
 requireMarker(driverBundle, 'background_location_unavailable', 'Motorista leva fail-safe do Foreground Service ao bundle final');
 requireMarker(driverBundle, 'Modo online desativado porque a localização em segundo plano não iniciou', 'Motorista informa falha de background e volta para OFFLINE');
 requireMarker(driverBundle, 'TOKEN_REFRESHED', 'Motorista repassa renovação de sessão WebView ao GPS nativo');
-requireMarker(driverBundle, 'sessão renovada não foi repassada ao GPS nativo', 'Motorista inclui diagnóstico do sync WebView/FGS');
+requireMarker(driverBundle, 'updateSession', 'Motorista leva atualização da sessão nativa ao bundle final');
 requireMarker(driverBundle, 'apois-parceiro:operational-role', 'Motorista grava trava operacional do shell');
 forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque legado ao APK');
 forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
@@ -118,7 +118,7 @@ requireMarker(courierBundle, 'não foi possível confirmar que você ficou offli
 requireMarker(courierBundle, 'backButton', 'Entregador leva proteção do botão Voltar para o bundle final');
 requireMarker(courierBundle, 'Fique offline ou use Trocar perfil de parceiro', 'Entregador não permite sair do módulo enquanto permanece ONLINE');
 requireMarker(courierBundle, 'TOKEN_REFRESHED', 'Entregador repassa renovação de sessão WebView ao GPS nativo');
-requireMarker(courierBundle, 'sessão renovada não foi repassada ao GPS nativo', 'Entregador inclui diagnóstico do sync WebView/FGS');
+requireMarker(courierBundle, 'updateSession', 'Entregador leva atualização da sessão nativa ao bundle final');
 requireMarker(courierBundle, 'apois-parceiro:operational-role', 'Entregador grava trava operacional do shell');
 forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saque legado ao APK');
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
