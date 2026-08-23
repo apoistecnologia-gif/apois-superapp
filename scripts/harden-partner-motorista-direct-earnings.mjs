@@ -19,32 +19,17 @@ function patch(relativePath, transform, label) {
 patch('src/routes/motorista.carteira.tsx', (source) => {
   let next = source;
 
-  // A rota de carteira é somente uma superfície legada no APOIS Parceiro. Não
-  // dependemos mais do nome histórico DriverWalletPage, porque hardeners/fontes
-  // anteriores podem renomear o componente sem alterar a rota. A autoridade é
-  // createFileRoute('/motorista/carteira') e o componente final deve sempre ser
-  // o redirect seguro para Ganhos.
+  // A carteira é uma superfície legada. O redirect não depende de useNavigate,
+  // useEffect ou Loader2 porque hardeners anteriores podem remover imports que
+  // ficaram sem uso antes desta etapa. A rota Hash é relativa ao módulo Motorista
+  // já hospedado dentro do shell Parceiro e não encerra a sessão.
   if (!next.includes('function PartnerDirectEarningsRedirect()')) {
     const routeMarker = 'export const Route = createFileRoute("/motorista/carteira")({';
     if (!next.includes(routeMarker)) {
       throw new Error('[FAIL] motorista.carteira.tsx: rota /motorista/carteira não encontrada');
     }
 
-    if (!next.includes('useNavigate')) {
-      next = next.replace(
-        'from "@tanstack/react-router";',
-        'from "@tanstack/react-router";',
-      );
-      throw new Error('[FAIL] motorista.carteira.tsx: useNavigate ausente; fonte incompatível com redirect seguro');
-    }
-    if (!next.includes('useEffect')) {
-      throw new Error('[FAIL] motorista.carteira.tsx: useEffect ausente; fonte incompatível com redirect seguro');
-    }
-    if (!next.includes('Loader2')) {
-      throw new Error('[FAIL] motorista.carteira.tsx: Loader2 ausente; fonte incompatível com redirect seguro');
-    }
-
-    const redirect = `function PartnerDirectEarningsRedirect() {\n  const navigate = useNavigate();\n  useEffect(() => {\n    void navigate({ to: "/motorista/ganhos", replace: true });\n  }, [navigate]);\n  return (\n    <div className="flex min-h-[100dvh] items-center justify-center bg-[#050607] px-4 text-white" role="status" aria-live="polite">\n      <div className="max-w-sm text-center">\n        <Loader2 className="mx-auto h-7 w-7 animate-spin text-[#F6BE1C] motion-reduce:animate-none" aria-hidden="true" />\n        <p className="mt-3 text-sm font-black">Abrindo seus ganhos...</p>\n        <p className="mt-1 text-xs font-medium leading-5 text-zinc-500">No APOIS Parceiro, os recebimentos da corrida são diretos ao motorista. A carteira antiga não é usada para retiradas manuais.</p>\n      </div>\n    </div>\n  );\n}\n\n`;
+    const redirect = `function PartnerDirectEarningsRedirect() {\n  if (typeof window !== \"undefined\" && window.location.hash !== \"#/motorista/ganhos\") {\n    window.location.hash = \"#/motorista/ganhos\";\n  }\n  return (\n    <div className=\"flex min-h-[100dvh] items-center justify-center bg-[#050607] px-4 text-white\" role=\"status\" aria-live=\"polite\">\n      <div className=\"max-w-sm text-center\">\n        <div className=\"mx-auto h-7 w-7 animate-spin rounded-full border-2 border-[#F6BE1C]/25 border-t-[#F6BE1C] motion-reduce:animate-none\" aria-hidden=\"true\" />\n        <p className=\"mt-3 text-sm font-black\">Abrindo seus ganhos...</p>\n        <p className=\"mt-1 text-xs font-medium leading-5 text-zinc-500\">No APOIS Parceiro, os recebimentos da corrida são diretos ao motorista. A carteira antiga não é usada para retiradas manuais.</p>\n      </div>\n    </div>\n  );\n}\n\n`;
     next = next.replace(routeMarker, redirect + routeMarker);
   }
 
@@ -72,7 +57,7 @@ patch('src/routes/motorista.carteira.tsx', (source) => {
   if (!finalRouteBlock.includes('component: PartnerDirectEarningsRedirect,')) {
     throw new Error('[FAIL] motorista.carteira.tsx: rota legada não aponta para Ganhos');
   }
-  if (!next.includes('to: "/motorista/ganhos"')) {
+  if (!next.includes('window.location.hash = "#/motorista/ganhos"')) {
     throw new Error('[FAIL] motorista.carteira.tsx: destino Ganhos ausente');
   }
   return next;
