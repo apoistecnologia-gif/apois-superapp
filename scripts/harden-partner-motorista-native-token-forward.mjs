@@ -26,8 +26,22 @@ for (const marker of [
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Motorista Parceiro: forward do refresh token para GPS nativo incompleto (${marker})`);
 }
-if (source.includes('APOIS_PARTNER_DRIVER_NATIVE_TOKEN_FORWARD') && source.includes('DriverLocation.start({\n    supabaseUrl')) {
+
+// DriverLocation.start() é necessário em outros fluxos legítimos de início do GPS.
+// O que não pode acontecer é o bloco específico de TOKEN_REFRESHED reiniciar o FGS.
+// Por isso a validação fica restrita ao bloco acrescentado por este hardener, em vez
+// de reprovar qualquer DriverLocation.start() existente no arquivo inteiro.
+const tokenForwardMarker = '// APOIS_PARTNER_DRIVER_NATIVE_TOKEN_FORWARD';
+const tokenForwardIndex = source.indexOf(tokenForwardMarker);
+if (tokenForwardIndex < 0) {
+  throw new Error('[FAIL] Motorista Parceiro: bloco de token-forward não encontrado após hardening');
+}
+const tokenForwardBlock = source.slice(tokenForwardIndex);
+if (tokenForwardBlock.includes('DriverLocation.start(')) {
   throw new Error('[FAIL] Motorista Parceiro: TOKEN_REFRESHED ainda tenta reiniciar Foreground Service em vez de apenas atualizar sessão');
+}
+if (!tokenForwardBlock.includes('DriverLocation.updateSession({')) {
+  throw new Error('[FAIL] Motorista Parceiro: TOKEN_REFRESHED não atualiza a sessão nativa do Foreground Service');
 }
 
 writeFileSync(path, source, 'utf8');
