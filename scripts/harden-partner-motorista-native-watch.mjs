@@ -154,3 +154,9 @@ console.log('[OK] Motorista Parceiro: acompanhamento contínuo usa Geolocation n
 // Este hardener depende de stopDriverWatch criado acima, então precisa executar
 // depois da gravação do watcher, não como import ESM estático (que seria hoisted).
 await import('./harden-partner-motorista-background-failsafe.mjs');
+
+// O Motorista é carregado dentro de modules/motorista/ no host Parceiro. A
+// normalização de base/entry precisa acontecer antes do build real; caso
+// contrário o APK pode compilar e abrir apenas o ErrorBoundary genérico porque
+// os chunks são procurados na raiz do WebView em vez do diretório do módulo.
+await import('./harden-partner-motorista-entry-runtime.mjs');
