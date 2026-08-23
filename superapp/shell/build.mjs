@@ -38,6 +38,100 @@ for (const [name, source] of modules) {
   console.log(`[OK] ${name} copiado para dist/modules/${name}`);
 }
 
+// Ponte visual do Superapp: permite trocar Corridas <-> Entregas sem encerrar
+// nenhuma sessão. Cada módulo já persiste sua própria sessão em chaves separadas.
+// O botão apenas volta ao seletor principal; não chama signOut().
+const moduleBridgeScript = `
+<script id="apois-superapp-module-bridge">
+(function () {
+  function goToSelector() {
+    window.location.replace('../../index.html');
+  }
+
+  function mountSwitcher() {
+    if (document.getElementById('apois-switch-service')) return;
+    var button = document.createElement('button');
+    button.id = 'apois-switch-service';
+    button.type = 'button';
+    button.setAttribute('aria-label', 'Trocar entre Corridas e Entregas');
+    button.setAttribute('title', 'Trocar serviço');
+    button.innerHTML = '<span aria-hidden="true">⇄</span>';
+    button.style.position = 'fixed';
+    button.style.right = '14px';
+    button.style.top = 'calc(max(env(safe-area-inset-top), 12px) + 56px)';
+    button.style.zIndex = '2147483646';
+    button.style.width = '44px';
+    button.style.height = '44px';
+    button.style.borderRadius = '14px';
+    button.style.border = '1px solid rgba(255,255,255,.14)';
+    button.style.background = 'rgba(5,5,5,.88)';
+    button.style.color = '#f2b414';
+    button.style.fontSize = '24px';
+    button.style.fontWeight = '900';
+    button.style.boxShadow = '0 8px 26px rgba(0,0,0,.38)';
+    button.style.backdropFilter = 'blur(10px)';
+    button.style.webkitBackdropFilter = 'blur(10px)';
+    button.style.display = 'grid';
+    button.style.placeItems = 'center';
+    button.style.padding = '0';
+    button.addEventListener('click', goToSelector);
+    document.body.appendChild(button);
+  }
+
+  // Corridas: se a foto externa do Google falhar, nunca mostrar o texto quebrado
+  // "Foto". Trocamos por uma inicial legível do passageiro.
+  function repairBrokenPassengerAvatar(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    var images = scope.querySelectorAll ? scope.querySelectorAll('img[alt="Foto do passageiro"]') : [];
+    Array.prototype.forEach.call(images, function (img) {
+      if (img.dataset.apoisAvatarGuard === '1') return;
+      img.dataset.apoisAvatarGuard = '1';
+      function fallback() {
+        var holder = img.parentElement;
+        if (!holder) return;
+        var greeting = document.body.innerText.match(/(?:Bom dia|Boa tarde|Boa noite|Boa madrugada),\\s*([^\\s👋]+)/i);
+        var initial = greeting && greeting[1] ? greeting[1].charAt(0).toUpperCase() : 'P';
+        holder.textContent = initial;
+      }
+      img.addEventListener('error', fallback, { once: true });
+      if (img.complete && img.naturalWidth === 0) fallback();
+    });
+  }
+
+  function initialize() {
+    mountSwitcher();
+    repairBrokenPassengerAvatar(document);
+    var observer = new MutationObserver(function (mutations) {
+      mountSwitcher();
+      mutations.forEach(function (mutation) {
+        mutation.addedNodes.forEach(function (node) {
+          if (node && node.nodeType === 1) repairBrokenPassengerAvatar(node);
+        });
+      });
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  } else {
+    initialize();
+  }
+})();
+</script>`;
+
+for (const moduleName of ['corridas', 'entregas']) {
+  const moduleIndex = resolve(dist, `modules/${moduleName}/index.html`);
+  if (!existsSync(moduleIndex)) continue;
+  const html = readFileSync(moduleIndex, 'utf8');
+  if (html.includes('apois-superapp-module-bridge')) continue;
+  const patched = html.includes('</body>')
+    ? html.replace('</body>', `${moduleBridgeScript}\n</body>`)
+    : `${html}\n${moduleBridgeScript}\n`;
+  writeFileSync(moduleIndex, patched, 'utf8');
+  console.log(`[OK] alternador de módulos injetado em ${moduleName}`);
+}
+
 // O shell entra nos módulos usando location.replace(), portanto o WebView não mantém
 // uma entrada anterior no histórico. No Android isso fazia o botão nativo "Voltar"
 // ficar sem efeito dentro do módulo Entregas. Injetamos um handler apenas no bundle
