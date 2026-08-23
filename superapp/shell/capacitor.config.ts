@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'br.com.apois.app',
-  appName: 'APOIS',
+  appName: 'APOIS Cliente',
   webDir: 'dist',
   android: {
     allowMixedContent: false,
