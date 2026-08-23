@@ -7,6 +7,7 @@ import './harden-partner-entregador-active-delivery.mjs';
 import './harden-partner-entregador-active-tracking.mjs';
 import './harden-partner-entregador-offer-expiry.mjs';
 import './harden-partner-entregador-map-camera.mjs';
+import './normalize-partner-entregador-route-map-touch.mjs';
 import './harden-partner-entregador-touch-safearea.mjs';
 import './harden-partner-entregador-finance.mjs';
 import './harden-partner-entregador-finance-runtime.mjs';
