@@ -35,10 +35,23 @@ if (source.includes('PushNotifications.unregister()')) {
   console.error('[FAIL] Motorista sessão v3: FCM nativo compartilhado não pode ser invalidado no logout do módulo');
   failed = true;
 }
-if (source.includes('driver_set_presence\", {\\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\\n      }).catch(() => undefined)')) {
-  console.error('[FAIL] Motorista sessão v3: saída ainda ignora falha ao confirmar OFFLINE');
-  failed = true;
+
+// O hardener mantém o padrão legado com .catch(() => undefined) apenas como
+// entrada de migração para substituí-lo pela RPC que lança em caso de erro.
+// Validamos a própria guarda estrutural, em vez de reprovar a presença textual
+// desse padrão dentro do script de transformação.
+for (const marker of [
+  'const offlineRpc = `const { error: presenceError } = await (supabase as any).rpc("driver_set_presence"',
+  'if (presenceError) throw presenceError;',
+  'Remove tolerância legada se o hardener anterior já tiver sido aplicado.',
+  ').catch(() => undefined);`,\n    `      ${offlineRpc}`',
+]) {
+  if (!source.includes(marker)) {
+    console.error(`[FAIL] Motorista sessão v3: saída ainda ignora falha ao confirmar OFFLINE — guarda ausente ${marker}`);
+    failed = true;
+  }
 }
+if (!failed) console.log('[OK] Motorista sessão v3: logout não ignora falha de OFFLINE; padrões legados só existem como entrada de migração e são substituídos por RPC fail-closed.');
 
 const profileSwitch = read('scripts/harden-partner-motorista-profile-switch.mjs');
 for (const marker of [
@@ -49,15 +62,30 @@ for (const marker of [
   'await stopNativeDriverLocation()',
   'localStorage.setItem("apois:driver:online", "0")',
   'onClick={() => void handleSwitchPartnerProfile()}',
+  'disabled={switchingProfile}',
+  'const oldButton = `',
+  'const safeButton = `',
+  'if (source.includes(oldButton)) source = source.replace(oldButton, safeButton);',
+  "throw new Error('[FAIL] Motorista Parceiro: troca de perfil ainda pode abandonar presença ONLINE sem reconciliação')",
 ]) {
   if (!profileSwitch.includes(marker)) {
     console.error(`[FAIL] Motorista sessão v3: troca segura de perfil ausente ${marker}`);
     failed = true;
   }
 }
-if (profileSwitch.includes(`onClick={() => window.location.replace('../../index.html')}`)) {
+
+// O CTA direto ao seletor aparece somente dentro de oldButton e na guarda final
+// que proíbe sua permanência no DriverSideMenu transformado. A auditoria deve
+// verificar substituição + guarda, não interpretar esse literal como runtime ativo.
+if (!profileSwitch.includes("onClick={() => window.location.replace('../../index.html')}")) {
+  console.error('[FAIL] Motorista sessão v3: padrão legado da troca não está coberto pelo hardener');
+  failed = true;
+} else if (!profileSwitch.includes('if (source.includes(oldButton)) source = source.replace(oldButton, safeButton);') ||
+           !profileSwitch.includes("if (source.includes(`onClick={() => window.location.replace('../../index.html')}`))")) {
   console.error('[FAIL] Motorista sessão v3: troca de perfil ainda pode deixar presença/GPS online');
   failed = true;
+} else {
+  console.log('[OK] Motorista sessão v3: CTA legado de troca é substituído e bloqueado se sobreviver ao hardening.');
 }
 
 const policy = read('scripts/harden-partner-motorista-payment-policy.mjs');
