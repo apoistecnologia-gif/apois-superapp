@@ -43,15 +43,12 @@ requireAll('scripts/harden-partner-motorista-direct-earnings.mjs', [
   'window.location.hash = "#/motorista/ganhos"',
   'Recebimento direto ao motorista',
   'Ganhos registrados',
-  'false ? (',
+  "next = next.replace(/dashboard\\?\\.payoutEnabled/g, 'false');",
+  "next = next.replace(/dashboard\\.payoutEnabled/g, 'false');",
+  '/dashboard\\??\\.payoutEnabled/.test(next)',
   'sem saldo custodial da APOIS',
-], 'carteira legada é desviada e ganhos exibem recebimento direto sem saque manual');
+], 'carteira legada é desviada e ganhos neutralizam retirada sem depender da forma do JSX');
 
-// O hardener usa uma única blocklist genérica e valida cada resíduo com
-// next.includes(forbidden). Não exija uma chamada literal específica para cada
-// item da lista, pois isso transforma a própria implementação genérica em falso
-// negativo. O que importa é: o stub de saque está bloqueado, a chave legada faz
-// parte da blocklist e qualquer item remanescente faz o hardener falhar.
 requireAll('scripts/harden-partner-motorista-release-surface.mjs', [
   'requestDriverWithdrawal(_amountCents: number)',
   'Saque manual não está disponível no APOIS Parceiro',
