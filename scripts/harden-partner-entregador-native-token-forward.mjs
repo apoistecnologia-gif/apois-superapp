@@ -26,8 +26,21 @@ for (const marker of [
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Entregador Parceiro: forward do refresh token para GPS nativo incompleto (${marker})`);
 }
-if (source.includes('APOIS_PARTNER_COURIER_NATIVE_TOKEN_FORWARD') && source.includes('CourierLocation.start({\n    supabaseUrl')) {
+
+// CourierLocation.start() pode existir em fluxos legítimos de início do GPS.
+// A regra de segurança vale para o callback TOKEN_REFRESHED: nele somente a
+// sessão do FGS deve ser atualizada, sem reiniciar o serviço.
+const tokenForwardMarker = '// APOIS_PARTNER_COURIER_NATIVE_TOKEN_FORWARD';
+const tokenForwardIndex = source.indexOf(tokenForwardMarker);
+if (tokenForwardIndex < 0) {
+  throw new Error('[FAIL] Entregador Parceiro: bloco de token-forward não encontrado após hardening');
+}
+const tokenForwardBlock = source.slice(tokenForwardIndex);
+if (tokenForwardBlock.includes('CourierLocation.start(')) {
   throw new Error('[FAIL] Entregador Parceiro: TOKEN_REFRESHED ainda tenta reiniciar Foreground Service em vez de apenas atualizar sessão');
+}
+if (!tokenForwardBlock.includes('CourierLocation.updateSession({')) {
+  throw new Error('[FAIL] Entregador Parceiro: TOKEN_REFRESHED não atualiza a sessão nativa do Foreground Service');
 }
 
 writeFileSync(path, source, 'utf8');
