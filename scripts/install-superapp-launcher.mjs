@@ -14,22 +14,40 @@ if (!existsSync(resRoot)) {
   throw new Error(`Recursos Android não encontrados: ${resRoot}`);
 }
 
-function renderPng(size, output) {
-  const result = spawnSync(
-    'sips',
-    ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', output],
-    { encoding: 'utf8' },
-  );
-  if (result.error || result.status !== 0 || !existsSync(output)) {
+function runSips(args, label) {
+  const result = spawnSync('sips', args, { encoding: 'utf8' });
+  if (result.error || result.status !== 0) {
     throw new Error(
-      `Falha ao gerar launcher ${size}x${size}: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`,
+      `Falha ao ${label}: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`,
     );
   }
 }
 
-// Android usa tamanhos físicos diferentes por densidade. Copiar o mesmo PNG
-// 192x192 para todas as pastas faz launchers de baixa densidade ficarem
-// superdimensionados e pode provocar recorte/blur no ícone final.
+function renderPng(size, output, contentScale) {
+  // O launcher anterior ocupava praticamente todo o canvas. Em launchers Android
+  // com máscara adaptativa isso recortava o "A" nas bordas. A arte agora é
+  // reduzida e centralizada dentro de uma zona segura, preservando o símbolo inteiro.
+  const innerSize = Math.max(1, Math.round(size * contentScale));
+  const tmp = `/tmp/apois-launcher-inner-${size}-${innerSize}.png`;
+
+  runSips(
+    ['-s', 'format', 'png', '-z', String(innerSize), String(innerSize), source, '--out', tmp],
+    `redimensionar launcher para ${innerSize}x${innerSize}`,
+  );
+  runSips(
+    ['-p', String(size), String(size), '--padColor', '050505', tmp, '--out', output],
+    `centralizar launcher em canvas ${size}x${size}`,
+  );
+
+  if (!existsSync(output)) {
+    throw new Error(`Launcher não foi gerado: ${output}`);
+  }
+  rmSync(tmp, { force: true });
+}
+
+// Android usa tamanhos físicos diferentes por densidade. Para o ícone legacy
+// usamos 70% do canvas; no foreground adaptativo, 62%, porque a máscara do
+// launcher pode recortar ainda mais as bordas dependendo do fabricante.
 const densities = [
   { dir: 'mipmap-mdpi', legacy: 48, foreground: 108 },
   { dir: 'mipmap-hdpi', legacy: 72, foreground: 162 },
@@ -44,12 +62,14 @@ for (const density of densities) {
 
   const legacyTmp = `/tmp/apois-launcher-${density.legacy}.png`;
   const foregroundTmp = `/tmp/apois-launcher-foreground-${density.foreground}.png`;
-  renderPng(density.legacy, legacyTmp);
-  renderPng(density.foreground, foregroundTmp);
+  renderPng(density.legacy, legacyTmp, 0.70);
+  renderPng(density.foreground, foregroundTmp, 0.62);
 
   copyFileSync(legacyTmp, join(dir, 'ic_launcher.png'));
   copyFileSync(legacyTmp, join(dir, 'ic_launcher_round.png'));
   copyFileSync(foregroundTmp, join(dir, 'ic_launcher_foreground.png'));
+  rmSync(legacyTmp, { force: true });
+  rmSync(foregroundTmp, { force: true });
 }
 
 // Legacy launchers devem apontar para o raster oficial, nunca para o fallback
@@ -84,4 +104,4 @@ if (!manifest.includes('android:usesCleartextTraffic="false"')) {
   throw new Error('AndroidManifest não bloqueia tráfego HTTP cleartext.');
 }
 
-console.log('[OK] Launcher APOIS Brasil gerado nas dimensões corretas e Android hardening validado.');
+console.log('[OK] Launcher APOIS Cliente centralizado na zona segura Android e hardening validado.');
