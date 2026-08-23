@@ -90,6 +90,17 @@ patch('.work/entregas/src/components/GoogleMapsAddressSelector.tsx', (source) =>
     source = `import { Geolocation } from "@capacitor/geolocation";\n${source}`;
   }
 
+  // The snapshot's fallback map center (used only before the merchant/customer
+  // searches or drags the pin) was a hardcoded developer coordinate with no
+  // relation to any real address. Swap it for Brasília — a real, recognizable
+  // reference point, not a leftover test value.
+  source = replaceRequired(
+    source,
+    'useState(initialCenter || { lat: -9.3891, lng: -40.5031 })',
+    'useState(initialCenter || { lat: -15.7801, lng: -47.9292 })',
+    'Mapa de edição: centro padrão do mapa usa referência real (Brasília) em vez de coordenada de desenvolvimento',
+  );
+
   const serverFnBlock = `  const geocodeFn = useServerFn(geocodeAddress);\n  const autocompleteFn = useServerFn(autocompleteAddress);\n  const detailsFn = useServerFn(getPlaceDetails);\n\n  const getAccessToken = async () => {\n    const {\n      data: { session },\n      error,\n    } = await supabase.auth.getSession();\n    if (error || !session?.access_token) throw new Error("Sessão expirada");\n    return session.access_token;\n  };`;
   const edgeBlock = `  const invokeMaps = async (body: Record<string, unknown>) => {\n    const { data, error } = await supabase.functions.invoke("google-maps-address", { body });\n    if (error) throw error;\n    if (data?.error) throw new Error(String(data.error));\n    return data;\n  };`;
   source = replaceRequired(
