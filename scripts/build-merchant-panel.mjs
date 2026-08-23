@@ -47,6 +47,11 @@ run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'entregas
 run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), 'entregas']);
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
+// harden-entregas-superapp-address-ux.mjs converts GoogleMapsAddressSelector.tsx off
+// TanStack server functions; neutralize-entregas-superapp-legacy.mjs (below) runs
+// harden-entregas-merchant-map-runtime.mjs, which verifies that conversion already
+// happened, so this must run first.
+run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-address-ux.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
 
 for (const script of [
@@ -61,7 +66,6 @@ for (const script of [
   'harden-entregas-superapp-push-navigation.mjs',
   'harden-entregas-superapp-notification-feed.mjs',
   'harden-entregas-superapp-address-confirmation.mjs',
-  'harden-entregas-superapp-address-ux.mjs',
   'harden-entregas-superapp-image-fallbacks.mjs',
   'harden-entregas-superapp-legal-routes.mjs',
   'harden-entregas-superapp-customer-ux.mjs',
