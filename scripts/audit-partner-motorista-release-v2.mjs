@@ -81,10 +81,18 @@ requireAll('scripts/harden-partner-motorista-session-hygiene.mjs', [
   "patch('src/routes/motorista.configuracoes.tsx'",
 ], 'logout do Motorista limpa registro Push do módulo e retorna ao seletor Parceiro');
 
+// O hardener de navegação deixou de depender da string literal
+// if (next.includes('to: "/motorista/carteira"')). Ele remove a rota Carteira
+// estruturalmente por regex, normaliza o objeto /motorista/ganhos e faz uma
+// validação final também estrutural. A auditoria deve verificar essas proteções,
+// não uma implementação antiga baseada em includes literal.
 requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'to: "/motorista/ganhos", label: "Ganhos"',
   'Recebimentos das corridas',
-  `if (next.includes('to: "/motorista/carteira"'))`,
+  'const gainsObject = /',
+  '/motorista\\/carteira',
+  'rota de carteira legada permaneceu no menu',
+  'menu de ganhos direto não foi aplicado',
   'min-h-[82px]',
   'min-h-[60px]',
   'h-6 w-6',
