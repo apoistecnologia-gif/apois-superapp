@@ -1,6 +1,6 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 
 const root = resolve('.');
 const workspace = resolve(root, '.work/entregas');
@@ -89,7 +89,7 @@ const env = {
 // Vercel injects VERCEL=1 into every build, which makes Nitro auto-detect the
 // "vercel" preset and emit its Build Output API layout (.vercel/output/...)
 // instead of the plain .output/server + .output/public shape this script
-// pre-renders and republishes. Force the generic preset for this nested build.
+// republishes. Force the generic preset for this nested build.
 delete env.VERCEL;
 delete env.VERCEL_ENV;
 delete env.VERCEL_URL;
@@ -98,47 +98,20 @@ env.NITRO_PRESET = 'node-server';
 run('bun', ['install'], { cwd: workspace, env });
 run('bun', ['run', 'build:merchant'], { cwd: workspace, env });
 
-const serverEntry = resolve(workspace, '.output/server/index.mjs');
 const publicIndex = resolve(workspace, '.output/public/index.html');
-if (!existsSync(serverEntry)) {
-  console.error('[FAIL] Painel merchant não gerou .output/server/index.mjs');
+if (!existsSync(publicIndex)) {
+  console.error('[FAIL] Painel merchant não gerou .output/public/index.html');
   process.exit(1);
 }
 
-const host = '127.0.0.1';
-const port = '4175';
-const server = spawn('node', [serverEntry], {
-  cwd: workspace,
-  env: { ...env, HOST: host, PORT: port },
-  stdio: ['ignore', 'pipe', 'pipe'],
-});
-let logs = '';
-server.stdout?.on('data', (chunk) => { logs += chunk.toString(); });
-server.stderr?.on('data', (chunk) => { logs += chunk.toString(); });
-
-let html = null;
-try {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    try {
-      const response = await fetch(`http://${host}:${port}/`, { redirect: 'follow' });
-      if (response.ok) {
-        html = await response.text();
-        break;
-      }
-    } catch {}
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
-  }
-} finally {
-  server.kill('SIGTERM');
-}
-
-if (!html) {
-  console.error('[FAIL] Não foi possível renderizar o HTML inicial do painel merchant.');
-  if (logs) console.error(logs.slice(-5000));
-  process.exit(1);
-}
-
-html = html
+// Nitro já gera o shell estático real da SPA em .output/public/index.html (com as
+// tags de script/link para os bundles do Vite). Não iniciar o servidor SSR nem
+// capturar HTML renderizado aqui: qualquer resposta pré-renderizada reflete o
+// estado (sem sessão) daquele instante do build e ficaria congelada como
+// index.html estático para todo mundo, para sempre — inclusive /login,
+// causando um loop de redirecionamento. Autenticação e roteamento continuam
+// sendo decididos em runtime pelo React/router no navegador do usuário.
+let html = readFileSync(publicIndex, 'utf8')
   .replace(/(src|href)="\/(?!\/)/g, '$1="./')
   .replace(/(src|href)='\/(?!\/)/g, "$1='./");
 writeFileSync(publicIndex, html, 'utf8');
