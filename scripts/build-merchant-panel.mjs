@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -86,46 +86,30 @@ const env = {
   APOIS_MOBILE_BUILD: '0',
 };
 
-// Vercel injects VERCEL=1 into every build, which makes Nitro auto-detect the
-// "vercel" preset and emit its Build Output API layout (.vercel/output/...)
-// instead of the plain .output/server + .output/public shape this script
-// republishes. Force the generic preset for this nested build.
-delete env.VERCEL;
-delete env.VERCEL_ENV;
-delete env.VERCEL_URL;
-env.NITRO_PRESET = 'node-server';
+// TanStack Start renders HTML per request; there is no static index.html to
+// capture. Deploy it the way it's meant to run: as a real Vercel Serverless
+// Function via Nitro's "vercel" preset, so each visitor's actual session is
+// read at request time by the running server. That's also why forcing
+// NITRO_PRESET=node-server here was wrong: it produces .output/server +
+// .output/public, but this SSR app never writes an index.html into
+// .output/public, so nothing was ever there to republish.
+env.NITRO_PRESET = 'vercel';
 
 run('bun', ['install'], { cwd: workspace, env });
 run('bun', ['run', 'build:merchant'], { cwd: workspace, env });
 
-const publicIndex = resolve(workspace, '.output/public/index.html');
-if (!existsSync(publicIndex)) {
-  console.error('[FAIL] Painel merchant não gerou .output/public/index.html');
+const nestedOutput = resolve(workspace, '.vercel/output');
+if (!existsSync(resolve(nestedOutput, 'config.json'))) {
+  console.error('[FAIL] Painel merchant não gerou .vercel/output/config.json em .work/entregas.');
   process.exit(1);
 }
 
-// Nitro já gera o shell estático real da SPA em .output/public/index.html (com as
-// tags de script/link para os bundles do Vite). Não iniciar o servidor SSR nem
-// capturar HTML renderizado aqui: qualquer resposta pré-renderizada reflete o
-// estado (sem sessão) daquele instante do build e ficaria congelada como
-// index.html estático para todo mundo, para sempre — inclusive /login,
-// causando um loop de redirecionamento. Autenticação e roteamento continuam
-// sendo decididos em runtime pelo React/router no navegador do usuário.
-let html = readFileSync(publicIndex, 'utf8')
-  .replace(/(src|href)="\/(?!\/)/g, '$1="./')
-  .replace(/(src|href)='\/(?!\/)/g, "$1='./");
-writeFileSync(publicIndex, html, 'utf8');
+// Vercel's Build Output API only looks for .vercel/output at the project
+// root where the build command ran (/vercel/path0), not inside our nested
+// .work/entregas workspace. Copy it up so Vercel picks it up after this
+// script exits.
+const rootOutput = resolve(root, '.vercel/output');
+rmSync(rootOutput, { recursive: true, force: true });
+cpSync(nestedOutput, rootOutput, { recursive: true });
 
-for (const forbidden of [
-  'Conta para repasse',
-  'Salvar chave PIX',
-  'Solicitar saque',
-  'SOLICITAR ENTREGADOR · PEDIDO',
-]) {
-  if (html.includes(forbidden)) {
-    console.error(`[FAIL] Painel merchant publicado ainda contém UI legada: ${forbidden}`);
-    process.exit(1);
-  }
-}
-
-console.log('[OK] Painel do estabelecimento pronto para Vercel em .work/entregas/.output/public');
+console.log('[OK] Painel do estabelecimento pronto para Vercel em .vercel/output (Serverless Function).');
