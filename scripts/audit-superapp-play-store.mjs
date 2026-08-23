@@ -37,10 +37,10 @@ function forbidAll(path, markers, label) {
 
 requireAll('superapp/shell/capacitor.config.ts', [
   "appId: 'br.com.apois.app'",
-  "appName: 'APOIS'",
+  "appName: 'APOIS Cliente'",
   "backgroundColor: '#050505'",
   "overlaysWebView: false",
-], 'Capacitor mantém package, label e barras do Superapp');
+], 'Capacitor mantém package, label e barras do Superapp Cliente');
 
 requireAll('scripts/harden-superapp-android-security.mjs', [
   "['compileSdkVersion', 36]",
