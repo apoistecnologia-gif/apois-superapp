@@ -85,13 +85,8 @@ const monochromeXml = `<?xml version="1.0" encoding="utf-8"?>
     android:viewportHeight="432">
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M216,88 L92,344 L146,344 L176,278 L256,278 L286,344 L340,344 Z" />
-    <path
-        android:fillColor="#050505"
-        android:pathData="M198,228 L216,180 L234,228 Z" />
-    <path
-        android:fillColor="#050505"
-        android:pathData="M164,300 L268,300 L288,344 L144,344 Z" />
+        android:fillType="evenOdd"
+        android:pathData="M216,88 L92,344 L146,344 L176,278 L256,278 L286,344 L340,344 Z M198,228 L216,180 L234,228 Z M164,300 L268,300 L288,344 L144,344 Z" />
 </vector>
 `;
 writeFileSync(join(drawableDir, 'ic_launcher_monochrome.xml'), monochromeXml, 'utf8');
