@@ -6,9 +6,9 @@
       "purpose": "APOIS Corridas - passageiro"
     },
     "entregas": {
-      "source": "apps/merchant",
-      "workspace": "apps/merchant",
-      "purpose": "APOIS Entregas - estabelecimento interno"
+      "source": "sources/apois-entregas",
+      "workspace": ".work/entregas",
+      "purpose": "APOIS Entregas - estabelecimento"
     },
     "motorista": {
       "source": "sources/apois-corridas-motorista-admin",
