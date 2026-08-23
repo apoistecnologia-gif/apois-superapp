@@ -11,7 +11,7 @@ workflows:
         - apois_android
       vars:
         APP_PACKAGE: "br.com.apois.app"
-        APP_LABEL: "APOIS"
+        APP_LABEL: "APOIS Cliente"
         APP_VERSION_CODE: "1"
         APP_VERSION_NAME: "1.0.0"
         BUN_VERSION: "1.3.14"
