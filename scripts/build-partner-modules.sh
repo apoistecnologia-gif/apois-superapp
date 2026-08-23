@@ -85,6 +85,9 @@ require_contains 'APOIS_PARTNER_DRIVER_HEADER_OPERATIONAL_GUARD' src/components/
 } > .env.mobile.local
 export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
+cd "$ROOT"
+node "$ROOT/scripts/reconcile-partner-motorista-lockfile.mjs"
+cd "$MOTORISTA"
 bun install --frozen-lockfile
 npm run build:motorista
 
