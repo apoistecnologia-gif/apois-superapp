@@ -6,13 +6,10 @@ import './install-partner-courier-location.mjs';
 import './harden-partner-location-startup-ack.mjs';
 import './harden-partner-location-session-sync.mjs';
 import './harden-partner-location-notification-routing.mjs';
-// Ordem intencional: import './verify-partner-native-plugins.mjs'; é executado abaixo via await,
-// somente depois que ACK/retry, sessão e roteamento terminaram de materializar o Java final.
-import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+// verify-partner-native-plugins roda via await no fim, depois de todos os hardeners.
+import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
 
-const source = resolve('superapp/branding/apois-launcher.png');
 const resRoot = resolve('superapp/partner-shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/partner-shell/android/app/src/main/AndroidManifest.xml');
 const mainActivityPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/MainActivity.java');
@@ -21,45 +18,63 @@ const driverLocationServicePath = resolve('superapp/partner-shell/android/app/sr
 const courierLocationPluginPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationPlugin.java');
 const courierLocationServicePath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationService.java');
 
-if (!existsSync(source)) throw new Error(`Arte oficial APOIS não encontrada: ${source}`);
 if (!existsSync(resRoot)) throw new Error(`Recursos Android do APOIS Parceiro não encontrados: ${resRoot}`);
 
-function renderPng(size, output) {
-  const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', output], { encoding: 'utf8' });
-  if (result.error || result.status !== 0 || !existsSync(output)) {
-    throw new Error(`Falha ao gerar launcher ${size}x${size}: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`);
-  }
-}
-
-const densities = [
-  { dir: 'mipmap-mdpi', legacy: 48, foreground: 108 },
-  { dir: 'mipmap-hdpi', legacy: 72, foreground: 162 },
-  { dir: 'mipmap-xhdpi', legacy: 96, foreground: 216 },
-  { dir: 'mipmap-xxhdpi', legacy: 144, foreground: 324 },
-  { dir: 'mipmap-xxxhdpi', legacy: 192, foreground: 432 },
-];
-
-for (const density of densities) {
-  const dir = join(resRoot, density.dir);
-  mkdirSync(dir, { recursive: true });
-  const legacyTmp = `/tmp/apois-partner-launcher-${density.legacy}.png`;
-  const foregroundTmp = `/tmp/apois-partner-launcher-foreground-${density.foreground}.png`;
-  renderPng(density.legacy, legacyTmp);
-  renderPng(density.foreground, foregroundTmp);
-  copyFileSync(legacyTmp, join(dir, 'ic_launcher.png'));
-  copyFileSync(legacyTmp, join(dir, 'ic_launcher_round.png'));
-  copyFileSync(foregroundTmp, join(dir, 'ic_launcher_foreground.png'));
-}
-
+// Launcher determinístico: não depende de PNG raster que pode chegar preto/branco.
+// Um único A dourado, pequeno e centralizado, com ampla safe-area.
+const drawableDir = join(resRoot, 'drawable');
+const valuesDir = join(resRoot, 'values');
 const legacyAnyDpi = join(resRoot, 'mipmap-anydpi');
-rmSync(join(legacyAnyDpi, 'ic_launcher.xml'), { force: true });
-rmSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), { force: true });
-
 const adaptiveDir = join(resRoot, 'mipmap-anydpi-v26');
-mkdirSync(adaptiveDir, { recursive: true });
-const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/ic_launcher_background" />\n    <foreground android:drawable="@mipmap/ic_launcher_foreground" />\n</adaptive-icon>\n`;
+for (const dir of [drawableDir, valuesDir, legacyAnyDpi, adaptiveDir]) mkdirSync(dir, { recursive: true });
+
+const goldAPath = 'M54,20 L25,88 L38,88 L44.5,71 L63.5,71 L70,88 L83,88 L54,20 Z M49,59 L54,45 L59,59 Z';
+const aVector = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#F6BE1C"
+        android:fillType="evenOdd"
+        android:pathData="${goldAPath}" />
+</vector>
+`;
+const monoVector = aVector.replace('#F6BE1C', '#FFFFFF');
+writeFileSync(join(drawableDir, 'apois_launcher_a.xml'), aVector, 'utf8');
+writeFileSync(join(drawableDir, 'apois_launcher_a_monochrome.xml'), monoVector, 'utf8');
+writeFileSync(join(valuesDir, 'apois_launcher_colors.xml'), `<?xml version="1.0" encoding="utf-8"?>
+<resources><color name="ic_launcher_background">#050505</color></resources>
+`, 'utf8');
+
+const legacyXml = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/ic_launcher_background" />
+    <item android:drawable="@drawable/apois_launcher_a" />
+</layer-list>
+`;
+writeFileSync(join(legacyAnyDpi, 'ic_launcher.xml'), legacyXml, 'utf8');
+writeFileSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), legacyXml, 'utf8');
+
+const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/apois_launcher_a" />
+    <monochrome android:drawable="@drawable/apois_launcher_a_monochrome" />
+</adaptive-icon>
+`;
 writeFileSync(join(adaptiveDir, 'ic_launcher.xml'), adaptiveXml, 'utf8');
 writeFileSync(join(adaptiveDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
+
+// Remove bitmaps do template/arte antiga para impedir que algum launcher OEM
+// escolha um quadrado preto/branco em vez do recurso anydpi determinístico.
+for (const density of ['mipmap-mdpi', 'mipmap-hdpi', 'mipmap-xhdpi', 'mipmap-xxhdpi', 'mipmap-xxxhdpi']) {
+  const dir = join(resRoot, density);
+  for (const file of ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png', 'ic_launcher.webp', 'ic_launcher_round.webp', 'ic_launcher_foreground.webp']) {
+    rmSync(join(dir, file), { force: true });
+  }
+}
 
 const manifest = readFileSync(manifestPath, 'utf8');
 if (!manifest.includes('android:icon="@mipmap/ic_launcher"')) throw new Error('Manifest Parceiro não aponta para @mipmap/ic_launcher');
@@ -103,9 +118,5 @@ if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) throw new
 if (!mainActivity.includes('registerPlugin(DriverLocationPlugin.class)')) throw new Error('DriverLocationPlugin não registrado no host Parceiro.');
 if (!mainActivity.includes('registerPlugin(CourierLocationPlugin.class)')) throw new Error('CourierLocationPlugin não registrado no host Parceiro.');
 
-// A verificação precisa enxergar o estado final. Como harden-partner-location-startup-ack
-// usa top-level await para aplicar o retry, importá-la estaticamente ao lado dos hardeners
-// criava uma corrida e podia validar o DriverLocation antes de STARTUP_ACK_MAX_ATTEMPTS existir.
 await import('./verify-partner-native-plugins.mjs');
-
-console.log('[OK] Ícone oficial APOIS aplicado; GPS só confirma ONLINE após ACK real, tokens nativos renovados ficam reconciliáveis e notificações retornam ao módulo correto.');
+console.log('[OK] Launcher APOIS Parceiro: fundo preto + um único A dourado centralizado; runtime nativo validado.');
