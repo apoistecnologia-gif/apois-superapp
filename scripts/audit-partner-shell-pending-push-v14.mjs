@@ -14,6 +14,7 @@ function read(path) {
 
 const hardener = read('scripts/harden-partner-shell-startup.mjs');
 for (const marker of [
+  'const newBlock = `    async function bootPartnerShell()',
   'const launch=await appPlugin.getLaunchUrl();',
   'if(launch?.url&&relayDeepLink(launch.url))return;',
   'if(consumePendingPartnerPush())return;',
@@ -25,9 +26,19 @@ for (const marker of [
     failed = true;
   }
 }
-const launchIndex = hardener.indexOf('const launch=await appPlugin.getLaunchUrl();');
-const pendingIndex = hardener.indexOf('if(consumePendingPartnerPush())return;');
-const lockIndex = hardener.indexOf('const lockedOnLaunch=operationalRole();');
+
+// O hardener preserva blocos antigos apenas como padrões de migração. A ordem
+// operacional deve ser medida no newBlock efetivamente escrito no shell, e não
+// no arquivo inteiro, pois o oldBlock contém propositalmente a ordem insegura
+// que será substituída.
+const newBlockStart = hardener.indexOf('const newBlock = `');
+const newBlockEnd = newBlockStart >= 0 ? hardener.indexOf('`;\n\nif (source.includes(oldBlock))', newBlockStart) : -1;
+const runtimeBlock = newBlockStart >= 0 && newBlockEnd > newBlockStart
+  ? hardener.slice(newBlockStart, newBlockEnd)
+  : '';
+const launchIndex = runtimeBlock.indexOf('const launch=await appPlugin.getLaunchUrl();');
+const pendingIndex = runtimeBlock.indexOf('if(consumePendingPartnerPush())return;');
+const lockIndex = runtimeBlock.indexOf('const lockedOnLaunch=operationalRole();');
 if (!(launchIndex >= 0 && pendingIndex > launchIndex && lockIndex > pendingIndex)) {
   console.error('[FAIL] Shell startup: ordem precisa ser deep link -> Push pendente -> lock operacional.');
   failed = true;
