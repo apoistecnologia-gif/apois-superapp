@@ -1,7 +1,3 @@
-[submodule "sources/apois-entregas"]
-	path = sources/apois-entregas
-	url = https://github.com/franciel046631/apois-entregas.git
-	branch = main
 [submodule "sources/apois-corridas-passageiro"]
 	path = sources/apois-corridas-passageiro
 	url = https://github.com/franciel046631/say-hello-buddy-23-84b5dcbf.git
