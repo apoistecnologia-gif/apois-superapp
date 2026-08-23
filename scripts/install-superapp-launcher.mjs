@@ -6,6 +6,8 @@ import { spawnSync } from 'node:child_process';
 const source = resolve('superapp/branding/apois-launcher.png');
 const resRoot = resolve('superapp/shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
+const stringsPath = resolve('superapp/shell/android/app/src/main/res/values/strings.xml');
+const APP_LABEL = 'APOIS Cliente';
 
 if (!existsSync(source)) {
   throw new Error(`Arte oficial do launcher não encontrada: ${source}`);
@@ -90,6 +92,27 @@ const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 writeFileSync(join(adaptiveDir, 'ic_launcher.xml'), adaptiveXml, 'utf8');
 writeFileSync(join(adaptiveDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
 
+// Garante que o nome exibido no launcher seja APOIS Cliente, independentemente
+// de qualquer rótulo legado criado pelo projeto nativo anterior.
+if (!existsSync(stringsPath)) {
+  throw new Error(`strings.xml não encontrado: ${stringsPath}`);
+}
+let stringsXml = readFileSync(stringsPath, 'utf8');
+if (/<string name="app_name">[^<]*<\/string>/.test(stringsXml)) {
+  stringsXml = stringsXml.replace(
+    /<string name="app_name">[^<]*<\/string>/,
+    `<string name="app_name">${APP_LABEL}</string>`,
+  );
+} else if (stringsXml.includes('</resources>')) {
+  stringsXml = stringsXml.replace(
+    '</resources>',
+    `    <string name="app_name">${APP_LABEL}</string>\n</resources>`,
+  );
+} else {
+  throw new Error('strings.xml não possui estrutura <resources> válida.');
+}
+writeFileSync(stringsPath, stringsXml, 'utf8');
+
 const manifest = readFileSync(manifestPath, 'utf8');
 if (!manifest.includes('android:icon="@mipmap/ic_launcher"')) {
   throw new Error('AndroidManifest não aponta para @mipmap/ic_launcher.');
@@ -104,4 +127,4 @@ if (!manifest.includes('android:usesCleartextTraffic="false"')) {
   throw new Error('AndroidManifest não bloqueia tráfego HTTP cleartext.');
 }
 
-console.log('[OK] Launcher APOIS Cliente centralizado na zona segura Android e hardening validado.');
+console.log('[OK] Launcher APOIS Cliente centralizado na zona segura Android, rótulo validado e hardening mantido.');
