@@ -36,7 +36,7 @@ if (checkout) {
     fail('Entregas: caminho legado OpenPix/Asaas permaneceu no checkout final');
   }
   if (!checkout.includes('get_delivery_checkout_readiness')) fail('Entregas: checkout não valida readiness de repasse direto ao entregador');
-  if (!checkout.includes('deliveryFinancialReady')) fail('Entregas: bloqueio de entrega sem payout direto não está ativo');
+  if (!checkout.includes('deliveryPlatformAvailable')) fail('Entregas: bloqueio de entrega sem payout direto não está ativo');
   if (!failed) ok('Entregas: novos pedidos usam Mercado Pago do estabelecimento e entrega fica bloqueada sem payout direto homologado');
 }
 

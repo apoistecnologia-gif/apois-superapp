@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,6 +6,42 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(resolve(root, '.apois/modules.json'), 'utf8'));
 const selected = process.argv.slice(2);
 const names = selected.length ? selected : Object.keys(manifest.modules);
+
+// Os hardeners deste pipeline usam substituição textual exata (padrões com \n).
+// Um checkout local com core.autocrlf=true converte esses arquivos para CRLF
+// na árvore de trabalho, embora o blob no Git permaneça LF — quebrando a
+// substituição sem indicar nenhuma mudança real de conteúdo. Normalizamos a
+// cópia .work para LF logo após copiá-la, tornando o build imune à
+// configuração local de autocrlf de qualquer desenvolvedor.
+const NORMALIZE_EXTENSIONS = new Set([
+  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.css', '.scss',
+  '.html', '.md', '.yml', '.yaml', '.sql', '.sh', '.toml', '.env',
+]);
+// Os hardeners só reescrevem arquivos de aplicação (predominantemente em
+// src/). Projetos nativos gerados (android/ios), subprojetos aninhados e
+// diretórios de build têm milhares de arquivos irrelevantes para esse
+// padrão e tornariam a normalização proibitivamente lenta sem necessidade.
+const SKIP_DIRECTORIES = new Set([
+  'android', 'ios', 'backend-standalone', 'node_modules', 'dist',
+  '.output', 'build', '.gradle', '.tanstack', '.git',
+]);
+
+function normalizeLineEndings(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory() && SKIP_DIRECTORIES.has(entry.name)) continue;
+    const full = resolve(dir, entry.name);
+    if (entry.isDirectory()) {
+      normalizeLineEndings(full);
+      continue;
+    }
+    const dot = entry.name.lastIndexOf('.');
+    const ext = dot >= 0 ? entry.name.slice(dot) : '';
+    if (!NORMALIZE_EXTENSIONS.has(ext)) continue;
+    const before = readFileSync(full, 'utf8');
+    if (!before.includes('\r\n')) continue;
+    writeFileSync(full, before.replace(/\r\n/g, '\n'));
+  }
+}
 
 function replaceWorkspaceRequired(path, search, replacement, label) {
   const full = resolve(root, path);
@@ -43,8 +79,22 @@ for (const name of names) {
   mkdirSync(dirname(workspace), { recursive: true });
   cpSync(source, workspace, {
     recursive: true,
-    filter: (src) => !src.includes('/.git/') && !src.endsWith('/.git') && !src.includes('/node_modules/'),
+    // cpSync's filter receives OS-native paths — on Windows that's
+    // backslash-separated, so a forward-slash-only check like
+    // src.includes('/node_modules/') never matches and silently copies the
+    // entire (possibly tens of thousands of files) node_modules tree on
+    // every run. Normalize separators before checking.
+    filter: (src) => {
+      const normalized = src.replaceAll('\\', '/');
+      return (
+        !normalized.includes('/.git/') &&
+        !normalized.endsWith('/.git') &&
+        !normalized.includes('/node_modules/') &&
+        !normalized.endsWith('/node_modules')
+      );
+    },
   });
+  normalizeLineEndings(workspace);
   console.log(`[OK] ${name}: snapshot copiado para ${config.workspace}`);
 
   if (name === 'corridas') {

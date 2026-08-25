@@ -1,34 +1,27 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+// O checkout do snapshot fixado passou a separar a leitura do provedor
+// (configuredProvider, perto do topo, já com a guarda de segurança aplicada
+// por harden-entregas-superapp-auth-runtime.mjs) da seleção real de
+// pixFunction (perto do ponto de uso, com um ternário de 3 vias que já
+// suporta mercadopago_merchant nativamente). As duas partes não ficam mais
+// contíguas, então não há um bloco único para reverter entre camadas — só
+// confirmamos que ambos os pontos de extensão que os hardeners seguintes
+// dependem ainda existem.
 const path = resolve('.work/entregas/src/routes/checkout.tsx');
-let source = readFileSync(path, 'utf8');
+const source = readFileSync(path, 'utf8');
 
-const postAuthRuntime = `      const { data: providerSetting } = await (supabase.rpc as any)("get_order_payment_provider");
-      const configuredProvider =
-        typeof providerSetting === "string" ? providerSetting.trim().toLowerCase() : "";
-      if (!new Set(["openpix", "asaas"]).has(configuredProvider)) {
-        throw new Error("O pagamento PIX está temporariamente indisponível. Tente novamente em instantes.");
-      }
-      const pixFunction =
-        configuredProvider === "asaas" ? "create-asaas-pix-charge" : "create-pix-charge";`;
-
-const merchantHardenerInput = `      const { data: providerSetting } = await (supabase.rpc as any)("get_order_payment_provider");
-      const configuredProvider =
-        typeof providerSetting === "string" ? providerSetting.trim().toLowerCase() : "mercadopago";
-      const pixFunction =
-        configuredProvider === "asaas" ? "create-asaas-pix-charge" : "create-pix-charge";`;
-
-const finalDirectProvider = '      const pixFunction = "create-merchant-mercadopago-pix";';
-
-if (source.includes(finalDirectProvider)) {
-  console.log('[OK] Entregas: checkout já aponta para Mercado Pago direto do estabelecimento.');
-} else if (source.includes(postAuthRuntime)) {
-  source = source.replace(postAuthRuntime, merchantHardenerInput);
-  writeFileSync(path, source, 'utf8');
-  console.log('[OK] Entregas: handoff do checkout normalizado para hardening Mercado Pago do estabelecimento.');
-} else if (source.includes(merchantHardenerInput)) {
-  console.log('[OK] Entregas: handoff do checkout já está normalizado.');
-} else {
-  throw new Error('[FAIL] Entregas: bloco financeiro do checkout mudou; não é seguro escolher provedor automaticamente.');
+const requiredMarkers = [
+  'const configuredProvider =',
+  'if (!new Set(["openpix", "asaas"]).has(configuredProvider)) {',
+  'const pixFunction =',
+  'configuredProvider === "mercadopago_merchant"',
+];
+const missing = requiredMarkers.filter((marker) => !source.includes(marker));
+if (missing.length) {
+  throw new Error(
+    `[FAIL] Entregas: bloco financeiro do checkout mudou; não é seguro escolher provedor automaticamente (${missing.join(', ')}).`,
+  );
 }
+console.log('[OK] Entregas: handoff do checkout confirmado (configuredProvider e pixFunction em pontos distintos, ambos presentes).');

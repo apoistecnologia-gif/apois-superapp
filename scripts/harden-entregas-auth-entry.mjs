@@ -15,22 +15,20 @@ function update(relativePath, transform, verify, label) {
   console.log(`[OK] ${label}${after === before ? ' (já aplicado)' : ''}`);
 }
 
+// O componente atual deriva o scheme nativo em runtime via
+// getNativeAuthCallback() (lendo VITE_APOIS_NATIVE_SCHEME, com fallback por
+// produto) e o pós-login usa getProductHomeRoute() com prefixo de hash — não
+// há mais texto literal do scheme/rota para substituir. .apois/modules.json
+// já define VITE_APOIS_NATIVE_SCHEME=br.com.apois.app para o build do
+// Superapp; aqui só confirmamos que o mecanismo dinâmico continua presente.
 update(
   'src/components/GoogleLoginButton.tsx',
-  (source) => {
-    let next = source;
-    next = next.replace(
-      /const CUSTOMER_OAUTH_CALLBACK = "[^"]+";/,
-      `const CUSTOMER_OAUTH_CALLBACK = "${scheme}://auth/callback";`,
-    );
-    next = next.replace(
-      '      window.location.replace("/inicio");',
-      `      window.location.replace("#${home}");`,
-    );
-    return next;
-  },
-  (source) => source.includes(`${scheme}://auth/callback`) && source.includes(`window.location.replace("#${home}")`),
-  `entregas: Google OAuth retorna para ${scheme} e abre ${home}`,
+  (source) => source,
+  (source) =>
+    source.includes('function getNativeAuthCallback()') &&
+    source.includes('VITE_APOIS_NATIVE_SCHEME') &&
+    source.includes('getProductHomeRoute'),
+  `entregas: Google OAuth deriva scheme/rota em runtime (VITE_APOIS_NATIVE_SCHEME=${scheme})`,
 );
 
 update(

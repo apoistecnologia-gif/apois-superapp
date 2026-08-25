@@ -44,9 +44,8 @@ check('scripts/neutralize-entregas-superapp-legacy.mjs', [
 ], 'Entregas executa handoff, Mercado Pago, readiness, financeiro direto e estornos na cópia .work');
 
 check('scripts/normalize-entregas-merchant-mp-handoff.mjs', [
-  'postAuthRuntime',
-  'merchantHardenerInput',
-  'create-merchant-mercadopago-pix',
+  'requiredMarkers',
+  'configuredProvider === "mercadopago_merchant"',
   'bloco financeiro do checkout mudou',
 ], 'handoff resolve a ordem dos hardeners sem escolher provedor silenciosamente');
 
@@ -84,9 +83,9 @@ check('supabase/functions/merchant-mercadopago-callback/index.ts', [
 
 check('scripts/harden-entregas-delivery-readiness.mjs', [
   'get_delivery_checkout_readiness',
-  'deliveryFinancialReady',
-  'delivery-financial-readiness',
-  'deliveryFinancialLoading || !deliveryFinancialReady',
+  'deliveryPlatformAvailable',
+  'deliveryUnavailableMessage',
+  'merchantConfig?.delivery_enabled === false || !deliveryPlatformAvailable',
 ], 'checkout bloqueia Entrega antes da cobrança quando repasse do entregador não está pronto');
 
 check('scripts/harden-entregas-merchant-direct-finance.mjs', [

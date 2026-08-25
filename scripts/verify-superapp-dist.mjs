@@ -202,7 +202,12 @@ requireMarkers(
 );
 requireMarkers(
   '.work/entregas/src/components/GoogleLoginButton.tsx',
-  ['br.com.apois.app://auth/callback', '__APOIS_SUPERAPP_AUTH_BRIDGE__', 'window.location.replace("#/inicio")'],
+  [
+    'function getNativeAuthCallback()',
+    'VITE_APOIS_NATIVE_SCHEME',
+    '__APOIS_SUPERAPP_AUTH_BRIDGE__',
+    'window.location.replace(`#${home}`)',
+  ],
   'Google OAuth de Entregas retorna ao Superapp sem listener duplicado',
 );
 requireMarkers(

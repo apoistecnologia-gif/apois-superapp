@@ -20,6 +20,7 @@ const component = [
 'import { useCallback, useEffect, useState } from "react";',
 'import { toast } from "sonner";',
 'import { Button } from "@/components/ui/button";',
+'import { useConfirmDialog } from "@/components/ui/confirm-dialog";',
 'import { supabase } from "@/integrations/supabase/client";',
 '',
 'type SafeAccount = { providerUserId: string | null; email: string | null; status: string; expiresAt: string | null; connectedAt: string | null; lastRefreshedAt: string | null; lastError: string | null };',
@@ -27,6 +28,7 @@ const component = [
 'const dateLabel = (value: string | null | undefined) => value ? new Date(value).toLocaleString("pt-BR") : "—";',
 '',
 'export function MerchantMercadoPagoConnection() {',
+'  const { confirm, confirmDialog } = useConfirmDialog();',
 '  const [state, setState] = useState<ConnectionState>({ connected: false, account: null });',
 '  const [busy, setBusy] = useState<"status" | "start" | "disconnect" | null>("status");',
 '  const refresh = useCallback(async (interactive = false) => {',
@@ -54,7 +56,13 @@ const component = [
 '    finally { setBusy(null); }',
 '  };',
 '  const disconnect = async () => {',
-'    if (!window.confirm("Desconectar o Mercado Pago? Novos pedidos ficarão indisponíveis até uma nova conexão.")) return;',
+'    const ok = await confirm({',
+'      title: "Desconectar Mercado Pago",',
+'      description: "Novos pedidos ficarão indisponíveis até uma nova conexão.",',
+'      confirmLabel: "Desconectar",',
+'      destructive: true,',
+'    });',
+'    if (!ok) return;',
 '    setBusy("disconnect");',
 '    try {',
 '      const { error } = await supabase.functions.invoke("merchant-mercadopago-oauth", { body: { action: "disconnect" } });',
@@ -66,6 +74,7 @@ const component = [
 '  const connected = state.connected && state.account?.status === "connected";',
 '  const accountLabel = state.account?.email || (state.account?.providerUserId ? "Mercado Pago #" + state.account.providerUserId : "Conta Mercado Pago");',
 '  return (',
+'    <>',
 '    <section className="rounded-3xl border border-primary/30 bg-zinc-950 p-6 text-white shadow-2xl md:p-8">',
 '      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">',
 '        <div className="flex gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><WalletCards className="h-6 w-6" /></div>',
@@ -84,6 +93,8 @@ const component = [
 '        {connected ? <Button type="button" variant="outline" onClick={() => void disconnect()} disabled={busy !== null} className="min-h-12 border-red-950 bg-black text-red-300 hover:bg-red-950/30 hover:text-red-200">{busy === "disconnect" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Unplug className="mr-2 h-4 w-4" />}Desconectar</Button> : null}',
 '      </div>',
 '    </section>',
+'    {confirmDialog}',
+'    </>',
 '  );',
 '}',
 '',
@@ -103,12 +114,50 @@ patch('src/components/MerchantSubscriptionGate.tsx',
   'Assim que o pagamento for confirmado, o\n            liberação para novos pedidos ocorre automaticamente por um mês.',
   'Assim que o pagamento for confirmado, a\n            liberação para novos pedidos ocorre automaticamente por um mês.',
   'Entregas: corrigir texto da mensalidade');
+// A checagem de prontidão do recebedor já existe nativamente no snapshot
+// fixado, condicionada ao provedor mercadopago_merchant (chamando
+// merchant-payment-readiness). Confirmamos a presença dela em vez de exigir
+// o texto irrestrito original, que ficou obsoleto quando o checkout passou a
+// suportar múltiplos provedores.
+{
+  const checkoutPath = resolve(ws, 'src/routes/checkout.tsx');
+  const checkoutSource = readFileSync(checkoutPath, 'utf8');
+  if (
+    !checkoutSource.includes('"merchant-payment-readiness"') ||
+    !checkoutSource.includes('readiness?.ready !== true')
+  ) {
+    console.error('[FAIL] Entregas: validar recebedor antes de criar pedido: checagem de prontidão não encontrada em checkout.tsx');
+    process.exit(1);
+  }
+  console.log('[OK] Entregas: validar recebedor antes de criar pedido (já nativo no snapshot fixado)');
+}
+// A guarda openpix/asaas inserida por harden-entregas-superapp-auth-runtime.mjs
+// (necessária para o checkpoint de handoff em normalize-entregas-merchant-mp-handoff.mjs)
+// fica obsoleta assim que o pixFunction é fixado em Mercado Pago abaixo: ela
+// rejeitaria todo pedido real, já que order_payment_provider é
+// "mercadopago_merchant" em produção. Removemos só a guarda (o throw),
+// preservando a declaração de configuredProvider, que a checagem de
+// prontidão do recebedor logo acima ainda usa. patch() trata replacement=""
+// como "já aplicado" (before.includes("") é sempre true), então removemos
+// diretamente aqui em vez de usar o helper.
+{
+  const checkoutPath2 = resolve(ws, 'src/routes/checkout.tsx');
+  const guardBlock = '      if (!new Set(["openpix", "asaas"]).has(configuredProvider)) {\n        throw new Error("O pagamento PIX está temporariamente indisponível. Tente novamente em instantes.");\n      }\n';
+  let checkoutSource2 = readFileSync(checkoutPath2, 'utf8');
+  if (checkoutSource2.includes(guardBlock)) {
+    checkoutSource2 = checkoutSource2.replace(guardBlock, '');
+    writeFileSync(checkoutPath2, checkoutSource2, 'utf8');
+    console.log('[OK] Entregas: remove guarda openpix/asaas obsoleta do checkout do Superapp');
+  } else if (checkoutSource2.includes('new Set(["openpix", "asaas"])')) {
+    console.error('[FAIL] Entregas: guarda openpix/asaas mudou de formato; remoção precisa ser atualizada');
+    process.exit(1);
+  } else {
+    console.log('[OK] Entregas: remove guarda openpix/asaas obsoleta do checkout do Superapp (já aplicado)');
+  }
+}
+
 patch('src/routes/checkout.tsx',
-  '      if (paymentMethod !== "pix") throw new Error("No momento, apenas PIX está disponível.");\n\n      const fingerprint = checkoutFingerprint({',
-  '      if (paymentMethod !== "pix") throw new Error("No momento, apenas PIX está disponível.");\n\n      const { data: paymentReadiness, error: readinessError } = await supabase.functions.invoke("merchant-payment-readiness", { body: { merchantId: merchant.id } });\n      if (readinessError) throw new Error(await getFunctionErrorMessage(readinessError, "Não foi possível validar o recebimento deste estabelecimento."));\n      if (!paymentReadiness?.ready) throw new Error(typeof paymentReadiness?.message === "string" ? paymentReadiness.message : "Este estabelecimento ainda não está pronto para receber pedidos por PIX.");\n\n      const fingerprint = checkoutFingerprint({',
-  'Entregas: validar recebedor antes de criar pedido');
-patch('src/routes/checkout.tsx',
-  '      const { data: providerSetting } = await (supabase.rpc as any)("get_order_payment_provider");\n      const configuredProvider =\n        typeof providerSetting === "string" ? providerSetting.trim().toLowerCase() : "mercadopago";\n      const pixFunction =\n        configuredProvider === "asaas" ? "create-asaas-pix-charge" : "create-pix-charge";',
+  '      const pixFunction =\n        configuredProvider === "asaas"\n          ? "create-asaas-pix-charge"\n          : configuredProvider === "mercadopago_merchant"\n            ? "create-merchant-mercadopago-pix"\n            : "create-pix-charge";',
   '      const pixFunction = "create-merchant-mercadopago-pix";',
   'Entregas: PIX vai para Mercado Pago do estabelecimento');
 

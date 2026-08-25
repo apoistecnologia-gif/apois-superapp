@@ -6,9 +6,29 @@ MOTORISTA="$ROOT/.work/partner-motorista"
 ENTREGADOR="$ROOT/.work/partner-entregador"
 
 rm -rf "$MOTORISTA" "$ENTREGADOR"
-mkdir -p "$ROOT/.work"
-cp -R "$ROOT/sources/apois-corridas-motorista-admin" "$MOTORISTA"
-cp -R "$ROOT/sources/apois-entregas" "$ENTREGADOR"
+mkdir -p "$MOTORISTA" "$ENTREGADOR"
+# Os submódulos fonte costumam ter node_modules instalado localmente para
+# typecheck/lint/build isolados durante o desenvolvimento. Um `cp -R` simples
+# copiaria essa árvore inteira (potencialmente dezenas de milhares de
+# arquivos) para dentro de .work a cada execução. tar com --exclude copia
+# sem essa cópia redundante.
+tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-corridas-motorista-admin" -cf - . \
+  | tar -C "$MOTORISTA" -xf -
+tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-entregas" -cf - . \
+  | tar -C "$ENTREGADOR" -xf -
+
+# Um checkout local com core.autocrlf=true grava esses arquivos como CRLF na
+# árvore de trabalho, embora o blob no Git permaneça LF. Os hardeners abaixo
+# usam substituição textual exata (padrões com \n) e quebrariam sem indicar
+# nenhuma mudança real de conteúdo. Normalizamos para LF logo após copiar.
+find "$MOTORISTA" "$ENTREGADOR" \
+  \( -name android -o -name ios -o -name backend-standalone -o -name node_modules \
+     -o -name dist -o -name .output -o -name build -o -name .gradle -o -name .tanstack -o -name .git \) -prune -o \
+  -type f \
+  \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.cjs' \
+     -o -name '*.json' -o -name '*.css' -o -name '*.scss' -o -name '*.html' -o -name '*.md' \
+     -o -name '*.yml' -o -name '*.yaml' -o -name '*.sql' -o -name '*.sh' -o -name '*.toml' -o -name '.env*' \) \
+  -print0 | xargs -0 -r sed -i 's/\r$//'
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"

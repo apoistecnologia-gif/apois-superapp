@@ -19,7 +19,7 @@ const floatingCourierBlock = `      {readyDeliveryOrder ? (
           type="button"
           disabled={busyOrderId === readyDeliveryOrder.id}
           onClick={() => void requestCourier(readyDeliveryOrder.id)}
-          className="mb-3 flex w-[min(420px,calc(100vw-2.5rem))] items-center justify-center gap-3 rounded-2xl border border-[#FFD700] bg-[#FFD700] px-5 py-4 text-sm font-black uppercase text-black shadow-2xl disabled:opacity-60"
+          className="mb-3 flex w-[min(420px,calc(100vw-2.5rem))] items-center justify-center gap-3 rounded-2xl border border-[#F6BE1C] bg-[#F6BE1C] px-5 py-4 text-sm font-black uppercase text-black shadow-2xl disabled:opacity-60"
         >
           {busyOrderId === readyDeliveryOrder.id ? (
             <Loader2 className="h-5 w-5 animate-spin" />

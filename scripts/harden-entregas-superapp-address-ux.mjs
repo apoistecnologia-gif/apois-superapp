@@ -101,9 +101,16 @@ patch('.work/entregas/src/components/GoogleMapsAddressSelector.tsx', (source) =>
     'Mapa de edição: centro padrão do mapa usa referência real (Brasília) em vez de coordenada de desenvolvimento',
   );
 
+  // O snapshot fixado já traz invokeMaps como função de módulo (não um const
+  // dentro do componente) chamando a mesma Edge Function google-maps-address.
+  // Só aplicamos a conversão abaixo se essa função de módulo ainda não
+  // existir; caso contrário os useServerFn/getAccessToken já foram removidos
+  // e não há nada para converter.
   const serverFnBlock = `  const geocodeFn = useServerFn(geocodeAddress);\n  const autocompleteFn = useServerFn(autocompleteAddress);\n  const detailsFn = useServerFn(getPlaceDetails);\n\n  const getAccessToken = async () => {\n    const {\n      data: { session },\n      error,\n    } = await supabase.auth.getSession();\n    if (error || !session?.access_token) throw new Error("Sessão expirada");\n    return session.access_token;\n  };`;
   const edgeBlock = `  const invokeMaps = async (body: Record<string, unknown>) => {\n    const { data, error } = await supabase.functions.invoke("google-maps-address", { body });\n    if (error) throw error;\n    if (data?.error) throw new Error(String(data.error));\n    return data;\n  };`;
-  source = replaceRequired(
+  if (source.includes('async function invokeMaps(')) {
+    // já nativo no snapshot fixado
+  } else source = replaceRequired(
     source,
     serverFnBlock,
     edgeBlock,

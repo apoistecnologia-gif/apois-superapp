@@ -193,18 +193,25 @@ if (name === 'entregas') {
     '    storage: typeof window !== "undefined" ? window.localStorage : undefined,\n    storageKey: "apois-superapp-entregas-auth-v1",\n    // Merchant uses a dedicated auth namespace.',
     'entregas: sessão Supabase isolada dentro do Superapp',
   );
-  replaceRequired(
-    '.work/entregas/src/components/GoogleLoginButton.tsx',
-    'const CUSTOMER_OAUTH_CALLBACK = "br.com.apois.cliente://auth/callback";',
-    'const CUSTOMER_OAUTH_CALLBACK = "br.com.apois.app://auth/callback";',
-    'entregas: callback Google usa package unificado',
-  );
-  replaceRequired(
-    '.work/entregas/src/components/GoogleLoginButton.tsx',
-    '      window.location.replace("/inicio");',
-    '      window.location.replace("#/inicio");',
-    'entregas: pós-login Google respeita Hash History do Superapp',
-  );
+  // GoogleLoginButton.tsx deriva o scheme nativo de VITE_APOIS_NATIVE_SCHEME
+  // (com fallback por produto) via getNativeAuthCallback(), e o pós-login já
+  // usa getProductHomeRoute() com prefixo de hash nativamente. O Superapp só
+  // precisa definir VITE_APOIS_NATIVE_SCHEME=br.com.apois.app no ambiente de
+  // build (.apois/modules.json), sem patch textual do componente.
+  {
+    const googleLoginPath = resolve(root, '.work/entregas/src/components/GoogleLoginButton.tsx');
+    const googleLoginSource = readFileSync(googleLoginPath, 'utf8');
+    if (
+      !googleLoginSource.includes('function getNativeAuthCallback()') ||
+      !googleLoginSource.includes('VITE_APOIS_NATIVE_SCHEME')
+    ) {
+      console.error(
+        '[FAIL] entregas: callback Google usa package unificado: getNativeAuthCallback()/VITE_APOIS_NATIVE_SCHEME não encontrados em GoogleLoginButton.tsx',
+      );
+      process.exit(1);
+    }
+    console.log('[OK] entregas: callback Google usa package unificado (via VITE_APOIS_NATIVE_SCHEME)');
+  }
   replaceRequired(
     '.work/entregas/src/routes/register.tsx',
     '          emailRedirectTo: `${window.location.origin}/auth/callback`,',

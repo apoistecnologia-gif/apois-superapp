@@ -34,9 +34,9 @@ function forbidText(path, markers, label) {
 
 const lock = JSON.parse(read('.apois/source-lock.json'));
 const expectedPins = {
-  entregas: '835772994e2c9828dbcef759016c4fad613090e4',
-  corridas_passageiro: 'c25dd67464f0913da3dfbe5504ec018d6ff8dfec',
-  corridas_motorista_admin: 'd10008ec86da135512e70aa6f3c0dc954922af9c',
+  entregas: '0e16fefcca57e0a9ae967b6f09d59a99b2672839',
+  corridas_passageiro: 'cc44977db717bdf2d23da455b42135f966d1f427',
+  corridas_motorista_admin: 'a74140deff949f1f498b93bedd8fcd1bfc5d8b44',
 };
 for (const [name, commit] of Object.entries(expectedPins)) {
   if (lock.sources?.[name]?.commit !== commit) {
@@ -203,8 +203,8 @@ requireText(
   'scripts/harden-entregas-delivery-readiness.mjs',
   [
     'get_delivery_checkout_readiness',
-    'deliveryFinancialReady',
-    'deliveryFinancialLoading',
+    'deliveryPlatformAvailable',
+    'deliveryUnavailableMessage',
     'checkout desabilita Entrega antes do pedido quando repasse direto do entregador ainda não está homologado',
   ],
   'Entregas bloqueia delivery enquanto payout direto do entregador não estiver homologado',

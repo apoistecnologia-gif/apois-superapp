@@ -32,10 +32,17 @@ const safeCancel = `    } catch (error) {\n      console.error("Erro ao cancelar
 if (source.includes(unsafeCancel)) source = source.replace(unsafeCancel, safeCancel);
 
 if (!source.includes('<AppBottomNav activeTab="pedidos" />')) {
-  const closing = '\n    </div>\n  );\n}';
-  const index = source.lastIndexOf(closing);
+  // O snapshot fixado agora envolve o retorno em um Fragment para também
+  // renderizar os diálogos assíncronos de cancelamento (confirmDialog/
+  // promptDialog) como irmãos do container principal, então o fechamento já
+  // não é mais imediatamente seguido por `);\n}`. Ancoramos no fechamento do
+  // <main>, que continua estável, e inserimos o rodapé como último filho do
+  // container externo antes dele fechar.
+  const marker = '      </main>\n    </div>';
+  const index = source.indexOf(marker);
   if (index < 0) throw new Error('Pedido: fechamento da página não encontrado para inserir rodapé.');
-  source = `${source.slice(0, index)}\n      <AppBottomNav activeTab="pedidos" />${source.slice(index)}`;
+  const insertAt = index + '      </main>\n    </div>'.length;
+  source = `${source.slice(0, insertAt)}\n      <AppBottomNav activeTab="pedidos" />${source.slice(insertAt)}`;
 }
 
 for (const marker of [
