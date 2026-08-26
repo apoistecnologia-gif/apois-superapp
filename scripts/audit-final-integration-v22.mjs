@@ -57,7 +57,7 @@ if (!buildPartner.includes('build-partner-modules.sh')) fail('build:partner não
 if (!failed) ok('builds Cliente e Parceiro mantêm gates e separação de responsabilidades');
 
 requireAll('.apois/source-lock.json', [
-  'd50e33c42409540c5961daa1a20dfbbb18ed8eea',
+  '0a1e0b294f75c97bce903200b57e7a6b482f381a',
   'cc44977db717bdf2d23da455b42135f966d1f427',
   'a74140deff949f1f498b93bedd8fcd1bfc5d8b44',
   'pinned read-only source snapshots',
@@ -100,7 +100,7 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
 requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
   'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
-  'Carro • Moto • Fretes • Guincho • Envios',
+  'Carro • Moto • Envios',
   '<strong>Apois, <span>vamos?</span></strong>',
 ], 'copy e iconografia oficiais são aplicadas antes do mobile hardening');
 

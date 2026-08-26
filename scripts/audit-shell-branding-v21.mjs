@@ -29,7 +29,7 @@ check('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
   'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
   '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
-  'Carro • Moto • Fretes • Guincho • Envios',
+  'Carro • Moto • Envios',
   '<strong>Apois, <span>vamos?</span></strong>',
 ], 'Seletor substitui emojis por SVG determinístico e valida categorias/slogan finais');
 

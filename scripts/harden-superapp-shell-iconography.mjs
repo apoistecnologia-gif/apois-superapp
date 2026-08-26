@@ -20,7 +20,7 @@ source = source.replace('<div class="badge">🛍</div><div class="delivery">🛵
 if (/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)) {
   throw new Error('[FAIL] Shell Cliente: emoji de serviço variável por dispositivo ainda está presente.');
 }
-for (const marker of ['.vehicle svg,.delivery svg', '<svg viewBox="0 0 24 24" aria-hidden="true">', 'Carro • Moto • Fretes • Guincho • Envios', '<strong>Apois, <span>vamos?</span></strong>']) {
+for (const marker of ['.vehicle svg,.delivery svg', '<svg viewBox="0 0 24 24" aria-hidden="true">', 'Carro • Moto • Envios', '<strong>Apois, <span>vamos?</span></strong>']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Shell Cliente: iconografia/texto oficial ausente (${marker})`);
 }
 
