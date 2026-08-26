@@ -57,7 +57,7 @@ if (!buildPartner.includes('build-partner-modules.sh')) fail('build:partner não
 if (!failed) ok('builds Cliente e Parceiro mantêm gates e separação de responsabilidades');
 
 requireAll('.apois/source-lock.json', [
-  '0e16fefcca57e0a9ae967b6f09d59a99b2672839',
+  'd50e33c42409540c5961daa1a20dfbbb18ed8eea',
   'cc44977db717bdf2d23da455b42135f966d1f427',
   'a74140deff949f1f498b93bedd8fcd1bfc5d8b44',
   'pinned read-only source snapshots',

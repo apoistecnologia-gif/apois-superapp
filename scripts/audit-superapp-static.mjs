@@ -34,7 +34,7 @@ function forbidText(path, markers, label) {
 
 const lock = JSON.parse(read('.apois/source-lock.json'));
 const expectedPins = {
-  entregas: '0e16fefcca57e0a9ae967b6f09d59a99b2672839',
+  entregas: 'd50e33c42409540c5961daa1a20dfbbb18ed8eea',
   corridas_passageiro: 'cc44977db717bdf2d23da455b42135f966d1f427',
   corridas_motorista_admin: 'a74140deff949f1f498b93bedd8fcd1bfc5d8b44',
 };

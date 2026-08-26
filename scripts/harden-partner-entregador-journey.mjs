@@ -19,36 +19,34 @@ if (!source.includes('const courierReadableError =')) {
   source = source.replace(rpcAnchor, readableErrorHelper);
 }
 
-const oldBlock = `        if (!navigator.geolocation) {
-          throw new Error(
-            "Este dispositivo não disponibiliza localização. Ative o GPS para ficar online.",
-          );
-        }
+const webBlockStartMarker = '        if (!navigator.geolocation) {';
+const webBlockEndMarker = 'recordedAt: Date.now(),\n        };';
+const webBlockStart = source.indexOf(webBlockStartMarker);
+if (webBlockStart < 0 && !source.includes('isNativeCourierAndroid()) {\n          let permission = await Geolocation.checkPermissions();')) {
+  throw new Error('Entregador Parceiro: bloco de geolocalização web (toggle online) não encontrado.');
+}
+if (webBlockStart >= 0) {
+  const webBlockEndRel = source.indexOf(webBlockEndMarker, webBlockStart);
+  if (webBlockEndRel < 0) throw new Error('Entregador Parceiro: fim do bloco de geolocalização web não encontrado.');
+  const webBlockEnd = webBlockEndRel + webBlockEndMarker.length;
+  const originalWebBlock = source.slice(webBlockStart, webBlockEnd);
+  // Preserva o bloco web original (com o mapeamento de erros por geoError.code) tal como está,
+  // apenas trocando a leitura final de `position.coords.*` para uma variável `coords`
+  // compartilhada com o novo caminho nativo Capacitor.
+  const webBlockAsElse = originalWebBlock
+    .replace(
+      'const position = await new Promise<GeolocationPosition>((resolve, reject) =>',
+      'const webPosition = await new Promise<GeolocationPosition>((resolve, reject) =>',
+    )
+    .replace(
+      /const initialPosition: CourierPosition = \{\n          lat: position\.coords\.latitude,[\s\S]*$/,
+      'coords = webPosition.coords;',
+    );
+  if (webBlockAsElse.includes('position.coords')) {
+    throw new Error('Entregador Parceiro: não foi possível isolar a leitura final de coords do bloco web original.');
+  }
 
-        const position = await new Promise<GeolocationPosition>((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0,
-          }),
-        );
-
-        const initialPosition: CourierPosition = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
-          heading:
-            position.coords.heading !== null && Number.isFinite(position.coords.heading)
-              ? position.coords.heading
-              : null,
-          speed:
-            position.coords.speed !== null && Number.isFinite(position.coords.speed)
-              ? position.coords.speed
-              : null,
-          recordedAt: Date.now(),
-        };`;
-
-const newBlock = `        let coords: {
+  const newBlock = `        let coords: {
           latitude: number;
           longitude: number;
           accuracy: number;
@@ -73,19 +71,7 @@ const newBlock = `        let coords: {
           });
           coords = nativePosition.coords;
         } else {
-          if (!navigator.geolocation) {
-            throw new Error(
-              "Este dispositivo não disponibiliza localização. Ative o GPS para ficar online.",
-            );
-          }
-          const webPosition = await new Promise<GeolocationPosition>((resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 20_000,
-              maximumAge: 0,
-            }),
-          );
-          coords = webPosition.coords;
+${webBlockAsElse}
         }
 
         const initialPosition: CourierPosition = {
@@ -103,7 +89,8 @@ const newBlock = `        let coords: {
           recordedAt: Date.now(),
         };`;
 
-if (source.includes(oldBlock)) source = source.replace(oldBlock, newBlock);
+  source = source.slice(0, webBlockStart) + newBlock + source.slice(webBlockEnd);
+}
 
 const replacements = [
   ['toast.error(error?.message || "Não foi possível atualizar sua disponibilidade.");', 'toast.error(courierReadableError(error, "Não foi possível atualizar sua disponibilidade."));'],

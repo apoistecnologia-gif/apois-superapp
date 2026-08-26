@@ -42,6 +42,10 @@ source = source.replace('const BRAND_GREEN = "#39B54A";\nconst BRAND_PURPLE = "#
 source = source.replaceAll('BRAND_PURPLE', 'APOIS_GOLD');
 source = source.replace('const BRAND_GREEN = "#39B54A";\n', '');
 source = source.replace('const APOIS_GOLD = "#C88A08";', 'const APOIS_GOLD = "#F6BE1C";');
+// A fonte já pode ter migrado nativamente as constantes verde/roxa direto para
+// dourado sob o nome BRAND_GOLD; padroniza para o nome APOIS_GOLD esperado
+// pelas demais verificações do pipeline (build-partner-modules.sh, audit-partner-superapp.mjs).
+source = source.replaceAll('BRAND_GOLD', 'APOIS_GOLD');
 
 const oldBrowserKey = 'const browserKey = (import.meta as any).env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined;';
 const newBrowserKey = 'const browserKey = ((import.meta as any).env.VITE_GOOGLE_MAPS_BROWSER_KEY || (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || (import.meta as any).env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY) as string | undefined;';

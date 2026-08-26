@@ -7,10 +7,12 @@
   <title>APOIS Parceiro</title>
   <style>
     :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;background:#050505;--gold:#f6be1c}
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}body{min-height:100dvh}
-    .screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),28px) 18px max(env(safe-area-inset-bottom),24px);display:flex;flex-direction:column;justify-content:center;background:radial-gradient(circle at 50% 18%,rgba(246,190,28,.18),transparent 25%),#050505}
-    .brand{text-align:center}.logo{width:126px;height:126px;margin:0 auto 16px;border-radius:50%;overflow:hidden;border:1px solid rgba(246,190,28,.22);background:#000;box-shadow:0 16px 34px -22px rgba(246,190,28,.65)}.logo img{display:block;width:100%;height:100%;object-fit:cover}.brand h1{margin:0;font-size:34px;line-height:1;font-weight:950}.brand p{margin:10px auto 0;color:#b8b8b8;font-size:14px;max-width:330px;line-height:1.45}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}
+    .screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),20px) 18px max(env(safe-area-inset-bottom),20px);display:flex;flex-direction:column;justify-content:center;background:radial-gradient(circle at 50% 18%,rgba(246,190,28,.18),transparent 25%),#050505}
+    .brand{text-align:center}.logo{width:126px;height:126px;margin:0 auto 16px;border-radius:50%;overflow:hidden;border:1px solid rgba(246,190,28,.22);background:#000;box-shadow:0 16px 34px -22px rgba(246,190,28,.65)}.logo img{display:block;width:100%;height:100%;object-fit:contain;padding:8px}.brand h1{margin:0;font-size:34px;line-height:1;font-weight:950}.brand p{margin:10px auto 0;color:#b8b8b8;font-size:14px;max-width:330px;line-height:1.45}
     .choices{display:grid;gap:14px;margin-top:34px}.card{width:100%;border:1px solid rgba(246,190,28,.42);border-radius:26px;background:linear-gradient(180deg,#111,#090909);padding:20px;text-align:left;color:white;box-shadow:0 14px 34px -28px rgba(246,190,28,.5)}.card strong{display:block;font-size:22px}.card span{display:block;margin-top:6px;font-size:13px;color:#b9b9b9;line-height:1.4}.card button{margin-top:18px;width:100%;height:52px;border:0;border-radius:16px;font:inherit;font-weight:900;background:linear-gradient(135deg,#f7ca48,#f6be1c 56%,#c88a08);color:#050505;box-shadow:0 12px 28px -18px rgba(246,190,28,.9)}.card button:focus-visible{outline:3px solid rgba(246,190,28,.5);outline-offset:3px}.foot{text-align:center;margin-top:28px;color:#777;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+    @media(max-height:700px){.screen{justify-content:flex-start}.logo{width:92px;height:92px;margin-bottom:10px}.brand h1{font-size:29px}.brand p{margin-top:7px;font-size:13px}.choices{margin-top:20px;gap:10px}.card{border-radius:22px;padding:15px}.card strong{font-size:19px}.card span{margin-top:4px;font-size:12px}.card button{margin-top:12px;height:48px}.foot{margin-top:18px}}
+    @media(max-width:360px){.screen{padding-left:14px;padding-right:14px}.brand h1{font-size:28px}.card{padding:14px}.card strong{font-size:18px}}
   </style>
 </head>
 <body>
@@ -27,7 +29,7 @@
     <div class="foot">APOIS • PARCEIROS</div>
   </main>
   <script>
-    const urls={motorista:'./modules/motorista/index.html#/motorista/login',entregador:'./modules/entregador/index.html'};
+    const urls={motorista:'./modules/motorista/index.html',entregador:'./modules/entregador/index.html'};
     const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html'};
     const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
     const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
@@ -161,14 +163,10 @@
       }
     }
 
-    const lockedOnLaunch=operationalRole();
-    if(lockedOnLaunch){
-      window.location.replace(operationalHome(lockedOnLaunch));
-    }else if(!consumePendingPartnerPush()){
+    async function bootPartnerShell(){
       const appPlugin=window.Capacitor?.Plugins?.App;
       if(appPlugin){
         appPlugin.addListener('appUrlOpen',({url})=>{relayDeepLink(url);}).catch(()=>undefined);
-        appPlugin.getLaunchUrl().then((result)=>{if(result?.url)relayDeepLink(result.url);}).catch(()=>undefined);
       }
       const pushPlugin=window.Capacitor?.Plugins?.PushNotifications;
       if(pushPlugin){
@@ -176,7 +174,30 @@
           relayPartnerPush(action?.notification?.data||{});
         }).catch(()=>undefined);
       }
+
+      // Callback de lançamento tem precedência. A própria relayDeepLink respeita
+      // a trava operacional e não atravessa Motorista/Entregador.
+      if(appPlugin){
+        try{
+          const launch=await appPlugin.getLaunchUrl();
+          if(launch?.url&&relayDeepLink(launch.url))return;
+        }catch{}
+      }
+
+      // Push encaminhado por um módulo também precisa ser consumido antes do
+      // redirect por lock. routeRole mantém a função operacional se o Push for
+      // da outra função, mas a entrada é removida agora para não reaparecer horas
+      // depois quando o parceiro finalmente ficar OFFLINE e voltar ao seletor.
+      if(consumePendingPartnerPush())return;
+
+      const lockedOnLaunch=operationalRole();
+      if(lockedOnLaunch){
+        window.location.replace(operationalHome(lockedOnLaunch));
+        return;
+      }
     }
+
+    void bootPartnerShell();
   </script>
 </body>
 </html>
