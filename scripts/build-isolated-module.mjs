@@ -110,7 +110,7 @@ function injectSuperappBridge(indexPath, moduleName) {
 
   function parseAuthDeepLink(rawUrl) {
     const incoming = new URL(rawUrl);
-    const path = incoming.pathname.replace(/^\//, '');
+    const path = incoming.pathname.replace(/^\\//, '');
     const params = new URLSearchParams(incoming.search);
     const fragment = incoming.hash.replace(/^#/, '');
     if (fragment) {

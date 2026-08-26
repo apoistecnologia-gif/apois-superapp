@@ -75,7 +75,7 @@ for (const target of targets) {
         candidate = candidate.split('?')[0].split('#')[0];
         if (candidate.length > 1 && candidate.endsWith('/')) candidate = candidate.slice(0, -1);
         if (allowedRideStaticPaths.has(candidate)) return candidate;
-        const match = /^\/corrida\/([^/]+)$/.exec(candidate);
+        const match = /^\\/corrida\\/([^/]+)$/.exec(candidate);
         if (match && uuidPattern.test(match[1])) return candidate;
       }
     }
