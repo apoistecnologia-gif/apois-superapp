@@ -45,7 +45,7 @@ const moduleBridgeScript = `
 <script id="apois-superapp-module-bridge">
 (function () {
   function goToSelector() {
-    window.location.replace('../../index.html');
+    window.location.replace('/');
   }
 
   function mountSwitcher() {
