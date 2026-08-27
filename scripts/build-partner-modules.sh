@@ -185,7 +185,7 @@ export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 bun install --frozen-lockfile
 bun run build
 
-HOST=127.0.0.1 PORT=4173 node .output/server/index.mjs >/tmp/apois-parceiro-entregador.log 2>&1 &
+HOST=127.0.0.1 PORT=4173 TSS_SHELL=true node .output/server/index.mjs >/tmp/apois-parceiro-entregador.log 2>&1 &
 SERVER_PID=$!
 cleanup_server() { kill "$SERVER_PID" 2>/dev/null || true; }
 trap cleanup_server EXIT
