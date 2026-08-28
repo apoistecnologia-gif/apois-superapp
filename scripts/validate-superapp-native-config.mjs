@@ -51,10 +51,13 @@ if (EXPECTED_SHA1) {
   requireOrWarn(false, 'SHA-1 esperado da assinatura disponível');
 }
 
-const versionCodeRaw = process.env.APP_VERSION_CODE?.trim() || '1';
-const versionName = process.env.APP_VERSION_NAME?.trim() || '1.0.0';
-const versionCode = Number.parseInt(versionCodeRaw, 10);
-if (!/^\d+$/.test(versionCodeRaw) || !Number.isInteger(versionCode) || versionCode < 1) {
+const versionCodeRaw = process.env.APP_VERSION_CODE?.trim();
+const versionName = process.env.APP_VERSION_NAME?.trim();
+if (!versionCodeRaw || !versionName) {
+  fail('APP_VERSION_CODE e APP_VERSION_NAME são obrigatórios no release');
+}
+const versionCode = Number.parseInt(versionCodeRaw || '', 10);
+if (!/^\d+$/.test(versionCodeRaw || '') || !Number.isInteger(versionCode) || versionCode < 1) {
   fail('APP_VERSION_CODE deve ser inteiro positivo');
 } else {
   ok(`versionCode Android válido: ${versionCode}`);

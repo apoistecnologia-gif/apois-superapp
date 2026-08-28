@@ -54,14 +54,17 @@ for (const [field, value] of sdkFields) {
 }
 writeFileSync(variablesGradlePath, variablesGradle, 'utf8');
 
-// Versionamento explícito para o primeiro release e futuras atualizações.
-// O Codemagic pode sobrescrever pelos envs APP_VERSION_CODE / APP_VERSION_NAME.
+// Versionamento explícito para o release; o pipeline precisa fornecê-lo.
 if (!existsSync(appGradlePath)) {
   throw new Error(`build.gradle Android ausente: ${appGradlePath}`);
 }
-const versionCode = Number.parseInt(process.env.APP_VERSION_CODE?.trim() || '1', 10);
-const versionName = process.env.APP_VERSION_NAME?.trim() || '1.0.0';
-if (!Number.isInteger(versionCode) || versionCode < 1) {
+const versionCodeRaw = process.env.APP_VERSION_CODE?.trim();
+const versionName = process.env.APP_VERSION_NAME?.trim();
+if (!versionCodeRaw || !versionName) {
+  throw new Error('APP_VERSION_CODE e APP_VERSION_NAME são obrigatórios no release.');
+}
+const versionCode = Number.parseInt(versionCodeRaw, 10);
+if (!/^\d+$/.test(versionCodeRaw) || !Number.isInteger(versionCode) || versionCode < 1) {
   throw new Error('APP_VERSION_CODE deve ser inteiro positivo.');
 }
 if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(versionName)) {

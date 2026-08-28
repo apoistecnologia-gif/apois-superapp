@@ -45,6 +45,8 @@ workflows:
           : "${CORRIDAS_WEB_MAPS_API_KEY:?Add CORRIDAS_WEB_MAPS_API_KEY to Codemagic}"
           : "${CORRIDAS_ANDROID_MAPS_API_KEY:?Add CORRIDAS_ANDROID_MAPS_API_KEY to Codemagic}"
           : "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:?Add unified Firebase google-services.json for br.com.apois.app to Codemagic}"
+          : "${APP_VERSION_CODE:?APP_VERSION_CODE is required for the customer release}"
+          : "${APP_VERSION_NAME:?APP_VERSION_NAME is required for the customer release}"
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
@@ -97,6 +99,8 @@ workflows:
           cd ../..
           node scripts/configure-superapp-android.mjs
           node scripts/install-superapp-launcher.mjs
+          grep -Fq "versionCode ${APP_VERSION_CODE}" superapp/shell/android/app/build.gradle
+          grep -Fq "versionName \"${APP_VERSION_NAME}\"" superapp/shell/android/app/build.gradle
       - name: Build APK and AAB release
         script: |
           set -euo pipefail
@@ -168,6 +172,8 @@ workflows:
           : "${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required for Entregas}"
           : "${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY is required for Entregas}"
           : "${FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64:?Add Firebase google-services.json with br.com.apois.parceiro to Codemagic}"
+          : "${PARTNER_VERSION_CODE:?PARTNER_VERSION_CODE is required for the partner release}"
+          : "${PARTNER_VERSION_NAME:?PARTNER_VERSION_NAME is required for the partner release}"
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
@@ -201,6 +207,8 @@ workflows:
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
           node scripts/install-partner-splash.mjs
+          grep -Fq "versionCode ${PARTNER_VERSION_CODE}" superapp/partner-shell/android/app/build.gradle
+          grep -Fq "versionName \"${PARTNER_VERSION_NAME}\"" superapp/partner-shell/android/app/build.gradle
           MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
           grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"

@@ -105,6 +105,9 @@ requireAll('scripts/harden-partner-android-security.mjs', [
   "setApplicationAttribute('usesCleartextTraffic', 'false')",
   'PARTNER_VERSION_CODE',
   'PARTNER_VERSION_NAME',
+  'const versionCodeRaw = process.env.PARTNER_VERSION_CODE?.trim();',
+  'const versionName = process.env.PARTNER_VERSION_NAME?.trim();',
+  'PARTNER_VERSION_CODE e PARTNER_VERSION_NAME são obrigatórios no release.',
 ], 'Parceiro fixa API 36, versão e segurança Android');
 
 requireAll('scripts/harden-partner-mercadopago-callback.mjs', [
@@ -178,6 +181,9 @@ requireAll('supabase/functions/dispatch-push-outbox/index.ts', [
 
 requireAll('codemagic.yaml', [
   'android-partner-superapp:', 'PARTNER_APP_PACKAGE: "br.com.apois.parceiro"',
+  'PARTNER_VERSION_CODE: "1"', 'PARTNER_VERSION_NAME: "1.0.0"',
+  'grep -Fq "versionCode ${PARTNER_VERSION_CODE}" superapp/partner-shell/android/app/build.gradle',
+  'grep -Fq "versionName \\"${PARTNER_VERSION_NAME}\\"" superapp/partner-shell/android/app/build.gradle',
   'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64', 'register_courier_push_device_v2',
   'test -s superapp/partner-shell/android/app/google-services.json', 'APOIS-Parceiro.apk',
 ], 'Codemagic bloqueia release Parceiro sem Firebase/package coerentes');

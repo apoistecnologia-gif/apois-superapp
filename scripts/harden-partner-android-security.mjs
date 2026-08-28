@@ -32,9 +32,11 @@ for (const [field, value] of [['compileSdkVersion', 36], ['targetSdkVersion', 36
 writeFileSync(variablesGradlePath, variables, 'utf8');
 
 if (!existsSync(appGradlePath)) throw new Error('build.gradle do Parceiro não encontrado.');
-const versionCode = Number.parseInt(process.env.PARTNER_VERSION_CODE?.trim() || '1', 10);
-const versionName = process.env.PARTNER_VERSION_NAME?.trim() || '1.0.0';
-if (!Number.isInteger(versionCode) || versionCode < 1) throw new Error('PARTNER_VERSION_CODE deve ser inteiro positivo.');
+const versionCodeRaw = process.env.PARTNER_VERSION_CODE?.trim();
+const versionName = process.env.PARTNER_VERSION_NAME?.trim();
+if (!versionCodeRaw || !versionName) throw new Error('PARTNER_VERSION_CODE e PARTNER_VERSION_NAME são obrigatórios no release.');
+const versionCode = Number.parseInt(versionCodeRaw, 10);
+if (!/^\d+$/.test(versionCodeRaw) || !Number.isInteger(versionCode) || versionCode < 1) throw new Error('PARTNER_VERSION_CODE deve ser inteiro positivo.');
 if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(versionName)) throw new Error('PARTNER_VERSION_NAME deve usar formato semântico.');
 let gradle = readFileSync(appGradlePath, 'utf8');
 if (!/versionCode\s+\d+/.test(gradle) || !/versionName\s+"[^"]+"/.test(gradle)) throw new Error('Versionamento Android do Parceiro não encontrado.');
