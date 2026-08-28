@@ -10,12 +10,12 @@
     "corridas_passageiro": {
       "repository": "franciel046631/say-hello-buddy-23-84b5dcbf",
       "branch": "feat/apois-passageiro-completo",
-      "commit": "cc44977db717bdf2d23da455b42135f966d1f427"
+      "commit": "1e3de167088e4f5eedaa342a7dc1daebc56ba719"
     },
     "corridas_motorista_admin": {
       "repository": "franciel046631/movvi-go-connect",
       "branch": "fix/apois-corridas-consolidacao",
-      "commit": "a74140deff949f1f498b93bedd8fcd1bfc5d8b44"
+      "commit": "9fc171050d8b5703540c49d19a8f1e9f5162775f"
     }
   }
 }
