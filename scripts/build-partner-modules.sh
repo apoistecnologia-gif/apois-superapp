@@ -199,6 +199,8 @@ export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
 export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
 node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
+node "$ROOT/scripts/harden-partner-entregador-router.mjs"
+node "$ROOT/scripts/harden-partner-entregador-hash-boundary.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
 node "$ROOT/scripts/harden-partner-entregador-map.mjs"
 

@@ -134,6 +134,19 @@ requireAll('scripts/harden-partner-entregador-push.mjs', [
   'PushNotifications.unregister()',
 ], 'Entregador registra package correto, encaminha Push cruzado e remove unregister compartilhado');
 
+requireAll('scripts/harden-partner-entregador-router.mjs', [
+  'createHashHistory',
+  'history: hashHistory',
+], 'Entregador Parceiro usa Hash History no módulo aninhado');
+requireAll('scripts/harden-partner-entregador-hash-boundary.mjs', [
+  'const hashPath = window.location.hash',
+  'endsWith("/index.html") ? "/courier"',
+], 'boundary de sessão do Entregador respeita Hash History no módulo aninhado');
+requireAll('.work/partner-entregador/src/components/AuthSessionIsolation.tsx', [
+  'const hashPath = window.location.hash',
+  'endsWith("/index.html") ? "/courier"',
+], 'bundle-fonte do Entregador normaliza a rota Hash antes do boundary de sessão');
+
 requireAll('scripts/harden-partner-entregador-journey.mjs', [
   'import { Geolocation } from "@capacitor/geolocation";',
   'Geolocation.checkPermissions()', 'Geolocation.requestPermissions({', 'Geolocation.getCurrentPosition({',
@@ -165,7 +178,7 @@ requireAll('scripts/install-partner-launcher.mjs', [
 
 requireAll('superapp/partner-shell/index.html', [
   'PARTNER_PENDING_PUSH_KEY', 'consumePendingPartnerPush', 'pushNotificationActionPerformed',
-  'relayPartnerPush', './modules/entregador/index.html', './modules/motorista/index.html#/motorista/app',
+  'relayPartnerPush', './modules/entregador/index.html#/courier', './modules/motorista/index.html#/motorista/app',
   'if(isDelivery&&isRide)return false;',
 ], 'shell consome Push encaminhado, ignora ambíguos e abre o módulo correto');
 
