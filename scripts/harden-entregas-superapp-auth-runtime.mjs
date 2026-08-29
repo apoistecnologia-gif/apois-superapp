@@ -9,6 +9,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 function replaceRequired(path, search, replacement, label) {
   const full = resolve(root, path);
   const before = readFileSync(full, 'utf8');
+  if (
+    path === '.work/entregas/src/lib/customer-push.ts' &&
+    search.includes('remove_customer_push_devices') &&
+    before.includes('remove_superapp_customer_push_devices')
+  ) {
+    console.log(`[OK] ${label} (já aplicado)`);
+    return;
+  }
   if (before.includes(replacement)) {
     console.log(`[OK] ${label} (já aplicado)`);
     return;

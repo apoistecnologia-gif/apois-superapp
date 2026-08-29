@@ -125,9 +125,12 @@ for (const moduleName of ['corridas', 'entregas']) {
   if (!existsSync(moduleIndex)) continue;
   const html = readFileSync(moduleIndex, 'utf8');
   if (html.includes('apois-superapp-module-bridge')) continue;
-  const patched = html.includes('</body>')
-    ? html.replace('</body>', `${moduleBridgeScript}\n</body>`)
-    : `${html}\n${moduleBridgeScript}\n`;
+  const normalized = moduleName === 'entregas'
+    ? html.replaceAll('/./assets/', './assets/')
+    : html;
+  const patched = normalized.includes('</body>')
+    ? normalized.replace('</body>', `${moduleBridgeScript}\n</body>`)
+    : `${normalized}\n${moduleBridgeScript}\n`;
   writeFileSync(moduleIndex, patched, 'utf8');
   console.log(`[OK] alternador de módulos injetado em ${moduleName}`);
 }
