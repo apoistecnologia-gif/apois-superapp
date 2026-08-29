@@ -9,7 +9,7 @@ function read(path) {
     failed = true;
     return '';
   }
-  return readFileSync(full, 'utf8');
+  return readFileSync(full, 'utf8').replace(/\r\n/g, '\n');
 }
 
 const source = read('scripts/harden-partner-motorista-session-hygiene.mjs');
