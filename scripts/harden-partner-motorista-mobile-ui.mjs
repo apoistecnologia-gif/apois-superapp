@@ -155,18 +155,11 @@ patch('src/routes/motorista.perfil.tsx', (source) => {
   source.includes('to="/motorista/configuracoes"'),
 'Motorista: Perfil concentra opções auxiliares sem repetir mensalidade ou documentos');
 
-patch('src/mobile-route-tree.motorista.ts', (source) => {
-  let next = source;
-  next = next
-    .replace("import { Route as MotoristaCarteiraRouteImport } from './routes/motorista.carteira'\n", '')
-    .replace("const MotoristaCarteiraRoute = MotoristaCarteiraRouteImport.update({ id: '/motorista/carteira', path: '/motorista/carteira', getParentRoute: () => rootRouteImport } as any)\n", '')
-    .replace('  MotoristaCarteiraRoute,\n', '');
-  return next;
-}, (source) =>
-  !source.includes('MotoristaCarteiraRouteImport') &&
-  !source.includes('MotoristaCarteiraRoute') &&
-  !source.includes("./routes/motorista.carteira") &&
+patch('src/mobile-route-tree.motorista.ts', (source) => source, (source) =>
+  source.includes("import { Route as MotoristaCarteiraRouteImport } from './routes/motorista.carteira'\n") &&
+  source.includes("const MotoristaCarteiraRoute = MotoristaCarteiraRouteImport.update({ id: '/motorista/carteira', path: '/motorista/carteira', getParentRoute: () => rootRouteImport } as any)\n") &&
+  source.includes('  MotoristaCarteiraRoute,\n') &&
   source.includes('MotoristaGanhosRoute'),
-'Motorista: árvore do APK não inclui mais a carteira custodial legada; Ganhos é a única superfície financeira de corridas');
+'Motorista: árvore do APK preserva a rota de compatibilidade carteira→ganhos sem recolocá-la na navegação primária');
 
-console.log(`[OK] UI móvel do Motorista simplificada em ${workspace}: um único menu primário, sem carteira legada, sem atalhos incompletos e sem splash interna duplicada.`);
+console.log(`[OK] UI móvel do Motorista simplificada em ${workspace}: um único menu primário, rota carteira→ganhos preservada para compatibilidade, sem atalhos incompletos e sem splash interna duplicada.`);
