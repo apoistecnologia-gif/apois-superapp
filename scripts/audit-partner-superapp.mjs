@@ -142,10 +142,6 @@ requireAll('scripts/harden-partner-entregador-hash-boundary.mjs', [
   'const hashPath = window.location.hash',
   'endsWith("/index.html") ? "/courier"',
 ], 'boundary de sessão do Entregador respeita Hash History no módulo aninhado');
-requireAll('.work/partner-entregador/src/components/AuthSessionIsolation.tsx', [
-  'const hashPath = window.location.hash',
-  'endsWith("/index.html") ? "/courier"',
-], 'bundle-fonte do Entregador normaliza a rota Hash antes do boundary de sessão');
 
 requireAll('scripts/harden-partner-entregador-journey.mjs', [
   'import { Geolocation } from "@capacitor/geolocation";',
@@ -208,6 +204,13 @@ requireAll('.env.example', [
 requireAll('scripts/harden-motorista-field-mercadopago.mjs', [
   'mercadopago-driver-status', 'mercadopago-oauth-start', 'Conectar Mercado Pago',
 ], 'Motorista possui vínculo Mercado Pago direto');
+requireAll('scripts/build-motorista-module.mjs', [
+  "rawUrl.startsWith('br.com.apois.parceiro://auth/mercadopago')",
+  "window.location.replace('#/motorista/assinatura'+suffix)",
+], 'Bridge Motorista aceita somente callback Mercado Pago do APK Parceiro e roteia para assinatura');
+forbidAll('scripts/build-motorista-module.mjs', [
+  "rawUrl.startsWith('br.com.apois.app://auth/mercadopago')",
+], 'Bridge Motorista não consome callback Mercado Pago do APK Cliente');
 requireAll('scripts/harden-motorista-mercadopago-disconnect.mjs', [
   'disconnect_my_mercadopago_driver', 'Desconectar Mercado Pago',
 ], 'Motorista pode trocar conta Mercado Pago');

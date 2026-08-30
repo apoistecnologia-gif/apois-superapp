@@ -49,7 +49,9 @@ if (!html.includes('data-apois-superapp-bridge')) {
   function publicRoute(){const value=route();return ['/motorista/login','/motorista/cadastro','/motorista/recuperar-senha','/motorista/redefinir-senha'].some((part)=>value.includes(part));}
   function enforce(){if(hasSession()||publicRoute())return;try{localStorage.removeItem(routeStorageKey);}catch{}window.location.replace('#/motorista/login');}
   function handleDeepLink(rawUrl){
-    if(typeof rawUrl!=='string'||!rawUrl.startsWith('br.com.apois.app://auth/mercadopago'))return false;
+    // O Motorista é empacotado no APK Parceiro. O callback do Cliente pertence
+    // ao outro aplicativo e não deve ser consumido por este bundle.
+    if(typeof rawUrl!=='string'||!rawUrl.startsWith('br.com.apois.parceiro://auth/mercadopago'))return false;
     try{
         const previous = sessionStorage.getItem(authDeepLinkKey);
         if (previous === rawUrl) return true;

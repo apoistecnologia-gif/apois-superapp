@@ -91,7 +91,9 @@
           routeRole('entregador',operationalUrls.entregador);
           return true;
         }
-        if(path==='mercadopago'){
+        // Mercado Pago do Motorista pertence exclusivamente ao APK Parceiro;
+        // o shell não deve consumir o callback registrado pelo Cliente.
+        if(isPartner&&incoming.host==='auth'&&path==='mercadopago'){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
             window.location.replace(operationalHome(locked));

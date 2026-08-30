@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -13,11 +13,28 @@ if (!name || !manifest.modules[name]) {
   process.exit(1);
 }
 
+function resolveCommand(bin) {
+  if (process.platform !== 'win32' || bin !== 'bash') return bin;
+  const candidates = [
+    process.env.APOIS_BASH_PATH,
+    process.env.ProgramW6432 && resolve(process.env.ProgramW6432, 'Git', 'bin', 'bash.exe'),
+    process.env.ProgramFiles && resolve(process.env.ProgramFiles, 'Git', 'bin', 'bash.exe'),
+    process.env.LOCALAPPDATA && resolve(process.env.LOCALAPPDATA, 'Programs', 'Git', 'bin', 'bash.exe'),
+  ].filter(Boolean);
+  const command = candidates.find((candidate) => existsSync(candidate));
+  if (!command) {
+    console.error('[FAIL] Windows: bash.exe não encontrado; instale Git Bash ou defina APOIS_BASH_PATH.');
+    process.exit(1);
+  }
+  return command;
+}
+
 function run(bin, args, options = {}) {
-  const result = spawnSync(bin, args, {
+  const result = spawnSync(resolveCommand(bin), args, {
     cwd: options.cwd ?? root,
     stdio: 'inherit',
     env: options.env ?? process.env,
+    shell: false,
   });
   if (result.error) {
     console.error(result.error.message);
