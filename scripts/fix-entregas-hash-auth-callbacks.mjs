@@ -26,6 +26,13 @@ replaceRequired(
 );
 
 replaceRequired(
+  '.work/entregas/src/routes/auth.callback.tsx',
+  '      const code = params.get("code");\n      if (code) {',
+  '      const accessToken = params.get("access_token");\n      const refreshToken = params.get("refresh_token");\n      if (accessToken && refreshToken) {\n        const { error } = await supabase.auth.setSession({\n          access_token: accessToken,\n          refresh_token: refreshToken,\n        });\n        if (error) {\n          if (!cancelled) setErrorMessage("Não foi possível confirmar este acesso. Solicite um novo link.");\n          return;\n        }\n      }\n\n      const code = params.get("code");\n      if (code) {',
+  'Entregas: callback aplica tokens implícitos antes de consultar a sessão',
+);
+
+replaceRequired(
   '.work/entregas/src/routes/redefinir-senha.tsx',
   'const params = new URLSearchParams(window.location.search);',
   hashAwareParams,

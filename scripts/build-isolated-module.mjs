@@ -189,9 +189,15 @@ function injectSuperappBridge(indexPath, moduleName) {
   }
 
   if (appPlugin) {
-    appPlugin.addListener('appUrlOpen', ({ url }) => { routeAuthDeepLink(url); }).catch(() => undefined);
+    // Entregas registers its own callback listener so the one-time OAuth code
+    // is exchanged exactly once. Keep the bridge listener for cold launches.
+    // Keep the native listener alive while this module is the active WebView
+    // page. Entregas' button owns the callback; the bridge only owns Corridas.
+    Promise.resolve(appPlugin.addListener('appUrlOpen', ({ url }) => {
+      routeAuthDeepLink(url);
+    })).catch(() => undefined);
     appPlugin.getLaunchUrl().then((result) => { if (result?.url) routeAuthDeepLink(result.url); }).catch(() => undefined);
-    if (moduleName === 'entregas') {
+    if (${moduleName === 'entregas'} && !window.location.hash.includes('/login')) {
       try {
         const forwardedAuthUrl = sessionStorage.getItem(entregasAuthForwardKey);
         if (forwardedAuthUrl) {
@@ -203,7 +209,7 @@ function injectSuperappBridge(indexPath, moduleName) {
     appPlugin.addListener('appStateChange', ({ isActive }) => {
       if (isActive) enforceSessionBoundary();
       else persistRoute();
-    }).catch(() => undefined);
+    });
     appPlugin.addListener('backButton', ({ canGoBack }) => {
       const hash = window.location.hash || '';
       const moduleRootHashes = new Set(['', '#', '#/', '#/inicio', '#/login']);
@@ -213,7 +219,7 @@ function injectSuperappBridge(indexPath, moduleName) {
         return;
       }
       window.history.back();
-    }).catch(() => undefined);
+    });
   }
 
   window.setTimeout(enforceSessionBoundary, 350);

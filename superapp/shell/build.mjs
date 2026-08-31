@@ -153,7 +153,7 @@ if (existsSync(entregasIndex)) {
     return path.charAt(0) === '/' ? path : '/' + path;
   }
 
-  appPlugin.addListener('backButton', function () {
+  Promise.resolve(appPlugin.addListener('backButton', function () {
     var path = routePath();
 
     // Login/cadastro públicos voltam para a tela inicial do APOIS Entregas.
@@ -174,7 +174,7 @@ if (existsSync(entregasIndex)) {
     } else {
       window.location.hash = '#/';
     }
-  }).catch(function () {});
+  })).catch(function () {});
 })();
 </script>`;
 
