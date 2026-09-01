@@ -98,12 +98,31 @@ for (const name of names) {
   console.log(`[OK] ${name}: snapshot copiado para ${config.workspace}`);
 
   if (name === 'corridas') {
-    replaceWorkspaceRequired(
-      '.work/corridas/src/hooks/use-ride-categories.tsx',
-      '      setSelectedCategory((current) =>\n        data.find((category) => category.id === current?.id) ?? data[0] ?? null,\n      );',
-      '      setSelectedCategory((current) => {\n        const available = current ? data.find((category) => category.id === current.id) : null;\n        return available?.isActive ? available : data[0] ?? null;\n      });',
-      'corridas: estado selecionado nunca mantém categoria indisponível',
-    );
+    const categoriesPath = '.work/corridas/src/hooks/use-ride-categories.tsx';
+    const categoriesSource = readFileSync(resolve(root, categoriesPath), 'utf8');
+    const legacySelection = '      setSelectedCategory((current) =>\n        data.find((category) => category.id === current?.id) ?? data[0] ?? null,\n      );';
+    const currentSelection = '      if (data.length > 0 && !selectedCategory) {\n        setSelectedCategory(data[0] || null);\n      }';
+    const guardedSelection = '      setSelectedCategory((current) => {\n        const available = current ? data.find((category) => category.id === current.id) : null;\n        return available?.isActive ? available : data[0] ?? null;\n      });';
+    if (categoriesSource.includes(guardedSelection)) {
+      console.log('[OK] corridas: estado selecionado nunca mantém categoria indisponível (já aplicado)');
+    } else if (categoriesSource.includes(legacySelection)) {
+      replaceWorkspaceRequired(
+        categoriesPath,
+        legacySelection,
+        guardedSelection,
+        'corridas: estado selecionado nunca mantém categoria indisponível',
+      );
+    } else if (categoriesSource.includes(currentSelection)) {
+      replaceWorkspaceRequired(
+        categoriesPath,
+        currentSelection,
+        guardedSelection,
+        'corridas: estado selecionado nunca mantém categoria indisponível (adaptação da implementação atual)',
+      );
+    } else {
+      console.error(`[FAIL] corridas: implementação de seleção de categoria não reconhecida em ${categoriesPath}`);
+      process.exit(1);
+    }
     // As formas ativas da fonte são preservadas na cópia de trabalho. O hardener
     // específico de pagamentos decide disponibilidade: PIX é eletrônico;
     // Dinheiro e Cartão de crédito são recebimentos diretos ao motorista.
