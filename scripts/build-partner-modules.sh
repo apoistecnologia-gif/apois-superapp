@@ -21,14 +21,9 @@ tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-entregas" -cf 
 # árvore de trabalho, embora o blob no Git permaneça LF. Os hardeners abaixo
 # usam substituição textual exata (padrões com \n) e quebrariam sem indicar
 # nenhuma mudança real de conteúdo. Normalizamos para LF logo após copiar.
-find "$MOTORISTA" "$ENTREGADOR" \
-  \( -name android -o -name ios -o -name backend-standalone -o -name node_modules \
-     -o -name dist -o -name .output -o -name build -o -name .gradle -o -name .tanstack -o -name .git \) -prune -o \
-  -type f \
-  \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.cjs' \
-     -o -name '*.json' -o -name '*.css' -o -name '*.scss' -o -name '*.html' -o -name '*.md' \
-     -o -name '*.yml' -o -name '*.yaml' -o -name '*.sql' -o -name '*.sh' -o -name '*.toml' -o -name '.env*' \) \
-  -print0 | xargs -0 -r sed -i 's/\r$//'
+node "$ROOT/scripts/normalize-partner-workspaces.mjs" "$MOTORISTA" "$ENTREGADOR"
+
+echo '[OK] normalização Parceiro usa Node.js portátil (CRLF/CR para LF)'
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
