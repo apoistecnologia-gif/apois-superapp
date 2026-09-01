@@ -126,7 +126,10 @@ for (const marker of [
   }
 }
 const newBlockStart = shellStartup.indexOf('const newBlock = `');
-const newBlockEnd = newBlockStart >= 0 ? shellStartup.indexOf('`;\n\nif (source.includes(oldBlock))', newBlockStart) : -1;
+// O bloco é um template literal e pode variar na quebra de linha antes do
+// `if` que o aplica. Encontre o início do código seguinte sem depender do
+// whitespace específico do hardener.
+const newBlockEnd = newBlockStart >= 0 ? shellStartup.indexOf('if (source.includes(oldBlock))', newBlockStart) : -1;
 const startupRuntime = newBlockStart >= 0 && newBlockEnd > newBlockStart
   ? shellStartup.slice(newBlockStart, newBlockEnd)
   : '';

@@ -21,14 +21,9 @@ tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-entregas" -cf 
 # árvore de trabalho, embora o blob no Git permaneça LF. Os hardeners abaixo
 # usam substituição textual exata (padrões com \n) e quebrariam sem indicar
 # nenhuma mudança real de conteúdo. Normalizamos para LF logo após copiar.
-find "$MOTORISTA" "$ENTREGADOR" \
-  \( -name android -o -name ios -o -name backend-standalone -o -name node_modules \
-     -o -name dist -o -name .output -o -name build -o -name .gradle -o -name .tanstack -o -name .git \) -prune -o \
-  -type f \
-  \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.cjs' \
-     -o -name '*.json' -o -name '*.css' -o -name '*.scss' -o -name '*.html' -o -name '*.md' \
-     -o -name '*.yml' -o -name '*.yaml' -o -name '*.sql' -o -name '*.sh' -o -name '*.toml' -o -name '.env*' \) \
-  -print0 | xargs -0 -r sed -i 's/\r$//'
+node "$ROOT/scripts/normalize-partner-workspaces.mjs" "$MOTORISTA" "$ENTREGADOR"
+
+echo '[OK] normalização Parceiro usa Node.js portátil (CRLF/CR para LF)'
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
@@ -71,6 +66,7 @@ node "$ROOT/scripts/harden-partner-motorista-push-runtime.mjs"
 node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
+node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 
 cd "$MOTORISTA"
 require_contains 'appTarget: "partner"' src/components/payments/MercadoPagoSellerCard.tsx 'OAuth Mercado Pago usa callback exclusivo do APOIS Parceiro'
@@ -97,12 +93,50 @@ require_contains 'APOIS_PARTNER_DRIVER_SETTINGS_OPERATIONAL_LOGOUT_GUARD' src/ro
 require_contains 'APOIS_PARTNER_DRIVER_SETTINGS_OPERATIONAL_DELETE_GUARD' src/routes/motorista.configuracoes.tsx 'configurações bloqueiam exclusão enquanto Motorista está operacional'
 require_contains 'Fique offline no mapa antes de sair, trocar de conta ou excluir seu cadastro.' src/routes/motorista.perfil.tsx 'perfil não encerra sessão operacional por rota secundária'
 require_contains 'APOIS_PARTNER_DRIVER_HEADER_OPERATIONAL_GUARD' src/components/MovviHeader.tsx 'cabeçalho não encerra sessão operacional por tela secundária'
+CORRIDAS_URL_VALUE="${CORRIDAS_VITE_SUPABASE_URL:-}"
+CORRIDAS_KEY_VALUE="${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
+CORRIDAS_MAPS_KEY_VALUE="${CORRIDAS_WEB_MAPS_API_KEY:-}"
+if [ -z "$CORRIDAS_URL_VALUE" ] || [ -z "$CORRIDAS_KEY_VALUE" ] || [ -z "$CORRIDAS_MAPS_KEY_VALUE" ]; then
+  echo '[FAIL] Motorista: variáveis CORRIDAS_VITE_SUPABASE_URL, CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY e CORRIDAS_WEB_MAPS_API_KEY são obrigatórias.'
+  exit 1
+fi
 {
-  printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_VITE_SUPABASE_URL"
-  printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY"
-  printf 'VITE_GOOGLE_MAPS_API_KEY=%s\n' "$CORRIDAS_WEB_MAPS_API_KEY"
-  printf 'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY=%s\n' "$CORRIDAS_WEB_MAPS_API_KEY"
+  printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_URL_VALUE"
+  printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_KEY_VALUE"
+  printf 'VITE_GOOGLE_MAPS_API_KEY=%s\n' "$CORRIDAS_MAPS_KEY_VALUE"
+  printf 'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY=%s\n' "$CORRIDAS_MAPS_KEY_VALUE"
 } > .env.mobile.local
+
+# Vite mescla variáveis do processo por cima dos arquivos .env. O PowerShell
+# externo pode manter VITE_* do módulo Entregador; essas variáveis não podem
+# contaminar o bundle Motorista, que deve usar exclusivamente o projeto Corridas.
+case "$CORRIDAS_URL_VALUE" in
+  *vqtucstyduxrqjgyigfk.supabase.co) ;;
+  *)
+    echo '[FAIL] Motorista: CORRIDAS_VITE_SUPABASE_URL não aponta para o projeto Corridas esperado.'
+    exit 1
+    ;;
+esac
+
+# A publishable key informada deve ser a mesma chave válida do projeto Corridas
+# presente na fonte. Comparamos por fingerprint (sha256 dos primeiros bytes)
+# para nunca imprimir o valor: uma chave do projeto Entregas passaria pela
+# checagem de URL e geraria login 401 UNAUTHORIZED_INVALID_API_KEY em runtime.
+CORRIDAS_KEY_FROM_SOURCE="$(sed -n 's/^\s*VITE_SUPABASE_PUBLISHABLE_KEY\s*=\s*//p' \
+  "$ROOT/sources/apois-corridas-motorista-admin/.env.mobile" | head -n1 | tr -d '\r')"
+if [ -z "$CORRIDAS_KEY_FROM_SOURCE" ]; then
+  echo '[FAIL] Motorista: VITE_SUPABASE_PUBLISHABLE_KEY ausente em sources/apois-corridas-motorista-admin/.env.mobile'
+  exit 1
+fi
+if [ "$(printf '%s' "$CORRIDAS_KEY_VALUE" | sha256sum | cut -d' ' -f1)" != \
+     "$(printf '%s' "$CORRIDAS_KEY_FROM_SOURCE" | sha256sum | cut -d' ' -f1)" ]; then
+  echo '[FAIL] Motorista: CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY diverge da chave do projeto Corridas na fonte.'
+  echo '       Corrija o valor da variável no ambiente externo e execute o build novamente.'
+  exit 1
+fi
+echo '[OK] validação Parceiro: publishable key corresponde ao projeto Corridas'
+unset CORRIDAS_KEY_FROM_SOURCE
+unset VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY SUPABASE_URL SUPABASE_PUBLISHABLE_KEY
 export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
 cd "$ROOT"
@@ -110,6 +144,16 @@ node "$ROOT/scripts/reconcile-partner-motorista-lockfile.mjs"
 cd "$MOTORISTA"
 bun install --frozen-lockfile
 npm run build:motorista
+
+# Validação de isolamento: o bundle Motorista deve apontar para Corridas,
+# nunca para o projeto Entregas, mesmo que o processo externo tenha VITE_*
+# herdado de outro módulo.
+require_contains 'vqtucstyduxrqjgyigfk.supabase.co' dist/client 'bundle Motorista usa o Supabase Corridas'
+if grep -R -Fq 'sbvhdgyuuperszlsllji.supabase.co' dist/client; then
+  echo '[FAIL] bundle Motorista contaminado com o Supabase Entregas'
+  exit 1
+fi
+echo '[OK] validação Motorista: Supabase Entregas ausente do bundle'
 
 require_contains 'Continuar com Google' dist/client 'login Google presente'
 require_contains 'Esqueci minha senha' dist/client 'recuperação de senha presente'
@@ -150,6 +194,8 @@ export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
 export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
 node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
+node "$ROOT/scripts/harden-partner-entregador-router.mjs"
+node "$ROOT/scripts/harden-partner-entregador-hash-boundary.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
 node "$ROOT/scripts/harden-partner-entregador-map.mjs"
 
@@ -178,9 +224,9 @@ export VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"
 export APP_ROUTE="/"
 export APP_PACKAGE="br.com.apois.parceiro"
 export APP_LABEL="APOIS Parceiro"
-export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
-export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
-export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_WEB_MAPS_API_KEY"
+export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
+export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_MAPS_KEY_VALUE"
+export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 bun install --frozen-lockfile
 bun run build
@@ -209,7 +255,13 @@ const path = '.output/public/index.html';
 let html = readFileSync(path, 'utf8');
 html = html
   .replace(/(src|href)="\/(?!\/)/g, '$1="./')
-  .replace(/(src|href)='\/(?!\/)/g, "$1='./");
+  .replace(/(src|href)='\/(?!\/)/g, "$1='./")
+  // TanStack Start serializa preloads/scripts no manifesto TSR como strings
+  // absolutas; normalize-as também para o módulo aninhado do Parceiro.
+  .replace(/(["'])\/(assets\/)/g, '$1./$2');
+if (html.includes('"/assets/') || html.includes("'/assets/")) {
+  throw new Error('Entregador: manifesto TSR ainda contém referências absolutas a /assets');
+}
 writeFileSync(path, html, 'utf8');
 NODE
 

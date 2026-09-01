@@ -11,6 +11,7 @@ function run(bin, args, options = {}) {
     cwd: options.cwd ?? root,
     env: options.env ?? process.env,
     stdio: 'inherit',
+    shell: process.platform === 'win32' && command.endsWith('.cmd'),
   });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);

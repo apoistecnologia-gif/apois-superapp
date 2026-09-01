@@ -9,7 +9,7 @@ function read(path) {
     failed = true;
     return '';
   }
-  return readFileSync(full, 'utf8').replaceAll('\r\n', '\n');
+  return readFileSync(full, 'utf8').replace(/\r\n/g, '\n');
 }
 function requireAll(path, markers, label) {
   const source = read(path);

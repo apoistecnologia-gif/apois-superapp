@@ -24,6 +24,15 @@ for (const row of [
   source = source.replace(row, '');
 }
 
+// A seção de privacidade continua visível, mas os hardeners removem o ícone
+// Shield dos atalhos de segurança. Use o ícone já permitido no bundle para
+// evitar um identificador JSX sem import no artefato final.
+source = source.replace('<SettingsSection icon={Shield} title="Privacidade">', '<SettingsSection icon={ShieldCheck} title="Privacidade">');
+source = source.replace('SettingsLinkRow icon={Shield} title="Sessões ativas"', 'SettingsLinkRow icon={ShieldCheck} title="Sessões ativas"');
+if (source.includes('<SettingsSection icon={Shield}')) {
+  throw new Error('[FAIL] Motorista Parceiro: referência Shield sem import permaneceu nas configurações');
+}
+
 const languageBlock = `                <SettingsRow\n                  icon={Languages}\n                  title="Idioma"\n                  hint="Preferência local de interface"\n                  right={\n                    <select\n                      value={prefs.language}\n                      onChange={(event) => update("language", event.target.value as DriverPrefs["language"])}\n                      aria-label="Idioma preferido"\n                      className="min-h-11 rounded-xl border border-white/8 bg-[#111315] px-3 text-sm font-semibold text-white outline-none focus-visible:border-[#F6BE1C]/55 focus-visible:ring-2 focus-visible:ring-[#F6BE1C]/40"\n                    >\n                      <option value="pt">Português</option>\n                      <option value="en">English</option>\n                      <option value="es">Español</option>\n                    </select>\n                  }\n                />\n`;
 source = source.replace(languageBlock, '');
 

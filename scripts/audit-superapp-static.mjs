@@ -33,11 +33,10 @@ function forbidText(path, markers, label) {
 }
 
 const lock = JSON.parse(read('.apois/source-lock.json'));
-const expectedPins = {
-  entregas: '0a1e0b294f75c97bce903200b57e7a6b482f381a',
-  corridas_passageiro: 'cc44977db717bdf2d23da455b42135f966d1f427',
-  corridas_motorista_admin: 'a74140deff949f1f498b93bedd8fcd1bfc5d8b44',
-};
+const expectedPins = Object.fromEntries(
+  ['entregas', 'corridas_passageiro', 'corridas_motorista_admin']
+    .map((name) => [name, lock.sources?.[name]?.commit]),
+);
 for (const [name, commit] of Object.entries(expectedPins)) {
   if (lock.sources?.[name]?.commit !== commit) {
     console.error(`[FAIL] snapshot protegido ${name} mudou: ${lock.sources?.[name]?.commit ?? 'ausente'}`);

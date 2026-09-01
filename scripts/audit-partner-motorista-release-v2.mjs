@@ -110,10 +110,7 @@ requireAll('scripts/harden-partner-motorista-settings-cleanup.mjs', [
   'title="Segurança e emergência"',
   'SOS e contatos de emergência',
   'Sair de todos os dispositivos',
-  'Sessões ativas em breve.',
-  'Biometria em breve.',
-  'PIN em breve.',
-  'aria-label="Idioma preferido"',
+  '<SettingsSection icon={ShieldCheck} title="Privacidade">',
   'const protectedOperationalKeys = new Set([',
   '"apois:driver:online"',
   '"apois-parceiro:operational-role"',
@@ -121,6 +118,24 @@ requireAll('scripts/harden-partner-motorista-settings-cleanup.mjs', [
 ], 'configurações removem atalhos incompletos e limpar cache não apaga presença/trava operacional');
 
 const routeTreePath = 'sources/apois-corridas-motorista-admin/src/mobile-route-tree.motorista.ts';
+requireAll(routeTreePath, [
+  "./routes/motorista.app",
+  "./routes/motorista.assinatura",
+  "./routes/motorista.carteira",
+  "./routes/motorista.configuracoes",
+  "./routes/motorista.seguranca",
+  "./routes/motorista.suporte",
+  "./routes/motorista.termos",
+  "const MotoristaCarteiraRoute =",
+  "  MotoristaCarteiraRoute,",
+], 'árvore mobile do Motorista preserva carteira→ganhos apenas como rota de compatibilidade');
+
+requireAll('scripts/harden-partner-motorista-mobile-ui.mjs', [
+  'MotoristaCarteiraRouteImport',
+  'const MotoristaCarteiraRoute =',
+  'Motorista: árvore do APK preserva a rota de compatibilidade',
+], 'harden móvel preserva a rota legada sem recolocá-la na navegação primária');
+
 requireAll(routeTreePath, [
   "./routes/motorista.app",
   "./routes/motorista.assinatura",

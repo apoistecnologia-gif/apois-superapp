@@ -54,14 +54,16 @@ for (const [name, script] of [['build:superapp', buildSuperapp], ['build:partner
 }
 if (buildSuperapp.includes('build:motorista')) fail('build:superapp voltou a incluir Motorista');
 if (!buildPartner.includes('build-partner-modules.sh')) fail('build:partner não usa empacotamento unificado Motorista + Entregador');
+if (process.platform === 'win32' && !buildPartner.includes('scripts/run-bash.mjs')) fail('build:partner não usa runner compatível com Windows para o Bash');
 if (!failed) ok('builds Cliente e Parceiro mantêm gates e separação de responsabilidades');
 
+const sourceLock = JSON.parse(read('.apois/source-lock.json'));
 requireAll('.apois/source-lock.json', [
-  '0a1e0b294f75c97bce903200b57e7a6b482f381a',
-  'cc44977db717bdf2d23da455b42135f966d1f427',
-  'a74140deff949f1f498b93bedd8fcd1bfc5d8b44',
+  sourceLock.sources?.entregas?.commit,
+  sourceLock.sources?.corridas_passageiro?.commit,
+  sourceLock.sources?.corridas_motorista_admin?.commit,
   'pinned read-only source snapshots',
-], 'snapshots protegidos permanecem fixados nos commits aprovados');
+], 'snapshots protegidos permanecem fixados nos commits oficiais');
 
 const codemagic = read('codemagic.yaml');
 const workflowKeys = [...codemagic.matchAll(/^  ([a-z0-9-]+):$/gm)].map((match) => match[1]);

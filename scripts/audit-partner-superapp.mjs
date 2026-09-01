@@ -46,7 +46,10 @@ requireAll('scripts/build-partner-modules.sh', [
   '_app_package: "br.com.apois.parceiro"',
   'appTarget: "partner"',
   'PushNotifications.unregister()',
-  'VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_WEB_MAPS_API_KEY"',
+  'CORRIDAS_MAPS_KEY_VALUE="${CORRIDAS_WEB_MAPS_API_KEY:-}"',
+  'export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_MAPS_KEY_VALUE"',
+  'export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"',
+  'export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"',
   'Conectar Mercado Pago',
   'Siga a rota até o ponto de embarque',
   'Como foi o passageiro?',
@@ -102,6 +105,9 @@ requireAll('scripts/harden-partner-android-security.mjs', [
   "setApplicationAttribute('usesCleartextTraffic', 'false')",
   'PARTNER_VERSION_CODE',
   'PARTNER_VERSION_NAME',
+  'const versionCodeRaw = process.env.PARTNER_VERSION_CODE?.trim();',
+  'const versionName = process.env.PARTNER_VERSION_NAME?.trim();',
+  'PARTNER_VERSION_CODE e PARTNER_VERSION_NAME são obrigatórios no release.',
 ], 'Parceiro fixa API 36, versão e segurança Android');
 
 requireAll('scripts/harden-partner-mercadopago-callback.mjs', [
@@ -127,6 +133,15 @@ requireAll('scripts/harden-partner-entregador-push.mjs', [
   'PARTNER_PENDING_PUSH_KEY', 'isRidePushPayload(data)', 'isDeliveryPushPayload(data)',
   'PushNotifications.unregister()',
 ], 'Entregador registra package correto, encaminha Push cruzado e remove unregister compartilhado');
+
+requireAll('scripts/harden-partner-entregador-router.mjs', [
+  'createHashHistory',
+  'history: hashHistory',
+], 'Entregador Parceiro usa Hash History no módulo aninhado');
+requireAll('scripts/harden-partner-entregador-hash-boundary.mjs', [
+  'const hashPath = window.location.hash',
+  'endsWith("/index.html") ? "/courier"',
+], 'boundary de sessão do Entregador respeita Hash History no módulo aninhado');
 
 requireAll('scripts/harden-partner-entregador-journey.mjs', [
   'import { Geolocation } from "@capacitor/geolocation";',
@@ -159,7 +174,7 @@ requireAll('scripts/install-partner-launcher.mjs', [
 
 requireAll('superapp/partner-shell/index.html', [
   'PARTNER_PENDING_PUSH_KEY', 'consumePendingPartnerPush', 'pushNotificationActionPerformed',
-  'relayPartnerPush', './modules/entregador/index.html', './modules/motorista/index.html#/motorista/app',
+  'relayPartnerPush', './modules/entregador/index.html#/courier', './modules/motorista/index.html#/motorista/app',
   'if(isDelivery&&isRide)return false;',
 ], 'shell consome Push encaminhado, ignora ambíguos e abre o módulo correto');
 
@@ -175,6 +190,9 @@ requireAll('supabase/functions/dispatch-push-outbox/index.ts', [
 
 requireAll('codemagic.yaml', [
   'android-partner-superapp:', 'PARTNER_APP_PACKAGE: "br.com.apois.parceiro"',
+  'PARTNER_VERSION_CODE: "1"', 'PARTNER_VERSION_NAME: "1.0.0"',
+  'grep -Fq "versionCode ${PARTNER_VERSION_CODE}" superapp/partner-shell/android/app/build.gradle',
+  'grep -Fq "versionName \\"${PARTNER_VERSION_NAME}\\"" superapp/partner-shell/android/app/build.gradle',
   'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64', 'register_courier_push_device_v2',
   'test -s superapp/partner-shell/android/app/google-services.json', 'APOIS-Parceiro.apk',
 ], 'Codemagic bloqueia release Parceiro sem Firebase/package coerentes');
@@ -186,6 +204,13 @@ requireAll('.env.example', [
 requireAll('scripts/harden-motorista-field-mercadopago.mjs', [
   'mercadopago-driver-status', 'mercadopago-oauth-start', 'Conectar Mercado Pago',
 ], 'Motorista possui vínculo Mercado Pago direto');
+requireAll('scripts/build-motorista-module.mjs', [
+  "rawUrl.startsWith('br.com.apois.parceiro://auth/mercadopago')",
+  "window.location.replace('#/motorista/assinatura'+suffix)",
+], 'Bridge Motorista aceita somente callback Mercado Pago do APK Parceiro e roteia para assinatura');
+forbidAll('scripts/build-motorista-module.mjs', [
+  "rawUrl.startsWith('br.com.apois.app://auth/mercadopago')",
+], 'Bridge Motorista não consome callback Mercado Pago do APK Cliente');
 requireAll('scripts/harden-motorista-mercadopago-disconnect.mjs', [
   'disconnect_my_mercadopago_driver', 'Desconectar Mercado Pago',
 ], 'Motorista pode trocar conta Mercado Pago');

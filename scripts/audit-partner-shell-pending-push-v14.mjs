@@ -32,7 +32,9 @@ for (const marker of [
 // no arquivo inteiro, pois o oldBlock contém propositalmente a ordem insegura
 // que será substituída.
 const newBlockStart = hardener.indexOf('const newBlock = `');
-const newBlockEnd = newBlockStart >= 0 ? hardener.indexOf('`;\n\nif (source.includes(oldBlock))', newBlockStart) : -1;
+// O hardener pode ajustar o whitespace ao redor do template literal. Recorte
+// pelo próximo código de aplicação, sem depender da quebra exata de linha.
+const newBlockEnd = newBlockStart >= 0 ? hardener.indexOf('if (source.includes(oldBlock))', newBlockStart) : -1;
 const runtimeBlock = newBlockStart >= 0 && newBlockEnd > newBlockStart
   ? hardener.slice(newBlockStart, newBlockEnd)
   : '';

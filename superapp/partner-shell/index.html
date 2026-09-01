@@ -29,8 +29,8 @@
     <div class="foot">APOIS • PARCEIROS</div>
   </main>
   <script>
-    const urls={motorista:'./modules/motorista/index.html',entregador:'./modules/entregador/index.html'};
-    const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html'};
+    const urls={motorista:'./modules/motorista/index.html',entregador:'./modules/entregador/index.html#/courier'};
+    const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html#/courier'};
     const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
     const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
     const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
@@ -91,7 +91,9 @@
           routeRole('entregador',operationalUrls.entregador);
           return true;
         }
-        if(path==='mercadopago'){
+        // Mercado Pago do Motorista pertence exclusivamente ao APK Parceiro;
+        // o shell não deve consumir o callback registrado pelo Cliente.
+        if(isPartner&&incoming.host==='auth'&&path==='mercadopago'){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
             window.location.replace(operationalHome(locked));

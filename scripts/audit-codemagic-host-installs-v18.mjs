@@ -8,7 +8,7 @@ const ok = (message) => console.log(`[OK] Codemagic host installs v18: ${message
 function read(path) {
   const full = resolve(path);
   if (!existsSync(full)) { fail(`arquivo ausente: ${path}`); return ''; }
-  return readFileSync(full, 'utf8').replaceAll('\r\n', '\n');
+  return readFileSync(full, 'utf8').replace(/\r\n/g, '\n');
 }
 
 function assertPinnedCapacitorPackage(path, label) {

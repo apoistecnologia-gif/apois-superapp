@@ -45,8 +45,9 @@ requireAll('superapp/shell/capacitor.config.ts', [
 requireAll('scripts/harden-superapp-android-security.mjs', [
   "['compileSdkVersion', 36]",
   "['targetSdkVersion', 36]",
-  "process.env.APP_VERSION_CODE?.trim() || '1'",
-  "process.env.APP_VERSION_NAME?.trim() || '1.0.0'",
+  'const versionCodeRaw = process.env.APP_VERSION_CODE?.trim();',
+  'const versionName = process.env.APP_VERSION_NAME?.trim();',
+  'APP_VERSION_CODE e APP_VERSION_NAME são obrigatórios no release.',
   "setApplicationAttribute('allowBackup', 'false')",
   "setApplicationAttribute('usesCleartextTraffic', 'false')",
   'android.permission.ACCESS_BACKGROUND_LOCATION',
