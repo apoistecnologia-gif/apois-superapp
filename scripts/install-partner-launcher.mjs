@@ -28,9 +28,10 @@ if (!existsSync(resRoot)) throw new Error(`Recursos Android do APOIS Parceiro n√
 
 function resizePng(source, size, output) {
   const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', output], { encoding: 'utf8' });
-  if (result.error || result.status !== 0 || !existsSync(output)) {
-    throw new Error(`Falha ao gerar launcher ${size}x${size}: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`);
-  }
+  if (!result.error && result.status === 0 && existsSync(output)) return;
+  // sips is macOS-only. On Windows/Linux, retain the official PNG rather than
+  // falling back to a synthetic icon; Android accepts the source as a valid raster.
+  copyFileSync(source, output);
 }
 
 function removeStaleLauncherBitmaps(dir) {
@@ -93,7 +94,7 @@ rmSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), { force: true });
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/apois_launcher_background" />
-    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
 </adaptive-icon>
 `;
 writeFileSync(join(adaptiveDir, 'ic_launcher.xml'), adaptiveXml, 'utf8');
