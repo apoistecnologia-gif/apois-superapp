@@ -41,6 +41,14 @@ if (mapsKey && !xml.includes('com.google.android.geo.API_KEY')) {
     '</application>',
     `        <meta-data android:name="com.google.android.geo.API_KEY" android:value="${mapsKey.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}" />\n    </application>`,
   );
+} else if (!xml.includes('com.google.android.geo.API_KEY')) {
+  // Google Maps SDK aborts the process when its metadata is absent. Keep the
+  // debug/local shell launchable without inventing a credential; the runtime
+  // will surface the Maps configuration state instead of crashing startup.
+  xml = xml.replace(
+    '</application>',
+    '        <meta-data android:name="com.google.android.geo.API_KEY" android:value="" />\n    </application>',
+  );
 }
 
 writeFileSync(manifestPath, xml);
