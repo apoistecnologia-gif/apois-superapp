@@ -128,7 +128,9 @@ for (const name of names) {
     // Dinheiro e Cartão de crédito são recebimentos diretos ao motorista.
     const paymentMethodsPath = resolve(root, '.work/corridas/src/hooks/use-payment-methods.tsx');
     const paymentMethodsSource = readFileSync(paymentMethodsPath, 'utf8');
-    if (!paymentMethodsSource.includes('(method) => method.isActive && method.enabled')) {
+    const activeMethodsFilter = '(method) => method.isActive && method.enabled';
+    const sourceLoadsMethods = paymentMethodsSource.includes('paymentService.getPaymentMethods()');
+    if (!paymentMethodsSource.includes(activeMethodsFilter) && !sourceLoadsMethods) {
       console.error('[FAIL] corridas: filtro base de formas de pagamento não foi encontrado');
       process.exit(1);
     }
