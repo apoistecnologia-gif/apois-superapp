@@ -10,7 +10,10 @@ if (!existsSync(resolve(cwd, 'package.json'))) {
   throw new Error(`[FAIL] Entregador Parceiro: package.json ausente em ${workspace}`);
 }
 
-const result = spawnSync('bun', ['install', '--lockfile-only'], {
+const bunCommand = process.platform === 'win32'
+  ? resolve(process.env.APPDATA || '', 'npm', 'node_modules', 'bun', 'bin', 'bun.exe')
+  : 'bun';
+const result = spawnSync(bunCommand, ['install', '--lockfile-only'], {
   cwd,
   stdio: 'inherit',
   env: process.env,

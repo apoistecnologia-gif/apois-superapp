@@ -171,7 +171,7 @@ const splashXml = `<?xml version="1.0" encoding="utf-8"?>
     <item android:drawable="@android:color/black" />
     <item android:gravity="center">
         <inset
-            android:drawable="@mipmap/ic_launcher_foreground"
+            android:drawable="@drawable/ic_launcher_foreground"
             android:insetLeft="64dp"
             android:insetTop="64dp"
             android:insetRight="64dp"

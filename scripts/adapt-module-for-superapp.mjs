@@ -52,8 +52,8 @@ if (name === 'corridas') {
   );
   replaceRequired(
     '.work/corridas/src/hooks/use-location.tsx',
-    '  }, [checkPermissions, refreshLocation, requestPermission, updateLocationState]);',
-    '  }, [checkPermissions, permissionState, refreshLocation, requestPermission, updateLocationState]);',
+    '  }, [checkPermissions, refreshLocation, updateLocationState]);',
+    '  }, [checkPermissions, permissionState, refreshLocation, updateLocationState]);',
     'corridas: watcher de localização reinicia após mudança de permissão',
   );
   replaceRequired(
@@ -82,8 +82,8 @@ if (name === 'corridas') {
   );
   replaceRequired(
     '.work/corridas/src/components/map/PassengerMap.tsx',
-    '  }, [compact, destination, emitMapCenter, orderedStops, origin, route?.decodedPoints, selectionMode, status, validDriverLocation]);',
-    '  }, [compact, destination, displayedRoutePoints, emitMapCenter, orderedStops, origin, selectionMode, status, validDriverLocation]);',
+    '  }, [destination, orderedStops, origin, route?.decodedPoints, status]);',
+    '  }, [destination, displayedRoutePoints, orderedStops, origin, route?.decodedPoints, status]);',
     'corridas: atualização do mapa acompanha rota persistida',
   );
   replaceRequired(

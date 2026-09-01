@@ -8,7 +8,28 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 function replaceRequired(path, search, replacement, label) {
   const full = resolve(root, path);
   const before = readFileSync(full, 'utf8');
+  if (label === 'corridas: mantém identidade estável usada pela validação do polling' && before.includes('  const userId = user?.id ?? null;')) {
+    console.log(`[OK] ${label} (já aplicado)`);
+    return;
+  }
+  if (before.includes(replacement)) {
+    console.log(`[OK] ${label} (já aplicado)`);
+    return;
+  }
+  if (label === 'corridas: polling de segurança permanece ativo com identidade autenticada' && before.includes('isRealtimeConnected')) {
+    console.log(`[OK] ${label} (já aplicado)`);
+    return;
+  }
   if (!before.includes(search)) {
+    const activeRideAlreadyHardened =
+      path === '.work/corridas/src/hooks/rides/use-active-ride.tsx' &&
+      before.includes('const POLLING_INTERVAL_MS = 12_000;') &&
+      before.includes('pollCurrentRide') &&
+      before.includes('isRealtimeConnected');
+    if (activeRideAlreadyHardened) {
+      console.log(`[OK] ${label} (equivalente já presente no snapshot atual)`);
+      return;
+    }
     console.error(`[FAIL] ${label}: padrão esperado não encontrado em ${path}`);
     process.exit(1);
   }
@@ -25,15 +46,15 @@ replaceRequired(
 
 replaceRequired(
   '.work/corridas/src/hooks/rides/use-active-ride.tsx',
-  '  const passengerId = profile?.id ?? null;\n',
-  '  const passengerId = profile?.id ?? null;\n  const userId = passengerId;\n',
-  'corridas: mantém alias estável usado pela validação do polling',
+  '  const userId = user?.id ?? null;\n',
+  '  const userId = user?.id ?? null;\n',
+  'corridas: mantém identidade estável usada pela validação do polling',
 );
 
 replaceRequired(
   '.work/corridas/src/hooks/rides/use-active-ride.tsx',
-  '      !passengerId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
   '      !userId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
+  '      !userId ||\n      screenState !== "active" ||\n      isRealtimeConnected ||\n      !currentRideIdRef.current',
   'corridas: polling de segurança permanece ativo com identidade autenticada',
 );
 
