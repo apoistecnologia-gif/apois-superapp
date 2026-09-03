@@ -47,6 +47,7 @@ workflows:
           : "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:?Add unified Firebase google-services.json for br.com.apois.app to Codemagic}"
           : "${APP_VERSION_CODE:?APP_VERSION_CODE is required for the customer release}"
           : "${APP_VERSION_NAME:?APP_VERSION_NAME is required for the customer release}"
+          : "${EXPECTED_SIGNING_SHA1:?EXPECTED_SIGNING_SHA1 is required for the customer release}"
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
@@ -124,6 +125,13 @@ workflows:
           "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out "$SIGNED_APK" "$ALIGNED"
           jarsigner -keystore "$CM_KEYSTORE_PATH" -storepass "$CM_KEYSTORE_PASSWORD" -keypass "$CM_KEY_PASSWORD" -signedjar build/APOIS-Superapp.aab build/APOIS-Superapp-unsigned.aab "$CM_KEY_ALIAS"
           "$BUILD_TOOLS/apksigner" verify --verbose "$SIGNED_APK"
+          ACTUAL_SHA1="$("$BUILD_TOOLS/apksigner" verify --print-certs "$SIGNED_APK" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -n 1 | tr '[:lower:]' '[:upper:]')"
+          test -n "$ACTUAL_SHA1"
+          if [ "$ACTUAL_SHA1" != "$EXPECTED_SIGNING_SHA1" ]; then
+            echo "[FAIL] certificado do APK Cliente diverge do esperado: $ACTUAL_SHA1"
+            exit 1
+          fi
+          echo "[OK] certificado APK Cliente confirmado: $ACTUAL_SHA1"
           "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED_APK"
           rm -f "$ALIGNED"
     artifacts:
@@ -146,6 +154,7 @@ workflows:
         PARTNER_APP_LABEL: "APOIS Parceiro"
         PARTNER_VERSION_CODE: "1"
         PARTNER_VERSION_NAME: "1.0.0"
+        EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"
     scripts:
       - name: Install pinned Bun
         script: |
@@ -174,6 +183,7 @@ workflows:
           : "${FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64:?Add Firebase google-services.json with br.com.apois.parceiro to Codemagic}"
           : "${PARTNER_VERSION_CODE:?PARTNER_VERSION_CODE is required for the partner release}"
           : "${PARTNER_VERSION_NAME:?PARTNER_VERSION_NAME is required for the partner release}"
+          : "${EXPECTED_SIGNING_SHA1:?EXPECTED_SIGNING_SHA1 is required for the partner release}"
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
@@ -236,6 +246,13 @@ workflows:
           "$BUILD_TOOLS/zipalign" -f -P 16 4 "$UNSIGNED" "$ALIGNED"
           "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out "$SIGNED" "$ALIGNED"
           "$BUILD_TOOLS/apksigner" verify --verbose "$SIGNED"
+          ACTUAL_SHA1="$("$BUILD_TOOLS/apksigner" verify --print-certs "$SIGNED" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -n 1 | tr '[:lower:]' '[:upper:]')"
+          test -n "$ACTUAL_SHA1"
+          if [ "$ACTUAL_SHA1" != "$EXPECTED_SIGNING_SHA1" ]; then
+            echo "[FAIL] certificado do APK Parceiro diverge do esperado: $ACTUAL_SHA1"
+            exit 1
+          fi
+          echo "[OK] certificado APK Parceiro confirmado: $ACTUAL_SHA1"
           "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED"
           rm -f "$ALIGNED"
           test -s "$SIGNED"
