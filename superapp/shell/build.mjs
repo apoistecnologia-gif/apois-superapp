@@ -45,7 +45,11 @@ const moduleBridgeScript = `
 <script id="apois-superapp-module-bridge">
 (function () {
   function goToSelector() {
-    window.location.replace('/');
+    // Os módulos vivem em dist/modules/<nome>/index.html. Usar "/" aqui é
+    // perigoso dentro do WebView Capacitor porque pode resolver para a raiz do
+    // origin interno em vez do shell empacotado. Volte explicitamente dois
+    // níveis para o index do Superapp.
+    window.location.replace('../../index.html');
   }
 
   function mountSwitcher() {
