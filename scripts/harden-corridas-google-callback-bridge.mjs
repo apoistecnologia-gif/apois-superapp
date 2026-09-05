@@ -8,14 +8,13 @@ const pendingKey = 'apois-superapp:pending-oauth-product';
 const corridasForwardKey = 'apois-superapp:corridas-google-url';
 
 if (!html.includes(corridasForwardKey)) {
-  const corridasBranchPattern = /if\s*\(moduleName\s*===\s*['"]corridas['"]\)\s*\{[\s\S]*?return\s+false;\s*\}/;
-  const match = html.match(corridasBranchPattern);
-  if (!match) {
-    throw new Error('[FAIL] corridas: branch de roteamento auth do Superapp não encontrado');
+  const anchor = "if (path === 'reset' || path === 'callback' || path === 'email-change') {";
+  const anchorIndex = html.indexOf(anchor);
+  if (anchorIndex < 0) {
+    throw new Error('[FAIL] corridas: roteamento de callback auth do Superapp não encontrado');
   }
 
-  const replacement = `if (moduleName === 'corridas') {
-        if (path === 'callback') {
+  const callbackBlock = `if (path === 'callback') {
           try {
             const pendingProduct = sessionStorage.getItem('${pendingKey}');
             if (pendingProduct === 'corridas') {
@@ -27,15 +26,9 @@ if (!html.includes(corridasForwardKey)) {
             }
           } catch {}
         }
-        if (path === 'reset' || path === 'callback' || path === 'email-change') {
-          try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
-          window.location.replace('../entregas/index.html');
-          return true;
-        }
-        return false;
-      }`;
+        `;
 
-  html = html.replace(corridasBranchPattern, replacement);
+  html = html.slice(0, anchorIndex) + callbackBlock + html.slice(anchorIndex);
   writeFileSync(path, html, 'utf8');
 }
 
