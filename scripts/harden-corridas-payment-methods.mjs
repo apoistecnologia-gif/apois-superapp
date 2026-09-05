@@ -6,65 +6,39 @@ const workspace = process.env.APOIS_CORRIDAS_WORKSPACE || '.work/corridas';
 const servicePath = resolve(root, workspace, 'src/services/payments/payment-service.ts');
 let service = readFileSync(servicePath, 'utf8');
 
-// Cartão de crédito da corrida é pagamento externo/direto ao motorista (maquininha
-// ou meio aceito pelo próprio motorista). Portanto não depende da homologação do
-// provedor eletrônico da APOIS. Apenas PIX passa pelo fluxo Mercado Pago.
-service = service.replace(
-  'const NOT_YET_HOMOLOGATED_METHODS = new Set<PaymentMethodCode>(["credit", "debit"]);',
-  'const NOT_YET_HOMOLOGATED_METHODS = new Set<PaymentMethodCode>(["debit"]);',
-);
-
-const oldProviderReady = `      const providerReady = isElectronicPending
-        ? false
-        : isElectronicHomologated
-          ? electronicEnabled
-          : true;`;
-const newProviderReady = `      const isDirectToDriver = code === "cash" || code === "credit";
-      const providerReady = isDirectToDriver
-        ? true
-        : isElectronicPending
-          ? false
-          : isElectronicHomologated
-            ? electronicEnabled
-            : true;`;
-if (service.includes(oldProviderReady)) service = service.replace(oldProviderReady, newProviderReady);
-
-const oldDescription = `          description:
-            isElectronicPending
-              ? "Indisponível até a homologação da integração de cartão."
-              : isElectronicHomologated && !providerReady
-                ? "Indisponível até a confirmação do provedor Pix da corrida."
-                : method.description,`;
-const newDescription = `          description:
-            code === "cash"
-              ? "Pague diretamente ao motorista ao final da corrida."
-              : code === "credit"
-                ? "Pague diretamente ao motorista com cartão de crédito."
-                : isElectronicPending
-                  ? "Indisponível até a homologação deste meio de pagamento."
-                  : isElectronicHomologated && !providerReady
-                    ? "Indisponível até a confirmação do provedor Pix da corrida."
-                    : method.description,`;
-if (service.includes(oldDescription)) service = service.replace(oldDescription, newDescription);
+if (!service.includes('const isDirectToDriver = code === "cash" || code === "credit";')) {
+  service = service.replace(
+    '      const isActive = method.is_active === true;\n      return [',
+    '      const isActive = method.is_active === true;\n      const isDirectToDriver = code === "cash" || code === "credit";\n      const providerReady = code !== "debit";\n      const enabled = isActive && providerReady;\n      const description = code === "cash"\n        ? "Pague diretamente ao motorista ao final da corrida."\n        : code === "credit"\n          ? "Pague diretamente ao motorista com cartão de crédito."\n          : code === "debit"\n            ? "Indisponível até a homologação deste meio de pagamento."\n            : method.description;\n      return [',
+  );
+  service = service.replace(
+    '          description: method.description,\n          icon: method.icon,\n          isActive,\n          enabled: isActive,',
+    '          description,\n          icon: method.icon,\n          isActive,\n          enabled,',
+  );
+}
 
 for (const marker of [
-  'new Set<PaymentMethodCode>(["debit"])',
   'const isDirectToDriver = code === "cash" || code === "credit";',
+  'const providerReady = code !== "debit";',
   'Pague diretamente ao motorista ao final da corrida.',
   'Pague diretamente ao motorista com cartão de crédito.',
+  'Indisponível até a homologação deste meio de pagamento.',
+  'enabled,',
 ]) {
-  if (!service.includes(marker)) throw new Error(`Corridas Superapp: política de pagamento direto incompleta (${marker}).`);
-}
-if (service.includes('new Set<PaymentMethodCode>(["credit", "debit"])')) {
-  throw new Error('Corridas Superapp: cartão de crédito ainda está bloqueado como integração não homologada.');
+  if (!service.includes(marker)) throw new Error(`Corridas Superapp: política de pagamento incompleta (${marker}).`);
 }
 writeFileSync(servicePath, service, 'utf8');
 
+const hookPath = resolve(root, workspace, 'src/hooks/use-payment-methods.tsx');
+const hook = readFileSync(hookPath, 'utf8');
+if (hook.includes('method.code === "pix"')) {
+  throw new Error('Corridas Superapp: hook voltou a restringir formas de pagamento somente a PIX.');
+}
+
 const selectorPath = resolve(root, workspace, 'src/components/payments/PaymentMethodSelector.tsx');
-let selector = readFileSync(selectorPath, 'utf8');
+const selector = readFileSync(selectorPath, 'utf8');
 if (!selector.includes('method.description')) {
   throw new Error('Corridas Superapp: seletor não exibe descrição da forma de pagamento.');
 }
-writeFileSync(selectorPath, selector, 'utf8');
 
-console.log('[OK] Corridas Superapp: PIX permanece digital; Dinheiro e Cartão de crédito ficam disponíveis para pagamento direto ao motorista.');
+console.log('[OK] Corridas Superapp: PIX permanece digital; Dinheiro/Crédito ficam diretos ao motorista e Débito segue bloqueado até homologação.');
