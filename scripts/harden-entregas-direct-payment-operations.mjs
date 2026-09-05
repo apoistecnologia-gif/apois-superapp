@@ -50,9 +50,7 @@ patch('src/components/MerchantOrderSoundWatcher.tsx', (source) => {
       `function isAlertableOrderPayment(paymentMethod: unknown, paymentStatus: unknown) {\n  const method = String(paymentMethod ?? "").toLowerCase();\n  const status = String(paymentStatus ?? "").toLowerCase();\n  return status === "paid" || (method === "cash" && status === "pending");\n}\n\nfunction persistAlertedOrders(ids: Set<string>) {`,
     );
   }
-  next = next.replace('  const queuePaidOrder = useCallback(', '  const queueOrder = useCallback(');
-  next = next.replaceAll('queuePaidOrder(', 'queueOrder(');
-  next = next.replaceAll('queuePaidOrder]', 'queueOrder]');
+  next = next.replaceAll('queuePaidOrder', 'queueOrder');
   next = next.replace(
     '      toast.success(`Novo pedido pago${label}!`, {\n        description: "Pagamento confirmado. O pedido já pode ser atendido pelo estabelecimento.",',
     '      toast.success(`Novo pedido${label}!`, {\n        description: "O pedido já pode ser atendido pelo estabelecimento.",',
@@ -74,8 +72,10 @@ patch('src/components/MerchantOrderSoundWatcher.tsx', (source) => {
 }, (source) =>
   source.includes('function isAlertableOrderPayment(') &&
   source.includes('return status === "paid" || (method === "cash" && status === "pending");') &&
+  source.includes('const queueOrder = useCallback(') &&
   source.includes('const paymentReady = isAlertableOrderPayment(paymentMethod, paymentStatus);') &&
   source.includes('.select("id,order_number,payment_status,payment_method,status,created_at")') &&
+  !source.includes('queuePaidOrder') &&
   !source.includes('Novo pedido pago') &&
   !source.includes('.eq("payment_status", "paid")\n        .eq("status", "confirmed")'),
 'Entregas merchant: alerta sonoro também reconhece pedido direto cash/pending');
