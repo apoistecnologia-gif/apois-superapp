@@ -1,73 +1,157 @@
 # APOIS — Backend Authorization Matrix
 
-Checkpoint de segurança do Superapp. Esta matriz documenta **quem autoriza o chamador no backend** antes de operações privilegiadas. Ela não substitui testes E2E/RLS multiusuário.
+Checkpoint de autorização para o release do Superapp. Esta matriz separa **ACTIVE no Supabase** de **usado pelo release atual**. Não substitui teste E2E/RLS A×B.
 
 ## Legenda
 
-- **PUBLIC_RESOURCE**: leitura pública deliberada, sem recurso privado do usuário.
-- **WEBHOOK**: entrada máquina-a-máquina autenticada por segredo/assinatura.
-- **INTERNAL**: chamada interna autenticada por segredo de serviço.
-- **AUTH_USER**: usuário Supabase autenticado; ownership deve ser derivado da sessão.
-- **DRIVER**: AUTH → `public.users.auth_user_id` → DOMAIN USER → `public.drivers.user_id` → DRIVER RECORD.
-- **COURIER**: usuário autenticado resolvido pelo helper/RPC de courier; recursos devem pertencer ao courier atual.
-- **MERCHANT**: usuário autenticado + `current_user_is_merchant_member(merchant_id)`.
-- **ADMIN**: usuário autenticado + `current_user_is_admin()`.
-- **LEGACY_DISABLED**: permanece no histórico/source, mas não pode ser alcançado pela jornada release atual.
+- **PUBLIC_RESOURCE** — recurso público deliberado, sem mutação privilegiada de recurso de usuário.
+- **WEBHOOK** — entrada máquina-a-máquina; assinatura/segredo e replay protection precisam ser provados.
+- **INTERNAL** — job/dispatcher interno autenticado por segredo de runtime.
+- **AUTH_USER** — usuário Supabase autenticado; ator deve ser derivado do JWT/sessão.
+- **DRIVER** — AUTH → `public.users.auth_user_id` → DOMAIN USER → `public.drivers.user_id` → DRIVER RECORD.
+- **COURIER** — `auth.uid()` → courier atual; recursos precisam pertencer ao courier resolvido.
+- **MERCHANT** — usuário autenticado + membership/ownership backend.
+- **ADMIN** — usuário autenticado + role/permission backend.
+- **LEGACY_DISABLED** — não pertence à jornada release atual; continuar implantado não o torna seguro.
+- **REQUIRE E2E/RLS** — análise estática não prova isolamento A×B.
 
-## Entregas — Edge Functions ativas na jornada atual
+## Contagem observada em 2026-09-05
 
-| Endpoint | Actor | Auth method | Resource ownership | service_role? | Idempotency / replay | Risco / observação |
-|---|---|---|---|---|---|---|
-| `create-order` | AUTH_USER | Bearer JWT + `auth.getUser(token)` | `customer_id` é derivado de `userData.user.id`; não é aceito `user_id` arbitrário do body | Sim, **somente após autenticação** para leitura/escrita privilegiada necessária à criação | contrato de criação/RPC deve continuar protegendo duplicação; E2E concorrente pendente | Source pin ainda contém fluxo histórico Pix; hardener de integração restringe release atual a cash/pending. |
-| `customer-orders` | AUTH_USER | Bearer JWT + `auth.getUser(token)` | list/detail filtram `customer_id = user.id`; cancel/review usam client autenticado/RPC | Sim, apenas para leitura hidratada já escopada ao customer | cancel/review dependem de idempotência dos RPCs | `order_id` sozinho nunca autoriza acesso. |
-| `customer-favorites` | AUTH_USER | JWT | favoritos escopados por `customer_id = user.id` | Não | add/remove por par customer/merchant | Não aceita `customer_id` do body como autoridade. |
-| `customer-notifications` | AUTH_USER | JWT | list/update exigem `user_id = user.id` | Não | updates naturalmente limitados ao recurso do usuário | IDOR mitigado por filtro explícito. |
-| `customer-support` | AUTH_USER | JWT | operações passam por RPCs `customer_*`; ownership deve ser validado no banco | Não | depende dos RPCs | Exige regressão RLS/E2E para ticket de outro customer. |
-| `google-maps-address` | AUTH_USER | JWT + `auth.getUser(token)` | quota cobrada do usuário autenticado | Não | quota RPC | Chave Google nunca autoriza acesso ao recurso do usuário. |
-| `account-deletion` | AUTH_USER / PUBLIC | JWT para conta autenticada; fluxo externo usa e-mail normalizado e resposta genérica | usuário autenticado só solicita exclusão própria; solicitação externa não retorna existência de conta | Sim no fluxo externo, **após validação de input** | upsert/dedup por e-mail | Requer rate limiting externo/operacional para abuso de formulário, mas não há IDOR de conta no contrato revisado. |
-| `dispatch-push-outbox` | INTERNAL | bearer `SUPABASE_SERVICE_ROLE_KEY` com comparação constante antes do client privilegiado | outbox interno | Sim | processamento/outbox | Não expor como endpoint autenticado por usuário comum. |
-| `privacy-policy` | PUBLIC_RESOURCE | público | sem dado privado | Não necessário | N/A | Conteúdo público deliberado. |
+| Projeto | Edge Functions ACTIVE |
+|---|---:|
+| Corridas `vqtucstyduxrqjgyigfk` | **41** |
+| Entregas `sbvhdgyuuperszlsllji` | **38** |
+| Total | **79** |
 
-## Entregas — RPCs / SECURITY DEFINER relevantes
+## Corridas — todas as Edge Functions ACTIVE
 
-| Endpoint / família | Actor | Auth method | Resource ownership | service_role? | Idempotency | Risco / observação |
-|---|---|---|---|---|---|---|
-| `courier_confirm_courier_settlement(order_id)` | COURIER | `auth.uid()` → `current_courier_id()` | `orders.courier_id` precisa ser o courier atual; order deve estar `delivered`, modo `merchant_manual`, settlement pendente | Não | update condicional; retry retorna estado corrente | Confirma **recebimento manual já ocorrido**; não é disparado por aceitar/finalizar entrega. Registra timestamp e actor. |
-| Merchant order accept/step/dispatch/cancel/reject | MERCHANT | sessão + helper | `current_user_is_merchant_member(order.merchant_id)` ou ADMIN | Não | transições condicionais/RPC | Merchant A não pode operar order de Merchant B. |
-| `merchant_reject_order` (forward cash/pending) | MERCHANT / ADMIN | sessão + helper | membership sobre `v_order.merchant_id` | Não | lock `FOR UPDATE`; terminal retry retorna estado; refund só para payment realmente paid | Cash/pending não cria refund eletrônico. |
-| leitura merchant de orders/items/history (forward cash/pending) | MERCHANT / ADMIN | RLS | membership sobre `merchant_id`; payment state operacional explícito | Não | N/A | Cash/pending fica visível sem fabricar `paid`. |
-| `get_authorized_merchant_private_data` | MERCHANT / ADMIN | helpers SECURITY DEFINER | admin ou membership do merchant solicitado | Não | N/A | Evita exposição cross-merchant de dados privados. |
-| `admin_review_merchant` | ADMIN | `current_user_is_admin()` no início | global admin | Não | audit log | RPC revoga PUBLIC/anon e concede `authenticated/service_role`; role é validada dentro da função. |
-| `admin_review_courier` e família `admin_*` | ADMIN | `current_user_is_admin()` | global admin | Não | varia; ações críticas devem registrar audit | `SECURITY DEFINER` não substitui checagem de role. |
+| FUNCTION | RELEASE_USAGE | CLASS | AUTH | AUTHORIZATION / OWNERSHIP | SERVICE_ROLE | IDEMPOTENCY | STATUS / RISK |
+|---|---|---|---|---|---|---|---|
+| `passenger-profile` | ACTIVE_CURRENT | AUTH_USER | JWT | profile do ator; AUTH→DOMAIN | a confirmar no source completo | N/A/mutation-specific | current; REQUIRE E2E/RLS |
+| `passenger-support` | ACTIVE_CURRENT | AUTH_USER | JWT | tickets do ator | a confirmar | RPC/id próprio | current; REQUIRE E2E/RLS |
+| `delete-my-account` | ACTIVE_CURRENT | AUTH_USER | JWT | somente própria identidade | sim/administrativo | operação terminal | current; backend próprio obrigatório |
+| `passenger-pricing-estimate` | ACTIVE_CURRENT | AUTH_USER | JWT | cálculo sem aceitar autoridade de user id do body | sim para tabelas de tarifa, conforme runtime | N/A | current |
+| `cancel-ride` | ACTIVE_CURRENT | AUTH_USER | JWT | ride do passageiro DOMAIN atual | sim após auth | cancellation fee unique/retry | current; branch possui hardening adicional |
+| `passenger-routes-compute` | ACTIVE_CURRENT | AUTH_USER | JWT | cálculo para ator autenticado | não crítico | N/A | current |
+| `send-ride-push` | ACTIVE_CURRENT / INTERNAL-AWARE | AUTH_USER/INTERNAL | JWT/service context | evento deve ser compatível com ride e ator ou chamada interna | sim | push sem efeito financeiro | current; identity normalizer na branch |
+| `passenger-ride-request` | LEGACY_DISABLED | AUTH_USER | JWT | histórico de pedido de corrida | sim | a confirmar | duplicata histórica; release usa `request-ride` |
+| `create-cancellation-fee-charge` | LEGACY_DISABLED | AUTH_USER | JWT | cobrança histórica ligada à fee do passageiro | sim | provider-specific | **REQUIRE REVIEW / release blocker** |
+| `cancellation-fee-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | evento provider precisa ser autenticado e correlacionado | sim | webhook receipt esperado | **PUBLICLY EXPOSED / release blocker** |
+| `passenger-geocode-reverse` | ACTIVE_CURRENT | AUTH_USER | JWT | ator autenticado/quota | não crítico | quota | current |
+| `asaas-create-driver-membership` | LEGACY_DISABLED | DRIVER | JWT | deriva driver autenticado, mas ainda cria provider state | sim | provider keys | **DANGEROUSLY_CALLABLE** |
+| `asaas-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | assinatura provider precisa ser provada | sim | event id esperado | **PUBLICLY EXPOSED / release blocker** |
+| `asaas-create-driver-subaccount` | LEGACY_DISABLED | DRIVER | JWT | driver próprio, porém provisiona subconta/credencial provider | sim | provider-specific | **DANGEROUSLY_CALLABLE** |
+| `asaas-create-ride-pix` | LEGACY_DISABLED | AUTH_USER | JWT | ride owner, porém cria cobrança e altera estado financeiro | sim | charge/provider id | **DANGEROUSLY_CALLABLE** |
+| `request-driver-payout` | LEGACY_DISABLED | LEGACY_DISABLED | JWT | não chega a payout | não antes do retorno | N/A | **SAFE_DISABLED: HTTP 410** |
+| `account-deletion-request` | PUBLIC_RESOURCE | PUBLIC_RESOURCE | verify_jwt=false | solicitação genérica; não apaga conta diretamente | conforme implementação | dedupe operacional | público deliberado; anti-enumeração obrigatório |
+| `privacy-policy` | PUBLIC_RESOURCE | PUBLIC_RESOURCE | público | sem recurso privado | não | N/A | safe public resource |
+| `finance-oneoff-cancel-orphan-asaas-pix` | LEGACY_DISABLED | ADMIN/INTERNAL | JWT | one-off financeiro histórico | sim | a confirmar | **REQUIRE REVIEW / release blocker** |
+| `dispatch-ride` | ACTIVE_CURRENT | INTERNAL/AUTH_USER | JWT | ride/dispatch conforme ator e estado | sim | CAS/state | current; branch hardening deve ser runtime-compatible |
+| `driver-cancel-redispatch` | ACTIVE_CURRENT | DRIVER | JWT | ride do driver atual | sim | state transition | current; REQUIRE E2E A×B |
+| `driver-reject-redispatch` | ACTIVE_CURRENT | DRIVER | JWT | offer/ride do driver atual | sim | reject/state | current; REQUIRE E2E A×B |
+| `admin-driver-operational-status` | ACTIVE_CURRENT | ADMIN | JWT | role ADMIN no backend | sim | mutation-specific | current; non-admin must DENY |
+| `driver-finish-redispatch` | ACTIVE_CURRENT | DRIVER | JWT | finish só do driver atual; settlement server-side | sim | finish/credit idempotency | current; REQUIRE E2E |
+| `pagbank-connect-callback` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | OAuth state/callback provider | sim | state nonce required | **PUBLICLY EXPOSED / release blocker** |
+| `pagbank-apois-logo` | PUBLIC_RESOURCE | PUBLIC_RESOURCE | público | asset/branding | não | N/A | safe if strictly static resource |
+| `activate-scheduled-rides` | ACTIVE_CURRENT | INTERNAL | verify_jwt=false | cron/runtime-secret contract obrigatório | sim | scheduled-state CAS | current; secret path REQUIRE REVIEW |
+| `request-ride` | ACTIVE_CURRENT | AUTH_USER | JWT→DOMAIN | passenger derivado de `users.auth_user_id`; request key + own active ride | sim após auth | request key / active ride | **CODE FIXED / RUNTIME OLD**: runtime ainda engole dispatch failure e mantém subscription gate antigo |
+| `pagbank-create-ride-pix` | LEGACY_DISABLED | AUTH_USER | JWT | ride owner, mas cria cobrança provider | sim | provider id | **DANGEROUSLY_CALLABLE** |
+| `pagbank-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | provider signature/replay obrigatório | sim | event id esperado | **PUBLICLY EXPOSED / release blocker** |
+| `ride-pix-checkout` | LEGACY_DISABLED | AUTH_USER | JWT | ride owner, mas roteia para provider financeiro | sim | provider-specific | **DANGEROUSLY_CALLABLE** |
+| `mercadopago-oauth-start` | LEGACY_DISABLED | AUTH_USER/DRIVER | JWT | ator próprio, mas inicia provider OAuth | sim | state nonce | **AUTHENTICATED_BUT_LEGACY** |
+| `mercadopago-oauth-callback` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | OAuth state obrigatório | sim | state nonce | **PUBLICLY EXPOSED / release blocker** |
+| `mercadopago-create-ride-pix` | LEGACY_DISABLED | AUTH_USER | JWT | ride owner; cria cobrança provider | sim | provider-specific | **AUTHENTICATED_BUT_LEGACY / blocker** |
+| `mercadopago-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | assinatura/replay obrigatório | sim | webhook receipts | **PUBLICLY EXPOSED / blocker** |
+| `mercadopago-create-driver-membership` | LEGACY_DISABLED | DRIVER | JWT | driver próprio, mas cria membership provider | sim | provider-specific | **AUTHENTICATED_BUT_LEGACY / blocker** |
+| `mercadopago-membership-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | assinatura/replay obrigatório | sim | event id | **PUBLICLY EXPOSED / blocker** |
+| `passenger-ride-request-mercadopago` | LEGACY_DISABLED | AUTH_USER | JWT | passageiro próprio, provider-specific | sim | request/provider | **AUTHENTICATED_BUT_LEGACY / blocker** |
+| `driver-membership-checkout` | LEGACY_DISABLED | DRIVER | JWT | driver próprio, provider-oriented membership | sim | provider-specific | **AUTHENTICATED_BUT_LEGACY / blocker** |
+| `mercadopago-driver-status` | LEGACY_DISABLED | DRIVER | JWT | driver próprio, provider-specific | sim | read/sync | **AUTHENTICATED_BUT_LEGACY / blocker** |
+| `public-ride-tracker` | PUBLIC_RESOURCE | PUBLIC_RESOURCE | verify_jwt=false + capability token | somente ride vinculada a token não enumerável | sim/read-only conforme runtime | token capability | current public surface; ride_id sozinho não pode autorizar |
 
-## Corridas — Edge Functions / mutações críticas
+## Entregas — todas as Edge Functions ACTIVE
 
-| Endpoint | Actor | Auth method | Resource ownership | service_role? | Idempotency | Risco / observação |
-|---|---|---|---|---|---|---|
-| `request-ride` | AUTH_USER / PASSENGER | JWT → DOMAIN USER | ride criada para passageiro derivado da sessão | Sim após autenticação | `request_key` + regra de corrida ativa; falha de dispatch faz rollback lógico condicional | Não deixa `procurar_motorista` significar matching ativo quando dispatch falha. |
-| `cancel-ride` | AUTH_USER / PASSENGER | JWT → DOMAIN USER | apenas ride do passageiro atual | Sim após autenticação | fee por ride única + reconciliação de retry | `cancellation_fees.passenger_id` e wallet usam DOMAIN USER ID. |
-| `driver-ride-action` | DRIVER | JWT → DOMAIN USER → DRIVER RECORD | ride deve estar atribuída ao DRIVER RECORD atual; CAS por estado | Sim após autenticação | aceite/transições condicionais; finish repetido não duplica crédito | `final_price` é server-side; body do motorista não autoriza preço. |
-| `send-ride-push` / dispatch interno | INTERNAL | segredo/service role conforme função | somente eventos internos | Sim | outbox/efeito de push não deve duplicar efeito financeiro | Falha de push não autoriza alterar state machine. |
-| Google/address helpers de Corridas | AUTH_USER | JWT | usuário autenticado/quota | conforme implementação | quota | Não usar chave Maps como autorização. |
-| tracker público por token, quando habilitado | PUBLIC_RESOURCE | token não enumerável/escopado | somente ride vinculada ao token | Não | leitura | Token é capacidade; não aceitar `ride_id` arbitrário sem token válido. |
+| FUNCTION | RELEASE_USAGE | CLASS | AUTH | AUTHORIZATION / OWNERSHIP | SERVICE_ROLE | IDEMPOTENCY | STATUS / RISK |
+|---|---|---|---|---|---|---|---|
+| `create-order` | ACTIVE_CURRENT | AUTH_USER | JWT via `auth.getUser(token)` | customer vem de `userData.user.id`; endereço `user_id` próprio; RPC recebe customer derivado | sim após auth | request/checkout intent | **runtime ainda Pix; release integration cash => DRIFT** |
+| `customer-orders` | ACTIVE_CURRENT | AUTH_USER | JWT | list/detail por `customer_user_id=authData.user.id`; mutations via authenticated RPC | sim para leitura hidratada | RPC/state | static ownership PASS; E2E A×B pendente |
+| `create-pix-charge` | LEGACY_DISABLED | AUTH_USER | JWT | provider setting atualmente impede OpenPix | sim | provider charge | **runtime-setting disabled, sem product guard permanente; blocker** |
+| `openpix-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | assinatura/replay provider obrigatório | sim | provider event | **PUBLICLY EXPOSED / blocker** |
+| `customer-favorites` | ACTIVE_CURRENT | AUTH_USER | JWT | `customer_user_id=authData.user.id` | sim para lookup | unique pair/state | current |
+| `customer-notifications` | ACTIVE_CURRENT | AUTH_USER | JWT | `user_id=authData.user.id` | sim conforme source | state | current |
+| `customer-support` | ACTIVE_CURRENT | AUTH_USER | JWT | requester do ator; attachments no prefixo ator/ticket; RPC authenticated | não privilegiado para mutation | RPC/message | current; E2E cross-ticket pendente |
+| `mercadopago-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | assinatura/replay obrigatório | sim | event id | **PUBLICLY EXPOSED / blocker** |
+| `process-refund` | LEGACY_DISABLED | AUTH_USER/ADMIN | JWT | histórico de refund provider | sim | refund idempotency | **AUTHENTICATED_BUT_LEGACY / blocker** |
+| `mercadopago-credential-diagnostic` | LEGACY_DISABLED | ADMIN/DIAGNOSTIC | JWT | diagnóstico provider | sim | N/A | **legacy diagnostic / blocker** |
+| `apois-refund-homol-8-7c2f` | LEGACY_DISABLED | AUTH_USER/TEST | JWT | homologação refund | sim | provider-specific | **homologation endpoint ACTIVE / blocker** |
+| `sync-payment-status` | LEGACY_DISABLED | AUTH_USER/INTERNAL | JWT | provider payment sync | sim | provider status | **legacy / blocker** |
+| `apois-pix-auto-homol-8f4c3e9a` | LEGACY_DISABLED | AUTH_USER/TEST | JWT | homologação Pix | sim | provider-specific | **homologation endpoint ACTIVE / blocker** |
+| `merchant-subscription` | LEGACY_DISABLED | MERCHANT | JWT | active membership derivada server-side, mas cria Mercado Pago PIX mensal | sim | subscription/provider payment | **DANGEROUSLY_CALLABLE** |
+| `mercadopago-subscription-selftest` | LEGACY_DISABLED | ADMIN/TEST | JWT | provider selftest | sim | N/A | **test endpoint ACTIVE / blocker** |
+| `mercadopago-subscription-e2e-test` | LEGACY_DISABLED | ADMIN/TEST | JWT | provider E2E endpoint | sim | N/A | **test endpoint ACTIVE / blocker** |
+| `mercadopago-subscription-stage-probe` | LEGACY_DISABLED | ADMIN/TEST | JWT | provider probe | sim | N/A | **test endpoint ACTIVE / blocker** |
+| `mercadopago-monthly-pix-probe` | LEGACY_DISABLED | ADMIN/TEST | JWT | provider Pix probe | sim | N/A | **test endpoint ACTIVE / blocker** |
+| `merchant-monthly-webhook-selftest` | LEGACY_DISABLED | ADMIN/TEST | JWT | webhook selftest | sim | N/A | **test endpoint ACTIVE / blocker** |
+| `asaas-merchant-account` | LEGACY_DISABLED | MERCHANT | JWT | merchant membership/owner esperado | sim | provider account | **legacy / blocker** |
+| `create-asaas-pix-charge` | LEGACY_DISABLED | AUTH_USER/MERCHANT | JWT | resource ownership esperado | sim | provider charge | **legacy / blocker** |
+| `asaas-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | assinatura/replay obrigatório | sim | event id | **PUBLICLY EXPOSED / blocker** |
+| `asaas-payout` | LEGACY_DISABLED | LEGACY_DISABLED | JWT | retorna antes de provider work | não antes do retorno | N/A | **SAFE_DISABLED: HTTP 410 ASAAS_RETIRED** |
+| `confirm-asaas-sandbox-payment` | LEGACY_DISABLED | ADMIN/TEST | JWT | sandbox payment | sim | test-provider | **sandbox endpoint ACTIVE / blocker** |
+| `openpix-sandbox-selftest` | LEGACY_DISABLED | ADMIN/TEST | JWT | sandbox selftest | sim | N/A | **sandbox endpoint ACTIVE / blocker** |
+| `openpix-payout` | LEGACY_DISABLED | MERCHANT/INTERNAL | JWT | atualmente bloqueado porque provider setting != openpix | sim | payout attempt | **runtime-setting disabled; callable if setting changes; blocker** |
+| `dispatch-push-outbox` | ACTIVE_CURRENT | INTERNAL | runtime key (`x-apois-push-dispatch-key`) | `verify_push_dispatch_runtime_key` antes de claim/process | sim | outbox claim/retry | static ordering PASS; no queue work before authorization |
+| `google-maps-address` | ACTIVE_CURRENT | AUTH_USER | JWT | quota pelo ator autenticado | não crítico | quota | current |
+| `account-deletion` | PUBLIC_RESOURCE | PUBLIC_RESOURCE | verify_jwt=false | somente registra `external_account_deletion_requests`, resposta anti-enumeração | sim para fila | dedupe temporal | não apaga auth/profile diretamente |
+| `privacy-policy` | PUBLIC_RESOURCE | PUBLIC_RESOURCE | público | sem dado privado | não | N/A | safe public resource |
+| `merchant-mercadopago-oauth` | LEGACY_DISABLED | MERCHANT | JWT | owner/manager validado, mas conecta/refresh/disconnect provider | sim | OAuth state/account | **DANGEROUSLY_CALLABLE** |
+| `merchant-mercadopago-callback` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | OAuth state obrigatório | sim | OAuth state | **PUBLICLY EXPOSED / blocker** |
+| `create-merchant-mercadopago-pix` | LEGACY_DISABLED | AUTH_USER/MERCHANT | JWT | order/customer/merchant checks, mas cria cobrança provider | sim | provider charge | **DANGEROUSLY_CALLABLE** |
+| `merchant-mercadopago-webhook` | LEGACY_DISABLED | WEBHOOK | verify_jwt=false | assinatura/replay obrigatório | sim | event id | **PUBLICLY EXPOSED / blocker** |
+| `merchant-payment-readiness` | LEGACY_DISABLED | MERCHANT | JWT | provider-specific readiness | sim/read | N/A | **legacy / blocker** |
+| `process-superapp-refund` | LEGACY_DISABLED | ADMIN/MERCHANT historical | JWT | actor histórico autorizado, mas executa refund provider e muta order/payment | sim | refund/provider id | **DANGEROUSLY_CALLABLE** |
+| `temp-mp-token-key-check` | LEGACY_DISABLED | ADMIN/DIAGNOSTIC | JWT | credential diagnostic | sim | N/A | **temporary endpoint ACTIVE / blocker** |
+| `mercadopago-payout` | LEGACY_DISABLED | ADMIN/INTERNAL | runtime HMAC + admin | exige mode `mercadopago_connect` + enable flag; runtime atual `merchant_manual` | sim | idempotency | **SAFE_DISABLED_BY_RUNTIME_SETTING** no estado observado |
 
-## Superfícies legadas financeiras
+Detalhes de provider/runtime ficam versionados também em `docs/legacy-provider-runtime-state.json`; o gate de release falha enquanto houver endpoint legado classificado como release-blocking.
 
-Mercado Pago, PagBank, Asaas e OpenPix podem permanecer no histórico protegido para rastreabilidade. Na política atual eles são **LEGACY_DISABLED**: o release não pode importar, chamar ou exibir CTA desses gateways. O pipeline de Motorista/Entregador e o payment boundary do Cliente/Merchant devem falhar caso os marcadores ativos retornem ao bundle.
+## SECURITY DEFINER — invariantes verificadas no runtime
 
-## Casos de regressão de autorização obrigatórios
+### Corridas
 
-| Caso | Resultado esperado | Nível disponível agora |
+- Funções administrativas privadas usam `SET search_path` fixo e `auth.uid()` + `private.has_permission(...)`; wrappers públicos delegam para a implementação que valida permissão.
+- `driver_update_document` resolve AUTH→DOMAIN→DRIVER. A forward migration 14:30 adiciona slot/MIME/filename/10 MiB e policies mais estritas; runtime ainda é a versão anterior.
+- `driver_confirm_cash_payment`, leitura de settlement e lifecycle de driver escopam pelo driver atual.
+- Funções de marcação/reversão de withdrawal/pagamento de serviço verificadas como `service_role`-only onde aplicável.
+- Existem predicates antigos de subscription no runtime (`driver_subscription_allows_rides` e caminhos associados); isto mantém drift com a decisão de mensalidade eletrônica desativada.
+
+### Entregas
+
+- `current_user_is_admin()` = conta ativa + role admin backend.
+- Família `admin_*` inspecionada usa `current_user_is_admin()` antes da mutação e `SET search_path=''`.
+- `current_user_is_merchant_member/manager/owner` deriva membership de `auth.uid()`.
+- `current_user_courier_id()` deriva courier do `auth.uid()` e profile ativo.
+- `customer_cancel_order` e `submit_order_review` combinam `_order_id` com `customer_user_id=auth.uid()`.
+- `merchant_transition_order`, `merchant_request_courier` e `merchant_reject_order` resolvem merchant a partir do order e exigem membership/admin.
+- `courier_transition_delivery` e route/location RPCs exigem courier atual e job atribuído.
+- `courier_confirm_courier_settlement` runtime nega courier B sobre settlement A, mas retry após confirmação ainda falha. Forward migration `20260905114500...` torna retry do mesmo courier idempotente sem remover ownership.
+- `close_courier_settlements` só agrega jobs `delivered` e exige manager/admin; confirmação de pagamento é etapa separada.
+- `admin_settle_payout` ainda existe historicamente e é admin-only; provider/payout legado continua fora do release atual.
+
+## Casos de autorização obrigatórios
+
+| Caso | Esperado | Evidência atual |
 |---|---|---|
-| USER A → profile/wallet de USER B | DENY | static/RLS fixture a executar |
-| DRIVER A → ride de DRIVER B | DENY | static fixture; E2E concorrente pendente |
-| MERCHANT A → order de MERCHANT B | DENY | static/RLS fixture a executar |
-| MERCHANT A → merchant B private data | DENY | static/RLS fixture a executar |
-| COURIER A → delivery/settlement de COURIER B | DENY | static/RLS fixture a executar |
-| usuário comum → admin action | DENY | static RPC contract; E2E pendente |
-| DRIVER → admin action | DENY | static RPC contract; E2E pendente |
-| MERCHANT → admin global action | DENY | static RPC contract; E2E pendente |
+| USER A → profile/wallet de USER B | DENY | static/RLS test pendente |
+| PASSENGER A → ride de PASSENGER B | DENY | static ownership; E2E pendente |
+| DRIVER A → ride/document/wallet de DRIVER B | DENY | static/RPC/storage; E2E pendente |
+| MERCHANT A → order/private data de MERCHANT B | DENY | static RPC/membership; E2E pendente |
+| COURIER A → delivery/settlement de COURIER B | DENY | static RPC; E2E pendente |
+| NON-ADMIN → `admin_*` | DENY | runtime SECURITY DEFINER inspection; E2E pendente |
+| replay settlement do mesmo courier | IDEMPOTENT | **CODE FIXED in forward migration; runtime old** |
 
-## Regra operacional
+## Regra de evidência
 
-Nenhum resultado puramente estático nesta matriz deve ser chamado de **E2E PASS**. O fechamento de RLS exige PostgreSQL/Supabase descartável com pelo menos AUTH USER A/B, DOMAIN USER A/B, DRIVER A/B, MERCHANT A/B, COURIER A/B e ADMIN, aplicando pinned migrations + preparação histórica documentada + forward migrations. Nunca usar produção para esse teste.
+- **CODE FIXED** não significa **BUILD VALIDATED**.
+- **BUILD VALIDATED** não significa **RUNTIME DEPLOYED**.
+- **RUNTIME DEPLOYED** não significa **E2E VALIDATED**.
+- Um endpoint `LEGACY_DISABLED` que continua publicamente alcançável pode continuar sendo **release blocker**.
