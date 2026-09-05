@@ -1,4 +1,5 @@
 import './harden-corridas-superapp-push-isolation.mjs';
+import './harden-corridas-superapp-google-auth.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -51,9 +52,6 @@ patch('.work/corridas/src/routes/_authenticated.perfil.tsx', (source) => {
   return next;
 }, 'Corridas: Perfil real remove atalhos duplicados e corrige viewport');
 
-// O layout já usa useRouterState; reaproveitamos o mesmo estado de rota para não
-// introduzir um segundo hook de localização e ocultamos o rodapé apenas nas
-// jornadas fullscreen onde ele conflita com teclado/BottomSheet/mapa ativo.
 patch('.work/corridas/src/routes/_authenticated.tsx', (source) => {
   if (source.includes('const hideBottomNavigation =')) return source;
   let next = source;
@@ -80,5 +78,10 @@ requireMarkers(
   ['PassengerMap', 'Digite um endereço...', '<CategorySelector />'],
   'Corridas Home real preservada para o hardener visual',
 );
+requireMarkers(
+  '.work/corridas/src/routes/_public.login.tsx',
+  ['PassengerGoogleLoginButton', '<PassengerGoogleLoginButton />', 'to="/recuperar-senha"'],
+  'Corridas login preserva Google, senha e recuperação',
+);
 
-console.log('[OK] Corridas: UI base alinhada ao snapshot atual sem AppShell, PassengerProfileCenter ou assets obsoletos');
+console.log('[OK] Corridas: UI base alinhada ao snapshot atual com Google Login restaurado');
