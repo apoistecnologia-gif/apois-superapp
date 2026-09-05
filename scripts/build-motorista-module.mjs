@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 const root = resolve('.');
 const workspace = resolve(root, '.work/motorista');
+const hardenerEnv = { ...process.env, APOIS_MOTORISTA_WORKSPACE: '.work/motorista' };
 
 function run(bin, args, cwd = root, env = process.env) {
   const result = spawnSync(bin, args, { cwd, stdio: 'inherit', env });
@@ -17,19 +18,32 @@ if (!corridasUrl || !corridasKey) {
   console.error('[FAIL] motorista: variáveis CORRIDAS_VITE_SUPABASE_* ausentes');
   process.exit(1);
 }
+if (!corridasUrl.includes('vqtucstyduxrqjgyigfk.supabase.co')) {
+  console.error('[FAIL] motorista: Supabase informado não é o projeto Corridas canônico');
+  process.exit(1);
+}
 
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
-run(process.execPath, [resolve(root, 'scripts/harden-motorista-finance-boundary.mjs')]);
+for (const script of [
+  'harden-motorista-auth.mjs',
+  'harden-motorista-provider-boundary.mjs',
+  'harden-motorista-finance-boundary.mjs',
+]) {
+  run(process.execPath, [resolve(root, `scripts/${script}`)], root, hardenerEnv);
+}
 
 const env = {
   ...process.env,
+  APOIS_MOTORISTA_WORKSPACE: '.work/motorista',
   VITE_SUPABASE_URL: corridasUrl,
   VITE_SUPABASE_PUBLISHABLE_KEY: corridasKey,
   VITE_ENABLE_NATIVE_PUSH: process.env.APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1' ? 'true' : 'false',
 };
 
 run('bun', ['install'], workspace, env);
+run('bun', ['run', 'typecheck'], workspace, env);
 run('bun', ['run', 'build:motorista'], workspace, env);
+run(process.execPath, [resolve(root, 'scripts/audit-motorista-release-surface.mjs')], root, env);
 
 const indexPath = resolve(workspace, 'dist/client/index.html');
 let html = readFileSync(indexPath, 'utf8');
@@ -58,10 +72,22 @@ if (!html.includes('data-apois-superapp-bridge')) {
   writeFileSync(indexPath, html);
 }
 
-for (const forbidden of ['mercadopago', 'Mercado Pago', 'asaas-create-driver-membership', 'driver-membership-checkout']) {
-  if (html.toLowerCase().includes(forbidden.toLowerCase())) {
-    console.error(`[FAIL] motorista: bridge/build final ainda contém gateway legado (${forbidden})`);
+const executable = readFileSync(indexPath, 'utf8');
+for (const forbidden of [
+  'mercadopago',
+  'Mercado Pago',
+  'asaas-create-driver-membership',
+  'asaas-create-driver-subaccount',
+  'driver-membership-checkout',
+  '/debug/motorista-auth',
+  '/dev-diagnostics',
+  '/dev/rating-test',
+  '/diagnostico',
+  '/map-test',
+]) {
+  if (executable.toLowerCase().includes(forbidden.toLowerCase())) {
+    console.error(`[FAIL] motorista: index final contém superfície proibida (${forbidden})`);
     process.exit(1);
   }
 }
-console.log('[OK] motorista: build isolado do Superapp concluído sem gateway legado ativo');
+console.log('[OK] motorista: typecheck + build isolado concluídos com auth/provider boundary');
