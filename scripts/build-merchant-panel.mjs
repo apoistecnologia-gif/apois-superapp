@@ -111,9 +111,6 @@ for (const validator of [
 
 run('bun', ['run', 'typecheck'], { cwd: workspace, env: baseEnv });
 
-// O lint do source protegido é global e inclui Edge Functions históricas/desativadas.
-// Ele continua sendo executado e seu EXIT CODE é registrado, mas não pode impedir
-// testes/builds da composição atual. Um EXIT != 0 permanece falha de lint no relatório.
 const lintStatus = run('bun', ['run', 'lint'], {
   cwd: workspace,
   env: baseEnv,
@@ -131,6 +128,10 @@ const customerEnv = {
   APOIS_MOBILE_BUILD: '1',
 };
 run('bun', ['run', 'build:customer'], { cwd: workspace, env: customerEnv });
+run(process.execPath, [resolve(root, 'scripts/audit-entregas-customer-bundle.mjs')], {
+  cwd: root,
+  env: customerEnv,
+});
 
 const merchantEnv = {
   ...baseEnv,
@@ -152,4 +153,4 @@ cpSync(nestedOutput, rootOutput, { recursive: true });
 if (lintStatus !== 0) {
   console.warn(`[WARN] Fixture funcional/build concluída, porém o lint source-wide permanece FAIL (EXIT ${lintStatus}).`);
 }
-console.log('[OK] Fixture Cliente + gates + painel do estabelecimento concluídos na árvore Entregas transformada.');
+console.log('[OK] Fixture Cliente + bundle audit + gates + painel do estabelecimento concluídos na árvore Entregas transformada.');
