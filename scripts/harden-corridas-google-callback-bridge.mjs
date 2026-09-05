@@ -4,43 +4,66 @@ import { resolve } from 'node:path';
 const path = resolve('.work/corridas/dist/index.html');
 let html = readFileSync(path, 'utf8');
 
+const marker = 'data-apois-corridas-google-callback-bridge';
 const pendingKey = 'apois-superapp:pending-oauth-product';
 const corridasForwardKey = 'apois-superapp:corridas-google-url';
 
-if (!html.includes(corridasForwardKey)) {
-  const anchor = "if (path === 'reset' || path === 'callback' || path === 'email-change') {";
-  const anchorIndex = html.indexOf(anchor);
-  if (anchorIndex < 0) {
-    throw new Error('[FAIL] corridas: roteamento de callback auth do Superapp não encontrado');
+if (!html.includes(marker)) {
+  const bridge = `
+<script ${marker}>
+(() => {
+  const PENDING_KEY = '${pendingKey}';
+  const FORWARD_KEY = '${corridasForwardKey}';
+  const appPlugin = window.Capacitor?.Plugins?.App;
+  const browserPlugin = window.Capacitor?.Plugins?.Browser;
+
+  function isSharedAuthCallback(rawUrl) {
+    return typeof rawUrl === 'string' && rawUrl.startsWith('br.com.apois.app://auth/callback');
   }
 
-  const callbackBlock = `if (path === 'callback') {
-          try {
-            const pendingProduct = sessionStorage.getItem('${pendingKey}');
-            if (pendingProduct === 'corridas') {
-              sessionStorage.removeItem('${pendingKey}');
-              sessionStorage.setItem('${corridasForwardKey}', rawUrl);
-              void browserPlugin?.close?.().catch(() => undefined);
-              window.location.replace('./index.html#/login');
-              return true;
-            }
-          } catch {}
-        }
-        `;
+  function routeCorridasGoogleCallback(rawUrl) {
+    if (!isSharedAuthCallback(rawUrl)) return false;
+    try {
+      const pendingProduct = sessionStorage.getItem(PENDING_KEY);
+      if (pendingProduct !== 'corridas') return false;
+      sessionStorage.removeItem(PENDING_KEY);
+      sessionStorage.setItem(FORWARD_KEY, rawUrl);
+    } catch {
+      return false;
+    }
+    void browserPlugin?.close?.().catch(() => undefined);
+    window.location.replace('./index.html#/login');
+    return true;
+  }
 
-  html = html.slice(0, anchorIndex) + callbackBlock + html.slice(anchorIndex);
+  if (appPlugin) {
+    Promise.resolve(appPlugin.addListener('appUrlOpen', ({ url }) => {
+      routeCorridasGoogleCallback(url);
+    })).catch(() => undefined);
+    Promise.resolve(appPlugin.getLaunchUrl()).then((result) => {
+      if (result?.url) routeCorridasGoogleCallback(result.url);
+    }).catch(() => undefined);
+  }
+})();
+</script>`;
+
+  html = html.includes('</body>')
+    ? html.replace('</body>', `${bridge}\n</body>`)
+    : `${html}\n${bridge}\n`;
   writeFileSync(path, html, 'utf8');
 }
 
-for (const marker of [
+for (const required of [
+  marker,
   pendingKey,
   corridasForwardKey,
-  "pendingProduct === 'corridas'",
+  'br.com.apois.app://auth/callback',
+  "pendingProduct !== 'corridas'",
   "window.location.replace('./index.html#/login')",
 ]) {
-  if (!html.includes(marker)) {
-    throw new Error(`[FAIL] corridas: callback Google compartilhado incompleto (${marker})`);
+  if (!html.includes(required)) {
+    throw new Error(`[FAIL] corridas: callback Google compartilhado incompleto (${required})`);
   }
 }
 
-console.log('[OK] corridas: callback OAuth compartilhado retorna ao módulo Corridas');
+console.log('[OK] corridas: listener standalone de callback OAuth compartilhado injetado');
