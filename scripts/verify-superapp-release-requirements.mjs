@@ -58,6 +58,11 @@ requireMigration(
   'Corridas ownership/MIME de documentos do motorista',
 );
 requireMigration(
+  'supabase/corridas-forward-migrations/20260905162500_remove_retired_driver_subscription_gates.sql',
+  ['driver_set_presence', 'driver_accept_ride_candidate_legacy', 'driver_finish_ride', 'electronic_payment_not_configured', 'driver_kyc_is_ready'],
+  'Corridas eligibility/lifecycle sem provider aposentado',
+);
+requireMigration(
   'supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql',
   ['cash', 'pending'],
   'Entregas cash/pending operacional',
