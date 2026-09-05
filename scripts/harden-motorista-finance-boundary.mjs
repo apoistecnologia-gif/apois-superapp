@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const path = resolve('.work/motorista/src/routes/motorista.assinatura.tsx');
+const root = process.cwd();
+const workspace = process.env.APOIS_MOTORISTA_WORKSPACE || '.work/motorista';
+const path = resolve(root, workspace, 'src/routes/motorista.assinatura.tsx');
 const before = readFileSync(path, 'utf8');
 
 for (const marker of [
@@ -37,7 +39,7 @@ type DriverInfo = {
 
 const BENEFITS = [
   "Corridas ilimitadas na plataforma",
-  "Repasse integral das corridas ao motorista",
+  "100% do valor da corrida para o motorista",
   "Sem taxa por corrida da APOIS",
   "Suporte durante a operação",
 ];
@@ -225,4 +227,4 @@ for (const required of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] motorista: mensalidade mantém status/valor, mas não oferece gateway descontinuado.');
+console.log(`[OK] motorista: mensalidade sem gateway descontinuado em ${workspace}`);
