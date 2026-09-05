@@ -189,10 +189,6 @@ function injectSuperappBridge(indexPath, moduleName) {
   }
 
   if (appPlugin) {
-    // Entregas registers its own callback listener so the one-time OAuth code
-    // is exchanged exactly once. Keep the bridge listener for cold launches.
-    // Keep the native listener alive while this module is the active WebView
-    // page. Entregas' button owns the callback; the bridge only owns Corridas.
     Promise.resolve(appPlugin.addListener('appUrlOpen', ({ url }) => {
       routeAuthDeepLink(url);
     })).catch(() => undefined);
@@ -232,16 +228,17 @@ function injectSuperappBridge(indexPath, moduleName) {
 }
 
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), name]);
-run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
+if (name === 'corridas') {
+  run(process.execPath, [resolve(root, 'scripts/adapt-corridas-current.mjs')]);
+} else {
+  run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
+}
 if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
 }
 if (name === 'entregas') {
-  // scripts/normalize-entregas-adaptation-handoff.mjs é executado pelo import no
-  // início de harden-entregas-superapp-auth-runtime.mjs, imediatamente após o
-  // adaptador base e antes dos hardeners especializados.
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
