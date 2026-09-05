@@ -1,265 +1,181 @@
 # APOIS Superapp — Final Production Audit
 
-> Checkpoint operacional. Este documento não autoriza publicação, deploy, aplicação de migrations ou alteração de secrets.
+> Documento de fechamento de produção. Não autoriza deploy, aplicação de migrations, alteração de secrets ou mudança dos pins protegidos.
 
-- **Data:** 2026-09-05
-- **Branch:** `homologacao-apois-cliente`
-- **HEAD confirmado antes desta atualização:** `3ccfe3f1e24bdf6145ec652a50d77eedfd8632c3`
-- **Parent confirmado:** `33637c4c27d7f8e5db43c880923fdb3da574b77f`
-- **Android package:** `br.com.apois.app`
-- **Supabase Corridas canônico:** `vqtucstyduxrqjgyigfk`
-- **Supabase Entregas canônico:** `sbvhdgyuuperszlsllji`
-- **Supabase Corridas proibido/histórico:** `zjphbuvcapwyuynadgdt`
+- Data: 2026-09-05
+- Branch: `homologacao-apois-cliente`
+- HEAD observado imediatamente antes desta revisão: `41fa0d388818552ab551af619eb8674704b45818`
+- Android package Cliente: `br.com.apois.app`
+- Supabase Corridas canônico: `vqtucstyduxrqjgyigfk`
+- Supabase Entregas canônico: `sbvhdgyuuperszlsllji`
+- Supabase Corridas histórico/proibido em runtime: `zjphbuvcapwyuynadgdt`
 
-## Proveniência da branch e divergência de HEAD
+## Proveniência e divergência histórica
 
-O SHA anteriormente esperado `31ae367757129917662818c58f94d00c1cc713a0` não foi resolvível pelo mecanismo GitHub disponível na rodada anterior. Por isso, a continuidade não usa esse SHA como prova de ancestralidade.
+O SHA anteriormente esperado `31ae367757129917662818c58f94d00c1cc713a0` não foi resolvível. A continuidade passou a ser baseada na ref real e nos contratos presentes na árvore, não na suposição de que aquele SHA exista. A rodada de fechamento iniciou em `ae567dbb313b0aed9131c5125bb4b6a61d8bb011` e, antes desta atualização documental, já havia integrado os hardeners e o release gate até `41fa0d388818552ab551af619eb8674704b45818`.
 
-A proveniência foi restabelecida diretamente pela ref `homologacao-apois-cliente`: antes de qualquer nova correção desta rodada, a branch apontava para `3ccfe3f1e24bdf6145ec652a50d77eedfd8632c3`, com parent `33637c4c27d7f8e5db43c880923fdb3da574b77f`. O histórico recente contém, entre outros, `9fc2bed2d2654369251cc120e58da44ffb8679de` (`build(motorista): apply auth and provider hardening before build`), `33637c4c...` (`docs(security): map backend authorization boundaries`) e `3ccfe3f1...` (`test(security): verify backend authorization boundaries`).
+### Pins obrigatórios preservados
 
-Como a ancestralidade do SHA `31ae...` não pôde ser usada, a integridade das correções críticas é confirmada por **conteúdo presente na árvore atual**, e não apenas por nomes de commits.
+| Módulo | Pin |
+|---|---|
+| Passageiro | `7b047f75a1a919a5336c0df6e0d60b14b02f2618` |
+| Motorista/Admin | `9fc171050d8b5703540c49d19a8f1e9f5162775f` |
+| Entregas | `0a1e0b294f75c97bce903200b57e7a6b482f381a` |
 
-### Contratos críticos encontrados na árvore atual
+Os submódulos protegidos não são editados diretamente. Correções de integração são aplicadas em `.work` e por forward migrations versionadas no integrador.
 
-**Corridas:**
-
-- Auth UUID e DOMAIN USER ID tratados como identidades distintas;
-- profile por `public.users.auth_user_id`;
-- Google OAuth com `flowType: "pkce"`, dedupe de callback, `browserFinished`, `App.getLaunchUrl()` e cleanup de listeners;
-- `request-ride` com `rollbackFailedDispatch`, cleanup condicional e `cancellation_reason`;
-- `driver-ride-action` ignora `final_price` arbitrário do body e usa `ride.final_price ?? ride.estimated_price`;
-- `cancel-ride` resolve AUTH → DOMAIN USER antes de ownership/escrita;
-- cancellation fee tem reconciliação de retry e migration forward com `UNIQUE` por `ride_id`;
-- wallet do motorista tem RLS AUTH → DOMAIN → DRIVER RECORD;
-- `verify-corridas-ride-lifecycle-regressions.mjs` permanece versionado.
-
-**Entregas:**
-
-- payment boundary direto sem gateway no checkout release;
-- `cash` + `payment_status` pendente sem fabricar `paid`;
-- Merchant cash/pending por membership do `merchant_id`;
-- `merchant_manual` versionado;
-- `audit-entregas-customer-bundle.mjs` permanece versionado;
-- fixture Cliente/Merchant permanece no integrador;
-- migrations forward obrigatórias continuam presentes.
-
-**Motorista:**
-
-- provider boundary remove provisionamento automático Asaas;
-- mensalidade informa indisponibilidade de gateway e não expõe CTA eletrônico morto;
-- `audit-motorista-release-surface.mjs` existe e verifica a árvore mobile/dist executável;
-- finance/state hardening permanece versionado.
-
-**Autorização:**
-
-- `docs/BACKEND_AUTHORIZATION_MATRIX.md` presente;
-- `scripts/verify-backend-authorization-boundaries.mjs` presente.
-
-Nenhuma correção crítica acima precisou ser restaurada antes da continuação.
-
-## Pins protegidos
-
-Os pins permanecem inalterados. Os sources protegidos não são editados diretamente; toda adaptação é feita na camada de integração e em cópias `.work` descartáveis.
-
-| Módulo | Repositório | Pin |
-|---|---|---|
-| Entregas | `franciel046631/apois-entregas` | `0a1e0b294f75c97bce903200b57e7a6b482f381a` |
-| Corridas Passageiro | `franciel046631/say-hello-buddy-23-84b5dcbf` | `7b047f75a1a919a5336c0df6e0d60b14b02f2618` |
-| Corridas Motorista/Admin | `franciel046631/movvi-go-connect` | `9fc171050d8b5703540c49d19a8f1e9f5162775f` |
-
-## Arquitetura de identidade de Corridas
-
-Os identificadores abaixo **não são intercambiáveis**:
-
-1. **AUTH USER ID** — `auth.users.id`, `auth.uid()`, `public.users.auth_user_id`.
-2. **DOMAIN USER ID** — `public.users.id`.
-3. **DRIVER RECORD ID** — `public.drivers.id`.
-
-Relações confirmadas no schema pinado:
-
-- `public.drivers.user_id` → `public.users.id` (DOMAIN USER ID).
-- `public.rides.passenger_id` → `public.users.id` (DOMAIN USER ID).
-- `public.rides.driver_id` → `public.drivers.id` (DRIVER RECORD ID).
-- `public.rides.accepted_driver_id` → `public.drivers.id` (DRIVER RECORD ID).
-- `public.subscriptions.driver_id` → `public.drivers.id` (DRIVER RECORD ID).
-- `public.cancellation_fees.passenger_id` → `public.users.id` (DOMAIN USER ID).
-- `public.driver_wallets.driver_id` → `public.drivers.id` (DRIVER RECORD ID).
-- `public.driver_wallet_transactions.driver_id` → `public.drivers.id` (DRIVER RECORD ID).
-
-## Gateways e política financeira atual
-
-Nenhum gateway novo foi integrado nesta rodada.
+## Contratos críticos preservados
 
 ### Corridas
 
-O boundary atual expõe **Dinheiro** e **Cartão direto ao motorista**. O motorista não pode escolher arbitrariamente `final_price`: a Edge Function transformada usa somente valor já persistido pelo backend (`ride.final_price ?? ride.estimated_price`), e o trigger pinado de settlement reforça o mesmo source of truth.
+- AUTH USER ID, DOMAIN USER ID e DRIVER RECORD ID são tratados como identidades distintas.
+- Passageiro é resolvido por `public.users.auth_user_id`.
+- Google OAuth usa PKCE, dedupe de callback, `browserFinished` e launch URL.
+- `request-ride` na branch possui rollback de falha de dispatch e `cancellation_reason`.
+- `driver-ride-action` não aceita preço final arbitrário do cliente.
+- cancelamento resolve AUTH → DOMAIN antes de ownership/escrita.
+- cancellation fee tem proteção idempotente forward-only.
+- driver wallet usa ownership AUTH → DOMAIN → DRIVER.
+- lifecycle verifier permanece versionado.
 
 ### Entregas
 
-O produto Cliente usa pagamento direto `cash`, cria pedido com `payment_status` pendente e não deve chamar Mercado Pago, PagBank, Asaas ou OpenPix no fluxo ativo. O repasse ao entregador é `merchant_manual`: o estabelecimento paga diretamente ao entregador; a APOIS não deve custodiá-lo nem marcar payout como concluído sem evidência/autorização.
+- Checkout release é direto, sem gateway eletrônico ativo.
+- `cash/pending` permanece operacional sem falsificar `paid`.
+- Merchant opera somente seu `merchant_id` por membership backend.
+- Repasse do entregador usa `merchant_manual`.
+- Customer bundle auditor, fixture e forward migrations permanecem versionados.
 
-## Migrations forward obrigatórias
+### Motorista
 
-**Nenhuma foi aplicada em produção nesta rodada.** Código + migrations obrigatórias são tratados como uma única unidade de release.
+- Provider boundary remove gateways não homologados do runtime de release.
+- Mensalidade não oferece CTA eletrônico impossível de regularizar.
+- Release surface auditor verifica árvore executável/bundle, não apenas arquivos históricos.
+- Finance/state hardening permanece versionado.
 
-### Corridas
+## Integração dos hardeners nesta rodada
 
-- `supabase/corridas-forward-migrations/20260905070000_fix_passenger_identity_rls.sql`
-- `supabase/corridas-forward-migrations/20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql`
+### Document boundary
 
-### Entregas
+`harden-motorista-document-boundary.mjs` foi conectado ao build isolado Motorista e ao pipeline Partner, antes do provider/finance boundary. Ele alinha a UI ao limite real de 10 MiB e mantém slot/MIME/client RPC sob verificação estática.
 
-- `supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql`
-- `supabase/entregas-forward-migrations/20260905114500_enable_merchant_manual_courier_mode.sql`
+### Eligibility sem gateway
 
-A segunda migration de Corridas cria a barreira mecânica de idempotência `UNIQUE` por `cancellation_fees.ride_id` e corrige RLS de wallet/transactions para a cadeia AUTH → DOMAIN → DRIVER RECORD.
+`harden-corridas-driver-eligibility-no-gateway.mjs` foi conectado imediatamente depois de `harden-corridas-backend-identity-boundary.mjs` na ordem real do build Corridas. Assim ele opera sobre o código já normalizado e remove somente o gate de assinatura eletrônica, preservando aprovação, online, GPS, categoria e preferências.
 
-## Achados e correções acumuladas
+### Release gate
 
-### Request Ride — falha de dispatch
+`verify-superapp-release-requirements.mjs` agora exige cinco forward migrations:
 
-Problema confirmado: a função criava `procurar_motorista`, chamava `dispatch()` e engolia exceção, podendo retornar sucesso para uma corrida sem matching ativo.
+Corridas:
 
-Correção no integrador:
+- `20260905070000_fix_passenger_identity_rls.sql`
+- `20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql`
+- `20260905143000_harden_driver_document_ownership.sql`
 
-- rollback lógico somente se a corrida ainda estiver `procurar_motorista`;
-- `driver_id IS NULL` e `accepted_driver_id IS NULL` obrigatórios no cleanup;
-- estado terminal existente `cancelada_passageiro` é usado para a falha interna;
-- `cancellation_reason` registra falha de dispatch;
-- nenhum fee/wallet é criado;
-- `request_key` é liberado no registro terminal para permitir retry do mesmo request sem apagar auditoria;
-- se uma corrida avançou concorrentemente, o cleanup não a sobrescreve; a função relê e devolve o estado real;
-- erro de dispatch retorna erro real ao cliente, não falso sucesso.
+Entregas:
 
-### Driver Ride Action — final price
+- `20260905113000_allow_direct_cash_order_operations.sql`
+- `20260905114500_enable_merchant_manual_courier_mode.sql`
 
-Problema confirmado: `finish` aceitava qualquer `final_price > 0` enviado pelo cliente/motorista.
+Nenhuma migration foi aplicada em produção.
 
-Correção: o parâmetro do cliente deixa de ser autoridade. `finish` utiliza preço persistido pelo backend; a migration/trigger histórica de settlement já reforça essa regra.
+## P1 — Motorista documents / MIME + slot
 
-### Cancelamento — identidade e idempotência
+O backend real já possuía AUTH → DOMAIN → DRIVER, buckets privados, path iniciado por `auth.uid()`, ownership e limite de 10 MiB. Porém `vehicle-documents` admite PDF porque CRLV pode ser PDF; sem validação de slot específica, um PDF válido no bucket poderia ser referenciado como `vehicle_photo`.
 
-Correções materializadas:
+A forward migration `20260905143000_harden_driver_document_ownership.sql` fecha esse bypass com:
 
-- AUTH USER ID é resolvido para DOMAIN USER ID antes de autorizar/escrever;
-- UI oferece cancelamento somente em `procurar_motorista` e `motorista_a_caminho`, como o backend;
-- fórmula de fee inexistente foi removida da UI;
-- fee usa `app_settings` do backend;
-- retry de corrida já cancelada reconcilia fee/wallet caso a primeira execução tenha falhado após mudar o status;
-- índice forward-only único por `ride_id` impede fee duplicado mecanicamente;
-- fee já liquidado não volta a bloquear wallet.
+- slots explícitos `selfie`, `cnh_front`, `cnh_back`, `crlv`, `vehicle_photo`;
+- bucket derivado do slot;
+- path `auth.uid()/arquivo` sem escape/nesting arbitrário;
+- filename ligado ao slot;
+- MIME + extensão compatíveis;
+- `selfie`/`vehicle_photo` somente imagem;
+- `cnh_*`/`crlv` imagem ou PDF;
+- buckets privados e limite de 10 MiB;
+- leitura própria ou reviewer autorizado;
+- bloqueio de update/delete de evidência já referenciada;
+- RPC público somente para `authenticated`/`service_role` e implementação privada sem grant a cliente comum.
 
-### Motorista — boundary financeiro/release
+Status: **CODE FIXED / MIGRATION NOT APPLIED / E2E NOT EXECUTED**.
 
-Correções já presentes na árvore:
+### Compatibilidade histórica
 
-- login/profile não provisiona subconta Asaas;
-- mensalidade não inicia Pix/cartão/débito por gateway desativado;
-- estado de mensalidade real permanece visível;
-- acesso de homologação não cria cobrança;
-- auditor de release verifica árvore mobile e, quando existe, `dist/client` executável para impedir rotas debug/dev e gateways antigos.
+A migration não apaga nem reescreve URLs históricas já gravadas em `drivers`. As novas regras de MIME/filename são aplicadas quando `driver_update_document` recebe uma substituição. Objetos antigos continuam legíveis conforme policies de ownership/reviewer; não há migração destrutiva de evidências existentes.
 
-### Authorization / IDOR
+## P1 — Eligibility sem mensalidade eletrônica
 
-A matriz backend e o verificador estático estão versionados. A execução real do verificador e a ampliação do inventário service_role/SECURITY DEFINER são objetivos ainda abertos desta rodada. Resultado estático nunca será promovido a E2E PASS sem teste A/B/RLS.
+O matching não pode exigir uma assinatura eletrônica ativa quando não existe provider homologado disponível para o motorista regularizar a mensalidade. O hardener remove a consulta/gate de `subscriptions` do matching enquanto gateways estão desativados, sem remover:
 
-### Baseline histórico Corridas
+- `approval_status = aprovado`;
+- `is_online`;
+- GPS válido e fresco;
+- categoria compatível;
+- exclusão de motoristas rejeitados/ocupados;
+- raio/preferências;
+- preferência por meio direto.
 
-**Erro confirmado, não falso positivo.** O arquivo protegido `supabase/migrations/20260806000000_clean_baseline.sql` contém vírgula ausente entre `rejected_driver_ids UUID[]` e `accepted_at TIMESTAMPTZ`.
+A normalização anterior continua responsável por manter `subscriptions.driver_id = DRIVER RECORD ID` nos trechos históricos que ainda usam a relação. O hardener de eligibility não volta a misturar AUTH/DOMAIN/DRIVER.
 
-Como o source é protegido, ele não foi editado. `scripts/prepare-corridas-clean-room.mjs` corrige exatamente esse erro somente na cópia `.work/corridas`, para permitir uma futura execução clean-room reproduzível. Isso **não equivale a clean-room PASS**.
+Status: **CODE FIXED / BUILD VALIDATION PENDING / RUNTIME UPDATE MAY BE REQUIRED**.
 
-## Validações acumuladas conhecidas
+## Drift branch × runtime
 
-Os resultados abaixo não são promovidos para um nível de validação maior do que o efetivamente executado.
+O fato mais importante permanece: branch corrigida não significa backend implantado atualizado.
 
-| Comando/etapa | Exit | Resultado |
-|---|---:|---|
-| checkout Entregas pinado | 0 | PASS |
-| `prepare-workspace.mjs entregas` | 0 | PASS |
-| `adapt-module-for-superapp.mjs entregas` | 0 | PASS |
-| hardeners principais Entregas | 0 | PASS |
-| `bun install --frozen-lockfile` | 1 | lock protegido incompatível com Bun usado no executor |
-| `bun install --no-save` em `.work` | 0 | PASS; source/lock protegido não alterado |
-| `audit-superapp-static.mjs` | 0 | PASS em execução anterior |
-| `verify-corridas-database-ownership.mjs` | 0 | PASS em execução anterior |
-| `audit-entregas-merchant-payments.mjs` | 0 | PASS em execução anterior; revisar coerência com boundary atual nos gates finais |
-| `audit-payment-boundary.mjs` | 0 | PASS em execução anterior |
-| `verify-superapp-release-requirements.mjs` | 0 | PASS em modo desenvolvimento, com warnings de env de Corridas |
-| Entregas `bun run typecheck` | 0 | PASS |
-| Entregas `bun run lint` | 1 | FAIL source-wide |
-| Entregas `bun run test` | 0 | 43 pass, 0 fail, 6 arquivos |
-| Entregas `bun run build:customer` | 0 | PASS |
-| Entregas `bun run build:merchant` | 0 | PASS |
+| Componente | Branch | Runtime observado | Drift | Ação de release |
+|---|---|---|---|---|
+| `request-ride` | rollback de dispatch + identity + eligibility hardening | função implantada ainda engole exceção de dispatch e contém gate de subscription antigo | SIM | deploy backend controlado antes da publicação final |
+| `driver-ride-action` | AUTH→DOMAIN→DRIVER + preço persistido | revisar versão implantada contra markers da branch | A CONFIRMAR | comparação/deploy controlado se divergir |
+| `cancel-ride` | AUTH→DOMAIN + cancel policy corrigida | runtime deve ser comparado antes de release | A CONFIRMAR | gate de drift |
+| `send-ride-push` | normalização de recipients AUTH/DOMAIN | runtime deve ser comparado antes de release | A CONFIRMAR | gate de drift |
+| `create-order` | boundary direto/cash aplicado em `.work` | Edge implantada pinada ainda aceita contrato antigo até deploy correspondente | SIM/PRODUTO | não publicar frontend incompatível |
+| Merchant operations | cash/pending + membership no integrador | runtime precisa suportar forward migrations | A CONFIRMAR | migrations + deploy controlado |
+| `driver_update_document` / storage | migration 14:30 versiona contrato endurecido | runtime atual possui versão anterior sem MIME/slot estrito | SIM | aplicar migration controladamente antes de release |
 
-## Lint — triagem
+`request-ride` deve permanecer **CODE FIXED / RUNTIME OLD** até atualização controlada do backend.
 
-Resultado source-wide conhecido e preservado como FAIL. Não executar formatter global nem reforma de milhares de arquivos históricos. A rodada atual deve extrair somente regras potencialmente funcionais/security do runtime ativo e registrar contagem por regra.
+## Authorization / service_role
 
-## Clean-room
+`docs/BACKEND_AUTHORIZATION_MATRIX.md` e `scripts/verify-backend-authorization-boundaries.mjs` são gates obrigatórios. A rodada atual precisa corrigir premissas obsoletas do verifier e completar a classificação das Edge Functions ACTIVE dos dois projetos.
 
-**PENDENTE / NOT EXECUTED.**
+Nenhum PASS estático será promovido a E2E PASS sem testes A×B/RLS.
 
-Há preparação reproduzível para reparar o erro sintático histórico apenas na cópia descartável, mas a cadeia de migrations ainda não foi aplicada em PostgreSQL/Supabase limpo nesta rodada.
+## Baseline Corridas / clean-room
 
-`migration review PASS` ≠ `clean-room PASS` ≠ `produção migrada`.
+O source pinado original permanece historicamente inválido por vírgula ausente após `rejected_driver_ids UUID[]`. O reparo permitido ocorre apenas na cópia `.work` por `prepare-corridas-clean-room.mjs`.
+
+Portanto:
+
+- ORIGINAL PINNED MIGRATION = **INVALID**;
+- HISTORICAL REPAIR IN `.work` = **DOCUMENTED**;
+- CLEAN-ROOM DATABASE PASS = **NOT EXECUTED**.
 
 ## Android
 
-**PENDENTE.**
+APK/AAB não foram gerados nesta rodada. OAuth real, Maps real, FCM, GPS/background, deep links, resume e comportamento WebView continuam exigindo build Android/dispositivo apropriado. A revisão estática deve ser diferenciada de validação física.
 
-Nenhum APK/AAB foi gerado nesta rodada. Google OAuth real, Maps real, GPS/background, push, deep links, Android Back, resume e atualização/cache de WebView continuam dependentes de build/dispositivo apropriado.
+## Níveis de evidência
 
-## Matriz de achados
+Sempre registrar separadamente:
 
-| ID | Severidade | App | Jornada | Causa raiz | Correção | Validação | Status |
-|---|---|---|---|---|---|---|---|
-| RID-01 | P0/P1 | Corridas Passageiro | Request ride / matching | exceção de `dispatch()` era engolida depois de criar a ride | rollback lógico condicional + erro real + retry seguro | verificador de regressão criado; build Corridas ainda pendente | CORRIGIDO / BUILD NÃO VERIFICADO |
-| RID-02 | P1 | Corridas Motorista | Finish | `final_price > 0` do cliente era aceito como autoridade | preço final passa a vir do estado persistido/backend | verificador + trigger histórico revisado; build Motorista pendente | CORRIGIDO / BUILD NÃO VERIFICADO |
-| RID-03 | P1 | Corridas | Identidade | AUTH/DOMAIN/DRIVER IDs misturados em dispatch/action/push | resolução explícita em cada boundary | verifier versionado; execução final pendente | CORRIGIDO / BUILD NÃO VERIFICADO |
-| RID-04 | P1 | Corridas Passageiro | Cancelamento | retry podia deixar fee/wallet parcial e RLS de wallet usava AUTH como DRIVER RECORD | reconciliação idempotente + UNIQUE por ride + RLS AUTH→DOMAIN→DRIVER | migration versionada, não aplicada; fixture Corridas pendente | CORRIGIDO / BUILD NÃO VERIFICADO |
-| MIG-01 | P1 | Corridas DB | Clean-room | baseline histórico possui vírgula ausente em `rejected_driver_ids` | reparo exato somente em `.work` para futura clean-room | inspeção do arquivo real confirmou defeito; DB limpo ainda não executado | PENDENTE |
-| DEL-01 | P1 | Entregas Cliente | Checkout | gateways antigos precisavam ser removidos do fluxo ativo | boundary direto `cash/pending`, sem gateway | typecheck/tests/build customer anteriores; E2E não executado | CORRIGIDO / E2E NÃO VERIFICADO |
-| DEL-02 | P1 | Merchant | Pedidos cash/pending | pedidos diretos podiam ser tratados como não operacionais | merchant reconhece cash/pending sem marcar pago | build merchant anterior; RLS A/B pendente | CORRIGIDO / E2E NÃO VERIFICADO |
-| DEL-03 | P1 | Entregas | Courier settlement | `merchant_manual` precisava impedir custódia/payout falso | settlement fica pendente até confirmação manual autorizada | migration/RPC revisados; clean-room/E2E pendentes | CORRIGIDO / E2E NÃO VERIFICADO |
-| MOT-01 | P1 | Motorista | Login/Profile | profile aprovado provisionava gateway legado | provider boundary remove side effect | script versionado; build final pendente | CORRIGIDO / BUILD NÃO VERIFICADO |
-| MOT-02 | P1 | Motorista | Mensalidade | UI podia oferecer fluxo eletrônico sem provider homologado | tela informativa sem CTA de gateway | script versionado; build final pendente | CORRIGIDO / BUILD NÃO VERIFICADO |
-| AUTH-01 | P1 | Backend | Authorization | inventário service_role/IDOR estava incompleto | matriz + verifier versionados | execução/inventário completo pendentes | EM VALIDAÇÃO |
-| LINT-01 | P2 | Entregas | Qualidade | source-wide inclui dívida histórica e formatação | triagem, sem formatter global | lint continua EXIT 1 | PENDENTE |
-| BLD-01 | P1 | Superapp | Release | Corridas/Motorista sources não estavam materializados no executor Entregas | nenhuma falsa fixture criada | build completo não executado | PENDENTE |
-| AND-01 | P1 | Android | Release | build físico não executado | nenhuma | APK/AAB não gerados | PENDENTE |
+1. **CODE FIXED** — correção presente na branch.
+2. **BUILD VALIDATED** — comando/build correspondente passou.
+3. **RUNTIME DEPLOYED** — backend/migration realmente implantado no ambiente alvo.
+4. **E2E VALIDATED** — jornada/teste A×B/dispositivo executado.
 
-## Pendências de código atuais
+Um nível nunca implica automaticamente o seguinte.
 
-- executar `verify-backend-authorization-boundaries.mjs` e corrigir falhas reais;
-- completar inventário de Edge Functions com `service_role` e RPCs `SECURITY DEFINER` ativos;
-- provar backend/storage ownership de `driver_update_document`;
-- executar `audit-motorista-release-surface.mjs` em árvore transformada e artefato, quando materializável;
-- executar pipeline Partner e build Motorista;
-- executar os quatro verificadores Corridas e build Corridas, quando o source privado puder ser materializado sem alterar secrets;
-- executar gates finais possíveis e registrar exit code real;
-- executar build Superapp + `verify:dist` se os três sources estiverem disponíveis;
-- preparar/executar testes multiusuário de RLS em ambiente descartável;
-- completar clean-room das migrations.
+## Release blockers atuais
 
-## Dependências externas
+- authorization verifier ainda precisa ser atualizado e executado;
+- service_role/legacy deployed inventory precisa ser fechado;
+- drift branch/runtime precisa ser explicitamente bloqueado no release;
+- Motorista/Partner/Corridas builds precisam ser executados quando o source estiver materializável;
+- migration de documents não aplicada;
+- clean-room não executado;
+- RLS/IDOR A×B não executado;
+- Android APK/AAB/E2E não executados.
 
-Somente devem ser classificadas como externas quando realmente exigirem ambiente/credencial fora do código:
-
-- Supabase/PostgreSQL descartável para clean-room e testes RLS multiusuário;
-- configuração real de Maps/Google OAuth;
-- Firebase real;
-- toolchain Android + dispositivo/emulador para APK/AAB e comportamento nativo;
-- materialização dos submódulos Corridas/Motorista no executor sem alteração de secrets, se a credencial atual não permitir;
-- aplicação controlada das migrations em ambiente alvo, apenas após autorização.
-
-## Release blockers no checkpoint
-
-1. Authorization crítica ainda precisa de execução do verifier + inventário completo + RLS/E2E A/B.
-2. Build Corridas transformado ainda não executado no checkpoint atual.
-3. Build Motorista ainda não executado no checkpoint atual.
-4. Build Superapp + `verify:dist` ainda não executados.
-5. Clean-room das migrations ainda não executado.
-6. Android APK/AAB e E2E externo ainda não verificados.
-
-**Status global neste checkpoint: PENDENTE para publicação.**
+**STATUS GLOBAL: NOT READY.**
