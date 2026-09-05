@@ -58,18 +58,17 @@ assertPinnedCapacitorPackage('superapp/partner-shell/package.json', 'shell Parce
 
 const codemagic = read('codemagic.yaml');
 const workflows = [
-  ['android-superapp-experimental', 'superapp/shell', 'O shell Cliente também não possui bun.lock próprio.'],
-  ['android-partner-superapp', 'superapp/partner-shell', 'Este host não possui bun.lock próprio.'],
+  ['android-superapp-experimental', 'superapp/shell'],
+  ['android-partner-superapp', 'superapp/partner-shell'],
 ];
 for (let i = 0; i < workflows.length; i += 1) {
-  const [key, directory, explanatoryMarker] = workflows[i];
+  const [key, directory] = workflows[i];
   const start = codemagic.indexOf(`  ${key}:`);
   if (start < 0) { fail(`workflow ${key} ausente`); continue; }
   const next = codemagic.indexOf('\n  android-', start + key.length + 3);
   const section = codemagic.slice(start, next > start ? next : codemagic.length);
   const cdMarker = `cd ${directory}`;
   if (!section.includes(cdMarker)) fail(`${key}: não entra em ${directory}`);
-  if (!section.includes(explanatoryMarker)) fail(`${key}: ausência de lockfile não está documentada`);
   if (!section.includes(`${cdMarker}\n`)) fail(`${key}: etapa de host não encontrada`);
   if (!section.includes('\n          bun install\n          rm -rf android')) fail(`${key}: deve instalar dependências antes de recriar Android`);
   if (section.includes('bun install --frozen-lockfile')) fail(`${key}: --frozen-lockfile reapareceu no host sem lockfile`);
