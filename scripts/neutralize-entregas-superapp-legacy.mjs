@@ -22,7 +22,7 @@ const telemetry = requireSnapshotFile(
   'diagnóstico legado',
 );
 
-const telemetryReplacement = `export function reportLovableError(\n  error: unknown,\n  context: Record<string, unknown> = {},\n) {\n  // O Superapp não usa hooks/telemetria do editor Lovable. O ErrorBoundary continua\n  // exibindo recuperação ao usuário e registramos somente diagnóstico local, sem\n  // enviar rota, stack ou dados do usuário a integrações de editor antigas.\n  if (typeof console === \"undefined\") return;\n  console.error(\"[APOIS Superapp] erro capturado pelo boundary\", {\n    message: error instanceof Error ? error.message : String(error),\n    ...context,\n  });\n}\n`;
+const telemetryReplacement = `export function reportLovableError(\n  error: unknown,\n  context: Record<string, unknown> = {},\n) {\n  // O Superapp não usa hooks/telemetria do editor Lovable. O ErrorBoundary continua\n  // exibindo recuperação ao usuário e registramos somente diagnóstico local, sem\n  // enviar rota, stack ou dados do usuário a integrações de editor antigas.\n  if (typeof console === "undefined") return;\n  console.error("[APOIS Superapp] erro capturado pelo boundary", {\n    message: error instanceof Error ? error.message : String(error),\n    ...context,\n  });\n}\n`;
 writeFileSync(telemetry.target, telemetryReplacement, 'utf8');
 console.log('[OK] Entregas: telemetria do editor legado neutralizada apenas na cópia .work do Superapp');
 
@@ -32,9 +32,6 @@ const splash = requireSnapshotFile(
   'splash React legado já adaptado para caminho relativo',
 );
 
-// O APK já exibe a splash nativa e em seguida o shell único da APOIS. Ao entrar
-// em Entregas não deve aparecer uma segunda splash de quase dois segundos. A
-// exportação é preservada para que o Root continue estável sem animação duplicada.
 const splashReplacement = `export function ApoisLaunchSplash() {\n  return null;\n}\n`;
 writeFileSync(splash.target, splashReplacement, 'utf8');
 console.log('[OK] Entregas: splash duplicada removida dentro do módulo do Superapp');
@@ -47,8 +44,9 @@ const landing = requireSnapshotFile(
 writeFileSync(landing.target, landing.before, 'utf8');
 console.log('[OK] Entregas: logo pública permanece relativa ao módulo aninhado');
 
-await import('./normalize-entregas-merchant-mp-handoff.mjs');
-await import('./harden-entregas-merchant-mercadopago-v2.mjs');
+// Mercado Pago/PagBank/Asaas/OpenPix não fazem parte do boundary financeiro ativo.
+// Não execute os antigos hardeners de OAuth/charge aqui: o boundary final de
+// pagamento direto é aplicado no fim da cadeia de build de Entregas.
 await import('./harden-entregas-delivery-readiness.mjs');
 await import('./harden-entregas-merchant-direct-finance.mjs');
 await import('./harden-entregas-superapp-refunds.mjs');
