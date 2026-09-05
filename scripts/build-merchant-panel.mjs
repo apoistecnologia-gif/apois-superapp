@@ -104,6 +104,7 @@ for (const validator of [
   'scripts/verify-corridas-database-ownership.mjs',
   'scripts/audit-entregas-merchant-payments.mjs',
   'scripts/audit-payment-boundary.mjs',
+  'scripts/verify-backend-authorization-boundaries.mjs',
   'scripts/verify-superapp-release-requirements.mjs',
 ]) {
   run(process.execPath, [resolve(root, validator)], { cwd: root, env: baseEnv });
