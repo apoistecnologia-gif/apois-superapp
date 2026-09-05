@@ -134,8 +134,16 @@ requireMarkers(
 );
 requireMarkers(
   '.work/corridas/src/components/pricing/CategorySelector.tsx',
-  ['grid-cols-[58px_minmax(0,1fr)_auto]', 'Fretes', 'Guincho', 'Envios'],
-  'Categorias Corridas usam cards premium sem truncamento horizontal',
+  [
+    'grid-cols-[58px_minmax(0,1fr)_auto]',
+    'carro: Car',
+    'moto: Bike',
+    'fretes: Truck',
+    'guincho: Wrench',
+    'envios: Package',
+    'PRICING_CONFIG.LABELS[cat.key]',
+  ],
+  'Categorias Corridas usam os cinco códigos oficiais em cards premium sem truncamento horizontal',
 );
 requireMarkers(
   '.work/corridas/src/hooks/rides/use-active-ride.tsx',
