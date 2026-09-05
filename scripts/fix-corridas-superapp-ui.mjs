@@ -1,5 +1,6 @@
 import './harden-corridas-superapp-push-isolation.mjs';
 import './harden-corridas-superapp-google-auth.mjs';
+import './harden-corridas-login-error-message.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -80,8 +81,8 @@ requireMarkers(
 );
 requireMarkers(
   '.work/corridas/src/routes/_public.login.tsx',
-  ['PassengerGoogleLoginButton', '<PassengerGoogleLoginButton />', 'to="/recuperar-senha"'],
-  'Corridas login preserva Google, senha e recuperação',
+  ['PassengerGoogleLoginButton', '<PassengerGoogleLoginButton />', 'to="/recuperar-senha"', 'invalidCredentials ? "E-mail ou senha incorretos."'],
+  'Corridas login preserva Google, senha, recuperação e feedback correto de credenciais',
 );
 
 console.log('[OK] Corridas: UI base alinhada ao snapshot atual com Google Login restaurado');
