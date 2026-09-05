@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 const root = process.cwd();
 const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/entregas';
 const full = (relative) => resolve(root, workspace, relative);
+const PAYMENT_STORAGE_KEY = 'apois-superapp-entregas:payment-method';
 
 function write(relative, source) {
   writeFileSync(full(relative), source, 'utf8');
@@ -23,7 +24,12 @@ function replaceRequired(source, search, replacement, label) {
 {
   const relative = 'src/routes/sacola.tsx';
   let source = read(relative);
-  source = source.replaceAll('sessionStorage.setItem("apois_payment_method", "pix");', 'sessionStorage.setItem("apois_payment_method", "cash");');
+  for (const key of ['apois_payment_method', PAYMENT_STORAGE_KEY]) {
+    source = source.replaceAll(
+      `sessionStorage.setItem("${key}", "pix");`,
+      `sessionStorage.setItem("${PAYMENT_STORAGE_KEY}", "cash");`,
+    );
+  }
   source = source.replace('PIX habilitado', 'Pagamento direto');
   source = source.replace('<p className="text-sm font-bold">PIX</p>', '<p className="text-sm font-bold">Pagamento direto ao estabelecimento</p>');
   source = source.replace(
@@ -34,8 +40,12 @@ function replaceRequired(source, search, replacement, label) {
     '<span>O pedido só avança após a confirmação do PIX</span>',
     '<span>O pagamento é feito diretamente ao estabelecimento, fora do gateway da APOIS</span>',
   );
-  if (!source.includes('"apois_payment_method", "cash"')) throw new Error('[FAIL] Entregas: sacola não seleciona pagamento direto');
-  if (source.includes('PIX habilitado') || source.includes('confirmação do PIX')) throw new Error('[FAIL] Entregas: texto PIX ativo permaneceu na sacola');
+  if (!source.includes(`"${PAYMENT_STORAGE_KEY}", "cash"`)) {
+    throw new Error('[FAIL] Entregas: sacola não seleciona pagamento direto após namespacing');
+  }
+  if (source.includes('PIX habilitado') || source.includes('confirmação do PIX')) {
+    throw new Error('[FAIL] Entregas: texto PIX ativo permaneceu na sacola');
+  }
   write(relative, source);
   console.log('[OK] Entregas: sacola usa pagamento direto ao estabelecimento.');
 }
@@ -66,14 +76,17 @@ function replaceRequired(source, search, replacement, label) {
 
   source = source.replace('  const [pixData, setPixData] = useState<PixData | null>(loadActivePix);\n', '');
   source = source.replace('  const [copied, setCopied] = useState(false);\n', '');
-  source = source.replace(
-    '  const paymentMethod =\n    typeof window !== "undefined" ? sessionStorage.getItem("apois_payment_method") || "pix" : "pix";',
-    '  const paymentMethod = "cash";',
-  );
+
+  for (const key of ['apois_payment_method', PAYMENT_STORAGE_KEY]) {
+    source = source.replace(
+      `  const paymentMethod =\n    typeof window !== "undefined" ? sessionStorage.getItem("${key}") || "pix" : "pix";`,
+      '  const paymentMethod = "cash";',
+    );
+  }
   source = source.replace('  const paymentMethod = "pix";', '  const paymentMethod = "cash";');
   source = source.replace(
     '  useEffect(() => {\n    ensureMercadoPagoSecurityScript();\n  }, []);',
-    '  useEffect(() => {\n    sessionStorage.removeItem(ACTIVE_PIX_STORAGE_KEY);\n    sessionStorage.setItem("apois_payment_method", "cash");\n  }, []);',
+    `  useEffect(() => {\n    sessionStorage.removeItem(ACTIVE_PIX_STORAGE_KEY);\n    sessionStorage.setItem("${PAYMENT_STORAGE_KEY}", "cash");\n  }, []);`,
   );
   source = source.replace('    if (items.length === 0 && !pixData) {', '    if (items.length === 0) {');
   source = source.replace('  }, [isHydrated, items.length, pixData, navigate]);', '  }, [isHydrated, items.length, navigate]);');
