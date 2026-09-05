@@ -83,6 +83,30 @@ backend = backend
   .replaceAll('.eq("passenger_id", userId)', '.eq("passenger_id", passengerDomainUserId)')
   .replaceAll('passenger_id: userId,', 'passenger_id: passengerDomainUserId,');
 
+// Uma corrida pode ter sido marcada como cancelada antes de uma falha transitória ao
+// persistir a taxa ou bloquear a carteira. O retry precisa reconciliar o efeito financeiro
+// sem duplicá-lo. A migration forward-only cria UNIQUE(cancellation_fees.ride_id), que é
+// a barreira mecânica de idempotência entre retries/processos concorrentes.
+const helperMarker = 'Deno.serve(async (req) => {';
+if (!backend.includes('async function ensureCancellationFinancialState(')) {
+  const helper = `async function ensureCancellationFinancialState(\n  admin: any,\n  rideId: string,\n  passengerDomainUserId: string,\n  fee: number,\n  reason: string,\n  now: string,\n): Promise<void> {\n  if (!(fee > 0)) return;\n\n  let { data: existingFee, error: existingFeeError } = await admin\n    .from("cancellation_fees")\n    .select("id,status")\n    .eq("ride_id", rideId)\n    .limit(1)\n    .maybeSingle();\n  if (existingFeeError) throw new Error(\`cancellation_fee_lookup_failed:\${existingFeeError.message}\`);\n\n  if (!existingFee) {\n    const { data: insertedFee, error: feeError } = await admin\n      .from("cancellation_fees")\n      .insert({\n        ride_id: rideId,\n        passenger_id: passengerDomainUserId,\n        amount: fee,\n        reason,\n        status: "pending",\n      })\n      .select("id,status")\n      .maybeSingle();\n\n    if (feeError && feeError.code !== "23505") {\n      throw new Error(\`cancellation_fee_create_failed:\${feeError.message}\`);\n    }\n    existingFee = insertedFee ?? null;\n\n    if (!existingFee && feeError?.code === "23505") {\n      const retryLookup = await admin\n        .from("cancellation_fees")\n        .select("id,status")\n        .eq("ride_id", rideId)\n        .limit(1)\n        .maybeSingle();\n      if (retryLookup.error || !retryLookup.data) {\n        throw new Error(\`cancellation_fee_conflict_lookup_failed:\${retryLookup.error?.message ?? "missing_row"}\`);\n      }\n      existingFee = retryLookup.data;\n    }\n  }\n\n  // Nunca re-bloquear uma carteira depois que a taxa já foi liquidada.\n  const feeStatus = String(existingFee?.status ?? "pending").toLowerCase();\n  if (["paid", "completed", "settled"].includes(feeStatus)) return;\n\n  const { error: walletError } = await admin.from("passenger_wallets").upsert({\n    passenger_id: passengerDomainUserId,\n    is_blocked: true,\n    blocked_reason: \`Taxa de cancelamento pendente de R$ \${fee.toFixed(2).replace(".", ",")}\`,\n    updated_at: now,\n  }, { onConflict: "passenger_id" });\n\n  if (walletError) throw new Error(\`wallet_block_failed:\${walletError.message}\`);\n}\n\n`;
+  if (!backend.includes(helperMarker)) fail('marcador Deno.serve não encontrado no cancel-ride');
+  backend = backend.replace(helperMarker, helper + helperMarker);
+}
+
+backend = backend.replace(
+  '.select("id,passenger_id,status,accepted_at,created_at,cancellation_fee")',
+  '.select("id,passenger_id,status,accepted_at,created_at,cancellation_fee,cancellation_reason")',
+);
+
+const oldTerminal = `    if (["finalizada", "cancelada_passageiro", "cancelada_motorista"].includes(String(ride.status))) {\n      return json({\n        ok: true,\n        status: ride.status,\n        cancellation_fee: Number(ride.cancellation_fee ?? 0),\n        message: "A corrida já está encerrada.",\n      }, 200, req);\n    }`;
+const newTerminal = `    if (["finalizada", "cancelada_passageiro", "cancelada_motorista"].includes(String(ride.status))) {\n      const existingFee = Number(ride.cancellation_fee ?? 0);\n      if (ride.status === "cancelada_passageiro" && existingFee > 0) {\n        try {\n          await ensureCancellationFinancialState(\n            admin,\n            rideId,\n            passengerDomainUserId,\n            existingFee,\n            String(ride.cancellation_reason ?? "Cancelada pelo passageiro"),\n            new Date().toISOString(),\n          );\n        } catch (reconcileError) {\n          console.error("[cancel-ride] terminal reconciliation failed", {\n            rideId,\n            error: reconcileError instanceof Error ? reconcileError.message : String(reconcileError),\n          });\n          return json({ ok: false, error_code: "cancellation_financial_reconciliation_failed" }, 500, req);\n        }\n      }\n      return json({\n        ok: true,\n        status: ride.status,\n        cancellation_fee: existingFee,\n        message: "A corrida já está encerrada.",\n      }, 200, req);\n    }`;
+if (backend.includes(oldTerminal)) backend = backend.replace(oldTerminal, newTerminal);
+
+const oldFeeBlock = `    if (fee > 0) {\n      const { error: feeError } = await admin.from("cancellation_fees").insert({\n        ride_id: rideId,\n        passenger_id: passengerDomainUserId,\n        amount: fee,\n        reason,\n        status: "pending",\n      });\n      if (feeError && feeError.code !== "23505") {\n        console.error("[cancel-ride] fee insert failed", feeError);\n        return json({ ok: false, error_code: "cancellation_fee_create_failed" }, 500, req);\n      }\n\n      const { error: walletError } = await admin.from("passenger_wallets").upsert({\n        passenger_id: passengerDomainUserId,\n        is_blocked: true,\n        blocked_reason: \`Taxa de cancelamento pendente de R$ \${fee.toFixed(2).replace(".", ",")}\`,\n        updated_at: now,\n      }, { onConflict: "passenger_id" });\n\n      if (walletError) {\n        console.error("[cancel-ride] wallet block failed", walletError);\n        return json({ ok: false, error_code: "wallet_block_failed" }, 500, req);\n      }\n    }`;
+const newFeeBlock = `    if (fee > 0) {\n      try {\n        await ensureCancellationFinancialState(\n          admin,\n          rideId,\n          passengerDomainUserId,\n          fee,\n          reason,\n          now,\n        );\n      } catch (financialError) {\n        console.error("[cancel-ride] cancellation financial state failed", {\n          rideId,\n          error: financialError instanceof Error ? financialError.message : String(financialError),\n        });\n        return json({ ok: false, error_code: "cancellation_financial_reconciliation_failed" }, 500, req);\n      }\n    }`;
+if (backend.includes(oldFeeBlock)) backend = backend.replace(oldFeeBlock, newFeeBlock);
+
 for (const marker of [
   'const authUserId = authData.user?.id;',
   '.eq("auth_user_id", authUserId)',
@@ -91,8 +115,14 @@ for (const marker of [
   'cancelled_by: passengerDomainUserId',
   '.eq("passenger_id", passengerDomainUserId)',
   'passenger_id: passengerDomainUserId,',
+  'async function ensureCancellationFinancialState(',
+  '.eq("ride_id", rideId)',
+  'feeError.code !== "23505"',
+  '["paid", "completed", "settled"].includes(feeStatus)',
+  'cancellation_financial_reconciliation_failed',
+  'ride.status === "cancelada_passageiro" && existingFee > 0',
 ]) {
-  if (!backend.includes(marker)) fail(`cancel-ride sem boundary de identidade (${marker})`);
+  if (!backend.includes(marker)) fail(`cancel-ride sem boundary/reconciliação (${marker})`);
 }
 for (const forbidden of [
   'ride.passenger_id !== userId',
@@ -104,4 +134,4 @@ for (const forbidden of [
 }
 writeFileSync(backendPath, backend, 'utf8');
 
-console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatíveis com backend e UI sem fórmula financeira divergente.');
+console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatíveis, UI sem fórmula divergente e taxa recuperável/idempotente.');
