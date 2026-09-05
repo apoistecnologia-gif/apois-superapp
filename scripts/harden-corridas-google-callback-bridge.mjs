@@ -5,9 +5,40 @@ const path = resolve('.work/corridas/dist/index.html');
 let html = readFileSync(path, 'utf8');
 
 const marker = 'data-apois-corridas-google-callback-bridge';
+const inlineMarker = 'apois-superapp:corridas-google-inline-v2';
 const pendingKey = 'apois-superapp:pending-oauth-product';
 const corridasForwardKey = 'apois-superapp:corridas-google-url';
 
+// Corrige o bridge já injetado pelo build-isolated-module ANTES de registrar
+// listeners adicionais. Assim o callback compartilhado de Corridas não pode ser
+// encaminhado para Entregas por uma corrida entre listeners appUrlOpen.
+if (!html.includes(inlineMarker)) {
+  const branchAnchor = "if (moduleName === 'corridas') {";
+  const anchorIndex = html.indexOf(branchAnchor);
+  if (anchorIndex < 0) {
+    throw new Error('[FAIL] corridas: branch base de auth do Superapp não encontrada');
+  }
+  const insertAt = anchorIndex + branchAnchor.length;
+  const inlineGuard = `
+        /* ${inlineMarker} */
+        if (path === 'callback') {
+          try {
+            const pendingProduct = sessionStorage.getItem('${pendingKey}');
+            if (pendingProduct === 'corridas') {
+              sessionStorage.removeItem('${pendingKey}');
+              sessionStorage.setItem('${corridasForwardKey}', rawUrl);
+              void browserPlugin?.close?.().catch(() => undefined);
+              window.location.replace('./index.html#/login');
+              return true;
+            }
+          } catch {}
+        }
+`;
+  html = html.slice(0, insertAt) + inlineGuard + html.slice(insertAt);
+}
+
+// Listener standalone permanece como defesa em profundidade para callbacks
+// recebidos quando o bridge base ainda não terminou o bootstrap.
 if (!html.includes(marker)) {
   const bridge = `
 <script ${marker}>
@@ -50,15 +81,17 @@ if (!html.includes(marker)) {
   html = html.includes('</body>')
     ? html.replace('</body>', `${bridge}\n</body>`)
     : `${html}\n${bridge}\n`;
-  writeFileSync(path, html, 'utf8');
 }
 
+writeFileSync(path, html, 'utf8');
+
 for (const required of [
+  inlineMarker,
   marker,
   pendingKey,
   corridasForwardKey,
   'br.com.apois.app://auth/callback',
-  "pendingProduct !== 'corridas'",
+  "pendingProduct === 'corridas'",
   "window.location.replace('./index.html#/login')",
 ]) {
   if (!html.includes(required)) {
@@ -66,4 +99,4 @@ for (const required of [
   }
 }
 
-console.log('[OK] corridas: listener standalone de callback OAuth compartilhado injetado');
+console.log('[OK] corridas: callback OAuth compartilhado é consumido antes do encaminhamento para Entregas');
