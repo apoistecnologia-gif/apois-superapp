@@ -80,6 +80,20 @@ patch('src/routes/motorista.ganhos.tsx', (source) => {
   // Isso evita depender de "? (", "&& (" ou de espaços produzidos por outros hardeners.
   next = next.replace(/dashboard\?\.payoutEnabled/g, 'false');
   next = next.replace(/dashboard\.payoutEnabled/g, 'false');
+  next = next.replace(
+    'if (!false || withdrawing) return;',
+    'if (!dashboard || !false || withdrawing) return;',
+  );
+
+  // O ramo visual de saque fica deliberadamente inacessível, mas o TypeScript
+  // ainda analisa callbacks internos e não preserva o narrowing do ternário.
+  // Limitar a asserção ao ramo morto evita contaminar a UI financeira ativa.
+  const legacyBranchStart = next.indexOf('{false ? (');
+  const legacyBranchEnd = legacyBranchStart >= 0 ? next.indexOf(') : (', legacyBranchStart) : -1;
+  if (legacyBranchStart >= 0 && legacyBranchEnd > legacyBranchStart) {
+    const legacyBranch = next.slice(legacyBranchStart, legacyBranchEnd).replaceAll('dashboard.', 'dashboard!.');
+    next = next.slice(0, legacyBranchStart) + legacyBranch + next.slice(legacyBranchEnd);
+  }
 
   if (!next.includes('Recebimento direto ao motorista')) {
     const mainMatch = next.match(/<main\b[^>]*>/);

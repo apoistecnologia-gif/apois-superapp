@@ -21,7 +21,7 @@ if (paymentMethods) {
   } else if (!hasCanonicalActiveFilter && !delegatesToPaymentService) {
     fail('Corridas Superapp não preserva a filtragem canônica dos métodos ativos nem delega ao paymentService');
   } else {
-    ok('Corridas preserva PIX + Dinheiro + Cartão conforme política do Superapp');
+    ok('Corridas delega ao serviço que libera somente Dinheiro + Cartão direto');
   }
 }
 
@@ -29,8 +29,8 @@ const paymentService = requireFile('.work/corridas/src/services/payments/payment
 if (paymentService) {
   for (const marker of [
     'const isDirectToDriver = code === "cash" || code === "credit";',
-    'Pague diretamente ao motorista ao final da corrida.',
-    'Pague diretamente ao motorista com cartão de crédito.',
+    'Pague diretamente ao motorista em dinheiro ao final da corrida.',
+    'Pague diretamente ao motorista no cartão de crédito',
   ]) {
     if (!paymentService.includes(marker)) fail(`Corridas não confirmou recebimento direto de Dinheiro/Cartão: ${marker}`);
   }
@@ -119,14 +119,12 @@ if (resetPassword) {
 }
 const checkout = requireFile('.work/entregas/src/routes/checkout.tsx');
 if (checkout) {
-  if (!checkout.includes('const paymentMethod = "pix";')) fail('checkout Entregas não está PIX-only'); else ok('checkout Entregas está PIX-only');
+  if (!checkout.includes('const paymentMethod = "cash";') || !checkout.includes('paymentMethod: "cash"')) fail('checkout Entregas não está cash-only'); else ok('checkout Entregas está cash-only');
   if (checkout.includes('payload?.provider?.message') || checkout.includes('payload?.provider?.status_detail')) fail('checkout Entregas ainda pode expor detalhe técnico do provedor ao cliente');
   else if (!checkout.includes('return fallback;')) fail('checkout Entregas não possui fallback seguro para erro técnico de Edge Function'); else ok('checkout Entregas exibe somente mensagens seguras ao cliente');
-  if (!checkout.includes('merchant-payment-readiness')) fail('checkout Entregas não valida a conta Mercado Pago do estabelecimento antes de criar o pedido');
-  else if (!checkout.includes('const pixFunction = "create-merchant-mercadopago-pix";')) fail('checkout Entregas não está apontando exclusivamente para o PIX Mercado Pago do estabelecimento');
-  else if (/create-(?:asaas-)?pix-charge/.test(checkout) || checkout.includes('new Set(["openpix", "asaas"])')) fail('checkout Entregas ainda contém caminho legado OpenPix/Asaas para novos pedidos'); else ok('checkout Entregas usa somente Mercado Pago direto do estabelecimento para novos pedidos');
-  if (checkout.includes('if (!payment?.qrCodeText || !payment?.qrCodeImageUrl)')) fail('checkout Entregas ainda rejeita PIX válido quando o provedor não fornece imagem QR');
-  else if (!checkout.includes('if (!payment?.qrCodeText)') || !checkout.includes('typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : ""')) fail('checkout Entregas não possui fallback de QR local para brCode sem imagem do provedor'); else ok('checkout Entregas aceita brCode válido e gera QR local quando necessário');
+  if (/mercadopago|openpix|pagbank|asaas|create-(?:asaas-)?pix-charge/i.test(checkout)) fail('checkout Entregas ainda contém gateway aposentado executável');
+  else if (!checkout.includes('supabase.functions.invoke(\n        "create-order"')) fail('checkout Entregas não usa create-order cash-only');
+  else ok('checkout Entregas cria pedido direto sem gateway aposentado');
   if (!checkout.includes('get_delivery_checkout_readiness')) fail('checkout Entregas não consulta readiness do repasse direto do entregador'); else ok('checkout Entregas bloqueia entrega quando o repasse direto ao entregador ainda não está homologado');
 }
 const shellSource = requireFile('superapp/shell/index.html');

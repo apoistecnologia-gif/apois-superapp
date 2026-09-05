@@ -229,6 +229,10 @@ function injectSuperappBridge(indexPath, moduleName) {
 
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), name]);
 if (name === 'corridas') {
+  // The pinned Corridas snapshot contains a protected historical .env. Never
+  // let Vite load it: release configuration must come only from the explicit
+  // CORRIDAS_* environment mapped below.
+  run(process.execPath, [resolve(root, 'scripts/sanitize-corridas-workspace-env.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/adapt-corridas-current.mjs')]);
 } else {
   run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);

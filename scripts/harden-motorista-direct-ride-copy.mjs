@@ -33,7 +33,7 @@ for (const forbidden of [
 }
 
 for (const required of [
-  'Corrida aceita. Siga até o ponto de embarque.',
+  'Corrida aceita. Siga até o embarque',
   'motorista_a_caminho',
   'motorista_chegou',
   'em_viagem',

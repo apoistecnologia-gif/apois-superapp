@@ -21,8 +21,13 @@ const newResetBlock = `        if(path==='corridas-google'){
           return true;
         }`;
 if (!html.includes("path==='corridas-google'")) {
-  if (!html.includes(oldResetBlock)) throw new Error('[FAIL] shell cliente: bloco corridas-reset não encontrado');
-  html = html.replace(oldResetBlock, newResetBlock);
+  if (html.includes(oldResetBlock)) {
+    html = html.replace(oldResetBlock, newResetBlock);
+  } else {
+    const resetPattern = /        if\(path==='corridas-reset'\)\{\r?\n          try\{sessionStorage\.setItem\(CORRIDAS_RECOVERY_KEY,rawUrl\);\}catch\{\}\r?\n          window\.location\.replace\('\.\/modules\/corridas\/index\.html'\);\r?\n          return true;\r?\n        \}/;
+    if (!resetPattern.test(html)) throw new Error('[FAIL] shell cliente: bloco corridas-reset não encontrado');
+    html = html.replace(resetPattern, newResetBlock);
+  }
 }
 
 const oldCallbackBlock = `        if(path==='callback'){
@@ -44,8 +49,13 @@ const newCallbackBlock = `        if(path==='callback'){
           return true;
         }`;
 if (!html.includes("pendingProduct==='corridas'")) {
-  if (!html.includes(oldCallbackBlock)) throw new Error('[FAIL] shell cliente: bloco callback compartilhado não encontrado');
-  html = html.replace(oldCallbackBlock, newCallbackBlock);
+  if (html.includes(oldCallbackBlock)) {
+    html = html.replace(oldCallbackBlock, newCallbackBlock);
+  } else {
+    const callbackPattern = /        if\(path==='callback'\)\{\r?\n          window\.location\.replace\(`\.\/modules\/entregas\/index\.html#\/auth\/callback\$\{suffix\(\)\}`\);\r?\n          return true;\r?\n        \}/;
+    if (!callbackPattern.test(html)) throw new Error('[FAIL] shell cliente: bloco callback compartilhado não encontrado');
+    html = html.replace(callbackPattern, newCallbackBlock);
+  }
 } else {
   html = html
     .replace("sessionStorage.getItem('apois-superapp:pending-oauth-product')", "localStorage.getItem('apois-superapp:pending-oauth-product')")

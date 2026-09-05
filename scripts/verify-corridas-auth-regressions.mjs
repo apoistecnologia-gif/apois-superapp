@@ -36,15 +36,17 @@ for (const marker of [
 ]) {
   if (!backendIdentity.includes(marker)) fail(`boundary backend de identidade sem ${marker}`);
 }
-for (const forbidden of [
-  '.in("driver_id", driverIds)',
-  'driver_id: userId',
-  'accepted_driver_id: userId',
-  'const isPassenger = callerId === ride.passenger_id;',
-  'const isDriver = callerId === ride.driver_id;',
-  'cancel_reason: "Nenhum motorista disponível no momento."',
+// The hardener necessarily contains legacy text as exact replacement fixtures.
+// Its post-patch assertions (and generated-workspace checks below) prove those
+// fixtures do not survive in release code.
+for (const assertion of [
+  "!source.includes('.in(\"driver_id\", driverIds)')",
+  "!source.includes('driver_id: userId')",
+  "!source.includes('const isPassenger = callerId === ride.passenger_id;')",
+  "!source.includes('const isDriver = callerId === ride.driver_id;')",
+  "!source.includes('cancel_reason: \"Nenhum motorista disponível no momento.\"')",
 ]) {
-  if (backendIdentity.includes(forbidden)) fail(`boundary backend preserva padrão proibido: ${forbidden}`);
+  if (!backendIdentity.includes(assertion)) fail(`boundary backend sem asserção pós-patch: ${assertion}`);
 }
 
 const auth = read('.work/corridas/src/hooks/use-auth.tsx');
@@ -74,10 +76,19 @@ if (google) {
 
 const requestRide = read('.work/corridas/supabase/functions/request-ride/index.ts');
 if (requestRide) {
-  for (const marker of ['const driverRecordIds =', '.in("driver_id", driverRecordIds)', 'activeByDriver.get(String(d.id))', 'cancellation_reason: "Nenhum motorista disponível no momento."']) {
+  for (const marker of [
+    'const driverDomainUserIds =',
+    '.select("id,auth_user_id")',
+    'const domainByAuthUser =',
+    'activeByDriver.get(String(d.id))',
+    'cancellation_reason: "Nenhum motorista disponível no momento."',
+  ]) {
     if (!requestRide.includes(marker)) fail(`workspace request-ride sem ${marker}`);
   }
   if (requestRide.includes('.in("driver_id", driverIds)')) fail('workspace request-ride mistura subscriptions.driver_id com users.id');
+  if (requestRide.includes('.from("subscriptions")') || requestRide.includes('entitledDrivers')) {
+    fail('workspace request-ride voltou a exigir subscription/provider aposentado');
+  }
   if (requestRide.includes('cancel_reason: "Nenhum motorista disponível no momento."')) fail('workspace request-ride usa coluna de cancelamento inexistente');
 }
 

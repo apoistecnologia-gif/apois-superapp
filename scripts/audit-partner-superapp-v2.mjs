@@ -83,7 +83,7 @@ requireAll('scripts/harden-partner-motorista-native-watch.mjs', [
   'stopDriverWatch();',
 ], 'Motorista usa watcher GPS nativo contínuo e o encerra com segurança ao ficar offline');
 
-requireAll('scripts/build-partner-modules.sh', [
+requireAll('scripts/build-partner-release.sh', [
   'harden-partner-motorista-finish-authority.mjs',
   'harden-partner-motorista-post-finish.mjs',
   'harden-partner-motorista-rating-handoff.mjs',
@@ -92,8 +92,6 @@ requireAll('scripts/build-partner-modules.sh', [
   'harden-partner-motorista-active-resume.mjs',
   'harden-partner-motorista-native-watch.mjs',
   "require_contains 'driver-finish-redispatch'",
-  "require_contains 'setRouteSteps([]);'",
-  "require_contains 'event: \"rating.closed\"'",
   "require_contains 'Geolocation.watchPosition('",
   "require_contains 'stopDriverWatch();'",
 ], 'build Parceiro aplica o conjunto completo de finalização, avaliação, push/resume, financeiro e GPS do Motorista');

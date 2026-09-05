@@ -53,7 +53,7 @@ for (const [name, script] of [['build:superapp', buildSuperapp], ['build:partner
   if (!script.includes('npm run verify:pins')) fail(`${name} não verifica snapshots protegidos antes do build`);
 }
 if (buildSuperapp.includes('build:motorista')) fail('build:superapp voltou a incluir Motorista');
-if (!buildPartner.includes('build-partner-modules.sh')) fail('build:partner não usa empacotamento unificado Motorista + Entregador');
+if (!buildPartner.includes('build-partner-release.sh')) fail('build:partner não usa o empacotamento release unificado Motorista + Entregador');
 if (process.platform === 'win32' && !buildPartner.includes('scripts/run-bash.mjs')) fail('build:partner não usa runner compatível com Windows para o Bash');
 if (!failed) ok('builds Cliente e Parceiro mantêm gates e separação de responsabilidades');
 

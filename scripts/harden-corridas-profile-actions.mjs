@@ -16,6 +16,10 @@ source = source.replace(
   '<MenuLink icon={<Shield size={20} />} label="Segurança" />',
   '<MenuLink icon={<Shield size={20} />} label="Segurança" value="Proteção da conta ativa" />',
 );
+source = source.replace(
+  /<MenuLink icon=\{<Shield size=\{20\} \/>\} label="Segurança"(?: value="[^"]*")? \/>/,
+  '<MenuLink icon={<Shield size={20} />} label="Segurança" value="Proteção da conta ativa" />',
+);
 
 const oldComponent = `function MenuLink({\n  icon,\n  label,\n  value,\n}: {\n  icon: React.ReactNode;\n  label: string;\n  value?: string;\n}) {\n  return (\n    <button className="w-full flex items-center justify-between p-4 bg-[#121212] hover:bg-[#1a1a1a] rounded-xl transition-colors text-left group">\n      <div className="flex items-center gap-4">\n        <div className="text-yellow-500">{icon}</div>\n        <div>\n          <p className="text-sm font-medium">{label}</p>\n          {value && <p className="text-xs text-gray-500 truncate max-w-[200px]">{value}</p>}\n        </div>\n      </div>\n      <ChevronRight\n        size={18}\n        className="text-gray-700 group-hover:text-yellow-500 transition-colors"\n      />\n    </button>\n  );\n}`;
 
@@ -24,17 +28,31 @@ const newComponent = `function MenuLink({\n  icon,\n  label,\n  value,\n  onClic
 if (source.includes(oldComponent)) {
   source = source.replace(oldComponent, newComponent);
 } else if (!source.includes('onClick?: () => void;')) {
-  throw new Error('[FAIL] Corridas: componente MenuLink mudou; não é seguro aplicar ações automaticamente');
+  const currentComponent = /function MenuLink\(\{[\s\S]*?\n\}\s*$/;
+  const match = source.match(currentComponent)?.[0] ?? '';
+  if (!match.includes('icon: React.ReactNode;') ||
+      !match.includes('label: string;') ||
+      !match.includes('value?: string;') ||
+      !match.includes('<button className=')) {
+    throw new Error('[FAIL] Corridas: componente MenuLink mudou; não é seguro aplicar ações automaticamente');
+  }
+  source = source.replace(currentComponent, newComponent);
 }
 
 for (const marker of [
-  'label="Notificações" onClick={() => navigate({ to: "/notificacoes" })}',
-  'label="Pagamentos" onClick={() => navigate({ to: "/carteira" })}',
   'onClick?: () => void;',
   'if (!onClick)',
   '{onClick ? (',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Corridas perfil: ação incompleta (${marker})`);
+}
+for (const [label, route] of [['Notificações', '/notificacoes'], ['Pagamentos', '/carteira']]) {
+  if (source.includes(`label="${label}"`) && !source.includes(`label="${label}" onClick={() => navigate({ to: "${route}" })}`)) {
+    throw new Error(`[FAIL] Corridas perfil: ${label} permaneceu sem ação real`);
+  }
+}
+if (!source.includes('label="Segurança" value="Proteção da conta ativa"')) {
+  throw new Error('[FAIL] Corridas perfil: Segurança permaneceu com affordance inerte');
 }
 
 if (/function MenuLink[\s\S]*return \(\s*<button className=/.test(source)) {

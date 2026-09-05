@@ -13,18 +13,11 @@ if (after.includes(oldBlock)) {
   throw new Error('Padrão de deduplicação de deep link do shell não encontrado.');
 }
 
-const staleGoogleBlock = `        if(path==='corridas-google'){\n          try{sessionStorage.setItem('apois-superapp:corridas-google-url',rawUrl);}catch{}\n          void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);\n          window.location.replace('./modules/corridas/index.html#/login');\n          return true;\n        }\n`;
-after = after.replace(staleGoogleBlock, '');
-
 if (!after.includes("if(path==='corridas-reset')")) {
   throw new Error('Shell perdeu o roteamento de recuperação de senha de Corridas.');
 }
 if (!after.includes("sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl)")) {
   throw new Error('Shell não preserva o callback de recuperação de Corridas.');
 }
-if (after.includes("path==='corridas-google'") || after.includes('corridas-google-url')) {
-  throw new Error('Shell ainda contém callback Google Corridas sem fluxo suportado.');
-}
-
 if (after !== before) writeFileSync(path, after, 'utf8');
-console.log('[OK] Shell fonte mantém recuperação Corridas e remove callback Google não suportado.');
+console.log('[OK] Shell fonte mantém deduplicação e recuperação Corridas; callback Google é consolidado no build.');

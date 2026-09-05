@@ -46,11 +46,28 @@ if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?m
   console.log('[OK] release integrity: nenhum GitHub Action ativo');
 }
 
-requireAll('package.json', [
-  '"audit:play-store": "node scripts/audit-superapp-play-store.mjs"',
-  '"audit:release-integrity": "node scripts/audit-superapp-release-integrity.mjs"',
-  'npm run audit:play-store && npm run audit:release-integrity && npm run verify:rides-push-firebase',
-], 'pipeline executa gates Play Store e integridade antes dos builds');
+const packageJson = JSON.parse(read('package.json'));
+const releaseIntegrity = String(packageJson.scripts?.['audit:release-integrity'] ?? '');
+const superappBuild = String(packageJson.scripts?.['build:superapp'] ?? '');
+const releaseGateMarkers = [
+  'node scripts/audit-superapp-release-integrity.mjs',
+  'npm run verify:retired-provider-source',
+  'npm run verify:corridas-driver-eligibility',
+  'npm run verify:entregas-direct-order',
+  'npm run verify:legacy-provider-runtime',
+];
+const superappGateMarkers = [
+  'npm run audit:play-store',
+  'npm run audit:release-integrity',
+  'npm run verify:rides-push-firebase',
+];
+if (releaseGateMarkers.some((marker) => !releaseIntegrity.includes(marker)) ||
+    superappGateMarkers.some((marker) => !superappBuild.includes(marker))) {
+  console.error('[FAIL] pipeline não executa todos os gates de integridade antes dos builds');
+  failed = true;
+} else {
+  console.log('[OK] pipeline executa gates Play Store, providers aposentados e integridade antes dos builds');
+}
 
 requireAll('.apois/modules.json', [
   'harden-entregas-superapp-account-security.mjs',

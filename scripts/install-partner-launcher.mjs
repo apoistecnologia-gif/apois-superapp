@@ -1,4 +1,3 @@
-import './harden-partner-mercadopago-callback.mjs';
 import './harden-partner-android-security.mjs';
 import './configure-partner-firebase.mjs';
 import './install-partner-driver-location.mjs';

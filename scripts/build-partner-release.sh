@@ -66,7 +66,7 @@ require_contains 'stopDriverWatch();' src/routes/motorista.app.tsx 'Motorista en
 require_contains 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.ts 'Finalização usa lifecycle canônico'
 require_contains 'settlement?.driver_earning ?? settlement?.passenger_charge' 'src/routes/motorista.corridas.$id.tsx' 'Histórico usa ganho autorizado'
 require_contains 'Pagamento eletrônico temporariamente indisponível' src/routes/motorista.assinatura.tsx 'Mensalidade informa indisponibilidade sem CTA morto'
-require_contains 'Corrida aceita. Siga até o ponto de embarque.' src/routes/motorista.app.tsx 'Jornada da corrida não depende de gateway'
+require_contains 'Corrida aceita. Siga até o embarque' src/routes/motorista.app.tsx 'Jornada da corrida não depende de gateway'
 
 CORRIDAS_URL_VALUE="${CORRIDAS_VITE_SUPABASE_URL:-}"
 CORRIDAS_KEY_VALUE="${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"

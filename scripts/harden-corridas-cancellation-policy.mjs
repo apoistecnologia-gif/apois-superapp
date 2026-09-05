@@ -73,6 +73,12 @@ writeFileSync(requestHookPath, requestHook, 'utf8');
 // Resolver explicitamente public.users.auth_user_id antes de qualquer autorização/escrita.
 const backendPath = resolve('.work/corridas/supabase/functions/cancel-ride/index.ts');
 let backend = readFileSync(backendPath, 'utf8');
+// O snapshot protegido contém uma aspa ausente na mensagem de taxa. Corrigir na
+// cópia isolada mantém o pin intacto e garante que a Edge Function publicada seja válida.
+backend = backend.replace(
+  'fee.toFixed(2).replace(".", ")}.' ,
+  'fee.toFixed(2).replace(".", ",")}.' ,
+);
 backend = backend.replace(
   '    const userId = authData.user?.id;\n    if (authError || !userId) {\n      return json({ ok: false, error_code: "unauthorized" }, 401, req);\n    }',
   '    const authUserId = authData.user?.id;\n    if (authError || !authUserId) {\n      return json({ ok: false, error_code: "unauthorized" }, 401, req);\n    }\n\n    const { data: domainUser, error: domainUserError } = await admin\n      .from("users")\n      .select("id")\n      .eq("auth_user_id", authUserId)\n      .maybeSingle();\n    if (domainUserError) {\n      return json({ ok: false, error_code: "passenger_identity_lookup_failed" }, 500, req);\n    }\n    if (!domainUser?.id) {\n      return json({ ok: false, error_code: "passenger_profile_not_found" }, 404, req);\n    }\n    const passengerDomainUserId = String(domainUser.id);',
@@ -93,6 +99,22 @@ if (!backend.includes('async function ensureCancellationFinancialState(')) {
   if (!backend.includes(helperMarker)) fail('marcador Deno.serve não encontrado no cancel-ride');
   backend = backend.replace(helperMarker, helper + helperMarker);
 }
+backend = backend.replace(
+  `  let { data: existingFee, error: existingFeeError } = await admin
+    .from("cancellation_fees")
+    .select("id,status")
+    .eq("ride_id", rideId)
+    .limit(1)
+    .maybeSingle();`,
+  `  const existingFeeLookup = await admin
+    .from("cancellation_fees")
+    .select("id,status")
+    .eq("ride_id", rideId)
+    .limit(1)
+    .maybeSingle();
+  let existingFee = existingFeeLookup.data;
+  const existingFeeError = existingFeeLookup.error;`,
+);
 
 backend = backend.replace(
   '.select("id,passenger_id,status,accepted_at,created_at,cancellation_fee")',

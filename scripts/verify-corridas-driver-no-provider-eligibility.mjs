@@ -25,7 +25,9 @@ for (const marker of [
   if (!sql.includes(marker)) fail(`migration perdeu contrato obrigatório: ${marker}`);
 }
 
-const functionSections = sql.split(/create or replace function /i).slice(1).map((x) => `create or replace function ${x}`);
+// Inspect only each dollar-quoted function body. A trailing COMMENT mentioning
+// the historical helper is audit evidence, not an operational subscription call.
+const functionSections = sql.match(/create or replace function[\s\S]*?\$function\$;/gi) ?? [];
 for (const section of functionSections) {
   const header = section.split('\n', 1)[0];
   if (section.includes('driver_subscription_allows_rides(') && !header.includes('driver_subscription_allows_rides')) {
@@ -36,11 +38,15 @@ for (const section of functionSections) {
   }
 }
 
-for (const marker of [
-  "payment_method,''))) not in ('cash','dinheiro','money','credit','credit_card','cartao_credito')",
-  "coalesce(v_ride.service_details->>'payment_flow','') in ('mercadopago_marketplace','asaas','pagbank','openpix')",
-]) {
-  if (!sql.includes(marker)) fail(`accept não bloqueia fluxo aposentado: ${marker}`);
+for (const functionName of ['driver_accept_ride', 'driver_accept_ride_candidate_legacy']) {
+  const section = functionSections.find((candidate) => candidate.toLowerCase().includes(`${functionName.toLowerCase()}(`)) ?? '';
+  for (const marker of [
+    "not in ('cash','dinheiro','money','credit','credit_card','cartao_credito')",
+    "in ('mercadopago_marketplace','asaas','pagbank','openpix')",
+    "raise exception 'electronic_payment_not_configured'",
+  ]) {
+    if (!section.includes(marker)) fail(`${functionName} não bloqueia fluxo aposentado: ${marker}`);
+  }
 }
 
 if (!failed) {

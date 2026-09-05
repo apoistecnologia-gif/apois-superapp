@@ -36,7 +36,9 @@ function scanDirectory(dir, label) {
   while (stack.length) {
     const current = stack.pop();
     for (const entry of readdirSync(current, { withFileTypes: true })) {
-      if (['node_modules','.git','.gradle'].includes(entry.name)) continue;
+      // Documentation preserves historical rollback evidence by design; it is
+      // not shipped as executable application code.
+      if (['node_modules','.git','.gradle','docs'].includes(entry.name)) continue;
       const target = resolve(current, entry.name);
       if (entry.isDirectory()) { stack.push(target); continue; }
       const dot = entry.name.lastIndexOf('.');
@@ -50,6 +52,9 @@ function scanDirectory(dir, label) {
   }
 }
 
+const historicalBackend = resolve(root, '.work/corridas/backend-standalone');
+if (existsSync(historicalBackend)) fail('workspace Corridas inclui backend standalone histórico fora do source de release');
+if (existsSync(resolve(root, '.work/corridas/.env'))) fail('workspace Corridas ainda contém .env herdado do snapshot');
 scanDirectory(resolve(root, '.work/corridas'), 'workspace Corridas');
 scanDirectory(resolve(root, '.work/corridas/dist'), 'bundle Corridas');
 scanDirectory(resolve(root, 'superapp/shell/dist/modules/corridas'), 'bundle final Corridas');

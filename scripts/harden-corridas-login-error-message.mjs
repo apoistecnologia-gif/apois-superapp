@@ -32,7 +32,36 @@ const newBlock = `      if (error) {
         return;
       }`;
 
-if (source.includes(oldBlock)) {
+const currentBlock = `      if (error) {
+        const { data: existing } = await supabase.auth.getSession();
+        if (existing.session?.user) {
+          window.location.replace("./index.html#/inicio");
+          return;
+        }
+        console.error("[Login] signIn failed", {
+          name: error.name,
+          status: error.status,
+          code: (error as { code?: string }).code,
+          message: error.message,
+        });
+        toast.error(friendlyLoginError(error.message));
+        return;
+      }`;
+
+const currentReplacement = newBlock.replace(
+  '      if (error) {',
+  `      if (error) {
+        const { data: existing } = await supabase.auth.getSession();
+        if (existing.session?.user) {
+          window.location.replace("./index.html#/inicio");
+          return;
+        }`,
+);
+
+if (source.includes(currentBlock)) {
+  source = source.replace(currentBlock, currentReplacement);
+  writeFileSync(path, source, 'utf8');
+} else if (source.includes(oldBlock)) {
   source = source.replace(oldBlock, newBlock);
   writeFileSync(path, source, 'utf8');
 }

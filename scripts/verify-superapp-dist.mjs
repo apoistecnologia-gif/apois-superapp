@@ -28,7 +28,7 @@ if(googleAuth){
   else ok('Google OAuth Corridas usa callback nativo do Superapp');
 }
 requireMarkers('.work/corridas/src/hooks/rides/use-ride-request.tsx',['functions.invoke("request-ride"'],'Corridas cria solicitação pelo roteador financeiro do Superapp');
-requireMarkers('.work/corridas/src/services/payments/payment-service.ts',['const isDirectToDriver = code === "cash" || code === "credit";','Pague diretamente ao motorista ao final da corrida.','Pague diretamente ao motorista com cartão de crédito.'],'Corridas preserva PIX digital e Dinheiro/Cartão direto ao motorista');
+requireMarkers('.work/corridas/src/services/payments/payment-service.ts',['const isDirectToDriver = code === "cash" || code === "credit";','Pague diretamente ao motorista em dinheiro ao final da corrida.','Pague diretamente ao motorista no cartão de crédito'],'Corridas preserva somente Dinheiro/Cartão direto ao motorista');
 requireMarkers('.work/corridas/src/components/BottomNavigation.tsx',['grid-cols-5','min-h-[64px]','Início','Corridas','Carteira','Notificações','Perfil'],'Corridas mantém rodapé único, legível e com cinco destinos');
 requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNavigation','pathname === "/buscar-destino"','pathname.startsWith("/corrida/")'],'Corridas não sobrepõe rodapé nas jornadas fullscreen');
 requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
@@ -38,7 +38,7 @@ requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',[
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',['grid-cols-[58px_minmax(0,1fr)_auto]','carro: Car','moto: Bike','fretes: Truck','guincho: Wrench','envios: Package','PRICING_CONFIG.LABELS[cat.key]'],'Categorias Corridas usam os cinco códigos oficiais em cards premium sem truncamento horizontal');
 requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
 requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
-requireMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['postgres_changes','canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corridas mantém Realtime e bloqueia cancelamento após início da viagem');
+requireMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['postgres_changes','canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)'],'Corridas mantém Realtime e bloqueia cancelamento após chegada/início da viagem');
 forbidMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"]'],'Corridas não permite cancelamento em viagem');
 
 const visualBundleMarkers=['apois-kit-home','apois-kit-search-screen','apois-kit-home-panel'];
@@ -57,6 +57,6 @@ requireMarkers('.work/entregas/src/routes/register.tsx',['emailRedirectTo: "br.c
 requireMarkers('.work/entregas/src/routes/login.tsx',['redirectTo: "br.com.apois.app://auth/reset"'],'reset Entregas usa deep link unificado');
 requireMarkers('.work/entregas/src/lib/customer-push.ts',['register_superapp_customer_push_device','_app_package: "br.com.apois.app"','const isDeliveryPush =','if (!target) return;'],'Push Entregas filtra produto e registra package correto');
 forbidMarkers('.work/entregas/src/lib/customer-push.ts',['PushNotifications.unregister()'],'logout Entregas não invalida token FCM compartilhado');
-requireMarkers('.work/entregas/src/routes/checkout.tsx',['const paymentMethod = "pix";'],'checkout Entregas permanece PIX-only');
+requireMarkers('.work/entregas/src/routes/checkout.tsx',['const paymentMethod = "cash";','paymentMethod: "cash"','if (paymentMethod !== "cash")'],'checkout Entregas permanece cash-only e fail-closed');
 requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['fixed bottom-0','min-h-[88px]','aria-label="Buscar"','<Search className="h-8 w-8" />'],'rodapé Entregas é fixo, legível e explícito');
 if(failed)process.exit(1);console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');

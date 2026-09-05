@@ -110,9 +110,8 @@
           fragmentParams.forEach((value,key)=>{if(!params.has(key))params.set(key,value);});
         }
         const suffix=()=>{const query=params.toString();return query?`?${query}`:'';};
-
         if(path==='corridas-google'){
-          try{sessionStorage.setItem('apois-superapp:corridas-google-url',rawUrl);}catch{}
+          try{localStorage.setItem('apois-superapp:corridas-google-url',rawUrl);}catch{}
           void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
           window.location.replace('./modules/corridas/index.html#/login');
           return true;
@@ -132,6 +131,16 @@
           return true;
         }
         if(path==='callback'){
+          try{
+            const pendingProduct=localStorage.getItem('apois-superapp:pending-oauth-product');
+            if(pendingProduct==='corridas'){
+              localStorage.removeItem('apois-superapp:pending-oauth-product');
+              localStorage.setItem('apois-superapp:corridas-google-url',rawUrl);
+              void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
+              window.location.replace('./modules/corridas/index.html#/login');
+              return true;
+            }
+          }catch{}
           window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix()}`);
           return true;
         }
