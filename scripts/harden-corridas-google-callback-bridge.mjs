@@ -5,21 +5,11 @@ const path = resolve('.work/corridas/dist/index.html');
 let html = readFileSync(path, 'utf8');
 
 const marker = 'data-apois-corridas-google-callback-bridge';
-const inlineMarker = 'apois-superapp:corridas-google-inline-v2';
+const inlineMarker = 'apois-superapp:corridas-google-inline-v3';
 const pendingKey = 'apois-superapp:pending-oauth-product';
 const corridasForwardKey = 'apois-superapp:corridas-google-url';
 
-// Corrige o bridge já injetado pelo build-isolated-module ANTES de registrar
-// listeners adicionais. Assim o callback compartilhado de Corridas não pode ser
-// encaminhado para Entregas por uma corrida entre listeners appUrlOpen.
-if (!html.includes(inlineMarker)) {
-  const branchAnchor = "if (moduleName === 'corridas') {";
-  const anchorIndex = html.indexOf(branchAnchor);
-  if (anchorIndex < 0) {
-    throw new Error('[FAIL] corridas: branch base de auth do Superapp não encontrada');
-  }
-  const insertAt = anchorIndex + branchAnchor.length;
-  const inlineGuard = `
+const inlineGuard = `
         /* ${inlineMarker} */
         if (path === 'callback') {
           try {
@@ -34,11 +24,33 @@ if (!html.includes(inlineMarker)) {
           } catch {}
         }
 `;
-  html = html.slice(0, insertAt) + inlineGuard + html.slice(insertAt);
+
+// O bridge do módulo pode vir do snapshot ou do build-isolated-module e já mudou
+// de formatação ao longo dos pins. Em vez de depender da linha
+// "if (moduleName === 'corridas')", endurecemos o ponto de encaminhamento real
+// para Entregas. Se esse encaminhamento existir, o callback compartilhado de
+// Corridas precisa ser consumido imediatamente antes dele.
+if (!html.includes(inlineMarker)) {
+  const forwardingBlock = /if\s*\(\s*path\s*===\s*['"]reset['"]\s*\|\|\s*path\s*===\s*['"]callback['"]\s*\|\|\s*path\s*===\s*['"]email-change['"]\s*\)\s*\{/;
+  const forwardingMatch = forwardingBlock.exec(html);
+
+  if (forwardingMatch?.index >= 0) {
+    html = html.slice(0, forwardingMatch.index) + inlineGuard + html.slice(forwardingMatch.index);
+  } else {
+    const appearsToForwardToEntregas =
+      html.includes('entregasAuthForwardKey') &&
+      html.includes('../entregas/index.html') &&
+      html.includes("path === 'callback'");
+
+    if (appearsToForwardToEntregas) {
+      throw new Error('[FAIL] corridas: encaminhamento auth para Entregas existe, mas formato não foi reconhecido com segurança');
+    }
+  }
 }
 
-// Listener standalone permanece como defesa em profundidade para callbacks
-// recebidos quando o bridge base ainda não terminou o bootstrap.
+// Listener standalone permanece como defesa em profundidade. Ele cobre bundles
+// que não possuem o bridge de encaminhamento acima e também callbacks recebidos
+// antes da inicialização completa da tela React.
 if (!html.includes(marker)) {
   const bridge = `
 <script ${marker}>
@@ -86,12 +98,10 @@ if (!html.includes(marker)) {
 writeFileSync(path, html, 'utf8');
 
 for (const required of [
-  inlineMarker,
   marker,
   pendingKey,
   corridasForwardKey,
   'br.com.apois.app://auth/callback',
-  "pendingProduct === 'corridas'",
   "window.location.replace('./index.html#/login')",
 ]) {
   if (!html.includes(required)) {
@@ -99,4 +109,13 @@ for (const required of [
   }
 }
 
-console.log('[OK] corridas: callback OAuth compartilhado é consumido antes do encaminhamento para Entregas');
+const stillForwardsSharedCallbackToEntregas =
+  html.includes('entregasAuthForwardKey') &&
+  html.includes('../entregas/index.html') &&
+  html.includes("path === 'callback'");
+
+if (stillForwardsSharedCallbackToEntregas && !html.includes(inlineMarker)) {
+  throw new Error('[FAIL] corridas: callback compartilhado ainda pode ser encaminhado para Entregas antes de ser consumido');
+}
+
+console.log('[OK] corridas: callback OAuth compartilhado endurecido sem depender de branch/whitespace do HTML');
