@@ -26,12 +26,19 @@ const dialogPath = resolve('.work/corridas/src/components/rides/active/Cancellat
 let dialog = readFileSync(dialogPath, 'utf8');
 const ruleText = 'Regra APOIS: R$ 5,00 + R$ 1,00 por km percorrido pelo motorista, limitada a R$ 15,00. Se o motorista já chegou ao embarque, a taxa é R$ 15,00.';
 if (!dialog.includes(ruleText)) {
-  const insertion = `\n          <p className="rounded-xl border border-apois-yellow/20 bg-apois-yellow/5 px-3 py-2 text-[11px] leading-5 text-zinc-400">\n            ${ruleText}\n          </p>\n`;
-  const actionMarker = '<div className="flex gap-3">';
-  const index = dialog.indexOf(actionMarker);
-  if (index < 0) fail('área de ações do diálogo não encontrada');
-  dialog = dialog.slice(0, index) + insertion + dialog.slice(index);
+  const insertion = `\n        <p className="rounded-xl border border-apois-yellow/20 bg-apois-yellow/5 px-3 py-2 text-[11px] leading-5 text-zinc-400">\n          ${ruleText}\n        </p>\n`;
+  const actionMarkers = [
+    '<DialogFooter className="flex flex-col gap-2 mt-2">',
+    '<DialogFooter',
+    '<div className="flex gap-3">',
+  ];
+  const foundMarker = actionMarkers
+    .map((marker) => ({ marker, index: dialog.indexOf(marker) }))
+    .find(({ index }) => index >= 0);
+  if (!foundMarker) fail('área de ações do diálogo não encontrada');
+  dialog = dialog.slice(0, foundMarker.index) + insertion + dialog.slice(foundMarker.index);
 }
+if (!dialog.includes(ruleText)) fail('texto da política não foi inserido no diálogo');
 writeFileSync(dialogPath, dialog, 'utf8');
 
 const routePath = resolve('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx');
