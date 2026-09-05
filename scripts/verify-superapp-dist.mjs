@@ -19,7 +19,14 @@ const shell=requireFile('superapp/shell/dist/index.html');if(shell){if(/\b(?:src
 
 requireMarkers('.work/corridas/src/integrations/supabase/client.ts',['storageKey: "apois-superapp-corridas-auth-v1"'],'Corridas usa namespace de sessão próprio');
 requireMarkers('.work/corridas/src/routes/_public.login.tsx',['PassengerGoogleLoginButton','<PassengerGoogleLoginButton />','to="/recuperar-senha"'],'Corridas login oferece Google, senha e recuperação');
-requireMarkers('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx',['br.com.apois.app://auth/corridas-google','signInWithOAuth','provider: "google"','Browser.open'],'Google OAuth Corridas usa callback nativo do Superapp');
+const googleAuth=requireFile('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx');
+if(googleAuth){
+  const baseMarkers=['br.com.apois.app://auth/corridas-google','signInWithOAuth','provider: "google"'];
+  const missing=baseMarkers.filter(marker=>!googleAuth.includes(marker));
+  const hasBrowserOpen=googleAuth.includes('Browser.open') || (googleAuth.includes('browserPlugin()') && googleAuth.includes('browser.open({ url: data.url })'));
+  if(missing.length || !hasBrowserOpen) fail(`Google OAuth Corridas usa callback nativo do Superapp: ${[...missing,...(!hasBrowserOpen?['Browser.open/native Browser bridge']:[])].join(' | ')}`);
+  else ok('Google OAuth Corridas usa callback nativo do Superapp');
+}
 requireMarkers('.work/corridas/src/hooks/rides/use-ride-request.tsx',['functions.invoke("request-ride"'],'Corridas cria solicitação pelo roteador financeiro do Superapp');
 requireMarkers('.work/corridas/src/services/payments/payment-service.ts',['const isDirectToDriver = code === "cash" || code === "credit";','Pague diretamente ao motorista ao final da corrida.','Pague diretamente ao motorista com cartão de crédito.'],'Corridas preserva PIX digital e Dinheiro/Cartão direto ao motorista');
 requireMarkers('.work/corridas/src/components/BottomNavigation.tsx',['grid-cols-5','min-h-[64px]','Início','Corridas','Carteira','Notificações','Perfil'],'Corridas mantém rodapé único, legível e com cinco destinos');
