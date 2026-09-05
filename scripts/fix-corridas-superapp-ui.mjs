@@ -23,8 +23,6 @@ function requireMarkers(path, markers, label) {
   console.log(`[OK] ${label}`);
 }
 
-// O pin atual usa BottomNavigation no layout autenticado. Não existe AppShell
-// nem um segundo rodapé privado na Home. Mantemos uma única navegação global.
 patch('.work/corridas/src/components/BottomNavigation.tsx', (source) => {
   let next = source;
   next = next.replace(
@@ -40,8 +38,6 @@ patch('.work/corridas/src/components/BottomNavigation.tsx', (source) => {
   return next;
 }, 'Corridas: navegação inferior real recebe alvos móveis e safe area');
 
-// Perfil do pin atual é uma rota direta. Removemos atalhos que apenas duplicam
-// itens permanentes do rodapé e deixamos o restante do perfil funcional intacto.
 patch('.work/corridas/src/routes/_authenticated.perfil.tsx', (source) => {
   let next = source;
   next = next.replace('  Bell,\n', '');
@@ -55,21 +51,17 @@ patch('.work/corridas/src/routes/_authenticated.perfil.tsx', (source) => {
   return next;
 }, 'Corridas: Perfil real remove atalhos duplicados e corrige viewport');
 
-// O layout autenticado do pin atual é quem monta o rodapé. As jornadas de busca
-// e corrida ativa usam telas próprias; o rodapé deve permanecer fora delas para
-// evitar sobreposição com BottomSheet/teclado.
+// O layout já usa useRouterState; reaproveitamos o mesmo estado de rota para não
+// introduzir um segundo hook de localização e ocultamos o rodapé apenas nas
+// jornadas fullscreen onde ele conflita com teclado/BottomSheet/mapa ativo.
 patch('.work/corridas/src/routes/_authenticated.tsx', (source) => {
   if (source.includes('const hideBottomNavigation =')) return source;
   let next = source;
   next = next.replace(
-    'import { Outlet, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";',
-    'import { Outlet, createFileRoute, redirect, useLocation, useNavigate } from "@tanstack/react-router";',
+    'function AuthenticatedLayout() {\n  return (',
+    'function AuthenticatedLayout() {\n  const pathname = useRouterState({ select: (state) => state.location.pathname });\n  const hideBottomNavigation = pathname === "/buscar-destino" || pathname === "/revisar-solicitacao" || pathname.startsWith("/corrida/");\n\n  return (',
   );
-  next = next.replace(
-    'function AuthenticatedLayout() {\n  const navigate = useNavigate();',
-    'function AuthenticatedLayout() {\n  const navigate = useNavigate();\n  const pathname = useLocation().pathname;\n  const hideBottomNavigation = pathname === "/buscar-destino" || pathname === "/revisar-solicitacao" || pathname.startsWith("/corrida/");',
-  );
-  next = next.replace('<BottomNavigation />', '{!hideBottomNavigation ? <BottomNavigation /> : null}');
+  next = next.replace('                                      <BottomNavigation />', '                                      {!hideBottomNavigation ? <BottomNavigation /> : null}');
   return next;
 }, 'Corridas: rodapé não invade busca, revisão ou corrida ativa');
 
@@ -80,7 +72,7 @@ requireMarkers(
 );
 requireMarkers(
   '.work/corridas/src/routes/_authenticated.tsx',
-  ['hideBottomNavigation', 'pathname === "/buscar-destino"', 'pathname.startsWith("/corrida/")'],
+  ['const hideBottomNavigation =', 'pathname === "/buscar-destino"', 'pathname.startsWith("/corrida/")', '!hideBottomNavigation ? <BottomNavigation />'],
   'Corridas layout autenticado compatível com jornadas fullscreen',
 );
 requireMarkers(
