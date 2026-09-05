@@ -81,22 +81,13 @@ patch('src/hooks/rides/use-ride-request.tsx', (source) => {
       '  const { route } = useRoute();\n  const { address: pickupAddress, pickupLabel, pickupShortLabel, pickupPlaceId } = usePickupAddress();\n  const { destination } = useDestination();\n  const { selectedMethod } = usePaymentMethods();',
     );
   }
-  next = next.replace(
-    '    destination: null,\n  });',
-    '    destination: null,\n    paymentMethod: null,\n  });',
-  );
+  next = next.replace('    destination: null,\n  });', '    destination: null,\n    paymentMethod: null,\n  });');
   next = next.replace(
     '      !sameCoordinates(currentOrigin, requestDataRef.current.origin) ||\n      !sameCoordinates(currentDestination, requestDataRef.current.destination);',
     '      !sameCoordinates(currentOrigin, requestDataRef.current.origin) ||\n      !sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      selectedMethod !== requestDataRef.current.paymentMethod;',
   );
-  next = next.replace(
-    '        destination: currentDestination,\n      };',
-    '        destination: currentDestination,\n        paymentMethod: selectedMethod,\n      };',
-  );
-  next = next.replace(
-    '  }, [selectedCategory, route, request.requestKey]);',
-    '  }, [selectedCategory, selectedMethod, route, request.requestKey]);',
-  );
+  next = next.replace('        destination: currentDestination,\n      };', '        destination: currentDestination,\n        paymentMethod: selectedMethod,\n      };');
+  next = next.replace('  }, [selectedCategory, route, request.requestKey]);', '  }, [selectedCategory, selectedMethod, route, request.requestKey]);');
   next = next.replace(
     '        origin_name: "Origem",\n        destination_name: "Destino",\n        distance_km: route.distanceMeters / 1000,\n        duration_min: route.durationSeconds / 60,\n        service_details: {},',
     '        origin_name: pickupLabel || pickupShortLabel || pickupAddress || "Origem",\n        destination_name: destination?.formattedAddress || destination?.label || "Destino",\n        distance_km: route.distanceMeters / 1000,\n        duration_min: route.durationSeconds / 60,\n        pickup_label: pickupLabel,\n        pickup_short_label: pickupShortLabel,\n        pickup_address: pickupAddress,\n        pickup_place_id: pickupPlaceId,\n        pickup_source: "gps",\n        payment_method: selectedMethod,\n        service_details: selectedCategory.details ?? {},',
@@ -112,6 +103,12 @@ patch('src/hooks/rides/use-ride-request.tsx', (source) => {
   return next;
 }, 'Corridas: solicitação usa endereço, destino e pagamento reais com idempotência');
 
+patch('src/types/places.ts', (source) =>
+  source.includes('  place?: unknown;')
+    ? source
+    : source.replace('  distanceMeters?: number;\n', '  distanceMeters?: number;\n  place?: unknown;\n'),
+'Corridas: sugestão tipa referência interna usada no fetchFields');
+
 patch('src/services/places/places-service.ts', (source) => {
   let next = source;
   if (!next.includes('private initializationPromise: Promise<void> | null = null;')) {
@@ -124,16 +121,22 @@ patch('src/services/places/places-service.ts', (source) => {
   const newInit = `  public async initialize(): Promise<void> {\n    if (this.placesLib) return;\n    if (this.initializationPromise) return this.initializationPromise;\n\n    this.isInitializing = true;\n    this.initializationPromise = (async () => {\n      try {\n        this.placesLib = await googleMapsLoader.importLibrary("places");\n        this.createSessionToken();\n      } catch (error) {\n        console.error("Failed to initialize Places library:", error);\n        throw this.normalizeError("places_library_load_failed");\n      } finally {\n        this.isInitializing = false;\n        this.initializationPromise = null;\n      }\n    })();\n    return this.initializationPromise;\n  }`;
   if (next.includes(oldInit)) next = next.replace(oldInit, newInit);
 
+  next = next.replace(
+    '      const suggestions = googleSuggestions.map((s: any) => this.normalizeSuggestion(s));',
+    '      const suggestions = googleSuggestions.flatMap((suggestion: any) => {\n        try {\n          return [this.normalizeSuggestion(suggestion)];\n        } catch {\n          return [];\n        }\n      });',
+  );
+
   const oldNormalize = `  private normalizeSuggestion(s: any): PlaceSuggestion {\n    // A estrutura moderna de AutocompleteSuggestion tem propriedades aninhadas\n    const p = s.placePrediction;\n    return {\n      placeId: p.placeId,\n      primaryText: p.text.mainText.text,\n      secondaryText: p.text.secondaryText?.text,\n      fullText: p.text.text,\n      types: p.types || [],\n      distanceMeters: p.distanceMeters,\n      // Guardamos a referência ao objeto de lugar para o fetchFields posterior\n      // @ts-ignore\n      place: p.toPlace(),\n    };\n  }`;
-  const newNormalize = `  private normalizeSuggestion(s: any): PlaceSuggestion {\n    const p = s?.placePrediction;\n    if (!p || (!p.placeId && typeof p.toPlace !== "function")) {\n      throw this.normalizeError("places_invalid_prediction");\n    }\n    const textObject = p.text;\n    const fullText = typeof textObject?.text === "string"\n      ? textObject.text\n      : typeof textObject?.toString === "function"\n        ? String(textObject)\n        : "";\n    const primaryText = typeof textObject?.mainText?.text === "string" && textObject.mainText.text.trim()\n      ? textObject.mainText.text\n      : fullText.split(",")[0]?.trim() || fullText || "Local encontrado";\n    const secondaryText = typeof textObject?.secondaryText?.text === "string" && textObject.secondaryText.text.trim()\n      ? textObject.secondaryText.text\n      : fullText.startsWith(primaryText)\n        ? fullText.slice(primaryText.length).replace(/^\\s*,\\s*/, "").trim()\n        : fullText;\n    return {\n      placeId: p.placeId || primaryText,\n      primaryText,\n      secondaryText: secondaryText || undefined,\n      fullText: fullText || primaryText,\n      types: p.types || [],\n      distanceMeters: p.distanceMeters,\n      place: typeof p.toPlace === "function" ? p.toPlace() : undefined,\n    };\n  }`;
+  const newNormalize = `  private normalizeSuggestion(s: any): PlaceSuggestion {\n    const p = s?.placePrediction;\n    if (!p || typeof p.placeId !== "string" || !p.placeId.trim() || typeof p.toPlace !== "function") {\n      throw this.normalizeError("places_invalid_prediction");\n    }\n    const textObject = p.text;\n    const fullText = typeof textObject?.text === "string"\n      ? textObject.text\n      : typeof textObject?.toString === "function"\n        ? String(textObject)\n        : "";\n    const primaryText = typeof textObject?.mainText?.text === "string" && textObject.mainText.text.trim()\n      ? textObject.mainText.text\n      : fullText.split(",")[0]?.trim() || fullText || "Local encontrado";\n    const secondaryText = typeof textObject?.secondaryText?.text === "string" && textObject.secondaryText.text.trim()\n      ? textObject.secondaryText.text\n      : fullText.startsWith(primaryText)\n        ? fullText.slice(primaryText.length).replace(/^\\s*,\\s*/, "").trim()\n        : fullText;\n    return {\n      placeId: p.placeId,\n      primaryText,\n      secondaryText: secondaryText || undefined,\n      fullText: fullText || primaryText,\n      types: p.types || [],\n      distanceMeters: p.distanceMeters,\n      place: p.toPlace(),\n    };\n  }`;
   if (next.includes(oldNormalize)) next = next.replace(oldNormalize, newNormalize);
   return next;
-}, 'Corridas: Places aguarda inicialização concorrente e aceita shape real do autocomplete');
+}, 'Corridas: Places aguarda inicialização concorrente e preserva só sugestões selecionáveis');
 
 requireMarkers('src/integrations/supabase/client.ts', ['storageKey: "apois-superapp-corridas-auth-v1"'], 'Corridas auth isolado');
 requireMarkers('src/hooks/use-location.tsx', ['apois-superapp-corridas-last-location'], 'Corridas localização isolada');
 requireMarkers('src/components/map/PassengerMap.tsx', ['encodedPolyline', 'PolylineDecoder', 'displayedRoutePoints'], 'Corridas mapa com rota persistida');
 requireMarkers('src/hooks/rides/use-ride-request.tsx', ['paymentMethod: string | null', 'payment_method: selectedMethod', 'pickup_address: pickupAddress'], 'Corridas payload real e idempotente');
-requireMarkers('src/services/places/places-service.ts', ['initializationPromise', 'fullText.split(",")[0]', 'typeof p.toPlace === "function"'], 'Corridas autocomplete robusto');
+requireMarkers('src/types/places.ts', ['place?: unknown'], 'Corridas tipo Places compatível com seleção');
+requireMarkers('src/services/places/places-service.ts', ['initializationPromise', 'googleSuggestions.flatMap', 'fullText.split(",")[0]', 'place: p.toPlace()'], 'Corridas autocomplete robusto');
 
 console.log('[OK] Corridas: adaptação atual concluída sem modificar a fonte protegida');
