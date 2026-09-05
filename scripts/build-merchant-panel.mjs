@@ -74,6 +74,8 @@ for (const script of [
   'harden-entregas-order-finish-mobile-ui.mjs',
   'harden-superapp-module-mobile-ui.mjs',
   'harden-entregas-superapp-secondary-mobile-ui.mjs',
+  'harden-entregas-payment-provider-boundary.mjs',
+  'harden-entregas-direct-payment-operations.mjs',
 ]) {
   const args = script === 'harden-superapp-module-mobile-ui.mjs'
     ? [resolve(root, `scripts/${script}`), 'entregas']
@@ -87,13 +89,6 @@ const env = {
   APOIS_MOBILE_BUILD: '0',
 };
 
-// TanStack Start renders HTML per request; there is no static index.html to
-// capture. Deploy it the way it's meant to run: as a real Vercel Serverless
-// Function via Nitro's "vercel" preset, so each visitor's actual session is
-// read at request time by the running server. That's also why forcing
-// NITRO_PRESET=node-server here was wrong: it produces .output/server +
-// .output/public, but this SSR app never writes an index.html into
-// .output/public, so nothing was ever there to republish.
 env.NITRO_PRESET = 'vercel';
 
 run('bun', ['install'], { cwd: workspace, env });
@@ -105,12 +100,8 @@ if (!existsSync(resolve(nestedOutput, 'config.json'))) {
   process.exit(1);
 }
 
-// Vercel's Build Output API only looks for .vercel/output at the project
-// root where the build command ran (/vercel/path0), not inside our nested
-// .work/entregas workspace. Copy it up so Vercel picks it up after this
-// script exits.
 const rootOutput = resolve(root, '.vercel/output');
 rmSync(rootOutput, { recursive: true, force: true });
 cpSync(nestedOutput, rootOutput, { recursive: true });
 
-console.log('[OK] Painel do estabelecimento pronto para Vercel em .vercel/output (Serverless Function).');
+console.log('[OK] Painel do estabelecimento pronto para Vercel em .vercel/output (Serverless Function), sem gateway legado no fluxo de pedidos.');
