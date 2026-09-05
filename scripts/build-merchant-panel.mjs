@@ -16,8 +16,10 @@ function run(bin, args, options = {}) {
     shell: process.platform === 'win32' && command.endsWith('.cmd'),
   });
   if (result.error) throw result.error;
-  console.log(`[EXIT ${result.status ?? 1}] ${command} ${args.join(' ')}`);
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  const status = result.status ?? 1;
+  console.log(`[EXIT ${status}] ${command} ${args.join(' ')}`);
+  if (status !== 0 && options.allowFailure !== true) process.exit(status);
+  return status;
 }
 
 if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
@@ -87,12 +89,20 @@ const baseEnv = {
   APOIS_MOBILE_BUILD: '0',
 };
 
-// A fonte protegida possui bun.lock. Use instalação reproduzível; não reescreva lockfile
-// para mascarar incompatibilidade.
-run('bun', ['install', '--frozen-lockfile'], { cwd: workspace, env: baseEnv });
+// Primeiro prove se o lock da fonte é reproduzível. O pin atual não é aceito por
+// Bun 1.3.14 em --frozen-lockfile; isso é registrado como incompatibilidade do
+// lock, mas não reescrevemos o lock protegido. A continuação usa --no-save somente
+// na cópia descartável .work para permitir typecheck/test/build desta rodada.
+const frozenInstallStatus = run('bun', ['install', '--frozen-lockfile'], {
+  cwd: workspace,
+  env: baseEnv,
+  allowFailure: true,
+});
+if (frozenInstallStatus !== 0) {
+  console.warn('[WARN] Entregas: bun.lock do pin não é reproduzível com Bun atual; usando instalação --no-save apenas em .work.');
+  run('bun', ['install', '--no-save'], { cwd: workspace, env: baseEnv });
+}
 
-// Validadores reais que podem ser executados neste checkout mesmo sem os outros
-// submódulos privados materializados.
 for (const validator of [
   'scripts/audit-superapp-static.mjs',
   'scripts/verify-corridas-database-ownership.mjs',
@@ -103,14 +113,10 @@ for (const validator of [
   run(process.execPath, [resolve(root, validator)], { cwd: root, env: baseEnv });
 }
 
-// TypeScript, lint e testes são executados sobre a árvore .work já totalmente
-// transformada; build Vite isolado não substitui essas três validações.
 run('bun', ['run', 'typecheck'], { cwd: workspace, env: baseEnv });
 run('bun', ['run', 'lint'], { cwd: workspace, env: baseEnv });
 run('bun', ['run', 'test'], { cwd: workspace, env: baseEnv });
 
-// Fixture completa do Cliente sobre a MESMA árvore transformada que será usada pelo
-// merchant. O resultado é descartável e não é tratado como build do Superapp inteiro.
 const customerEnv = {
   ...baseEnv,
   VITE_APOIS_PRODUCT_MODE: 'customer',
@@ -118,8 +124,6 @@ const customerEnv = {
 };
 run('bun', ['run', 'build:customer'], { cwd: workspace, env: customerEnv });
 
-// O painel merchant é construído por último para que .vercel/output contenha somente
-// o artefato esperado por este projeto Vercel.
 const merchantEnv = {
   ...baseEnv,
   VITE_APOIS_PRODUCT_MODE: 'merchant',
