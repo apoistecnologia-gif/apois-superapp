@@ -47,15 +47,33 @@ requireMarkers('scripts/harden-entregas-payment-provider-boundary.mjs', [
   'paymentMethod: "cash"',
   'Pedido criado. O pagamento será feito diretamente ao estabelecimento.',
   'const PAYMENT_METHODS = new Set(["cash"]);',
-  'process-superapp-refund',
+  'openpix-payout',
+  'MP_DEVICE_SESSION_ID',
+  'PixPaymentScreen(',
   'devolução automática por gateway não se aplica',
   'SEM GATEWAY DA APOIS',
-], 'Boundary final de Entregas usa pagamento direto e neutraliza estorno eletrônico');
+], 'Boundary final de Entregas usa pagamento direto e rejeita resíduos de gateway/PIX');
+
+requireMarkers('scripts/harden-entregas-direct-payment-operations.mjs', [
+  'function isOperationalPayment(order: MerchantOrder)',
+  'return status === "paid" || (method === "cash" && status === "pending");',
+  'const paymentReady = isOperationalPayment(order);',
+  'function isAlertableOrderPayment(',
+  'isAlertableOrderPayment(order.payment_method, order.payment_status)',
+], 'Operação merchant reconhece cash/pending sem marcar o pedido como pago');
 
 requireMarkers('.apois/modules.json', [
   'harden-entregas-payment-provider-boundary.mjs',
+  'harden-entregas-direct-payment-operations.mjs',
   'bun run build:customer',
-], 'Boundary de pagamento direto é aplicado antes do build customer');
+], 'Boundaries de pagamento direto são aplicados antes do build customer');
+
+requireMarkers('supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql', [
+  'Merchant members can view operational merchant orders',
+  "payment_method = 'cash' and payment_status in ('pending','cancelled')",
+  "v_order.payment_method = 'cash' and v_order.payment_status = 'pending'",
+  'merchant access required',
+], 'Migration forward-only preserva autorização merchant e libera apenas cash direto');
 
 requireMarkers('supabase/migrations/20260826051214_courier_manual_settlements.sql', [
   'merchant pays the courier directly via',
