@@ -26,6 +26,7 @@ if (!corridasUrl.includes('vqtucstyduxrqjgyigfk.supabase.co')) {
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
 for (const script of [
   'harden-motorista-auth.mjs',
+  'harden-motorista-document-boundary.mjs',
   'harden-motorista-provider-boundary.mjs',
   'harden-motorista-finance-boundary.mjs',
 ]) {
@@ -90,4 +91,4 @@ for (const forbidden of [
     process.exit(1);
   }
 }
-console.log('[OK] motorista: typecheck + build isolado concluídos com auth/provider boundary');
+console.log('[OK] motorista: typecheck + build isolado concluídos com auth/document/provider boundary');
