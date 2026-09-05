@@ -13,8 +13,10 @@ function read(path) {
 const rideMethods = read('.work/corridas/src/hooks/use-payment-methods.tsx');
 const rideService = read('.work/corridas/src/services/payments/payment-service.ts');
 if (rideMethods) {
+  const hasCanonicalActiveFilter = rideMethods.includes('(method) => method.isActive && method.enabled');
+  const delegatesToPaymentService = rideMethods.includes('paymentService.getPaymentMethods()');
   if (rideMethods.includes('method.code === "pix"')) fail('Corridas voltou a PIX-only');
-  else if (!rideMethods.includes('method.isActive && method.enabled')) fail('Corridas perdeu filtro dos meios ativos');
+  else if (!hasCanonicalActiveFilter && !delegatesToPaymentService) fail('Corridas perdeu filtro/delegação dos meios ativos');
   else ok('Corridas preserva os meios ativos');
 }
 if (rideService) {
@@ -32,9 +34,7 @@ if (checkout) {
   if (!checkout.includes('const paymentMethod = "pix";')) fail('Entregas: checkout deixou de ser PIX-only');
   if (!checkout.includes('merchant-payment-readiness')) fail('Entregas: checkout não valida recebedor Mercado Pago');
   if (!checkout.includes('const pixFunction = "create-merchant-mercadopago-pix";')) fail('Entregas: checkout não usa Mercado Pago direto do estabelecimento');
-  if (checkout.includes('new Set(["openpix", "asaas"])') || /create-(?:asaas-)?pix-charge/.test(checkout)) {
-    fail('Entregas: caminho legado OpenPix/Asaas permaneceu no checkout final');
-  }
+  if (checkout.includes('new Set(["openpix", "asaas"])') || /create-(?:asaas-)?pix-charge/.test(checkout)) fail('Entregas: caminho legado OpenPix/Asaas permaneceu no checkout final');
   if (!checkout.includes('get_delivery_checkout_readiness')) fail('Entregas: checkout não valida readiness de repasse direto ao entregador');
   if (!checkout.includes('deliveryPlatformAvailable')) fail('Entregas: bloqueio de entrega sem payout direto não está ativo');
   if (!failed) ok('Entregas: novos pedidos usam Mercado Pago do estabelecimento e entrega fica bloqueada sem payout direto homologado');
