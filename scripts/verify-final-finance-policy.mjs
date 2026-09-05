@@ -2,48 +2,41 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 let failed = false;
-function fail(message) { console.error(`[FAIL] ${message}`); failed = true; }
+function fail(message) { failed = true; console.error(`[FAIL] ${message}`); }
 function ok(message) { console.log(`[OK] ${message}`); }
-function read(path) {
-  const full = resolve(path);
-  if (!existsSync(full)) { fail(`arquivo ausente: ${path}`); return ''; }
-  return readFileSync(full, 'utf8');
-}
+function read(path) { const full = resolve(path); if (!existsSync(full)) { fail(`arquivo ausente: ${path}`); return ''; } return readFileSync(full, 'utf8'); }
 
-const rideMethods = read('.work/corridas/src/hooks/use-payment-methods.tsx');
 const rideService = read('.work/corridas/src/services/payments/payment-service.ts');
-if (rideMethods) {
-  const hasCanonicalActiveFilter = rideMethods.includes('(method) => method.isActive && method.enabled');
-  const delegatesToPaymentService = rideMethods.includes('paymentService.getPaymentMethods()');
-  if (rideMethods.includes('method.code === "pix"')) fail('Corridas voltou a PIX-only');
-  else if (!hasCanonicalActiveFilter && !delegatesToPaymentService) fail('Corridas perdeu filtro/delegação dos meios ativos');
-  else ok('Corridas preserva os meios ativos');
-}
 if (rideService) {
-  const markers = [
+  for (const marker of [
     'const isDirectToDriver = code === "cash" || code === "credit";',
-    'Pague diretamente ao motorista ao final da corrida.',
-    'Pague diretamente ao motorista com cartão de crédito.',
-  ];
-  for (const marker of markers) if (!rideService.includes(marker)) fail(`Corridas: política direta ausente (${marker})`);
-  if (!markers.some((marker) => !rideService.includes(marker))) ok('Corridas: PIX eletrônico + Dinheiro/Cartão direto ao motorista confirmado');
+    'if (!isActive || !isDirectToDriver) return [];',
+    'Pague diretamente ao motorista em dinheiro ao final da corrida.',
+    'Pague diretamente ao motorista no cartão de crédito',
+  ]) if (!rideService.includes(marker)) fail(`Corridas: política direta ausente (${marker})`);
+  if (!failed) ok('Corridas: somente Dinheiro/Crédito direto ao motorista ficam no fluxo ativo');
 }
 
 const checkout = read('.work/entregas/src/routes/checkout.tsx');
 if (checkout) {
-  if (!checkout.includes('const paymentMethod = "pix";')) fail('Entregas: checkout deixou de ser PIX-only');
-  if (!checkout.includes('merchant-payment-readiness')) fail('Entregas: checkout não valida recebedor Mercado Pago');
-  if (!checkout.includes('const pixFunction = "create-merchant-mercadopago-pix";')) fail('Entregas: checkout não usa Mercado Pago direto do estabelecimento');
-  if (checkout.includes('new Set(["openpix", "asaas"])') || /create-(?:asaas-)?pix-charge/.test(checkout)) fail('Entregas: caminho legado OpenPix/Asaas permaneceu no checkout final');
-  if (!checkout.includes('get_delivery_checkout_readiness')) fail('Entregas: checkout não valida readiness de repasse direto ao entregador');
-  if (!checkout.includes('deliveryPlatformAvailable')) fail('Entregas: bloqueio de entrega sem payout direto não está ativo');
-  if (!failed) ok('Entregas: novos pedidos usam Mercado Pago do estabelecimento e entrega fica bloqueada sem payout direto homologado');
+  if (!checkout.includes('const paymentMethod = "cash";')) fail('Entregas: checkout não está em pagamento direto');
+  if (!checkout.includes('paymentMethod: "cash"')) fail('Entregas: create-order não recebe cash');
+  if (!checkout.includes('Pedido criado. O pagamento será feito diretamente ao estabelecimento.')) fail('Entregas: feedback do pagamento direto ausente');
+  for (const forbidden of [
+    'merchant-payment-readiness',
+    'create-merchant-mercadopago-pix',
+    'create-asaas-pix-charge',
+    'create-pix-charge',
+    'mercadopago.com/v2/security.js',
+    'sync-payment-status',
+  ]) if (checkout.includes(forbidden)) fail(`Entregas: gateway antigo permaneceu no checkout (${forbidden})`);
 }
 
-const merchantHardener = read('scripts/harden-entregas-merchant-mercadopago-v2.mjs');
-if (merchantHardener) {
-  if (!merchantHardener.includes('create-merchant-mercadopago-pix')) fail('Hardener Mercado Pago perdeu função direta do estabelecimento');
-  if (!merchantHardener.includes('merchant-payment-readiness')) fail('Hardener Mercado Pago perdeu readiness do recebedor');
+const createOrder = read('.work/entregas/supabase/functions/create-order/index.ts');
+if (createOrder) {
+  if (!createOrder.includes('const PAYMENT_METHODS = new Set(["cash"]);')) fail('Entregas: create-order não restringe o método temporário a cash');
+  if (createOrder.includes('payment_status: "paid"') || createOrder.includes("payment_status: 'paid'")) fail('Entregas: payment_status=paid não pode ser fabricado');
 }
 
-process.exit(failed ? 1 : 0);
+if (failed) process.exit(1);
+ok('Política financeira final verificada sem gateway legado no fluxo ativo.');
