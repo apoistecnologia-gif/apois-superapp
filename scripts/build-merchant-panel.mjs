@@ -7,13 +7,16 @@ const workspace = resolve(root, '.work/entregas');
 
 function run(bin, args, options = {}) {
   const command = process.platform === 'win32' && bin === 'bun' ? 'bun.cmd' : bin;
+  const cwd = options.cwd ?? root;
+  console.log(`[RUN] cwd=${cwd} :: ${command} ${args.join(' ')}`);
   const result = spawnSync(command, args, {
-    cwd: options.cwd ?? root,
+    cwd,
     env: options.env ?? process.env,
     stdio: 'inherit',
     shell: process.platform === 'win32' && command.endsWith('.cmd'),
   });
   if (result.error) throw result.error;
+  console.log(`[EXIT ${result.status ?? 1}] ${command} ${args.join(' ')}`);
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
@@ -48,10 +51,6 @@ run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'entregas
 run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), 'entregas']);
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
-// harden-entregas-superapp-address-ux.mjs converts GoogleMapsAddressSelector.tsx off
-// TanStack server functions; neutralize-entregas-superapp-legacy.mjs (below) runs
-// harden-entregas-merchant-map-runtime.mjs, which verifies that conversion already
-// happened, so this must run first.
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-address-ux.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
 
@@ -83,16 +82,50 @@ for (const script of [
   run(process.execPath, args);
 }
 
-const env = {
+const baseEnv = {
   ...process.env,
-  VITE_APOIS_PRODUCT_MODE: 'merchant',
   APOIS_MOBILE_BUILD: '0',
 };
 
-env.NITRO_PRESET = 'vercel';
+// A fonte protegida possui bun.lock. Use instalação reproduzível; não reescreva lockfile
+// para mascarar incompatibilidade.
+run('bun', ['install', '--frozen-lockfile'], { cwd: workspace, env: baseEnv });
 
-run('bun', ['install'], { cwd: workspace, env });
-run('bun', ['run', 'build:merchant'], { cwd: workspace, env });
+// Validadores reais que podem ser executados neste checkout mesmo sem os outros
+// submódulos privados materializados.
+for (const validator of [
+  'scripts/audit-superapp-static.mjs',
+  'scripts/verify-corridas-database-ownership.mjs',
+  'scripts/audit-entregas-merchant-payments.mjs',
+  'scripts/audit-payment-boundary.mjs',
+  'scripts/verify-superapp-release-requirements.mjs',
+]) {
+  run(process.execPath, [resolve(root, validator)], { cwd: root, env: baseEnv });
+}
+
+// TypeScript, lint e testes são executados sobre a árvore .work já totalmente
+// transformada; build Vite isolado não substitui essas três validações.
+run('bun', ['run', 'typecheck'], { cwd: workspace, env: baseEnv });
+run('bun', ['run', 'lint'], { cwd: workspace, env: baseEnv });
+run('bun', ['run', 'test'], { cwd: workspace, env: baseEnv });
+
+// Fixture completa do Cliente sobre a MESMA árvore transformada que será usada pelo
+// merchant. O resultado é descartável e não é tratado como build do Superapp inteiro.
+const customerEnv = {
+  ...baseEnv,
+  VITE_APOIS_PRODUCT_MODE: 'customer',
+  APOIS_MOBILE_BUILD: '1',
+};
+run('bun', ['run', 'build:customer'], { cwd: workspace, env: customerEnv });
+
+// O painel merchant é construído por último para que .vercel/output contenha somente
+// o artefato esperado por este projeto Vercel.
+const merchantEnv = {
+  ...baseEnv,
+  VITE_APOIS_PRODUCT_MODE: 'merchant',
+  NITRO_PRESET: 'vercel',
+};
+run('bun', ['run', 'build:merchant'], { cwd: workspace, env: merchantEnv });
 
 const nestedOutput = resolve(workspace, '.vercel/output');
 if (!existsSync(resolve(nestedOutput, 'config.json'))) {
@@ -104,4 +137,4 @@ const rootOutput = resolve(root, '.vercel/output');
 rmSync(rootOutput, { recursive: true, force: true });
 cpSync(nestedOutput, rootOutput, { recursive: true });
 
-console.log('[OK] Painel do estabelecimento pronto para Vercel em .vercel/output (Serverless Function), sem gateway legado no fluxo de pedidos.');
+console.log('[OK] Fixture Cliente + gates + painel do estabelecimento concluídos na árvore Entregas transformada.');
