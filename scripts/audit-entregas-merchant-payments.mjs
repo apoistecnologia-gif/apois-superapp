@@ -75,15 +75,29 @@ requireMarkers('supabase/entregas-forward-migrations/20260905113000_allow_direct
   'merchant access required',
 ], 'Migration forward-only preserva autorização merchant e libera apenas cash direto');
 
-requireMarkers('supabase/migrations/20260826051214_courier_manual_settlements.sql', [
+// Esta migration pertence ao snapshot protegido de Entregas. Em um checkout real
+// ela existe dentro do submódulo sources/apois-entregas, não em supabase/ do
+// repositório integrador.
+requireMarkers('sources/apois-entregas/supabase/migrations/20260826051214_courier_manual_settlements.sql', [
   'merchant pays the courier directly via',
   'APOIS never custodies or moves this money',
+  "v_mode not in ('marketplace_direct_live', 'merchant_manual')",
+  "'delivery_available', v_mode in ('marketplace_direct_live', 'merchant_manual')",
   "if v_order.payment_method = 'pix' and v_order.payment_status <> 'paid'",
-], 'Repasse manual de entregador continua sem custódia pela APOIS');
+], 'Repasse manual de entregador continua sem custódia pela APOIS e aceita merchant_manual');
+
+requireMarkers('supabase/entregas-forward-migrations/20260905114500_enable_merchant_manual_courier_mode.sql', [
+  "values ('courier_payout_mode', '\"merchant_manual\"'::jsonb)",
+  "to_regclass('public.courier_settlements')",
+  "to_regprocedure('public.get_delivery_checkout_readiness()')",
+  "to_regprocedure('public.close_courier_settlements(uuid)')",
+], 'Switch merchant_manual é forward-only e falha se a infraestrutura de settlement não existir');
 
 requireMarkers('scripts/harden-entregas-delivery-readiness.mjs', [
   'get_delivery_checkout_readiness',
   'deliveryPlatformAvailable',
-], 'Readiness logístico continua presente e independente do gateway do pedido');
+  'merchant_manual',
+  '20260905114500_enable_merchant_manual_courier_mode.sql',
+], 'Readiness logístico continua presente e alinhado ao pagamento manual do entregador');
 
 process.exit(failed ? 1 : 0);
