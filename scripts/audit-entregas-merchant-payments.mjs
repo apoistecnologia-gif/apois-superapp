@@ -42,7 +42,8 @@ forbidMarkers('scripts/neutralize-entregas-superapp-legacy.mjs', [
 ], 'Entregas não executa hardeners de Mercado Pago no build ativo');
 
 requireMarkers('scripts/harden-entregas-payment-provider-boundary.mjs', [
-  'sessionStorage.setItem("apois_payment_method", "cash")',
+  "const PAYMENT_STORAGE_KEY = 'apois-superapp-entregas:payment-method';",
+  '`sessionStorage.setItem("${PAYMENT_STORAGE_KEY}", "cash");`',
   'const paymentMethod = "cash";',
   'paymentMethod: "cash"',
   'Pedido criado. O pagamento será feito diretamente ao estabelecimento.',
@@ -52,7 +53,7 @@ requireMarkers('scripts/harden-entregas-payment-provider-boundary.mjs', [
   'PixPaymentScreen(',
   'devolução automática por gateway não se aplica',
   'SEM GATEWAY DA APOIS',
-], 'Boundary final de Entregas usa pagamento direto e rejeita resíduos de gateway/PIX');
+], 'Boundary final de Entregas usa storage namespaced, pagamento direto e rejeita resíduos de gateway/PIX');
 
 requireMarkers('scripts/harden-entregas-direct-payment-operations.mjs', [
   'function isOperationalPayment(order: MerchantOrder)',
@@ -75,9 +76,6 @@ requireMarkers('supabase/entregas-forward-migrations/20260905113000_allow_direct
   'merchant access required',
 ], 'Migration forward-only preserva autorização merchant e libera apenas cash direto');
 
-// Esta migration pertence ao snapshot protegido de Entregas. Em um checkout real
-// ela existe dentro do submódulo sources/apois-entregas, não em supabase/ do
-// repositório integrador.
 requireMarkers('sources/apois-entregas/supabase/migrations/20260826051214_courier_manual_settlements.sql', [
   'merchant pays the courier directly via',
   'APOIS never custodies or moves this money',
