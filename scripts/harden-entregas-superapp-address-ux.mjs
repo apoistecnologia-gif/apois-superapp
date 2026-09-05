@@ -58,6 +58,10 @@ patch('.work/entregas/src/components/CustomerLocationAddressSelector.tsx', (sour
   if (!source.includes('import { Geolocation } from "@capacitor/geolocation";')) {
     source = `import { Geolocation } from "@capacitor/geolocation";\n${source}`;
   }
+  source = source.replace(
+    'import { useEffect, useRef, useState } from "react";',
+    'import { useCallback, useEffect, useRef, useState } from "react";',
+  );
 
   const startMarker = '  const locate = async () => {';
   const endMarker = '\n\n  useEffect(() => {';
@@ -65,20 +69,23 @@ patch('.work/entregas/src/components/CustomerLocationAddressSelector.tsx', (sour
   const end = source.indexOf(endMarker, start);
   if (start < 0 || end < 0) throw new Error('Localização: função locate esperada não encontrada');
 
-  const nativeLocate = `  const locate = async () => {\n    if (isLocating) return;\n    setIsLocating(true);\n    try {\n      let permission = await Geolocation.checkPermissions();\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        permission = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });\n      }\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        toast.error("Permita o acesso à localização para preencher seu endereço automaticamente.");\n        return;\n      }\n\n      const position = await Geolocation.getCurrentPosition({\n        enableHighAccuracy: true,\n        timeout: 15000,\n        maximumAge: 15000,\n      });\n      const lat = position.coords.latitude;\n      const lng = position.coords.longitude;\n\n      try {\n        const data = await invokeMaps({ action: "reverse_geocode", lat, lng });\n        const first = data?.results?.[0];\n        if (!first?.address_components) throw new Error("reverse_geocode_empty");\n\n        const address = parseAddressComponents(first.address_components);\n        onAddressSelected({ ...address, latitude: lat, longitude: lng });\n        const missing = [\n          !address.street && "rua",\n          !address.number && "número",\n          !address.neighborhood && "bairro",\n          !address.city && "cidade",\n          !address.state && "UF",\n          !address.postal_code && "CEP",\n        ].filter(Boolean);\n        if (missing.length > 0) {\n          toast.success(\`Localização encontrada. Complete apenas: \${missing.join(", ")}.\`);\n        } else {\n          toast.success("Endereço preenchido pela sua localização.");\n        }\n      } catch (error) {\n        console.error("Erro ao converter GPS em endereço:", error);\n        onAddressSelected({\n          street: "",\n          number: "",\n          neighborhood: "",\n          city: "",\n          state: "",\n          postal_code: "",\n          latitude: lat,\n          longitude: lng,\n        });\n        toast.error("Localização obtida. Complete manualmente os dados do endereço que não puderam ser identificados.");\n      }\n    } catch (error) {\n      console.error("Erro de geolocalização:", error);\n      toast.error("Não foi possível acessar sua localização. Verifique a permissão do aplicativo e tente novamente.");\n    } finally {\n      setIsLocating(false);\n    }\n  };`;
+  const nativeLocate = `  const locate = useCallback(async () => {\n    if (isLocating) return;\n    setIsLocating(true);\n    try {\n      let permission = await Geolocation.checkPermissions();\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        permission = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });\n      }\n      if (permission.location !== "granted" && permission.coarseLocation !== "granted") {\n        toast.error("Permita o acesso à localização para preencher seu endereço automaticamente.");\n        return;\n      }\n\n      const position = await Geolocation.getCurrentPosition({\n        enableHighAccuracy: true,\n        timeout: 15000,\n        maximumAge: 15000,\n      });\n      const lat = position.coords.latitude;\n      const lng = position.coords.longitude;\n\n      try {\n        const data = await invokeMaps({ action: "reverse_geocode", lat, lng });\n        const first = data?.results?.[0];\n        if (!first?.address_components) throw new Error("reverse_geocode_empty");\n\n        const address = parseAddressComponents(first.address_components);\n        onAddressSelected({ ...address, latitude: lat, longitude: lng });\n        const missing = [\n          !address.street && "rua",\n          !address.number && "número",\n          !address.neighborhood && "bairro",\n          !address.city && "cidade",\n          !address.state && "UF",\n          !address.postal_code && "CEP",\n        ].filter(Boolean);\n        if (missing.length > 0) {\n          toast.success(\`Localização encontrada. Complete apenas: \${missing.join(", ")}.\`);\n        } else {\n          toast.success("Endereço preenchido pela sua localização.");\n        }\n      } catch (error) {\n        console.error("Erro ao converter GPS em endereço:", error);\n        onAddressSelected({\n          street: "",\n          number: "",\n          neighborhood: "",\n          city: "",\n          state: "",\n          postal_code: "",\n          latitude: lat,\n          longitude: lng,\n        });\n        toast.error("Localização obtida. Complete manualmente os dados do endereço que não puderam ser identificados.");\n      }\n    } catch (error) {\n      console.error("Erro de geolocalização:", error);\n      toast.error("Não foi possível acessar sua localização. Verifique a permissão do aplicativo e tente novamente.");\n    } finally {\n      setIsLocating(false);\n    }\n  }, [isLocating, onAddressSelected]);`;
 
   source = `${source.slice(0, start)}${nativeLocate}${source.slice(end)}`;
+  source = source.replace('  }, [autoLocate]);', '  }, [autoLocate, locate]);');
   source = source.replace(
     '      toast.error(error instanceof Error ? error.message : "Não foi possível carregar o endereço.");',
     '      toast.error("Não foi possível carregar este endereço. Tente outra busca ou complete os dados manualmente.");',
   );
 
   if (source.includes('navigator.geolocation')) throw new Error('Localização: navigator.geolocation legado ainda presente');
+  if (!source.includes('const locate = useCallback(async () => {')) throw new Error('Localização: callback memoizado não aplicado');
+  if (!source.includes('}, [autoLocate, locate]);')) throw new Error('Localização: efeito de auto-locate continua com dependência incompleta');
   if (source.includes('Localização obtida, mas não foi possível buscar o endereço: ${error.message}')) {
     throw new Error('Localização: erro técnico ainda exposto ao cliente');
   }
   return source;
-}, 'Entregas: localização de endereço usa plugin nativo e mensagens seguras');
+}, 'Entregas: localização de endereço usa plugin nativo e dependências estáveis');
 
 patch('.work/entregas/src/components/GoogleMapsAddressSelector.tsx', (source) => {
   source = source.replace('import { useServerFn } from "@tanstack/react-start";\n', '');
@@ -90,22 +97,15 @@ patch('.work/entregas/src/components/GoogleMapsAddressSelector.tsx', (source) =>
     source = `import { Geolocation } from "@capacitor/geolocation";\n${source}`;
   }
 
-  // The snapshot's fallback map center (used only before the merchant/customer
-  // searches or drags the pin) was a hardcoded developer coordinate with no
-  // relation to any real address. Swap it for Brasília — a real, recognizable
-  // reference point, not a leftover test value.
+  const legacyCenter = 'useState(initialCenter || { lat: -9.3891, lng: -40.5031 })';
+  const realCenter = 'useState(initialCenter || { lat: -15.7801, lng: -47.9292 })';
   source = replaceRequired(
     source,
-    'useState(initialCenter || { lat: -9.3891, lng: -40.5031 })',
-    'useState(initialCenter || { lat: -15.7801, lng: -47.9292 })',
+    legacyCenter,
+    realCenter,
     'Mapa de edição: centro padrão do mapa usa referência real (Brasília) em vez de coordenada de desenvolvimento',
   );
 
-  // O snapshot fixado já traz invokeMaps como função de módulo (não um const
-  // dentro do componente) chamando a mesma Edge Function google-maps-address.
-  // Só aplicamos a conversão abaixo se essa função de módulo ainda não
-  // existir; caso contrário os useServerFn/getAccessToken já foram removidos
-  // e não há nada para converter.
   const serverFnBlock = `  const geocodeFn = useServerFn(geocodeAddress);\n  const autocompleteFn = useServerFn(autocompleteAddress);\n  const detailsFn = useServerFn(getPlaceDetails);\n\n  const getAccessToken = async () => {\n    const {\n      data: { session },\n      error,\n    } = await supabase.auth.getSession();\n    if (error || !session?.access_token) throw new Error("Sessão expirada");\n    return session.access_token;\n  };`;
   const edgeBlock = `  const invokeMaps = async (body: Record<string, unknown>) => {\n    const { data, error } = await supabase.functions.invoke("google-maps-address", { body });\n    if (error) throw error;\n    if (data?.error) throw new Error(String(data.error));\n    return data;\n  };`;
   if (source.includes('async function invokeMaps(')) {
