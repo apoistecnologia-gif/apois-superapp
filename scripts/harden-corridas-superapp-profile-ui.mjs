@@ -34,3 +34,6 @@ for (const marker of [
 
 writeFileSync(path, source, 'utf8');
 console.log('[OK] Passageiro: Perfil sem atalhos duplicados, documentos legais acessíveis, botões tocáveis e diálogos adaptados à viewport móvel.');
+
+// Última etapa visual de Corridas: roda depois dos hardeners funcionais e antes do build.
+await import('./harden-corridas-kit-visual.mjs');
