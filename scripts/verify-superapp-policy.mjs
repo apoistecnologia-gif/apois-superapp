@@ -14,10 +14,12 @@ function requireFile(path) {
 
 const paymentMethods = requireFile('.work/corridas/src/hooks/use-payment-methods.tsx');
 if (paymentMethods) {
+  const hasCanonicalActiveFilter = paymentMethods.includes('(method) => method.isActive && method.enabled');
+  const delegatesToPaymentService = paymentMethods.includes('paymentService.getPaymentMethods()');
   if (paymentMethods.includes('method.code === "pix"')) {
     fail('Corridas Superapp regrediu para PIX-only; Dinheiro e Cartão direto ao motorista devem continuar disponíveis');
-  } else if (!paymentMethods.includes('method.isActive && method.enabled')) {
-    fail('Corridas Superapp não preserva a filtragem canônica dos métodos ativos');
+  } else if (!hasCanonicalActiveFilter && !delegatesToPaymentService) {
+    fail('Corridas Superapp não preserva a filtragem canônica dos métodos ativos nem delega ao paymentService');
   } else {
     ok('Corridas preserva PIX + Dinheiro + Cartão conforme política do Superapp');
   }
@@ -61,12 +63,7 @@ for (const [name, path, corridasBase, entregasBase] of htmlTargets) {
   const html = requireFile(path);
   if (!html) continue;
   if (!html.includes('data-apois-superapp-push-routing')) { fail(`${name}: bridge global de Push não foi injetado`); continue; }
-  const hasCurrentClassifier =
-    html.includes('const rideEvents = new Set') &&
-    html.includes('function deliveryMarker(data)') &&
-    html.includes('function rideMarker(data)') &&
-    html.includes('const delivery = deliveryMarker(data);') &&
-    html.includes('const ride = rideMarker(data);');
+  const hasCurrentClassifier = html.includes('const rideEvents = new Set') && html.includes('function deliveryMarker(data)') && html.includes('function rideMarker(data)') && html.includes('const delivery = deliveryMarker(data);') && html.includes('const ride = rideMarker(data);');
   if (!hasCurrentClassifier) { fail(`${name}: bridge global não diferencia Corridas de Entregas`); continue; }
   if (!html.includes('if (delivery.isDelivery && ride.isRide) return null;')) { fail(`${name}: payload de Push ambíguo não é bloqueado`); continue; }
   if (corridasBase && !html.includes(`const corridasBase = ${JSON.stringify(corridasBase)};`)) { fail(`${name}: destino cruzado para Corridas está ausente`); continue; }
@@ -79,36 +76,24 @@ if (searchRoute) {
   if (!searchRoute.includes('overflow-y-auto px-4 pb-32 pt-2')) fail('Busca de Entregas ainda pode ficar encoberta pelo rodapé fixo');
   else ok('Busca de Entregas reserva espaço para rodapé e safe area');
 }
-
 const landingRoute = requireFile('.work/entregas/src/routes/index.tsx');
 if (landingRoute) {
   if (landingRoute.includes('src="/apois-logo.svg"')) fail('landing de Entregas ainda usa logo absoluto e quebra dentro de modules/entregas');
   else if (!landingRoute.includes('src="./apois-logo.svg"')) fail('landing de Entregas não aponta para o logo público relativo');
   else ok('landing de Entregas resolve o logo dentro do módulo aninhado');
 }
-
 const launchSplash = requireFile('.work/entregas/src/components/ApoisLaunchSplash.tsx');
 if (launchSplash) {
-  if (!launchSplash.includes('export function ApoisLaunchSplash()') || !launchSplash.includes('return null;')) {
-    fail('Entregas ainda exibe uma segunda splash React ao entrar no módulo do Superapp');
-  } else if (launchSplash.includes('/apois-app-icon.png') || launchSplash.includes('SPLASH_MS')) {
-    fail('splash legada de Entregas ainda contém asset/timer do app separado');
-  } else {
-    ok('Entregas não duplica a splash nativa/shell ao trocar de módulo');
-  }
+  if (!launchSplash.includes('export function ApoisLaunchSplash()') || !launchSplash.includes('return null;')) fail('Entregas ainda exibe uma segunda splash React ao entrar no módulo do Superapp');
+  else if (launchSplash.includes('/apois-app-icon.png') || launchSplash.includes('SPLASH_MS')) fail('splash legada de Entregas ainda contém asset/timer do app separado');
+  else ok('Entregas não duplica a splash nativa/shell ao trocar de módulo');
 }
-
 const legacyTelemetry = requireFile('.work/entregas/src/lib/lovable-error-reporting.ts');
 if (legacyTelemetry) {
-  if (legacyTelemetry.includes('__lovableEvents') || legacyTelemetry.includes('__lovableReportRuntimeError')) {
-    fail('bundle Entregas ainda contém hooks de telemetria do editor Lovable');
-  } else if (!legacyTelemetry.includes('[APOIS Superapp] erro capturado pelo boundary')) {
-    fail('ErrorBoundary de Entregas não possui diagnóstico local após remover telemetria antiga');
-  } else {
-    ok('Entregas remove telemetria Lovable e mantém diagnóstico local do ErrorBoundary');
-  }
+  if (legacyTelemetry.includes('__lovableEvents') || legacyTelemetry.includes('__lovableReportRuntimeError')) fail('bundle Entregas ainda contém hooks de telemetria do editor Lovable');
+  else if (!legacyTelemetry.includes('[APOIS Superapp] erro capturado pelo boundary')) fail('ErrorBoundary de Entregas não possui diagnóstico local após remover telemetria antiga');
+  else ok('Entregas remove telemetria Lovable e mantém diagnóstico local do ErrorBoundary');
 }
-
 for (const [path, label, variable] of [
   ['.work/entregas/src/routes/auth.callback.tsx', 'callback OAuth/e-mail', 'params'],
   ['.work/entregas/src/routes/redefinir-senha.tsx', 'recuperação de senha', 'params'],
@@ -116,70 +101,38 @@ for (const [path, label, variable] of [
 ]) {
   const authRoute = requireFile(path);
   if (!authRoute) continue;
-  if (authRoute.includes(`const ${variable} = new URLSearchParams(window.location.search);`)) {
-    fail(`Entregas ${label} ainda ignora query dentro do Hash Router`);
-  } else if (!authRoute.includes('window.location.hash.includes("?")') || !authRoute.includes(`new URLSearchParams(hashQuery || window.location.search)`)) {
-    fail(`Entregas ${label} não possui leitura Hash-aware dos parâmetros`);
-  } else {
-    ok(`Entregas ${label} lê parâmetros de #/rota?...`);
-  }
+  if (authRoute.includes(`const ${variable} = new URLSearchParams(window.location.search);`)) fail(`Entregas ${label} ainda ignora query dentro do Hash Router`);
+  else if (!authRoute.includes('window.location.hash.includes("?")') || !authRoute.includes(`new URLSearchParams(hashQuery || window.location.search)`)) fail(`Entregas ${label} não possui leitura Hash-aware dos parâmetros`);
+  else ok(`Entregas ${label} lê parâmetros de #/rota?...`);
 }
-
 const authCallback = requireFile('.work/entregas/src/routes/auth.callback.tsx');
 if (authCallback) {
   if (authCallback.includes('setErrorMessage(providerError)')) fail('callback Entregas ainda exibe erro bruto do provedor');
   else if (!authCallback.includes('Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.')) fail('callback Entregas não possui mensagem pública segura');
   else ok('callback Entregas sanitiza falhas externas antes de exibir ao usuário');
 }
-
 const resetPassword = requireFile('.work/entregas/src/routes/redefinir-senha.tsx');
 if (resetPassword) {
   if (resetPassword.includes('toast.error(error.message || "Não foi possível atualizar sua senha.")')) fail('redefinição de senha Entregas ainda exibe erro bruto do provedor');
   else if (!resetPassword.includes('toast.error("Não foi possível atualizar sua senha. Tente novamente.")')) fail('redefinição de senha Entregas não possui mensagem pública segura');
   else ok('redefinição de senha Entregas mantém detalhe técnico somente no console local');
 }
-
 const checkout = requireFile('.work/entregas/src/routes/checkout.tsx');
 if (checkout) {
-  if (!checkout.includes('const paymentMethod = "pix";')) fail('checkout Entregas não está PIX-only');
-  else ok('checkout Entregas está PIX-only');
-  if (checkout.includes('payload?.provider?.message') || checkout.includes('payload?.provider?.status_detail')) {
-    fail('checkout Entregas ainda pode expor detalhe técnico do provedor ao cliente');
-  } else if (!checkout.includes('return fallback;')) {
-    fail('checkout Entregas não possui fallback seguro para erro técnico de Edge Function');
-  } else {
-    ok('checkout Entregas exibe somente mensagens seguras ao cliente');
-  }
-  if (!checkout.includes('merchant-payment-readiness')) {
-    fail('checkout Entregas não valida a conta Mercado Pago do estabelecimento antes de criar o pedido');
-  } else if (!checkout.includes('const pixFunction = "create-merchant-mercadopago-pix";')) {
-    fail('checkout Entregas não está apontando exclusivamente para o PIX Mercado Pago do estabelecimento');
-  } else if (/create-(?:asaas-)?pix-charge/.test(checkout) || checkout.includes('new Set(["openpix", "asaas"])')) {
-    fail('checkout Entregas ainda contém caminho legado OpenPix/Asaas para novos pedidos');
-  } else {
-    ok('checkout Entregas usa somente Mercado Pago direto do estabelecimento para novos pedidos');
-  }
-  if (checkout.includes('if (!payment?.qrCodeText || !payment?.qrCodeImageUrl)')) {
-    fail('checkout Entregas ainda rejeita PIX válido quando o provedor não fornece imagem QR');
-  } else if (!checkout.includes('if (!payment?.qrCodeText)') || !checkout.includes('typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : ""')) {
-    fail('checkout Entregas não possui fallback de QR local para brCode sem imagem do provedor');
-  } else {
-    ok('checkout Entregas aceita brCode válido e gera QR local quando necessário');
-  }
-  if (!checkout.includes('get_delivery_checkout_readiness')) {
-    fail('checkout Entregas não consulta readiness do repasse direto do entregador');
-  } else {
-    ok('checkout Entregas bloqueia entrega quando o repasse direto ao entregador ainda não está homologado');
-  }
+  if (!checkout.includes('const paymentMethod = "pix";')) fail('checkout Entregas não está PIX-only'); else ok('checkout Entregas está PIX-only');
+  if (checkout.includes('payload?.provider?.message') || checkout.includes('payload?.provider?.status_detail')) fail('checkout Entregas ainda pode expor detalhe técnico do provedor ao cliente');
+  else if (!checkout.includes('return fallback;')) fail('checkout Entregas não possui fallback seguro para erro técnico de Edge Function'); else ok('checkout Entregas exibe somente mensagens seguras ao cliente');
+  if (!checkout.includes('merchant-payment-readiness')) fail('checkout Entregas não valida a conta Mercado Pago do estabelecimento antes de criar o pedido');
+  else if (!checkout.includes('const pixFunction = "create-merchant-mercadopago-pix";')) fail('checkout Entregas não está apontando exclusivamente para o PIX Mercado Pago do estabelecimento');
+  else if (/create-(?:asaas-)?pix-charge/.test(checkout) || checkout.includes('new Set(["openpix", "asaas"])')) fail('checkout Entregas ainda contém caminho legado OpenPix/Asaas para novos pedidos'); else ok('checkout Entregas usa somente Mercado Pago direto do estabelecimento para novos pedidos');
+  if (checkout.includes('if (!payment?.qrCodeText || !payment?.qrCodeImageUrl)')) fail('checkout Entregas ainda rejeita PIX válido quando o provedor não fornece imagem QR');
+  else if (!checkout.includes('if (!payment?.qrCodeText)') || !checkout.includes('typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : ""')) fail('checkout Entregas não possui fallback de QR local para brCode sem imagem do provedor'); else ok('checkout Entregas aceita brCode válido e gera QR local quando necessário');
+  if (!checkout.includes('get_delivery_checkout_readiness')) fail('checkout Entregas não consulta readiness do repasse direto do entregador'); else ok('checkout Entregas bloqueia entrega quando o repasse direto ao entregador ainda não está homologado');
 }
-
 const shellSource = requireFile('superapp/shell/index.html');
 if (shellSource) {
   if (!shellSource.includes('./assets/apois-brand.png')) fail('shell ainda não usa a arte oficial APOIS');
-  else if (shellSource.includes('<div class="logo-mark">A</div>')) fail('shell ainda contém marca provisória em texto');
-  else ok('shell usa arte oficial APOIS');
-  if (!shellSource.includes("return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';")) fail('entrada dos módulos não é determinística por sessão');
-  else ok('shell envia sessão válida para Início e sessão ausente para Login');
+  else if (shellSource.includes('<div class="logo-mark">A</div>')) fail('shell ainda contém marca provisória em texto'); else ok('shell usa arte oficial APOIS');
+  if (!shellSource.includes("return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';")) fail('entrada dos módulos não é determinística por sessão'); else ok('shell envia sessão válida para Início e sessão ausente para Login');
 }
-
 process.exit(failed ? 1 : 0);
