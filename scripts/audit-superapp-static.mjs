@@ -51,6 +51,8 @@ requireText('package.json', [
 requireText('.apois/modules.json', [
   '"source": "sources/apois-corridas-passageiro"',
   '"workspace": ".work/corridas"',
+  'harden-corridas-ride-lifecycle.mjs',
+  'verify-corridas-ride-lifecycle-regressions.mjs',
   'harden-corridas-cancellation-policy.mjs',
   'harden-corridas-superapp-storage.mjs',
   'harden-superapp-module-mobile-ui.mjs corridas',
@@ -132,9 +134,17 @@ requireText('scripts/harden-corridas-payment-provider-boundary.mjs', [
 ], 'Corridas expõe apenas Dinheiro/Crédito direto ao motorista');
 
 requireText('scripts/harden-corridas-cancellation-policy.mjs', [
-  'canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou"].includes(status)',
+  'canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)',
+  'motorista_chegou não pode oferecer cancelamento se o backend o recusa',
   'em_viagem não pode permitir cancelamento',
-], 'cancelamento Corridas segue bloqueado depois do início da viagem');
+  'ensureCancellationFinancialState',
+], 'cancelamento Corridas segue exatamente os estados do backend e reconcilia taxa idempotentemente');
+requireText('scripts/harden-corridas-ride-lifecycle.mjs', [
+  'rollbackFailedDispatch',
+  'error_code: "dispatch_failed"',
+  'request_key: null',
+  'ride.final_price ?? ride.estimated_price',
+], 'lifecycle Corridas não deixa ride órfã de matching e não confia em final_price do motorista');
 
 requireText('scripts/harden-corridas-superapp-push-isolation.mjs', [
   'isPushRideEvent', 'const hasDeliveryMarker =', 'if (hasDeliveryMarker) return;',
@@ -169,11 +179,16 @@ requireText('supabase/corridas-forward-migrations/20260905070000_fix_passenger_i
 forbidText('supabase/corridas-forward-migrations/20260905070000_fix_passenger_identity_rls.sql', [
   'EXCLUDED.id', 'USING (auth.uid() = passenger_id)', 'USING (auth.uid() = user_id)',
 ], 'migration de ownership não usa comparações diretas incorretas nem EXCLUDED');
+requireText('supabase/corridas-forward-migrations/20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql', [
+  'cancellation_fees_one_per_ride_uidx', 'driver_reads_own_wallet',
+  'u.auth_user_id = auth.uid()',
+], 'migration forward-only protege idempotência da taxa e ownership da carteira');
 
 requireText('scripts/verify-superapp-release-requirements.mjs', [
   "APOIS_STRICT_NATIVE_CONFIG === '1'", 'vqtucstyduxrqjgyigfk',
   'CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY',
-], 'release estrito exige Supabase canônico e chaves Maps reais');
+  '20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql',
+], 'release estrito exige Supabase canônico, chaves Maps e migrations forward obrigatórias');
 requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
   'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
 ], 'gate Supabase rejeita projeto histórico no runtime/bundle');
