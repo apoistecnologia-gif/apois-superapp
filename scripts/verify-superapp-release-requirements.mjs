@@ -53,6 +53,11 @@ requireMigration(
   'Corridas wallet/cancelamento idempotente',
 );
 requireMigration(
+  'supabase/corridas-forward-migrations/20260905143000_harden_driver_document_ownership.sql',
+  ['driver_update_document', 'invalid_document_mime', 'apois_driver_storage_insert_own', '10485760'],
+  'Corridas ownership/MIME de documentos do motorista',
+);
+requireMigration(
   'supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql',
   ['cash', 'pending'],
   'Entregas cash/pending operacional',
