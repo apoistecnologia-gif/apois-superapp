@@ -32,10 +32,7 @@ if (moduleName === 'corridas') {
   }
 
   await import('./harden-corridas-superapp-profile-ui.mjs');
-  return;
-}
-
-if (moduleName === 'entregas') {
+} else {
   patch('.work/entregas/src/routes/inicio.tsx', (source) => {
     let next = source;
     next = next.replace(
