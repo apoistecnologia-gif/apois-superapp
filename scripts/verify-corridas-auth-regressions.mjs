@@ -19,6 +19,34 @@ for (const marker of ['flowType: "pkce"', 'handledUrlRef.current === rawUrl', 'b
 if (!googleHardener.includes('br.com.apois.app://auth/callback')) fail('callback canônico Google ausente');
 if (!googleHardener.includes('br.com.apois.app://auth/corridas-google')) fail('callback legado compatível ausente');
 
+const backendIdentity = read('scripts/harden-corridas-backend-identity-boundary.mjs');
+for (const marker of [
+  'subscriptions.driver_id referencia public.drivers(id)',
+  'const driverRecordIds =',
+  '.in("driver_id", driverRecordIds)',
+  '.eq("auth_user_id", authUserId)',
+  'const domainUserId = String(domainUser.id);',
+  'const driverRecordId = String(driver.id);',
+  'driver_id: driverRecordId',
+  'accepted_driver_id: driverRecordId',
+  'async function normalizeRecipientAuthIds',
+  'callerDomainUserId === String(ride.passenger_id)',
+  'callerDriverRecordId === String(ride.driver_id ?? "")',
+  'cancellation_reason: "Nenhum motorista disponível no momento."',
+]) {
+  if (!backendIdentity.includes(marker)) fail(`boundary backend de identidade sem ${marker}`);
+}
+for (const forbidden of [
+  '.in("driver_id", driverIds)',
+  'driver_id: userId',
+  'accepted_driver_id: userId',
+  'const isPassenger = callerId === ride.passenger_id;',
+  'const isDriver = callerId === ride.driver_id;',
+  'cancel_reason: "Nenhum motorista disponível no momento."',
+]) {
+  if (backendIdentity.includes(forbidden)) fail(`boundary backend preserva padrão proibido: ${forbidden}`);
+}
+
 const auth = read('.work/corridas/src/hooks/use-auth.tsx');
 if (auth) {
   if (!auth.includes('.eq("auth_user_id", userId)')) fail('workspace AuthProvider não resolve users.auth_user_id');
@@ -44,5 +72,34 @@ if (google) {
   }
 }
 
+const requestRide = read('.work/corridas/supabase/functions/request-ride/index.ts');
+if (requestRide) {
+  for (const marker of ['const driverRecordIds =', '.in("driver_id", driverRecordIds)', 'activeByDriver.get(String(d.id))', 'cancellation_reason: "Nenhum motorista disponível no momento."']) {
+    if (!requestRide.includes(marker)) fail(`workspace request-ride sem ${marker}`);
+  }
+  if (requestRide.includes('.in("driver_id", driverIds)')) fail('workspace request-ride mistura subscriptions.driver_id com users.id');
+  if (requestRide.includes('cancel_reason: "Nenhum motorista disponível no momento."')) fail('workspace request-ride usa coluna de cancelamento inexistente');
+}
+
+const driverAction = read('.work/corridas/supabase/functions/driver-ride-action/index.ts');
+if (driverAction) {
+  for (const marker of ['.eq("auth_user_id", authUserId)', 'const domainUserId = String(domainUser.id);', 'const driverRecordId = String(driver.id);', 'driver_id: driverRecordId', 'accepted_driver_id: driverRecordId']) {
+    if (!driverAction.includes(marker)) fail(`workspace driver-ride-action sem ${marker}`);
+  }
+  if (driverAction.includes('.eq("user_id", userId)') || driverAction.includes('driver_id: userId')) {
+    fail('workspace driver-ride-action voltou a tratar AUTH ID como driver/domain ID');
+  }
+}
+
+const push = read('.work/corridas/supabase/functions/send-ride-push/index.ts');
+if (push) {
+  for (const marker of ['normalizeRecipientAuthIds', 'callerDomainUserId', 'callerDriverRecordId', 'finalUserIds = await normalizeRecipientAuthIds(admin, input.user_ids);']) {
+    if (!push.includes(marker)) fail(`workspace send-ride-push sem ${marker}`);
+  }
+  if (push.includes('const isPassenger = callerId === ride.passenger_id;') || push.includes('const isDriver = callerId === ride.driver_id;')) {
+    fail('workspace send-ride-push voltou a comparar AUTH ID com IDs de domínio');
+  }
+}
+
 if (failed) process.exit(1);
-ok('Regressões críticas de Auth/Google Corridas verificadas.');
+ok('Regressões críticas de Auth/Google/identidade backend Corridas verificadas.');
