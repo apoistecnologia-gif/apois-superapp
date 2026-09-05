@@ -122,17 +122,33 @@ function replaceRequired(source, search, replacement, label) {
     source = source.replace('import { useCallback, useEffect, useState } from "react";', 'import { useEffect, useState } from "react";');
   }
 
-  for (const forbidden of [
+  const forbiddenMarkers = [
     'merchant-payment-readiness',
     'create-merchant-mercadopago-pix',
     'create-asaas-pix-charge',
     'create-pix-charge',
+    'openpix-payout',
     'mercadopago.com/v2/security.js',
+    'MP_DEVICE_SESSION_ID',
+    'ensureMercadoPagoSecurityScript',
+    'readMercadoPagoDeviceId',
     'sync-payment-status',
     'Pagamento PIX',
-  ]) {
+    'type PixData =',
+    'PixPaymentScreen(',
+    'pixData',
+    'setPixData',
+    'handleCopyPix',
+    'QRCode',
+    'QrCode',
+  ];
+  for (const forbidden of forbiddenMarkers) {
     if (source.includes(forbidden)) throw new Error(`[FAIL] Entregas: gateway/runtime antigo permaneceu no checkout (${forbidden}).`);
   }
+  if (/mercadopago|openpix|pagbank|asaas/i.test(source)) {
+    throw new Error('[FAIL] Entregas: checkout final ainda contém referência executável a gateway descontinuado.');
+  }
+
   for (const marker of [
     'const paymentMethod = "cash";',
     'paymentMethod: "cash"',
@@ -147,8 +163,6 @@ function replaceRequired(source, search, replacement, label) {
 }
 
 // Cancelamento/estorno: com pagamento direto não existe provider para a APOIS acionar.
-// Mantemos o cancelamento/RPC e o registro de refund quando o backend o gerar, mas
-// removemos qualquer tentativa de processar devolução por função de gateway.
 for (const relative of [
   'src/routes/pedido/$orderId/index.tsx',
   'src/components/MerchantOrderControlCenter.tsx',
@@ -171,8 +185,7 @@ for (const relative of [
 }
 console.log('[OK] Entregas: cancelamentos não disparam estorno eletrônico quando o pagamento é direto.');
 
-// Edge Function da cópia de integração: cash é permitido, sem alterar o default
-// payment_status=pending do banco.
+// Edge Function da cópia de integração: cash é permitido, sem alterar o default payment_status=pending do banco.
 {
   const relative = 'supabase/functions/create-order/index.ts';
   let source = read(relative);
@@ -184,6 +197,9 @@ console.log('[OK] Entregas: cancelamentos não disparam estorno eletrônico quan
   );
   if (source.includes('payment_status: "paid"') || source.includes("payment_status: 'paid'")) {
     throw new Error('[FAIL] Entregas: create-order não pode fabricar payment_status=paid.');
+  }
+  if (!source.includes('const PAYMENT_METHODS = new Set(["cash"]);')) {
+    throw new Error('[FAIL] Entregas: create-order não ficou restrito ao método direto temporário.');
   }
   write(relative, source);
   console.log('[OK] Entregas: create-order aceita cash e preserva payment_status do banco.');
