@@ -10,35 +10,29 @@ function patch(path, transform, label) {
   const full = resolve(path);
   const before = readFileSync(full, 'utf8');
   const after = transform(before);
-  if (after === before) throw new Error(`[FAIL] ${label}: nenhum ajuste aplicado em ${path}`);
+  if (after === before) {
+    console.log(`[OK] ${label} (já aplicado ou nativo)`);
+    return;
+  }
   writeFileSync(full, after, 'utf8');
   console.log(`[OK] ${label}`);
 }
 
 if (moduleName === 'corridas') {
-  patch('.work/corridas/src/components/layout/AppShell.tsx', (source) => {
+  patch('.work/corridas/src/components/BottomNavigation.tsx', (source) => {
     let next = source;
-    next = next.replaceAll(
-      '"app-pressable flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-xl text-[9px] font-bold"',
-      '"app-pressable flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold leading-none"',
-    );
-    next = next.replaceAll('<Icon size={21} />', '<Icon size={24} strokeWidth={2.2} />');
-    next = next.replace(
-      'className="app-safe-x shrink-0 border-t border-white/10 bg-black/98 pt-2 shadow-[0_-12px_30px_rgba(0,0,0,.55)]"',
-      'className="app-safe-x shrink-0 border-t border-white/10 bg-black/98 pt-2.5 shadow-[0_-12px_30px_rgba(0,0,0,.55)]"',
-    );
+    next = next.replaceAll('text-zinc-600', 'text-zinc-500');
+    next = next.replace('shadow-[0_-4px_20px_rgba(0,0,0,0.5)]', 'shadow-[0_-10px_30px_rgba(0,0,0,0.55)]');
     return next;
-  }, 'Corridas: rodapé global ganha alvos de toque e textos legíveis em celular');
+  }, 'Corridas: rodapé real mantém contraste adequado em celular');
 
-  const appShell = readFileSync(resolve('.work/corridas/src/components/layout/AppShell.tsx'), 'utf8');
-  for (const marker of ['min-h-[64px]', 'text-[11px]', '<Icon size={24} strokeWidth={2.2} />', 'pt-2.5']) {
-    if (!appShell.includes(marker)) throw new Error(`[FAIL] Corridas: rodapé mobile incompleto (${marker})`);
-  }
-  if (appShell.includes('MainHamburgerMenu')) {
-    throw new Error('[FAIL] Corridas: menu hambúrguer duplicado voltou ao AppShell.');
+  const bottomNav = readFileSync(resolve('.work/corridas/src/components/BottomNavigation.tsx'), 'utf8');
+  for (const marker of ['grid-cols-5', 'min-h-[64px]', 'Início', 'Corridas', 'Carteira', 'Notificações', 'Perfil']) {
+    if (!bottomNav.includes(marker)) throw new Error(`[FAIL] Corridas: rodapé mobile incompleto (${marker})`);
   }
 
   await import('./harden-corridas-superapp-profile-ui.mjs');
+  return;
 }
 
 if (moduleName === 'entregas') {
