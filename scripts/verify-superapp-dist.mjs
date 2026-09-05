@@ -83,7 +83,6 @@ if (shell) {
   else ok('shell final contém roteamento global de Push');
 }
 
-// Corridas — snapshot real fixado 7b047f75.
 requireMarkers(
   '.work/corridas/src/integrations/supabase/client.ts',
   ['storageKey: "apois-superapp-corridas-auth-v1"'],
@@ -93,11 +92,6 @@ requireMarkers(
   '.work/corridas/src/hooks/rides/use-ride-request.tsx',
   ['functions.invoke("request-ride"'],
   'Corridas cria solicitação pelo roteador financeiro do Superapp',
-);
-forbidMarkers(
-  '.work/corridas/src',
-  [],
-  'noop',
 );
 requireMarkers(
   '.work/corridas/src/services/payments/payment-service.ts',
@@ -171,7 +165,6 @@ if (!treeContains('superapp/shell/dist/modules/corridas', 'apois-kit-search-scre
   fail('bundle Corridas final não contém a busca visual nova');
 } else ok('bundle Corridas final contém a busca visual nova');
 
-// Garante que o pipeline não volte a depender de componentes de uma revisão antiga.
 forbidMarkers(
   '.apois/modules.json',
   ['ActiveRideMap.tsx', 'RidePixPaymentCard.tsx', 'ActiveJourneyScreen.tsx', 'aguardando_pagamento: 2'],
@@ -183,7 +176,6 @@ forbidMarkers(
   'adaptador UI Corridas aponta somente para arquivos do pin atual',
 );
 
-// Entregas — invariantes críticos do cliente dentro do Superapp.
 requireMarkers(
   '.work/entregas/src/integrations/supabase/client.ts',
   ['storageKey: "apois-superapp-entregas-auth-v1"'],
