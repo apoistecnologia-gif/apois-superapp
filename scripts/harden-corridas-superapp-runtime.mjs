@@ -63,16 +63,13 @@ patch('.work/corridas/src/hooks/rides/use-active-ride.tsx', (source) => {
     );
   }
 
-  // Polling de segurança continua em paralelo ao Realtime. Isso evita um estado
-  // congelado quando o socket aparenta estar conectado, mas deixa de entregar eventos.
-  next = next.replace(
-    '      screenState !== "active" ||\n      isRealtimeConnected ||\n      !currentRideIdRef.current',
-    '      screenState !== "active" ||\n      !currentRideIdRef.current',
-  );
-  next = next.replace(
-    '  }, [isRealtimeConnected, pollCurrentRide, screenState, userId]);',
-    '  }, [pollCurrentRide, screenState, userId]);',
-  );
+  // Polling de segurança continua em paralelo ao Realtime. O snapshot já mudou
+  // algumas vezes a formatação/condição desse efeito, então removemos somente a
+  // guarda isRealtimeConnected quando ela estiver presente e validamos o efeito
+  // pelo comportamento estrutural (pollCurrentRide + intervalo), não por whitespace.
+  next = next
+    .replace(/\n\s*isRealtimeConnected\s*\|\|/g, '')
+    .replace(/\[isRealtimeConnected,\s*pollCurrentRide,\s*screenState,\s*userId\]/g, '[pollCurrentRide, screenState, userId]');
 
   if (!next.includes('await loadRide(currentRideId);')) {
     next = next.replace(
@@ -108,16 +105,21 @@ patch('.work/corridas/src/components/rides/active/RideStatusHeader.tsx', (source
   ),
 'Corridas: orientação de chegada usa linguagem direta');
 
-requireMarkers(
-  '.work/corridas/src/hooks/rides/use-active-ride.tsx',
-  [
-    'const RIDE_STATUS_ORDER: Record<RideStatus, number>',
-    'lastAcceptedStatusRef',
-    'await loadRide(currentRideId)',
-    'screenState !== "active" ||\n      !currentRideIdRef.current',
-  ],
-  'Corridas runtime reconciliado com o snapshot atual',
-);
+const activeRideSource = readFileSync(resolve(root, '.work/corridas/src/hooks/rides/use-active-ride.tsx'), 'utf8');
+for (const marker of [
+  'const RIDE_STATUS_ORDER: Record<RideStatus, number>',
+  'lastAcceptedStatusRef',
+  'await loadRide(currentRideId)',
+  'pollCurrentRide',
+  'POLLING_INTERVAL_MS',
+]) {
+  if (!activeRideSource.includes(marker)) throw new Error(`[FAIL] Corridas runtime: ${marker}`);
+}
+if (/screenState\s*!==\s*["']active["'][\s\S]{0,180}isRealtimeConnected\s*\|\|/.test(activeRideSource)) {
+  throw new Error('[FAIL] Corridas: polling de segurança ainda depende de isRealtimeConnected');
+}
+console.log('[OK] Corridas runtime reconciliado com o snapshot atual');
+
 requireMarkers(
   '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
   ['PassengerMap', '["motorista_a_caminho", "motorista_chegou"].includes(status)'],
