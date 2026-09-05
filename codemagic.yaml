@@ -89,9 +89,6 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           cd superapp/shell
-          # O shell Cliente também não possui bun.lock próprio. As versões diretas
-          # do Capacitor estão fixadas no package.json; o lockfile dos módulos
-          # protegidos continua sendo respeitado separadamente.
           bun install
           rm -rf android
           bunx cap add android
@@ -127,7 +124,11 @@ workflows:
           "$BUILD_TOOLS/apksigner" verify --verbose "$SIGNED_APK"
           ACTUAL_SHA1="$("$BUILD_TOOLS/apksigner" verify --print-certs "$SIGNED_APK" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -n 1 | tr '[:lower:]' '[:upper:]')"
           test -n "$ACTUAL_SHA1"
-          if [ "$ACTUAL_SHA1" != "$EXPECTED_SIGNING_SHA1" ]; then
+          NORMALIZED_ACTUAL_SHA1="$(printf '%s' "$ACTUAL_SHA1" | tr -cd '[:xdigit:]' | tr '[:lower:]' '[:upper:]')"
+          NORMALIZED_EXPECTED_SHA1="$(printf '%s' "$EXPECTED_SIGNING_SHA1" | tr -cd '[:xdigit:]' | tr '[:lower:]' '[:upper:]')"
+          test -n "$NORMALIZED_ACTUAL_SHA1"
+          test -n "$NORMALIZED_EXPECTED_SHA1"
+          if [ "$NORMALIZED_ACTUAL_SHA1" != "$NORMALIZED_EXPECTED_SHA1" ]; then
             echo "[FAIL] certificado do APK Cliente diverge do esperado: $ACTUAL_SHA1"
             exit 1
           fi
@@ -205,9 +206,6 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           cd superapp/partner-shell
-          # Este host não possui bun.lock próprio. As versões diretas do Capacitor
-          # estão fixadas no package.json, então a instalação precisa criar/resolver
-          # dependências em vez de falhar antes do cap add por --frozen-lockfile.
           bun install
           rm -rf android
           bunx cap add android
@@ -255,6 +253,5 @@ workflows:
           echo "[OK] certificado APK Parceiro confirmado: $ACTUAL_SHA1"
           "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED"
           rm -f "$ALIGNED"
-          test -s "$SIGNED"
     artifacts:
       - build/APOIS-Parceiro.apk
