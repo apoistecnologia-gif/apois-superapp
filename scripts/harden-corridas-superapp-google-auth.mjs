@@ -27,9 +27,11 @@ if (!login.includes('PassengerGoogleLoginButton')) {
   );
 }
 
-// Após o Supabase confirmar a autenticação, usa navegação determinística pelo
-// próprio documento. Isso evita falso erro causado por corrida entre useAuth e
-// TanStack Router no WebView nativo.
+login = login.replace(
+  `      if (error) {\n        console.error("[Login] signIn failed", {\n          name: error.name,\n          status: error.status,\n          code: (error as { code?: string }).code,\n          message: error.message,\n        });\n        toast.error(friendlyLoginError(error.message));\n        return;\n      }`,
+  `      if (error) {\n        const { data: existing } = await supabase.auth.getSession();\n        if (existing.session?.user) {\n          window.location.replace("./index.html#/inicio");\n          return;\n        }\n        console.error("[Login] signIn failed", {\n          name: error.name,\n          status: error.status,\n          code: (error as { code?: string }).code,\n          message: error.message,\n        });\n        toast.error(friendlyLoginError(error.message));\n        return;\n      }`,
+);
+
 login = login.replace(
   '      toast.success("Login realizado com sucesso!");\n      await navigate({ to: "/inicio", replace: true });',
   '      toast.success("Login realizado com sucesso!");\n      window.location.replace("./index.html#/inicio");\n      return;',
@@ -38,10 +40,17 @@ login = login.replace(
   '      toast.success("Login realizado com sucesso!");\n      void navigate({ to: "/inicio", replace: true });',
   '      toast.success("Login realizado com sucesso!");\n      window.location.replace("./index.html#/inicio");\n      return;',
 );
+
+login = login.replace(
+  `    } catch (error) {\n      console.error("[Login] unexpected failure", {\n        message: error instanceof Error ? error.message : "unknown_error",\n      });\n      toast.error("Falha de conexão com o servidor. Tente novamente.");\n    } finally {`,
+  `    } catch (error) {\n      const { data: existing } = await supabase.auth.getSession();\n      if (existing.session?.user) {\n        window.location.replace("./index.html#/inicio");\n        return;\n      }\n      console.error("[Login] unexpected failure", {\n        message: error instanceof Error ? error.message : "unknown_error",\n      });\n      toast.error("Falha de conexão com o servidor. Tente novamente.");\n    } finally {`,
+);
+
 writeFileSync(loginPath, login, 'utf8');
 
 if (!login.includes('import { PassengerGoogleLoginButton }')) throw new Error('[FAIL] corridas: import do Google Login não foi inserido');
 if (!login.includes('<PassengerGoogleLoginButton />')) throw new Error('[FAIL] corridas: botão Google não foi inserido no login atual');
 if (!login.includes('to="/recuperar-senha"')) throw new Error('[FAIL] corridas: recuperação de senha desapareceu');
 if (!login.includes('window.location.replace("./index.html#/inicio")')) throw new Error('[FAIL] corridas: navegação pós-login não é determinística');
-console.log('[OK] corridas: login atual contém Google + senha + recuperação com navegação pós-auth determinística');
+if (!login.includes('existing.session?.user')) throw new Error('[FAIL] corridas: sessão válida não é preservada em erro tardio de login');
+console.log('[OK] corridas: Google e senha usam roteamento persistente e preservam sessão válida');
