@@ -55,12 +55,12 @@ patch('supabase/functions/request-ride/index.ts', (source) => {
   return next;
 }, (source) =>
   source.includes('"id,user_id,category,is_online,approval_status,current_lat,current_lng,last_location_at"') &&
-  source.includes('const driverRecordIds =') &&
-  source.includes('.in("driver_id", driverRecordIds)') &&
+  ((source.includes('const driverRecordIds =') &&
+    source.includes('.in("driver_id", driverRecordIds)')) ||
+   (!source.includes('.from("subscriptions")') && !source.includes('entitledDrivers'))) &&
   source.includes('const driverDomainUserIds =') &&
   source.includes('.select("id,auth_user_id")') &&
   source.includes('const domainByAuthUser =') &&
-  source.includes('if (!entitledDrivers.has(String(d.id))) return false;') &&
   source.includes('activeByDriver.get(String(d.id))') &&
   source.includes('cancellation_reason: "Nenhum motorista disponível no momento."') &&
   !source.includes('cancel_reason: "Nenhum motorista disponível no momento."') &&
