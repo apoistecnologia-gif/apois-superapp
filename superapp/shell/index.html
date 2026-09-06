@@ -124,7 +124,8 @@
         }
         const suffix=()=>{const query=params.toString();return query?`?${query}`:'';};
         const storeCorridasGoogle=()=>{
-          if(!params.get('code')||params.has('access_token')||params.has('refresh_token'))return false;
+          const codes=params.getAll('code');
+          if(codes.length!==1||!codes[0]?.trim()||params.has('access_token')||params.has('refresh_token'))return false;
           try{
             const envelope=JSON.stringify({url:rawUrl,createdAt:Date.now()});
             localStorage.setItem(CORRIDAS_GOOGLE_KEY,envelope);

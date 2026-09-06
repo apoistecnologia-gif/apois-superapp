@@ -55,16 +55,20 @@ writeFileSync(componentPath, `import { useEffect, useRef, useState } from "react
     .replace('import { Capacitor } from "@capacitor/core";', 'import { Capacitor, type PluginListenerHandle } from "@capacitor/core";')
     .replace('import { useEffect, useRef, useState } from "react";', 'import { useCallback, useEffect, useRef, useState } from "react";')
     .replace(
+      'export function DriverGoogleLoginButton() {',
+      `function isDriverCallback(rawUrl: string) {\n  try {\n    const callback = new URL(rawUrl);\n    return callback.protocol === "apoismotorista:" && callback.hostname === "auth" && callback.pathname === "/google";\n  } catch {\n    return false;\n  }\n}\n\nfunction singlePkceCode(params: URLSearchParams) {\n  const codes = params.getAll("code");\n  return codes.length === 1 && codes[0]?.trim() ? codes[0] : null;\n}\n\nexport function DriverGoogleLoginButton() {`,
+    )
+    .replace(
       '  const finish = async (rawUrl: string) => {',
       '  const finish = useCallback(async (rawUrl: string) => {',
     )
     .replace(
       `    const code = params.get("code");\n    if (code) {\n      const { error } = await supabase.auth.exchangeCodeForSession(code);\n      if (error) throw error;\n    } else {\n      const accessToken = params.get("access_token");\n      const refreshToken = params.get("refresh_token");\n      if (accessToken && refreshToken) {\n        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });\n        if (error) throw error;\n      }\n    }`,
-      `    if (params.has("access_token") || params.has("refresh_token")) throw new Error("google_callback_tokens_rejected");\n    const code = params.get("code");\n    if (!code) throw new Error("google_callback_without_code");\n    const { error } = await supabase.auth.exchangeCodeForSession(code);\n    if (error) throw error;`,
+      `    if (params.has("access_token") || params.has("refresh_token")) throw new Error("google_callback_tokens_rejected");\n    const code = singlePkceCode(params);\n    if (!code) throw new Error("google_callback_without_single_code");\n    const { error } = await supabase.auth.exchangeCodeForSession(code);\n    if (error) throw error;`,
     )
     .replace(
       '  };\n\n  const handleCallback = async (rawUrl: string) => {\n    if (!rawUrl.startsWith(CALLBACK)) return;',
-      '  }, [navigate]);\n\n  const handleCallback = useCallback(async (rawUrl: string) => {\n    let callback: URL;\n    try { callback = new URL(rawUrl); } catch { return; }\n    if (callback.protocol !== "apoismotorista:" || callback.hostname !== "auth" || callback.pathname !== "/google") return;',
+      '  }, [navigate]);\n\n  const handleCallback = useCallback(async (rawUrl: string) => {\n    if (!isDriverCallback(rawUrl)) return;',
     )
     .replace(
       '  };\n\n  useEffect(() => {',
@@ -72,7 +76,7 @@ writeFileSync(componentPath, `import { useEffect, useRef, useState } from "react
     )
     .replace('      } catch {}', '      } catch { /* appUrlOpen/getLaunchUrl continuam ativos */ }')
     .replace('  }, []);\n\n  const login = async () => {', '  }, [finish, handleCallback]);\n\n  const login = async () => {');
-  for (const marker of ['google_callback_tokens_rejected', 'callback.pathname !== "/google"', '}, [finish, handleCallback]);']) {
+  for (const marker of ['google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', 'function isDriverCallback', 'callback.pathname === "/google"', '}, [finish, handleCallback]);']) {
     if (!generated.includes(marker)) throw new Error(`[FAIL] motorista: OAuth Google endurecido incompleto (${marker})`);
   }
   writeFileSync(componentPath, generated, 'utf8');

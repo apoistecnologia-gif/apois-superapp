@@ -19,7 +19,8 @@ const inlineGuard = `
             const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
             const age = Date.now() - Number(pending?.createdAt);
             const callbackParams = new URL(rawUrl).searchParams;
-            if (pending?.product === 'corridas' && age >= 0 && age <= ${callbackTtlMs} && callbackParams.get('code') && !callbackParams.has('access_token') && !callbackParams.has('refresh_token')) {
+            const callbackCodes = callbackParams.getAll('code');
+            if (pending?.product === 'corridas' && age >= 0 && age <= ${callbackTtlMs} && callbackCodes.length === 1 && callbackCodes[0]?.trim() && !callbackParams.has('access_token') && !callbackParams.has('refresh_token')) {
               const envelope = JSON.stringify({ url: rawUrl, createdAt: Date.now() });
               localStorage.setItem('${corridasForwardKey}', envelope);
               window.setTimeout(() => { try { if (localStorage.getItem('${corridasForwardKey}') === envelope) localStorage.removeItem('${corridasForwardKey}'); } catch { /* storage indisponível */ } }, ${callbackTtlMs});
@@ -76,7 +77,8 @@ if (!html.includes(marker)) {
       const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
       const age = Date.now() - Number(pending?.createdAt);
       const params = new URL(rawUrl).searchParams;
-      if (pending?.product !== 'corridas' || age < 0 || age > ${callbackTtlMs} || !params.get('code') || params.has('access_token') || params.has('refresh_token')) return false;
+      const codes = params.getAll('code');
+      if (pending?.product !== 'corridas' || age < 0 || age > ${callbackTtlMs} || codes.length !== 1 || !codes[0]?.trim() || params.has('access_token') || params.has('refresh_token')) return false;
       const envelope = JSON.stringify({ url: rawUrl, createdAt: Date.now() });
       localStorage.setItem(FORWARD_KEY, envelope);
       window.setTimeout(() => { try { if (localStorage.getItem(FORWARD_KEY) === envelope) localStorage.removeItem(FORWARD_KEY); } catch { /* storage indisponível */ } }, ${callbackTtlMs});

@@ -6,7 +6,8 @@ let html = readFileSync(path, 'utf8');
 
 if (html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const storeCorridasGoogle=()=>{')) {
   for (const marker of [
-    "params.get('code')",
+    "params.getAll('code')",
+    'codes.length!==1',
     "params.has('access_token')",
     "params.has('refresh_token')",
     'JSON.stringify({url:rawUrl,createdAt:Date.now()})',

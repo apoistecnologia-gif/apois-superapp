@@ -18,7 +18,8 @@ function callbackKind(rawUrl) {
 function validatePkceCallback(rawUrl, expectedKind) {
   if (callbackKind(rawUrl) !== expectedKind) return false;
   const params = new URL(rawUrl).searchParams;
-  return Boolean(params.get('code')) && !params.has('access_token') && !params.has('refresh_token');
+  const codes = params.getAll('code');
+  return codes.length === 1 && Boolean(codes[0]?.trim()) && !params.has('access_token') && !params.has('refresh_token');
 }
 
 function consumePassenger(storage, now) {
@@ -47,7 +48,7 @@ function memoryStorage() {
 async function finishDriver({ rawUrl, closeBrowser, exchange, profile }) {
   if (!validatePkceCallback(rawUrl, 'driver')) throw new Error('invalid_callback');
   await closeBrowser().catch(() => undefined);
-  await exchange(new URL(rawUrl).searchParams.get('code'));
+  await exchange(new URL(rawUrl).searchParams.getAll('code')[0]);
   const resolved = await profile();
   if (!resolved.ok) {
     if (resolved.reason === 'not_found') return '/motorista/cadastro';
@@ -62,6 +63,7 @@ const storage = memoryStorage();
 
 assert.equal(validatePkceCallback(validPassenger, 'passenger'), true, 'callback válido');
 assert.equal(validatePkceCallback('br.com.apois.app://auth/callback', 'passenger'), false, 'callback sem code');
+assert.equal(validatePkceCallback('br.com.apois.app://auth/callback?code=a&code=b', 'passenger'), false, 'callback com code duplicado');
 assert.equal(validatePkceCallback('br.com.apois.app://auth/callbackevil?code=x', 'passenger'), false, 'path inválido');
 assert.equal(validatePkceCallback('br.com.apois.app://auth/callback?access_token=a&refresh_token=b', 'passenger'), false, 'tokens rejeitados');
 
@@ -98,6 +100,90 @@ await assert.rejects(
 const passengerSource = readFileSync(resolve('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx'), 'utf8');
 const driverSource = readFileSync(resolve('.work/motorista/src/components/DriverGoogleLoginButton.tsx'), 'utf8');
 const shellSource = readFileSync(resolve('superapp/shell/index.html'), 'utf8');
+
+function extractNamedFunction(source, name) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, `função real ${name} presente`);
+  const bodyStart = source.indexOf('{', start);
+  let depth = 0;
+  for (let index = bodyStart; index < source.length; index += 1) {
+    if (source[index] === '{') depth += 1;
+    if (source[index] === '}') depth -= 1;
+    if (depth === 0) return source.slice(start, index + 1);
+  }
+  throw new Error(`função ${name} não terminada`);
+}
+
+function executable(functionSource) {
+  return functionSource
+    .replace(/let stored:\s*string\s*\|\s*null/, 'let stored')
+    .replaceAll(': string', '')
+    .replaceAll(': URLSearchParams', '')
+    .replace(' as { url?: unknown; createdAt?: unknown }', '');
+}
+
+const actualPassengerUri = new Function(
+  'CALLBACK',
+  'LEGACY_CALLBACK',
+  `return (${executable(extractNamedFunction(passengerSource, 'isCorridasCallback'))});`,
+)('br.com.apois.app://auth/callback', 'br.com.apois.app://auth/corridas-google');
+const actualDriverUri = new Function(
+  `return (${executable(extractNamedFunction(driverSource, 'isDriverCallback'))});`,
+)();
+const actualPassengerSingleCode = new Function(
+  `return (${executable(extractNamedFunction(passengerSource, 'singlePkceCode'))});`,
+)();
+const actualDriverSingleCode = new Function(
+  `return (${executable(extractNamedFunction(driverSource, 'singlePkceCode'))});`,
+)();
+const actualParamsFrom = new Function(
+  `return (${executable(extractNamedFunction(passengerSource, 'paramsFrom'))});`,
+)();
+
+for (const invalid of [
+  'not a uri',
+  'https://auth/callback?code=x',
+  'br.com.apois.app://auth.example/callback?code=x',
+  'br.com.apois.app://auth/callback-prefix?code=x',
+  'br.com.apois.app://auth/callback/suffix?code=x',
+  'apoismotorista://auth/google?code=x',
+]) assert.equal(actualPassengerUri(invalid), false, `passageiro rejeita ${invalid}`);
+assert.equal(actualPassengerUri(validPassenger), true, 'validador real aceita callback Passageiro');
+
+for (const invalid of [
+  'not a uri',
+  'https://auth/google?code=x',
+  'apoismotorista://auth.example/google?code=x',
+  'apoismotorista://auth/google-prefix?code=x',
+  'apoismotorista://auth/google/suffix?code=x',
+  validPassenger,
+]) assert.equal(actualDriverUri(invalid), false, `motorista rejeita ${invalid}`);
+assert.equal(actualDriverUri(driverUrl), true, 'validador real aceita callback Motorista');
+
+for (const [label, singleCode] of [['passageiro', actualPassengerSingleCode], ['motorista', actualDriverSingleCode]]) {
+  assert.equal(singleCode(new URLSearchParams('code=one')), 'one', `${label}: code único aceito`);
+  assert.equal(singleCode(new URLSearchParams('')), null, `${label}: code ausente rejeitado`);
+  assert.equal(singleCode(new URLSearchParams('code=')), null, `${label}: code vazio rejeitado`);
+  assert.equal(singleCode(new URLSearchParams('code=one&code=two')), null, `${label}: code duplicado rejeitado`);
+  assert.equal(singleCode(new URLSearchParams('code=one&unexpected=safe')), 'one', `${label}: parâmetro adicional não cria ambiguidade`);
+}
+
+const actualConsumer = new Function(
+  'window', 'FORWARDED_KEY', 'CALLBACK_TTL_MS', 'isCorridasCallback', 'paramsFrom', 'singlePkceCode',
+  `return (${executable(extractNamedFunction(passengerSource, 'consumeForwardedCallback'))});`,
+)({ localStorage: storage }, PASSENGER_KEY, TTL_MS, actualPassengerUri, actualParamsFrom, actualPassengerSingleCode);
+const actualNow = Date.now();
+storage.setItem(PASSENGER_KEY, JSON.stringify({ url: validPassenger, createdAt: actualNow }));
+assert.equal(actualConsumer(), validPassenger, 'consumer real aceita envelope válido');
+assert.equal(actualConsumer(), null, 'consumer real impede replay');
+storage.setItem(PASSENGER_KEY, JSON.stringify({ url: validPassenger, createdAt: actualNow - TTL_MS - 1 }));
+assert.equal(actualConsumer(), null, 'consumer real rejeita e remove envelope expirado');
+const callbackA = 'br.com.apois.app://auth/callback?code=A';
+const callbackB = 'br.com.apois.app://auth/callback?code=B';
+storage.setItem(PASSENGER_KEY, JSON.stringify({ url: callbackA, createdAt: Date.now() }));
+storage.setItem(PASSENGER_KEY, JSON.stringify({ url: callbackB, createdAt: Date.now() }));
+assert.equal(actualConsumer(), callbackB, 'concorrência usa explicitamente o callback mais recente');
+
 for (const [label, source] of [['passageiro', passengerSource], ['motorista', driverSource]]) {
   assert.match(source, /exchangeCodeForSession\(code\)/, `${label}: exchange PKCE`);
   assert.match(source, /google_callback_tokens_rejected/, `${label}: rejeita tokens no callback`);
@@ -108,6 +194,8 @@ assert.match(passengerSource, /consumeForwardedCallback/, 'passageiro: callback 
 assert.match(passengerSource, /CALLBACK_TTL_MS = 120_000/, 'passageiro: TTL explícito');
 assert.match(driverSource, /if \(!profile\.ok\)/, 'motorista: profile obrigatório antes da navegação');
 assert.match(driverSource, /profile\.reason === "not_found"/, 'motorista: ausência de cadastro segue para onboarding');
+assert.ok(passengerSource.indexOf('providerError') < passengerSource.indexOf('const code = singlePkceCode(params)'), 'erro OAuth precede exchange Passageiro');
+assert.ok(driverSource.indexOf('providerError') < driverSource.indexOf('const code = singlePkceCode(params)'), 'erro OAuth precede exchange Motorista');
 assert.match(shellSource, /clearExpiredCorridasGoogle\(\)/, 'shell: purge de callback expirado no relaunch');
 assert.match(shellSource, /localStorage\.getItem\(CORRIDAS_GOOGLE_KEY\)===envelope/, 'shell: timer não remove callback mais novo');
 

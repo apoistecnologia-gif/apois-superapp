@@ -35,32 +35,41 @@ replaceRequired(
   `type BrowserBridge = {\n  open?: (options: { url: string }) => Promise<void>;\n  close?: () => Promise<void>;\n  addListener?: (eventName: "browserFinished", listener: () => void) => Promise<{ remove: () => Promise<void> }>;\n};\n\nfunction browserPlugin(): BrowserBridge | undefined {\n  const nativeWindow = window as Window & { Capacitor?: { Plugins?: { Browser?: BrowserBridge } } };\n  return nativeWindow.Capacitor?.Plugins?.Browser;\n}`,
   'bridge Browser sem any mudou',
 );
-replaceRequired(
-  `function isCorridasCallback(rawUrl: string) {\n  return rawUrl.startsWith(CALLBACK) || rawUrl.startsWith(LEGACY_CALLBACK);\n}`,
-  `function isCorridasCallback(rawUrl: string) {\n  try {\n    const url = new URL(rawUrl);\n    return url.protocol === "br.com.apois.app:" && url.hostname === "auth" &&\n      (url.pathname === "/callback" || url.pathname === "/corridas-google");\n  } catch {\n    return false;\n  }\n}`,
-  'validação inicial da URI de callback mudou',
-);
-replaceRequired(
-  `function isCorridasCallback(rawUrl: string) {\n  try {\n    const url = new URL(rawUrl);\n    return url.protocol === "br.com.apois.app:" && url.hostname === "auth" &&\n      (url.pathname === "/callback" || url.pathname === "/corridas-google");\n  } catch {\n    return false;\n  }\n}`,
-  `function isCorridasCallback(rawUrl: string) {\n  try {\n    const url = new URL(rawUrl);\n    return [CALLBACK, LEGACY_CALLBACK].some((expected) => {\n      const target = new URL(expected);\n      return url.protocol === target.protocol && url.hostname === target.hostname && url.pathname === target.pathname;\n    });\n  } catch {\n    return false;\n  }\n}`,
-  'validação exata da URI de callback mudou',
-);
+const legacyUriCheck = `function isCorridasCallback(rawUrl: string) {\n  return rawUrl.startsWith(CALLBACK) || rawUrl.startsWith(LEGACY_CALLBACK);\n}`;
+const intermediateUriCheck = `function isCorridasCallback(rawUrl: string) {\n  try {\n    const url = new URL(rawUrl);\n    return url.protocol === "br.com.apois.app:" && url.hostname === "auth" &&\n      (url.pathname === "/callback" || url.pathname === "/corridas-google");\n  } catch {\n    return false;\n  }\n}`;
+const exactUriCheck = `function isCorridasCallback(rawUrl: string) {\n  try {\n    const url = new URL(rawUrl);\n    return [CALLBACK, LEGACY_CALLBACK].some((expected) => {\n      const target = new URL(expected);\n      return url.protocol === target.protocol && url.hostname === target.hostname && url.pathname === target.pathname;\n    });\n  } catch {\n    return false;\n  }\n}`;
+if (source.includes(legacyUriCheck)) source = source.replace(legacyUriCheck, intermediateUriCheck);
+if (source.includes(intermediateUriCheck)) source = source.replace(intermediateUriCheck, exactUriCheck);
+if (!source.includes(exactUriCheck)) throw new Error('[FAIL] OAuth Corridas: validação exata da URI mudou');
 
 const paramsMarker = 'function paramsFrom(rawUrl: string) {';
 const componentMarker = 'export function PassengerGoogleLoginButton() {';
+if (!source.includes('function singlePkceCode(')) {
+  const componentIndex = source.indexOf(componentMarker);
+  if (componentIndex < 0) throw new Error('[FAIL] OAuth Corridas: componente ausente');
+  const helper = `function singlePkceCode(params: URLSearchParams) {\n  const codes = params.getAll("code");\n  return codes.length === 1 && codes[0]?.trim() ? codes[0] : null;\n}\n\n`;
+  source = source.slice(0, componentIndex) + helper + source.slice(componentIndex);
+}
 if (!source.includes('function consumeForwardedCallback()')) {
   const componentIndex = source.indexOf(componentMarker);
   if (componentIndex < 0 || !source.includes(paramsMarker)) throw new Error('[FAIL] OAuth Corridas: parser/callback ausente');
-  const helper = `function consumeForwardedCallback() {\n  let stored: string | null = null;\n  try {\n    stored = window.localStorage.getItem(FORWARDED_KEY);\n    window.localStorage.removeItem(FORWARDED_KEY);\n  } catch {\n    return null;\n  }\n  if (!stored) return null;\n  try {\n    const envelope = JSON.parse(stored) as { url?: unknown; createdAt?: unknown };\n    if (typeof envelope.url !== "string" || typeof envelope.createdAt !== "number") return null;\n    const age = Date.now() - envelope.createdAt;\n    if (age < 0 || age > CALLBACK_TTL_MS || !isCorridasCallback(envelope.url)) return null;\n    const params = paramsFrom(envelope.url);\n    if (!params.get("code") || params.has("access_token") || params.has("refresh_token")) return null;\n    return envelope.url;\n  } catch {\n    return null;\n  }\n}\n\n`;
+  const helper = `function consumeForwardedCallback() {\n  let stored: string | null = null;\n  try {\n    stored = window.localStorage.getItem(FORWARDED_KEY);\n    window.localStorage.removeItem(FORWARDED_KEY);\n  } catch {\n    return null;\n  }\n  if (!stored) return null;\n  try {\n    const envelope = JSON.parse(stored) as { url?: unknown; createdAt?: unknown };\n    if (typeof envelope.url !== "string" || typeof envelope.createdAt !== "number") return null;\n    const age = Date.now() - envelope.createdAt;\n    if (age < 0 || age > CALLBACK_TTL_MS || !isCorridasCallback(envelope.url)) return null;\n    const params = paramsFrom(envelope.url);\n    const codes = params.getAll("code");\n    if (codes.length !== 1 || !codes[0]?.trim() || params.has("access_token") || params.has("refresh_token")) return null;\n    return envelope.url;\n  } catch {\n    return null;\n  }\n}\n\n`;
   source = source.slice(0, componentIndex) + helper + source.slice(componentIndex);
 }
+const legacyConsumerCode = '    if (!params.get("code") || params.has("access_token") || params.has("refresh_token")) return null;';
+const intermediateConsumerCode = '    const codes = params.getAll("code");\n    if (codes.length !== 1 || !codes[0]?.trim() || params.has("access_token") || params.has("refresh_token")) return null;';
+const exactConsumerCode = '    if (!singlePkceCode(params) || params.has("access_token") || params.has("refresh_token")) return null;';
+if (source.includes(legacyConsumerCode)) source = source.replace(legacyConsumerCode, intermediateConsumerCode);
+if (source.includes(intermediateConsumerCode)) source = source.replace(intermediateConsumerCode, exactConsumerCode);
+if (!source.includes(exactConsumerCode)) throw new Error('[FAIL] OAuth Corridas: validação consume-once do code mudou');
 
 replaceRequired('  const finish = async (rawUrl: string) => {', '  const finish = useCallback(async (rawUrl: string) => {', 'finish mudou');
-replaceRequired(
-  `    const code = params.get("code");\n    if (code) {\n      const { error } = await supabase.auth.exchangeCodeForSession(code);\n      if (error) throw error;\n    } else {\n      const accessToken = params.get("access_token");\n      const refreshToken = params.get("refresh_token");\n      if (!accessToken || !refreshToken) throw new Error("google_callback_without_session");\n      const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });\n      if (error) throw error;\n    }`,
-  `    if (params.has("access_token") || params.has("refresh_token")) throw new Error("google_callback_tokens_rejected");\n    const code = params.get("code");\n    if (!code) throw new Error("google_callback_without_code");\n    const { error } = await supabase.auth.exchangeCodeForSession(code);\n    if (error) throw error;`,
-  'fallback de tokens do fluxo implícito ainda estava ativo',
-);
+const implicitTokenFallback = `    const code = params.get("code");\n    if (code) {\n      const { error } = await supabase.auth.exchangeCodeForSession(code);\n      if (error) throw error;\n    } else {\n      const accessToken = params.get("access_token");\n      const refreshToken = params.get("refresh_token");\n      if (!accessToken || !refreshToken) throw new Error("google_callback_without_session");\n      const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });\n      if (error) throw error;\n    }`;
+const singleLegacyCode = `    if (params.has("access_token") || params.has("refresh_token")) throw new Error("google_callback_tokens_rejected");\n    const code = params.get("code");\n    if (!code) throw new Error("google_callback_without_code");\n    const { error } = await supabase.auth.exchangeCodeForSession(code);\n    if (error) throw error;`;
+const exactSingleCode = `    if (params.has("access_token") || params.has("refresh_token")) throw new Error("google_callback_tokens_rejected");\n    const code = singlePkceCode(params);\n    if (!code) throw new Error("google_callback_without_single_code");\n    const { error } = await supabase.auth.exchangeCodeForSession(code);\n    if (error) throw error;`;
+if (source.includes(implicitTokenFallback)) source = source.replace(implicitTokenFallback, singleLegacyCode);
+if (source.includes(singleLegacyCode)) source = source.replace(singleLegacyCode, exactSingleCode);
+if (!source.includes(exactSingleCode)) throw new Error('[FAIL] OAuth Corridas: callback PKCE exato mudou');
 replaceRequired('    try { window.localStorage.removeItem(FORWARDED_KEY); } catch {}', '    try { window.localStorage.removeItem(FORWARDED_KEY); } catch { /* callback já consumido */ }', 'cleanup do callback mudou');
 replaceRequired('  };\n\n  const handle = async (rawUrl: string) => {', '  }, []);\n\n  const handle = useCallback(async (rawUrl: string) => {', 'limite finish/handle mudou');
 replaceRequired('  };\n\n  useEffect(() => {', '  }, [finish]);\n\n  useEffect(() => {', 'limite handle/effect mudou');
@@ -76,7 +85,7 @@ replaceRequired(
   'marcador OAuth pendente mudou',
 );
 
-for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);']) {
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] OAuth Corridas incompleto: ${marker}`);
 }
 writeFileSync(path, source, 'utf8');
