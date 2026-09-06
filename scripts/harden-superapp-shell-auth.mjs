@@ -4,6 +4,25 @@ import { resolve } from 'node:path';
 const path = resolve('superapp/shell/index.html');
 let html = readFileSync(path, 'utf8');
 
+if (html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const storeCorridasGoogle=()=>{')) {
+  for (const marker of [
+    "params.get('code')",
+    "params.has('access_token')",
+    "params.has('refresh_token')",
+    'JSON.stringify({url:rawUrl,createdAt:Date.now()})',
+    'clearExpiredCorridasGoogle()',
+    'window.setTimeout(()=>{try{if(localStorage.getItem(CORRIDAS_GOOGLE_KEY)===envelope)',
+    'hasPendingCorridas()&&storeCorridasGoogle()',
+    "if(path==='corridas-reset')",
+    'sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl)',
+    "window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix()}`)",
+  ]) {
+    if (!html.includes(marker)) throw new Error(`[FAIL] shell cliente: handoff OAuth endurecido incompleto (${marker})`);
+  }
+  console.log('[OK] shell cliente encaminha somente authorization code PKCE com TTL e consumo único');
+  process.exit(0);
+}
+
 const oldResetBlock = `        if(path==='corridas-reset'){
           try{sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl);}catch{}
           window.location.replace('./modules/corridas/index.html');

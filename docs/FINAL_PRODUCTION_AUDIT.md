@@ -206,3 +206,18 @@ Esta seção substitui os estados `NOT EXECUTED` acima quando há evidência loc
 - Firebase/FCM, Maps reais, Google OAuth físico, assinatura release, ADB/device e migrations/RLS em banco descartável continuam externos.
 
 **STATUS GLOBAL APÓS EXECUÇÃO LOCAL: NOT READY — RUNTIME UPDATE REQUIRED, CONFIGURAÇÃO EXTERNA E CLEAN-ROOM/RLS E2E PENDENTES.**
+
+## Revisão Auth Corridas e lint funcional — 2026-09-06
+
+Baseline: branch `homologacao-apois-cliente`, HEAD inicial `bf467ec7425d270aa09bc8253818b72f0904402a`, working tree limpo e os três pins obrigatórios preservados.
+
+| ID | Severidade | App / funcionalidade | Sintoma / causa raiz | Correção / arquivos | Teste e exit code | Resultado | Status |
+|---|---|---|---|---|---|---|---|
+| AUTH-LOCAL-01 | P1 | Passageiro + Motorista / Google OAuth | Componentes gerados aceitavam fallback de `access_token`/`refresh_token` e validavam callback por prefixo. O handoff Passageiro persistia URL sem TTL. | Callback restrito a authorization code PKCE, scheme/host/path exatos, TTL de 120 s, consumo único e purge ativo; nenhum token de sessão é persistido manualmente. | `npm run test:corridas-oauth` = 0; `npm run verify:corridas-auth` = 0; typecheck Passageiro = 0; typecheck Motorista = 0. | STATIC/CONTRACT/TYPECHECK VERIFIED; OAuth físico não executado. | CORRIGIDO — DEPENDE VALIDAÇÃO EXTERNA |
+| AUTH-LOCAL-02 | P1 | Corridas / build isolado | Clean rebuild apagava `.work` e não reaplicava os boundaries backend, lifecycle nem o reparo de parsing do cancelamento antes dos gates finais. | `build-isolated-module.mjs` agora aplica identity → cancellation policy → ride lifecycle → eligibility sem provider, nessa ordem. | Reprodução: `verify:corridas-auth` = 1, `verify:corridas-lifecycle` = 1 e lint voltou a parser error; após a correção, os três gates direcionados = 0 e parser error removido. | Ordem do pipeline corrigida; build completo depende das variáveis release Corridas. | CORRIGIDO — DEPENDE VALIDAÇÃO EXTERNA |
+| AUTH-LOCAL-03 | P2 | Corridas / hooks e Maps | Dependências incorretas criavam stale closures/refetch instável; duas expressões ternárias eram usadas apenas por efeito; recovery possuía catch vazio. | Adaptações cirúrgicas no workspace gerado, sem formatter ou mudança de regra. | Lint Corridas: 117 errors/27 warnings → 111 errors/22 warnings; `no-empty`, hook dependencies, unused expressions e parser error removidos; typecheck = 0. | Dívida restante é predominantemente `no-explicit-any`, unused e react-refresh. | CORRIGIDO E VALIDADO |
+| AUTH-LOCAL-04 | P2 | Corridas / build e dist | O ambiente atual não fornece `CORRIDAS_VITE_SUPABASE_URL` e `CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY`; o gate falha fechado antes do bundle. | Nenhum valor foi inventado, nenhum secret foi lido/alterado. | `npm run build:corridas` = 1; `npm run build:motorista` = 1; `npm run verify:dist` = 1 por dist Corridas anterior/incompleto; `npm run build:shell` = 0. | Build/dist das mudanças Auth aguardam configuração release local válida. | BLOQUEADO POR CONFIGURAÇÃO EXTERNA |
+
+Google OAuth de Passageiro e Motorista continua **HARDENER-DEPENDENT**. A mudança arquitetural correta exige atualizar os repositórios fonte pinados: criar os componentes Google nos respectivos `src/components`, integrar as telas de login canônicas e manter no SuperApp apenas bridge de shell/Capacitor e adaptação de navegação. Nenhum submódulo ou pin foi alterado nesta rodada.
+
+**STATUS GLOBAL APÓS REVISÃO AUTH: NOT READY — PHYSICAL OAUTH, BUILD/DIST COM CONFIGURAÇÃO RELEASE, RUNTIME E E2E CONTINUAM PENDENTES.**

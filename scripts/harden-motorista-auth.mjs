@@ -52,10 +52,32 @@ writeFileSync(componentPath, `import { useEffect, useRef, useState } from "react
 {
   const generated = readFileSync(componentPath, 'utf8')
     .replace('import { App, type PluginListenerHandle } from "@capacitor/app";', 'import { App } from "@capacitor/app";')
-    .replace('import { Capacitor } from "@capacitor/core";', 'import { Capacitor, type PluginListenerHandle } from "@capacitor/core";');
+    .replace('import { Capacitor } from "@capacitor/core";', 'import { Capacitor, type PluginListenerHandle } from "@capacitor/core";')
+    .replace('import { useEffect, useRef, useState } from "react";', 'import { useCallback, useEffect, useRef, useState } from "react";')
+    .replace(
+      '  const finish = async (rawUrl: string) => {',
+      '  const finish = useCallback(async (rawUrl: string) => {',
+    )
+    .replace(
+      `    const code = params.get("code");\n    if (code) {\n      const { error } = await supabase.auth.exchangeCodeForSession(code);\n      if (error) throw error;\n    } else {\n      const accessToken = params.get("access_token");\n      const refreshToken = params.get("refresh_token");\n      if (accessToken && refreshToken) {\n        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });\n        if (error) throw error;\n      }\n    }`,
+      `    if (params.has("access_token") || params.has("refresh_token")) throw new Error("google_callback_tokens_rejected");\n    const code = params.get("code");\n    if (!code) throw new Error("google_callback_without_code");\n    const { error } = await supabase.auth.exchangeCodeForSession(code);\n    if (error) throw error;`,
+    )
+    .replace(
+      '  };\n\n  const handleCallback = async (rawUrl: string) => {\n    if (!rawUrl.startsWith(CALLBACK)) return;',
+      '  }, [navigate]);\n\n  const handleCallback = useCallback(async (rawUrl: string) => {\n    let callback: URL;\n    try { callback = new URL(rawUrl); } catch { return; }\n    if (callback.protocol !== "apoismotorista:" || callback.hostname !== "auth" || callback.pathname !== "/google") return;',
+    )
+    .replace(
+      '  };\n\n  useEffect(() => {',
+      '  }, [finish]);\n\n  useEffect(() => {',
+    )
+    .replace('      } catch {}', '      } catch { /* appUrlOpen/getLaunchUrl continuam ativos */ }')
+    .replace('  }, []);\n\n  const login = async () => {', '  }, [finish, handleCallback]);\n\n  const login = async () => {');
+  for (const marker of ['google_callback_tokens_rejected', 'callback.pathname !== "/google"', '}, [finish, handleCallback]);']) {
+    if (!generated.includes(marker)) throw new Error(`[FAIL] motorista: OAuth Google endurecido incompleto (${marker})`);
+  }
   writeFileSync(componentPath, generated, 'utf8');
 }
-console.log('[OK] motorista: componente de login Google criado');
+console.log('[OK] motorista: componente Google exige callback PKCE exato e remove listeners corretamente');
 
 const loginPath = file('src/routes/motorista.login.tsx');
 let login = readFileSync(loginPath, 'utf8');

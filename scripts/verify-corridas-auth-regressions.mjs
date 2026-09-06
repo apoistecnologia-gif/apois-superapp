@@ -19,6 +19,25 @@ for (const marker of ['flowType: "pkce"', 'handledUrlRef.current === rawUrl', 'b
 if (!googleHardener.includes('br.com.apois.app://auth/callback')) fail('callback canônico Google ausente');
 if (!googleHardener.includes('br.com.apois.app://auth/corridas-google')) fail('callback legado compatível ausente');
 
+const oauthHandoffHardener = read('scripts/harden-corridas-oauth-callback-handoff.mjs');
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', '[CALLBACK, LEGACY_CALLBACK].some']) {
+  if (!oauthHandoffHardener.includes(marker)) fail(`hardener final Google Passageiro sem ${marker}`);
+}
+const buildPipeline = read('scripts/build-isolated-module.mjs');
+if (!buildPipeline.includes("harden-corridas-oauth-callback-handoff.mjs")) fail('build Corridas não executa hardener final do callback');
+const identityStep = buildPipeline.indexOf("harden-corridas-backend-identity-boundary.mjs");
+const cancellationStep = buildPipeline.indexOf("harden-corridas-cancellation-policy.mjs");
+const lifecycleStep = buildPipeline.indexOf("harden-corridas-ride-lifecycle.mjs");
+const eligibilityStep = buildPipeline.indexOf("harden-corridas-driver-eligibility-no-gateway.mjs");
+if (identityStep < 0 || cancellationStep <= identityStep || lifecycleStep <= cancellationStep || eligibilityStep <= lifecycleStep) {
+  fail('build Corridas não aplica identity/cancellation/lifecycle/eligibility na ordem segura');
+}
+
+const driverGoogleHardener = read('scripts/harden-motorista-auth.mjs');
+for (const marker of ['google_callback_tokens_rejected', 'callback.pathname !== "/google"', '}, [finish, handleCallback]);']) {
+  if (!driverGoogleHardener.includes(marker)) fail(`hardener Google Motorista sem ${marker}`);
+}
+
 const backendIdentity = read('scripts/harden-corridas-backend-identity-boundary.mjs');
 for (const marker of [
   'subscriptions.driver_id referencia public.drivers(id)',
@@ -69,9 +88,18 @@ const client = read('.work/corridas/src/integrations/supabase/client.ts');
 if (client && !client.includes('flowType: "pkce"')) fail('workspace Supabase Auth não usa PKCE');
 const google = read('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx');
 if (google) {
-  for (const marker of ['exchangeCodeForSession(code)', 'handledUrlRef.current === rawUrl', 'browserFinished', 'App.getLaunchUrl()']) {
+  for (const marker of ['exchangeCodeForSession(code)', 'handledUrlRef.current === rawUrl', 'browserFinished', 'App.getLaunchUrl()', 'consumeForwardedCallback', 'google_callback_tokens_rejected']) {
     if (!google.includes(marker)) fail(`workspace Google OAuth sem ${marker}`);
   }
+  if (google.includes('auth.setSession(')) fail('workspace Google Passageiro aceita tokens de sessão no callback PKCE');
+}
+
+const driverGoogle = read('.work/motorista/src/components/DriverGoogleLoginButton.tsx');
+if (driverGoogle) {
+  for (const marker of ['exchangeCodeForSession(code)', 'google_callback_tokens_rejected', 'callback.pathname !== "/google"', 'listenerRef.current?.remove()']) {
+    if (!driverGoogle.includes(marker)) fail(`workspace Google Motorista sem ${marker}`);
+  }
+  if (driverGoogle.includes('auth.setSession(')) fail('workspace Google Motorista aceita tokens de sessão no callback PKCE');
 }
 
 const requestRide = read('.work/corridas/supabase/functions/request-ride/index.ts');

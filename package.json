@@ -29,6 +29,7 @@
     "verify:shell-navigation": "node scripts/verify-superapp-shell-navigation.mjs",
     "verify:corridas-supabase-source": "node scripts/verify-corridas-supabase-source-of-truth.mjs",
     "verify:corridas-auth": "node scripts/verify-corridas-auth-regressions.mjs",
+    "test:corridas-oauth": "node scripts/test-corridas-oauth-callbacks.mjs",
     "verify:corridas-db-ownership": "node scripts/verify-corridas-database-ownership.mjs",
     "verify:corridas-lifecycle": "node scripts/verify-corridas-ride-lifecycle-regressions.mjs",
     "verify:release-requirements": "node scripts/verify-superapp-release-requirements.mjs",

@@ -41,6 +41,19 @@
     const LAST_MODULE_KEY='apois-superapp:last-module';
     const AUTH_DEEP_LINK_KEY='apois-superapp:last-auth-deeplink';
     const CORRIDAS_RECOVERY_KEY='apois-superapp:corridas-recovery-url';
+    const CORRIDAS_GOOGLE_KEY='apois-superapp:corridas-google-url';
+    const OAUTH_PENDING_KEY='apois-superapp:pending-oauth-product';
+    const OAUTH_HANDOFF_TTL_MS=120000;
+    const clearExpiredCorridasGoogle=()=>{
+      try{
+        const stored=localStorage.getItem(CORRIDAS_GOOGLE_KEY);
+        if(!stored)return;
+        const envelope=JSON.parse(stored);
+        const age=Date.now()-Number(envelope?.createdAt);
+        if(age<0||age>OAUTH_HANDOFF_TTL_MS)localStorage.removeItem(CORRIDAS_GOOGLE_KEY);
+      }catch{try{localStorage.removeItem(CORRIDAS_GOOGLE_KEY);}catch{/* storage indisponível */}}
+    };
+    clearExpiredCorridasGoogle();
     const PUBLIC_ROUTE_FRAGMENTS=['/login','/register','/cadastro','/recuperar-senha','/redefinir-senha','/auth/callback'];
 
     function authStorageKey(moduleName){
@@ -110,8 +123,27 @@
           fragmentParams.forEach((value,key)=>{if(!params.has(key))params.set(key,value);});
         }
         const suffix=()=>{const query=params.toString();return query?`?${query}`:'';};
+        const storeCorridasGoogle=()=>{
+          if(!params.get('code')||params.has('access_token')||params.has('refresh_token'))return false;
+          try{
+            const envelope=JSON.stringify({url:rawUrl,createdAt:Date.now()});
+            localStorage.setItem(CORRIDAS_GOOGLE_KEY,envelope);
+            window.setTimeout(()=>{try{if(localStorage.getItem(CORRIDAS_GOOGLE_KEY)===envelope)localStorage.removeItem(CORRIDAS_GOOGLE_KEY);}catch{/* storage indisponível */}},OAUTH_HANDOFF_TTL_MS);
+            return true;
+          }catch{return false;}
+        };
+        const hasPendingCorridas=()=>{
+          try{
+            const stored=localStorage.getItem(OAUTH_PENDING_KEY);
+            localStorage.removeItem(OAUTH_PENDING_KEY);
+            if(!stored)return false;
+            const envelope=JSON.parse(stored);
+            const age=Date.now()-Number(envelope?.createdAt);
+            return envelope?.product==='corridas'&&age>=0&&age<=OAUTH_HANDOFF_TTL_MS;
+          }catch{return false;}
+        };
         if(path==='corridas-google'){
-          try{localStorage.setItem('apois-superapp:corridas-google-url',rawUrl);}catch{}
+          if(!storeCorridasGoogle())return false;
           void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
           window.location.replace('./modules/corridas/index.html#/login');
           return true;
@@ -132,10 +164,7 @@
         }
         if(path==='callback'){
           try{
-            const pendingProduct=localStorage.getItem('apois-superapp:pending-oauth-product');
-            if(pendingProduct==='corridas'){
-              localStorage.removeItem('apois-superapp:pending-oauth-product');
-              localStorage.setItem('apois-superapp:corridas-google-url',rawUrl);
+            if(hasPendingCorridas()&&storeCorridasGoogle()){
               void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
               window.location.replace('./modules/corridas/index.html#/login');
               return true;

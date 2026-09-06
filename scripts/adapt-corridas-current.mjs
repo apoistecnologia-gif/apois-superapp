@@ -131,10 +131,52 @@ patch('src/services/places/places-service.ts', (source) => {
   return next;
 }, 'Corridas: Places aguarda inicialização concorrente e aceita shape real do autocomplete');
 
+patch('src/types/places.ts', (source) =>
+  source.includes('  place?: unknown;')
+    ? source
+    : source.replace(
+        '  matchedSubstrings?: Array<{ length: number; offset: number }>;\n}',
+        '  matchedSubstrings?: Array<{ length: number; offset: number }>;\n  /** Referência opaca retornada pelo SDK Places e consumida por selectPrediction. */\n  place?: unknown;\n}',
+      ),
+'Corridas: contrato da sugestão inclui referência opaca necessária à seleção');
+
+patch('src/components/map/PassengerMap.tsx', (source) =>
+  source.replace(
+    '  }, [destination, displayedRoutePoints, orderedStops, origin, status]);',
+    '  }, [destination, displayedRoutePoints, orderedStops, origin, status, validDriverLocation]);',
+  ),
+'Corridas: câmera reage à localização válida do motorista');
+
+patch('src/hooks/use-destination-search.tsx', (source) =>
+  source.replace('    [location],\n  );', '    [currentPosition],\n  );'),
+'Corridas: busca de destino usa a posição atual sem stale closure');
+
+patch('src/hooks/use-ride-categories.tsx', (source) =>
+  source
+    .replace('  }, [selectedCategory]);', '  }, []);')
+    .replace('  }, []);\n\n  const selectCategory', '  }, [fetchCategories]);\n\n  const selectCategory'),
+'Corridas: categorias mantêm callback estável e efeito com dependência correta');
+
+patch('src/services/google/google-maps-loader.ts', (source) =>
+  source
+    .replace(
+      '            googleWindow.google?.maps?.importLibrary\n              ? finish()\n              : finish(new Error("maps_api_unavailable"));',
+      '            if (googleWindow.google?.maps?.importLibrary) finish();\n            else finish(new Error("maps_api_unavailable"));',
+    )
+    .replace(
+      '        googleWindow.google?.maps?.importLibrary\n          ? finish()\n          : finish(new Error("maps_api_unavailable"));',
+      '        if (googleWindow.google?.maps?.importLibrary) finish();\n        else finish(new Error("maps_api_unavailable"));',
+    ),
+'Corridas: loader de Maps usa controle de fluxo explícito');
+
 requireMarkers('src/integrations/supabase/client.ts', ['storageKey: "apois-superapp-corridas-auth-v1"'], 'Corridas auth isolado');
 requireMarkers('src/hooks/use-location.tsx', ['apois-superapp-corridas-last-location'], 'Corridas localização isolada');
 requireMarkers('src/components/map/PassengerMap.tsx', ['encodedPolyline', 'PolylineDecoder', 'displayedRoutePoints'], 'Corridas mapa com rota persistida');
 requireMarkers('src/hooks/rides/use-ride-request.tsx', ['paymentMethod: string | null', 'payment_method: selectedMethod', 'pickup_address: pickupAddress'], 'Corridas payload real e idempotente');
 requireMarkers('src/services/places/places-service.ts', ['initializationPromise', 'fullText.split(",")[0]', 'typeof p.toPlace === "function"'], 'Corridas autocomplete robusto');
+requireMarkers('src/types/places.ts', ['place?: unknown'], 'Corridas sugestão tipada sem any');
+requireMarkers('src/components/map/PassengerMap.tsx', ['status, validDriverLocation]'], 'Corridas câmera sem stale driver');
+requireMarkers('src/hooks/use-destination-search.tsx', ['[currentPosition]'], 'Corridas destino sem stale position');
+requireMarkers('src/hooks/use-ride-categories.tsx', ['}, []);', '}, [fetchCategories]);'], 'Corridas categorias com hooks estáveis');
 
 console.log('[OK] Corridas: adaptação atual concluída sem modificar a fonte protegida');

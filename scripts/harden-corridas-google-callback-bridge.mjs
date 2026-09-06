@@ -8,20 +8,26 @@ const marker = 'data-apois-corridas-google-callback-bridge';
 const inlineMarker = 'apois-superapp:corridas-google-inline-v4';
 const pendingKey = 'apois-superapp:pending-oauth-product';
 const corridasForwardKey = 'apois-superapp:corridas-google-url';
+const callbackTtlMs = 120_000;
 
 const inlineGuard = `
         /* ${inlineMarker} */
         if (path === 'callback') {
           try {
-            const pendingProduct = localStorage.getItem('${pendingKey}');
-            if (pendingProduct === 'corridas') {
-              localStorage.removeItem('${pendingKey}');
-              localStorage.setItem('${corridasForwardKey}', rawUrl);
+            const pendingRaw = localStorage.getItem('${pendingKey}');
+            localStorage.removeItem('${pendingKey}');
+            const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+            const age = Date.now() - Number(pending?.createdAt);
+            const callbackParams = new URL(rawUrl).searchParams;
+            if (pending?.product === 'corridas' && age >= 0 && age <= ${callbackTtlMs} && callbackParams.get('code') && !callbackParams.has('access_token') && !callbackParams.has('refresh_token')) {
+              const envelope = JSON.stringify({ url: rawUrl, createdAt: Date.now() });
+              localStorage.setItem('${corridasForwardKey}', envelope);
+              window.setTimeout(() => { try { if (localStorage.getItem('${corridasForwardKey}') === envelope) localStorage.removeItem('${corridasForwardKey}'); } catch { /* storage indisponível */ } }, ${callbackTtlMs});
               void browserPlugin?.close?.().catch(() => undefined);
               window.location.replace('./index.html#/login');
               return true;
             }
-          } catch {}
+          } catch { /* callback inválido falha fechado */ }
         }
 `;
 
@@ -53,16 +59,27 @@ if (!html.includes(marker)) {
   const browserPlugin = window.Capacitor?.Plugins?.Browser;
 
   function isSharedAuthCallback(rawUrl) {
-    return typeof rawUrl === 'string' && rawUrl.startsWith('br.com.apois.app://auth/callback');
+    if (typeof rawUrl !== 'string') return false;
+    try {
+      const url = new URL(rawUrl);
+      return url.protocol === 'br.com.apois.app:' && url.hostname === 'auth' && url.pathname === '/callback';
+    } catch {
+      return false;
+    }
   }
 
   function routeCorridasGoogleCallback(rawUrl) {
     if (!isSharedAuthCallback(rawUrl)) return false;
     try {
-      const pendingProduct = localStorage.getItem(PENDING_KEY);
-      if (pendingProduct !== 'corridas') return false;
+      const pendingRaw = localStorage.getItem(PENDING_KEY);
       localStorage.removeItem(PENDING_KEY);
-      localStorage.setItem(FORWARD_KEY, rawUrl);
+      const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+      const age = Date.now() - Number(pending?.createdAt);
+      const params = new URL(rawUrl).searchParams;
+      if (pending?.product !== 'corridas' || age < 0 || age > ${callbackTtlMs} || !params.get('code') || params.has('access_token') || params.has('refresh_token')) return false;
+      const envelope = JSON.stringify({ url: rawUrl, createdAt: Date.now() });
+      localStorage.setItem(FORWARD_KEY, envelope);
+      window.setTimeout(() => { try { if (localStorage.getItem(FORWARD_KEY) === envelope) localStorage.removeItem(FORWARD_KEY); } catch { /* storage indisponível */ } }, ${callbackTtlMs});
     } catch {
       return false;
     }
@@ -94,6 +111,7 @@ for (const required of [
   pendingKey,
   corridasForwardKey,
   'br.com.apois.app://auth/callback',
+  "url.pathname === '/callback'",
   "window.location.replace('./index.html#/login')",
   'localStorage.getItem(PENDING_KEY)',
 ]) {
