@@ -1,34 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { runSourcePreflight } from './lib/source-preflight.mjs';
 
-const lock = JSON.parse(readFileSync(new URL('../.apois/source-lock.json', import.meta.url), 'utf8'));
-const modules = [
-  ['entregas', 'sources/apois-entregas'],
-  ['corridas_passageiro', 'sources/apois-corridas-passageiro'],
-  ['corridas_motorista_admin', 'sources/apois-corridas-motorista-admin'],
-];
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const result = runSourcePreflight({ root, checkPins: true });
 
-let failed = false;
-for (const [key, path] of modules) {
-  const expected = lock.sources[key]?.commit;
-  if (!expected) {
-    console.error(`[FAIL] ${key}: commit fixado ausente em .apois/source-lock.json`);
-    failed = true;
-    continue;
-  }
-
-  try {
-    const actual = execFileSync('git', ['-C', path, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-    if (actual !== expected) {
-      console.error(`[FAIL] ${key}: ${actual} != ${expected}`);
-      failed = true;
-    } else {
-      console.log(`[OK] ${key}: ${actual}`);
-    }
-  } catch {
-    console.error(`[FAIL] ${key}: fonte não inicializada. Rode npm run sources:clone.`);
-    failed = true;
-  }
+if (!result.rootGitMetadata && result.ok) {
+  console.log('[OK] verify:pins: export/ZIP sem .git; sources completos, pins não verificáveis neste ambiente.');
 }
 
-process.exit(failed ? 1 : 0);
+process.exit(result.ok ? 0 : 1);
