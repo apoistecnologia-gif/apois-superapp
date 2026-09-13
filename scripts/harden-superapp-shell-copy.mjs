@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const path = resolve('superapp/shell/index.html');
+const path = resolve(process.env.APOIS_SHELL_HTML_PATH?.trim() || 'superapp/shell/index.html');
 let source = readFileSync(path, 'utf8');
 source = source
   .replace('Carro • Moto • Fretes • Guincho • Envios', 'Carro • Moto • Envios')
@@ -12,4 +12,4 @@ for (const marker of ['Carro • Moto • Envios', '<strong>Apois, <span>vamos?<
   if (!source.includes(marker)) throw new Error(`[FAIL] Shell Cliente: texto oficial ausente (${marker})`);
 }
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Shell Cliente: mostra somente categorias liberadas e o slogan oficial APOIS.');
+console.log(`[OK] Shell Cliente: mostra somente categorias liberadas e o slogan oficial APOIS (${path}).`);

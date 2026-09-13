@@ -39,17 +39,30 @@ check('scripts/harden-corridas-superapp-storage.mjs', [
 ], 'Corridas usa storage operacional isolado');
 
 check('scripts/harden-superapp-shell-auth-deeplink-source.mjs', [
+  'APOIS_SHELL_HTML_PATH',
   'Date.now()-Number(previous?.at||0)<5000',
   'JSON.stringify({url:rawUrl,at:Date.now()})',
-], 'shell limita deduplicação de deep link a cinco segundos');
+], 'shell limita deduplicação de deep link a cinco segundos e aceita alvo staged');
+
+check('superapp/shell/build.mjs', [
+  'APOIS_SHELL_HTML_PATH: distIndex',
+  'scripts/harden-superapp-shell-auth.mjs',
+  'scripts/harden-superapp-shell-mobile-ui.mjs',
+  'scripts/harden-superapp-shell-auth-deeplink-source.mjs',
+  'fonte versionada não foi alterada',
+], 'build do shell aplica hardening somente sobre dist');
 
 check('package.json', [
-  'harden-superapp-shell-auth-deeplink-source.mjs && node superapp/shell/build.mjs',
+  '"build:shell": "node superapp/shell/build.mjs"',
   'audit:play-store',
   'verify-superapp-auth-deeplinks.mjs',
+  'verify-superapp-final-artifact.mjs',
+  'guard:build-sources:capture',
+  'guard:build-sources:verify',
+  'test:build-idempotency',
   'verify-superapp-address-runtime.mjs',
   'verify-superapp-notification-assets.mjs',
-], 'build aplica auditorias de hardening/Play e validadores pós-build');
+], 'build aplica hardening staged, auditorias e validadores pós-transformação');
 
 check('.apois/modules.json', [
   'harden-corridas-superapp-storage.mjs',
