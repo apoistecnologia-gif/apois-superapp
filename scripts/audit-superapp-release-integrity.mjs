@@ -86,6 +86,7 @@ const orderedMarkers = [
   'npm run inject:push-routing',
   'npm run verify:dist',
   'npm run test:build-idempotency',
+  'npm run verify:dist',
   'npm run guard:build-sources:verify',
 ];
 let previous = -1;
@@ -98,7 +99,7 @@ for (const marker of orderedMarkers) {
   }
   previous = position;
 }
-if (!failed) console.log('[OK] artefato é verificado somente depois de auth/deep-link e Push, com gate final de source');
+if (!failed) console.log('[OK] artefato é verificado depois das transformações e novamente após o teste de idempotência, com gate final de source');
 
 if (buildShell !== 'node superapp/shell/build.mjs') {
   console.error('[FAIL] build:shell ainda executa mutação externa antes do staging');
