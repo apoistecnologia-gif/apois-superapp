@@ -1,0 +1,54 @@
+name: Edge Function source of truth
+
+on:
+  push:
+    branches:
+      - main
+      - homologacao-apois-cliente
+      - 'fix/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-edge-function-ownership:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pinned integration sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify pinned submodules
+        run: npm run verify:pins
+
+      - name: Verify Edge Function source-of-truth classification
+        run: npm run verify:edge-function-source-of-truth
+
+      - name: Verify existing release-integrity audits
+        run: npm run audit:release-integrity
+
+      - name: Prepare generated workspaces
+        run: npm run prepare:modules
+
+      - name: Verify generated Edge Function parity
+        run: npm run verify:edge-function-source-of-truth -- --check-generated
+
+      - name: Ensure verification did not mutate tracked files
+        shell: bash
+        run: |
+          changes="$(git status --porcelain --untracked-files=no)"
+          if [ -n "$changes" ]; then
+            echo "[FAIL] tracked working tree changed during verification"
+            printf '%s\n' "$changes"
+            git diff --exit-code
+            exit 1
+          fi
+          echo "[OK] tracked working tree unchanged"

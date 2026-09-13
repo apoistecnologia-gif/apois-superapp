@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "observedAt": "2026-09-13",
+  "scope": "Governance for versioned APOIS Edge Function copies. This file changes ownership/provenance only; it does not change runtime or financial behavior.",
+  "roots": [
+    {
+      "id": "release-overlay",
+      "path": "supabase/functions",
+      "projectRef": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Release-policy overlay. Contains fail-closed provider stubs and selected current release implementations classified by docs/edge-function-release-classification.json.",
+      "pipeline": "Validated by verify:retired-provider-source and verify:edge-function-source-of-truth. Deploy only explicitly selected slugs; never use an unqualified deploy-all from this mixed-project overlay."
+    },
+    {
+      "id": "entregas-source",
+      "path": "sources/apois-entregas/supabase/functions",
+      "projectRef": "sbvhdgyuuperszlsllji",
+      "owner": "APOIS Entregas backend",
+      "purpose": "Canonical upstream implementation source for the Entregas Supabase project, except where the current Superapp release overlay explicitly supersedes a slug.",
+      "pipeline": "Pinned submodule -> .work/entregas for application build. Superapp build does not deploy Supabase Functions; backend deploy is explicit per slug from the approved source/release overlay."
+    },
+    {
+      "id": "corridas-passenger",
+      "path": "sources/apois-corridas-passageiro/supabase/functions",
+      "projectRef": "vqtucstyduxrqjgyigfk",
+      "owner": "APOIS Corridas passenger backend",
+      "purpose": "Canonical source for Corridas passenger-only Edge Functions. Also retains historical copies of shared slugs that must not be treated as deployment authority when a shared owner is declared below.",
+      "pipeline": "Pinned protected submodule -> .work/corridas for passenger build/hardening. The passenger deployment runbook is historical/manual; Superapp CI forbids treating overlapping shared slugs as implicit deploy-all authority."
+    },
+    {
+      "id": "corridas-driver-admin",
+      "path": "sources/apois-corridas-motorista-admin/supabase/functions",
+      "projectRef": "vqtucstyduxrqjgyigfk",
+      "owner": "APOIS Corridas shared/driver backend",
+      "purpose": "Canonical upstream source for Corridas shared and driver/admin Edge Functions when the same slug also exists in the passenger snapshot, unless the current release overlay supersedes it.",
+      "pipeline": "Pinned protected submodule -> .work/motorista for app build. Backend deploy is explicit per slug; overlapping Corridas slugs use this root as source authority unless release policy points to the release overlay."
+    }
+  ],
+  "sameProjectDuplicatePolicies": [
+    {
+      "roots": ["corridas-passenger", "corridas-driver-admin"],
+      "paths": [
+        "_shared/cors.ts",
+        "_shared/pricing.ts",
+        "approve-driver-and-create-mercadopago-subscription",
+        "create-cancellation-fee-charge",
+        "create-my-mercadopago-subscription",
+        "dispatch-broadcast-test",
+        "mercadopago-webhook",
+        "process-ride-dispatch",
+        "regenerate-driver-mercadopago-charge",
+        "request-driver-payout",
+        "send-ride-push"
+      ],
+      "relation": "intentional-divergence",
+      "canonicalRoot": "corridas-driver-admin",
+      "owner": "APOIS Corridas shared/driver backend",
+      "purpose": "These are same-project duplicate slugs/files. The passenger repository keeps a protected snapshot used by its application build, while the shared/driver backend owns overlapping upstream implementations. Retired financial slugs may be superseded at release time by the fail-closed release overlay.",
+      "pipeline": "Never run an unqualified deploy-all from either Corridas source. Deploy an overlapping slug only from corridas-driver-admin, or from release-overlay when the release classification marks the provider endpoint retired/fail-closed."
+    }
+  ],
+  "canonicalAssignments": [
+    {
+      "path": "mercadopago-webhook",
+      "domain": "current-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Current release policy retires Mercado Pago webhooks and requires fail-closed behavior.",
+      "pipeline": "verify:retired-provider-source -> explicit release deploy of the classified slug only."
+    },
+    {
+      "path": "request-driver-payout",
+      "domain": "current-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Current release policy retires provider-backed driver payout endpoints and requires fail-closed behavior.",
+      "pipeline": "verify:retired-provider-source -> explicit release deploy of the classified slug only."
+    },
+    {
+      "path": "create-cancellation-fee-charge",
+      "domain": "current-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Current release policy retires electronic cancellation-fee charging and requires fail-closed behavior.",
+      "pipeline": "verify:retired-provider-source -> explicit release deploy of the classified slug only."
+    },
+    {
+      "path": "send-ride-push",
+      "domain": "corridas",
+      "canonicalRoot": "corridas-driver-admin",
+      "owner": "APOIS Corridas shared/driver backend",
+      "purpose": "Shared dispatch/push function used by the Corridas backend; duplicate passenger copy is a protected snapshot, not deploy authority.",
+      "pipeline": "Explicit per-slug Corridas backend deploy from corridas-driver-admin after source-of-truth verification."
+    },
+    {
+      "path": "dispatch-push-outbox",
+      "domain": "entregas-current-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Current non-financial release implementation versioned in the integration overlay.",
+      "pipeline": "Release-integrity verification -> explicit per-slug deployment for Entregas."
+    },
+    {
+      "path": "delete-my-account",
+      "domain": "corridas-passenger",
+      "canonicalRoot": "corridas-passenger",
+      "owner": "APOIS Corridas passenger backend",
+      "purpose": "Passenger-only account deletion function; no same-project duplicate exists in the driver/admin source root.",
+      "pipeline": "Explicit per-slug Corridas backend deploy from corridas-passenger."
+    },
+    {
+      "path": "admin-actions",
+      "domain": "corridas-passenger",
+      "canonicalRoot": "corridas-passenger",
+      "owner": "APOIS Corridas passenger backend",
+      "purpose": "Only versioned Corridas copy at the pinned HEAD.",
+      "pipeline": "Explicit per-slug Corridas backend deploy from corridas-passenger after authorization review."
+    },
+    {
+      "path": "request-ride",
+      "domain": "corridas-passenger",
+      "canonicalRoot": "corridas-passenger",
+      "owner": "APOIS Corridas passenger backend",
+      "purpose": "Passenger ride-request router; the Superapp passenger workspace invokes this slug and no same-project duplicate exists in driver/admin.",
+      "pipeline": "Passenger source -> .work/corridas build validation; explicit per-slug Corridas backend deploy from corridas-passenger."
+    },
+    {
+      "path": "_shared/cors.ts",
+      "domain": "corridas-shared",
+      "canonicalRoot": "corridas-driver-admin",
+      "owner": "APOIS Corridas shared/driver backend",
+      "purpose": "CORS helpers are source-tree-local dependencies, not standalone deployables. The Corridas shared backend helper is authoritative for shared/driver functions; other roots intentionally keep their own helper semantics.",
+      "pipeline": "Bundled transitively with the explicitly selected Edge Function source; never deployed or synchronized globally as a standalone artifact."
+    }
+  ],
+  "generatedMustMatch": [
+    {
+      "source": "sources/apois-entregas/supabase/functions",
+      "derived": ".work/entregas/supabase/functions",
+      "stage": "immediately-after-prepare-modules-before-hardeners"
+    },
+    {
+      "source": "sources/apois-corridas-passageiro/supabase/functions",
+      "derived": ".work/corridas/supabase/functions",
+      "stage": "immediately-after-prepare-modules-before-hardeners"
+    },
+    {
+      "source": "sources/apois-corridas-motorista-admin/supabase/functions",
+      "derived": ".work/motorista/supabase/functions",
+      "stage": "immediately-after-prepare-modules-before-hardeners"
+    }
+  ]
+}
