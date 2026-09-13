@@ -2,7 +2,7 @@ import './harden-superapp-shell-copy.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const path = resolve('superapp/shell/index.html');
+const path = resolve(process.env.APOIS_SHELL_HTML_PATH?.trim() || 'superapp/shell/index.html');
 let source = readFileSync(path, 'utf8');
 
 const carSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14l-1.2-6.1a2 2 0 0 0-2-1.6H8.2a2 2 0 0 0-2 1.6L5 17Z"/><path d="M7 9.3 8.4 6h7.2L17 9.3M5 13H3.5M20.5 13H19"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>';
@@ -25,4 +25,4 @@ for (const marker of ['.vehicle svg,.delivery svg', '<svg viewBox="0 0 24 24" ar
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Shell Cliente: categorias, slogan e ícones ficam consistentes em todos os dispositivos.');
+console.log(`[OK] Shell Cliente: categorias, slogan e ícones ficam consistentes em todos os dispositivos (${path}).`);
