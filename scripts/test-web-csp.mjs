@@ -2,6 +2,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { serializeHttpCsp } from './web-csp-policy.mjs';
 
 const root = mkdtempSync(resolve(tmpdir(), 'apois-csp-'));
 const fixture = resolve(root, 'dist');
@@ -23,6 +24,12 @@ function run(script, args) {
 }
 
 try {
+  const httpPolicy = serializeHttpCsp(["'sha256-test='"]);
+  if (!httpPolicy.includes("frame-ancestors 'none'")) {
+    throw new Error('HTTP CSP must include frame-ancestors');
+  }
+  if (httpPolicy.includes("'unsafe-eval'")) throw new Error('HTTP CSP contains unsafe-eval');
+
   const apply = run('apply-web-csp.mjs', [fixture]);
   if (apply.status !== 0) throw new Error(`apply failed:\n${apply.stdout}\n${apply.stderr}`);
 
@@ -35,6 +42,7 @@ try {
     if (html.includes("'unsafe-eval'")) throw new Error(`${file}: unsafe-eval found`);
     if (/script-src[^;]*'unsafe-inline'/.test(html)) throw new Error(`${file}: unsafe-inline found in script-src`);
     if (!/script-src[^;]*'sha256-[A-Za-z0-9+/=]+'/.test(html)) throw new Error(`${file}: inline hash missing`);
+    if (html.includes('frame-ancestors')) throw new Error(`${file}: frame-ancestors must be delivered by HTTP header, not meta`);
   }
 
   // Prove that a post-build mutation invalidates the hash and is rejected.
@@ -43,7 +51,7 @@ try {
   const tampered = run('verify-web-csp.mjs', [fixture, capacitor]);
   if (tampered.status === 0) throw new Error('verifier accepted a mutated inline script');
 
-  console.log('[OK] CSP fixture test passed: shell + module + tamper detection');
+  console.log('[OK] CSP fixture test passed: shell + module + HTTP policy + tamper detection');
 } finally {
   rmSync(root, { recursive: true, force: true });
 }
