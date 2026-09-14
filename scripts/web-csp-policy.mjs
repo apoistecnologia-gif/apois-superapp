@@ -2,7 +2,6 @@ export const REQUIRED_CSP_DIRECTIVES = {
   "default-src": ["'self'"],
   "base-uri": ["'self'"],
   "object-src": ["'none'"],
-  "frame-ancestors": ["'none'"],
   "form-action": ["'self'"],
   "script-src": [
     "'self'",
@@ -39,6 +38,13 @@ export const REQUIRED_CSP_DIRECTIVES = {
   "manifest-src": ["'self'"],
 };
 
+// frame-ancestors is intentionally header-only: browsers ignore it when CSP is
+// delivered by <meta http-equiv="Content-Security-Policy">. Web hosts must add
+// this directive to their HTTP Content-Security-Policy header.
+export const HEADER_ONLY_CSP_DIRECTIVES = {
+  "frame-ancestors": ["'none'"],
+};
+
 // These providers are server-side only. If one appears in a generated frontend
 // bundle, the CSP audit fails instead of widening connect-src.
 export const FORBIDDEN_FRONTEND_FINANCIAL_ORIGINS = [
@@ -51,10 +57,22 @@ export const FORBIDDEN_FRONTEND_FINANCIAL_ORIGINS = [
   "api.celcoin.com.br",
 ];
 
+function serializeDirectives(directives, extraScriptHashes = []) {
+  return Object.entries(directives)
+    .map(([name, values]) => {
+      const effective = name === "script-src" ? [...values, ...extraScriptHashes] : values;
+      return `${name} ${effective.join(" ")}`;
+    })
+    .join("; ");
+}
+
 export function serializeCsp(extraScriptHashes = []) {
-  const directives = Object.entries(REQUIRED_CSP_DIRECTIVES).map(([name, values]) => {
-    const effective = name === "script-src" ? [...values, ...extraScriptHashes] : values;
-    return `${name} ${effective.join(" ")}`;
-  });
-  return directives.join("; ");
+  return serializeDirectives(REQUIRED_CSP_DIRECTIVES, extraScriptHashes);
+}
+
+export function serializeHttpCsp(extraScriptHashes = []) {
+  return serializeDirectives(
+    { ...REQUIRED_CSP_DIRECTIVES, ...HEADER_ONLY_CSP_DIRECTIVES },
+    extraScriptHashes,
+  );
 }
