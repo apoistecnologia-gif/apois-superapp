@@ -100,19 +100,27 @@ Remover essa exceção agora exigiria refatorar estilos para folhas externas e a
 - uma origem financeira server-side aparece no frontend;
 - `android.allowMixedContent` deixa de ser `false`.
 
+`test-web-csp.mjs` ainda valida a serialização destinada ao header HTTP e prova que `frame-ancestors 'none'` está presente nela, além de verificar que uma mutação posterior em script inline é rejeitada.
+
 Comandos:
 
 ```bash
+npm run test:csp
 npm run csp:apply:client
 npm run csp:verify:client
 npm run csp:apply:partner
 npm run csp:verify:partner
 ```
 
-`build:shell`, `build:partner` e `verify:dist` já executam as verificações correspondentes.
+`audit:static`, `build:shell`, `build:partner` e `verify:dist` já executam as verificações correspondentes.
 
 ## Header HTTP em hospedagem web
 
-A meta CSP protege o mesmo HTML no browser e no WebView. Para deployments web, o servidor/CDN deve enviar o **mesmo conteúdo** também no header HTTP `Content-Security-Policy`; o header tem precedência operacional e oferece cobertura antes do parser alcançar a meta.
+A meta CSP protege o HTML no browser e no WebView, mas algumas diretivas são válidas apenas quando a política vem de um header HTTP. Em particular, browsers ignoram `frame-ancestors` quando ele é entregue por `<meta>`.
 
-Não foi adicionado um `vercel.json`, `_headers` ou configuração de provedor genérica no repositório porque as superfícies APOIS têm pipelines diferentes. A política está centralizada em `scripts/web-csp-policy.mjs`; a configuração específica do host deve reutilizar exatamente essa política em vez de manter uma segunda lista divergente.
+Por isso existem duas serializações centralizadas em `scripts/web-csp-policy.mjs`:
+
+- `serializeCsp(...)`: política compatível com `<meta>` usada pelos artefatos Capacitor/web;
+- `serializeHttpCsp(...)`: mesma base, acrescentando `frame-ancestors 'none'` para o header `Content-Security-Policy` do servidor/CDN.
+
+Não foi adicionado `vercel.json`, `_headers` ou configuração de provedor genérica porque as superfícies APOIS têm pipelines de hospedagem diferentes. Quando uma superfície web for ligada a um host específico, a configuração desse host deve consumir a política HTTP centralizada em vez de manter uma segunda lista de origens divergente.
