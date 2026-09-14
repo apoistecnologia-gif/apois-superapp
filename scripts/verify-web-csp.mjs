@@ -47,6 +47,13 @@ function inlineScriptHashes(html) {
   }
   return [...new Set(hashes)];
 }
+function cspMetaContent(html) {
+  const tag = html.match(/<meta\b[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i)?.[0];
+  if (!tag) return null;
+  return tag.match(/\bcontent="([^"]*)"/i)?.[1]
+    ?? tag.match(/\bcontent='([^']*)'/i)?.[1]
+    ?? null;
+}
 
 if (!existsSync(target)) {
   fail(`CSP target not found: ${target}`);
@@ -56,13 +63,12 @@ if (!existsSync(target)) {
 
   for (const file of htmlFiles) {
     const html = readFileSync(file, 'utf8');
-    const meta = html.match(/<meta\s+http-equiv=["']Content-Security-Policy["']\s+content=["']([^"']+)["'][^>]*>/i)
-      ?? html.match(/<meta\s+content=["']([^"']+)["']\s+http-equiv=["']Content-Security-Policy["'][^>]*>/i);
-    if (!meta) {
+    const metaContent = cspMetaContent(html);
+    if (!metaContent) {
       fail(`${file}: missing CSP meta`);
       continue;
     }
-    const policyText = meta[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&');
+    const policyText = metaContent.replaceAll('&quot;', '"').replaceAll('&amp;', '&');
     const policy = parsePolicy(policyText);
     if (policyText.includes("'unsafe-eval'")) fail(`${file}: unsafe-eval is forbidden`);
     if ((policy.get('script-src') ?? []).includes("'unsafe-inline'")) {
