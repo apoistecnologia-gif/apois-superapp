@@ -5,6 +5,7 @@ const TEXT_EXT = /\.(?:ts|tsx|js|jsx|mjs|cjs)$/i;
 const TOOLING_SEGMENTS = /(?:^|\/)(?:scripts?|tests?|test|docs?|migrations?|node_modules|dist|build|coverage|android|ios)(?:\/|$)/i;
 const TOOLING_FILE = /(?:^|\/)(?:vite|vitest|eslint|tailwind|postcss|capacitor)\.config\./i;
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/i;
+const FINANCIAL_RUNTIME_PATH = /(?:payment|refund|payout|webhook|charge|billing|subscription)/i;
 
 const HARD_FAIL_PATTERNS = [
   { re: /\b(?:authorization|access[_-]?token|refresh[_-]?token|id[_-]?token|jwt)\b/i, reason: 'credential/token value referenced by console call' },
@@ -12,7 +13,7 @@ const HARD_FAIL_PATTERNS = [
   { re: /\b(?:service[_-]?role(?:[_-]?key)?|private[_-]?key|firebase[_-]?private[_-]?key|webhook[_-]?secret|client[_-]?secret)\b/i, reason: 'server secret referenced by console call' },
   { re: /\b(?:mercado\s*[_-]?pago|mp)[A-Za-z0-9_$]*[_-]?(?:access[_-]?)?token\b/i, reason: 'Mercado Pago access token referenced by console call' },
   { re: /\b(?:mapsKey|apiKey|googleMapsKey)\b/, reason: 'API key value referenced by console call' },
-  { re: /\b(?:latitude|longitude|\blat\b|\blng\b|coordinates?|coords|gps)\b/i, reason: 'precise location referenced by console call' },
+  { re: /\b(?:latitude|longitude|lat|lng|coordinates?|coords|gps)\b/i, reason: 'precise location referenced by console call' },
   { re: /(?:await\s+)?[A-Za-z0-9_$\.]+\.text\(\)/, reason: 'raw HTTP response body referenced by console call' },
 ];
 
@@ -73,6 +74,12 @@ export function extractConsoleCalls(source) {
   return calls;
 }
 
+function codeOnly(callText) {
+  return callText
+    .replace(/"(?:\\.|[^"\\])*"/g, '""')
+    .replace(/'(?:\\.|[^'\\])*'/g, "''");
+}
+
 export function auditRuntimeLogging(root, options = {}) {
   const { label = root, failOnSensitive = true } = options;
   let runtimeCalls = 0;
@@ -91,11 +98,15 @@ export function auditRuntimeLogging(root, options = {}) {
     }
     runtimeCalls += calls.length;
     for (const call of calls) {
+      const executable = codeOnly(call.text);
       for (const pattern of HARD_FAIL_PATTERNS) {
-        if (pattern.re.test(call.text)) failures.push({ path, line: call.line, method: call.method, reason: pattern.reason });
+        if (pattern.re.test(executable)) failures.push({ path, line: call.line, method: call.method, reason: pattern.reason });
+      }
+      if (FINANCIAL_RUNTIME_PATH.test(path) && /\b(?:payload|providerPayload|requestBody|responseBody|body)\b/.test(executable)) {
+        failures.push({ path, line: call.line, method: call.method, reason: 'full financial payload/body referenced by console call' });
       }
       for (const pattern of WARNING_PATTERNS) {
-        if (pattern.re.test(call.text)) warnings.push({ path, line: call.line, method: call.method, reason: pattern.reason });
+        if (pattern.re.test(executable)) warnings.push({ path, line: call.line, method: call.method, reason: pattern.reason });
       }
     }
   }
@@ -119,11 +130,7 @@ export function hardenRuntimeLogging(root, moduleName = 'module') {
   const changes = [];
   const replacements = [
     {
-      paths: [
-        'supabase/functions/driver-ride-action/index.ts',
-        'supabase/functions/process-ride-dispatch/index.ts',
-        'supabase/functions/request-ride/index.ts',
-      ],
+      paths: ['supabase/functions/driver-ride-action/index.ts'],
       search: 'console.error("[driver-ride-action] push failed", response.status, await response.text());',
       replacement: 'console.error("[driver-ride-action] push failed", { status: response.status });',
     },
