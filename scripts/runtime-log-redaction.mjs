@@ -1,7 +1,7 @@
 const REDACTED = '[REDACTED]';
 const PRECISE_LOCATION = '[PRECISE_LOCATION_REDACTED]';
 
-const SECRET_KEY_RE = /(?:authorization|access[_-]?token|refresh[_-]?token|jwt|id[_-]?token|oauth[_-]?code|code[_-]?verifier|pkce|client[_-]?secret|service[_-]?role|private[_-]?key|webhook[_-]?secret|firebase[_-]?private[_-]?key|mercado[_-]?pago.*token|password|secret)/i;
+const SECRET_KEY_RE = /(?:authorization|access[_-]?token|refresh[_-]?token|jwt|id[_-]?token|oauth[_-]?code|code[_-]?verifier|pkce|client[_-]?secret|service[_-]?role|private[_-]?key|webhook[_-]?secret|firebase[_-]?private[_-]?key|mercado[_-]?pago.*token|provider[_-]?payload|payment[_-]?payload|financial[_-]?payload|raw[_-]?payload|password|secret)/i;
 const PRECISE_LOCATION_KEY_RE = /^(?:lat|lng|latitude|longitude|coordinates?|coords|gps)$/i;
 const PERSONAL_KEY_RE = /^(?:email|phone|telefone|cpf|cnpj|full[_-]?name|nome[_-]?completo|address|endereco)$/i;
 const AUTH_VALUE_RE = /^Bearer\s+\S+/i;
