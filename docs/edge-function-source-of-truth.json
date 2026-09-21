@@ -38,7 +38,10 @@
   ],
   "sameProjectDuplicatePolicies": [
     {
-      "roots": ["corridas-passenger", "corridas-driver-admin"],
+      "roots": [
+        "corridas-passenger",
+        "corridas-driver-admin"
+      ],
       "paths": [
         "_shared/cors.ts",
         "_shared/pricing.ts",
@@ -131,6 +134,22 @@
       "owner": "APOIS Corridas shared/driver backend",
       "purpose": "CORS helpers are source-tree-local dependencies, not standalone deployables. The Corridas shared backend helper is authoritative for shared/driver functions; other roots intentionally keep their own helper semantics.",
       "pipeline": "Bundled transitively with the explicitly selected Edge Function source; never deployed or synchronized globally as a standalone artifact."
+    },
+    {
+      "path": "driver-ride-action",
+      "domain": "corridas-passenger",
+      "canonicalRoot": "corridas-passenger",
+      "owner": "APOIS Corridas passenger backend",
+      "purpose": "Driver ride lifecycle action is versioned in the pinned Corridas passenger backend source and hardened only in the generated release workspace.",
+      "pipeline": "corridas-passenger -> .work/corridas hardeners -> .release/corridas-functions -> explicit per-slug deployment after verification."
+    },
+    {
+      "path": "cancel-ride",
+      "domain": "corridas-passenger",
+      "canonicalRoot": "corridas-passenger",
+      "owner": "APOIS Corridas passenger backend",
+      "purpose": "Passenger cancellation endpoint with AUTH-to-DOMAIN ownership and idempotent financial reconciliation hardening.",
+      "pipeline": "corridas-passenger -> .work/corridas hardeners -> .release/corridas-functions -> explicit per-slug deployment after verification."
     }
   ],
   "generatedMustMatch": [
