@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-21",
+  "policy": "Explicit per-slug deployment only. Never deploy-all.",
+  "projects": {
+    "corridas": {
+      "projectRef": "vqtucstyduxrqjgyigfk",
+      "env": {
+        "SAFE2PAY_ONBOARDING_PRODUCT": "rides",
+        "SAFE2PAY_WEBHOOK_PRODUCT": "rides",
+        "SAFE2PAY_STATUS_PRODUCT": "rides"
+      },
+      "functions": [
+        {
+          "slug": "safe2pay-subaccount-onboarding",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-subaccount-reconcile",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-create-ride-pix",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-payment-status",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-webhook",
+          "verify_jwt": false
+        }
+      ]
+    },
+    "entregas": {
+      "projectRef": "sbvhdgyuuperszlsllji",
+      "env": {
+        "SAFE2PAY_ONBOARDING_PRODUCT": "orders",
+        "SAFE2PAY_WEBHOOK_PRODUCT": "orders",
+        "SAFE2PAY_STATUS_PRODUCT": "orders"
+      },
+      "functions": [
+        {
+          "slug": "safe2pay-subaccount-onboarding",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-subaccount-reconcile",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-create-order-pix",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-payment-status",
+          "verify_jwt": true
+        },
+        {
+          "slug": "safe2pay-webhook",
+          "verify_jwt": false
+        }
+      ]
+    }
+  }
+}
