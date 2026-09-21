@@ -96,27 +96,47 @@ Deno.serve(async (req) => {
     const name = String(domainUser.name ?? authData.user.user_metadata?.full_name ?? "").trim();
     if (!name) return json(409, { error: "passenger_name_required" });
 
-    const reference = `apois-ride-${ride.id}`;
     const { data: existing, error: existingError } = await admin
       .from("safe2pay_ride_transactions")
-      .select("provider_transaction_id,status,amount,reference,pix_copy_paste,pix_qr_code_base64")
-      .eq("reference", reference)
+      .select("id,provider_transaction_id,status,amount,reference,pix_copy_paste,pix_qr_code_base64,expires_at")
+      .eq("ride_id", ride.id)
+      .in("status", ["pending","processing","authorized"])
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (existingError) throw new Error(`safe2pay_existing_lookup_failed:${existingError.message}`);
-    if (existing && ["pending","processing","authorized"].includes(String(existing.status))) {
-      return json(200, {
-        reused: true,
-        reference: existing.reference,
-        transactionId: existing.provider_transaction_id,
-        status: existing.status,
-        amount: existing.amount,
-        pix: {
-          copyPaste: existing.pix_copy_paste ?? null,
-          qrCodeBase64: existing.pix_qr_code_base64 ?? null,
-        },
-      });
+
+    if (existing) {
+      const expiresAt = existing.expires_at ? Date.parse(String(existing.expires_at)) : Number.POSITIVE_INFINITY;
+      const expiredLocally =
+        ["pending","processing"].includes(String(existing.status)) &&
+        Number.isFinite(expiresAt) &&
+        expiresAt <= Date.now();
+
+      if (expiredLocally) {
+        const { error: expireError } = await admin
+          .from("safe2pay_ride_transactions")
+          .update({ status: "expired", updated_at: new Date().toISOString() })
+          .eq("id", existing.id)
+          .in("status", ["pending","processing"]);
+        if (expireError) throw new Error(`safe2pay_expire_local_failed:${expireError.message}`);
+      } else {
+        return json(200, {
+          reused: true,
+          reference: existing.reference,
+          transactionId: existing.provider_transaction_id,
+          status: existing.status,
+          amount: existing.amount,
+          pix: {
+            copyPaste: existing.pix_copy_paste ?? null,
+            qrCodeBase64: existing.pix_qr_code_base64 ?? null,
+          },
+        });
+      }
     }
 
+    const reference = `apois-ride-${ride.id}-${crypto.randomUUID()}`;
+    const expiresAt = new Date(Date.now() + 600_000).toISOString();
     const feePayer = safe2PayFeePayer();
     const providerPayload = await createSafe2PayPix({
       reference,
@@ -154,6 +174,7 @@ Deno.serve(async (req) => {
       receiver_id: Number(receiver.safe2pay_receiver_id),
       pix_copy_paste: publicPix.qrCode,
       pix_qr_code_base64: publicPix.qrCodeBase64,
+      expires_at: expiresAt,
       environment: "production",
       authorized_at: publicPix.statusCode === "3" ? new Date().toISOString() : null,
     });
