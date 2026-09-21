@@ -5,7 +5,10 @@ create table if not exists public.driver_safe2pay_accounts (
   driver_id uuid primary key references public.drivers(id) on delete cascade,
   safe2pay_receiver_id bigint unique,
   status text not null default 'pending'
-    check (status in ('pending','active','blocked','rejected','disabled')),
+    check (status in ('pending','provisioning','active','blocked','rejected','disabled','reconciliation_required')),
+  request_fingerprint text,
+  provisioning_started_at timestamptz,
+  provider_created_at timestamptz,
   environment text not null default 'sandbox'
     check (environment in ('sandbox','production')),
   last_error_code text,
