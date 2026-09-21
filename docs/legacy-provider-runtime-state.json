@@ -1,6 +1,6 @@
 {
   "observedAt": "2026-09-05",
-  "policy": "Electronic payment providers are outside the current APOIS Corridas/Entregas release. Any deployed endpoint that can still create, connect, refund, settle, transfer or mutate provider-backed financial state blocks release until it is fail-closed by a controlled backend change.",
+  "policy": "Safe2Pay Marketplace is the sole target electronic payment provider. Mercado Pago, Asaas, PagBank and OpenPix remain retired and release-blocking while callable. Safe2Pay itself remains fail-closed until credentials, receiver mapping, sandbox split, webhook idempotency and E2E validation are complete.",
   "runtimeSettingsObserved": {
     "corridas": {
       "finance.ride_electronic_payments_enabled": true,
@@ -15,57 +15,368 @@
     }
   },
   "endpoints": [
-    {"project":"corridas","function":"create-cancellation-fee-charge","classification":"REQUIRE_REVIEW","releaseBlocking":true,"evidence":"ACTIVE provider-backed cancellation fee charge; runtime source still requires provider review"},
-    {"project":"corridas","function":"cancellation-fee-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE verify_jwt=false; signature/idempotency must be confirmed before release"},
-    {"project":"corridas","function":"asaas-create-driver-membership","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authenticated approved driver can create Asaas customer/subscription/PIX and mutate membership state"},
-    {"project":"corridas","function":"asaas-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE verify_jwt=false; provider authentication must be confirmed"},
-    {"project":"corridas","function":"asaas-create-driver-subaccount","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authenticated approved driver can provision Asaas subaccount/webhook and persist provider credentials"},
-    {"project":"corridas","function":"asaas-create-ride-pix","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authenticated passenger owning ride can create/recover Asaas PIX and write payment state"},
-    {"project":"corridas","function":"request-driver-payout","classification":"SAFE_DISABLED","releaseBlocking":false,"evidence":"runtime returns HTTP 410 legacy_payout_disabled before provider/service-role work"},
-    {"project":"corridas","function":"finance-oneoff-cancel-orphan-asaas-pix","classification":"REQUIRE_REVIEW","releaseBlocking":true,"evidence":"ACTIVE one-off finance function; should not remain callable in release"},
-    {"project":"corridas","function":"pagbank-connect-callback","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE verify_jwt=false OAuth/provider callback; state validation must be confirmed"},
-    {"project":"corridas","function":"pagbank-apois-logo","classification":"PUBLIC_RESOURCE","releaseBlocking":false,"evidence":"provider branding resource; no financial mutation expected"},
-    {"project":"corridas","function":"pagbank-create-ride-pix","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authenticated ride owner can create PagBank PIX order and mutate payment state"},
-    {"project":"corridas","function":"pagbank-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE verify_jwt=false; provider signature/idempotency review required"},
-    {"project":"corridas","function":"ride-pix-checkout","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authenticated ride owner is routed to active provider charge functions"},
-    {"project":"corridas","function":"mercadopago-oauth-start","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE OAuth entry remains deployed despite provider-disabled release"},
-    {"project":"corridas","function":"mercadopago-oauth-callback","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE OAuth callback; state validation/runtime disable must be confirmed"},
-    {"project":"corridas","function":"mercadopago-create-ride-pix","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE provider charge endpoint remains deployed"},
-    {"project":"corridas","function":"mercadopago-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE provider webhook remains externally reachable"},
-    {"project":"corridas","function":"mercadopago-create-driver-membership","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE membership provider endpoint remains deployed"},
-    {"project":"corridas","function":"mercadopago-membership-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE membership webhook remains externally reachable"},
-    {"project":"corridas","function":"passenger-ride-request-mercadopago","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE provider-specific ride request remains deployed"},
-    {"project":"corridas","function":"driver-membership-checkout","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE provider-oriented membership checkout remains deployed"},
-    {"project":"corridas","function":"mercadopago-driver-status","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE provider-specific driver status endpoint remains deployed"},
-
-    {"project":"entregas","function":"create-pix-charge","classification":"SAFE_DISABLED_BY_RUNTIME_SETTING","releaseBlocking":true,"evidence":"OpenPix charge path currently blocked because order_payment_provider=mercadopago_merchant, but no permanent product-disabled guard"},
-    {"project":"entregas","function":"openpix-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE verify_jwt=false OpenPix webhook remains externally reachable"},
-    {"project":"entregas","function":"mercadopago-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE generic Mercado Pago webhook remains externally reachable"},
-    {"project":"entregas","function":"process-refund","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE refund path can mutate provider-backed payment/refund state"},
-    {"project":"entregas","function":"mercadopago-credential-diagnostic","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE provider diagnostic should not be part of release surface"},
-    {"project":"entregas","function":"apois-refund-homol-8-7c2f","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"homologation refund endpoint remains ACTIVE"},
-    {"project":"entregas","function":"sync-payment-status","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE provider payment-state synchronizer remains deployed"},
-    {"project":"entregas","function":"apois-pix-auto-homol-8f4c3e9a","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"homologation PIX endpoint remains ACTIVE"},
-    {"project":"entregas","function":"merchant-subscription","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authenticated active merchant member can create Mercado Pago monthly PIX and mutate subscription state"},
-    {"project":"entregas","function":"mercadopago-subscription-selftest","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"provider selftest remains ACTIVE"},
-    {"project":"entregas","function":"mercadopago-subscription-e2e-test","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"provider E2E test endpoint remains ACTIVE"},
-    {"project":"entregas","function":"mercadopago-subscription-stage-probe","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"provider stage probe remains ACTIVE"},
-    {"project":"entregas","function":"mercadopago-monthly-pix-probe","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"provider PIX probe remains ACTIVE"},
-    {"project":"entregas","function":"merchant-monthly-webhook-selftest","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"provider webhook selftest remains ACTIVE"},
-    {"project":"entregas","function":"asaas-merchant-account","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE Asaas merchant-account path remains deployed"},
-    {"project":"entregas","function":"create-asaas-pix-charge","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"ACTIVE Asaas charge path remains deployed"},
-    {"project":"entregas","function":"asaas-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE verify_jwt=false Asaas webhook remains externally reachable"},
-    {"project":"entregas","function":"asaas-payout","classification":"SAFE_DISABLED","releaseBlocking":false,"evidence":"runtime returns HTTP 410 ASAAS_RETIRED without provider mutation"},
-    {"project":"entregas","function":"confirm-asaas-sandbox-payment","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"sandbox confirmation endpoint remains ACTIVE"},
-    {"project":"entregas","function":"openpix-sandbox-selftest","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"OpenPix sandbox selftest remains ACTIVE"},
-    {"project":"entregas","function":"openpix-payout","classification":"SAFE_DISABLED_BY_RUNTIME_SETTING","releaseBlocking":true,"evidence":"currently blocked because order_payment_provider != openpix; function can transfer PIX if setting changes"},
-    {"project":"entregas","function":"merchant-mercadopago-oauth","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"merchant owner/manager can start/refresh/disconnect Mercado Pago OAuth and persist encrypted tokens"},
-    {"project":"entregas","function":"merchant-mercadopago-callback","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE OAuth callback remains externally reachable"},
-    {"project":"entregas","function":"create-merchant-mercadopago-pix","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authenticated order owner can create Mercado Pago PIX using connected merchant account"},
-    {"project":"entregas","function":"merchant-mercadopago-webhook","classification":"PUBLIC_WEBHOOK_ONLY","releaseBlocking":true,"evidence":"ACTIVE merchant provider webhook remains externally reachable"},
-    {"project":"entregas","function":"merchant-payment-readiness","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"provider-specific readiness endpoint remains ACTIVE"},
-    {"project":"entregas","function":"process-superapp-refund","classification":"DANGEROUSLY_CALLABLE","releaseBlocking":true,"evidence":"authorized legacy refund actor can execute Mercado Pago refund and mutate refund/order/payment state"},
-    {"project":"entregas","function":"temp-mp-token-key-check","classification":"AUTHENTICATED_BUT_LEGACY","releaseBlocking":true,"evidence":"temporary provider credential diagnostic remains ACTIVE"},
-    {"project":"entregas","function":"mercadopago-payout","classification":"SAFE_DISABLED_BY_RUNTIME_SETTING","releaseBlocking":false,"evidence":"admin/runtime authenticated and currently blocked by courier_payout_mode=merchant_manual plus explicit enable flag"}
-  ]
+    {
+      "project": "corridas",
+      "function": "create-cancellation-fee-charge",
+      "classification": "REQUIRE_REVIEW",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider-backed cancellation fee charge; runtime source still requires provider review"
+    },
+    {
+      "project": "corridas",
+      "function": "cancellation-fee-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE verify_jwt=false; signature/idempotency must be confirmed before release"
+    },
+    {
+      "project": "corridas",
+      "function": "asaas-create-driver-membership",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authenticated approved driver can create Asaas customer/subscription/PIX and mutate membership state"
+    },
+    {
+      "project": "corridas",
+      "function": "asaas-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE verify_jwt=false; provider authentication must be confirmed"
+    },
+    {
+      "project": "corridas",
+      "function": "asaas-create-driver-subaccount",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authenticated approved driver can provision Asaas subaccount/webhook and persist provider credentials"
+    },
+    {
+      "project": "corridas",
+      "function": "asaas-create-ride-pix",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authenticated passenger owning ride can create/recover Asaas PIX and write payment state"
+    },
+    {
+      "project": "corridas",
+      "function": "request-driver-payout",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "runtime returns HTTP 410 legacy_payout_disabled before provider/service-role work"
+    },
+    {
+      "project": "corridas",
+      "function": "finance-oneoff-cancel-orphan-asaas-pix",
+      "classification": "REQUIRE_REVIEW",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE one-off finance function; should not remain callable in release"
+    },
+    {
+      "project": "corridas",
+      "function": "pagbank-connect-callback",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE verify_jwt=false OAuth/provider callback; state validation must be confirmed"
+    },
+    {
+      "project": "corridas",
+      "function": "pagbank-apois-logo",
+      "classification": "PUBLIC_RESOURCE",
+      "releaseBlocking": false,
+      "evidence": "provider branding resource; no financial mutation expected"
+    },
+    {
+      "project": "corridas",
+      "function": "pagbank-create-ride-pix",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authenticated ride owner can create PagBank PIX order and mutate payment state"
+    },
+    {
+      "project": "corridas",
+      "function": "pagbank-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE verify_jwt=false; provider signature/idempotency review required"
+    },
+    {
+      "project": "corridas",
+      "function": "ride-pix-checkout",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authenticated ride owner is routed to active provider charge functions"
+    },
+    {
+      "project": "corridas",
+      "function": "mercadopago-oauth-start",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE OAuth entry remains deployed despite provider-disabled release"
+    },
+    {
+      "project": "corridas",
+      "function": "mercadopago-oauth-callback",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE OAuth callback; state validation/runtime disable must be confirmed"
+    },
+    {
+      "project": "corridas",
+      "function": "mercadopago-create-ride-pix",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider charge endpoint remains deployed"
+    },
+    {
+      "project": "corridas",
+      "function": "mercadopago-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider webhook remains externally reachable"
+    },
+    {
+      "project": "corridas",
+      "function": "mercadopago-create-driver-membership",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE membership provider endpoint remains deployed"
+    },
+    {
+      "project": "corridas",
+      "function": "mercadopago-membership-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE membership webhook remains externally reachable"
+    },
+    {
+      "project": "corridas",
+      "function": "passenger-ride-request-mercadopago",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider-specific ride request remains deployed"
+    },
+    {
+      "project": "corridas",
+      "function": "driver-membership-checkout",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider-oriented membership checkout remains deployed"
+    },
+    {
+      "project": "corridas",
+      "function": "mercadopago-driver-status",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider-specific driver status endpoint remains deployed"
+    },
+    {
+      "project": "entregas",
+      "function": "create-pix-charge",
+      "classification": "SAFE_DISABLED_BY_RUNTIME_SETTING",
+      "releaseBlocking": true,
+      "evidence": "OpenPix charge path currently blocked because order_payment_provider=mercadopago_merchant, but no permanent product-disabled guard"
+    },
+    {
+      "project": "entregas",
+      "function": "openpix-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE verify_jwt=false OpenPix webhook remains externally reachable"
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE generic Mercado Pago webhook remains externally reachable"
+    },
+    {
+      "project": "entregas",
+      "function": "process-refund",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE refund path can mutate provider-backed payment/refund state"
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-credential-diagnostic",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider diagnostic should not be part of release surface"
+    },
+    {
+      "project": "entregas",
+      "function": "apois-refund-homol-8-7c2f",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "homologation refund endpoint remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "sync-payment-status",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE provider payment-state synchronizer remains deployed"
+    },
+    {
+      "project": "entregas",
+      "function": "apois-pix-auto-homol-8f4c3e9a",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "homologation PIX endpoint remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-subscription",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authenticated active merchant member can create Mercado Pago monthly PIX and mutate subscription state"
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-subscription-selftest",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "provider selftest remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-subscription-e2e-test",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "provider E2E test endpoint remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-subscription-stage-probe",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "provider stage probe remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-monthly-pix-probe",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "provider PIX probe remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-monthly-webhook-selftest",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "provider webhook selftest remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "asaas-merchant-account",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE Asaas merchant-account path remains deployed"
+    },
+    {
+      "project": "entregas",
+      "function": "create-asaas-pix-charge",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE Asaas charge path remains deployed"
+    },
+    {
+      "project": "entregas",
+      "function": "asaas-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE verify_jwt=false Asaas webhook remains externally reachable"
+    },
+    {
+      "project": "entregas",
+      "function": "asaas-payout",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "runtime returns HTTP 410 ASAAS_RETIRED without provider mutation"
+    },
+    {
+      "project": "entregas",
+      "function": "confirm-asaas-sandbox-payment",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "sandbox confirmation endpoint remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "openpix-sandbox-selftest",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "OpenPix sandbox selftest remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "openpix-payout",
+      "classification": "SAFE_DISABLED_BY_RUNTIME_SETTING",
+      "releaseBlocking": true,
+      "evidence": "currently blocked because order_payment_provider != openpix; function can transfer PIX if setting changes"
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-mercadopago-oauth",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "merchant owner/manager can start/refresh/disconnect Mercado Pago OAuth and persist encrypted tokens"
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-mercadopago-callback",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE OAuth callback remains externally reachable"
+    },
+    {
+      "project": "entregas",
+      "function": "create-merchant-mercadopago-pix",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authenticated order owner can create Mercado Pago PIX using connected merchant account"
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-mercadopago-webhook",
+      "classification": "PUBLIC_WEBHOOK_ONLY",
+      "releaseBlocking": true,
+      "evidence": "ACTIVE merchant provider webhook remains externally reachable"
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-payment-readiness",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "provider-specific readiness endpoint remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "process-superapp-refund",
+      "classification": "DANGEROUSLY_CALLABLE",
+      "releaseBlocking": true,
+      "evidence": "authorized legacy refund actor can execute Mercado Pago refund and mutate refund/order/payment state"
+    },
+    {
+      "project": "entregas",
+      "function": "temp-mp-token-key-check",
+      "classification": "AUTHENTICATED_BUT_LEGACY",
+      "releaseBlocking": true,
+      "evidence": "temporary provider credential diagnostic remains ACTIVE"
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-payout",
+      "classification": "SAFE_DISABLED_BY_RUNTIME_SETTING",
+      "releaseBlocking": false,
+      "evidence": "admin/runtime authenticated and currently blocked by courier_payout_mode=merchant_manual plus explicit enable flag"
+    }
+  ],
+  "targetProvider": {
+    "name": "safe2pay",
+    "mode": "marketplace_split",
+    "activation": "fail_closed_until_sandbox_e2e",
+    "sourceOfTruth": "docs/payment-provider-policy.json"
+  }
 }
