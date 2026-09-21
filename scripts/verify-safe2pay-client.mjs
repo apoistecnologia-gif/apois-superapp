@@ -14,6 +14,7 @@ for (const marker of [
   'SAFE2PAY_PROVIDER_ENABLED',
   'SAFE2PAY_API_KEY_SANDBOX',
   'SAFE2PAY_API_KEY',
+  'IsSandbox: false',
   'SAFE2PAY_CALLBACK_URL',
   'safe2pay_split_total_mismatch',
   'CodeTaxType: 2 as const',
@@ -32,4 +33,4 @@ for (const forbidden of [
   if (source.includes(forbidden)) fail(`Safe2Pay shared client contém marker proibido: ${forbidden}`);
 }
 if (failed) process.exit(1);
-ok('Safe2Pay client é server-only, fail-closed e valida split fixo exato.');
+ok('Safe2Pay client é server-only, fail-closed, força Pix fora de sandbox e valida split fixo exato.');
