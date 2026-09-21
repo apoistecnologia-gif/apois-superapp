@@ -12,11 +12,10 @@ const corsHeaders = {
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-// Current release contract: APOIS does not process an electronic payment for
-// customer orders. `cash` means payment directly to the establishment; the DB
-// remains authoritative and must keep payment_status pending until an explicit
-// future contract says otherwise. Never add a provider method here as fallback.
-const PAYMENT_METHODS = new Set(["cash"]);
+// Current release contract: order creation accepts PIX only. The function
+// creates the order in pending state; payment authority belongs exclusively to
+// Safe2Pay webhook/status reconciliation. Never fabricate paid here.
+const PAYMENT_METHODS = new Set(["pix"]);
 const FULFILLMENT_TYPES = new Set(["delivery", "pickup"]);
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -216,7 +215,7 @@ Deno.serve(async (request: Request) => {
   }
 
   // Fail closed if a future/legacy DB function unexpectedly fabricated payment.
-  if (snapshot.payment_method !== "cash" || snapshot.payment_status === "paid") {
+  if (snapshot.payment_method !== "pix" || snapshot.payment_status === "paid") {
     console.error("create-order rejected inconsistent financial snapshot", {
       orderId: snapshot.id,
       paymentMethod: snapshot.payment_method,
