@@ -1,0 +1,720 @@
+{
+  "observedAt": "2026-09-21",
+  "projects": {
+    "corridas": [
+      {
+        "function": "passenger-profile",
+        "status": "ACTIVE",
+        "version": 23,
+        "verify_jwt": true,
+        "ezbr_sha256": "ad09a79e75861a829fb7399fbfaf0de7e3c176f98dec7997809337d0932ead47",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "passenger-support",
+        "status": "ACTIVE",
+        "version": 22,
+        "verify_jwt": true,
+        "ezbr_sha256": "66adacd41408e30cf55d9f80a244230b43ce94400324d2ed20b1f4f63087058e",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "delete-my-account",
+        "status": "ACTIVE",
+        "version": 22,
+        "verify_jwt": true,
+        "ezbr_sha256": "deb0e0f54eb7848833050bb25848a9021b5fddea6a9d3d598268ab0c61cd004b",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "passenger-pricing-estimate",
+        "status": "ACTIVE",
+        "version": 21,
+        "verify_jwt": true,
+        "ezbr_sha256": "e8c71c6db2c0dc9a283c0655e00e91488262a7c9946cfb86082b431ea795a076",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "cancel-ride",
+        "status": "ACTIVE",
+        "version": 26,
+        "verify_jwt": true,
+        "ezbr_sha256": "9a4116d1a5af6c9335597c9043ea62f5f9553ba0db05a0ed964a3b02c092fb6a",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "passenger-routes-compute",
+        "status": "ACTIVE",
+        "version": 24,
+        "verify_jwt": true,
+        "ezbr_sha256": "cd0c841df78c957815e0cd620c9ce12009939f01b11ffef3484d357917df6bf3",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "send-ride-push",
+        "status": "ACTIVE",
+        "version": 23,
+        "verify_jwt": true,
+        "ezbr_sha256": "5c1d7d4092421c9a46e90cf4cf47361821e410572a1e724c8a4e599ea7e2ed96",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "passenger-ride-request",
+        "status": "ACTIVE",
+        "version": 26,
+        "verify_jwt": true,
+        "ezbr_sha256": "0047b370d0b5f5fac6d21a7197845ade0f1cad5ac01558918f8e018a05363b41",
+        "classification": "HISTORICAL_ONLY",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "create-cancellation-fee-charge",
+        "status": "ACTIVE",
+        "version": 22,
+        "verify_jwt": true,
+        "ezbr_sha256": "a02609256e19c390ebececa3ddc78c88f453c89966b1f6fac2f6a8fc38be4ccc",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "cancellation-fee-webhook",
+        "status": "ACTIVE",
+        "version": 22,
+        "verify_jwt": false,
+        "ezbr_sha256": "a2a2c291056114de2317390d70d2da9a44e9a486c579576f91cbb031dff46383",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "passenger-geocode-reverse",
+        "status": "ACTIVE",
+        "version": 15,
+        "verify_jwt": true,
+        "ezbr_sha256": "943ade9ce2f1798de7819bf9401a9ce6e50b25e7dbd534ad6ffaa81323c46401",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "asaas-create-driver-membership",
+        "status": "ACTIVE",
+        "version": 15,
+        "verify_jwt": true,
+        "ezbr_sha256": "4647c8b73cbf6ca9d411547eec7e227f576ee841264752547926abe1c44223af",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "asaas-webhook",
+        "status": "ACTIVE",
+        "version": 20,
+        "verify_jwt": false,
+        "ezbr_sha256": "e667dfa5d56635d825ba468ab0be2dc3fcb7a040c1e9f35426795886f3b36bdb",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "asaas-create-driver-subaccount",
+        "status": "ACTIVE",
+        "version": 16,
+        "verify_jwt": true,
+        "ezbr_sha256": "688ec6cad579f495bf2ec03e84d7b86d33264fba9ccb06b81118efebbd5ec47e",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "asaas-create-ride-pix",
+        "status": "ACTIVE",
+        "version": 21,
+        "verify_jwt": true,
+        "ezbr_sha256": "d6f952f1927f32ed281edc13b429ac89b358e051f13ea46dd4750128370d8714",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "request-driver-payout",
+        "status": "ACTIVE",
+        "version": 20,
+        "verify_jwt": true,
+        "ezbr_sha256": "3766e6e622d1c44cd922588181e09fa700759182241191683dec99f2c5fcd078",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "account-deletion-request",
+        "status": "ACTIVE",
+        "version": 12,
+        "verify_jwt": false,
+        "ezbr_sha256": "d1ad68d5e468b6c27c38dc018db4a4ac71da11e031ba25928065e17720e39d8b",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "privacy-policy",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "c413ddd45cdc4f6a63767fd3c18fd1b7e4034b0e6a9b197ce51c806fcf746de0",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "finance-oneoff-cancel-orphan-asaas-pix",
+        "status": "ACTIVE",
+        "version": 13,
+        "verify_jwt": true,
+        "ezbr_sha256": "84ec67491b82e51d3bcdcbc0382f07f26def3c0f52e9636e6d2123d1741dbf4e",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "dispatch-ride",
+        "status": "ACTIVE",
+        "version": 16,
+        "verify_jwt": true,
+        "ezbr_sha256": "15a1382e9fe7ea3a8a8cd56fd38a074eb5cda5cb1c4169c17c9c0a24dd98d4ac",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "driver-cancel-redispatch",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "9c87d2a6f7bedf4c8da5e7695b3a5e95b3205b091d38e31fc75f3da20e06445d",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "driver-reject-redispatch",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "f81008415866358e24805fb0a386e1a485f3833d88a461534ed0391b2e1ed541",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "admin-driver-operational-status",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "aafc490c65ceaa55c58131fc5e9e06d4b6825d576461935783a12091ec640451",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "driver-finish-redispatch",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "775e87e4f5e5c30c9b54b657bd0dab476fe1d6bd2c09df05bad024ba325492f9",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "pagbank-connect-callback",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "0cf6392848b720f46628c4c4341e8d6a8628b6ce07b828d8b44eb9f83b502e47",
+        "classification": "OAUTH_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "pagbank-apois-logo",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "e9ae0eb37d1d9d9d47251fc9f1f452eacb5ec2d5b965d252f4be1c77724ca1e1",
+        "classification": "HISTORICAL_ONLY",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "activate-scheduled-rides",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "f65ba220d045524e5c34323e7095e382836558b69e0ac42c8f4bcccf14ddf79b",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "request-ride",
+        "status": "ACTIVE",
+        "version": 17,
+        "verify_jwt": true,
+        "ezbr_sha256": "dc721e063ef2ff6d2647476239a47615123927399f2db8822a0a4de6837105ad",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "pagbank-create-ride-pix",
+        "status": "ACTIVE",
+        "version": 12,
+        "verify_jwt": true,
+        "ezbr_sha256": "c4c788de89c15cac9055c5fcdfaf87ae1e0c8095b7b29156986dbe1e4ff3fb4a",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "pagbank-webhook",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "10f72d53e3bb30673f3ef705a6a1af1006fbaefc60956ed42a452883e200b773",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "ride-pix-checkout",
+        "status": "ACTIVE",
+        "version": 15,
+        "verify_jwt": true,
+        "ezbr_sha256": "3c2016fc8fabe78a22d3c6afedcac933928057e2aacb02da6648b41759daae9f",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-oauth-start",
+        "status": "ACTIVE",
+        "version": 12,
+        "verify_jwt": true,
+        "ezbr_sha256": "4abaaf2e6c1de4bde64d30d046178e6ea7714c1945eeabeb7fcb73629567678d",
+        "classification": "OAUTH_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-oauth-callback",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "7145dbf1a8fffa4423432de344d9f3b66d7429d3a195eba68ef55ce6c3bed807",
+        "classification": "OAUTH_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-create-ride-pix",
+        "status": "ACTIVE",
+        "version": 17,
+        "verify_jwt": true,
+        "ezbr_sha256": "eadc79857b91f51f2efb439dccfdfec5d0ecfce65c4725e7da987c9d5aac9ee9",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-webhook",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "f71b406e59adb01259d3b8182e62f30ce64389a2405520ff7154f59ba3148ce9",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-create-driver-membership",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "34f7bc61301db307f8db8fc24b627d7496052bdd6969765b70cb95373f0333f1",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-membership-webhook",
+        "status": "ACTIVE",
+        "version": 10,
+        "verify_jwt": false,
+        "ezbr_sha256": "664928fb68c6f73cb9125b4e3adf34acdc6f4abc13a268a4a3019e0dd242c056",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "passenger-ride-request-mercadopago",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "3cd422b59373022f9d2e136a2a46b2e65b3aad67763f60b0d9bad5843c20a8df",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "driver-membership-checkout",
+        "status": "ACTIVE",
+        "version": 10,
+        "verify_jwt": true,
+        "ezbr_sha256": "542f819c0af7202d65236b3b7f5abed7b37556a5e9835cff8bc697fa67191e48",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-driver-status",
+        "status": "ACTIVE",
+        "version": 10,
+        "verify_jwt": true,
+        "ezbr_sha256": "86806d76982066a9aeafad698fb4851ae067d49a20bbbf17a0df2bfc2223de33",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "public-ride-tracker",
+        "status": "ACTIVE",
+        "version": 3,
+        "verify_jwt": false,
+        "ezbr_sha256": "4753bb3d54957194cb57acff75c1bbeb93c4147be4d246e2b12a7f97c66faad8",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      }
+    ],
+    "entregas": [
+      {
+        "function": "create-order",
+        "status": "ACTIVE",
+        "version": 33,
+        "verify_jwt": true,
+        "ezbr_sha256": "30434831df2cc0685faba1bd11b68962720a435bbd87ba93229a30a7c6530dbc",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "customer-orders",
+        "status": "ACTIVE",
+        "version": 29,
+        "verify_jwt": true,
+        "ezbr_sha256": "830fe156d96dc2696fa8f53573f245cce0ef4ee0032d851c55dca22f4acd2b39",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "create-pix-charge",
+        "status": "ACTIVE",
+        "version": 35,
+        "verify_jwt": true,
+        "ezbr_sha256": "2340bee16c9be17178b425bd0d2fa1f698bcda16deac4bc7ef8f0b6de69b417e",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "openpix-webhook",
+        "status": "ACTIVE",
+        "version": 33,
+        "verify_jwt": false,
+        "ezbr_sha256": "015ab843ad9d63ee32c333bab4d15d8dd67197febd2a58e82115c8a106ad235e",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "customer-favorites",
+        "status": "ACTIVE",
+        "version": 26,
+        "verify_jwt": true,
+        "ezbr_sha256": "e6f389f4636f0e774dd572327319458c472a24a326095504675667a749536d96",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "customer-notifications",
+        "status": "ACTIVE",
+        "version": 26,
+        "verify_jwt": true,
+        "ezbr_sha256": "34515871d4e0ae81fc385fa1be94e212652d5d7afceee7d3c631778d4f17e3e7",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "customer-support",
+        "status": "ACTIVE",
+        "version": 27,
+        "verify_jwt": true,
+        "ezbr_sha256": "e614f9e36c9ad91705b0168232411ec8da47454c4a947cd776df85c71cc8cbef",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "mercadopago-webhook",
+        "status": "ACTIVE",
+        "version": 36,
+        "verify_jwt": false,
+        "ezbr_sha256": "b29024001515e5b2dd2329e611569d6897801e4a5faa9a74a71e9e6bdf91c7f0",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "process-refund",
+        "status": "ACTIVE",
+        "version": 31,
+        "verify_jwt": true,
+        "ezbr_sha256": "4b58ae4c7e0f2df9c44e0b58e19d92a45dfe1c1e55b3d960355b9c3dc62b5313",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-credential-diagnostic",
+        "status": "ACTIVE",
+        "version": 31,
+        "verify_jwt": true,
+        "ezbr_sha256": "d0204595e0119b7f43e487f5aa0a0a5e3cf4f2573db3ea1524594bdd8eed3c9c",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "apois-refund-homol-8-7c2f",
+        "status": "ACTIVE",
+        "version": 24,
+        "verify_jwt": true,
+        "ezbr_sha256": "ee8fc8b40559b9e217c83a56a6a60a6f02ec6c0efef4755b904f9836c6494680",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "sync-payment-status",
+        "status": "ACTIVE",
+        "version": 28,
+        "verify_jwt": true,
+        "ezbr_sha256": "b50dc89ebaf1896c9552f632a39b11e03a08fbe652f3eff94a5310b07a69c8f6",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "apois-pix-auto-homol-8f4c3e9a",
+        "status": "ACTIVE",
+        "version": 22,
+        "verify_jwt": true,
+        "ezbr_sha256": "46c0f2f6205d3331c5eba38b0d37762dab167ebe98a1eea41b71ae364731ae5a",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "merchant-subscription",
+        "status": "ACTIVE",
+        "version": 27,
+        "verify_jwt": true,
+        "ezbr_sha256": "62441faf2c8658e94b6f4869bdb506170845cba2ae16c4831abf220629d32454",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-subscription-selftest",
+        "status": "ACTIVE",
+        "version": 23,
+        "verify_jwt": true,
+        "ezbr_sha256": "04e9b491f4f27d361a846c0b8cf8b763ae0039638da12e8cd915c1f72d057146",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-subscription-e2e-test",
+        "status": "ACTIVE",
+        "version": 22,
+        "verify_jwt": true,
+        "ezbr_sha256": "ce4f23eefb7eceece33669d2a6d134747d51a53b64432c63ba2ed98723c7ccc2",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-subscription-stage-probe",
+        "status": "ACTIVE",
+        "version": 21,
+        "verify_jwt": true,
+        "ezbr_sha256": "0ef047ba817a085d9d965f6a8a7c22e9347b5f834ecf56dec1f6d5d713f89b81",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-monthly-pix-probe",
+        "status": "ACTIVE",
+        "version": 23,
+        "verify_jwt": true,
+        "ezbr_sha256": "921260adaebcaf9dc59ca68907d68b83ed001e7811069e5c8d930a4658362bc9",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "merchant-monthly-webhook-selftest",
+        "status": "ACTIVE",
+        "version": 21,
+        "verify_jwt": true,
+        "ezbr_sha256": "c807275dce7da68263913cf94376dd253ead6723fba3aa3e4417dd64d4cd905f",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "asaas-merchant-account",
+        "status": "ACTIVE",
+        "version": 21,
+        "verify_jwt": true,
+        "ezbr_sha256": "2233b19692b7c4cfebaa80a33ad34e601028b8ff33645f7b00ae79f3e380be59",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "create-asaas-pix-charge",
+        "status": "ACTIVE",
+        "version": 23,
+        "verify_jwt": true,
+        "ezbr_sha256": "5b0c25fa7c43dab1d2e9614aac07352421832fd00b82f57cfd6bb6159be1a12a",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "asaas-webhook",
+        "status": "ACTIVE",
+        "version": 22,
+        "verify_jwt": false,
+        "ezbr_sha256": "d1542a295c9838f49835926a76fa488abef9a73e266e1ed887973711643a8fa4",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "asaas-payout",
+        "status": "ACTIVE",
+        "version": 23,
+        "verify_jwt": true,
+        "ezbr_sha256": "25c88e98d01e0ce12c2bc067649c2b99c7d7407136bd58ce29e9b9c217aa135b",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "confirm-asaas-sandbox-payment",
+        "status": "ACTIVE",
+        "version": 17,
+        "verify_jwt": true,
+        "ezbr_sha256": "c37fa18655ba836dfe9c46627a544389b174438aa082b2d77d5343a4c52ebcd3",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "openpix-sandbox-selftest",
+        "status": "ACTIVE",
+        "version": 16,
+        "verify_jwt": true,
+        "ezbr_sha256": "bf24c0ad802ba7e7d670c554cfec97957ea96e134bb58b3dfe68c10d919a80ee",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "openpix-payout",
+        "status": "ACTIVE",
+        "version": 16,
+        "verify_jwt": true,
+        "ezbr_sha256": "d5f4a25816a439619592b9a37d44fa022bf25b4a3f35ba19f3b4b4ba1f7227aa",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "dispatch-push-outbox",
+        "status": "ACTIVE",
+        "version": 24,
+        "verify_jwt": false,
+        "ezbr_sha256": "d87974d43083837f813a967bdbd8a2b075d3255174689a18f29db34c14ab9297",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "google-maps-address",
+        "status": "ACTIVE",
+        "version": 13,
+        "verify_jwt": true,
+        "ezbr_sha256": "d317934096d318ddba433ca926eef90a6ec6e40d247fe8133c7b9b5f3a3f19e9",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "account-deletion",
+        "status": "ACTIVE",
+        "version": 10,
+        "verify_jwt": false,
+        "ezbr_sha256": "ddc73ab370e82d7bd5e3acb17cb545dfa32c3c0780691a0a51dfdcd3b8390ad3",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "privacy-policy",
+        "status": "ACTIVE",
+        "version": 10,
+        "verify_jwt": false,
+        "ezbr_sha256": "18d91a2fb763e4521f49f9c69b7d61bbbc1a1da570be59d992cc327293c3302e",
+        "classification": "REQUIRED_NON_FINANCIAL",
+        "legacyRuntimeBlocker": false
+      },
+      {
+        "function": "merchant-mercadopago-oauth",
+        "status": "ACTIVE",
+        "version": 12,
+        "verify_jwt": true,
+        "ezbr_sha256": "5a36bf99d8130bd4b64170e73bfa3c687da66f98ef535c2037681e5ab21065c3",
+        "classification": "OAUTH_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "merchant-mercadopago-callback",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": false,
+        "ezbr_sha256": "16e93a1503c0f9c9c16efc6bd8ce48ac4345ff6555be5feaaf9997ec379234ba",
+        "classification": "OAUTH_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "create-merchant-mercadopago-pix",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "0d632e65ba79b287ce5b82af13c5a0b56daac5381e923ea8da3e05344e4627b0",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "merchant-mercadopago-webhook",
+        "status": "ACTIVE",
+        "version": 12,
+        "verify_jwt": false,
+        "ezbr_sha256": "1943e574c75895345799d4785168844b6801875bd1e495e241da28bc32f932dd",
+        "classification": "WEBHOOK_RETIRED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "merchant-payment-readiness",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "48eeb626ce51ef605b6f8d2d6722bf7dfb82d634ec32d1119afe93bf6f15af2a",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "process-superapp-refund",
+        "status": "ACTIVE",
+        "version": 11,
+        "verify_jwt": true,
+        "ezbr_sha256": "7e046ef9cd7b703344be4d5b2162a1bffeecef91c5d48e3eba0f54465c5aab0c",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "temp-mp-token-key-check",
+        "status": "ACTIVE",
+        "version": 13,
+        "verify_jwt": true,
+        "ezbr_sha256": "6758f7bac78a5113f07656b419a2ccf71048edc12e876765a992d11543f5dda3",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      },
+      {
+        "function": "mercadopago-payout",
+        "status": "ACTIVE",
+        "version": 1,
+        "verify_jwt": false,
+        "ezbr_sha256": "a26eedf9f085f863a702c4df71a0d818fc6596972cbe7ad1ffd8597d8acb60a6",
+        "classification": "RETIRED_FAIL_CLOSED",
+        "legacyRuntimeBlocker": true
+      }
+    ]
+  }
+}
