@@ -119,12 +119,13 @@ if (resetPassword) {
 }
 const checkout = requireFile('.work/entregas/src/routes/checkout.tsx');
 if (checkout) {
-  if (!checkout.includes('const paymentMethod = "cash";') || !checkout.includes('paymentMethod: "cash"')) fail('checkout Entregas não está cash-only'); else ok('checkout Entregas está cash-only');
+  if (!checkout.includes('const paymentMethod = "pix";') || !checkout.includes('paymentMethod: "pix"')) fail('checkout Entregas não está PIX Safe2Pay'); else ok('checkout Entregas usa PIX Safe2Pay');
   if (checkout.includes('payload?.provider?.message') || checkout.includes('payload?.provider?.status_detail')) fail('checkout Entregas ainda pode expor detalhe técnico do provedor ao cliente');
   else if (!checkout.includes('return fallback;')) fail('checkout Entregas não possui fallback seguro para erro técnico de Edge Function'); else ok('checkout Entregas exibe somente mensagens seguras ao cliente');
   if (/mercadopago|openpix|pagbank|asaas|create-(?:asaas-)?pix-charge/i.test(checkout)) fail('checkout Entregas ainda contém gateway aposentado executável');
-  else if (!checkout.includes('supabase.functions.invoke(\n        "create-order"')) fail('checkout Entregas não usa create-order cash-only');
-  else ok('checkout Entregas cria pedido direto sem gateway aposentado');
+  else if (!checkout.includes('"safe2pay-create-order-pix"')) fail('checkout Entregas não cria PIX pela Safe2Pay');
+  else if (!checkout.includes('"safe2pay-payment-status"')) fail('checkout Entregas não consulta status Safe2Pay');
+  else ok('checkout Entregas usa somente Safe2Pay para novos pagamentos PIX');
   if (!checkout.includes('get_delivery_checkout_readiness')) fail('checkout Entregas não consulta readiness do repasse direto do entregador'); else ok('checkout Entregas bloqueia entrega quando o repasse direto ao entregador ainda não está homologado');
 }
 const shellSource = requireFile('superapp/shell/index.html');
