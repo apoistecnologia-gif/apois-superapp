@@ -40,13 +40,13 @@ export function safe2PayIsEnabled(): boolean {
   return env("SAFE2PAY_PROVIDER_ENABLED") === "1";
 }
 
-function isSandbox(): boolean {
-  return env("SAFE2PAY_ENVIRONMENT").toLowerCase() !== "production";
+function environment(): string {
+  return env("SAFE2PAY_ENVIRONMENT").toLowerCase() || "production";
 }
 
-function apiKey(): string {
-  const key = isSandbox() ? env("SAFE2PAY_API_KEY_SANDBOX") : env("SAFE2PAY_API_KEY");
-  if (!key) throw new Error("safe2pay_api_key_missing");
+function productionApiKey(): string {
+  const key = env("SAFE2PAY_API_KEY");
+  if (!key) throw new Error("safe2pay_production_api_key_missing");
   return key;
 }
 
@@ -58,7 +58,7 @@ function callbackUrl(): string {
 
 export function assertSafe2PayReady(): void {
   if (!safe2PayIsEnabled()) throw new Error("safe2pay_provider_disabled");
-  apiKey();
+  productionApiKey();
   callbackUrl();
 }
 
@@ -102,7 +102,7 @@ async function safe2PayFetch(url: string, body: unknown): Promise<Record<string,
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "X-API-KEY": apiKey(),
+      "X-API-KEY": productionApiKey(),
     },
     body: JSON.stringify(body),
   });
@@ -127,7 +127,8 @@ export async function createSafe2PayPix(input: Safe2PayPixInput): Promise<Record
   const expiration = Math.max(60, Math.min(86400, Math.trunc(input.expirationSeconds ?? 600)));
 
   return safe2PayFetch(PAYMENT_URL, {
-    IsSandbox: isSandbox(),
+    // Safe2Pay documentation states Pix has no sandbox environment.
+    IsSandbox: false,
     Application: "APOIS",
     Vendor: vendor,
     CallbackUrl: callbackUrl(),
@@ -142,5 +143,14 @@ export async function createSafe2PayPix(input: Safe2PayPixInput): Promise<Record
 
 export async function createSafe2PaySubaccount(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
   if (!payload || typeof payload !== "object") throw new Error("safe2pay_invalid_subaccount_payload");
-  return safe2PayFetch(SUBACCOUNT_URL, payload);
+  const useSandbox = environment() !== "production";
+  const key = useSandbox ? env("SAFE2PAY_API_KEY_SANDBOX") || productionApiKey() : productionApiKey();
+  const response = await fetch(SUBACCOUNT_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json", "X-API-KEY": key },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json().catch(() => ({})) as Record<string, unknown>;
+  if (!response.ok || result.HasError === true) throw new Error(`safe2pay_subaccount_failed:${String(result.ErrorCode ?? response.status)}`);
+  return result;
 }
