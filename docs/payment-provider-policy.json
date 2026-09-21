@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "decidedAt": "2026-09-21",
+  "provider": "safe2pay",
+  "mode": "marketplace_split",
+  "activation": "fail_closed_until_sandbox_e2e",
+  "legacyProviders": [
+    "mercadopago",
+    "asaas",
+    "pagbank",
+    "openpix"
+  ],
+  "products": {
+    "corridas": {
+      "electronicMethods": [
+        "pix"
+      ],
+      "directMethods": [
+        "cash",
+        "credit"
+      ],
+      "settlement": "driver_subaccount",
+      "platformCommissionPercent": 0,
+      "splitMode": "dynamic",
+      "receiver": "driver"
+    },
+    "entregas": {
+      "electronicMethods": [
+        "pix"
+      ],
+      "directMethods": [],
+      "settlement": "multi_recipient_subaccounts",
+      "platformCommissionPercent": 0,
+      "splitMode": "dynamic",
+      "receivers": [
+        "merchant",
+        "courier"
+      ]
+    }
+  },
+  "safe2pay": {
+    "paymentEndpoint": "https://payment.safe2pay.com.br/v2/payment",
+    "marketplaceSubaccountEndpoint": "https://api.safe2pay.com.br/v2/marketplace/add",
+    "authHeader": "X-API-KEY",
+    "pixPaymentMethodCode": "6",
+    "splitFields": [
+      "IdReceiver",
+      "CodeTaxType",
+      "Amount",
+      "IsPayTax"
+    ],
+    "requiredRuntimeSecrets": [
+      "SAFE2PAY_API_KEY",
+      "SAFE2PAY_SECRET_KEY",
+      "SAFE2PAY_CALLBACK_URL"
+    ],
+    "requiredPreProductionEvidence": [
+      "sandbox_charge",
+      "sandbox_split",
+      "webhook_authorized",
+      "webhook_idempotency",
+      "receiver_mapping",
+      "fee_payer_decision"
+    ]
+  },
+  "unresolvedCommercialDecision": {
+    "key": "SAFE2PAY_PIX_FEE_PAYER",
+    "allowed": [
+      "receiver",
+      "platform"
+    ],
+    "reason": "Safe2Pay separates split allocation from transaction-fee responsibility; production must not guess who pays the Pix fee."
+  }
+}
