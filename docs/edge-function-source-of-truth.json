@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "observedAt": "2026-09-13",
+  "observedAt": "2026-09-21",
   "scope": "Governance for versioned APOIS Edge Function copies. This file changes ownership/provenance only; it does not change runtime or financial behavior.",
   "roots": [
     {
@@ -150,6 +150,38 @@
       "owner": "APOIS Corridas passenger backend",
       "purpose": "Passenger cancellation endpoint with AUTH-to-DOMAIN ownership and idempotent financial reconciliation hardening.",
       "pipeline": "corridas-passenger -> .work/corridas hardeners -> .release/corridas-functions -> explicit per-slug deployment after verification."
+    },
+    {
+      "path": "safe2pay-create-ride-pix",
+      "domain": "corridas-current-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Creates Safe2Pay Pix for an owned ride and splits 100% of gross amount to the assigned driver's Safe2Pay receiver.",
+      "pipeline": "Safe2Pay source verification -> migration/runtime readiness -> explicit per-slug deployment to the intended Supabase project. Never deploy-all."
+    },
+    {
+      "path": "safe2pay-create-order-pix",
+      "domain": "entregas-current-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Creates Safe2Pay Pix for an owned order and routes the order amount to the merchant Safe2Pay receiver; courier payout remains merchant_manual.",
+      "pipeline": "Safe2Pay source verification -> migration/runtime readiness -> explicit per-slug deployment to the intended Supabase project. Never deploy-all."
+    },
+    {
+      "path": "safe2pay-webhook",
+      "domain": "safe2pay-shared-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Transaction webhook implementation. Deploy separately to Corridas and Entregas with SAFE2PAY_WEBHOOK_PRODUCT scoped to rides/orders.",
+      "pipeline": "Safe2Pay source verification -> migration/runtime readiness -> explicit per-slug deployment to the intended Supabase project. Never deploy-all."
+    },
+    {
+      "path": "safe2pay-payment-status",
+      "domain": "safe2pay-shared-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Ownership-checked read endpoint for Safe2Pay reconciliation status.",
+      "pipeline": "Safe2Pay source verification -> migration/runtime readiness -> explicit per-slug deployment to the intended Supabase project. Never deploy-all."
     }
   ],
   "generatedMustMatch": [
