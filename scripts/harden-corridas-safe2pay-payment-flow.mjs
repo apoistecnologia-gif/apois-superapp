@@ -205,4 +205,18 @@ function replaceRequired(source, search, replacement, label) {
   write(p, source);
 }
 
+
+{
+  const p = 'src/hooks/rides/use-active-ride.tsx';
+  let source = read(p);
+  source = source.replace(
+    '  procurar_motorista: 1,\n  motorista_a_caminho: 2,\n  motorista_chegou: 3,\n  em_viagem: 4,\n  finalizada: 5,\n  cancelada_passageiro: 5,\n  cancelada_motorista: 5,',
+    '  procurar_motorista: 1,\n  aguardando_pagamento: 2,\n  motorista_a_caminho: 3,\n  motorista_chegou: 4,\n  em_viagem: 5,\n  finalizada: 6,\n  cancelada_passageiro: 6,\n  cancelada_motorista: 6,',
+  );
+  if (!source.includes('aguardando_pagamento: 2')) {
+    throw new Error('[FAIL] Corridas: use-active-ride não reconhece aguardando_pagamento');
+  }
+  write(p, source);
+}
+
 console.log('[OK] Corridas: Safe2Pay Pix staged behind VITE_APOIS_SAFE2PAY_PIX_ENABLED.');
