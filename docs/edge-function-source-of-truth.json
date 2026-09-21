@@ -182,6 +182,22 @@
       "owner": "APOIS Superapp release engineering",
       "purpose": "Ownership-checked read endpoint for Safe2Pay reconciliation status.",
       "pipeline": "Safe2Pay source verification -> migration/runtime readiness -> explicit per-slug deployment to the intended Supabase project. Never deploy-all."
+    },
+    {
+      "path": "safe2pay-subaccount-onboarding",
+      "domain": "safe2pay-shared-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Admin-only creation of a Safe2Pay Marketplace subaccount for a driver or merchant; stores only the receiver id and provisioning state.",
+      "pipeline": "verify:safe2pay-subaccount-onboarding -> explicit deploy per project with SAFE2PAY_ONBOARDING_PRODUCT=rides|orders."
+    },
+    {
+      "path": "safe2pay-subaccount-reconcile",
+      "domain": "safe2pay-shared-release",
+      "canonicalRoot": "release-overlay",
+      "owner": "APOIS Superapp release engineering",
+      "purpose": "Admin-only reconciliation of an already-created Safe2Pay subaccount after an uncertain provisioning outcome; validates receiver membership before activation.",
+      "pipeline": "verify:safe2pay-subaccount-onboarding -> explicit deploy per project with SAFE2PAY_ONBOARDING_PRODUCT=rides|orders."
     }
   ],
   "generatedMustMatch": [
