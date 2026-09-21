@@ -13,18 +13,6 @@ create table if not exists public.merchant_safe2pay_accounts (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.courier_safe2pay_accounts (
-  courier_id uuid primary key references public.couriers(id) on delete cascade,
-  safe2pay_receiver_id bigint unique,
-  status text not null default 'pending'
-    check (status in ('pending','active','blocked','rejected','disabled')),
-  environment text not null default 'sandbox'
-    check (environment in ('sandbox','production')),
-  last_error_code text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create table if not exists public.safe2pay_order_transactions (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders(id) on delete cascade,
@@ -32,7 +20,6 @@ create table if not exists public.safe2pay_order_transactions (
   provider_transaction_id bigint unique,
   amount numeric(12,2) not null check (amount >= 0),
   merchant_amount numeric(12,2) not null check (merchant_amount >= 0),
-  courier_amount numeric(12,2) not null check (courier_amount >= 0),
   status text not null default 'pending'
     check (status in ('pending','processing','authorized','expired','refunded','chargeback','failed')),
   environment text not null default 'sandbox'
@@ -41,7 +28,7 @@ create table if not exists public.safe2pay_order_transactions (
   refunded_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  check (round((merchant_amount + courier_amount)::numeric, 2) = round(amount::numeric, 2))
+  check (round(merchant_amount::numeric, 2) = round(amount::numeric, 2))
 );
 
 create unique index if not exists ux_safe2pay_order_transaction_order_active
@@ -66,7 +53,6 @@ declare
 begin
   foreach table_name in array array[
     'merchant_safe2pay_accounts',
-    'courier_safe2pay_accounts',
     'safe2pay_order_transactions',
     'safe2pay_webhook_events'
   ]
@@ -79,9 +65,7 @@ end $$;
 
 comment on table public.merchant_safe2pay_accounts is
   'Server-only mapping from merchant to Safe2Pay Marketplace receiver.';
-comment on table public.courier_safe2pay_accounts is
-  'Server-only mapping from courier to Safe2Pay Marketplace receiver.';
 comment on table public.safe2pay_order_transactions is
-  'Order payment reconciliation. Merchant + courier split must equal the customer charge.';
+  'Order payment reconciliation. Merchant receives the order charge; courier payout remains merchant_manual.';
 comment on table public.safe2pay_webhook_events is
   'Idempotency ledger for Safe2Pay transaction status callbacks; raw secrets are not stored.';
