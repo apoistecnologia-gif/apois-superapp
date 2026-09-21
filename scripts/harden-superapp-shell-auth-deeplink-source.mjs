@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const path = resolve('superapp/shell/index.html');
+const path = resolve(process.env.APOIS_SHELL_HTML_PATH?.trim() || 'superapp/shell/index.html');
 const before = readFileSync(path, 'utf8');
 if (!before.includes('const OAUTH_HANDOFF_TTL_MS=120000;')) {
   throw new Error('Shell perdeu o handoff OAuth Corridas com TTL.');
@@ -26,4 +26,4 @@ if (!after.includes("sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl)")) {
   throw new Error('Shell não preserva o callback de recuperação de Corridas.');
 }
 if (after !== before) writeFileSync(path, after, 'utf8');
-console.log('[OK] Shell fonte mantém deduplicação e recuperação Corridas; callback Google é consolidado no build.');
+console.log(`[OK] Shell mantém deduplicação e recuperação Corridas no artefato alvo (${path}); callback Google é consolidado no build.`);
