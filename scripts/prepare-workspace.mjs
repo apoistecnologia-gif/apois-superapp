@@ -1,6 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { auditRuntimeLogging, hardenRuntimeLogging } from './runtime-logging-policy.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(resolve(root, '.apois/modules.json'), 'utf8'));
@@ -152,4 +153,9 @@ for (const name of names) {
       'corridas: solicitação passa pelo roteador financeiro request-ride',
     );
   }
+
+  // Logging runtime é endurecido somente na cópia .work. Tooling (scripts de
+  // build/auditoria/testes) permanece intacto e é classificado separadamente.
+  hardenRuntimeLogging(workspace, name);
+  auditRuntimeLogging(workspace, { label: name, failOnSensitive: true });
 }
