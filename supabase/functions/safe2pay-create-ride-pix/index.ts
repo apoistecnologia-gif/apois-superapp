@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
     const reference = `apois-ride-${ride.id}`;
     const { data: existing, error: existingError } = await admin
       .from("safe2pay_ride_transactions")
-      .select("provider_transaction_id,status,amount,reference")
+      .select("provider_transaction_id,status,amount,reference,pix_copy_paste,pix_qr_code_base64")
       .eq("reference", reference)
       .maybeSingle();
     if (existingError) throw new Error(`safe2pay_existing_lookup_failed:${existingError.message}`);
@@ -110,6 +110,10 @@ Deno.serve(async (req) => {
         transactionId: existing.provider_transaction_id,
         status: existing.status,
         amount: existing.amount,
+        pix: {
+          copyPaste: existing.pix_copy_paste ?? null,
+          qrCodeBase64: existing.pix_qr_code_base64 ?? null,
+        },
       });
     }
 
@@ -148,6 +152,8 @@ Deno.serve(async (req) => {
       amount,
       status: publicPix.statusCode === "3" ? "authorized" : "pending",
       receiver_id: Number(receiver.safe2pay_receiver_id),
+      pix_copy_paste: publicPix.qrCode,
+      pix_qr_code_base64: publicPix.qrCodeBase64,
       environment: "production",
       authorized_at: publicPix.statusCode === "3" ? new Date().toISOString() : null,
     });
