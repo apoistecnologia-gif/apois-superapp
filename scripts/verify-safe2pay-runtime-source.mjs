@@ -32,6 +32,7 @@ for (const marker of [
   'safe2pay_ride_transactions',
   'pix_copy_paste',
   'pix_qr_code_base64',
+  'expires_at',
   'IsPayTax: feePayer === "receiver"',
 ]) if (!source.ride.includes(marker)) fail('ride charge sem ownership/receiver: ' + marker);
 
