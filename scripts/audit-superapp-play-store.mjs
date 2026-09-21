@@ -38,9 +38,10 @@ function forbidAll(path, markers, label) {
 requireAll('superapp/shell/capacitor.config.ts', [
   "appId: 'br.com.apois.app'",
   "appName: 'APOIS Cliente'",
+  'allowMixedContent: false',
   "backgroundColor: '#050505'",
   "overlaysWebView: false",
-], 'Capacitor mantém package, label e barras do Superapp Cliente');
+], 'Capacitor mantém package, label, mixed-content bloqueado e barras do Superapp Cliente');
 
 requireAll('scripts/harden-superapp-android-security.mjs', [
   "['compileSdkVersion', 36]",
@@ -50,11 +51,19 @@ requireAll('scripts/harden-superapp-android-security.mjs', [
   'APP_VERSION_CODE e APP_VERSION_NAME são obrigatórios no release.',
   "setApplicationAttribute('allowBackup', 'false')",
   "setApplicationAttribute('usesCleartextTraffic', 'false')",
+  "setApplicationAttribute('fullBackupContent', '@xml/apois_backup_rules')",
+  "setApplicationAttribute('dataExtractionRules', '@xml/apois_data_extraction_rules')",
+  "const backupRulesPath = resolve(resXmlDir, 'apois_backup_rules.xml');",
+  "const dataExtractionRulesPath = resolve(resXmlDir, 'apois_data_extraction_rules.xml');",
+  '<full-backup-content>',
+  '<data-extraction-rules>',
+  '<cloud-backup>',
+  '<device-transfer>',
   'android.permission.ACCESS_BACKGROUND_LOCATION',
   'android:windowSoftInputMode="adjustResize"',
   'android.permission.REQUEST_INSTALL_PACKAGES',
   'android.permission.WRITE_EXTERNAL_STORAGE',
-], 'Android release fixa API 36, versionamento e hardening de dados/permissões');
+], 'Android release fixa API 36, versionamento, backup/D2D, cleartext e hardening de permissões');
 
 requireAll('scripts/install-superapp-launcher.mjs', [
   "import './harden-superapp-android-security.mjs';",
