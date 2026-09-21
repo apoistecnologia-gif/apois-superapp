@@ -22,7 +22,10 @@ function forbidText(source, marker, label) {
 requireText(pkg.scripts['build:partner'] ?? '', 'scripts/build-partner-release.sh', 'build:partner usa pipeline release atual');
 requireText(release, 'harden-motorista-provider-boundary.mjs', 'Motorista remove provisionamento legado');
 requireText(release, 'harden-motorista-finance-boundary.mjs', 'Motorista aplica boundary de mensalidade');
-requireText(release, 'harden-motorista-direct-ride-copy.mjs', 'Motorista neutraliza copy de gateway na corrida');
+requireText(release, 'harden-motorista-direct-ride-copy.mjs', 'Motorista neutraliza copy de gateway legado na corrida');
+requireText(release, 'harden-motorista-payment-wait.mjs', 'Motorista reconhece hold de pagamento Safe2Pay');
+requireText(release, "require_contains 'Aguardando pagamento do passageiro'", 'Bundle exige estado aguardando pagamento Safe2Pay');
+requireText(release, "require_contains 'Safe2Pay'", 'Bundle exige copy Safe2Pay no hold da corrida');
 requireText(release, 'audit-motorista-release-surface.mjs', 'Motorista audita bundle release');
 requireText(release, "forbid_bundle 'Mercado Pago'", 'Bundle bloqueia Mercado Pago');
 requireText(release, "forbid_bundle 'asaas-create-driver'", 'Bundle bloqueia provisionamento Asaas');
@@ -34,10 +37,8 @@ for (const marker of [
   'harden-partner-mercadopago-callback.mjs',
   'harden-motorista-mercadopago-disconnect.mjs',
   'harden-motorista-direct-mercadopago.mjs',
-  'harden-motorista-payment-wait.mjs',
   "require_contains 'Conectar Mercado Pago'",
   "require_contains 'mercadopago-oauth-start'",
-  "require_contains 'Aguardando pagamento do passageiro'",
 ]) forbidText(release, marker, 'Pipeline release não reintroduz gateway legado');
 
 process.exit(failed ? 1 : 0);
