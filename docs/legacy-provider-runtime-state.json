@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-09-05",
+  "observedAt": "2026-09-21",
   "policy": "Safe2Pay Marketplace is the sole target electronic payment provider. Mercado Pago, Asaas, PagBank and OpenPix remain retired and release-blocking while callable. Safe2Pay itself remains fail-closed until credentials, receiver mapping, sandbox split, webhook idempotency and E2E validation are complete.",
   "runtimeSettingsObserved": {
     "corridas": {
@@ -397,5 +397,13 @@
       "safe2pay-webhook",
       "safe2pay-payment-status"
     ]
-  }
+  },
+  "currentRuntimeSnapshot": "docs/provider-runtime-observed-20260921.json",
+  "failClosedDeployManifest": "docs/legacy-provider-failclosed-deploy-manifest.json",
+  "currentLegacyBlockerCounts": {
+    "corridas": 21,
+    "entregas": 29,
+    "total": 50
+  },
+  "note": "Safe2Pay source is prepared but not deployed. 50 legacy provider runtimes remain ACTIVE and must be cut over explicitly to versioned HTTP 410 stubs before production release."
 }
