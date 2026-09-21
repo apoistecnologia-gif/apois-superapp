@@ -24,12 +24,10 @@ for(const marker of [
 const entregas=readFileSync(files.entregas,'utf8');
 for(const marker of [
   'create table if not exists public.merchant_safe2pay_accounts',
-  'create table if not exists public.courier_safe2pay_accounts',
   'create table if not exists public.safe2pay_order_transactions',
   'create table if not exists public.safe2pay_webhook_events',
   'merchant_amount numeric(12,2)',
-  'courier_amount numeric(12,2)',
-  'merchant_amount + courier_amount',
+  'round(merchant_amount::numeric, 2) = round(amount::numeric, 2)'
   'unique(event_key)',
   'enable row level security',
   'from anon, authenticated',
