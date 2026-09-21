@@ -154,3 +154,56 @@ export async function createSafe2PaySubaccount(payload: Record<string, unknown>)
   if (!response.ok || result.HasError === true) throw new Error(`safe2pay_subaccount_failed:${String(result.ErrorCode ?? response.status)}`);
   return result;
 }
+
+
+export function safe2PayFeePayer(): "receiver" | "platform" {
+  const value = env("SAFE2PAY_PIX_FEE_PAYER").toLowerCase();
+  if (value !== "receiver" && value !== "platform") throw new Error("safe2pay_fee_payer_not_configured");
+  return value;
+}
+
+function walk(value: unknown, visitor: (key: string, value: unknown) => void): void {
+  if (Array.isArray(value)) {
+    for (const item of value) walk(item, visitor);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    visitor(key, child);
+    walk(child, visitor);
+  }
+}
+
+export function extractSafe2PayPixPublic(payload: Record<string, unknown>): {
+  transactionId: number | null;
+  qrCode: string | null;
+  qrCodeBase64: string | null;
+  statusCode: string | null;
+} {
+  let transactionId: number | null = null;
+  let qrCode: string | null = null;
+  let qrCodeBase64: string | null = null;
+  let statusCode: string | null = null;
+
+  walk(payload, (rawKey, value) => {
+    const key = rawKey.toLowerCase();
+    if (transactionId === null && ["idtransaction", "transactionid"].includes(key)) {
+      const parsed = Number(value);
+      if (Number.isInteger(parsed) && parsed > 0) transactionId = parsed;
+    }
+    if (qrCode === null && ["qrcode", "qrcodepayload", "payload", "copyandpaste", "pixcopyandpaste"].includes(key) && typeof value === "string") {
+      const text = value.trim();
+      if (text.length >= 20 && !text.startsWith("data:image/")) qrCode = text;
+    }
+    if (qrCodeBase64 === null && ["qrcodebase64", "qrcodeimage", "qrcodeimagebase64"].includes(key) && typeof value === "string") {
+      const text = value.trim();
+      if (text) qrCodeBase64 = text;
+    }
+    if (statusCode === null && ["code", "statuscode"].includes(key) && (typeof value === "string" || typeof value === "number")) {
+      const text = String(value).trim();
+      if (/^\d+$/.test(text)) statusCode = text;
+    }
+  });
+
+  return { transactionId, qrCode, qrCodeBase64, statusCode };
+}
