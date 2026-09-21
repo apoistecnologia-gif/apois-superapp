@@ -15,6 +15,7 @@ for(const marker of [
   'safe2pay_receiver_id bigint unique',
   'pix_copy_paste text',
   'pix_qr_code_base64 text',
+  'expires_at timestamptz',
   'create table if not exists public.safe2pay_ride_transactions',
   'create table if not exists public.safe2pay_webhook_events',
   'unique(event_key)',
