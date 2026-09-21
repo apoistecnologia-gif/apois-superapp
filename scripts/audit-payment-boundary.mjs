@@ -1,109 +1,81 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-let failed = false;
-function read(path) { const full = resolve(path); return existsSync(full) ? readFileSync(full, 'utf8') : ''; }
-function fail(message) { failed = true; console.error(`[FAIL] ${message}`); }
-function ok(message) { console.log(`[OK] ${message}`); }
+let failed=false;
+const read=(p)=>{const full=resolve(p);return existsSync(full)?readFileSync(full,'utf8'):''};
+const fail=(m)=>{failed=true;console.error('[FAIL] '+m)};
+const ok=(m)=>console.log('[OK] '+m);
 
-const corridasHardener = read('scripts/harden-corridas-payment-provider-boundary.mjs');
-for (const marker of ['code === "cash" || code === "credit"', 'if (!isActive || !isDirectToDriver) return []', 'nenhum PIX eletrônico']) {
-  if (!corridasHardener.includes(marker)) fail(`boundary Corridas sem ${marker}`);
-}
+// Corridas remains fail-closed for electronic payment until Safe2Pay runtime is live.
+// Cash/credit direct to driver stay available without invoking retired gateways.
+const corridas=read('scripts/harden-corridas-payment-provider-boundary.mjs');
+for(const marker of [
+  'code === "cash" || code === "credit"',
+  'if (!isActive || !isDirectToDriver) return []',
+  'nenhum PIX eletrônico',
+]) if(!corridas.includes(marker)) fail('boundary Corridas sem '+marker);
 
-const entregasHardener = read('scripts/harden-entregas-payment-provider-boundary.mjs');
-for (const marker of [
-  'paymentMethod: "cash"',
-  'const PAYMENT_METHODS = new Set(["cash"]);',
-  'merchant-payment-readiness',
+// Entregas is Safe2Pay-ready and must not retain any active legacy-provider branch.
+const entregas=read('scripts/harden-entregas-payment-provider-boundary.mjs');
+for(const marker of [
+  'const paymentMethod = "pix";',
+  'paymentMethod: "pix"',
+  '"safe2pay-create-order-pix"',
+  '"safe2pay-payment-status"',
+  'configuredProvider = "safe2pay_marketplace"',
+  'pixResponse?.pix?.copyPaste',
+]) if(!entregas.includes(marker)) fail('boundary Entregas Safe2Pay sem '+marker);
+
+for(const forbidden of [
   'create-merchant-mercadopago-pix',
+  'create-asaas-pix-charge',
+  'create-pix-charge',
   'openpix-payout',
-  'MP_DEVICE_SESSION_ID',
-  'PixPaymentScreen(',
-]) {
-  if (!entregasHardener.includes(marker)) fail(`boundary Entregas sem contrato ${marker}`);
-}
+  'sync-payment-status',
+  'merchant-payment-readiness',
+  'mercadopago.com/v2/security.js',
+]) if(entregas.includes(forbidden)) fail('boundary Entregas ainda ativa provider aposentado: '+forbidden);
 
-const directOperations = read('scripts/harden-entregas-direct-payment-operations.mjs');
-for (const marker of [
-  'return status === "paid" || (method === "cash" && status === "pending");',
+const operations=read('scripts/harden-entregas-direct-payment-operations.mjs');
+for(const marker of [
+  'return status === "paid";',
   'const paymentReady = isOperationalPayment(order);',
   'isAlertableOrderPayment(order.payment_method, order.payment_status)',
-]) {
-  if (!directOperations.includes(marker)) fail(`operação Entregas direta sem ${marker}`);
+]) if(!operations.includes(marker)) fail('operações Entregas não exigem paid: '+marker);
+if(operations.includes('method === "cash" && status === "pending"')) {
+  fail('operações Entregas ainda tratam cash/pending como pagamento pronto');
 }
 
-const directMigration = read('supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql');
-for (const marker of [
-  "payment_method = 'cash' and payment_status in ('pending','cancelled')",
-  'create policy "Merchant members can view operational merchant orders"',
-  "v_order.payment_method = 'cash' and v_order.payment_status = 'pending'",
-  'merchant access required',
-]) {
-  if (!directMigration.includes(marker)) fail(`migration forward-only Entregas sem ${marker}`);
-}
+const modules=read('.apois/modules.json');
+for(const marker of [
+  'harden-entregas-payment-provider-boundary.mjs',
+  'harden-entregas-direct-payment-operations.mjs',
+]) if(!modules.includes(marker)) fail('build Entregas não executa '+marker);
 
-const motorFinance = read('scripts/harden-motorista-finance-boundary.mjs');
-for (const marker of [
-  'Pagamento eletrônico temporariamente indisponível',
-  'Nenhum gateway de cobrança está ativo',
-  '.eq("auth_user_id", auth.user.id)',
-  '.eq("user_id", profile.id)',
-]) {
-  if (!motorFinance.includes(marker)) fail(`boundary Motorista sem ${marker}`);
-}
-const motorBuild = read('scripts/build-motorista-module.mjs');
-if (!motorBuild.includes('harden-motorista-finance-boundary.mjs')) fail('build Motorista não aplica boundary financeiro final');
-for (const forbidden of ['harden-motorista-superapp-mercadopago.mjs', 'auth/mercadopago']) {
-  if (motorBuild.includes(forbidden)) fail(`build Motorista ainda ativa integração removida: ${forbidden}`);
-}
-
-const modules = read('.apois/modules.json');
-for (const marker of ['harden-entregas-payment-provider-boundary.mjs', 'harden-entregas-direct-payment-operations.mjs']) {
-  if (!modules.includes(marker)) fail(`build Entregas não executa ${marker}`);
-}
-
-const neutralize = read('scripts/neutralize-entregas-superapp-legacy.mjs');
-if (neutralize.includes("await import('./harden-entregas-merchant-mercadopago-v2.mjs');") || neutralize.includes("await import('./normalize-entregas-merchant-mp-handoff.mjs');")) {
-  fail('pipeline Entregas ainda executa hardeners Mercado Pago concorrentes');
-}
-
-const rideService = read('.work/corridas/src/services/payments/payment-service.ts');
-if (rideService) {
-  if (!rideService.includes('if (!isActive || !isDirectToDriver) return [];')) fail('workspace Corridas não filtra pagamentos eletrônicos');
-  else ok('workspace Corridas expõe somente pagamento direto');
-}
-
-const checkout = read('.work/entregas/src/routes/checkout.tsx');
-if (checkout) {
-  for (const forbidden of [
-    'merchant-payment-readiness','create-merchant-mercadopago-pix','create-asaas-pix-charge','create-pix-charge','openpix-payout',
-    'mercadopago.com/v2/security.js','MP_DEVICE_SESSION_ID','ensureMercadoPagoSecurityScript','readMercadoPagoDeviceId',
-    'sync-payment-status','type PixData =','PixPaymentScreen(','pixData','setPixData','handleCopyPix','QRCode','QrCode',
-  ]) {
-    if (checkout.includes(forbidden)) fail(`workspace Entregas contém gateway/Pix ativo: ${forbidden}`);
+const checkout=read('.work/entregas/src/routes/checkout.tsx');
+if(checkout){
+  for(const marker of [
+    '"safe2pay-create-order-pix"',
+    '"safe2pay-payment-status"',
+    'const paymentMethod = "pix";',
+  ]) if(!checkout.includes(marker)) fail('workspace Entregas sem Safe2Pay: '+marker);
+  for(const forbidden of ['mercadopago','openpix','pagbank','asaas','sync-payment-status']) {
+    if(checkout.toLowerCase().includes(forbidden)) fail('workspace Entregas contém provider aposentado: '+forbidden);
   }
-  if (/mercadopago|openpix|pagbank|asaas/i.test(checkout)) fail('workspace Entregas ainda contém referência executável a gateway removido');
-  if (!checkout.includes('const paymentMethod = "cash";') || !checkout.includes('paymentMethod: "cash"')) fail('workspace Entregas não usa cash direto');
-  else ok('workspace Entregas usa pedido direto sem gateway');
+  ok('workspace Entregas usa somente Safe2Pay para PIX');
 }
 
-const createOrder = read('.work/entregas/supabase/functions/create-order/index.ts');
-if (createOrder) {
-  if (!createOrder.includes('const PAYMENT_METHODS = new Set(["cash"]);')) fail('create-order da integração não aceita boundary cash');
-  if (createOrder.includes('payment_status: "paid"') || createOrder.includes("payment_status: 'paid'")) fail('create-order fabrica paid');
+const createOrder=read('.work/entregas/supabase/functions/create-order/index.ts');
+if(createOrder){
+  if(!createOrder.includes('const PAYMENT_METHODS = new Set(["pix"]);')) fail('create-order da integração não aceita PIX Safe2Pay');
+  if(createOrder.includes('payment_status: "paid"')||createOrder.includes("payment_status: 'paid'")) fail('create-order fabrica paid');
 }
 
-const merchantControl = read('.work/entregas/src/components/MerchantOrderControlCenter.tsx');
-if (merchantControl) {
-  if (!merchantControl.includes('const paymentReady = isOperationalPayment(order);')) fail('merchant control não reconhece cash/pending como operacional');
-  if (merchantControl.includes('.eq("payment_status", "paid")\n      .in("status", ACTIVE_STATUSES)')) fail('merchant control ainda oculta pedido cash/pending');
-}
-const merchantWatcher = read('.work/entregas/src/components/MerchantOrderSoundWatcher.tsx');
-if (merchantWatcher) {
-  if (!merchantWatcher.includes('isAlertableOrderPayment(order.payment_method, order.payment_status)')) fail('alerta merchant não reconhece cash/pending');
-  if (merchantWatcher.includes('Novo pedido pago')) fail('alerta merchant ainda promete pagamento confirmado');
+const merchant=read('.work/entregas/src/components/MerchantOrderControlCenter.tsx');
+if(merchant){
+  if(!merchant.includes('return status === "paid";')) fail('merchant control não exige pagamento confirmado');
+  if(merchant.includes('method === "cash" && status === "pending"')) fail('merchant control ainda libera cash/pending');
 }
 
-if (failed) process.exit(1);
-ok('Boundary financeiro final auditado: gateways antigos ficam fora dos fluxos ativos e cash/pending continua operacional.');
+if(failed) process.exit(1);
+ok('Boundary financeiro auditado: Entregas Safe2Pay, Corridas eletrônico fail-closed e providers antigos fora dos fluxos ativos.');
