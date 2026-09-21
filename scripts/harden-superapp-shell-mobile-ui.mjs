@@ -2,7 +2,7 @@ import './harden-superapp-shell-iconography.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const path = resolve('superapp/shell/index.html');
+const path = resolve(process.env.APOIS_SHELL_HTML_PATH?.trim() || 'superapp/shell/index.html');
 let source = readFileSync(path, 'utf8');
 
 source = source.replace(
@@ -52,4 +52,4 @@ if (source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes(
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Shell cliente: seletor preto/dourado, ícones consistentes, logo sem corte e layout responsivo.');
+console.log(`[OK] Shell cliente: seletor preto/dourado, ícones consistentes, logo sem corte e layout responsivo (${path}).`);
