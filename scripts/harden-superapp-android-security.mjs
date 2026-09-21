@@ -1,9 +1,12 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
 const variablesGradlePath = resolve('superapp/shell/android/variables.gradle');
 const appGradlePath = resolve('superapp/shell/android/app/build.gradle');
+const resXmlDir = resolve('superapp/shell/android/app/src/main/res/xml');
+const backupRulesPath = resolve(resXmlDir, 'apois_backup_rules.xml');
+const dataExtractionRulesPath = resolve(resXmlDir, 'apois_data_extraction_rules.xml');
 
 let xml = readFileSync(manifestPath, 'utf8');
 
@@ -20,8 +23,46 @@ function setApplicationAttribute(name, value) {
 // que o Android restaure esse conteúdo automaticamente em outro aparelho/instalação.
 setApplicationAttribute('allowBackup', 'false');
 
+// Android 12+ pode ignorar allowBackup durante migração device-to-device.
+// Mantemos também regras explícitas para cloud backup e device transfer, além da
+// política legada usada por Android 11 e anteriores.
+setApplicationAttribute('fullBackupContent', '@xml/apois_backup_rules');
+setApplicationAttribute('dataExtractionRules', '@xml/apois_data_extraction_rules');
+
+mkdirSync(resXmlDir, { recursive: true });
+const backupRules = `<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>
+`;
+const dataExtractionRules = `<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </device-transfer>
+</data-extraction-rules>
+`;
+writeFileSync(backupRulesPath, backupRules, 'utf8');
+writeFileSync(dataExtractionRulesPath, dataExtractionRules, 'utf8');
+
 // Todas as APIs usadas pelo Superapp são HTTPS. Bloquear cleartext reduz o risco
-// de downgrade/acesso acidental a endpoints HTTP em produção.
+// de downgrade/acesso acidental a endpoints HTTP em produção. Google Maps, OAuth,
+// deep links, FCM e o bridge do Capacitor não dependem de HTTP cleartext.
 setApplicationAttribute('usesCleartextTraffic', 'false');
 
 // O Superapp só usa localização enquanto a interface está ativa. Não publique
@@ -83,6 +124,8 @@ const finalXml = readFileSync(manifestPath, 'utf8');
 for (const marker of [
   'android:allowBackup="false"',
   'android:usesCleartextTraffic="false"',
+  'android:fullBackupContent="@xml/apois_backup_rules"',
+  'android:dataExtractionRules="@xml/apois_data_extraction_rules"',
   'android:windowSoftInputMode="adjustResize"',
 ]) {
   if (!finalXml.includes(marker)) {
@@ -99,6 +142,17 @@ for (const forbidden of [
   }
 }
 
+for (const [path, markers] of [
+  [backupRulesPath, ['<full-backup-content>', '<exclude domain="root" path="." />', '<exclude domain="sharedpref" path="." />']],
+  [dataExtractionRulesPath, ['<data-extraction-rules>', '<cloud-backup>', '<device-transfer>', '<exclude domain="database" path="." />']],
+]) {
+  if (!existsSync(path)) throw new Error(`Regra Android de backup ausente: ${path}`);
+  const source = readFileSync(path, 'utf8');
+  for (const marker of markers) {
+    if (!source.includes(marker)) throw new Error(`Regra Android de backup incompleta em ${path}: ${marker}`);
+  }
+}
+
 const finalVariables = readFileSync(variablesGradlePath, 'utf8');
 if (!/compileSdkVersion\s*=\s*36/.test(finalVariables) || !/targetSdkVersion\s*=\s*36/.test(finalVariables)) {
   throw new Error('Android não ficou fixado em compileSdk/targetSdk 36.');
@@ -108,4 +162,4 @@ if (!finalGradle.includes(`versionCode ${versionCode}`) || !finalGradle.includes
   throw new Error('Versionamento Android não foi aplicado ao release.');
 }
 
-console.log(`[OK] Android Play-ready: API 36, version ${versionName} (${versionCode}), backup/cleartext/background-location endurecidos.`);
+console.log(`[OK] Android Play-ready: API 36, version ${versionName} (${versionCode}), backup/D2D/cleartext/background-location endurecidos.`);
