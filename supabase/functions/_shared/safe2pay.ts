@@ -180,28 +180,69 @@ export function extractSafe2PayPixPublic(payload: Record<string, unknown>): {
   qrCodeBase64: string | null;
   statusCode: string | null;
 } {
+  const detail = payload.ResponseDetail && typeof payload.ResponseDetail === "object"
+    ? payload.ResponseDetail as Record<string, unknown>
+    : {};
+  const transactionCandidates = [
+    payload.IdTransaction,
+    payload.TransactionId,
+    detail.IdTransaction,
+    detail.TransactionId,
+  ];
+
   let transactionId: number | null = null;
+  for (const value of transactionCandidates) {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      transactionId = parsed;
+      break;
+    }
+  }
+
+  const statusCandidates = [
+    payload.TransactionStatus,
+    detail.TransactionStatus,
+    detail.Status,
+  ].filter((value): value is Record<string, unknown> =>
+    Boolean(value && typeof value === "object" && !Array.isArray(value))
+  );
+  let statusCode: string | null = null;
+  for (const status of statusCandidates) {
+    const value = status.Code ?? status.Id ?? status.StatusCode;
+    const normalized = String(value ?? "").trim();
+    if (/^\d+$/.test(normalized)) {
+      statusCode = normalized;
+      break;
+    }
+  }
+
   let qrCode: string | null = null;
   let qrCodeBase64: string | null = null;
-  let statusCode: string | null = null;
-
   walk(payload, (rawKey, value) => {
     const key = rawKey.toLowerCase();
-    if (transactionId === null && ["idtransaction", "transactionid"].includes(key)) {
-      const parsed = Number(value);
-      if (Number.isInteger(parsed) && parsed > 0) transactionId = parsed;
+    if (
+      qrCode === null &&
+      ["qrcode", "qrcodepayload", "copyandpaste", "pixcopyandpaste", "brcode"].includes(key) &&
+      typeof value === "string"
+    ) {
+      const candidate = value.trim();
+      if (candidate.length >= 20 && !candidate.startsWith("data:image/")) qrCode = candidate;
     }
-    if (qrCode === null && ["qrcode", "qrcodepayload", "payload", "copyandpaste", "pixcopyandpaste"].includes(key) && typeof value === "string") {
-      const text = value.trim();
-      if (text.length >= 20 && !text.startsWith("data:image/")) qrCode = text;
+    if (
+      qrCode === null &&
+      key === "payload" &&
+      typeof value === "string" &&
+      value.trim().startsWith("000201")
+    ) {
+      qrCode = value.trim();
     }
-    if (qrCodeBase64 === null && ["qrcodebase64", "qrcodeimage", "qrcodeimagebase64"].includes(key) && typeof value === "string") {
-      const text = value.trim();
-      if (text) qrCodeBase64 = text;
-    }
-    if (statusCode === null && ["code", "statuscode"].includes(key) && (typeof value === "string" || typeof value === "number")) {
-      const text = String(value).trim();
-      if (/^\d+$/.test(text)) statusCode = text;
+    if (
+      qrCodeBase64 === null &&
+      ["qrcodebase64", "qrcodeimage", "qrcodeimagebase64"].includes(key) &&
+      typeof value === "string"
+    ) {
+      const candidate = value.trim();
+      if (candidate) qrCodeBase64 = candidate;
     }
   });
 
