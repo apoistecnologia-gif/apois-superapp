@@ -1,16 +1,35 @@
-import '../../scripts/harden-superapp-shell-auth.mjs';
-import '../../scripts/harden-superapp-shell-mobile-ui.mjs';
+import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
+const repoRoot = resolve(root, '../..');
 const dist = resolve(root, 'dist');
+const distIndex = resolve(dist, 'index.html');
 const officialBranding = resolve(root, '../branding/apois-launcher.png');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
-cpSync(resolve(root, 'index.html'), resolve(dist, 'index.html'));
+cpSync(resolve(root, 'index.html'), distIndex);
+
+function runShellHardener(relativeScript) {
+  execFileSync(process.execPath, [resolve(repoRoot, relativeScript)], {
+    cwd: repoRoot,
+    env: { ...process.env, APOIS_SHELL_HTML_PATH: distIndex },
+    stdio: 'inherit',
+  });
+}
+
+// O shell versionado é uma entrada imutável do build. Toda normalização/hardening
+// ocorre sobre a cópia em dist, evitando commits sujos e deriva silenciosa de source.
+for (const hardener of [
+  'scripts/harden-superapp-shell-auth.mjs',
+  'scripts/harden-superapp-shell-mobile-ui.mjs',
+  'scripts/harden-superapp-shell-auth-deeplink-source.mjs',
+]) {
+  runShellHardener(hardener);
+}
 
 if (!existsSync(officialBranding)) {
   console.error(`[FAIL] arte oficial APOIS não existe em ${officialBranding}`);
@@ -192,4 +211,4 @@ if (existsSync(entregasIndex)) {
   }
 }
 
-console.log(`[OK] shell cliente gerado em ${dist}: Corridas + Entregas`);
+console.log(`[OK] shell cliente gerado em ${dist}: Corridas + Entregas; fonte versionada não foi alterada`);
