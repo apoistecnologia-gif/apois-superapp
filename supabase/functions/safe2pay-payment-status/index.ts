@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
   if (resourceType === "order") {
     const order = await admin.from("orders").select("id,customer_user_id,payment_status").eq("id", resourceId).eq("customer_user_id", authData.user.id).maybeSingle();
     if (order.error || !order.data) return json(404, { error: "order_not_found" });
-    const tx = await admin.from("safe2pay_order_transactions").select("provider_transaction_id,status,amount,pix_copy_paste,pix_qr_code_base64,authorized_at,refunded_at,created_at").eq("order_id", resourceId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const tx = await admin.from("safe2pay_order_transactions").select("provider_transaction_id,status,amount,pix_copy_paste,pix_qr_code_base64,expires_at,authorized_at,refunded_at,created_at").eq("order_id", resourceId).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (tx.error) return json(500, { error: "payment_lookup_failed" });
     return json(200, { resourceType, resourceId, paymentStatus: order.data.payment_status, transaction: tx.data ?? null });
   }
