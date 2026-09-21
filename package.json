@@ -14,7 +14,7 @@
     "preflight:sources": "node scripts/preflight-sources.mjs",
     "test:source-preflight": "node --test scripts/tests/source-preflight.test.mjs",
     "preaudit:static": "node scripts/preflight-sources.mjs",
-    "audit:static": "node scripts/audit-superapp-static.mjs",
+    "audit:static": "node scripts/audit-superapp-static.mjs && npm run test:runtime-logging",
     "audit:payment-boundary": "node scripts/audit-payment-boundary.mjs",
     "verify:backend-auth": "node scripts/verify-backend-authorization-boundaries.mjs",
     "verify:legacy-provider-runtime": "node scripts/verify-legacy-provider-runtime-quarantine.mjs",
@@ -53,6 +53,8 @@
     "guard:build-sources:capture": "node scripts/guard-superapp-build-sources.mjs capture",
     "guard:build-sources:verify": "node scripts/guard-superapp-build-sources.mjs verify",
     "verify:final-artifact": "node scripts/verify-superapp-final-artifact.mjs",
-    "test:build-idempotency": "node scripts/test-superapp-build-idempotency.mjs"
+    "test:build-idempotency": "node scripts/test-superapp-build-idempotency.mjs",
+    "test:runtime-logging": "node scripts/test-runtime-log-redaction.mjs && node scripts/test-runtime-logging-policy.mjs",
+    "audit:runtime-logging": "node scripts/audit-runtime-logging.mjs"
   }
 }
