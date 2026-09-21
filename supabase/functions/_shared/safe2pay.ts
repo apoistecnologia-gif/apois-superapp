@@ -207,3 +207,31 @@ export function extractSafe2PayPixPublic(payload: Record<string, unknown>): {
 
   return { transactionId, qrCode, qrCodeBase64, statusCode };
 }
+
+
+export function extractSafe2PaySubaccountPublic(payload: Record<string, unknown>): {
+  receiverId: number | null;
+  hasSensitiveTokens: boolean;
+} {
+  const detail = payload.ResponseDetail && typeof payload.ResponseDetail === "object"
+    ? payload.ResponseDetail as Record<string, unknown>
+    : {};
+  const candidates = [
+    detail.Id,
+    detail.IdReceiver,
+    detail.IdMerchant,
+    detail.MerchantId,
+    detail.ReceiverId,
+  ];
+  let receiverId: number | null = null;
+  for (const value of candidates) {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      receiverId = parsed;
+      break;
+    }
+  }
+  const hasSensitiveTokens = ["Token","TokenSandbox","SecretKey","SecretKeySandbox"]
+    .some((key) => typeof detail[key] === "string" && String(detail[key]).trim().length > 0);
+  return { receiverId, hasSensitiveTokens };
+}
