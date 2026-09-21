@@ -38,14 +38,25 @@ A ativação do Pix fica bloqueada até existir receiver Safe2Pay válido para o
 
 ## Entregas
 
-Pagamento eletrônico alvo: **Pix Safe2Pay Marketplace com split 1:N**.
+Pagamento eletrônico alvo: **Pix Safe2Pay Marketplace**.
 
-Modelo:
-- produto/itens → subconta do estabelecimento;
-- taxa de entrega → subconta do entregador;
-- APOIS → R$ 0 de comissão sobre o pedido neste modelo;
-- a soma dos splits deve ser exatamente igual ao valor da cobrança;
-- pedido não pode virar `paid` antes do webhook Safe2Pay validado.
+O fluxo operacional já versionado usa `courier_payout_mode = merchant_manual`: o estabelecimento recebe o pagamento do pedido e posteriormente paga o entregador diretamente, com a APOIS apenas registrando o settlement. Portanto, o Pix Safe2Pay do pedido terá **um único recebedor financeiro: a subconta do estabelecimento**.
+
+Isso evita fabricar um split para um entregador que ainda não foi definido no momento do checkout. O entregador normalmente é escolhido depois que o pedido já existe.
+
+A Safe2Pay continua sendo responsável por processar o Pix e repassar o valor à subconta do estabelecimento. O ledger interno continua registrando a taxa de entrega e o settlement manual do entregador.
+
+## Homologação Pix
+
+A documentação oficial da Safe2Pay informa que **transações Pix não possuem ambiente Sandbox**. Por isso, não existe "Pix sandbox E2E" válido para esta integração.
+
+A ativação exige:
+- subconta/receiver válido;
+- webhook preparado e idempotente;
+- credenciais de produção;
+- teste Pix real, controlado e de baixo valor;
+- reconciliação do status Autorizado;
+- só então habilitar `SAFE2PAY_PROVIDER_ENABLED=1`.
 
 ## Regra de tarifa
 
