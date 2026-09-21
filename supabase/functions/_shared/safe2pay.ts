@@ -235,3 +235,17 @@ export function extractSafe2PaySubaccountPublic(payload: Record<string, unknown>
     .some((key) => typeof detail[key] === "string" && String(detail[key]).trim().length > 0);
   return { receiverId, hasSensitiveTokens };
 }
+
+
+export async function getSafe2PaySubaccount(receiverId: number): Promise<Record<string, unknown>> {
+  if (!Number.isInteger(receiverId) || receiverId <= 0) throw new Error("safe2pay_invalid_receiver");
+  const response = await fetch(
+    `https://api.safe2pay.com.br/v2/marketplace/get?id=${encodeURIComponent(String(receiverId))}`,
+    { headers: { "X-API-KEY": productionApiKey() } },
+  );
+  const result = await response.json().catch(() => ({})) as Record<string, unknown>;
+  if (!response.ok || result.HasError === true) {
+    throw new Error(`safe2pay_subaccount_lookup_failed:${String(result.ErrorCode ?? response.status)}`);
+  }
+  return result;
+}
