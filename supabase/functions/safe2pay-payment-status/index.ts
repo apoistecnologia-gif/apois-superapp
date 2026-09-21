@@ -30,6 +30,12 @@ Deno.serve(async (req) => {
   const resourceId = String(body.resource_id ?? "");
   if (!["ride","order"].includes(resourceType) || !UUID_RE.test(resourceId)) return json(400, { error: "invalid_resource" });
 
+  const statusProduct = (Deno.env.get("SAFE2PAY_STATUS_PRODUCT") ?? "").trim().toLowerCase();
+  if (!["rides","orders"].includes(statusProduct)) return json(500, { error: "status_product_not_configured" });
+  if ((statusProduct === "rides" && resourceType !== "ride") || (statusProduct === "orders" && resourceType !== "order")) {
+    return json(403, { error: "resource_product_mismatch" });
+  }
+
   if (resourceType === "order") {
     const order = await admin.from("orders").select("id,customer_user_id,payment_status").eq("id", resourceId).eq("customer_user_id", authData.user.id).maybeSingle();
     if (order.error || !order.data) return json(404, { error: "order_not_found" });
