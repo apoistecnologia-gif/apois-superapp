@@ -13,6 +13,8 @@ const corridas=readFileSync(files.corridas,'utf8');
 for(const marker of [
   'create table if not exists public.driver_safe2pay_accounts',
   'safe2pay_receiver_id bigint unique',
+  'pix_copy_paste text',
+  'pix_qr_code_base64 text',
   'create table if not exists public.safe2pay_ride_transactions',
   'create table if not exists public.safe2pay_webhook_events',
   'unique(event_key)',
@@ -27,6 +29,8 @@ for(const marker of [
   'create table if not exists public.safe2pay_order_transactions',
   'create table if not exists public.safe2pay_webhook_events',
   'merchant_amount numeric(12,2)',
+  'pix_copy_paste text',
+  'pix_qr_code_base64 text',
   'round(merchant_amount::numeric, 2) = round(amount::numeric, 2)'
   'unique(event_key)',
   'enable row level security',
