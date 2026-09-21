@@ -8,7 +8,7 @@ const ok = (m) => console.log(`[OK] ${m}`);
 
 if (policy.provider !== 'safe2pay') fail(`provider oficial inesperado: ${policy.provider}`);
 if (policy.mode !== 'marketplace_split') fail(`modo Safe2Pay inesperado: ${policy.mode}`);
-if (policy.activation !== 'fail_closed_until_sandbox_e2e') fail('Safe2Pay deve permanecer fail-closed até sandbox E2E');
+if (policy.activation !== 'fail_closed_until_controlled_production_e2e') fail('Safe2Pay deve permanecer fail-closed até teste Pix real controlado');
 
 const legacy = new Set(policy.legacyProviders ?? []);
 for (const name of ['mercadopago','asaas','pagbank','openpix']) {
@@ -29,10 +29,12 @@ else {
   if (!entregas.electronicMethods?.includes('pix')) fail('Entregas deve declarar Pix Safe2Pay');
   if (Number(entregas.platformCommissionPercent) !== 0) fail('Entregas: comissão por pedido deve permanecer 0%');
   const receivers = new Set(entregas.receivers ?? []);
-  for (const name of ['merchant','courier']) if (!receivers.has(name)) fail(`Entregas: receiver ausente: ${name}`);
+  if (!receivers.has('merchant')) fail('Entregas: receiver merchant ausente');
+  if (receivers.has('courier')) fail('Entregas: courier não pode receber split no checkout; payout permanece merchant_manual');
 }
 
 const cfg = policy.safe2pay ?? {};
+if (cfg.pixSandboxAvailable !== false) fail('Safe2Pay Pix: política deve declarar ausência de sandbox');
 if (cfg.authHeader !== 'X-API-KEY') fail('Safe2Pay: header de autenticação divergente da documentação');
 if (cfg.paymentEndpoint !== 'https://payment.safe2pay.com.br/v2/payment') fail('Safe2Pay: endpoint de cobrança inesperado');
 if (cfg.marketplaceSubaccountEndpoint !== 'https://api.safe2pay.com.br/v2/marketplace/add') fail('Safe2Pay: endpoint de subconta inesperado');
