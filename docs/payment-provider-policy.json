@@ -3,7 +3,7 @@
   "decidedAt": "2026-09-21",
   "provider": "safe2pay",
   "mode": "marketplace_split",
-  "activation": "fail_closed_until_sandbox_e2e",
+  "activation": "fail_closed_until_controlled_production_e2e",
   "legacyProviders": [
     "mercadopago",
     "asaas",
@@ -29,12 +29,11 @@
         "pix"
       ],
       "directMethods": [],
-      "settlement": "multi_recipient_subaccounts",
+      "settlement": "merchant_receives_order_total_and_pays_courier_manually",
       "platformCommissionPercent": 0,
-      "splitMode": "dynamic",
+      "splitMode": "single_receiver_dynamic",
       "receivers": [
-        "merchant",
-        "courier"
+        "merchant"
       ]
     }
   },
@@ -55,13 +54,13 @@
       "SAFE2PAY_CALLBACK_URL"
     ],
     "requiredPreProductionEvidence": [
-      "sandbox_charge",
-      "sandbox_split",
+      "receiver_mapping",
       "webhook_authorized",
       "webhook_idempotency",
-      "receiver_mapping",
+      "controlled_low_value_production_pix",
       "fee_payer_decision"
-    ]
+    ],
+    "pixSandboxAvailable": false
   },
   "unresolvedCommercialDecision": {
     "key": "SAFE2PAY_PIX_FEE_PAYER",
