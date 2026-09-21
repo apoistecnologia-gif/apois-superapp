@@ -85,3 +85,22 @@ Tokens de subconta retornados na criação são segredo: nunca retornar ao app. 
 9. executar E2E físico antes de produção.
 
 Nenhum endpoint legado deve ser reativado para servir como “ponte” para Safe2Pay.
+
+
+## Onboarding de subcontas
+
+O cadastro do receiver Safe2Pay é backend-only e administrativo.
+
+O endpoint `safe2pay-subaccount-onboarding`:
+- exige usuário admin/super_admin;
+- valida que o motorista ou estabelecimento existe no projeto correto;
+- cria a subconta via `POST /v2/marketplace/add`;
+- grava apenas `safe2pay_receiver_id` e estado operacional;
+- não devolve nem persiste credenciais de integração retornadas na criação;
+- entra em `reconciliation_required` se a criação ficar em estado incerto, em vez de repetir automaticamente e arriscar subconta duplicada.
+
+O endpoint `safe2pay-subaccount-reconcile` existe para esse estado incerto. Um administrador informa o receiver já criado; o backend consulta `GET /v2/marketplace/get?id=...` e somente então liga o receiver ao motorista/estabelecimento.
+
+O payload de criação segue o contrato oficial Safe2Pay: identificação do titular/responsável, data de nascimento, telefone, e-mail e endereço. `BankData` pode ser tratado em etapa administrativa própria; quando enviado à Safe2Pay, o bloco precisa estar completo. O APOIS não usa `MerchantSplit` estático no onboarding: a distribuição da cobrança é dinâmica por transação, evitando acumular regra estática e dinâmica.
+
+Para Corridas, o receiver é o motorista. Para Entregas, o receiver do checkout é o estabelecimento; o pagamento do entregador continua no fluxo `merchant_manual`.
