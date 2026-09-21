@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "observedAt": "2026-09-21",
+  "projectRef": "vqtucstyduxrqjgyigfk",
+  "evidence": "Read-only Supabase Management inspection performed during production consolidation.",
+  "functions": [
+    {
+      "slug": "request-ride",
+      "status": "ACTIVE",
+      "version": 17,
+      "verify_jwt": true,
+      "ezbr_sha256": "dc721e063ef2ff6d2647476239a47615123927399f2db8822a0a4de6837105ad",
+      "releaseState": "RUNTIME_OLD",
+      "blockers": [
+        "subscription/provider eligibility gate still present",
+        "dispatch failure rollback hardening not deployed",
+        "Google API key metadata is logged"
+      ]
+    },
+    {
+      "slug": "driver-ride-action",
+      "status": "MISSING",
+      "version": null,
+      "verify_jwt": null,
+      "ezbr_sha256": null,
+      "releaseState": "RUNTIME_MISSING",
+      "blockers": [
+        "function is present in pinned Corridas source but is not deployed in canonical Corridas Supabase"
+      ]
+    },
+    {
+      "slug": "cancel-ride",
+      "status": "ACTIVE",
+      "version": 26,
+      "verify_jwt": true,
+      "ezbr_sha256": "9a4116d1a5af6c9335597c9043ea62f5f9553ba0db05a0ed964a3b02c092fb6a",
+      "releaseState": "REQUIRES_CONTROLLED_COMPARISON",
+      "blockers": [
+        "runtime has AUTH→DOMAIN markers but must be compared with generated hardened bundle before release"
+      ]
+    },
+    {
+      "slug": "send-ride-push",
+      "status": "ACTIVE",
+      "version": 23,
+      "verify_jwt": true,
+      "ezbr_sha256": "5c1d7d4092421c9a46e90cf4cf47361821e410572a1e724c8a4e599ea7e2ed96",
+      "releaseState": "REQUIRES_CONTROLLED_COMPARISON",
+      "blockers": [
+        "runtime has recipient normalization markers but must be compared with generated hardened bundle before release"
+      ]
+    }
+  ]
+}
