@@ -20,6 +20,9 @@ for (const marker of [
   'SAFE2PAY_PROVIDER_ENABLED',
   'SAFE2PAY_PIX_FEE_PAYER',
   'safe2pay_split_total_mismatch',
+  'ResponseDetail',
+  'detail.TransactionStatus',
+  'value.trim().startsWith("000201")',
 ]) if (!source.shared.includes(marker)) fail('shared sem marker: ' + marker);
 
 for (const marker of [
@@ -27,6 +30,8 @@ for (const marker of [
   '.eq("passenger_id", domainUser.id)',
   'driver_safe2pay_accounts',
   'safe2pay_ride_transactions',
+  'pix_copy_paste',
+  'pix_qr_code_base64',
   'IsPayTax: feePayer === "receiver"',
 ]) if (!source.ride.includes(marker)) fail('ride charge sem ownership/receiver: ' + marker);
 
@@ -34,10 +39,13 @@ for (const marker of [
   '.eq("customer_user_id", authData.user.id)',
   'merchant_safe2pay_accounts',
   'safe2pay_order_transactions',
+  'pix_copy_paste',
+  'pix_qr_code_base64',
   'merchant_amount: amount',
   'IsPayTax: feePayer === "receiver"',
 ]) if (!source.order.includes(marker)) fail('order charge sem ownership/receiver: ' + marker);
 if (source.order.includes('courier_safe2pay_accounts')) fail('order charge não pode depender de courier receiver no checkout');
+if (source.shared.includes('["code", "statuscode"].includes(key)')) fail('shared não pode tratar Code arbitrário como status transacional');
 
 for (const marker of [
   'SAFE2PAY_SECRET_KEY',
