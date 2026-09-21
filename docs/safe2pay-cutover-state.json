@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "observedAt": "2026-09-21T17:15:00-03:00",
+  "provider": "safe2pay",
+  "feePayer": null,
+  "supabase": {
+    "corridas": {
+      "projectRef": "vqtucstyduxrqjgyigfk",
+      "status": "INACTIVE"
+    },
+    "entregas": {
+      "projectRef": "sbvhdgyuuperszlsllji",
+      "status": "INACTIVE"
+    }
+  },
+  "legacyProviderCutover": {
+    "corridas": {
+      "required": 21,
+      "completed": 0
+    },
+    "entregas": {
+      "required": 29,
+      "completed": 0
+    }
+  },
+  "migrations": {
+    "corridasApplied": false,
+    "entregasApplied": false
+  },
+  "edgeFunctions": {
+    "corridasDeployed": false,
+    "entregasDeployed": false
+  },
+  "safe2pay": {
+    "credentialsConfigured": false,
+    "webhookConfigured": false,
+    "receiversValidated": false,
+    "controlledPixTestPassed": false
+  },
+  "activation": {
+    "providerEnabled": false,
+    "corridasElectronicPaymentsEnabled": false,
+    "entregasElectronicPaymentsEnabled": false
+  }
+}
