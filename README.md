@@ -85,9 +85,11 @@ Corridas **não é PIX-only**.
 
 O passageiro pode usar os meios ativos previstos pela política final:
 
-- **PIX**: fluxo eletrônico integrado;
+- **PIX**: processado pela **Safe2Pay Marketplace**, com recebedor vinculado ao motorista e ativação controlada por feature flag;
 - **Dinheiro**: pagamento direto ao motorista;
 - **Cartão de crédito**: pagamento direto ao motorista, sem custódia da APOIS.
+
+O PIX permanece oculto/fail-closed até o runtime Safe2Pay, receivers, webhook e teste real controlado estarem homologados.
 
 A APOIS não retém comissão por corrida. A monetização do Motorista é feita pela mensalidade da plataforma.
 
@@ -95,13 +97,14 @@ A APOIS não retém comissão por corrida. A monetização do Motorista é feita
 
 Pedidos do Cliente permanecem **PIX-only**. Para pedidos novos:
 
-- o estabelecimento precisa estar conectado ao Mercado Pago via OAuth;
-- o checkout valida `merchant-payment-readiness` antes de criar a cobrança;
-- a cobrança usa `create-merchant-mercadopago-pix` diretamente para a conta Mercado Pago do estabelecimento;
-- OpenPix/Asaas não podem reaparecer como caminho de novos pedidos;
-- a APOIS não recebe o valor integral da venda para repassar depois.
+- o pagamento eletrônico oficial é a **Safe2Pay Marketplace**;
+- o checkout cria a cobrança por `safe2pay-create-order-pix`;
+- a confirmação vem do webhook/status Safe2Pay e o cliente não pode fabricar `paid`;
+- o recebedor financeiro do pedido é a subconta Safe2Pay do estabelecimento;
+- Mercado Pago, OpenPix, Asaas e PagBank não podem reaparecer como caminho de novos pedidos;
+- a APOIS não cobra percentual por pedido.
 
-Enquanto o repasse direto do Entregador não estiver homologado como `marketplace_direct_live`, a opção **Entrega** permanece bloqueada pelo readiness financeiro. Esse bloqueio é proposital e não deve ser contornado.
+O pagamento do entregador continua no modo `merchant_manual`: o estabelecimento paga o entregador diretamente após a operação, e a APOIS registra o settlement sem custodiar esse valor.
 
 ## Push unificado
 
