@@ -246,6 +246,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-oauth-callback-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-safe2pay-payment-flow.mjs')]);
 }
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
@@ -267,10 +268,13 @@ if (name === 'corridas') {
   env.VITE_SUPABASE_URL = corridasUrl;
   env.VITE_SUPABASE_PUBLISHABLE_KEY = corridasKey;
   env.VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED = process.env.APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1' ? '1' : '0';
+  env.VITE_APOIS_SAFE2PAY_PIX_ENABLED = process.env.APOIS_SAFE2PAY_PIX_ENABLED === '1' ? '1' : '0';
 
   const publicAppUrl = process.env.CORRIDAS_PUBLIC_APP_URL?.trim();
   if (publicAppUrl) env.VITE_PUBLIC_APP_URL = publicAppUrl;
   else delete env.VITE_PUBLIC_APP_URL;
+
+  console.log(env.VITE_APOIS_SAFE2PAY_PIX_ENABLED === '1' ? '[OK] corridas: PIX Safe2Pay habilitado no bundle' : '[INFO] corridas: PIX Safe2Pay oculto até runtime estar ativo');
 
   console.log(
     env.VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1'
