@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     const { data: ride, error: rideError } = await admin
       .from("rides")
-      .select("id,passenger_id,driver_id,accepted_driver_id,status,estimated_price,final_price,payment_method,origin_name,destination_name")
+      .select("id,passenger_id,driver_id,accepted_driver_id,status,estimated_price,final_price,payment_method,payment_status,origin_name,destination_name")
       .eq("id", rideId)
       .eq("passenger_id", domainUser.id)
       .maybeSingle();
@@ -71,6 +71,9 @@ Deno.serve(async (req) => {
     if (["cancelada_passageiro","cancelada_motorista","finalizada"].includes(String(ride.status))) {
       return json(409, { error: "ride_not_payable" });
     }
+    if (ride.payment_method !== "pix") return json(409, { error: "ride_payment_method_not_pix" });
+    if (ride.payment_status === "paid") return json(409, { error: "ride_already_paid" });
+    if (ride.status !== "aguardando_pagamento") return json(409, { error: "ride_not_awaiting_payment", status: ride.status });
 
     const driverId = String(ride.accepted_driver_id ?? ride.driver_id ?? "");
     if (!UUID_RE.test(driverId)) return json(409, { error: "driver_not_assigned" });
@@ -151,6 +154,16 @@ Deno.serve(async (req) => {
     if (insertError && insertError.code !== "23505") {
       throw new Error(`safe2pay_transaction_save_failed:${insertError.message}`);
     }
+
+    const ridePatch: Record<string, unknown> = {
+      payment_provider: "safe2pay",
+      provider_payment_id: String(publicPix.transactionId),
+      payment_status: publicPix.statusCode === "3" ? "paid" : "pending",
+      updated_at: new Date().toISOString(),
+    };
+    if (publicPix.statusCode === "3") ridePatch.payment_confirmed_at = new Date().toISOString();
+    const { error: ridePatchError } = await admin.from("rides").update(ridePatch).eq("id", ride.id).eq("passenger_id", domainUser.id);
+    if (ridePatchError) throw new Error(`ride_payment_state_failed:${ridePatchError.message}`);
 
     return json(200, {
       reused: false,
