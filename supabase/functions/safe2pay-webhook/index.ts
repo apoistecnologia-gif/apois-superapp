@@ -153,6 +153,31 @@ Deno.serve(async (req) => {
       return json(500, { error: "transaction_update_failed" });
     }
 
+    if (product === "rides") {
+      const rideId = String((tx.data as Record<string, unknown>).ride_id ?? "");
+      if (mapped === "authorized") {
+        const rideUpdate = await admin.from("rides")
+          .update({
+            payment_status: "paid",
+            payment_provider: "safe2pay",
+            provider_payment_id: String(transactionId),
+            payment_confirmed_at: now,
+            updated_at: now,
+          })
+          .eq("id", rideId)
+          .eq("payment_method", "pix")
+          .neq("status", "finalizada")
+          .neq("status", "cancelada_passageiro")
+          .neq("status", "cancelada_motorista");
+        if (rideUpdate.error) return json(500, { error: "ride_payment_update_failed" });
+      } else if (mapped === "refunded") {
+        const rideUpdate = await admin.from("rides")
+          .update({ payment_status: "refunded", payment_provider: "safe2pay", updated_at: now })
+          .eq("id", rideId);
+        if (rideUpdate.error) return json(500, { error: "ride_refund_update_failed" });
+      }
+    }
+
     if (product === "orders") {
       const orderId = String((tx.data as Record<string, unknown>).order_id ?? "");
       if (mapped === "authorized") {
