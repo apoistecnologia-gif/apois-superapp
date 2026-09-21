@@ -11,6 +11,7 @@ create table if not exists public.driver_safe2pay_accounts (
   provider_created_at timestamptz,
   pix_copy_paste text,
   pix_qr_code_base64 text,
+  expires_at timestamptz,
   environment text not null default 'sandbox'
     check (environment in ('sandbox','production')),
   last_error_code text,
