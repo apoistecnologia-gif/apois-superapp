@@ -1,0 +1,29 @@
+{
+  "observedAt": "2026-09-21T17:15:00-03:00",
+  "organizationId": "fbnsdjmdqznbklhejaax",
+  "projects": {
+    "corridas": {
+      "projectRef": "vqtucstyduxrqjgyigfk",
+      "name": "APOIS Produção",
+      "status": "INACTIVE"
+    },
+    "entregas": {
+      "projectRef": "sbvhdgyuuperszlsllji",
+      "name": "APOIS ENTREGA - PRODUÇÃO",
+      "status": "INACTIVE"
+    }
+  },
+  "restoreAttempt": {
+    "attempted": true,
+    "result": "BLOCKED",
+    "error": "organization_unpaid_invoices",
+    "message": "Supabase restore was rejected because the organization has unpaid invoices."
+  },
+  "releaseImpact": [
+    "Edge Function deploy is impossible while project status is INACTIVE.",
+    "Forward migrations cannot be applied while project service is unavailable.",
+    "Legacy provider cutover cannot be completed.",
+    "Safe2Pay cannot be activated or E2E tested."
+  ],
+  "requiredExternalAction": "Settle the outstanding Supabase organization invoices, then restore both production projects before controlled cutover."
+}
