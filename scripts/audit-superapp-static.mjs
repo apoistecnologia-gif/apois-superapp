@@ -62,8 +62,8 @@ requireText('.apois/modules.json', [
   'bun run build:customer',
 ], 'módulos são reconstruídos dos pins e recebem hardeners finais antes do build');
 forbidText('.apois/modules.json', [
-  'ActiveRideMap.tsx', 'RidePixPaymentCard.tsx', 'ActiveJourneyScreen.tsx', 'aguardando_pagamento: 2',
-], 'pipeline Corridas não exige componentes ou estados ausentes no pin atual');
+  'ActiveRideMap.tsx', 'RidePixPaymentCard.tsx', 'ActiveJourneyScreen.tsx',
+], 'pipeline Corridas não exige componentes ausentes no pin atual');
 
 requireText('scripts/prepare-workspace.mjs', [
   'rmSync(workspace, { recursive: true, force: true })',
@@ -109,8 +109,8 @@ requireText('scripts/harden-corridas-superapp-runtime.mjs', [
   'await loadRide(currentRideId)', 'PassengerMap',
 ], 'runtime Corridas mantém lifecycle, recuperação e mapa do pin real');
 forbidText('scripts/harden-corridas-superapp-runtime.mjs', [
-  'ActiveRideMap.tsx', 'RidePixPaymentCard.tsx', 'aguardando_pagamento',
-], 'runtime Corridas não ressuscita componentes/estados obsoletos');
+  'ActiveRideMap.tsx', 'RidePixPaymentCard.tsx',
+], 'runtime Corridas não ressuscita componentes obsoletos');
 
 requireText('scripts/fix-corridas-superapp-ui.mjs', [
   "import './harden-corridas-superapp-push-isolation.mjs';",
@@ -128,10 +128,17 @@ requireText('scripts/harden-corridas-payment-methods.mjs', [
 ], 'nome legado do hardener delega para um único boundary financeiro');
 requireText('scripts/harden-corridas-payment-provider-boundary.mjs', [
   'code === "cash" || code === "credit"',
-  'if (!isActive || !isDirectToDriver) return [];',
   'Pague diretamente ao motorista em dinheiro ao final da corrida.',
   'Pague diretamente ao motorista no cartão de crédito',
-], 'Corridas expõe apenas Dinheiro/Crédito direto ao motorista');
+], 'Corridas preserva Dinheiro/Crédito direto ao motorista');
+requireText('scripts/harden-corridas-safe2pay-payment-flow.mjs', [
+  'VITE_APOIS_SAFE2PAY_PIX_ENABLED',
+  'const isSafe2PayPix = code === "pix" && safe2PayPixEnabled;',
+  'safe2pay-create-ride-pix',
+  'safe2pay-payment-status',
+  'finance.ride_electronic_payments_enabled',
+  'aguardando_pagamento',
+], 'Corridas adiciona PIX Safe2Pay atrás de feature flags frontend/backend');
 
 requireText('scripts/harden-corridas-cancellation-policy.mjs', [
   'canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)',
@@ -157,10 +164,11 @@ requireText('scripts/harden-entregas-superapp-auth-runtime.mjs', [
   'br.com.apois.app://auth/email-change', '_app_package: "br.com.apois.app"', 'const isDeliveryPush =',
 ], 'Entregas mantém auth/push isolados; boundary financeiro é aplicado depois');
 requireText('scripts/harden-entregas-payment-provider-boundary.mjs', [
-  'const paymentMethod = "cash";', 'paymentMethod: "cash"',
-  'const PAYMENT_METHODS = new Set(["cash"]);', 'SEM GATEWAY DA APOIS',
-  'process-superapp-refund', 'devolução automática por gateway não se aplica',
-], 'Entregas finaliza pedido direto sem gateway nem estorno eletrônico automático');
+  'const paymentMethod = "pix";', 'paymentMethod: "pix"',
+  'const PAYMENT_METHODS = new Set(["pix"]);',
+  '"safe2pay-create-order-pix"', '"safe2pay-payment-status"',
+  'configuredProvider = "safe2pay_marketplace"',
+], 'Entregas usa PIX Safe2Pay e mantém confirmação server-authoritative');
 
 requireText('scripts/neutralize-entregas-superapp-legacy.mjs', [
   "await import('./harden-entregas-delivery-readiness.mjs');",
