@@ -29,6 +29,7 @@ for (const script of [
   'harden-motorista-document-boundary.mjs',
   'harden-motorista-provider-boundary.mjs',
   'harden-motorista-finance-boundary.mjs',
+  'harden-motorista-payment-wait.mjs',
   'harden-partner-motorista-direct-earnings.mjs',
 ]) {
   run(process.execPath, [resolve(root, `scripts/${script}`)], root, hardenerEnv);
