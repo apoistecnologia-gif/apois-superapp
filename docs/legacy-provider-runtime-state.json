@@ -378,5 +378,24 @@
     "mode": "marketplace_split",
     "activation": "fail_closed_until_sandbox_e2e",
     "sourceOfTruth": "docs/payment-provider-policy.json"
+  },
+  "safe2payRuntimeState": {
+    "observedAt": "2026-09-21",
+    "migrationsApplied": false,
+    "edgeFunctionsDeployed": false,
+    "providerEnabled": false,
+    "blockers": [
+      "SAFE2PAY_PIX_FEE_PAYER not yet chosen",
+      "Safe2Pay receiver/subaccount onboarding not yet completed",
+      "Safe2Pay Pix has no sandbox; controlled low-value production validation is required",
+      "Safe2Pay webhook secret and per-project SAFE2PAY_WEBHOOK_PRODUCT must be configured",
+      "legacy provider runtimes remain callable until controlled fail-closed deployment"
+    ],
+    "sourceFunctions": [
+      "safe2pay-create-ride-pix",
+      "safe2pay-create-order-pix",
+      "safe2pay-webhook",
+      "safe2pay-payment-status"
+    ]
   }
 }
