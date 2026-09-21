@@ -40,7 +40,7 @@
     "verify:release-requirements": "node scripts/verify-superapp-release-requirements.mjs",
     "verify:finance-policy": "node scripts/verify-final-finance-policy.mjs",
     "prepare:modules": "node scripts/prepare-workspace.mjs",
-    "build:corridas": "node scripts/build-isolated-module.mjs corridas && node scripts/harden-corridas-google-callback-bridge.mjs && npm run verify:corridas-auth && npm run verify:corridas-supabase-source && npm run verify:corridas-lifecycle && npm run verify:corridas-driver-eligibility && npm run verify:corridas-db-ownership",
+    "build:corridas": "node scripts/build-isolated-module.mjs corridas && npm run stage:corridas-edge-release && npm run verify:corridas-edge-release && node scripts/harden-corridas-google-callback-bridge.mjs && npm run verify:corridas-auth && npm run verify:corridas-supabase-source && npm run verify:corridas-lifecycle && npm run verify:corridas-driver-eligibility && npm run verify:corridas-db-ownership",
     "build:entregas": "node scripts/build-isolated-module.mjs entregas && npm run audit:payment-boundary && npm run verify:entregas-direct-order",
     "build:merchant": "node scripts/build-merchant-panel.mjs",
     "build:motorista": "node scripts/build-motorista-module.mjs",
@@ -55,6 +55,8 @@
     "verify:final-artifact": "node scripts/verify-superapp-final-artifact.mjs",
     "test:build-idempotency": "node scripts/test-superapp-build-idempotency.mjs",
     "test:runtime-logging": "node scripts/test-runtime-log-redaction.mjs && node scripts/test-runtime-logging-policy.mjs",
-    "audit:runtime-logging": "node scripts/audit-runtime-logging.mjs"
+    "audit:runtime-logging": "node scripts/audit-runtime-logging.mjs",
+    "stage:corridas-edge-release": "node scripts/stage-corridas-edge-release.mjs",
+    "verify:corridas-edge-release": "node scripts/verify-corridas-edge-release.mjs"
   }
 }
