@@ -80,9 +80,13 @@ workflows:
           test -s superapp/shell/dist/modules/entregas/index.html
           test ! -e superapp/shell/dist/modules/motorista
           grep -R -Fq 'public-ride-tracker' superapp/shell/dist/modules/corridas
-          grep -R -Fq 'create-merchant-mercadopago-pix' superapp/shell/dist/modules/entregas
-          grep -R -Fq 'process-superapp-refund' superapp/shell/dist/modules/entregas
-          echo '[OK] Superapp Cliente contém somente Corridas + Entregas e integrações financeiras endurecidas'
+          grep -R -Fq 'safe2pay-create-order-pix' superapp/shell/dist/modules/entregas
+          grep -R -Fq 'safe2pay-payment-status' superapp/shell/dist/modules/entregas
+          if grep -R -Eiq 'create-merchant-mercadopago-pix|create-asaas-pix-charge|openpix-payout|process-superapp-refund' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] provider financeiro aposentado permaneceu no bundle Entregas'
+            exit 1
+          fi
+          echo '[OK] Superapp Cliente contém Corridas + Entregas com boundary Safe2Pay'
       - name: Create and harden Capacitor Android project
         script: |
           set -euo pipefail
