@@ -191,4 +191,18 @@ function replaceRequired(source, search, replacement, label) {
   write(p, s);
 }
 
+
+{
+  const p = 'supabase/functions/request-ride/index.ts';
+  let source = read(p);
+  const marker = '    const body = (await req.json()) as RequestBody;';
+  const hardened = '    const body = (await req.json()) as RequestBody;\n    const paymentMethod = String(body.payment_method ?? "").trim().toLowerCase();\n    if (!["cash", "credit", "pix"].includes(paymentMethod)) {\n      return json({ error: "invalid_payment_method" }, 422, req);\n    }\n    if (paymentMethod === "pix") {\n      const { data: electronicSetting, error: electronicSettingError } = await admin\n        .from("app_settings")\n        .select("value")\n        .eq("key", "finance.ride_electronic_payments_enabled")\n        .maybeSingle();\n      if (electronicSettingError) return json({ error: "payment_setting_failed" }, 500, req);\n      const electronicEnabled = electronicSetting?.value === true || String(electronicSetting?.value).toLowerCase() === "true";\n      if (!electronicEnabled) return json({ error: "electronic_payments_disabled" }, 503, req);\n    }';
+  source = replaceRequired(source, marker, hardened, 'Corridas request-ride: payment method allowlist');
+  source = source.replace(
+    '        payment_method: body.payment_method?.trim() || null,',
+    '        payment_method: paymentMethod,',
+  );
+  write(p, source);
+}
+
 console.log('[OK] Corridas: Safe2Pay Pix staged behind VITE_APOIS_SAFE2PAY_PIX_ENABLED.');
