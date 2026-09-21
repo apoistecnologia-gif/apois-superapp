@@ -17,7 +17,7 @@ patch('src/components/MerchantOrderControlCenter.tsx', (source) => {
   if (!next.includes('function isOperationalPayment(order: MerchantOrder)')) {
     next = next.replace(
       'function money(value: MerchantOrder["total"]) {',
-      `function isOperationalPayment(order: MerchantOrder) {\n  const method = String(order.payment_method ?? "").toLowerCase();\n  const status = String(order.payment_status ?? "").toLowerCase();\n  return status === "paid" || (method === "cash" && status === "pending");\n}\n\nfunction money(value: MerchantOrder["total"]) {`,
+      `function isOperationalPayment(order: MerchantOrder) {\n  const method = String(order.payment_method ?? "").toLowerCase();\n  const status = String(order.payment_status ?? "").toLowerCase();\n  return status === "paid";\n}\n\nfunction money(value: MerchantOrder["total"]) {`,
     );
   }
   next = next.replace('      .eq("payment_status", "paid")\n      .in("status", ACTIVE_STATUSES)', '      .in("status", ACTIVE_STATUSES)');
@@ -40,7 +40,7 @@ patch('src/components/MerchantOrderControlCenter.tsx', (source) => {
   source.includes('const paymentReady = isOperationalPayment(order);') &&
   !source.includes('.eq("payment_status", "paid")\n      .in("status", ACTIVE_STATUSES)') &&
   !source.includes('motivo do cancelamento para o cliente e o estorno'),
-'Entregas merchant: pedidos cash/pending permanecem operacionais sem fingir pagamento pago');
+'Entregas merchant: somente pedidos pagos ficam operacionais');
 
 patch('src/components/MerchantOrderSoundWatcher.tsx', (source) => {
   let next = source;
@@ -78,6 +78,6 @@ patch('src/components/MerchantOrderSoundWatcher.tsx', (source) => {
   !source.includes('queuePaidOrder') &&
   !source.includes('Novo pedido pago') &&
   !source.includes('.eq("payment_status", "paid")\n        .eq("status", "confirmed")'),
-'Entregas merchant: alerta sonoro também reconhece pedido direto cash/pending');
+'Entregas merchant: alerta sonoro somente após pagamento confirmado');
 
-console.log('[OK] Entregas: operação merchant compatível com pagamento direto sem gateway.');
+console.log('[OK] Entregas: operação merchant exige pagamento Safe2Pay confirmado.');
