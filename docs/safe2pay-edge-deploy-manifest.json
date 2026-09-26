@@ -4,7 +4,7 @@
   "policy": "Explicit per-slug deployment only. Never deploy-all.",
   "projects": {
     "corridas": {
-      "projectRef": "vqtucstyduxrqjgyigfk",
+      "projectRef": "tbbzkrfupmqdywnzgnms",
       "env": {
         "SAFE2PAY_ONBOARDING_PRODUCT": "rides",
         "SAFE2PAY_WEBHOOK_PRODUCT": "rides",
@@ -34,7 +34,7 @@
       ]
     },
     "entregas": {
-      "projectRef": "sbvhdgyuuperszlsllji",
+      "projectRef": "ptgkwyyolrdgnqketkjj",
       "env": {
         "SAFE2PAY_ONBOARDING_PRODUCT": "orders",
         "SAFE2PAY_WEBHOOK_PRODUCT": "orders",
