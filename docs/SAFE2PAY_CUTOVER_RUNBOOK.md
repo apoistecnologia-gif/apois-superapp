@@ -5,8 +5,8 @@ Este runbook é o procedimento de produção. Ele não autoriza deploy-all.
 ## Pré-condições
 
 1. Os dois projetos Supabase precisam estar ACTIVE:
-   - Corridas: `vqtucstyduxrqjgyigfk`
-   - Entregas: `sbvhdgyuuperszlsllji`
+   - Corridas: `tbbzkrfupmqdywnzgnms`
+   - Entregas: `ptgkwyyolrdgnqketkjj`
 2. A pendência financeira da organização Supabase precisa estar regularizada.
 3. `SAFE2PAY_PIX_FEE_PAYER` precisa ter decisão explícita: `receiver` ou `platform`.
 4. Credenciais Safe2Pay e callback HTTPS precisam estar configurados somente como secrets backend.
