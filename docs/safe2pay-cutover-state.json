@@ -1,16 +1,16 @@
 {
   "version": 1,
-  "observedAt": "2026-09-21T17:15:00-03:00",
+  "observedAt": "2026-09-26",
   "provider": "safe2pay",
   "feePayer": null,
   "supabase": {
     "corridas": {
-      "projectRef": "vqtucstyduxrqjgyigfk",
-      "status": "INACTIVE"
+      "projectRef": "tbbzkrfupmqdywnzgnms",
+      "status": "ACTIVE_HEALTHY"
     },
     "entregas": {
-      "projectRef": "sbvhdgyuuperszlsllji",
-      "status": "INACTIVE"
+      "projectRef": "ptgkwyyolrdgnqketkjj",
+      "status": "ACTIVE_HEALTHY"
     }
   },
   "legacyProviderCutover": {
@@ -20,12 +20,12 @@
     },
     "entregas": {
       "required": 29,
-      "completed": 0
+      "completed": 29
     }
   },
   "migrations": {
     "corridasApplied": false,
-    "entregasApplied": false
+    "entregasApplied": true
   },
   "edgeFunctions": {
     "corridasDeployed": false,
