@@ -49,6 +49,12 @@ requireMarkers('supabase/entregas-forward-migrations/20260921173500_safe2pay_mar
   'round(merchant_amount::numeric, 2) = round(amount::numeric, 2)',
 ],'Foundation Safe2Pay do estabelecimento/ordem está versionada');
 
+requireMarkers('supabase/entregas-forward-migrations/20260926163000_safe2pay_order_pix_runtime_fields.sql',[
+  'pix_copy_paste text',
+  'pix_qr_code_base64 text',
+  'expires_at timestamptz',
+],'Schema Safe2Pay de pedido cobre os campos usados por checkout/status');
+
 requireMarkers('supabase/entregas-forward-migrations/20260921175000_select_safe2pay_provider.sql',[
   "'order_payment_provider'",
   "'\"safe2pay_marketplace\"'::jsonb",
