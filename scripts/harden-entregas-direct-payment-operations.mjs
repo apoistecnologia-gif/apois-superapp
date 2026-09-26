@@ -17,7 +17,7 @@ patch('src/components/MerchantOrderControlCenter.tsx', (source) => {
   if (!next.includes('function isOperationalPayment(order: MerchantOrder)')) {
     next = next.replace(
       'function money(value: MerchantOrder["total"]) {',
-      `function isOperationalPayment(order: MerchantOrder) {\n  const method = String(order.payment_method ?? "").toLowerCase();\n  const status = String(order.payment_status ?? "").toLowerCase();\n  return status === "paid";\n}\n\nfunction money(value: MerchantOrder["total"]) {`,
+      `function isOperationalPayment(order: MerchantOrder) {\n  const status = String(order.payment_status ?? "").toLowerCase();\n  return status === "paid";\n}\n\nfunction money(value: MerchantOrder["total"]) {`,
     );
   }
   next = next.replace('      .eq("payment_status", "paid")\n      .in("status", ACTIVE_STATUSES)', '      .in("status", ACTIVE_STATUSES)');
@@ -36,7 +36,7 @@ patch('src/components/MerchantOrderControlCenter.tsx', (source) => {
   return next;
 }, (source) =>
   source.includes('function isOperationalPayment(order: MerchantOrder)') &&
-  source.includes('return status === "paid" || (method === "cash" && status === "pending");') &&
+  source.includes('return status === "paid";') &&
   source.includes('const paymentReady = isOperationalPayment(order);') &&
   !source.includes('.eq("payment_status", "paid")\n      .in("status", ACTIVE_STATUSES)') &&
   !source.includes('motivo do cancelamento para o cliente e o estorno'),
@@ -47,7 +47,7 @@ patch('src/components/MerchantOrderSoundWatcher.tsx', (source) => {
   if (!next.includes('function isAlertableOrderPayment(')) {
     next = next.replace(
       'function persistAlertedOrders(ids: Set<string>) {',
-      `function isAlertableOrderPayment(paymentMethod: unknown, paymentStatus: unknown) {\n  const method = String(paymentMethod ?? "").toLowerCase();\n  const status = String(paymentStatus ?? "").toLowerCase();\n  return status === "paid" || (method === "cash" && status === "pending");\n}\n\nfunction persistAlertedOrders(ids: Set<string>) {`,
+      `function isAlertableOrderPayment(_paymentMethod: unknown, paymentStatus: unknown) {\n  const status = String(paymentStatus ?? "").toLowerCase();\n  return status === "paid";\n}\n\nfunction persistAlertedOrders(ids: Set<string>) {`,
     );
   }
   next = next.replaceAll('queuePaidOrder', 'queueOrder');
@@ -71,7 +71,7 @@ patch('src/components/MerchantOrderSoundWatcher.tsx', (source) => {
   return next;
 }, (source) =>
   source.includes('function isAlertableOrderPayment(') &&
-  source.includes('return status === "paid" || (method === "cash" && status === "pending");') &&
+  source.includes('return status === "paid";') &&
   source.includes('const queueOrder = useCallback(') &&
   source.includes('const paymentReady = isAlertableOrderPayment(paymentMethod, paymentStatus);') &&
   source.includes('.select("id,order_number,payment_status,payment_method,status,created_at")') &&
