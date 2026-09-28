@@ -18,7 +18,7 @@ if (!corridasUrl || !corridasKey) {
   console.error('[FAIL] motorista: variáveis CORRIDAS_VITE_SUPABASE_* ausentes');
   process.exit(1);
 }
-if (!corridasUrl.includes('vqtucstyduxrqjgyigfk.supabase.co')) {
+if (!corridasUrl.includes('tbbzkrfupmqdywnzgnms.supabase.co')) {
   console.error('[FAIL] motorista: Supabase informado não é o projeto Corridas canônico');
   process.exit(1);
 }
