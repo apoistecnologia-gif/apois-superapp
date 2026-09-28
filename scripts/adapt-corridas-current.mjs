@@ -755,9 +755,9 @@ export const BottomNavigation = () => {
           <Link
             key={item.path}
             to={item.path}
-            className={`flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 transition-all active:scale-95 ${
+            className={\`flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 transition-all active:scale-95 \${
               isActive ? "text-apois-yellow" : "text-zinc-400"
-            }`}
+            }\`}
           >
             <item.icon size={24} strokeWidth={isActive ? 2.8 : 2.1} />
             <span
