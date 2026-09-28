@@ -1038,4 +1038,24 @@ requireMarkers('src/lib/geocoding.ts', ['google-maps-address', 'action: "reverse
 requireMarkers('src/hooks/use-destination-search.tsx', ['[currentPosition]'], 'Corridas destino sem stale position');
 requireMarkers('src/hooks/use-ride-categories.tsx', ['}, []);', '}, [fetchCategories]);'], 'Corridas categorias com hooks estáveis');
 
+
+for (const relativePath of [
+  'src/routes/_authenticated.perfil.tsx',
+  'src/routes/_authenticated.notificacoes.tsx',
+  'src/routes/_authenticated.revisar-solicitacao.tsx',
+  'src/routes/_authenticated.buscar-destino.tsx',
+]) {
+  const source = readFileSync(resolve(root, workspace, relativePath), 'utf8');
+  if (/\b(?:min-)?h-screen\b/.test(source)) {
+    throw new Error(`[FAIL] Corridas layout: viewport duplicada permaneceu em ${relativePath}`);
+  }
+}
+{
+  const nav = readFileSync(resolve(root, workspace, 'src/components/BottomNavigation.tsx'), 'utf8');
+  if (nav.includes('text-[9px]') || nav.includes('text-zinc-600')) {
+    throw new Error('[FAIL] Corridas layout: rodapé voltou a usar rótulo pequeno/contraste fraco');
+  }
+}
+console.log('[OK] Corridas layout: telas autenticadas auditadas sem viewport duplicada; rodapé permanece legível.');
+
 console.log('[OK] Corridas: adaptação atual concluída sem modificar a fonte protegida');
