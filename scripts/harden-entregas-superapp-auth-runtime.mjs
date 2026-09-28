@@ -6,6 +6,35 @@ import { dirname } from 'node:path';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+function rewriteSupabaseRuntimeConfig() {
+  const relative = '.work/entregas/src/integrations/supabase/config.ts';
+  const full = resolve(root, relative);
+  const before = readFileSync(full, 'utf8');
+  const legacy = /export const SUPABASE_URL = "https:\/\/[a-z0-9]+\.supabase\.co";\s*export const SUPABASE_PUBLISHABLE_KEY = "[^"]+";/m;
+  const replacement = `const url = String(import.meta.env.VITE_SUPABASE_URL ?? "").trim();
+const publishableKey = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "").trim();
+
+if (!url || !publishableKey) {
+  throw new Error("Supabase Entregas não configurado para este build.");
+}
+
+export const SUPABASE_URL = url;
+export const SUPABASE_PUBLISHABLE_KEY = publishableKey;`;
+
+  if (before.includes('import.meta.env.VITE_SUPABASE_URL') && before.includes('import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY')) {
+    console.log('[OK] entregas: Supabase runtime usa variáveis do build (já aplicado)');
+    return;
+  }
+  if (!legacy.test(before)) {
+    console.error(`[FAIL] entregas: config Supabase legado não reconhecido em ${relative}`);
+    process.exit(1);
+  }
+  writeFileSync(full, before.replace(legacy, replacement), 'utf8');
+  console.log('[OK] entregas: Supabase runtime usa o projeto configurado pelo Codemagic');
+}
+
+rewriteSupabaseRuntimeConfig();
+
 function replaceRequired(path, search, replacement, label) {
   const full = resolve(root, path);
   const before = readFileSync(full, 'utf8');
