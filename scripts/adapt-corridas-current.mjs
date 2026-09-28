@@ -418,7 +418,7 @@ patch('src/services/places/places-service.ts', (source) => {
     if (Capacitor.isNativePlatform()) {
       try {
         const { data, error } = await supabase.functions.invoke("google-maps-address", {
-          body: { action: "autocomplete", input: normalizedQuery },
+          body: { action: "autocomplete", input: normalizedQuery, ...(locationBias ? { lat: locationBias.lat, lng: locationBias.lng } : {}) },
         });
         if (error) throw error;
         if (requestId !== this.lastRequestId) throw this.normalizeError("places_cancelled");
