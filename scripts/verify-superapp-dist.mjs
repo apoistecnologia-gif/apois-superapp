@@ -33,6 +33,7 @@ requireMarkers('.work/corridas/src/components/BottomNavigation.tsx',['grid-cols-
 requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNavigation','pathname === "/buscar-destino"','pathname.startsWith("/corrida/")'],'Corridas não sobrepõe rodapé nas jornadas fullscreen');
 requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
 requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','apois-kit-home','Digite um endereço...','<CategorySelector />'],'Home Corridas usa mapa real, busca e visual APOIS');
+requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',['APOIS_NATIVE_PASSENGER_MAP_V1','GoogleMap.create({','VITE_APOIS_ANDROID_MAPS_API_KEY','capacitor-google-map'],'Corridas usa Google Maps nativo no Android e mantém fallback web');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['apois-kit-search-screen','suggestions.map','whitespace-normal break-words'],'Busca Corridas mantém sugestões visíveis e legíveis');
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',['grid-cols-[58px_minmax(0,1fr)_auto]','carro: Car','moto: Bike','fretes: Truck','guincho: Wrench','envios: Package','PRICING_CONFIG.LABELS[cat.key]'],'Categorias Corridas usam os cinco códigos oficiais em cards premium sem truncamento horizontal');
@@ -47,6 +48,7 @@ if(missingVisualBundleMarkers.length)fail(`bundle Corridas final não contém id
 if(!treeContains('superapp/shell/dist/modules/corridas','apois-kit-search-screen'))fail('bundle Corridas final não contém a busca visual nova');else ok('bundle Corridas final contém a busca visual nova');
 if(!treeContains('superapp/shell/dist/modules/corridas','Continuar com Google'))fail('bundle Corridas final perdeu o botão Google');else ok('bundle Corridas final contém login com Google');
 if(!treeContains('superapp/shell/dist/modules/corridas','corridas-google'))fail('bundle Corridas final perdeu callback Google do Superapp');else ok('bundle Corridas final contém callback Google nativo');
+if(!treeContains('superapp/shell/dist/modules/corridas','apois-passenger-home-map'))fail('bundle Corridas final perdeu o mapa Google nativo Android');else ok('bundle Corridas final contém mapa Google nativo Android');
 
 forbidMarkers('.apois/modules.json',['ActiveRideMap.tsx','RidePixPaymentCard.tsx','ActiveJourneyScreen.tsx','aguardando_pagamento: 2'],'pipeline Corridas não depende de componentes/estados ausentes no pin atual');
 forbidMarkers('scripts/fix-corridas-superapp-ui.mjs',['src/components/layout/AppShell.tsx','PassengerProfileCenter.tsx','native-password-recovery.ts'],'adaptador UI Corridas aponta somente para arquivos do pin atual');
@@ -54,7 +56,7 @@ requireMarkers('.work/entregas/src/integrations/supabase/client.ts',['storageKey
 requireMarkers('.work/entregas/src/components/AuthSessionIsolation.tsx',['window.location.hash.startsWith("#/")'],'isolamento de sessão Entregas entende Hash History');
 requireMarkers('.work/entregas/src/components/GoogleLoginButton.tsx',['function getNativeAuthCallback()','VITE_APOIS_NATIVE_SCHEME','__APOIS_SUPERAPP_AUTH_BRIDGE__'],'Google OAuth Entregas retorna pelo package unificado');
 requireMarkers('.work/entregas/src/routes/register.tsx',['emailRedirectTo: "br.com.apois.app://auth/callback"'],'cadastro Entregas usa callback unificado');
-requireMarkers('.work/entregas/src/routes/login.tsx',['redirectTo: "br.com.apois.app://auth/reset"'],'reset Entregas usa deep link unificado');
+requireMarkers('.work/entregas/src/routes/login.tsx',['redirectTo: "br.com.apois.app://auth/reset"','pb-[calc(max(env(safe-area-inset-bottom),1.5rem)+5.5rem)]','break-words text-sm leading-6'],'login Entregas usa deep link unificado e não fica sob a navegação Android');
 requireMarkers('.work/entregas/src/lib/customer-push.ts',['register_superapp_customer_push_device','_app_package: "br.com.apois.app"','const isDeliveryPush =','if (!target) return;'],'Push Entregas filtra produto e registra package correto');
 forbidMarkers('.work/entregas/src/lib/customer-push.ts',['PushNotifications.unregister()'],'logout Entregas não invalida token FCM compartilhado');
 requireMarkers(
