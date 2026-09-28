@@ -378,8 +378,8 @@ if (name === 'entregas') {
   replaceRequired(
     '.work/entregas/src/integrations/supabase/client.ts',
     '    storage: typeof window !== "undefined" ? window.localStorage : undefined,\n    // Merchant uses a dedicated auth namespace.',
-    '    storage: typeof window !== "undefined" ? window.localStorage : undefined,\n    storageKey: "apois-superapp-entregas-auth-v1",\n    // Merchant uses a dedicated auth namespace.',
-    'entregas: sessão Supabase isolada dentro do Superapp',
+    '    storage: typeof window !== "undefined" ? window.localStorage : undefined,\n    storageKey: "apois-superapp-entregas-auth-v1",\n    flowType: "pkce",\n    // Merchant uses a dedicated auth namespace.',
+    'entregas: sessão Supabase isolada e OAuth PKCE consistente dentro do Superapp',
   );
   // GoogleLoginButton.tsx deriva o scheme nativo de VITE_APOIS_NATIVE_SCHEME
   // (com fallback por produto) via getNativeAuthCallback(), e o pós-login já
