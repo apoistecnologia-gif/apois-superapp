@@ -191,6 +191,9 @@ workflows:
           : "${CORRIDAS_WEB_MAPS_API_KEY:?CORRIDAS_WEB_MAPS_API_KEY is required}"
           : "${CORRIDAS_ANDROID_MAPS_API_KEY:?CORRIDAS_ANDROID_MAPS_API_KEY is required}"
           : "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:?Firebase config for br.com.apois.app is required}"
+          test "$(curl --silent --show-error --output /tmp/corridas-auth-settings.json --write-out '%{http_code}' -H "apikey: $CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY" "$CORRIDAS_VITE_SUPABASE_URL/auth/v1/settings")" = "200"
+          test "$(curl --silent --show-error --output /tmp/entregas-auth-settings.json --write-out '%{http_code}' -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_URL/auth/v1/settings")" = "200"
+          rm -f /tmp/corridas-auth-settings.json /tmp/entregas-auth-settings.json
           : "${CM_KEYSTORE_PATH:?Codemagic keystore was not loaded}"
           : "${CM_KEYSTORE_PASSWORD:?Codemagic keystore password is missing}"
           : "${CM_KEY_ALIAS:?Codemagic key alias is missing}"
