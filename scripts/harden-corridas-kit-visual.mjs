@@ -81,12 +81,25 @@ function replaceRequired(source, search, replacement, label) {
 {
   const path = 'src/routes/_authenticated.buscar-destino.tsx';
   let source = read(path);
-  source = replaceRequired(
-    source,
-    'className="flex flex-col min-h-screen bg-transparent relative"',
-    'className="apois-kit-search-screen flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#07090d] relative"',
-    'Corridas visual: busca ocupa viewport dinâmica',
-  );
+  {
+    const legacy = 'className="flex flex-col min-h-screen bg-transparent relative"';
+    const current = 'className="relative min-h-0 flex-1 overflow-hidden bg-transparent"';
+    const desired = 'className="apois-kit-search-screen relative min-h-0 flex-1 overflow-hidden bg-[#07090d]"';
+    if (source.includes(desired)) {
+      console.log('[OK] Corridas visual: busca ocupa viewport dinâmica (já aplicado)');
+    } else if (source.includes(current)) {
+      source = source.replace(current, desired);
+      console.log('[OK] Corridas visual: busca ocupa viewport dinâmica');
+    } else if (source.includes(legacy)) {
+      source = source.replace(
+        legacy,
+        'className="apois-kit-search-screen flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#07090d] relative"',
+      );
+      console.log('[OK] Corridas visual: busca ocupa viewport dinâmica');
+    } else {
+      throw new Error('[FAIL] Corridas visual: busca ocupa viewport dinâmica: padrão esperado não encontrado');
+    }
+  }
   source = source
     .replaceAll('bg-[#1a1a1a]', 'bg-[#0b0e14]/96 backdrop-blur-xl')
     .replaceAll('bg-[#2a2a2a]', 'bg-[#11151d]')
