@@ -94,19 +94,6 @@ function required(source, search, replacement, label) {
     source = source.slice(0, pixFunctionStart) + replacement + source.slice(pixInvokeEndAnchor);
   }
 
-  const oldPaymentBlock =
-`      const payment = pixResponse?.payment;
-      if (!payment?.qrCodeText || !payment?.qrCodeImageUrl) {
-        throw new Error("O provedor de pagamento não retornou os dados completos do PIX.");
-      }
-
-      const nextPixData: PixData = {
-        qrCodeImageUrl: payment.qrCodeImageUrl,
-        qrCodeText: payment.qrCodeText,
-        orderId,
-        total: Number(payment.amount) || Number(orderResponse?.total) || total,
-        expiresAt: typeof payment.expiresAt === "string" ? payment.expiresAt : null,
-      };`;
   const newPaymentBlock =
 `      const qrCodeText = pixResponse?.pix?.copyPaste;
       const qrCodeBase64 = pixResponse?.pix?.qrCodeBase64;
@@ -124,7 +111,21 @@ function required(source, search, replacement, label) {
         total: Number(pixResponse?.amount) || Number(orderResponse?.total) || total,
         expiresAt: null,
       };`;
-  source = required(source, oldPaymentBlock, newPaymentBlock, 'checkout adapta resposta Safe2Pay');
+
+  // O snapshot pode sofrer hardening de UI/storage antes deste boundary. Não dependa
+  // da igualdade textual do bloco inteiro legado; substitua somente o trecho
+  // financeiro delimitado por marcadores estáveis e falhe fechado se ele sumir.
+  if (!source.includes(newPaymentBlock)) {
+    const legacyPaymentStart = source.indexOf('      const payment = pixResponse?.payment;');
+    const setPixDataAnchor = source.indexOf('      setPixData(nextPixData);', legacyPaymentStart >= 0 ? legacyPaymentStart : 0);
+    if (legacyPaymentStart < 0 || setPixDataAnchor <= legacyPaymentStart) {
+      throw new Error('[FAIL] checkout adapta resposta Safe2Pay: bloco financeiro legado não reconhecido');
+    }
+    source = source.slice(0, legacyPaymentStart)
+      + newPaymentBlock
+      + '\n'
+      + source.slice(setPixDataAnchor);
+  }
 
   source = source.replace(
 `      const { data, error } = await supabase.functions.invoke("sync-payment-status", {
