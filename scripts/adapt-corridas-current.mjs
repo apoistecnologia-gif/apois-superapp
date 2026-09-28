@@ -732,23 +732,50 @@ function CarteiraPage() {
 'Corridas: Carteira deixa de ser placeholder preto e mostra estado financeiro real');
 
 
-patch('src/components/BottomNavigation.tsx', (source) =>
-  source
-    .replace(
-      'className="relative w-full min-h-[76px] bg-black border-t border-white/10 flex items-start justify-around pt-3 px-2 z-[100] pb-[max(14px,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] shrink-0"',
-      'className="relative w-full min-h-[82px] bg-black/95 border-t border-white/10 flex items-start justify-around pt-2.5 px-1.5 z-[100] pb-[max(14px,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.55)] backdrop-blur-xl shrink-0"',
-    )
-    .replace(
-      'className={`flex flex-col items-center gap-1 transition-all active:scale-90 ${',
-      'className={`flex min-h-[54px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 transition-all active:scale-95 ${',
-    )
-    .replace('<item.icon size={22} strokeWidth={isActive ? 3 : 2} />', '<item.icon size={25} strokeWidth={isActive ? 2.8 : 2} />')
-    .replace(
-      '"text-[9px] font-black uppercase tracking-widest",',
-      '"text-[11px] font-bold leading-none tracking-tight",',
-    )
-    .replaceAll('isActive ? "text-apois-yellow" : "text-zinc-600"', 'isActive ? "text-apois-yellow" : "text-zinc-400"'),
-'Corridas: navegação inferior ganha legibilidade e alvos de toque consistentes');
+patch('src/components/BottomNavigation.tsx', () => `import { Home, History, CreditCard, Bell, User } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
+
+export const BottomNavigation = () => {
+  const location = useLocation();
+
+  const navItems = [
+    { label: "Início", icon: Home, path: "/inicio" },
+    { label: "Corridas", icon: History, path: "/corridas" },
+    { label: "Carteira", icon: CreditCard, path: "/carteira" },
+    { label: "Notificações", icon: Bell, path: "/notificacoes" },
+    { label: "Perfil", icon: User, path: "/perfil" },
+  ];
+
+  return (
+    <nav className="relative z-[100] grid w-full shrink-0 grid-cols-5 border-t border-white/10 bg-black/95 px-1.5 pt-2.5 pb-[max(14px,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+      {navItems.map((item) => {
+        const isActive = location.pathname === item.path;
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 transition-all active:scale-95 ${
+              isActive ? "text-apois-yellow" : "text-zinc-400"
+            }`}
+          >
+            <item.icon size={24} strokeWidth={isActive ? 2.8 : 2.1} />
+            <span
+              className={cn(
+                "text-[11px] font-bold leading-none tracking-tight",
+                isActive ? "text-apois-yellow" : "text-zinc-400",
+              )}
+            >
+              {item.label}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+};
+`),
+'Corridas: navegação inferior ganha grade estável, legibilidade e alvos de toque consistentes');
 
 patch('src/routes/_authenticated.perfil.tsx', (source) =>
   source
@@ -1023,7 +1050,7 @@ requireMarkers('src/routes/_authenticated.notificacoes.tsx', ['min-h-0 flex-1 ov
 requireMarkers('src/routes/_authenticated.revisar-solicitacao.tsx', ['min-h-0 flex-1 overflow-hidden', 'min-h-0 flex-1 space-y-6 overflow-y-auto'], 'Corridas revisão usa scroll interno');
 requireMarkers('src/routes/_authenticated.buscar-destino.tsx', ['relative min-h-0 flex-1 overflow-hidden', 'bottom-[max(20px,env(safe-area-inset-bottom))]'], 'Corridas busca respeita viewport e safe-area');
 requireMarkers('src/styles.css', ['padding: 0;'], 'Corridas viewport sem safe-area duplicada');
-requireMarkers('src/components/BottomNavigation.tsx', ['min-h-[82px]', 'min-h-[54px]', 'text-[11px]', 'text-zinc-400'], 'Corridas navegação inferior legível e protegida');
+requireMarkers('src/components/BottomNavigation.tsx', ['grid-cols-5', 'min-h-[64px]', '<item.icon size={24}', 'text-[11px]', 'text-zinc-400'], 'Corridas navegação inferior legível, estável e protegida');
 requireMarkers('src/hooks/use-location.tsx', ['apois-superapp-corridas-last-location'], 'Corridas localização isolada');
 requireMarkers('src/components/map/PassengerMap.tsx', ['encodedPolyline', 'PolylineDecoder', 'displayedRoutePoints'], 'Corridas mapa com rota persistida');
 requireMarkers('src/hooks/rides/use-ride-request.tsx', ['paymentMethod: string | null', 'payment_method: selectedMethod', 'pickup_address: pickupAddress'], 'Corridas payload real e idempotente');
