@@ -89,6 +89,262 @@ patch('.work/corridas/src/hooks/use-push-notifications.tsx', (source) => {
   );
 }, 'Corridas: Push nativo próprio fica isolado até Firebase unificado ser habilitado');
 
+
+patch('.work/corridas/src/components/map/PassengerMap.tsx', (source) => {
+  if (source.includes('APOIS_NATIVE_PASSENGER_MAP_V1')) return source;
+  let next = source;
+
+  if (!next.includes('import { Capacitor } from "@capacitor/core";')) {
+    next = next.replace(
+      'import { googleMapsLoader } from "@/services/google/google-maps-loader";',
+      'import { googleMapsLoader } from "@/services/google/google-maps-loader";\nimport { Capacitor } from "@capacitor/core";\nimport { GoogleMap } from "@capacitor/google-maps";',
+    );
+  }
+
+  next = next.replace(
+    '  const mapElementRef = useRef<HTMLDivElement>(null);\n  const mapRef = useRef<any>(null);',
+    '  const mapElementRef = useRef<HTMLElement>(null);\n  const mapRef = useRef<any>(null);\n  const nativeMapRef = useRef<GoogleMap | null>(null);\n  const nativeMarkerIdsRef = useRef<string[]>([]);\n  const nativePolylineIdsRef = useRef<string[]>([]);\n  const nativeSyncGenerationRef = useRef(0);',
+  );
+
+  next = next.replace(
+    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);',
+    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";',
+  );
+
+  const initNeedle = '    setStatus("loading");\n\n    authFailureCleanupRef.current?.();';
+  const initReplacement = `    setStatus("loading");
+
+    // APOIS_NATIVE_PASSENGER_MAP_V1
+    if (nativeAndroid) {
+      try {
+        const nativeApiKey = String(import.meta.env["VITE_APOIS_ANDROID_MAPS_API_KEY"] ?? "").trim();
+        if (!nativeApiKey) throw new Error("android_maps_key_empty");
+
+        document.documentElement.style.backgroundColor = "transparent";
+        document.body.style.backgroundColor = "transparent";
+
+        if (nativeMapRef.current) {
+          await nativeMapRef.current.destroy().catch(() => undefined);
+          nativeMapRef.current = null;
+        }
+
+        nativeMapRef.current = await GoogleMap.create({
+          id: "apois-passenger-home-map",
+          element: mapElementRef.current,
+          apiKey: nativeApiKey,
+          forceCreate: true,
+          config: {
+            center: origin ?? DEFAULT_CENTER,
+            zoom: origin ? 16 : 13,
+          },
+        });
+        setStatus("ready");
+        return;
+      } catch (error) {
+        console.error("[PassengerMap] Native Google Maps initialization failed", {
+          code: error instanceof Error ? error.message : "native_maps_unknown_error",
+        });
+        setStatus("configuration-error");
+        return;
+      }
+    }
+
+    authFailureCleanupRef.current?.();`;
+  if (!next.includes(initNeedle)) throw new Error('[FAIL] PassengerMap: ponto de inicialização não encontrado');
+  next = next.replace(initNeedle, initReplacement);
+
+  next = next.replace(
+    '  }, [isStatic, origin, reloadKey]);',
+    '  }, [isStatic, nativeAndroid, origin, reloadKey]);',
+  );
+
+  const effectNeedle = `  useEffect(() => {
+    if (!mapRef.current || status !== "ready") return;`;
+  const nativeEffect = `  useEffect(() => {
+    if (!nativeAndroid || status !== "ready" || !nativeMapRef.current) return;
+    const generation = ++nativeSyncGenerationRef.current;
+    let cancelled = false;
+
+    void (async () => {
+      const nativeMap = nativeMapRef.current;
+      if (!nativeMap) return;
+
+      const previousMarkers = nativeMarkerIdsRef.current;
+      const previousPolylines = nativePolylineIdsRef.current;
+      nativeMarkerIdsRef.current = [];
+      nativePolylineIdsRef.current = [];
+      if (previousMarkers.length) await nativeMap.removeMarkers(previousMarkers).catch(() => undefined);
+      if (previousPolylines.length) await nativeMap.removePolylines(previousPolylines).catch(() => undefined);
+      if (cancelled || generation !== nativeSyncGenerationRef.current) return;
+
+      const markers: Array<any> = [];
+      if (origin) {
+        markers.push({
+          coordinate: origin,
+          title: "Sua localização",
+          tintColor: { r: 246, g: 190, b: 28, a: 255 },
+        });
+      }
+      orderedStops.forEach((stop, index) => {
+        if (!isCoordinate(stop.latitude) || !isCoordinate(stop.longitude)) return;
+        markers.push({
+          coordinate: { lat: stop.latitude, lng: stop.longitude },
+          title: stop.label || \`Parada \${index + 1}\`,
+        });
+      });
+      if (destination) {
+        markers.push({
+          coordinate: destination,
+          title: "Destino",
+          tintColor: { r: 17, g: 17, b: 17, a: 255 },
+        });
+      }
+      if (validDriverLocation) {
+        markers.push({
+          coordinate: validDriverLocation,
+          title: "Motorista",
+          tintColor: { r: 37, g: 99, b: 235, a: 255 },
+          zIndex: 50,
+        });
+      }
+
+      if (markers.length) {
+        const ids = await nativeMap.addMarkers(markers);
+        if (cancelled || generation !== nativeSyncGenerationRef.current) {
+          await nativeMap.removeMarkers(ids).catch(() => undefined);
+          return;
+        }
+        nativeMarkerIdsRef.current = ids;
+      }
+
+      if (displayedRoutePoints.length > 1) {
+        const ids = await nativeMap.addPolylines([{
+          path: displayedRoutePoints.map((point) => ({ lat: point.lat, lng: point.lng })),
+          strokeColor: "#F6BE1C",
+          strokeWidth: 6,
+          geodesic: false,
+        }]);
+        if (!cancelled && generation === nativeSyncGenerationRef.current) nativePolylineIdsRef.current = ids;
+      }
+
+      const focus = [
+        origin,
+        validDriverLocation,
+        ...orderedStops
+          .filter((stop) => isCoordinate(stop.latitude) && isCoordinate(stop.longitude))
+          .map((stop) => ({ lat: stop.latitude, lng: stop.longitude })),
+        destination,
+      ].filter(Boolean) as Coordinate[];
+
+      if (!focus.length) return;
+      if (focus.length === 1) {
+        await nativeMap.setCamera({ coordinate: focus[0], zoom: 16, animate: true });
+        return;
+      }
+
+      const latMin = Math.min(...focus.map((point) => point.lat));
+      const latMax = Math.max(...focus.map((point) => point.lat));
+      const lngMin = Math.min(...focus.map((point) => point.lng));
+      const lngMax = Math.max(...focus.map((point) => point.lng));
+      const span = Math.max(latMax - latMin, lngMax - lngMin);
+      const zoom = span < 0.006 ? 16 : span < 0.02 ? 14 : span < 0.08 ? 12 : 10;
+      await nativeMap.setCamera({
+        coordinate: { lat: (latMin + latMax) / 2, lng: (lngMin + lngMax) / 2 },
+        zoom,
+        animate: true,
+      });
+    })().catch((error) => {
+      console.error("[PassengerMap] native map sync failed", {
+        code: error instanceof Error ? error.message : "native_maps_sync_error",
+      });
+      if (!cancelled) setStatus("api-error");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [destination, displayedRoutePoints, nativeAndroid, orderedStops, origin, status, validDriverLocation]);
+
+${effectNeedle}`;
+  if (!next.includes(effectNeedle)) throw new Error('[FAIL] PassengerMap: efeito web não encontrado');
+  next = next.replace(effectNeedle, nativeEffect);
+
+  next = next.replace(
+    `    return () => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+      authFailureCleanupRef.current?.();
+      authFailureCleanupRef.current = null;
+      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);
+    };`,
+    `    return () => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+      authFailureCleanupRef.current?.();
+      authFailureCleanupRef.current = null;
+      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);
+      if (nativeAndroid) {
+        nativeSyncGenerationRef.current += 1;
+        const nativeMap = nativeMapRef.current;
+        nativeMapRef.current = null;
+        nativeMarkerIdsRef.current = [];
+        nativePolylineIdsRef.current = [];
+        void nativeMap?.destroy().catch(() => undefined);
+        document.documentElement.style.backgroundColor = "";
+        document.body.style.backgroundColor = "";
+      }
+    };`,
+  );
+
+  next = next.replace(
+    `  const retry = () => {
+    googleMapsLoader.reset();`,
+    `  const retry = () => {
+    if (nativeMapRef.current) {
+      void nativeMapRef.current.destroy().catch(() => undefined);
+      nativeMapRef.current = null;
+      nativeMarkerIdsRef.current = [];
+      nativePolylineIdsRef.current = [];
+    }
+    googleMapsLoader.reset();`,
+  );
+
+  const mapElementNeedle = '      <div ref={mapElementRef} className="absolute inset-0 h-full w-full" aria-label="Mapa da corrida" />';
+  const mapElementReplacement = `      {nativeAndroid
+        ? React.createElement("capacitor-google-map", {
+            ref: mapElementRef,
+            "aria-label": "Mapa da corrida",
+            style: {
+              display: "block",
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              background: "transparent",
+            },
+          })
+        : <div ref={mapElementRef as React.RefObject<HTMLDivElement>} className="absolute inset-0 h-full w-full" aria-label="Mapa da corrida" />}`;
+  if (!next.includes(mapElementNeedle)) throw new Error('[FAIL] PassengerMap: elemento visual do mapa não encontrado');
+  next = next.replace(mapElementNeedle, mapElementReplacement);
+
+  next = next.replace(
+    '    <div ref={containerRef} className="relative h-full min-h-[320px] w-full overflow-hidden bg-zinc-200">',
+    '    <div ref={containerRef} className={\`relative h-full min-h-[320px] w-full overflow-hidden \${nativeAndroid ? "bg-transparent" : "bg-zinc-200"}\`}>',
+  );
+
+  for (const marker of [
+    'APOIS_NATIVE_PASSENGER_MAP_V1',
+    'GoogleMap.create({',
+    'VITE_APOIS_ANDROID_MAPS_API_KEY',
+    'capacitor-google-map',
+    'nativeMap.addMarkers',
+    'nativeMap.addPolylines',
+  ]) {
+    if (!next.includes(marker)) throw new Error('[FAIL] PassengerMap nativo incompleto: ' + marker);
+  }
+  return next;
+}, 'Corridas: mapa inicial usa Google Maps nativo no Android e mantém fallback web');
+
 patch('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx', (source) => {
   let next = source;
   next = next.replace(
