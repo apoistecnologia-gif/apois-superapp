@@ -112,10 +112,16 @@ async function nominatimReverse(lat: number, lng: number) {
   }];
 }
 
-async function nominatimSearch(input: string) {
+async function nominatimSearch(input: string, lat?: number, lng?: number) {
   const url = new URL("https://photon.komoot.io/api/");
   url.searchParams.set("q", input);
   url.searchParams.set("limit", "6");
+  url.searchParams.set("bbox", "-73.99,-33.75,-34.79,5.27");
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lng));
+    url.searchParams.set("location_bias_scale", "0.15");
+  }
   const response = await fetch(url, { headers: photonHeaders });
   if (!response.ok) throw new Error(`Address search fallback HTTP ${response.status}`);
   const payload = await response.json();
@@ -197,7 +203,9 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const predictions = await nominatimSearch(input);
+      const lat = Number(body?.lat);
+      const lng = Number(body?.lng);
+      const predictions = await nominatimSearch(input, lat, lng);
       return json({ predictions, provider: "nominatim" });
     }
 
