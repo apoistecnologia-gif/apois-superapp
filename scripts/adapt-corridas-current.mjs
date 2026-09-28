@@ -622,6 +622,7 @@ patch('src/hooks/use-auth.tsx', (source) => {
             .from("profile-photos")
             .createSignedUrl(normalizedProfile.avatar_url, 60 * 60);
           if (signedAvatar?.signedUrl) normalizedProfile.avatar_url = signedAvatar.signedUrl;
+          else normalizedProfile.avatar_url = undefined;
         }
         if (!normalizedProfile?.avatar_url) {
           const { data: authUser } = await supabase.auth.getUser();
