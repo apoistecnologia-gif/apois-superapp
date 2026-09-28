@@ -67,10 +67,20 @@ requireAll('.apois/source-lock.json', [
 
 const codemagic = read('codemagic.yaml');
 const workflowKeys = [...codemagic.matchAll(/^  ([a-z0-9-]+):$/gm)].map((match) => match[1]);
-const expectedWorkflows = ['android-superapp-experimental', 'android-partner-superapp'];
-if (workflowKeys.length !== expectedWorkflows.length || expectedWorkflows.some((key) => !workflowKeys.includes(key))) {
-  fail(`Codemagic deve conter somente dois workflows oficiais; encontrados ${workflowKeys.join(', ') || 'nenhum'}`);
-} else ok('Codemagic contém somente Superapp Cliente e APOIS Parceiro');
+const requiredWorkflows = ['android-superapp-experimental', 'android-partner-superapp'];
+const allowedWorkflows = new Set([
+  'android-superapp-experimental',
+  'android-superapp-homologacao',
+  'android-partner-superapp',
+]);
+const unexpectedWorkflows = workflowKeys.filter((key) => !allowedWorkflows.has(key));
+if (requiredWorkflows.some((key) => !workflowKeys.includes(key))) {
+  fail(`Codemagic perdeu um dos dois apps oficiais; encontrados ${workflowKeys.join(', ') || 'nenhum'}`);
+} else if (unexpectedWorkflows.length) {
+  fail(`Codemagic contém workflow fora dos dois apps oficiais: ${unexpectedWorkflows.join(', ')}`);
+} else {
+  ok('Codemagic contém somente APOIS Superapp (produção/homologação) e APOIS Parceiro');
+}
 
 for (const marker of [
   'APOIS-Superapp.apk',
@@ -87,10 +97,12 @@ for (const forbidden of ['APOIS-Motorista.apk', 'APOIS-Entregador.apk', 'android
 if (!failed) ok('Codemagic não reintroduz APKs separados nem build debug');
 
 requireAll('superapp/shell/build.mjs', [
-  "import '../../scripts/harden-superapp-shell-mobile-ui.mjs';",
+  "'scripts/harden-superapp-shell-mobile-ui.mjs'",
+  "runShellHardener(hardener);",
+  "APOIS_SHELL_HTML_PATH: distIndex",
   "['corridas', resolve(root, '../../.work/corridas/dist')]",
   "['entregas', resolve(root, '../../.work/entregas/.output/public')]",
-], 'shell Cliente aplica identidade/mobile e inclui somente Passageiro + Cliente Entregas');
+], 'shell Cliente aplica identidade/mobile sobre dist e inclui somente Passageiro + Cliente Entregas');
 forbidAll('superapp/shell/build.mjs', ['partner-motorista', 'partner-entregador', "['motorista'", "['entregador'"], 'shell Cliente não copia módulos de parceiro');
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
