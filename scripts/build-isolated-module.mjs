@@ -148,7 +148,7 @@ function injectSuperappBridge(indexPath, moduleName) {
       const { path, params } = parseAuthDeepLink(rawUrl);
 
       if (moduleName === 'corridas') {
-        if (path === 'reset' || path === 'callback' || path === 'email-change') {
+        if (path === 'reset' || path === 'email-change') {
           try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
           window.location.replace('../entregas/index.html');
           return true;
