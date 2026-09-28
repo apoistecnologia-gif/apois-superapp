@@ -88,7 +88,6 @@ async function nominatimReverse(lat: number, lng: number) {
   const url = new URL("https://photon.komoot.io/reverse");
   url.searchParams.set("lat", String(lat));
   url.searchParams.set("lon", String(lng));
-  url.searchParams.set("lang", "pt");
   const response = await fetch(url, { headers: photonHeaders });
   if (!response.ok) throw new Error(`Reverse geocoding fallback HTTP ${response.status}`);
   const payload = await response.json();
@@ -116,7 +115,6 @@ async function nominatimReverse(lat: number, lng: number) {
 async function nominatimSearch(input: string) {
   const url = new URL("https://photon.komoot.io/api/");
   url.searchParams.set("q", input);
-  url.searchParams.set("lang", "pt");
   url.searchParams.set("limit", "6");
   const response = await fetch(url, { headers: photonHeaders });
   if (!response.ok) throw new Error(`Address search fallback HTTP ${response.status}`);
