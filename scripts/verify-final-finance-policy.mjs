@@ -48,6 +48,16 @@ if(merchantControl){
   if(merchantControl.includes('method === "cash" && status === "pending"')) fail('Entregas: cash/pending ainda tratado como pronto');
 }
 
+const retiredMerchantMpHardener=read('scripts/harden-entregas-merchant-mercadopago-v2.mjs');
+if(retiredMerchantMpHardener){
+  if(!retiredMerchantMpHardener.includes('RETIRED PROVIDER GUARD')) fail('Entregas: hardener Mercado Pago legado deixou de ser sentinela');
+  for(const forbidden of [
+    'merchant-mercadopago-oauth',
+    'create-merchant-mercadopago-pix',
+    'MerchantMercadoPagoConnection',
+  ]) if(retiredMerchantMpHardener.includes(forbidden)) fail('Entregas: hardener legado ainda contém implementação ativa ('+forbidden+')');
+}
+
 const providerPolicy=JSON.parse(read('docs/payment-provider-policy.json')||'{}');
 if(providerPolicy.provider!=='safe2pay') fail('Safe2Pay não é o provider eletrônico oficial');
 if(providerPolicy.products?.corridas?.platformCommissionPercent!==0) fail('Corridas: comissão por corrida deve permanecer 0%');
