@@ -69,6 +69,7 @@
     "verify:entregas-safe2pay-order": "node scripts/verify-entregas-safe2pay-order-contract.mjs",
     "verify:corridas-safe2pay": "node scripts/verify-corridas-safe2pay-payment-flow.mjs",
     "verify:safe2pay-cutover-ready": "node scripts/verify-safe2pay-cutover-ready.mjs",
-    "verify:safe2pay-edge-deploy-manifest": "node scripts/verify-safe2pay-edge-deploy-manifest.mjs"
+    "verify:safe2pay-edge-deploy-manifest": "node scripts/verify-safe2pay-edge-deploy-manifest.mjs",
+    "build:superapp:homologacao": "npm run guard:build-sources:capture && npm run audit:static && npm run audit:ui && npm run verify:pins && npm run audit:hardening && npm run audit:play-store && npm run verify:safe2pay-provider-policy && npm run verify:safe2pay-client && npm run verify:safe2pay-foundation && npm run verify:safe2pay-provider-selection && npm run verify:safe2pay-runtime-source && npm run verify:safe2pay-subaccount-onboarding && npm run verify:entregas-safe2pay-order && npm run build:corridas && npm run build:entregas && npm run build:shell && npm run harden:auth-deeplinks && npm run inject:push-routing && npm run verify:dist && npm run test:build-idempotency && npm run verify:dist && npm run guard:build-sources:verify"
   }
 }
