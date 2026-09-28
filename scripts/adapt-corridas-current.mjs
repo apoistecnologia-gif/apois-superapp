@@ -501,6 +501,54 @@ patch('src/services/places/places-service.ts', (source) => {
   return next;
 }, 'Corridas: autocomplete nativo usa Edge Function autenticada e não depende do Maps JS no WebView');
 
+patch('src/lib/geocoding.ts', (source) => {
+  let next = source;
+  if (!next.includes('import { Capacitor } from "@capacitor/core";')) {
+    next = next.replace(
+      'import { LocationData } from "@/hooks/use-location";',
+      'import { LocationData } from "@/hooks/use-location";\nimport { Capacitor } from "@capacitor/core";\nimport { supabase } from "@/integrations/supabase/client";',
+    );
+  }
+  next = next.replace(
+    '  try {\n    // Call the APOIS backend geocoding endpoint',
+    `  try {
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.functions.invoke("google-maps-address", {
+        body: { action: "reverse_geocode", lat: location.latitude, lng: location.longitude },
+      });
+      if (error) throw error;
+      const first = Array.isArray(data?.results) ? data.results[0] : null;
+      const formatted = typeof first?.formatted_address === "string" ? first.formatted_address.trim() : "";
+      if (formatted) {
+        cache[cacheKey] = { address: formatted, timestamp: Date.now() };
+        return formatted;
+      }
+      const components = Array.isArray(first?.address_components) ? first.address_components : [];
+      const read = (type: string) => {
+        const component = components.find((item: any) => Array.isArray(item?.types) && item.types.includes(type));
+        return typeof component?.long_name === "string" ? component.long_name.trim() : "";
+      };
+      const road = read("route");
+      const number = read("street_number");
+      const neighborhood = read("sublocality_level_1") || read("neighborhood");
+      const city = read("locality");
+      const region = read("administrative_area_level_1");
+      const address = [
+        [road, number].filter(Boolean).join(", "),
+        neighborhood,
+        city,
+        region,
+      ].filter(Boolean).join(" - ");
+      if (!address) throw new Error("geocode_empty_result");
+      cache[cacheKey] = { address, timestamp: Date.now() };
+      return address;
+    }
+
+    // Call the APOIS backend geocoding endpoint`,
+  );
+  return next;
+}, 'Corridas: reverse geocoding nativo usa Edge Function autenticada');
+
 patch('src/hooks/use-destination-search.tsx', (source) =>
   source.replace('    [location],\n  );', '    [currentPosition],\n  );'),
 'Corridas: busca de destino usa a posição atual sem stale closure');
@@ -534,6 +582,7 @@ requireMarkers('src/components/map/PassengerMap.tsx', ['status, validDriverLocat
 requireMarkers('src/hooks/use-location.tsx', ['await requestPermission();', 'permission === "prompt" || permission === "unknown"'], 'Corridas pede localização nativa');
 requireMarkers('src/routes/_authenticated.tsx', ['PushNotifications.requestPermissions()', '[push] permission prompt unavailable'], 'Corridas pede notificações nativas');
 requireMarkers('src/services/places/places-service.ts', ['google-maps-address', 'Capacitor.isNativePlatform()', 'action: "autocomplete"', 'action: "place_details"'], 'Corridas autocomplete nativo usa backend autenticado');
+requireMarkers('src/lib/geocoding.ts', ['google-maps-address', 'action: "reverse_geocode"', 'Capacitor.isNativePlatform()'], 'Corridas endereço do ponto de partida usa backend autenticado');
 requireMarkers('src/hooks/use-destination-search.tsx', ['[currentPosition]'], 'Corridas destino sem stale position');
 requireMarkers('src/hooks/use-ride-categories.tsx', ['}, []);', '}, [fetchCategories]);'], 'Corridas categorias com hooks estáveis');
 
