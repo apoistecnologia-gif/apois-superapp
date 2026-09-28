@@ -114,24 +114,19 @@ case "$CORRIDAS_URL_VALUE" in
     ;;
 esac
 
-# A publishable key informada deve ser a mesma chave válida do projeto Corridas
-# presente na fonte. Comparamos por fingerprint (sha256 dos primeiros bytes)
-# para nunca imprimir o valor: uma chave do projeto Entregas passaria pela
-# checagem de URL e geraria login 401 UNAUTHORIZED_INVALID_API_KEY em runtime.
-CORRIDAS_KEY_FROM_SOURCE="$(sed -n 's/^\s*VITE_SUPABASE_PUBLISHABLE_KEY\s*=\s*//p' \
-  "$ROOT/sources/apois-corridas-motorista-admin/.env.mobile" | head -n1 | tr -d '\r')"
-if [ -z "$CORRIDAS_KEY_FROM_SOURCE" ]; then
-  echo '[FAIL] Motorista: VITE_SUPABASE_PUBLISHABLE_KEY ausente em sources/apois-corridas-motorista-admin/.env.mobile'
+# Valide a chave externa contra o projeto novo em vez de compará-la com
+# o .env do snapshot protegido, que pode conter credencial histórica do projeto antigo.
+# A publishable key é pública, mas continua vindo somente do ambiente de release.
+AUTH_SETTINGS_STATUS="$(curl --silent --show-error --output /tmp/apois-corridas-auth-settings.json --write-out '%{http_code}' \
+  -H "apikey: $CORRIDAS_KEY_VALUE" \
+  "$CORRIDAS_URL_VALUE/auth/v1/settings")"
+if [ "$AUTH_SETTINGS_STATUS" != "200" ]; then
+  echo "[FAIL] Motorista: publishable key não foi aceita pelo novo projeto Corridas (HTTP $AUTH_SETTINGS_STATUS)."
+  rm -f /tmp/apois-corridas-auth-settings.json
   exit 1
 fi
-if [ "$(printf '%s' "$CORRIDAS_KEY_VALUE" | sha256sum | cut -d' ' -f1)" != \
-     "$(printf '%s' "$CORRIDAS_KEY_FROM_SOURCE" | sha256sum | cut -d' ' -f1)" ]; then
-  echo '[FAIL] Motorista: CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY diverge da chave do projeto Corridas na fonte.'
-  echo '       Corrija o valor da variável no ambiente externo e execute o build novamente.'
-  exit 1
-fi
-echo '[OK] validação Parceiro: publishable key corresponde ao projeto Corridas'
-unset CORRIDAS_KEY_FROM_SOURCE
+rm -f /tmp/apois-corridas-auth-settings.json
+echo '[OK] validação Parceiro: publishable key aceita pelo novo projeto Corridas'
 unset VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY SUPABASE_URL SUPABASE_PUBLISHABLE_KEY
 export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
