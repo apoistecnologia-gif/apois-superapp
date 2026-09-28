@@ -16,14 +16,16 @@ requireMarkers('scripts/harden-entregas-payment-provider-boundary.mjs',[
   'pixResponse?.pix?.copyPaste',
 ],'Boundary Entregas aponta checkout exclusivamente para Safe2Pay');
 
-forbidMarkers('scripts/harden-entregas-payment-provider-boundary.mjs',[
-  'create-merchant-mercadopago-pix',
-  'create-asaas-pix-charge',
-  'create-pix-charge',
-  'openpix-payout',
-  'sync-payment-status',
-  'merchant-payment-readiness',
-],'Boundary Entregas não mantém gateway aposentado executável');
+requireMarkers('scripts/harden-entregas-payment-provider-boundary.mjs',[
+  "const forbidden = [",
+  "'create-merchant-mercadopago-pix'",
+  "'create-asaas-pix-charge'",
+  "'create-pix-charge'",
+  "'openpix-payout'",
+  "'sync-payment-status'",
+  "'merchant-payment-readiness'",
+  "if (source.includes(marker)) throw new Error('[FAIL] Entregas: provider aposentado permaneceu no checkout (' + marker + ')');",
+],'Boundary Entregas remove e rejeita gateways aposentados no checkout materializado');
 
 requireMarkers('scripts/harden-entregas-direct-payment-operations.mjs',[
   'function isOperationalPayment(order: MerchantOrder)',
