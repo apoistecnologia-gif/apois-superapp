@@ -9,7 +9,7 @@ const ok = (m) => console.log(`[OK] ${m}`);
 for (const marker of [
   'https://payment.safe2pay.com.br/v2/payment',
   'https://api.safe2pay.com.br/v2/marketplace/add',
-  '"X-API-KEY": apiKey()',
+  '"X-API-KEY": productionApiKey()',
   'PaymentMethod: "6"',
   'SAFE2PAY_PROVIDER_ENABLED',
   'SAFE2PAY_API_KEY_SANDBOX',
