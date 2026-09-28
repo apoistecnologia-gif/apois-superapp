@@ -23,7 +23,7 @@
       <p>Escolha como você trabalha na APOIS. Motoristas e entregadores usam este aplicativo.</p>
     </section>
     <section class="choices">
-      <article class="card motorista"><strong>Sou Motorista</strong><span>Fique online, receba corridas, acompanhe ganhos e conecte sua conta Mercado Pago.</span><button data-module="motorista" type="button">Entrar como motorista →</button></article>
+      <article class="card motorista"><strong>Sou Motorista</strong><span>Fique online, receba corridas e acompanhe seus ganhos e recebimentos.</span><button data-module="motorista" type="button">Entrar como motorista →</button></article>
       <article class="card entregador"><strong>Sou Entregador</strong><span>Fique disponível, receba entregas e acompanhe suas rotas e pedidos.</span><button data-module="entregador" type="button">Entrar como entregador →</button></article>
     </section>
     <div class="foot">APOIS • PARCEIROS</div>
@@ -89,17 +89,6 @@
         }
         if(isPartner&&incoming.host==='module'&&path==='entregador'){
           routeRole('entregador',operationalUrls.entregador);
-          return true;
-        }
-        // Mercado Pago do Motorista pertence exclusivamente ao APK Parceiro;
-        // o shell não deve consumir o callback registrado pelo Cliente.
-        if(isPartner&&incoming.host==='auth'&&path==='mercadopago'){
-          const locked=operationalRole();
-          if(locked&&locked!=='motorista'){
-            window.location.replace(operationalHome(locked));
-            return true;
-          }
-          window.location.assign('./modules/motorista/index.html#/motorista/assinatura'+suffix);
           return true;
         }
         if(isDriver && path==='redefinir-senha'){
