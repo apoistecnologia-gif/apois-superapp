@@ -79,11 +79,21 @@ replaceRequired(
   'consumo legado do callback mudou',
 );
 replaceRequired('  }, []);\n\n  const login = async () => {', '  }, [handle]);\n\n  const login = async () => {', 'dependência do listener mudou');
-replaceRequired(
-  '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, "corridas"); } catch {}',
-  '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch { /* appUrlOpen direto permanece disponível */ }',
-  'marcador OAuth pendente mudou',
-);
+{
+  const legacyPending = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, "corridas"); } catch {}';
+  const compactPending = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch { /* appUrlOpen direto permanece disponível */ }';
+  const multilinePending = `        try {
+          window.localStorage.setItem(
+            PENDING_PRODUCT_KEY,
+            JSON.stringify({ product: "corridas", createdAt: Date.now() }),
+          );
+        } catch {}`;
+  const canonicalPending = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch { /* appUrlOpen direto permanece disponível */ }';
+
+  if (source.includes(legacyPending)) source = source.replace(legacyPending, canonicalPending);
+  else if (source.includes(multilinePending)) source = source.replace(multilinePending, canonicalPending);
+  else if (!source.includes(compactPending)) throw new Error('[FAIL] OAuth Corridas: marcador OAuth pendente mudou');
+}
 
 for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] OAuth Corridas incompleto: ${marker}`);
