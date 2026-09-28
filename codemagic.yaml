@@ -211,6 +211,7 @@ workflows:
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
           npm run build:superapp:homologacao
+          grep -R -Fq 'apois-passenger-native-map' superapp/shell/dist/modules/corridas
           grep -R -Fq 'safe2pay-create-order-pix' superapp/shell/dist/modules/entregas
           grep -R -Fq 'safe2pay-payment-status' superapp/shell/dist/modules/entregas
           if grep -R -Eiq 'create-merchant-mercadopago-pix|create-asaas-pix-charge|openpix-payout|process-superapp-refund' superapp/shell/dist/modules/entregas; then
