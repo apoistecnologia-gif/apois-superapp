@@ -44,6 +44,31 @@ const landing = requireSnapshotFile(
 writeFileSync(landing.target, landing.before, 'utf8');
 console.log('[OK] Entregas: logo pública permanece relativa ao módulo aninhado');
 
+
+// O snapshot unificado monta processadores de payout de merchant/courier no root
+// global. Eles pertencem aos produtos parceiros e importam o runtime OpenPix legado,
+// fazendo o código chegar ao bundle do Cliente mesmo quando as rotas são bloqueadas.
+// No Superapp Cliente removemos somente esses imports/mounts da cópia .work.
+{
+  const rootRoutePath = resolve('.work/entregas/src/routes/__root.tsx');
+  let rootRoute = readFileSync(rootRoutePath, 'utf8');
+  for (const line of [
+    'import { CourierPendingPayoutProcessor } from "../components/CourierPendingPayoutProcessor";\n',
+    'import { MerchantPendingPayoutProcessor } from "../components/MerchantPendingPayoutProcessor";\n',
+    '      <CourierPendingPayoutProcessor />\n',
+    '      <MerchantPendingPayoutProcessor />\n',
+  ]) {
+    rootRoute = rootRoute.replaceAll(line, '');
+  }
+  for (const forbidden of ['CourierPendingPayoutProcessor', 'MerchantPendingPayoutProcessor']) {
+    if (rootRoute.includes(forbidden)) {
+      throw new Error(`[FAIL] Entregas: processador de payout legado permaneceu no root Cliente (${forbidden})`);
+    }
+  }
+  writeFileSync(rootRoutePath, rootRoute, 'utf8');
+  console.log('[OK] Entregas: processadores OpenPix de merchant/courier removidos do root do Cliente');
+}
+
 // Mercado Pago/PagBank/Asaas/OpenPix não fazem parte do boundary financeiro ativo.
 // Não execute os antigos hardeners de OAuth/charge aqui: o boundary final de
 // pagamento direto é aplicado no fim da cadeia de build de Entregas.
