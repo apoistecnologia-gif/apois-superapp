@@ -293,8 +293,10 @@ if (name === 'corridas') {
 
   const androidMapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
   if (androidMapsKey) {
-    console.log('[OK] corridas: Google Maps Android key disponível para o shell nativo');
+    env.VITE_APOIS_ANDROID_MAPS_API_KEY = androidMapsKey;
+    console.log('[OK] corridas: Google Maps Android key disponível para o mapa nativo do passageiro');
   } else {
+    delete env.VITE_APOIS_ANDROID_MAPS_API_KEY;
     console.warn('[WARN] corridas: CORRIDAS_ANDROID_MAPS_API_KEY ausente; mapa nativo será homologado após configuração');
   }
 
