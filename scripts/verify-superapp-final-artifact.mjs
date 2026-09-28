@@ -48,7 +48,10 @@ if (existsSync(shellPath)) {
     'const OAUTH_HANDOFF_TTL_MS=120000;',
     'clearExpiredCorridasGoogle()',
     "if(path==='corridas-reset')",
-    "localStorage.getItem('apois-superapp:pending-oauth-product')",
+    "const OAUTH_PENDING_KEY='apois-superapp:pending-oauth-product';",
+    'localStorage.getItem(OAUTH_PENDING_KEY)',
+    "envelope?.product==='corridas'",
+    'age>=0&&age<=OAUTH_HANDOFF_TTL_MS',
     './modules/entregas/index.html',
     './modules/corridas/index.html',
   ]) {
