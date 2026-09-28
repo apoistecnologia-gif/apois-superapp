@@ -559,6 +559,23 @@ patch('src/hooks/use-ride-categories.tsx', (source) =>
     .replace('  }, []);\n\n  const selectCategory', '  }, [fetchCategories]);\n\n  const selectCategory'),
 'Corridas: categorias mantêm callback estável e efeito com dependência correta');
 
+patch('src/services/maps/map-service.ts', (source) =>
+  source
+    .replace('        iconUrl: "assets/markers/pickup.png",\n        opacity: 1,', '        tintColor: { r: 246, g: 190, b: 28, a: 255 },\n        opacity: 1,')
+    .replace('        iconUrl: "assets/markers/destination.png",\n        opacity: 1,', '        tintColor: { r: 255, g: 255, b: 255, a: 255 },\n        opacity: 1,'),
+'Corridas: mapa nativo usa marcadores legíveis sem assets quebrados');
+
+patch('src/services/maps/map-config.ts', (source) =>
+  source
+    .replace('{ color: "#212121" }', '{ color: "#171a1f" }')
+    .replace('{ color: "#000000" }', '{ color: "#101b24" }')
+    .replace('{ color: "#2c2c2c" }', '{ color: "#30343a" }')
+    .replace('{ color: "#373737" }', '{ color: "#3a3f46" }')
+    .replace('{ color: "#3c3c3c" }', '{ color: "#444a52" }')
+    .replace('{ color: "#8a8a8a" }', '{ color: "#b7bcc4" }')
+    .replace('{ color: "#616161" }', '{ color: "#9298a1" }'),
+'Corridas: mapa escuro ganha contraste e leitura melhores');
+
 patch('src/services/google/google-maps-loader.ts', (source) =>
   source
     .replace(
@@ -579,6 +596,7 @@ requireMarkers('src/hooks/rides/use-ride-request.tsx', ['paymentMethod: string |
 requireMarkers('src/services/places/places-service.ts', ['initializationPromise', 'fullText.split(",")[0]', 'typeof p.toPlace === "function"'], 'Corridas autocomplete robusto');
 requireMarkers('src/types/places.ts', ['place?: unknown'], 'Corridas sugestão tipada sem any');
 requireMarkers('src/components/map/PassengerMap.tsx', ['status, validDriverLocation]', 'apois-passenger-native-map', 'VITE_APOIS_ANDROID_MAPS_API_KEY', 'Capacitor.isNativePlatform()'], 'Corridas mapa nativo e câmera sem stale driver');
+requireMarkers('src/services/maps/map-service.ts', ['tintColor: { r: 246, g: 190, b: 28, a: 255 }', 'tintColor: { r: 255, g: 255, b: 255, a: 255 }'], 'Corridas mapa nativo sem marcadores quebrados');
 requireMarkers('src/hooks/use-location.tsx', ['await requestPermission();', 'permission === "prompt" || permission === "unknown"'], 'Corridas pede localização nativa');
 requireMarkers('src/routes/_authenticated.tsx', ['PushNotifications.requestPermissions()', '[push] permission prompt unavailable'], 'Corridas pede notificações nativas');
 requireMarkers('src/services/places/places-service.ts', ['google-maps-address', 'Capacitor.isNativePlatform()', 'action: "autocomplete"', 'action: "place_details"'], 'Corridas autocomplete nativo usa backend autenticado');
