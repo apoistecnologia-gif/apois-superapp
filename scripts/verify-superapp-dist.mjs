@@ -57,6 +57,28 @@ requireMarkers('.work/entregas/src/routes/register.tsx',['emailRedirectTo: "br.c
 requireMarkers('.work/entregas/src/routes/login.tsx',['redirectTo: "br.com.apois.app://auth/reset"'],'reset Entregas usa deep link unificado');
 requireMarkers('.work/entregas/src/lib/customer-push.ts',['register_superapp_customer_push_device','_app_package: "br.com.apois.app"','const isDeliveryPush =','if (!target) return;'],'Push Entregas filtra produto e registra package correto');
 forbidMarkers('.work/entregas/src/lib/customer-push.ts',['PushNotifications.unregister()'],'logout Entregas não invalida token FCM compartilhado');
-requireMarkers('.work/entregas/src/routes/checkout.tsx',['const paymentMethod = "cash";','paymentMethod: "cash"','if (paymentMethod !== "cash")'],'checkout Entregas permanece cash-only e fail-closed');
+requireMarkers(
+  '.work/entregas/src/routes/checkout.tsx',
+  [
+    'const paymentMethod = "pix";',
+    'paymentMethod: "pix"',
+    '"safe2pay-create-order-pix"',
+    '"safe2pay-payment-status"',
+    'configuredProvider = "safe2pay_marketplace"',
+  ],
+  'checkout Entregas usa somente PIX Safe2Pay e confirmação server-authoritative',
+);
+forbidMarkers(
+  '.work/entregas/src/routes/checkout.tsx',
+  [
+    'create-merchant-mercadopago-pix',
+    'create-asaas-pix-charge',
+    'create-pix-charge',
+    'openpix-payout',
+    'sync-payment-status',
+    'merchant-payment-readiness',
+  ],
+  'checkout Entregas não contém provider financeiro aposentado',
+);
 requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['fixed bottom-0','min-h-[88px]','aria-label="Buscar"','<Search className="h-8 w-8" />'],'rodapé Entregas é fixo, legível e explícito');
 if(failed)process.exit(1);console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');
