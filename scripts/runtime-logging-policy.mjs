@@ -154,6 +154,11 @@ export function hardenRuntimeLogging(root, moduleName = 'module') {
       search: 'console.error("customer-orders list failed", { code: error.code, userId: authData.user.id });',
       replacement: 'console.error("customer-orders list failed", { code: error.code });',
     },
+    {
+      paths: ['supabase/functions/process-refund/index.ts'],
+      search: 'console.error("process-refund refund lookup failed", {\n      code: refundError.code,\n      refundId: payload.refundId,\n    });',
+      replacement: 'console.error("process-refund refund lookup failed", { code: refundError.code });',
+    },
   ];
 
   for (const rule of replacements) {
