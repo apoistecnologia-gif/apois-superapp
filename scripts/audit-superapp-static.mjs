@@ -39,7 +39,7 @@ if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?m
 } else console.log('[OK] nenhum GitHub Action ativo no Superapp');
 
 requireText('package.json', [
-  '"audit:static": "node scripts/audit-superapp-static.mjs"',
+  '"audit:static": "node scripts/audit-superapp-static.mjs && npm run test:runtime-logging"',
   '"audit:payment-boundary": "node scripts/audit-payment-boundary.mjs"',
   '"verify:corridas-supabase-source": "node scripts/verify-corridas-supabase-source-of-truth.mjs"',
   '"verify:corridas-auth": "node scripts/verify-corridas-auth-regressions.mjs"',
