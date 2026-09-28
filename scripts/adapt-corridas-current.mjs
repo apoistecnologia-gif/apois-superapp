@@ -364,6 +364,143 @@ export default PassengerMap;`);
 }, 'Corridas: APK usa Google Maps nativo do Capacitor no Passageiro');
 
 
+
+patch('src/hooks/use-location.tsx', (source) =>
+  source.replace(
+    '      const permission = await checkPermissions();\n      if (!mountedRef.current || permission !== "granted") return;\n\n      await refreshLocation();',
+    '      let permission = await checkPermissions();\n      if (!mountedRef.current) return;\n      if (permission === "prompt" || permission === "unknown") {\n        await requestPermission();\n        permission = await checkPermissions();\n      }\n      if (!mountedRef.current || permission !== "granted") return;\n\n      await refreshLocation();',
+  ),
+'Corridas: solicita localização no primeiro acesso autenticado');
+
+patch('src/routes/_authenticated.tsx', (source) =>
+  source.replace(
+    'function PushBootstrap() {\n  usePushNotifications();\n  return null;\n}',
+    `function PushBootstrap() {
+  usePushNotifications();
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const { PushNotifications } = await import("@capacitor/push-notifications");
+        let permission = await PushNotifications.checkPermissions();
+        if (!active) return;
+        if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") {
+          permission = await PushNotifications.requestPermissions();
+        }
+      } catch (error) {
+        console.warn("[push] permission prompt unavailable", {
+          message: error instanceof Error ? error.message : "push_permission_error",
+        });
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  return null;
+}`,
+  ),
+'Corridas: solicita permissão nativa de notificações no runtime autenticado');
+
+patch('src/services/places/places-service.ts', (source) => {
+  let next = source;
+  if (!next.includes('import { Capacitor } from "@capacitor/core";')) {
+    next = next.replace(
+      'import { googleMapsLoader } from "../google/google-maps-loader";',
+      'import { googleMapsLoader } from "../google/google-maps-loader";\nimport { Capacitor } from "@capacitor/core";\nimport { supabase } from "@/integrations/supabase/client";',
+    );
+  }
+
+  next = next.replace(
+    '    await this.initialize();\n\n    const requestId = ++this.lastRequestId;',
+    `    const requestId = ++this.lastRequestId;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { data, error } = await supabase.functions.invoke("google-maps-address", {
+          body: { action: "autocomplete", input: normalizedQuery },
+        });
+        if (error) throw error;
+        if (requestId !== this.lastRequestId) throw this.normalizeError("places_cancelled");
+        const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
+        const suggestions: PlaceSuggestion[] = predictions
+          .map((prediction: any) => ({
+            placeId: String(prediction?.place_id ?? ""),
+            primaryText: String(prediction?.structured_formatting?.main_text ?? prediction?.description ?? ""),
+            secondaryText: String(prediction?.structured_formatting?.secondary_text ?? ""),
+            fullText: String(prediction?.description ?? ""),
+            types: Array.isArray(prediction?.types) ? prediction.types : [],
+          }))
+          .filter((prediction: PlaceSuggestion) => Boolean(prediction.placeId && prediction.primaryText));
+        this.cache.set(cacheKey, { data: suggestions, timestamp: Date.now() });
+        return suggestions;
+      } catch (error: any) {
+        if (error?.code === "places_cancelled") throw error;
+        console.error("Native Places Search Error:", error);
+        throw this.normalizeError("places_network_error");
+      }
+    }
+
+    await this.initialize();`,
+  );
+
+  next = next.replace(
+    '  public async selectPrediction(prediction: any): Promise<DestinationAddress> {\n    await this.initialize();',
+    `  public async selectPrediction(prediction: any): Promise<DestinationAddress> {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { data, error } = await supabase.functions.invoke("google-maps-address", {
+          body: { action: "place_details", placeId: prediction.placeId },
+        });
+        if (error || !data?.result) throw error ?? new Error("place_details_missing");
+        const result = data.result;
+        const latitude = Number(result?.geometry?.location?.lat);
+        const longitude = Number(result?.geometry?.location?.lng);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          throw this.normalizeError("places_invalid_location");
+        }
+
+        const components: AddressComponent = {};
+        for (const component of result.address_components ?? []) {
+          const types = Array.isArray(component?.types) ? component.types : [];
+          if (types.includes("route")) components.rua = component.long_name;
+          if (types.includes("street_number")) components.numero = component.long_name;
+          if (types.includes("neighborhood") || types.includes("sublocality_level_1")) components.bairro = component.long_name;
+          if (types.includes("locality")) components.cidade = component.long_name;
+          if (types.includes("administrative_area_level_1")) {
+            components.estado = component.long_name;
+            components.estadoSigla = component.short_name;
+          }
+          if (types.includes("postal_code")) components.cep = component.long_name;
+          if (types.includes("country")) components.pais = component.long_name;
+        }
+
+        const fullText = String(prediction.fullText ?? prediction.primaryText ?? "Local selecionado");
+        return {
+          placeId: String(prediction.placeId),
+          latitude,
+          longitude,
+          label: String(prediction.primaryText ?? fullText.split(",")[0] ?? "Local selecionado"),
+          subLabel: String(prediction.secondaryText ?? ""),
+          formattedAddress: fullText,
+          name: String(prediction.primaryText ?? ""),
+          components,
+          types: Array.isArray(prediction.types) ? prediction.types : [],
+          selectedAt: new Date().toISOString(),
+          source: "google_places",
+        };
+      } catch (error) {
+        console.error("Native Place Details Error:", error);
+        throw this.normalizeError("places_details_unavailable");
+      }
+    }
+
+    await this.initialize();`,
+  );
+
+  return next;
+}, 'Corridas: autocomplete nativo usa Edge Function autenticada e não depende do Maps JS no WebView');
+
 patch('src/hooks/use-destination-search.tsx', (source) =>
   source.replace('    [location],\n  );', '    [currentPosition],\n  );'),
 'Corridas: busca de destino usa a posição atual sem stale closure');
@@ -394,6 +531,9 @@ requireMarkers('src/hooks/rides/use-ride-request.tsx', ['paymentMethod: string |
 requireMarkers('src/services/places/places-service.ts', ['initializationPromise', 'fullText.split(",")[0]', 'typeof p.toPlace === "function"'], 'Corridas autocomplete robusto');
 requireMarkers('src/types/places.ts', ['place?: unknown'], 'Corridas sugestão tipada sem any');
 requireMarkers('src/components/map/PassengerMap.tsx', ['status, validDriverLocation]', 'apois-passenger-native-map', 'VITE_APOIS_ANDROID_MAPS_API_KEY', 'Capacitor.isNativePlatform()'], 'Corridas mapa nativo e câmera sem stale driver');
+requireMarkers('src/hooks/use-location.tsx', ['await requestPermission();', 'permission === "prompt" || permission === "unknown"'], 'Corridas pede localização nativa');
+requireMarkers('src/routes/_authenticated.tsx', ['PushNotifications.requestPermissions()', '[push] permission prompt unavailable'], 'Corridas pede notificações nativas');
+requireMarkers('src/services/places/places-service.ts', ['google-maps-address', 'Capacitor.isNativePlatform()', 'action: "autocomplete"', 'action: "place_details"'], 'Corridas autocomplete nativo usa backend autenticado');
 requireMarkers('src/hooks/use-destination-search.tsx', ['[currentPosition]'], 'Corridas destino sem stale position');
 requireMarkers('src/hooks/use-ride-categories.tsx', ['}, []);', '}, [fetchCategories]);'], 'Corridas categorias com hooks estáveis');
 
