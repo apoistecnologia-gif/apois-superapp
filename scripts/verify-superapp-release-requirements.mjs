@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const strict = process.env.APOIS_STRICT_NATIVE_CONFIG === '1';
-const canonicalUrl = 'https://tbbzkrfupmqdywnzgnms.supabase.co';
+const canonicalCorridasUrl = 'https://tbbzkrfupmqdywnzgnms.supabase.co';
+const canonicalEntregasUrl = 'https://ptgkwyyolrdgnqketkjj.supabase.co';
 let failed = false;
 function fail(message) { failed = true; console.error(`[FAIL] ${message}`); }
 function warn(message) { console.warn(`[WARN] ${message}`); }
@@ -24,9 +25,17 @@ const supabaseUrl = process.env.CORRIDAS_VITE_SUPABASE_URL?.trim().replace(/\/$/
 if (!supabaseUrl) {
   if (strict) fail('CORRIDAS_VITE_SUPABASE_URL é obrigatória no release');
   else warn('CORRIDAS_VITE_SUPABASE_URL ausente no desenvolvimento');
-} else if (supabaseUrl !== canonicalUrl) {
-  fail(`CORRIDAS_VITE_SUPABASE_URL deve ser ${canonicalUrl}`);
+} else if (supabaseUrl !== canonicalCorridasUrl) {
+  fail(`CORRIDAS_VITE_SUPABASE_URL deve ser ${canonicalCorridasUrl}`);
 } else ok('Supabase Corridas canônico configurado');
+
+const entregasUrl = process.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+if (!entregasUrl) {
+  if (strict) fail('VITE_SUPABASE_URL de Entregas é obrigatória no release');
+  else warn('VITE_SUPABASE_URL de Entregas ausente no desenvolvimento');
+} else if (entregasUrl !== canonicalEntregasUrl) {
+  fail(`VITE_SUPABASE_URL de Entregas deve ser ${canonicalEntregasUrl}`);
+} else ok('Supabase Entregas canônico configurado');
 
 for (const name of ['CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY']) {
   const value = process.env[name]?.trim() || '';
