@@ -33,14 +33,38 @@ for(const marker of [
   'pixResponse?.pix?.copyPaste',
 ]) if(!hardener.includes(marker)) fail('hardener Safe2Pay incompleto: '+marker);
 
-for(const forbidden of [
+// Os nomes legados precisam existir no hardener como alvos de remoção/bloqueio.
+// Não trate a denylist nem os padrões de substituição como "ativação" do provider.
+const retiredMarkers = [
   'create-merchant-mercadopago-pix',
   'create-asaas-pix-charge',
   'create-pix-charge',
   'openpix-payout',
   'sync-payment-status',
   'merchant-payment-readiness',
-]) if(hardener.includes(forbidden)) fail('hardener ainda ativa provider aposentado: '+forbidden);
+];
+for(const marker of retiredMarkers) {
+  if(!hardener.includes(`'${marker}'`)) {
+    fail('hardener não bloqueia provider aposentado: '+marker);
+  }
+}
+for(const marker of [
+  'const forbidden = [',
+  "if (source.includes(marker)) throw new Error('[FAIL] Entregas: provider aposentado permaneceu no checkout (' + marker + ')');",
+  'supabase.functions.invoke("safe2pay-create-order-pix"',
+  'supabase.functions.invoke("safe2pay-payment-status"',
+]) if(!hardener.includes(marker)) fail('hardener Safe2Pay perdeu proteção contra provider legado: '+marker);
+
+// Detecta reativação real no código que o hardener materializa, sem confundir
+// strings usadas exclusivamente para localizar/remover implementação antiga.
+for(const activePattern of [
+  'const configuredProvider = "mercadopago_merchant";',
+  'const configuredProvider = "asaas";',
+  'const configuredProvider = "openpix";',
+  'const pixFunction = "create-merchant-mercadopago-pix";',
+  'const pixFunction = "create-asaas-pix-charge";',
+  'const pixFunction = "create-pix-charge";',
+]) if(hardener.includes(activePattern)) fail('hardener ainda materializa provider aposentado: '+activePattern);
 
 for(const marker of [
   '.eq("customer_user_id", authData.user.id)',
