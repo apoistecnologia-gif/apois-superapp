@@ -11,7 +11,7 @@ workflows:
         - apois_android
       vars:
         APP_PACKAGE: "br.com.apois.app"
-        APP_LABEL: "APOIS Cliente"
+        APP_LABEL: "APOIS"
         APP_VERSION_CODE: "1"
         APP_VERSION_NAME: "1.0.0"
         BUN_VERSION: "1.3.14"
@@ -108,6 +108,10 @@ workflows:
           cd ../..
           node scripts/configure-superapp-android.mjs
           node scripts/install-superapp-launcher.mjs
+          grep -Fq '<string name="app_name">APOIS</string>' superapp/shell/android/app/src/main/res/values/strings.xml
+          grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/drawable/splash.xml
+          test ! -e superapp/shell/android/app/src/main/res/drawable/ic_launcher_foreground.xml
           grep -Fq "versionCode ${APP_VERSION_CODE}" superapp/shell/android/app/build.gradle
           grep -Fq "versionName \"${APP_VERSION_NAME}\"" superapp/shell/android/app/build.gradle
       - name: Build APK and AAB release
@@ -162,7 +166,7 @@ workflows:
         - apois_android
       vars:
         APP_PACKAGE: "br.com.apois.app"
-        APP_LABEL: "APOIS Cliente"
+        APP_LABEL: "APOIS"
         APP_VERSION_CODE: "1"
         APP_VERSION_NAME: "1.0.0"
         BUN_VERSION: "1.3.14"
@@ -232,6 +236,10 @@ workflows:
           cd ../..
           node scripts/configure-superapp-android.mjs
           node scripts/install-superapp-launcher.mjs
+          grep -Fq '<string name="app_name">APOIS</string>' superapp/shell/android/app/src/main/res/values/strings.xml
+          grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          grep -Fq '@mipmap/ic_launcher_foreground' superapp/shell/android/app/src/main/res/drawable/splash.xml
+          test ! -e superapp/shell/android/app/src/main/res/drawable/ic_launcher_foreground.xml
       - name: Build and sign homologation APK
         script: |
           set -euo pipefail
