@@ -22,10 +22,20 @@ else {
     if (codemagic.includes(forbidden)) fail(`workflow separado legado reapareceu (${forbidden})`);
   }
   const workflowKeys = [...codemagic.matchAll(/^  ([a-z0-9-]+):$/gm)].map((match) => match[1]);
-  const expected = ['android-superapp-experimental', 'android-partner-superapp'];
-  if (workflowKeys.length !== expected.length || expected.some((key) => !workflowKeys.includes(key))) {
-    fail(`Codemagic deve expor somente os dois apps unificados; encontrados: ${workflowKeys.join(', ') || 'nenhum'}`);
-  } else ok('Codemagic expõe somente APOIS Superapp e APOIS Parceiro');
+  const required = ['android-superapp-experimental', 'android-partner-superapp'];
+  const allowed = new Set([
+    'android-superapp-experimental',
+    'android-superapp-homologacao',
+    'android-partner-superapp',
+  ]);
+  const unexpected = workflowKeys.filter((key) => !allowed.has(key));
+  if (required.some((key) => !workflowKeys.includes(key))) {
+    fail(`Codemagic perdeu um dos dois apps unificados; encontrados: ${workflowKeys.join(', ') || 'nenhum'}`);
+  } else if (unexpected.length) {
+    fail(`Codemagic expõe workflow fora dos dois apps unificados: ${unexpected.join(', ')}`);
+  } else {
+    ok('Codemagic expõe somente APOIS Superapp (produção/homologação) e APOIS Parceiro');
+  }
 }
 
 for (const path of ['scripts/build-test-motorista.sh', 'scripts/build-test-entregador.sh']) {
