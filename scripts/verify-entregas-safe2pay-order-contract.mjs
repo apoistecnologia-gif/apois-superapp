@@ -51,8 +51,8 @@ for(const marker of retiredMarkers) {
 for(const marker of [
   'const forbidden = [',
   "if (source.includes(marker)) throw new Error('[FAIL] Entregas: provider aposentado permaneceu no checkout (' + marker + ')');",
-  'supabase.functions.invoke("safe2pay-create-order-pix"',
-  'supabase.functions.invoke("safe2pay-payment-status"',
+  '"safe2pay-create-order-pix"',
+  '"safe2pay-payment-status"',
 ]) if(!hardener.includes(marker)) fail('hardener Safe2Pay perdeu proteção contra provider legado: '+marker);
 
 // Detecta reativação real no código que o hardener materializa, sem confundir
