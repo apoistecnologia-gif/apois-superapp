@@ -774,7 +774,7 @@ export const BottomNavigation = () => {
     </nav>
   );
 };
-`),
+`,
 'Corridas: navegação inferior ganha grade estável, legibilidade e alvos de toque consistentes');
 
 patch('src/routes/_authenticated.perfil.tsx', (source) =>
