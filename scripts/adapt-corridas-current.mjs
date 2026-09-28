@@ -37,6 +37,40 @@ patch('src/hooks/use-location.tsx', (source) =>
   source.replace('const LAST_LOCATION_KEY = "apois-last-location";', 'const LAST_LOCATION_KEY = "apois-superapp-corridas-last-location";'),
 'Corridas: cache de localização isolado por módulo');
 
+
+patch('src/routes/_authenticated.inicio.tsx', (source) => {
+  let next = source;
+  next = next.replace(
+`              <div className="w-10 h-10 rounded-full border-2 border-green-500 overflow-hidden bg-zinc-800">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white font-black text-xs">
+                    {readString(profile?.full_name || profile?.name, "P")[0]}
+                  </div>
+                )}
+              </div>`,
+`              <div className="relative w-10 h-10 rounded-full border-2 border-apois-yellow/70 overflow-hidden bg-zinc-800">
+                <div className="absolute inset-0 flex items-center justify-center text-apois-yellow font-black text-sm">
+                  {readString(profile?.full_name || profile?.name, "A")[0]}
+                </div>
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Foto do perfil"
+                    className="relative z-10 w-full h-full object-cover"
+                    onError={(event) => { event.currentTarget.style.display = "none"; }}
+                  />
+                ) : null}
+              </div>`
+  );
+  next = next.replace(
+    '<span className="text-[10px] text-zinc-500 font-medium">1 motorista próximo</span>',
+    '<span className="text-[10px] text-zinc-500 font-medium">Motoristas disponíveis na região</span>',
+  );
+  return next;
+}, 'Corridas: avatar quebrado usa fallback e home não inventa contagem de motoristas');
+
 patch('src/components/map/PassengerMap.tsx', (source) => {
   let next = source;
   if (!next.includes('PolylineDecoder')) {
@@ -352,6 +386,7 @@ patch('src/services/google/google-maps-loader.ts', (source) =>
     ),
 'Corridas: loader de Maps usa controle de fluxo explícito');
 
+requireMarkers('src/routes/_authenticated.inicio.tsx', ['onError={(event) => { event.currentTarget.style.display = "none"; }}', 'Motoristas disponíveis na região'], 'Corridas home sem avatar quebrado nem contagem fictícia');
 requireMarkers('src/integrations/supabase/client.ts', ['storageKey: "apois-superapp-corridas-auth-v1"'], 'Corridas auth isolado');
 requireMarkers('src/hooks/use-location.tsx', ['apois-superapp-corridas-last-location'], 'Corridas localização isolada');
 requireMarkers('src/components/map/PassengerMap.tsx', ['encodedPolyline', 'PolylineDecoder', 'displayedRoutePoints'], 'Corridas mapa com rota persistida');
