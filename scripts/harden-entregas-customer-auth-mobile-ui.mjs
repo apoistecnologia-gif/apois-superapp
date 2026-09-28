@@ -20,6 +20,13 @@ function patch(relativePath, transform, verify, label, { optional = false } = {}
 patch('src/routes/login.tsx', (source) => {
   let next = source.replaceAll('h-screen', 'h-dvh').replaceAll('min-h-screen', 'min-h-dvh');
   next = next
+    .replace(
+      'className="mx-auto flex w-full max-w-md flex-col px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-8"',
+      'className="mx-auto flex w-full max-w-md flex-col px-5 pb-[calc(max(env(safe-area-inset-bottom),1.5rem)+5.5rem)] pt-6 sm:px-6"',
+    )
+    .replaceAll('className="mt-10 space-y-5"', 'className="mt-7 space-y-4"')
+    .replaceAll('className="mt-7 text-center"', 'className="mt-5 px-2 text-center"')
+    .replaceAll('className="text-sm text-zinc-500"', 'className="break-words text-sm leading-6 text-zinc-500"')
     .replaceAll('className="-ml-2 rounded-full p-2 transition-colors hover:bg-white/10"', 'className="-ml-2 grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10"')
     .replaceAll('className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"', 'className="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-xl text-zinc-500 hover:bg-white/5 hover:text-zinc-300"')
     .replaceAll('className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 active:text-zinc-300"', 'className="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-xl text-zinc-500 active:text-zinc-300"')
@@ -31,6 +38,8 @@ patch('src/routes/login.tsx', (source) => {
 }, (source) =>
   source.includes('grid h-11 w-11') &&
   source.includes('inline-flex min-h-11 items-center') &&
+  source.includes('pb-[calc(max(env(safe-area-inset-bottom),1.5rem)+5.5rem)]') &&
+  source.includes('break-words text-sm leading-6') &&
   source.includes('min-h-dvh') &&
   !source.includes('h-screen'),
 'Entregas: login central mantém controles de senha, recuperação e cadastro tocáveis');
