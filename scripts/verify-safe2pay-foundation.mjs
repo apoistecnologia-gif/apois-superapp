@@ -32,7 +32,7 @@ for(const marker of [
   'merchant_amount numeric(12,2)',
   'pix_copy_paste text',
   'pix_qr_code_base64 text',
-  'round(merchant_amount::numeric, 2) = round(amount::numeric, 2)'
+  'round(merchant_amount::numeric, 2) = round(amount::numeric, 2)',
   'unique(event_key)',
   'enable row level security',
   'from anon, authenticated',
