@@ -588,8 +588,155 @@ patch('src/services/google/google-maps-loader.ts', (source) =>
     ),
 'Corridas: loader de Maps usa controle de fluxo explícito');
 
+
+patch('src/styles.css', (source) =>
+  source.replace(
+    '    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)\n      env(safe-area-inset-left);',
+    '    padding: 0;',
+  ),
+'Corridas: viewport não soma safe-area ao 100dvh e evita corte inferior');
+
+patch('src/routes/_authenticated.tsx', (source) =>
+  source
+    .replace(
+      '                                  <div className="min-h-[100dvh] bg-zinc-950 flex justify-center selection:bg-yellow-500/30 overflow-hidden">\n                                    <div className="relative w-full max-w-[430px] h-[100dvh] bg-black overflow-hidden flex flex-col">\n                                      <div className="flex-1 relative overflow-hidden flex flex-col">',
+      '                                  <div className="h-[100dvh] bg-zinc-950 flex justify-center selection:bg-yellow-500/30 overflow-hidden">\n                                    <div className="relative w-full max-w-[430px] h-full bg-black overflow-hidden flex flex-col">\n                                      <div className="min-h-0 flex-1 relative overflow-hidden flex flex-col">',
+    ),
+'Corridas: shell ocupa exatamente a viewport e reserva espaço real para navegação');
+
+patch('src/components/BottomNavigation.tsx', (source) =>
+  source.replace(
+    'className="relative w-full bg-black border-t border-white/10 flex justify-around py-3 px-2 z-[100] pb-[calc(12px+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] shrink-0"',
+    'className="relative w-full min-h-[76px] bg-black border-t border-white/10 flex items-start justify-around pt-3 px-2 z-[100] pb-[max(14px,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] shrink-0"',
+  ),
+'Corridas: navegação inferior respeita barra do Android sem cortar rótulos');
+
+patch('src/hooks/use-auth.tsx', (source) => {
+  let next = source;
+  next = next.replace('.eq("id", userId)\n        .maybeSingle();', '.eq("auth_user_id", userId)\n        .maybeSingle();');
+  next = next.replace(
+    '        const normalizedProfile = normalizeProfile(data);\n        setProfile(normalizedProfile);\n        return normalizedProfile;',
+    `        const normalizedProfile = normalizeProfile(data);
+        if (normalizedProfile?.avatar_url && !/^https?:\\/\\//i.test(normalizedProfile.avatar_url) && !normalizedProfile.avatar_url.startsWith("data:")) {
+          const { data: signedAvatar } = await supabase.storage
+            .from("profile-photos")
+            .createSignedUrl(normalizedProfile.avatar_url, 60 * 60);
+          if (signedAvatar?.signedUrl) normalizedProfile.avatar_url = signedAvatar.signedUrl;
+        }
+        if (!normalizedProfile?.avatar_url) {
+          const { data: authUser } = await supabase.auth.getUser();
+          const metadataAvatar = authUser.user?.user_metadata?.avatar_url ?? authUser.user?.user_metadata?.picture;
+          if (typeof metadataAvatar === "string" && metadataAvatar.trim()) normalizedProfile.avatar_url = metadataAvatar.trim();
+        }
+        setProfile(normalizedProfile);
+        return normalizedProfile;`,
+  );
+  return next;
+}, 'Corridas: perfil resolve usuário por auth_user_id e assina foto privada do Storage');
+
+patch('src/routes/_authenticated.perfil.tsx', (source) =>
+  source.replace(
+    '<AvatarImage src={currentProfile.avatarUrl} />',
+    '<AvatarImage src={currentProfile.avatarUrl} alt={currentProfile.name} referrerPolicy="no-referrer" />',
+  ),
+'Corridas: foto de perfil usa URL assinada e fallback seguro');
+
+patch('src/routes/_authenticated.carteira.tsx', () => `import { createFileRoute } from "@tanstack/react-router";
+import { AlertTriangle, RefreshCw, ShieldCheck, WalletCards } from "lucide-react";
+import { useWallet } from "@/hooks/use-wallet";
+
+export const Route = createFileRoute("/_authenticated/carteira")({
+  component: CarteiraPage,
+});
+
+const money = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+function CarteiraPage() {
+  const { wallet, state, isLoading, refresh } = useWallet();
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto bg-black px-5 pt-[max(24px,env(safe-area-inset-top))] pb-8 text-white">
+      <div className="mx-auto w-full max-w-md space-y-5">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">APOIS</p>
+          <h1 className="mt-1 text-3xl font-black">Sua carteira</h1>
+          <p className="mt-1 text-sm text-zinc-400">Saldo e pendências relacionadas às suas corridas.</p>
+        </div>
+
+        <section className="rounded-[28px] border border-amber-400/20 bg-gradient-to-br from-zinc-900 to-black p-6 shadow-2xl">
+          <div className="flex items-center justify-between">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/10 text-apois-yellow">
+              <WalletCards size={25} />
+            </div>
+            <button type="button" onClick={() => void refresh()} disabled={isLoading} className="rounded-xl border border-white/10 p-3 text-zinc-300 disabled:opacity-50" aria-label="Atualizar carteira">
+              <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
+            </button>
+          </div>
+
+          <p className="mt-7 text-sm text-zinc-400">Saldo disponível</p>
+          <p className="mt-1 text-4xl font-black tracking-tight text-white">
+            {state === "available" || state === "blocked" ? money(wallet?.available_balance ?? 0) : "R$ 0,00"}
+          </p>
+
+          <div className="mt-6 rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+            {isLoading && <p className="text-sm text-zinc-400">Carregando sua carteira...</p>}
+            {!isLoading && state === "not_found" && (
+              <div className="flex gap-3">
+                <ShieldCheck className="mt-0.5 text-apois-yellow" size={20} />
+                <div>
+                  <p className="font-bold">Nenhuma carteira financeira criada</p>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">Sua conta está ativa. A carteira será usada somente quando houver saldo ou cobrança vinculada às corridas.</p>
+                </div>
+              </div>
+            )}
+            {!isLoading && state === "available" && (
+              <div className="flex gap-3">
+                <ShieldCheck className="mt-0.5 text-emerald-500" size={20} />
+                <div>
+                  <p className="font-bold">Carteira ativa</p>
+                  <p className="mt-1 text-xs text-zinc-400">Saldo disponível para operações permitidas no aplicativo.</p>
+                </div>
+              </div>
+            )}
+            {!isLoading && state === "blocked" && (
+              <div className="flex gap-3">
+                <AlertTriangle className="mt-0.5 text-red-500" size={20} />
+                <div>
+                  <p className="font-bold text-red-400">Carteira bloqueada</p>
+                  <p className="mt-1 text-xs text-red-300/80">{wallet?.blockedReason || "Existe uma pendência que precisa ser regularizada."}</p>
+                </div>
+              </div>
+            )}
+            {!isLoading && state === "failed" && (
+              <div className="flex gap-3">
+                <AlertTriangle className="mt-0.5 text-red-500" size={20} />
+                <div>
+                  <p className="font-bold text-red-400">Não foi possível carregar a carteira</p>
+                  <button type="button" onClick={() => void refresh()} className="mt-2 text-sm font-bold text-apois-yellow">Tentar novamente</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-white/5 bg-[#111214] p-5">
+          <h2 className="font-black">Como funciona</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-400">Esta área mostra saldo, bloqueios e pendências financeiras do passageiro. Nenhuma cobrança é criada apenas por abrir esta tela.</p>
+        </section>
+      </div>
+    </div>
+  );
+}
+`),
+'Corridas: Carteira deixa de ser placeholder preto e mostra estado financeiro real');
+
 requireMarkers('src/routes/_authenticated.inicio.tsx', ['onError={(event) => { event.currentTarget.style.display = "none"; }}', 'Motoristas disponíveis na região'], 'Corridas home sem avatar quebrado nem contagem fictícia');
 requireMarkers('src/integrations/supabase/client.ts', ['storageKey: "apois-superapp-corridas-auth-v1"'], 'Corridas auth isolado');
+requireMarkers('src/hooks/use-auth.tsx', ['.eq("auth_user_id", userId)', '.from("profile-photos")', 'createSignedUrl'], 'Corridas perfil usa domínio correto e foto privada assinada');
+requireMarkers('src/routes/_authenticated.carteira.tsx', ['useWallet', 'Saldo disponível', 'Carteira ativa'], 'Corridas carteira materializada e funcional');
+requireMarkers('src/styles.css', ['padding: 0;'], 'Corridas viewport sem safe-area duplicada');
+requireMarkers('src/components/BottomNavigation.tsx', ['min-h-[76px]', 'pb-[max(14px,env(safe-area-inset-bottom))]'], 'Corridas navegação inferior protegida');
 requireMarkers('src/hooks/use-location.tsx', ['apois-superapp-corridas-last-location'], 'Corridas localização isolada');
 requireMarkers('src/components/map/PassengerMap.tsx', ['encodedPolyline', 'PolylineDecoder', 'displayedRoutePoints'], 'Corridas mapa com rota persistida');
 requireMarkers('src/hooks/rides/use-ride-request.tsx', ['paymentMethod: string | null', 'payment_method: selectedMethod', 'pickup_address: pickupAddress'], 'Corridas payload real e idempotente');
