@@ -87,6 +87,194 @@ if (name === 'corridas') {
     'corridas: atualização do mapa acompanha rota persistida',
   );
   replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    'import { googleMapsLoader } from "@/services/google/google-maps-loader";\nimport { PolylineDecoder } from "@/services/routes/polyline-decoder";',
+    'import { googleMapsLoader } from "@/services/google/google-maps-loader";\nimport { PolylineDecoder } from "@/services/routes/polyline-decoder";\nimport { Capacitor } from "@capacitor/core";\nimport { mapService } from "@/services/maps/map-service";',
+    'corridas: mapa do passageiro carrega fallback nativo do Capacitor',
+  );
+  replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    'const PassengerMap: React.FC<PassengerMapProps> = (',
+    'const WebPassengerMap: React.FC<PassengerMapProps> = (',
+    'corridas: implementação web do mapa permanece como fallback',
+  );
+  replaceRequired(
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    'export default PassengerMap;',
+    `const NATIVE_PASSENGER_MAP_ID = "apois-passenger-native-map";
+
+const NativePassengerMap: React.FC<PassengerMapProps> = ({
+  origin: customOrigin,
+  destination: customDestination,
+  encodedPolyline,
+  driverLocation,
+  isStatic = false,
+}) => {
+  const { location } = useLocation();
+  const { route } = useRoute();
+  const { orderedStops } = useRideStops();
+  const { destination: globalDestination } = useDestination();
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<MapStatus>("loading");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const origin = useMemo<Coordinate | null>(() => {
+    const lat = customOrigin?.lat ?? location?.latitude;
+    const lng = customOrigin?.lng ?? location?.longitude;
+    return isCoordinate(lat) && isCoordinate(lng) ? { lat, lng } : null;
+  }, [customOrigin?.lat, customOrigin?.lng, location?.latitude, location?.longitude]);
+
+  const destination = useMemo<Coordinate | null>(() => {
+    const value = customDestination ?? globalDestination;
+    if (!value) return null;
+    const lat = "latitude" in value ? value.latitude : value.lat;
+    const lng = "longitude" in value ? value.longitude : value.lng;
+    return isCoordinate(lat) && isCoordinate(lng) ? { lat, lng } : null;
+  }, [customDestination, globalDestination]);
+
+  const displayedRoutePoints = useMemo<Coordinate[]>(() => {
+    if (route?.decodedPoints && route.decodedPoints.length > 1) {
+      return route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));
+    }
+    if (!encodedPolyline) return [];
+    try {
+      return PolylineDecoder.decode(encodedPolyline);
+    } catch {
+      return [];
+    }
+  }, [encodedPolyline, route?.decodedPoints]);
+
+  useEffect(() => {
+    let disposed = false;
+    const element = elementRef.current;
+    if (!element) return;
+
+    const transparentNodes: HTMLElement[] = [];
+    let cursor: HTMLElement | null = element;
+    while (cursor) {
+      transparentNodes.push(cursor);
+      if (cursor === document.body) break;
+      cursor = cursor.parentElement;
+    }
+    transparentNodes.push(document.documentElement);
+    const previousBackgrounds = transparentNodes.map((node) => ({
+      node,
+      background: node.style.background,
+      backgroundColor: node.style.backgroundColor,
+    }));
+    for (const item of previousBackgrounds) {
+      item.node.style.background = "transparent";
+      item.node.style.backgroundColor = "transparent";
+    }
+
+    const initialize = async () => {
+      setStatus("loading");
+      const apiKey = String(import.meta.env.VITE_APOIS_ANDROID_MAPS_API_KEY ?? "").trim();
+      if (!apiKey) {
+        setStatus("configuration-error");
+        return;
+      }
+      try {
+        await mapService.destroyMap(NATIVE_PASSENGER_MAP_ID).catch(() => undefined);
+        if (disposed || !elementRef.current) return;
+        elementRef.current.id = NATIVE_PASSENGER_MAP_ID;
+        await mapService.createMap(elementRef.current, apiKey, origin ?? DEFAULT_CENTER);
+        if (!disposed) setStatus("ready");
+      } catch (error) {
+        console.error("[PassengerMap] native map initialization failed", {
+          message: error instanceof Error ? error.message : "native_map_error",
+        });
+        if (!disposed) setStatus("api-error");
+      }
+    };
+
+    void initialize();
+    return () => {
+      disposed = true;
+      void mapService.destroyMap(NATIVE_PASSENGER_MAP_ID).catch(() => undefined);
+      for (const item of previousBackgrounds) {
+        item.node.style.background = item.background;
+        item.node.style.backgroundColor = item.backgroundColor;
+      }
+    };
+  }, [reloadKey]);
+
+  useEffect(() => {
+    if (status !== "ready") return;
+    void (async () => {
+      try {
+        mapService.resetCameraMovementState();
+        if (origin) {
+          await mapService.upsertPickupMarker(NATIVE_PASSENGER_MAP_ID, origin);
+        }
+        if (destination) {
+          await mapService.upsertDestinationMarker(NATIVE_PASSENGER_MAP_ID, destination);
+        } else {
+          await mapService.removeDestinationMarker(NATIVE_PASSENGER_MAP_ID);
+        }
+        if (displayedRoutePoints.length > 1) {
+          await mapService.upsertRoutePolyline(NATIVE_PASSENGER_MAP_ID, displayedRoutePoints);
+          await mapService.fitRouteBounds(NATIVE_PASSENGER_MAP_ID, displayedRoutePoints);
+        } else {
+          await mapService.removeRoutePolyline(NATIVE_PASSENGER_MAP_ID);
+          if (origin && destination) {
+            await mapService.fitPickupAndDestination(NATIVE_PASSENGER_MAP_ID, origin, destination, 96);
+          } else if (origin) {
+            await mapService.centerOnPickup(NATIVE_PASSENGER_MAP_ID, origin);
+          }
+        }
+        if (!isStatic && driverLocation && isCoordinate(driverLocation.lat) && isCoordinate(driverLocation.lng)) {
+          await mapService.setCamera(
+            NATIVE_PASSENGER_MAP_ID,
+            { coordinate: { lat: driverLocation.lat, lng: driverLocation.lng }, zoom: 15 },
+            true,
+          );
+        }
+      } catch (error) {
+        console.error("[PassengerMap] native map update failed", {
+          message: error instanceof Error ? error.message : "native_map_update_error",
+        });
+      }
+    })();
+  }, [destination, displayedRoutePoints, driverLocation?.lat, driverLocation?.lng, isStatic, origin, orderedStops, status]);
+
+  const retry = () => setReloadKey((value) => value + 1);
+
+  return (
+    <div className="relative h-full min-h-[320px] w-full overflow-hidden bg-transparent">
+      <div ref={elementRef} className="absolute inset-0 h-full w-full bg-transparent" aria-label="Mapa da corrida" />
+      {status === "loading" && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-zinc-950/70">
+          <div className="flex flex-col items-center gap-3 rounded-3xl bg-zinc-900/95 px-6 py-5 shadow-xl">
+            <div className="h-9 w-9 animate-spin rounded-full border-4 border-zinc-700 border-t-apois-yellow" />
+            <p className="text-xs font-bold text-zinc-200">Carregando mapa...</p>
+          </div>
+        </div>
+      )}
+      {(status === "configuration-error" || status === "api-error") && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-zinc-950/90 p-6 text-center">
+          <div className="max-w-xs space-y-4 rounded-3xl border border-white/10 bg-zinc-900 p-6 shadow-2xl">
+            <p className="text-sm font-black uppercase tracking-tight text-apois-yellow">Mapa indisponível</p>
+            <p className="text-xs leading-relaxed text-zinc-300">
+              Não foi possível iniciar o mapa nativo. Tente novamente.
+            </p>
+            <button type="button" onClick={retry} className="mx-auto flex items-center gap-2 rounded-xl bg-apois-yellow px-4 py-3 text-xs font-black text-black">
+              <RefreshCw size={16} /> Tentar novamente
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PassengerMap: React.FC<PassengerMapProps> = (props) =>
+  Capacitor.isNativePlatform() ? <NativePassengerMap {...props} /> : <WebPassengerMap {...props} />;
+
+export default PassengerMap;`,
+    'corridas: APK usa mapa nativo Android e web mantém JavaScript Maps',
+  );
+  replaceRequired(
     '.work/corridas/src/hooks/rides/use-active-ride.tsx',
     '      !passengerId ||\n      screenState !== "active" ||\n      isRealtimeConnected ||\n      !currentRideIdRef.current',
     '      !passengerId ||\n      screenState !== "active" ||\n      !currentRideIdRef.current',
