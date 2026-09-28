@@ -26,15 +26,17 @@ for(const marker of [
   'pixResponse?.pix?.copyPaste',
 ]) if(!entregas.includes(marker)) fail('boundary Entregas Safe2Pay sem '+marker);
 
-for(const forbidden of [
-  'create-merchant-mercadopago-pix',
-  'create-asaas-pix-charge',
-  'create-pix-charge',
-  'openpix-payout',
-  'sync-payment-status',
-  'merchant-payment-readiness',
-  'mercadopago.com/v2/security.js',
-]) if(entregas.includes(forbidden)) fail('boundary Entregas ainda ativa provider aposentado: '+forbidden);
+for(const marker of [
+  "const forbidden = [",
+  "'create-merchant-mercadopago-pix'",
+  "'create-asaas-pix-charge'",
+  "'create-pix-charge'",
+  "'openpix-payout'",
+  "'sync-payment-status'",
+  "'merchant-payment-readiness'",
+  "'mercadopago.com/v2/security.js'",
+  "if (source.includes(marker)) throw new Error('[FAIL] Entregas: provider aposentado permaneceu no checkout (' + marker + ')');",
+]) if(!entregas.includes(marker)) fail('boundary Entregas não prova remoção fail-closed de provider aposentado: '+marker);
 
 const operations=read('scripts/harden-entregas-direct-payment-operations.mjs');
 for(const marker of [
