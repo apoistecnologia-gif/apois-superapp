@@ -8,7 +8,7 @@ const foregroundSource = resolve('superapp/branding/apois-launcher-foreground.pn
 const resRoot = resolve('superapp/shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
 const stringsPath = resolve('superapp/shell/android/app/src/main/res/values/strings.xml');
-const APP_LABEL = 'APOIS Cliente';
+const APP_LABEL = process.env.APP_LABEL?.trim() || 'APOIS';
 
 for (const source of [legacySource, foregroundSource]) {
   if (!existsSync(source)) throw new Error(`Arte oficial APOIS não encontrada: ${source}`);
@@ -64,6 +64,7 @@ mkdirSync(adaptiveDir, { recursive: true });
 rmSync(join(drawableDir, 'apois_launcher_a.xml'), { force: true });
 rmSync(join(drawableDir, 'apois_launcher_a_monochrome.xml'), { force: true });
 rmSync(join(drawableDir, 'ic_launcher_monochrome.xml'), { force: true });
+rmSync(join(drawableDir, 'ic_launcher_foreground.xml'), { force: true });
 
 const backgroundDrawable = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
@@ -78,11 +79,27 @@ rmSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), { force: true });
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/apois_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>
 `;
 writeFileSync(join(adaptiveDir, 'ic_launcher.xml'), adaptiveXml, 'utf8');
+
 writeFileSync(join(adaptiveDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
+
+const splashXml = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/black" />
+    <item android:gravity="center">
+        <inset
+            android:drawable="@mipmap/ic_launcher_foreground"
+            android:insetLeft="64dp"
+            android:insetTop="64dp"
+            android:insetRight="64dp"
+            android:insetBottom="64dp" />
+    </item>
+</layer-list>
+`;
+writeFileSync(join(drawableDir, 'splash.xml'), splashXml, 'utf8');
 
 if (!existsSync(stringsPath)) throw new Error(`strings.xml não encontrado: ${stringsPath}`);
 let stringsXml = readFileSync(stringsPath, 'utf8');
@@ -101,4 +118,9 @@ if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) throw n
 if (!manifest.includes('android:allowBackup="false"')) throw new Error('AndroidManifest permite backup de dados do WebView/sessões.');
 if (!manifest.includes('android:usesCleartextTraffic="false"')) throw new Error('AndroidManifest não bloqueia tráfego HTTP cleartext.');
 
-console.log('[OK] Launcher APOIS Cliente usa a arte oficial da marca; A vetorial genérico removido.');
+const adaptiveInstalled = readFileSync(join(adaptiveDir, 'ic_launcher.xml'), 'utf8');
+const splashInstalled = readFileSync(join(drawableDir, 'splash.xml'), 'utf8');
+if (!adaptiveInstalled.includes('@mipmap/ic_launcher_foreground')) throw new Error('Ícone adaptativo não usa o PNG oficial APOIS.');
+if (!splashInstalled.includes('@mipmap/ic_launcher_foreground')) throw new Error('Splash não usa a arte oficial APOIS.');
+if (existsSync(join(drawableDir, 'ic_launcher_foreground.xml'))) throw new Error('Foreground vetorial provisório ainda está presente.');
+console.log(`[OK] Launcher ${APP_LABEL} usa arte oficial APOIS em legacy/adaptive e splash; foreground provisório removido.`);
