@@ -728,7 +728,7 @@ function CarteiraPage() {
     </div>
   );
 }
-`),
+`,
 'Corridas: Carteira deixa de ser placeholder preto e mostra estado financeiro real');
 
 
@@ -1010,7 +1010,7 @@ function CorridasPage() {
     </div>
   );
 }
-`),
+`,
 'Corridas: histórico deixa de ser placeholder e usa layout móvel real');
 
 requireMarkers('src/routes/_authenticated.inicio.tsx', ['onError={(event) => { event.currentTarget.style.display = "none"; }}', 'Motoristas disponíveis na região'], 'Corridas home sem avatar quebrado nem contagem fictícia');
