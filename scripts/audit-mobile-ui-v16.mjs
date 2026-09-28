@@ -114,7 +114,15 @@ requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs entregas',
 ], 'Hardening visual roda antes dos builds reais');
 
-requireAll('superapp/shell/build.mjs', ["import '../../scripts/harden-superapp-shell-mobile-ui.mjs';"], 'Shell Cliente aplica hardening visual antes de dist');
+requireAll(
+  'superapp/shell/build.mjs',
+  [
+    "runShellHardener(hardener);",
+    "'scripts/harden-superapp-shell-mobile-ui.mjs'",
+    "APOIS_SHELL_HTML_PATH: distIndex",
+  ],
+  'Shell Cliente aplica hardening visual sobre a cópia dist antes de empacotar',
+);
 requireAll('scripts/harden-partner-shell-startup.mjs', ["import './harden-partner-shell-mobile-ui.mjs';"], 'Shell Parceiro aplica hardening visual no bootstrap');
 
 if (!failed) console.log('[OK] Mobile UI v16: Cliente, Passageiro, Entregas e Parceiro mantêm safe-area, controles tocáveis e navegação consistente.');
