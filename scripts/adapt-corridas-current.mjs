@@ -747,7 +747,7 @@ patch('src/components/BottomNavigation.tsx', (source) =>
       '"text-[9px] font-black uppercase tracking-widest",',
       '"text-[11px] font-bold leading-none tracking-tight",',
     )
-    .replace('isActive ? "text-apois-yellow" : "text-zinc-600",', 'isActive ? "text-apois-yellow" : "text-zinc-400",'),
+    .replaceAll('isActive ? "text-apois-yellow" : "text-zinc-600",', 'isActive ? "text-apois-yellow" : "text-zinc-400",'),
 'Corridas: navegação inferior ganha legibilidade e alvos de toque consistentes');
 
 patch('src/routes/_authenticated.perfil.tsx', (source) =>
