@@ -52,7 +52,7 @@ if(!treeContains('superapp/shell/dist/modules/corridas','apois-passenger-home-ma
 
 forbidMarkers('.apois/modules.json',['ActiveRideMap.tsx','RidePixPaymentCard.tsx','ActiveJourneyScreen.tsx','aguardando_pagamento: 2'],'pipeline Corridas não depende de componentes/estados ausentes no pin atual');
 forbidMarkers('scripts/fix-corridas-superapp-ui.mjs',['src/components/layout/AppShell.tsx','PassengerProfileCenter.tsx','native-password-recovery.ts'],'adaptador UI Corridas aponta somente para arquivos do pin atual');
-requireMarkers('.work/entregas/src/integrations/supabase/client.ts',['storageKey: "apois-superapp-entregas-auth-v1"'],'Entregas usa namespace de sessão próprio');
+requireMarkers('.work/entregas/src/integrations/supabase/client.ts',['storageKey: "apois-superapp-entregas-auth-v1"','flowType: "pkce"'],'Entregas usa namespace de sessão próprio e PKCE consistente');
 requireMarkers('.work/entregas/src/components/AuthSessionIsolation.tsx',['window.location.hash.startsWith("#/")'],'isolamento de sessão Entregas entende Hash History');
 requireMarkers('.work/entregas/src/components/GoogleLoginButton.tsx',['function getNativeAuthCallback()','VITE_APOIS_NATIVE_SCHEME','__APOIS_SUPERAPP_AUTH_BRIDGE__'],'Google OAuth Entregas retorna pelo package unificado');
 requireMarkers('.work/entregas/src/routes/register.tsx',['emailRedirectTo: "br.com.apois.app://auth/callback"'],'cadastro Entregas usa callback unificado');
