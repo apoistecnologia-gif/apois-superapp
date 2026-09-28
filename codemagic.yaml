@@ -84,6 +84,11 @@ workflows:
           grep -R -Fq 'public-ride-tracker' superapp/shell/dist/modules/corridas
           grep -R -Fq 'safe2pay-create-order-pix' superapp/shell/dist/modules/entregas
           grep -R -Fq 'safe2pay-payment-status' superapp/shell/dist/modules/entregas
+          grep -R -Fq 'ptgkwyyolrdgnqketkjj.supabase.co' superapp/shell/dist/modules/entregas
+          if grep -R -Fq 'sbvhdgyuuperszlsllji.supabase.co' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] bundle Entregas ainda aponta para o Supabase aposentado'
+            exit 1
+          fi
           if grep -R -Eiq 'create-merchant-mercadopago-pix|create-asaas-pix-charge|openpix-payout|process-superapp-refund' superapp/shell/dist/modules/entregas; then
             echo '[FAIL] provider financeiro aposentado permaneceu no bundle Entregas'
             exit 1
