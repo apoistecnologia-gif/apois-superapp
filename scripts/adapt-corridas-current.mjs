@@ -731,12 +731,299 @@ function CarteiraPage() {
 `),
 'Corridas: Carteira deixa de ser placeholder preto e mostra estado financeiro real');
 
+
+patch('src/components/BottomNavigation.tsx', (source) =>
+  source
+    .replace(
+      'className="relative w-full min-h-[76px] bg-black border-t border-white/10 flex items-start justify-around pt-3 px-2 z-[100] pb-[max(14px,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] shrink-0"',
+      'className="relative w-full min-h-[82px] bg-black/95 border-t border-white/10 flex items-start justify-around pt-2.5 px-1.5 z-[100] pb-[max(14px,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.55)] backdrop-blur-xl shrink-0"',
+    )
+    .replace(
+      'className={`flex flex-col items-center gap-1 transition-all active:scale-90 ${',
+      'className={`flex min-h-[54px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 transition-all active:scale-95 ${',
+    )
+    .replace('<item.icon size={22} strokeWidth={isActive ? 3 : 2} />', '<item.icon size={25} strokeWidth={isActive ? 2.8 : 2} />')
+    .replace(
+      '"text-[9px] font-black uppercase tracking-widest",',
+      '"text-[11px] font-bold leading-none tracking-tight",',
+    )
+    .replace('isActive ? "text-apois-yellow" : "text-zinc-600",', 'isActive ? "text-apois-yellow" : "text-zinc-400",'),
+'Corridas: navegação inferior ganha legibilidade e alvos de toque consistentes');
+
+patch('src/routes/_authenticated.perfil.tsx', (source) =>
+  source
+    .replace(
+      '<div className="flex flex-col min-h-screen bg-black text-white pb-24">',
+      '<div className="min-h-0 flex-1 overflow-y-auto bg-black pb-6 text-white">',
+    )
+    .replace(
+      '<div className="p-6 pt-12 flex flex-col items-center border-b border-gray-900">',
+      '<div className="flex flex-col items-center border-b border-gray-900 px-5 pb-6 pt-[max(24px,env(safe-area-inset-top))]">',
+    )
+    .replace(
+      '<Avatar className="w-24 h-24 mb-4 border-2 border-yellow-500 p-1">',
+      '<Avatar className="mb-4 h-24 w-24 border-2 border-apois-yellow p-1 shadow-[0_0_28px_rgba(255,184,0,0.12)]">',
+    )
+    .replace(
+      '<h2 className="text-2xl font-bold">{currentProfile.name}</h2>',
+      '<h2 className="max-w-full truncate px-3 text-center text-2xl font-black">{currentProfile.name}</h2>',
+    )
+    .replace(
+      '<p className="text-gray-400 text-sm">{user?.email}</p>',
+      '<p className="max-w-full truncate px-3 text-center text-sm text-zinc-400">{user?.email}</p>',
+    )
+    .replace(
+      '<div className="p-4 space-y-2">',
+      '<div className="space-y-2 px-4 pb-2 pt-1">',
+    )
+    .replace(
+      '<div className="p-6 mt-4">',
+      '<div className="mt-2 px-4 pb-6">',
+    )
+    .replace(
+      'className="w-full flex items-center justify-between p-4 bg-[#121212] hover:bg-[#1a1a1a] rounded-xl transition-colors text-left group"',
+      'className="group flex min-h-[68px] w-full items-center justify-between rounded-2xl border border-white/5 bg-[#111214] p-4 text-left transition-colors active:bg-[#1a1a1a]"',
+    )
+    .replace(
+      '<div className="flex items-center gap-4">',
+      '<div className="min-w-0 flex items-center gap-4">',
+    )
+    .replace(
+      '<div>\n          <p className="text-sm font-medium">{label}</p>',
+      '<div className="min-w-0">\n          <p className="text-sm font-bold">{label}</p>',
+    )
+    .replace(
+      'className="text-xs text-gray-500 truncate max-w-[200px]"',
+      'className="max-w-[240px] truncate text-xs text-zinc-500"',
+    ),
+'Corridas: Perfil usa viewport do shell, textos truncados e cards tocáveis');
+
+patch('src/routes/_authenticated.notificacoes.tsx', (source) =>
+  source
+    .replace(
+      '<div className="min-h-screen bg-black px-5 pb-24 pt-8 text-white">',
+      '<div className="min-h-0 flex-1 overflow-y-auto bg-black px-5 pb-6 pt-[max(24px,env(safe-area-inset-top))] text-white">',
+    )
+    .replace(
+      'className="mb-6 flex items-start justify-between gap-4"',
+      'className="mb-5 flex min-w-0 items-start justify-between gap-4"',
+    )
+    .replace(
+      '<div>\n          <p className="text-xs font-black uppercase tracking-[0.2em] text-apois-yellow">',
+      '<div className="min-w-0">\n          <p className="text-xs font-black uppercase tracking-[0.2em] text-apois-yellow">',
+    )
+    .replace(
+      '<h1 className="mt-1 text-2xl font-black">Notificações</h1>',
+      '<h1 className="mt-1 truncate text-2xl font-black">Notificações</h1>',
+    ),
+'Corridas: Notificações usa viewport real do shell e não fica atrás do rodapé');
+
+patch('src/routes/_authenticated.revisar-solicitacao.tsx', (source) =>
+  source
+    .replace(
+      '<div className="flex flex-col min-h-screen bg-black text-white pb-safe">',
+      '<div className="min-h-0 flex-1 overflow-hidden bg-black text-white flex flex-col">',
+    )
+    .replace(
+      'className="px-5 py-6 flex items-center gap-4 border-b border-white/5 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-10"',
+      'className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/5 bg-zinc-900/90 px-4 pb-4 pt-[max(16px,env(safe-area-inset-top))] backdrop-blur-md"',
+    )
+    .replace(
+      'className="p-2 -ml-2 text-zinc-400"',
+      'className="-ml-1 grid h-11 w-11 shrink-0 place-items-center rounded-full text-zinc-300 active:bg-white/5"',
+    )
+    .replace(
+      'className="flex-1 px-5 py-6 space-y-6 overflow-y-auto"',
+      'className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 pb-6 pt-5"',
+    ),
+'Corridas: revisão da solicitação usa safe-area, scroll interno e botão voltar tocável');
+
+patch('src/routes/_authenticated.buscar-destino.tsx', (source) =>
+  source
+    .replace(
+      '<div className="flex flex-col min-h-screen bg-transparent relative">',
+      '<div className="relative min-h-0 flex-1 overflow-hidden bg-transparent">',
+    )
+    .replace(
+      'className="fixed bottom-10 left-5 right-5 z-50"',
+      'className="fixed bottom-[max(20px,env(safe-area-inset-bottom))] left-5 right-5 z-50"',
+    )
+    .replace(
+      'className="p-2 -ml-2 text-white active:bg-white/10 rounded-full transition-colors"',
+      'className="-ml-2 grid h-11 w-11 shrink-0 place-items-center rounded-full text-white transition-colors active:bg-white/10"',
+    )
+    .replace(
+      'className="absolute right-4 p-1 text-gray-400"',
+      'className="absolute right-1 grid h-11 w-11 place-items-center rounded-xl text-gray-400 active:bg-white/5"',
+    )
+    .replace(
+      'className="w-full flex items-center gap-4 p-4 bg-[#2a2a2a] rounded-2xl border border-white/5 active:scale-[0.98] transition-all"',
+      'className="flex min-h-[64px] w-full items-center gap-4 rounded-2xl border border-white/5 bg-[#2a2a2a] p-4 transition-all active:scale-[0.98]"',
+    ),
+'Corridas: busca de destino respeita viewport, safe-area e alvos de toque');
+
+patch('src/routes/_authenticated.corrida.$rideId.tsx', (source) =>
+  source
+    .replaceAll('min-h-screen', 'min-h-0 flex-1')
+    .replaceAll('h-screen', 'h-full')
+    .replace(
+      'className="flex h-full flex-col bg-black text-white"',
+      'className="min-h-0 flex-1 overflow-hidden bg-black text-white flex flex-col"',
+    ),
+'Corridas: tela da corrida não cria segunda viewport dentro do shell');
+
+patch('src/routes/_authenticated.corridas.tsx', () => `import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CarFront, ChevronRight, Clock3, Loader2, MapPin, RefreshCw, Route as RouteIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+
+export const Route = createFileRoute("/_authenticated/corridas")({
+  component: CorridasPage,
+});
+
+type RideRow = {
+  id: string;
+  status: string;
+  origin_name: string | null;
+  destination_name: string | null;
+  estimated_price: number | null;
+  final_price: number | null;
+  created_at: string;
+  category: string | null;
+};
+
+const statusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    agendada: "Agendada",
+    procurar_motorista: "Procurando motorista",
+    motorista_a_caminho: "Motorista a caminho",
+    motorista_chegou: "Motorista chegou",
+    em_viagem: "Em viagem",
+    finalizada: "Finalizada",
+    cancelada_passageiro: "Cancelada",
+    cancelada_motorista: "Cancelada",
+  };
+  return labels[status] ?? status.replaceAll("_", " ");
+};
+
+const money = (value: number | null) =>
+  typeof value === "number" && Number.isFinite(value)
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+    : "—";
+
+function CorridasPage() {
+  const navigate = useNavigate();
+  const { profile } = useAuth();
+  const [rides, setRides] = useState<RideRow[]>([]);
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+
+  const load = useCallback(async () => {
+    if (!profile?.id) {
+      setRides([]);
+      setState("ready");
+      return;
+    }
+    setState("loading");
+    const { data, error } = await supabase
+      .from("rides")
+      .select("id,status,origin_name,destination_name,estimated_price,final_price,created_at,category")
+      .eq("passenger_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) {
+      console.error("[RideHistory] load failed", { code: error.code, message: error.message });
+      setState("failed");
+      return;
+    }
+    setRides((data ?? []) as RideRow[]);
+    setState("ready");
+  }, [profile?.id]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto bg-black px-4 pb-6 pt-[max(24px,env(safe-area-inset-top))] text-white">
+      <div className="mx-auto w-full max-w-md">
+        <header className="mb-5 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-apois-yellow">APOIS</p>
+            <h1 className="mt-1 text-3xl font-black">Suas corridas</h1>
+            <p className="mt-1 text-sm text-zinc-500">Histórico e corridas em andamento.</p>
+          </div>
+          <button type="button" onClick={() => void load()} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/10 bg-zinc-900" aria-label="Atualizar corridas">
+            <RefreshCw size={18} className={state === "loading" ? "animate-spin" : ""} />
+          </button>
+        </header>
+
+        {state === "loading" && (
+          <div className="flex min-h-[45vh] items-center justify-center"><Loader2 className="animate-spin text-apois-yellow" size={32} /></div>
+        )}
+
+        {state === "failed" && (
+          <div className="flex min-h-[45vh] flex-col items-center justify-center gap-4 rounded-3xl border border-white/5 bg-zinc-950 p-6 text-center">
+            <RouteIcon size={38} className="text-zinc-700" />
+            <div><h2 className="font-black">Não foi possível carregar</h2><p className="mt-1 text-sm text-zinc-500">Tente atualizar o histórico.</p></div>
+            <button type="button" onClick={() => void load()} className="rounded-xl bg-apois-yellow px-5 py-3 text-sm font-black text-black">Tentar novamente</button>
+          </div>
+        )}
+
+        {state === "ready" && rides.length === 0 && (
+          <div className="flex min-h-[45vh] flex-col items-center justify-center gap-4 text-center">
+            <div className="grid h-20 w-20 place-items-center rounded-full bg-zinc-900"><CarFront size={34} className="text-zinc-600" /></div>
+            <div><h2 className="font-black">Nenhuma corrida ainda</h2><p className="mt-1 text-sm text-zinc-500">Quando você pedir uma corrida, ela aparecerá aqui.</p></div>
+            <button type="button" onClick={() => void navigate({ to: "/inicio" })} className="rounded-2xl bg-apois-yellow px-5 py-3 text-sm font-black text-black">Pedir uma corrida</button>
+          </div>
+        )}
+
+        {state === "ready" && rides.length > 0 && (
+          <div className="space-y-3">
+            {rides.map((ride) => (
+              <button
+                key={ride.id}
+                type="button"
+                onClick={() => void navigate({ to: "/corrida/$rideId", params: { rideId: ride.id } })}
+                className="w-full rounded-3xl border border-white/5 bg-[#111214] p-4 text-left transition-transform active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <CarFront size={18} className="shrink-0 text-apois-yellow" />
+                      <p className="truncate text-sm font-black capitalize">{ride.category || "Corrida"}</p>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-start gap-2 text-xs text-zinc-400"><MapPin size={15} className="mt-0.5 shrink-0 text-apois-yellow" /><span className="line-clamp-1">{ride.origin_name || "Origem"}</span></div>
+                      <div className="flex items-start gap-2 text-xs text-zinc-300"><RouteIcon size={15} className="mt-0.5 shrink-0 text-white" /><span className="line-clamp-1">{ride.destination_name || "Destino"}</span></div>
+                    </div>
+                  </div>
+                  <ChevronRight size={19} className="mt-1 shrink-0 text-zinc-600" />
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500"><Clock3 size={14} />{new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(ride.created_at))}</div>
+                  <div className="text-right"><p className="text-xs font-black text-apois-yellow">{money(ride.final_price ?? ride.estimated_price)}</p><p className="mt-0.5 text-[10px] font-bold text-zinc-500">{statusLabel(ride.status)}</p></div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+`),
+'Corridas: histórico deixa de ser placeholder e usa layout móvel real');
+
 requireMarkers('src/routes/_authenticated.inicio.tsx', ['onError={(event) => { event.currentTarget.style.display = "none"; }}', 'Motoristas disponíveis na região'], 'Corridas home sem avatar quebrado nem contagem fictícia');
 requireMarkers('src/integrations/supabase/client.ts', ['storageKey: "apois-superapp-corridas-auth-v1"'], 'Corridas auth isolado');
 requireMarkers('src/hooks/use-auth.tsx', ['.eq("auth_user_id", userId)', '.from("profile-photos")', 'createSignedUrl'], 'Corridas perfil usa domínio correto e foto privada assinada');
 requireMarkers('src/routes/_authenticated.carteira.tsx', ['useWallet', 'Saldo disponível', 'Carteira ativa'], 'Corridas carteira materializada e funcional');
+requireMarkers('src/routes/_authenticated.corridas.tsx', ['from("rides")', 'Histórico e corridas em andamento.', 'Pedir uma corrida'], 'Corridas histórico funcional e sem placeholder');
+requireMarkers('src/routes/_authenticated.perfil.tsx', ['min-h-0 flex-1 overflow-y-auto', 'min-h-[68px]', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas perfil cabe na viewport e tem alvos confortáveis');
+requireMarkers('src/routes/_authenticated.notificacoes.tsx', ['min-h-0 flex-1 overflow-y-auto', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas notificações cabe na viewport');
+requireMarkers('src/routes/_authenticated.revisar-solicitacao.tsx', ['min-h-0 flex-1 overflow-hidden', 'min-h-0 flex-1 space-y-6 overflow-y-auto'], 'Corridas revisão usa scroll interno');
+requireMarkers('src/routes/_authenticated.buscar-destino.tsx', ['relative min-h-0 flex-1 overflow-hidden', 'bottom-[max(20px,env(safe-area-inset-bottom))]'], 'Corridas busca respeita viewport e safe-area');
 requireMarkers('src/styles.css', ['padding: 0;'], 'Corridas viewport sem safe-area duplicada');
-requireMarkers('src/components/BottomNavigation.tsx', ['min-h-[76px]', 'pb-[max(14px,env(safe-area-inset-bottom))]'], 'Corridas navegação inferior protegida');
+requireMarkers('src/components/BottomNavigation.tsx', ['min-h-[82px]', 'min-h-[54px]', 'text-[11px]', 'text-zinc-400'], 'Corridas navegação inferior legível e protegida');
 requireMarkers('src/hooks/use-location.tsx', ['apois-superapp-corridas-last-location'], 'Corridas localização isolada');
 requireMarkers('src/components/map/PassengerMap.tsx', ['encodedPolyline', 'PolylineDecoder', 'displayedRoutePoints'], 'Corridas mapa com rota persistida');
 requireMarkers('src/hooks/rides/use-ride-request.tsx', ['paymentMethod: string | null', 'payment_method: selectedMethod', 'pickup_address: pickupAddress'], 'Corridas payload real e idempotente');
