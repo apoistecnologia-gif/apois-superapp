@@ -553,6 +553,33 @@ patch('src/hooks/use-destination-search.tsx', (source) =>
   source.replace('    [location],\n  );', '    [currentPosition],\n  );'),
 'Corridas: busca de destino usa a posição atual sem stale closure');
 
+
+patch('src/hooks/use-destination-search.tsx', (source) =>
+  source
+    .replace(
+      '  const debounceTimer = useRef<NodeJS.Timeout | null>(null);',
+      '  const debounceTimer = useRef<NodeJS.Timeout | null>(null);\n  const searchSeq = useRef(0);',
+    )
+    .replace(
+      '      setIsLoading(true);\n      setStatus("loading");\n      setError(null);',
+      '      const seq = ++searchSeq.current;\n      setIsLoading(true);\n      setStatus("loading");\n      setError(null);',
+    )
+    .replace(
+      '        setSuggestions(results);\n        setStatus(results.length > 0 ? "success" : "empty");',
+      '        if (seq !== searchSeq.current) return;\n        setSuggestions(results);\n        setStatus(results.length > 0 ? "success" : "empty");',
+    )
+    .replace(
+      '        const placesError = err as PlacesError;',
+      '        if (seq !== searchSeq.current) return;\n        const placesError = err as PlacesError;',
+    )
+    .replace(
+      '      } finally {\n        setIsLoading(false);\n      }',
+      '      } finally {\n        if (seq === searchSeq.current) setIsLoading(false);\n      }',
+    ),
+'Corridas: busca de destino ignora respostas antigas e não deixa spinner preso');
+
+
+
 patch('src/hooks/use-ride-categories.tsx', (source) =>
   source
     .replace('  }, [selectedCategory]);', '  }, []);')
@@ -1063,7 +1090,7 @@ requireMarkers('src/hooks/use-location.tsx', ['await requestPermission();', 'per
 requireMarkers('src/routes/_authenticated.tsx', ['PushNotifications.requestPermissions()', '[push] permission prompt unavailable'], 'Corridas pede notificações nativas');
 requireMarkers('src/services/places/places-service.ts', ['google-maps-address', 'Capacitor.isNativePlatform()', 'action: "autocomplete"', 'action: "place_details"'], 'Corridas autocomplete nativo usa backend autenticado');
 requireMarkers('src/lib/geocoding.ts', ['google-maps-address', 'action: "reverse_geocode"', 'Capacitor.isNativePlatform()'], 'Corridas endereço do ponto de partida usa backend autenticado');
-requireMarkers('src/hooks/use-destination-search.tsx', ['[currentPosition]'], 'Corridas destino sem stale position');
+requireMarkers('src/hooks/use-destination-search.tsx', ['[currentPosition]', 'searchSeq.current', 'seq === searchSeq.current'], 'Corridas destino sem stale position nem spinner preso por respostas antigas');
 requireMarkers('src/hooks/use-ride-categories.tsx', ['}, []);', '}, [fetchCategories]);'], 'Corridas categorias com hooks estáveis');
 
 
