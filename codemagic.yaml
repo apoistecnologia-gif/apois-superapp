@@ -18,7 +18,7 @@ workflows:
         EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"
         APOIS_STRICT_NATIVE_CONFIG: "1"
         APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"
-        CORRIDAS_PUBLIC_APP_URL: "https://vqtucstyduxrqjgyigfk.supabase.co/functions/v1/public-ride-tracker"
+        CORRIDAS_PUBLIC_APP_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co/functions/v1/public-ride-tracker"
     scripts:
       - name: Install pinned Bun
         script: |
