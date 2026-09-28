@@ -23,7 +23,12 @@ for(const marker of [
   "'false'::jsonb",
 ]) if(!entregas.includes(marker)) fail(`Entregas provider selection sem marker: ${marker}`);
 
-if (/"mercadopago"'::jsonb|"asaas"'::jsonb|"pagbank"'::jsonb|"openpix"'::jsonb/.test(corridas+entregas)) {
+const selectedProviderAssignments = [
+  ...corridas.matchAll(/values\s*\(\s*'finance\.target_electronic_payment_provider'\s*,\s*'"[^"]+"'::jsonb/gi),
+  ...entregas.matchAll(/values\s*\(\s*'order_payment_provider'\s*,\s*'"[^"]+"'::jsonb/gi),
+].map((match) => match[0]);
+
+if (selectedProviderAssignments.some((assignment) => /"(mercadopago|asaas|pagbank|openpix|woovi)"'::jsonb/i.test(assignment))) {
   fail('migration de seleção ainda escolhe provider aposentado');
 }
 if(failed) process.exit(1);
