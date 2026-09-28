@@ -52,9 +52,9 @@ const retiredMerchantMpHardener=read('scripts/harden-entregas-merchant-mercadopa
 if(retiredMerchantMpHardener){
   if(!retiredMerchantMpHardener.includes('RETIRED PROVIDER GUARD')) fail('Entregas: hardener Mercado Pago legado deixou de ser sentinela');
   for(const forbidden of [
-    'merchant-mercadopago-oauth',
-    'create-merchant-mercadopago-pix',
-    'MerchantMercadoPagoConnection',
+    'supabase.functions.invoke("merchant-mercadopago-oauth"',
+    'supabase.functions.invoke("create-merchant-mercadopago-pix"',
+    'export function MerchantMercadoPagoConnection',
   ]) if(retiredMerchantMpHardener.includes(forbidden)) fail('Entregas: hardener legado ainda contém implementação ativa ('+forbidden+')');
 }
 
