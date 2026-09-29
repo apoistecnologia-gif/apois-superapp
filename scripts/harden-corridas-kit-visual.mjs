@@ -117,19 +117,58 @@ function replaceRequired(source, search, replacement, label) {
   console.log('[OK] Corridas: sugestões permanecem na área útil sem exigir arrastar a tela');
 }
 
-// BOTTOM SHEET — remove a reserva fixa de 72px que escondia conteúdo quando o
-// rodapé global já estava oculto na jornada de busca/revisão.
+// BOTTOM SHEET — compatível com o shell atual. O adapter de Corridas já
+// posiciona o sheet acima da navegação global e limita sua altura à área útil.
+// Este hardener aceita tanto snapshots legados quanto o formato endurecido.
 {
   const path = 'src/components/ui/bottom-sheet/BottomSheet.tsx';
   let source = read(path);
-  source = replaceRequired(source, '"h-auto max-h-[85vh]",', '"h-auto max-h-[94dvh]",', 'Corridas visual: BottomSheet usa altura dinâmica');
-  source = replaceRequired(
-    source,
-    'style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}',
-    'style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}',
-    'Corridas visual: BottomSheet remove rodapé fantasma',
-  );
-  source = source.replace('className="flex-1 overflow-y-auto px-4 pb-8"', 'className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5"');
+
+  const legacyHeight = '"h-auto max-h-[85vh]",';
+  const visualHeight = '"h-auto max-h-[94dvh]",';
+  const hardenedHeight = '"h-auto max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]",';
+
+  if (source.includes(legacyHeight)) {
+    source = source.replace(legacyHeight, visualHeight);
+    console.log('[OK] Corridas visual: BottomSheet usa altura dinâmica');
+  } else if (source.includes(visualHeight) || source.includes(hardenedHeight)) {
+    console.log('[OK] Corridas visual: BottomSheet usa altura dinâmica (já endurecido)');
+  } else {
+    throw new Error('[FAIL] Corridas visual: BottomSheet usa altura dinâmica: padrão esperado não encontrado');
+  }
+
+  const legacyPadding = 'style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}';
+  const visualPadding = 'style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}';
+  const hardenedPadding = 'style={{ paddingBottom: 0 }}';
+
+  if (source.includes(legacyPadding)) {
+    source = source.replace(legacyPadding, visualPadding);
+    console.log('[OK] Corridas visual: BottomSheet remove rodapé fantasma');
+  } else if (source.includes(visualPadding) || source.includes(hardenedPadding)) {
+    console.log('[OK] Corridas visual: BottomSheet remove rodapé fantasma (já endurecido)');
+  } else {
+    throw new Error('[FAIL] Corridas visual: BottomSheet remove rodapé fantasma: padrão esperado não encontrado');
+  }
+
+  source = source
+    .replace(
+      'className="flex-1 overflow-y-auto px-4 pb-8"',
+      'className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5"',
+    )
+    .replace(
+      'className="min-h-0 flex-1 overflow-y-auto px-4 pb-6"',
+      'className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6"',
+    );
+
+  for (const marker of [
+    'overflow-y-auto',
+    'min-h-0 flex-1',
+  ]) {
+    if (!source.includes(marker)) {
+      throw new Error(`[FAIL] Corridas visual: BottomSheet incompleto (${marker})`);
+    }
+  }
+
   write(path, source);
 }
 
