@@ -941,6 +941,62 @@ patch('src/routes/_authenticated.buscar-destino.tsx', (source) =>
     ),
 'Corridas: busca de destino respeita viewport, safe-area e alvos de toque');
 
+patch('src/hooks/rides/use-active-ride.tsx', (source) =>
+  source
+    .replace(
+      `        if (currentRideIdRef.current !== activeRide.id || ride?.id !== activeRide.id) {
+          await loadRide(activeRide.id);
+        } else {
+          handleUpdate(activeRide);
+          if (!isRealtimeConnected) {
+            activeRideService.subscribeToRide(
+              activeRide.id,
+              handleUpdate,
+              setIsRealtimeConnected,
+            );
+          }
+        }
+
+        return activeRide.id;`,
+      `        // Always reload through the canonical path. This refreshes the row and
+        // owns the realtime subscription without making recovery depend on ride/
+        // realtime state identities (which previously caused a fetch loop).
+        await loadRide(activeRide.id);
+        return activeRide.id;`,
+    )
+    .replace(
+      '  }, [handleUpdate, isRealtimeConnected, loadRide, ride?.id, userId]);',
+      '  }, [loadRide, userId]);',
+    ),
+'Corridas: recuperação de corrida ativa não entra em loop de GET por mudanças de realtime/ride');
+
+patch('src/routes/_authenticated.corrida.$rideId.tsx', (source) =>
+  source
+    .replace(
+      '  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);',
+      '  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);\n  const [showReconnectWarning, setShowReconnectWarning] = useState(false);',
+    )
+    .replace(
+      '  useEffect(() => {\n    if (rideId) void loadRide(rideId);\n  }, [rideId, loadRide]);',
+      `  useEffect(() => {
+    if (rideId) void loadRide(rideId);
+  }, [rideId, loadRide]);
+
+  useEffect(() => {
+    if (screenState !== "active" || isRealtimeConnected) {
+      setShowReconnectWarning(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => setShowReconnectWarning(true), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [isRealtimeConnected, screenState]);`,
+    )
+    .replace(
+      '{screenState === "active" && !isRealtimeConnected && (',
+      '{screenState === "active" && showReconnectWarning && (',
+    ),
+'Corridas: aviso de reconexão só aparece após falha persistente, não durante conexão inicial');
+
 patch('src/routes/_authenticated.corrida.$rideId.tsx', (source) =>
   source
     .replaceAll('min-h-screen', 'min-h-0 flex-1')
@@ -1100,6 +1156,8 @@ requireMarkers('src/routes/_authenticated.corridas.tsx', ['from("rides")', 'Hist
 requireMarkers('src/routes/_authenticated.perfil.tsx', ['min-h-0 flex-1 overflow-y-auto', 'min-h-[68px]', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas perfil cabe na viewport e tem alvos confortáveis');
 requireMarkers('src/routes/_authenticated.notificacoes.tsx', ['min-h-0 flex-1 overflow-y-auto', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas notificações cabe na viewport');
 requireMarkers('src/routes/_authenticated.revisar-solicitacao.tsx', ['min-h-0 flex-1 overflow-hidden', 'min-h-0 flex-1 space-y-6 overflow-y-auto', 'pb-[max(18px,env(safe-area-inset-bottom))]'], 'Corridas revisão usa scroll interno e CTA acima da barra do Android');
+requireMarkers('src/hooks/rides/use-active-ride.tsx', ['await loadRide(activeRide.id);', '}, [loadRide, userId]);'], 'Corridas recuperação de corrida sem loop de polling');
+requireMarkers('src/routes/_authenticated.corrida.$rideId.tsx', ['showReconnectWarning', 'setTimeout(() => setShowReconnectWarning(true), 3000)'], 'Corridas reconexão sem falso alerta inicial');
 requireMarkers('src/components/ui/bottom-sheet/BottomSheet.tsx', ['bottom-[calc(82px+env(safe-area-inset-bottom))]', 'max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]', 'min-h-0 flex-1 overflow-y-auto'], 'Corridas BottomSheet não fica atrás do rodapé');
 requireMarkers('src/routes/_authenticated.buscar-destino.tsx', ['relative min-h-0 flex-1 overflow-hidden', 'bottom-[max(20px,env(safe-area-inset-bottom))]'], 'Corridas busca respeita viewport e safe-area');
 requireMarkers('src/styles.css', ['padding: 0;'], 'Corridas viewport sem safe-area duplicada');
