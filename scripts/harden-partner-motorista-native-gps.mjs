@@ -115,13 +115,22 @@ if (source.includes(oldFastRequest)) source = source.replace(oldFastRequest, new
 const permissionAnchor = `    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
     if (permsApi?.query) {`;
 const permissionReplacement = `    if (isNativeDriverAndroid()) {
-      requestFastLocation();
+      void Geolocation.checkPermissions()
+        .then((permission) => {
+          if (permission.location === "granted") {
+            setGpsStatus("granted");
+            setGpsMessage(null);
+          } else {
+            setGpsStatus("prompt");
+          }
+        })
+        .catch(() => setGpsStatus("prompt"));
       return;
     }
 
     const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
     if (permsApi?.query) {`;
-if (!source.includes('if (isNativeDriverAndroid()) {\n      requestFastLocation();\n      return;')) {
+if (!source.includes('Geolocation.checkPermissions()\n        .then((permission) => {')) {
   if (!source.includes(permissionAnchor)) throw new Error('Motorista Parceiro: âncora de permissão web do toggle não encontrada.');
   source = source.replace(permissionAnchor, permissionReplacement);
 }
@@ -203,7 +212,7 @@ for (const marker of [
   'const isNativeDriverAndroid = () =>',
   'Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] })',
   'Geolocation.getCurrentPosition({',
-  'if (isNativeDriverAndroid()) {\n      requestFastLocation();',
+  'Geolocation.checkPermissions()',
   'restauração do GPS nativo falhou',
   'Não conseguimos restaurar sua localização. Toque em Ficar online para tentar novamente.',
 ]) {
