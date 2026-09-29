@@ -144,7 +144,8 @@ require_contains 'const transitionJobId = activeJob.id;' src/routes/courier.tsx 
 require_contains 'setCompletedJob({ ...deliveredJob, status: "delivered" });' src/routes/courier.tsx 'Conclusão operacional separada do financeiro'
 require_contains 'Recebimento direto ainda está em homologação.' src/routes/courier.tsx 'Settlement manual permanece explícito'
 require_contains 'Saque manual está desativado.' src/routes/courier.tsx 'Saque legado desativado'
-require_contains 'confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
+require_contains 'Recebimento direto ainda está em homologação.' src/routes/courier.tsx 'Repasse direto permanece bloqueado até homologação'
+require_contains 'Saque manual está desativado.' src/routes/courier.tsx 'Runtime do Entregador não expõe saque manual'
 
 export APOIS_MOBILE_PRODUCT="courier"
 export APOIS_MOBILE_BUILD="1"
