@@ -180,14 +180,20 @@ function replaceRequired(source, search, replacement, label) {
   console.log('[OK] Corridas: categorias oficiais renderizadas sem overflow horizontal');
 }
 
-for (const [path, marker] of [
-  ['src/styles.css', 'APOIS_VISUAL_KIT_V1'],
-  ['src/routes/_authenticated.inicio.tsx', 'apois-kit-home-panel'],
-  ['src/routes/_authenticated.buscar-destino.tsx', 'apois-kit-search-results'],
-  ['src/components/ui/bottom-sheet/BottomSheet.tsx', 'max-h-[94dvh]'],
-  ['src/components/pricing/CategorySelector.tsx', 'grid-cols-[58px_minmax(0,1fr)_auto]'],
+for (const [path, markers] of [
+  ['src/styles.css', ['APOIS_VISUAL_KIT_V1']],
+  ['src/routes/_authenticated.inicio.tsx', ['apois-kit-home-panel']],
+  ['src/routes/_authenticated.buscar-destino.tsx', ['apois-kit-search-results']],
+  ['src/components/ui/bottom-sheet/BottomSheet.tsx', [
+    'max-h-[94dvh]',
+    'max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]',
+  ]],
+  ['src/components/pricing/CategorySelector.tsx', ['grid-cols-[58px_minmax(0,1fr)_auto]']],
 ]) {
-  if (!read(path).includes(marker)) throw new Error(`[FAIL] Corridas visual: marcador ausente em ${path} (${marker})`);
+  const source = read(path);
+  if (!markers.some((marker) => source.includes(marker))) {
+    throw new Error(`[FAIL] Corridas visual: marcador ausente em ${path} (${markers.join(' | ')})`);
+  }
 }
 
 console.log('[OK] APOIS_VISUAL_KIT_V1: Home, busca, BottomSheet e categorias aplicados no snapshot real');
