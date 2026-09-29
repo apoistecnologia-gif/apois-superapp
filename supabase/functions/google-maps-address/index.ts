@@ -114,10 +114,14 @@ async function nominatimReverse(lat: number, lng: number) {
 
 async function nominatimSearch(input: string, lat?: number, lng?: number) {
   const url = new URL("https://photon.komoot.io/api/");
-  url.searchParams.set("q", input);
+  const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
+  url.searchParams.set(
+    "q",
+    hasLocation ? input : `${input}, Petrolina, Pernambuco, Brasil`,
+  );
   url.searchParams.set("limit", "8");
   url.searchParams.set("countrycode", "BR");
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+  if (hasLocation) {
     url.searchParams.set("lat", String(lat));
     url.searchParams.set("lon", String(lng));
     url.searchParams.set("zoom", "13");
