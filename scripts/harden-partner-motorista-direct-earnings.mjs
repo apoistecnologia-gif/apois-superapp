@@ -47,6 +47,7 @@ patch('src/routes/motorista.carteira.tsx', (source) => {
     next = next.slice(0, routeStart) + hardenedRouteBlock + next.slice(routeEnd + 3);
   }
 
+  next = next.replaceAll('Carteira — APOIS Motorista', 'Ganhos — APOIS Motorista');
   next = next.replaceAll('Solicitar saque', 'Fluxo legado indisponível');
   next = next.replaceAll('Saque Pix', 'Repasse legado');
   next = next.replaceAll('Estorno de saque', 'Estorno de repasse legado');
@@ -59,6 +60,12 @@ patch('src/routes/motorista.carteira.tsx', (source) => {
   }
   if (!next.includes('window.location.hash = "#/motorista/ganhos"')) {
     throw new Error('[FAIL] motorista.carteira.tsx: destino Ganhos ausente');
+  }
+  if (next.includes('Carteira — APOIS Motorista')) {
+    throw new Error('[FAIL] motorista.carteira.tsx: título custodial legado permaneceu no bundle');
+  }
+  if (!next.includes('Ganhos — APOIS Motorista')) {
+    throw new Error('[FAIL] motorista.carteira.tsx: título Ganhos ausente após redirecionamento');
   }
   return next;
 }, 'motorista: carteira legada redirecionada para ganhos diretos');
