@@ -51,7 +51,7 @@ patch('src/routes/motorista.app.tsx', (source) => {
   if (!next.includes(old)) throw new Error('[FAIL] botão pequeno de cancelar não encontrado');
   next = next.replace(old, replacement);
 
-  if (!next.includes('>Cancelar<') && !next.includes('Cancelamento')) {
+  if (!/>\s*Cancelar\s*<\/DSButton>/.test(next)) {
     throw new Error('[FAIL] botão visível de cancelamento não foi aplicado');
   }
   return next;
