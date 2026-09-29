@@ -24,21 +24,58 @@ function patch(path, apply, verify, label) {
 patch(
   '.work/corridas/src/services/rides/active-ride-service.ts',
   (source) => {
-    let out = source.replace(
-      '    return this.normalizeRide(data);\n  }\n\n  public async getActiveRide',
-      '    return this.hydratePassengerSecurityCode(this.normalizeRide(data));\n  }\n\n  public async getActiveRide',
-    );
+    let out = source;
+
+    // Leitura direta por id: hidrata o PIN protegido quando aplicável.
     out = out.replace(
-      '    if (error) throw error;\n    return data ? this.normalizeRide(data) : null;\n  }\n\n  public subscribeToRide',
-      '    if (error) throw error;\n    return data ? this.hydratePassengerSecurityCode(this.normalizeRide(data)) : null;\n  }\n\n  private async hydratePassengerSecurityCode(ride: ActiveRide): Promise<ActiveRide> {\n    if (!["motorista_a_caminho", "motorista_chegou"].includes(ride.status)) return ride;\n    try {\n      const { data, error } = await (supabase.rpc as any)("get_passenger_ride_security_code", { _ride_id: ride.id });\n      if (error) throw error;\n      const payload = data && typeof data === "object" ? data as Record<string, unknown> : null;\n      const code = typeof payload?.security_code === "string" ? payload.security_code.trim() : "";\n      return code ? { ...ride, security_code: code } : ride;\n    } catch (error) {\n      console.warn("[ActiveRide] PIN protegido indisponível temporariamente", error);\n      return ride;\n    }\n  }\n\n  public subscribeToRide',
+      /return\s+this\.normalizeRide\(data\);/g,
+      'return this.hydratePassengerSecurityCode(this.normalizeRide(data));',
     );
+
+    // Leitura da corrida ativa: aceita tanto o snapshot original quanto o
+    // snapshot já endurecido pelo adapt-corridas-current.
     out = out.replace(
-      '        (payload) => {\n          try {\n            const updatedRide = this.normalizeRide(payload.new);',
-      '        async (payload) => {\n          try {\n            const updatedRide = await this.hydratePassengerSecurityCode(this.normalizeRide(payload.new));',
+      /return\s+data\s*\?\s*this\.normalizeRide\(data\)\s*:\s*null;/g,
+      'return data ? this.hydratePassengerSecurityCode(this.normalizeRide(data)) : null;',
     );
+
+    if (!out.includes('private async hydratePassengerSecurityCode')) {
+      const subscribeMarker = '\n  public subscribeToRide(';
+      if (!out.includes(subscribeMarker)) {
+        throw new Error('[FAIL] active-ride-service: ponto de inserção do PIN não encontrado');
+      }
+      const helper = `
+
+  private async hydratePassengerSecurityCode(ride: ActiveRide): Promise<ActiveRide> {
+    if (!["motorista_a_caminho", "motorista_chegou"].includes(ride.status)) return ride;
+    try {
+      const { data, error } = await (supabase.rpc as any)("get_passenger_ride_security_code", { _ride_id: ride.id });
+      if (error) throw error;
+      const payload = data && typeof data === "object" ? data as Record<string, unknown> : null;
+      const code = typeof payload?.security_code === "string" ? payload.security_code.trim() : "";
+      return code ? { ...ride, security_code: code } : ride;
+    } catch (error) {
+      console.warn("[ActiveRide] PIN protegido indisponível temporariamente", error);
+      return ride;
+    }
+  }
+`;
+      out = out.replace(subscribeMarker, helper + subscribeMarker);
+    }
+
+    // Realtime: o payload também precisa passar pela hidratação protegida.
+    out = out.replace(
+      /(\n\s*)\(payload\)\s*=>\s*\{(\n\s*)try\s*\{(\n\s*)const updatedRide = this\.normalizeRide\(payload\.new\);/,
+      '$1async (payload) => {$2try {$3const updatedRide = await this.hydratePassengerSecurityCode(this.normalizeRide(payload.new));',
+    );
+
     return out;
   },
-  (source) => source.includes('hydratePassengerSecurityCode') && source.includes('get_passenger_ride_security_code') && source.includes('await this.hydratePassengerSecurityCode(this.normalizeRide(payload.new))'),
+  (source) =>
+    source.includes('private async hydratePassengerSecurityCode') &&
+    source.includes('get_passenger_ride_security_code') &&
+    source.includes('this.hydratePassengerSecurityCode(this.normalizeRide(data))') &&
+    source.includes('await this.hydratePassengerSecurityCode(this.normalizeRide(payload.new))'),
   'corridas passageiro: carrega PIN protegido em leitura, polling e Realtime',
 );
 
