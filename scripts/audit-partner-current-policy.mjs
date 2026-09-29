@@ -29,7 +29,8 @@ requireText(release, 'audit-motorista-release-surface.mjs', 'Motorista audita bu
 requireText(release, "forbid_bundle 'Mercado Pago'", 'Bundle bloqueia Mercado Pago');
 requireText(release, "forbid_bundle 'asaas-create-driver'", 'Bundle bloqueia provisionamento Asaas');
 requireText(release, 'harden-partner-entregador-map.mjs', 'Entregador usa umbrella de hardening operacional');
-requireText(release, 'confirm_courier_settlement', 'Entregador exige contrato de settlement manual');
+requireText(release, "require_contains 'Recebimento direto ainda está em homologação.'", 'Entregador mantém repasse direto bloqueado em homologação');
+requireText(release, "require_contains 'Saque manual está desativado.'", 'Entregador mantém saque manual desativado');
 
 for (const marker of [
   'harden-motorista-payment-wait.mjs',
