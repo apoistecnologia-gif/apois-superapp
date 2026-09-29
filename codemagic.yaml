@@ -371,9 +371,11 @@ workflows:
           "$BUILD_TOOLS/zipalign" -f -P 16 4 "$UNSIGNED" "$ALIGNED"
           "$BUILD_TOOLS/apksigner" sign --ks "$CM_KEYSTORE_PATH" --ks-key-alias "$CM_KEY_ALIAS" --ks-pass "pass:$CM_KEYSTORE_PASSWORD" --key-pass "pass:$CM_KEY_PASSWORD" --out "$SIGNED" "$ALIGNED"
           "$BUILD_TOOLS/apksigner" verify --verbose "$SIGNED"
-          ACTUAL_SHA1="$("$BUILD_TOOLS/apksigner" verify --print-certs "$SIGNED" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -n 1 | tr '[:lower:]' '[:upper:]')"
+          ACTUAL_SHA1="$("$BUILD_TOOLS/apksigner" verify --print-certs "$SIGNED" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -n 1 | tr '[:lower:]' '[:upper:]' | tr -d ':')"
+          EXPECTED_SHA1_NORMALIZED="$(printf '%s' "$EXPECTED_SIGNING_SHA1" | tr '[:lower:]' '[:upper:]' | tr -d ':')"
           test -n "$ACTUAL_SHA1"
-          if [ "$ACTUAL_SHA1" != "$EXPECTED_SIGNING_SHA1" ]; then
+          test -n "$EXPECTED_SHA1_NORMALIZED"
+          if [ "$ACTUAL_SHA1" != "$EXPECTED_SHA1_NORMALIZED" ]; then
             echo "[FAIL] certificado do APK Parceiro diverge do esperado: $ACTUAL_SHA1"
             exit 1
           fi
