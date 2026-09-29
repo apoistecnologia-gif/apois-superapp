@@ -23,9 +23,8 @@ requireText(pkg.scripts['build:partner'] ?? '', 'scripts/build-partner-release.s
 requireText(release, 'harden-motorista-provider-boundary.mjs', 'Motorista remove provisionamento legado');
 requireText(release, 'harden-motorista-finance-boundary.mjs', 'Motorista aplica boundary de mensalidade');
 requireText(release, 'harden-motorista-direct-ride-copy.mjs', 'Motorista neutraliza copy de gateway legado na corrida');
-requireText(release, 'harden-motorista-payment-wait.mjs', 'Motorista reconhece hold de pagamento Safe2Pay');
-requireText(release, "require_contains 'Aguardando pagamento do passageiro'", 'Bundle exige estado aguardando pagamento Safe2Pay');
-requireText(release, "require_contains 'Safe2Pay'", 'Bundle exige copy Safe2Pay no hold da corrida');
+requireText(release, 'harden-motorista-direct-ride-copy.mjs', 'Motorista mantém jornada direta sem hold de gateway');
+requireText(release, "require_contains 'Corrida aceita. Siga até o embarque'", 'Bundle exige jornada pós-aceite sem dependência de gateway');
 requireText(release, 'audit-motorista-release-surface.mjs', 'Motorista audita bundle release');
 requireText(release, "forbid_bundle 'Mercado Pago'", 'Bundle bloqueia Mercado Pago');
 requireText(release, "forbid_bundle 'asaas-create-driver'", 'Bundle bloqueia provisionamento Asaas');
@@ -33,6 +32,9 @@ requireText(release, 'harden-partner-entregador-map.mjs', 'Entregador usa umbrel
 requireText(release, 'confirm_courier_settlement', 'Entregador exige contrato de settlement manual');
 
 for (const marker of [
+  'harden-motorista-payment-wait.mjs',
+  "require_contains 'Aguardando pagamento do passageiro'",
+  "require_contains 'Safe2Pay'",
   'harden-motorista-field-mercadopago.mjs',
   'harden-partner-mercadopago-callback.mjs',
   'harden-motorista-mercadopago-disconnect.mjs',
