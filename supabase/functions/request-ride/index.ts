@@ -211,6 +211,59 @@ Deno.serve(async (req: Request) => {
     if (wallet?.is_blocked) return json({ error: "passenger_debt_block", reason: wallet.blocked_reason }, 403);
 
     const body = await req.json();
+
+    if (body?.action === "cancel") {
+      const rideId = String(body?.ride_id ?? "").trim();
+      if (!rideId) return json({ ok: false, error: "invalid_ride_id" }, 422);
+
+      const { data: ride, error: rideError } = await admin
+        .from("rides")
+        .select("id,status,passenger_id")
+        .eq("id", rideId)
+        .eq("passenger_id", userRow.id)
+        .maybeSingle();
+      if (rideError) throw rideError;
+      if (!ride) return json({ ok: false, error: "ride_not_found" }, 404);
+
+      const status = String(ride.status ?? "");
+      if (["finalizada","cancelada_passageiro","cancelada_motorista"].includes(status)) {
+        return json({ ok: true, status, cancellation_fee: 0 });
+      }
+      if (!["procurar_motorista","motorista_a_caminho","agendada"].includes(status)) {
+        return json({ ok: false, error: "cancellation_not_allowed", status }, 409);
+      }
+
+      const now = new Date().toISOString();
+      const { data: cancelled, error: cancelError } = await admin
+        .from("rides")
+        .update({
+          status: "cancelada_passageiro",
+          cancelled_by: String(userRow.id),
+          cancellation_reason: "Cancelada pelo passageiro",
+          cancellation_fee: 0,
+          cancelled_at: now,
+          updated_at: now,
+          candidate_driver_ids: [],
+          offered_driver_ids: [],
+          request_expires_at: null,
+          search_expires_at: null,
+        })
+        .eq("id", rideId)
+        .eq("passenger_id", userRow.id)
+        .in("status", ["procurar_motorista","motorista_a_caminho","agendada"])
+        .select("id,status,cancellation_fee")
+        .maybeSingle();
+      if (cancelError) throw cancelError;
+      if (!cancelled) return json({ ok: false, error: "ride_status_changed" }, 409);
+
+      return json({
+        ok: true,
+        status: "cancelada_passageiro",
+        cancellation_fee: 0,
+        message: "Corrida cancelada sem taxa.",
+      });
+    }
+
     if (body?.action === "redispatch") {
       const rideId = String(body?.ride_id ?? "");
       const { data: ride } = await admin.from("rides").select("*").eq("id", rideId).eq("passenger_id", userRow.id).maybeSingle();
@@ -218,6 +271,24 @@ Deno.serve(async (req: Request) => {
       const ids = await dispatch(admin, ride);
       return json({ ok: true, rideId: ride.id, candidates: ids.length, status: ride.status });
     }
+
+    // Expire stale searching rides before accepting a new request. Reinstalling
+    // the app must not resurrect a search that already timed out server-side.
+    const staleCutoff = new Date().toISOString();
+    await admin
+      .from("rides")
+      .update({
+        status: "cancelada_passageiro",
+        cancellation_reason: "Busca expirada sem motorista",
+        cancelled_at: staleCutoff,
+        updated_at: staleCutoff,
+        candidate_driver_ids: [],
+        offered_driver_ids: [],
+        request_expires_at: null,
+      })
+      .eq("passenger_id", userRow.id)
+      .eq("status", "procurar_motorista")
+      .lt("search_expires_at", staleCutoff);
 
     if (!validPoint(body?.origin) || !validPoint(body?.destination)) return json({ error: "invalid_coordinates" }, 422);
     const category = String(body?.category ?? "").trim().toLowerCase();
