@@ -11,7 +11,7 @@ if (!source.includes('const pendingOfferPoll = window.setInterval')) {
   if (!source.includes(anchor)) throw new Error('[FAIL] Motorista Parceiro: ancora de focus/online nao encontrada.');
   source = source.replace(
     anchor,
-    anchor + '\n    const pendingOfferPoll = window.setInterval(() => { void resyncDriverRides(); }, 5000);',
+    anchor + '\n    const pendingOfferPoll = window.setInterval(() => { void resyncDriverRides(); }, 2000);',
   );
 }
 
@@ -30,4 +30,4 @@ for (const marker of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Motorista Parceiro: ofertas pendentes sao ressincronizadas a cada 5s.');
+console.log('[OK] Motorista Parceiro: ofertas pendentes sao ressincronizadas a cada 2s.');
