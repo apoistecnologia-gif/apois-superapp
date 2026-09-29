@@ -18,12 +18,14 @@ if (start < 0 || end < 0) {
   throw new Error('[FAIL] Entregador Parceiro: bloco legado de payout não encontrado no runtime.');
 }
 
-const replacement = `  const savePayoutAccount = async () => {\n    toast.error(\"Recebimento direto ainda está em homologação. O APOIS Parceiro não cadastra chave PIX para saque manual.\");\n  };\n\n  const requestPayout = async () => {\n    toast.error(\"Saque manual está desativado. O repasse ao entregador será liberado somente pelo fluxo financeiro direto homologado.\");\n  };`;
+const replacement = `  const savePayoutAccount = async () => {\n    toast.error(\"Recebimento direto ainda está em homologação. O APOIS Parceiro não cadastra chave PIX para saque manual.\");\n  };\n\n  const requestPayout = async () => {\n    toast.error(\"Saque manual está desativado. O repasse ao entregador será liberado somente pelo fluxo financeiro direto homologado.\");\n  };\n\n  const confirmSettlementReceived = async (_settlementId: string) => {\n    toast.error(\"Confirmação manual de recebimento está desativada durante a homologação do repasse direto.\");\n  };\n\n  const disputeSettlement = async (_settlementId: string) => {\n    toast.error(\"Contestação manual de repasse está desativada durante a homologação do repasse direto.\");\n  };`;
 source = source.slice(0, start) + replacement + source.slice(end);
 
 for (const marker of [
   'Recebimento direto ainda está em homologação.',
   'Saque manual está desativado.',
+  'const confirmSettlementReceived = async (_settlementId: string)',
+  'const disputeSettlement = async (_settlementId: string)',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Entregador Parceiro: trava financeira ausente (${marker}).`);
 }
