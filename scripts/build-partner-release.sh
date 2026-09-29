@@ -40,7 +40,6 @@ node "$ROOT/scripts/harden-partner-motorista-onboarding.mjs"
 node "$ROOT/scripts/harden-motorista-document-boundary.mjs"
 node "$ROOT/scripts/harden-motorista-provider-boundary.mjs"
 node "$ROOT/scripts/harden-motorista-finance-boundary.mjs"
-node "$ROOT/scripts/harden-motorista-payment-wait.mjs"
 node "$ROOT/scripts/harden-motorista-ride-flow-ui.mjs"
 node "$ROOT/scripts/harden-motorista-voice-navigation-flow.mjs"
 node "$ROOT/scripts/harden-motorista-direct-ride-copy.mjs"
@@ -67,8 +66,7 @@ require_contains 'stopDriverWatch();' src/routes/motorista.app.tsx 'Motorista en
 require_contains 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.ts 'Finalização usa lifecycle canônico'
 require_contains 'settlement?.driver_earning ?? settlement?.passenger_charge' 'src/routes/motorista.corridas.$id.tsx' 'Histórico usa ganho autorizado'
 require_contains 'Pagamento eletrônico temporariamente indisponível' src/routes/motorista.assinatura.tsx 'Mensalidade informa indisponibilidade sem CTA morto'
-require_contains 'Aguardando pagamento do passageiro' src/routes/motorista.app.tsx 'Motorista reconhece hold PIX Safe2Pay'
-require_contains 'Safe2Pay' src/routes/motorista.app.tsx 'Motorista informa provider Safe2Pay no hold de pagamento'
+require_contains 'Corrida aceita. Siga até o embarque' src/routes/motorista.app.tsx 'Motorista segue diretamente ao embarque após aceitar corrida'
 
 CORRIDAS_URL_VALUE="${CORRIDAS_VITE_SUPABASE_URL:-}"
 CORRIDAS_KEY_VALUE="${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
@@ -118,7 +116,7 @@ require_contains 'Esqueci minha senha' dist/client 'Recovery do Motorista presen
 require_contains 'Pagamento eletrônico temporariamente indisponível' dist/client 'Mensalidade sem gateway presente'
 require_contains 'Recebimento direto' dist/client 'Política de recebimento direto presente'
 require_contains 'Nova corrida. Embarque em' dist/client 'Voz de oferta presente'
-require_contains 'Aguardando pagamento do passageiro' dist/client 'Estado de espera PIX Safe2Pay presente'
+require_contains 'Corrida aceita. Siga até o embarque' dist/client 'Motorista não depende de hold de gateway para iniciar deslocamento'
 require_contains 'Chegada informada. Aguarde o passageiro e solicite o PIN' dist/client 'Chegada/PIN presente'
 require_contains 'Corrida iniciada. Siga a rota até' dist/client 'Início da corrida presente'
 require_contains 'toque em finalizar corrida' dist/client 'Finalização orientada presente'
