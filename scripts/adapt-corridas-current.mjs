@@ -910,6 +910,10 @@ patch('src/routes/_authenticated.revisar-solicitacao.tsx', (source) =>
     .replace(
       'className="flex-1 px-5 py-6 space-y-6 overflow-y-auto"',
       'className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 pb-6 pt-5"',
+    )
+    .replace(
+      'className="px-5 py-6 bg-zinc-900/80 backdrop-blur-xl border-t border-white/5"',
+      'className="shrink-0 border-t border-white/5 bg-zinc-900/95 px-4 pt-4 pb-[max(18px,env(safe-area-inset-bottom))] backdrop-blur-xl"',
     ),
 'Corridas: revisão da solicitação usa safe-area, scroll interno e botão voltar tocável');
 
@@ -1095,7 +1099,7 @@ requireMarkers('src/routes/_authenticated.carteira.tsx', ['useWallet', 'Saldo di
 requireMarkers('src/routes/_authenticated.corridas.tsx', ['from("rides")', 'Histórico e corridas em andamento.', 'Pedir uma corrida'], 'Corridas histórico funcional e sem placeholder');
 requireMarkers('src/routes/_authenticated.perfil.tsx', ['min-h-0 flex-1 overflow-y-auto', 'min-h-[68px]', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas perfil cabe na viewport e tem alvos confortáveis');
 requireMarkers('src/routes/_authenticated.notificacoes.tsx', ['min-h-0 flex-1 overflow-y-auto', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas notificações cabe na viewport');
-requireMarkers('src/routes/_authenticated.revisar-solicitacao.tsx', ['min-h-0 flex-1 overflow-hidden', 'min-h-0 flex-1 space-y-6 overflow-y-auto'], 'Corridas revisão usa scroll interno');
+requireMarkers('src/routes/_authenticated.revisar-solicitacao.tsx', ['min-h-0 flex-1 overflow-hidden', 'min-h-0 flex-1 space-y-6 overflow-y-auto', 'pb-[max(18px,env(safe-area-inset-bottom))]'], 'Corridas revisão usa scroll interno e CTA acima da barra do Android');
 requireMarkers('src/components/ui/bottom-sheet/BottomSheet.tsx', ['bottom-[calc(82px+env(safe-area-inset-bottom))]', 'max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]', 'min-h-0 flex-1 overflow-y-auto'], 'Corridas BottomSheet não fica atrás do rodapé');
 requireMarkers('src/routes/_authenticated.buscar-destino.tsx', ['relative min-h-0 flex-1 overflow-hidden', 'bottom-[max(20px,env(safe-area-inset-bottom))]'], 'Corridas busca respeita viewport e safe-area');
 requireMarkers('src/styles.css', ['padding: 0;'], 'Corridas viewport sem safe-area duplicada');
