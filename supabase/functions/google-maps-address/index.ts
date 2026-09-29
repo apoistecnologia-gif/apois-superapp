@@ -115,12 +115,13 @@ async function nominatimReverse(lat: number, lng: number) {
 async function nominatimSearch(input: string, lat?: number, lng?: number) {
   const url = new URL("https://photon.komoot.io/api/");
   url.searchParams.set("q", input);
-  url.searchParams.set("limit", "6");
-  url.searchParams.set("bbox", "-73.99,-33.75,-34.79,5.27");
+  url.searchParams.set("limit", "8");
+  url.searchParams.set("countrycode", "BR");
   if (Number.isFinite(lat) && Number.isFinite(lng)) {
     url.searchParams.set("lat", String(lat));
     url.searchParams.set("lon", String(lng));
-    url.searchParams.set("location_bias_scale", "0.15");
+    url.searchParams.set("zoom", "13");
+    url.searchParams.set("location_bias_scale", "0.05");
   }
   const response = await fetch(url, { headers: photonHeaders });
   if (!response.ok) throw new Error(`Address search fallback HTTP ${response.status}`);
