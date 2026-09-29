@@ -78,7 +78,7 @@ if [ -z "$CORRIDAS_URL_VALUE" ] || [ -z "$CORRIDAS_KEY_VALUE" ] || [ -z "$CORRID
   exit 1
 fi
 case "$CORRIDAS_URL_VALUE" in
-  *vqtucstyduxrqjgyigfk.supabase.co) ;;
+  *tbbzkrfupmqdywnzgnms.supabase.co) ;;
   *) echo '[FAIL] Motorista: Supabase não é o projeto Corridas canônico.'; exit 1 ;;
 esac
 {
@@ -111,7 +111,7 @@ cd "$ROOT"
 node "$ROOT/scripts/audit-motorista-release-surface.mjs"
 cd "$MOTORISTA"
 
-require_contains 'vqtucstyduxrqjgyigfk.supabase.co' dist/client 'Bundle Motorista usa Supabase Corridas'
+require_contains 'tbbzkrfupmqdywnzgnms.supabase.co' dist/client 'Bundle Motorista usa Supabase Corridas'
 forbid_bundle 'sbvhdgyuuperszlsllji.supabase.co' dist/client 'Bundle Motorista isolado de Entregas'
 require_contains 'Continuar com Google' dist/client 'Google login do Motorista presente'
 require_contains 'Esqueci minha senha' dist/client 'Recovery do Motorista presente'
