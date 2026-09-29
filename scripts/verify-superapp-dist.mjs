@@ -35,7 +35,28 @@ requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','.apois-ki
 requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','apois-kit-home','Digite um endereço...','<CategorySelector />'],'Home Corridas usa mapa real, busca e visual APOIS');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',['APOIS_NATIVE_PASSENGER_MAP_V1','GoogleMap.create({','VITE_APOIS_ANDROID_MAPS_API_KEY','capacitor-google-map'],'Corridas usa Google Maps nativo no Android e mantém fallback web');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['apois-kit-search-screen','suggestions.map','whitespace-normal break-words'],'Busca Corridas mantém sugestões visíveis e legíveis');
-requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
+{
+  const bottomSheet = requireFile('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx');
+  if (bottomSheet) {
+    const hasValidHeight =
+      bottomSheet.includes('max-h-[94dvh]') ||
+      bottomSheet.includes('max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]');
+    const hasValidBottomSafeArea =
+      bottomSheet.includes('max(16px, env(safe-area-inset-bottom))') ||
+      bottomSheet.includes('style={{ paddingBottom: 0 }}') ||
+      bottomSheet.includes('bottom-[calc(82px+env(safe-area-inset-bottom))]');
+    const hasScrollContainment = bottomSheet.includes('overscroll-contain');
+
+    const missing = [
+      ...(!hasValidHeight ? ['altura dinâmica compatível com shell'] : []),
+      ...(!hasValidBottomSafeArea ? ['safe area inferior/offset do rodapé'] : []),
+      ...(!hasScrollContainment ? ['overscroll-contain'] : []),
+    ];
+
+    if (missing.length) fail(`BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area: ${missing.join(' | ')}`);
+    else ok('BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
+  }
+}
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',['grid-cols-[58px_minmax(0,1fr)_auto]','carro: Car','moto: Bike','fretes: Truck','guincho: Wrench','envios: Package','PRICING_CONFIG.LABELS[cat.key]'],'Categorias Corridas usam os cinco códigos oficiais em cards premium sem truncamento horizontal');
 requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
 requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
