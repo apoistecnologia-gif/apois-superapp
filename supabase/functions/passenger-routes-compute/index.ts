@@ -44,9 +44,14 @@ async function googleRoute(origin: any, destination: any, stops: any[], key: str
   const payload = await response.json();
   const route = payload?.routes?.[0];
   if (!route?.encodedPolyline && !route?.polyline?.encodedPolyline) throw new Error("google_route_empty");
+  const distanceMeters = Number(route.distanceMeters);
+  const durationSeconds = Number.parseInt(String(route.duration ?? "0").replace("s", ""), 10);
   return {
-    distanceMeters: Number(route.distanceMeters),
-    durationSeconds: Number.parseInt(String(route.duration ?? "0").replace("s", ""), 10),
+    ok: true,
+    distanceMeters,
+    distanceKm: distanceMeters / 1000,
+    durationSeconds,
+    durationMinutes: Math.ceil(durationSeconds / 60),
     encodedPolyline: String(route.polyline?.encodedPolyline ?? route.encodedPolyline),
     provider: "google",
   };
@@ -63,9 +68,14 @@ async function osrmRoute(origin: any, destination: any, stops: any[]) {
   const payload = await response.json();
   const route = payload?.routes?.[0];
   if (!route?.geometry) throw new Error("osrm_route_empty");
+  const distanceMeters = Math.round(Number(route.distance));
+  const durationSeconds = Math.round(Number(route.duration));
   return {
-    distanceMeters: Math.round(Number(route.distance)),
-    durationSeconds: Math.round(Number(route.duration)),
+    ok: true,
+    distanceMeters,
+    distanceKm: distanceMeters / 1000,
+    durationSeconds,
+    durationMinutes: Math.ceil(durationSeconds / 60),
     encodedPolyline: String(route.geometry),
     provider: "osrm",
   };
