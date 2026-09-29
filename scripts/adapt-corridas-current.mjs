@@ -941,6 +941,39 @@ patch('src/routes/_authenticated.buscar-destino.tsx', (source) =>
     ),
 'Corridas: busca de destino respeita viewport, safe-area e alvos de toque');
 
+patch('src/services/rides/ride-request-service.ts', (source) =>
+  source.replace(
+    `      const { data, error } = await supabase.functions.invoke("cancel-ride", {
+        body: {
+          ride_id: rideId,
+          ...(reason?.trim() ? { reason: reason.trim() } : {}),
+        },
+      });`,
+    `      const { data, error } = await supabase.rpc("cancel_own_ride", {
+        p_ride_id: rideId,
+      });`,
+  ).replace(
+    '      return normalizeCancellationResponse(data);',
+    '      return normalizeCancellationResponse(Array.isArray(data) ? data[0] : data);',
+  ),
+'Corridas: cancelamento usa RPC autenticada e não depende de Edge Function ausente');
+
+patch('src/services/rides/active-ride-service.ts', (source) =>
+  source.replace(
+    `    if (error) throw error;
+    return data ? this.normalizeRide(data) : null;`,
+    `    if (error) throw error;
+    if (
+      data?.status === "procurar_motorista" &&
+      data?.search_expires_at &&
+      new Date(data.search_expires_at).getTime() <= Date.now()
+    ) {
+      return null;
+    }
+    return data ? this.normalizeRide(data) : null;`,
+  ),
+'Corridas: recuperação ignora busca expirada e não ressuscita corrida antiga');
+
 patch('src/hooks/rides/use-active-ride.tsx', (source) =>
   source
     .replace(
@@ -1157,6 +1190,8 @@ requireMarkers('src/routes/_authenticated.perfil.tsx', ['min-h-0 flex-1 overflow
 requireMarkers('src/routes/_authenticated.notificacoes.tsx', ['min-h-0 flex-1 overflow-y-auto', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas notificações cabe na viewport');
 requireMarkers('src/routes/_authenticated.revisar-solicitacao.tsx', ['min-h-0 flex-1 overflow-hidden', 'min-h-0 flex-1 space-y-6 overflow-y-auto', 'pb-[max(18px,env(safe-area-inset-bottom))]'], 'Corridas revisão usa scroll interno e CTA acima da barra do Android');
 requireMarkers('src/hooks/rides/use-active-ride.tsx', ['await loadRide(activeRide.id);', '}, [loadRide, userId]);'], 'Corridas recuperação de corrida sem loop de polling');
+requireMarkers('src/services/rides/ride-request-service.ts', ['supabase.rpc("cancel_own_ride"', 'Array.isArray(data) ? data[0] : data'], 'Corridas cancela pela RPC autenticada');
+requireMarkers('src/services/rides/active-ride-service.ts', ['search_expires_at', 'new Date(data.search_expires_at).getTime() <= Date.now()'], 'Corridas não recupera busca expirada');
 requireMarkers('src/routes/_authenticated.corrida.$rideId.tsx', ['showReconnectWarning', 'setTimeout(() => setShowReconnectWarning(true), 3000)'], 'Corridas reconexão sem falso alerta inicial');
 requireMarkers('src/components/ui/bottom-sheet/BottomSheet.tsx', ['bottom-[calc(82px+env(safe-area-inset-bottom))]', 'max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]', 'min-h-0 flex-1 overflow-y-auto'], 'Corridas BottomSheet não fica atrás do rodapé');
 requireMarkers('src/routes/_authenticated.buscar-destino.tsx', ['relative min-h-0 flex-1 overflow-hidden', 'bottom-[max(20px,env(safe-area-inset-bottom))]'], 'Corridas busca respeita viewport e safe-area');
