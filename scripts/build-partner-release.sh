@@ -86,16 +86,16 @@ esac
   printf 'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY=%s\n' "$CORRIDAS_MAPS_KEY_VALUE"
 } > .env.mobile.local
 
-CORRIDAS_KEY_FROM_SOURCE="$(sed -n 's/^\s*VITE_SUPABASE_PUBLISHABLE_KEY\s*=\s*//p' "$ROOT/sources/apois-corridas-motorista-admin/.env.mobile" | head -n1 | tr -d '\r')"
-if [ -z "$CORRIDAS_KEY_FROM_SOURCE" ]; then
-  echo '[FAIL] Motorista: publishable key canônica ausente da fonte pinada.'
+AUTH_SETTINGS_STATUS="$(curl --silent --show-error --output /tmp/apois-corridas-auth-settings.json --write-out '%{http_code}' \
+  -H "apikey: $CORRIDAS_KEY_VALUE" \
+  "$CORRIDAS_URL_VALUE/auth/v1/settings")"
+if [ "$AUTH_SETTINGS_STATUS" != "200" ]; then
+  echo "[FAIL] Motorista: publishable key não foi aceita pelo projeto Corridas atual (HTTP $AUTH_SETTINGS_STATUS)."
+  rm -f /tmp/apois-corridas-auth-settings.json
   exit 1
 fi
-if [ "$(printf '%s' "$CORRIDAS_KEY_VALUE" | sha256sum | cut -d' ' -f1)" != "$(printf '%s' "$CORRIDAS_KEY_FROM_SOURCE" | sha256sum | cut -d' ' -f1)" ]; then
-  echo '[FAIL] Motorista: publishable key externa diverge da fonte Corridas.'
-  exit 1
-fi
-unset CORRIDAS_KEY_FROM_SOURCE
+rm -f /tmp/apois-corridas-auth-settings.json
+echo '[OK] Motorista: publishable key validada diretamente no Supabase Corridas atual'
 unset VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY SUPABASE_URL SUPABASE_PUBLISHABLE_KEY
 export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
