@@ -49,14 +49,37 @@ Deno.serve(async(req:Request)=>{
     if(!Number.isFinite(distanceMeters)||!Number.isFinite(durationSeconds))return json({error:"Distância ou duração inválida"},400);
     const [{data:categories,error:catError},{data:rules,error:ruleError}]=await Promise.all([
       admin.from("ride_categories").select("id,code,name").eq("is_active",true),
-      admin.from("tariff_rules").select("*"),
+      admin.from("tariff_rules").select("*").eq("is_active",true),
     ]);
     if(catError)throw catError; if(ruleError)throw ruleError;
+
+    const tariffFields = [
+      "base_fare","min_fare","per_km","per_min","stop_fee","fixed_fee","dynamic_multiplier",
+      "helper1_fee","helper2_fee","heavy_furniture_fee","assembly_fee","packing_fee",
+      "difficult_access_fee","stair_fee","heavy_vehicle_fee","accident_fee","platform_fee",
+      "locked_wheels_fee","garage_fee","max_weight_kg","per_kg"
+    ];
+
     const estimates=(categories??[]).filter((cat:any)=>!input.categoryIds||input.categoryIds.includes(cat.id)).map((cat:any)=>{
-      const catRules=(rules??[]).filter((r:any)=>r.category_id===cat.id||r.category_key===cat.code);
-      if(!catRules.length)return{categoryId:cat.id,available:false,unavailableReason:"Sem regras de tarifa"};
-      const tariff:Record<string,number>={}; for(const r of catRules)tariff[r.field_key]=Number(r.value);
-      try{const b=fare(cat.code,distanceMeters/1000,durationSeconds/60,tariff,input.serviceDetails);return{categoryId:cat.id,categoryCode:cat.code,available:true,estimatedPrice:b.total,basePrice:b.base,extras:b.extras,currency:"BRL"};}
+      const candidates=(rules??[]).filter((r:any)=>r.category_id===cat.id);
+      if(!candidates.length)return{categoryId:cat.id,available:false,unavailableReason:"Sem regras de tarifa"};
+
+      const rule =
+        candidates.find((r:any)=>String(r.city??"").trim().toLowerCase()==="petrolina") ??
+        candidates.find((r:any)=>!String(r.city??"").trim()) ??
+        candidates[0];
+
+      const tariff:Record<string,number>={};
+      for(const key of tariffFields){
+        const value=Number(rule?.[key]);
+        if(Number.isFinite(value)) tariff[key]=value;
+      }
+
+      try{
+        const b=fare(cat.code,distanceMeters/1000,durationSeconds/60,tariff,input.serviceDetails);
+        if(!(b.total>0)) return{categoryId:cat.id,categoryCode:cat.code,available:false,unavailableReason:"Tarifa zerada ou incompleta"};
+        return{categoryId:cat.id,categoryCode:cat.code,available:true,estimatedPrice:b.total,basePrice:b.base,extras:b.extras,currency:"BRL"};
+      }
       catch(e){return{categoryId:cat.id,available:false,unavailableReason:e instanceof Error?e.message:"Tarifa indisponível"};}
     });
     return json({ok:true,estimates,pricingVersion:"v2-edge"});
