@@ -873,6 +873,26 @@ patch('src/routes/_authenticated.notificacoes.tsx', (source) =>
     ),
 'Corridas: Notificações usa viewport real do shell e não fica atrás do rodapé');
 
+patch('src/components/ui/bottom-sheet/BottomSheet.tsx', (source) =>
+  source
+    .replace(
+      '"fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[60]",',
+      '"fixed bottom-[calc(82px+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[60]",',
+    )
+    .replace(
+      '"h-auto max-h-[85vh]",',
+      '"h-auto max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]",',
+    )
+    .replace(
+      'style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}',
+      'style={{ paddingBottom: 0 }}',
+    )
+    .replace(
+      '<div className="flex-1 overflow-y-auto px-4 pb-8">{children}</div>',
+      '<div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">{children}</div>',
+    ),
+'Corridas: BottomSheet termina acima da navegação inferior e mantém CTA visível');
+
 patch('src/routes/_authenticated.revisar-solicitacao.tsx', (source) =>
   source
     .replace(
@@ -1076,6 +1096,7 @@ requireMarkers('src/routes/_authenticated.corridas.tsx', ['from("rides")', 'Hist
 requireMarkers('src/routes/_authenticated.perfil.tsx', ['min-h-0 flex-1 overflow-y-auto', 'min-h-[68px]', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas perfil cabe na viewport e tem alvos confortáveis');
 requireMarkers('src/routes/_authenticated.notificacoes.tsx', ['min-h-0 flex-1 overflow-y-auto', 'pt-[max(24px,env(safe-area-inset-top))]'], 'Corridas notificações cabe na viewport');
 requireMarkers('src/routes/_authenticated.revisar-solicitacao.tsx', ['min-h-0 flex-1 overflow-hidden', 'min-h-0 flex-1 space-y-6 overflow-y-auto'], 'Corridas revisão usa scroll interno');
+requireMarkers('src/components/ui/bottom-sheet/BottomSheet.tsx', ['bottom-[calc(82px+env(safe-area-inset-bottom))]', 'max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]', 'min-h-0 flex-1 overflow-y-auto'], 'Corridas BottomSheet não fica atrás do rodapé');
 requireMarkers('src/routes/_authenticated.buscar-destino.tsx', ['relative min-h-0 flex-1 overflow-hidden', 'bottom-[max(20px,env(safe-area-inset-bottom))]'], 'Corridas busca respeita viewport e safe-area');
 requireMarkers('src/styles.css', ['padding: 0;'], 'Corridas viewport sem safe-area duplicada');
 requireMarkers('src/components/BottomNavigation.tsx', ['grid-cols-5', 'min-h-[64px]', '<item.icon size={24}', 'text-[11px]', 'text-zinc-400'], 'Corridas navegação inferior legível, estável e protegida');
