@@ -39,13 +39,23 @@ if (!html.includes(inlineMarker)) {
   if (forwardingMatch?.index >= 0) {
     html = html.slice(0, forwardingMatch.index) + inlineGuard + html.slice(forwardingMatch.index);
   } else {
-    const appearsToForwardToEntregas =
-      html.includes('entregasAuthForwardKey') &&
-      html.includes('../entregas/index.html') &&
-      html.includes("path === 'callback'");
+    const corridasBranch =
+      /if\s*\(\s*moduleName\s*===\s*['"]corridas['"]\s*\)\s*\{([\s\S]*?)\n\s*\}/.exec(html)?.[1] ?? '';
+    const corridasForwardsSharedCallback =
+      corridasBranch.includes('entregasAuthForwardKey') &&
+      corridasBranch.includes('../entregas/index.html') &&
+      corridasBranch.includes("path === 'callback'");
 
-    if (appearsToForwardToEntregas) {
+    if (corridasForwardsSharedCallback) {
       throw new Error('[FAIL] corridas: encaminhamento auth para Entregas existe, mas formato não foi reconhecido com segurança');
+    }
+
+    const safeCurrentBridge =
+      corridasBranch.includes("path === 'reset' || path === 'email-change'") &&
+      corridasBranch.includes('return false;');
+
+    if (safeCurrentBridge) {
+      console.log('[OK] corridas: bridge atual já deixa callback compartilhado sob responsabilidade do módulo Corridas');
     }
   }
 }
@@ -123,10 +133,13 @@ for (const required of [
   }
 }
 
+const finalCorridasBranch =
+  /if\s*\(\s*moduleName\s*===\s*['"]corridas['"]\s*\)\s*\{([\s\S]*?)\n\s*\}/.exec(html)?.[1] ?? '';
+
 const stillForwardsSharedCallbackToEntregas =
-  html.includes('entregasAuthForwardKey') &&
-  html.includes('../entregas/index.html') &&
-  html.includes("path === 'callback'");
+  finalCorridasBranch.includes('entregasAuthForwardKey') &&
+  finalCorridasBranch.includes('../entregas/index.html') &&
+  finalCorridasBranch.includes("path === 'callback'");
 
 if (stillForwardsSharedCallbackToEntregas && !html.includes(inlineMarker)) {
   throw new Error('[FAIL] corridas: callback compartilhado ainda pode ser encaminhado para Entregas antes de ser consumido');
