@@ -78,6 +78,8 @@ require_contains 'Corrida aceita. Siga até o embarque' src/routes/motorista.app
 CORRIDAS_URL_VALUE="${CORRIDAS_VITE_SUPABASE_URL:-}"
 CORRIDAS_KEY_VALUE="${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
 CORRIDAS_MAPS_KEY_VALUE="${CORRIDAS_WEB_MAPS_API_KEY:-}"
+ENTREGAS_URL_VALUE="${APOIS_ENTREGAS_VITE_SUPABASE_URL:-}"
+ENTREGAS_KEY_VALUE="${APOIS_ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
 if [ -z "$CORRIDAS_URL_VALUE" ] || [ -z "$CORRIDAS_KEY_VALUE" ] || [ -z "$CORRIDAS_MAPS_KEY_VALUE" ]; then
   echo '[FAIL] Motorista: env Corridas URL/key/Maps é obrigatório para build release.'
   exit 1
@@ -138,6 +140,8 @@ export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
 export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
 node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
+node "$ROOT/scripts/harden-entregas-google-pkce.mjs"
+node "$ROOT/scripts/harden-partner-entregador-google-runtime.mjs"
 node "$ROOT/scripts/harden-partner-entregador-router.mjs"
 node "$ROOT/scripts/harden-partner-entregador-hash-boundary.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
@@ -158,6 +162,16 @@ export APOIS_MOBILE_PRODUCT="courier"
 export APOIS_MOBILE_BUILD="1"
 export VITE_APOIS_PRODUCT_MODE="courier"
 export VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"
+if [ -z "$ENTREGAS_URL_VALUE" ] || [ -z "$ENTREGAS_KEY_VALUE" ]; then
+  echo '[FAIL] Entregador: env dedicada do Supabase Entregas é obrigatória no release.'
+  exit 1
+fi
+case "$ENTREGAS_URL_VALUE" in
+  *ptgkwyyolrdgnqketkjj.supabase.co) ;;
+  *) echo '[FAIL] Entregador: Supabase não é o projeto Entregas canônico.'; exit 1 ;;
+esac
+export VITE_SUPABASE_URL="$ENTREGAS_URL_VALUE"
+export VITE_SUPABASE_PUBLISHABLE_KEY="$ENTREGAS_KEY_VALUE"
 export APP_ROUTE="/"
 export APP_PACKAGE="br.com.apois.parceiro"
 export APP_LABEL="APOIS Parceiro"
@@ -168,6 +182,11 @@ export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 bun install --frozen-lockfile
 bun run typecheck
 bun run build
+require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output 'Bundle Entregador usa Supabase Entregas atual'
+forbid_bundle 'sbvhdgyuuperszlsllji.supabase.co' .output 'Bundle Entregador sem Supabase aposentado'
+require_contains 'br.com.apois.parceiro://auth/callback' .output 'Bundle Entregador usa callback Google do Parceiro'
+require_contains 'flowType' src/integrations/supabase/client.ts 'Entregador usa PKCE'
+require_contains 'pkce' src/integrations/supabase/client.ts 'Entregador PKCE presente'
 
 HOST=127.0.0.1 PORT=4173 TSS_SHELL=true node .output/server/index.mjs >/tmp/apois-parceiro-entregador.log 2>&1 &
 SERVER_PID=$!
