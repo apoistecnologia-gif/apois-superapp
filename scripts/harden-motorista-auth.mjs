@@ -84,7 +84,8 @@ writeFileSync(componentPath, `import { useEffect, useRef, useState } from "react
 console.log('[OK] motorista: componente Google exige callback PKCE exato e remove listeners corretamente');
 {
   const generated = readFileSync(componentPath, 'utf8');
-  if (!generated.includes('const CALLBACK = "br.com.apois.parceiro://auth/motorista-google";')) throw new Error('[FAIL] motorista: OAuth Google nativo não usa scheme do APK Parceiro');\n  if (!generated.includes('const redirectTo = isNative ? CALLBACK :')) throw new Error('[FAIL] motorista: OAuth Google nativo não força callback do Parceiro');
+  if (!generated.includes('const CALLBACK = "br.com.apois.parceiro://auth/motorista-google";')) throw new Error('[FAIL] motorista: OAuth Google nativo não usa scheme do APK Parceiro');
+  if (!generated.includes('const redirectTo = isNative ? CALLBACK :')) throw new Error('[FAIL] motorista: OAuth Google nativo não força callback do Parceiro');
   if (generated.includes('const redirectTo = new URL("/motorista/login", window.location.origin).toString();')) throw new Error('[FAIL] motorista: OAuth Google pode retornar ao origin localhost do WebView');
   console.log('[OK] motorista: OAuth Google nativo usa callback do APK Parceiro e não pode retornar para localhost');
 }
