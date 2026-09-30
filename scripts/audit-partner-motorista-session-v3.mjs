@@ -18,7 +18,7 @@ for (const marker of [
   'Finalize a corrida ativa antes de sair da conta.',
   'rpc("driver_set_presence"',
   '_online: false, _lat: null, _lng: null',
-  'if (presenceError) throw presenceError;',
+  'profile_missing", "driver_profile_missing',
   'Não foi possível confirmar que você ficou offline.',
   "patch('src/components/MovviHeader.tsx'",
   "patch('src/routes/motorista.perfil.tsx'",
@@ -42,7 +42,7 @@ if (source.includes('PushNotifications.unregister()')) {
 // desse padrão dentro do script de transformação.
 for (const marker of [
   'const offlineRpc = `const { error: presenceError } = await (supabase as any).rpc("driver_set_presence"',
-  'if (presenceError) throw presenceError;',
+  'profile_missing", "driver_profile_missing',
   'Remove tolerância legada se o hardener anterior já tiver sido aplicado.',
   ').catch(() => undefined);`,\n    `      ${offlineRpc}`',
 ]) {
@@ -58,7 +58,7 @@ for (const marker of [
   'Conclua a corrida ativa antes de trocar de perfil.',
   'rpc("driver_set_presence"',
   '_online: false,',
-  'if (presenceError) throw presenceError;',
+  'profile_missing", "driver_profile_missing',
   'await stopNativeDriverLocation()',
   'localStorage.setItem("apois:driver:online", "0")',
   'onClick={() => void handleSwitchPartnerProfile()}',
