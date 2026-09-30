@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "observedAt": "2026-09-26",
+  "observedAt": "2026-09-30",
   "provider": "safe2pay",
-  "feePayer": null,
+  "feePayer": "platform",
   "supabase": {
     "corridas": {
       "projectRef": "tbbzkrfupmqdywnzgnms",
@@ -24,11 +24,11 @@
     }
   },
   "migrations": {
-    "corridasApplied": false,
+    "corridasApplied": true,
     "entregasApplied": true
   },
   "edgeFunctions": {
-    "corridasDeployed": false,
+    "corridasDeployed": true,
     "entregasDeployed": false
   },
   "safe2pay": {
