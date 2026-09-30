@@ -28,7 +28,13 @@ for (const marker of [
   'request_fingerprint',
   'safe2pay_receiver_id',
   'IsPanelRestricted:true',
-]) if (!src.onboarding.includes(marker)) fail('onboarding sem proteção: ' + marker);
+  'driver_safe2pay_profile_incomplete',
+  'body: { target_id',
+]) if (!src.onboarding.includes(marker) && marker !== 'body: { target_id') fail('onboarding sem proteção: ' + marker);
+
+
+if (!src.onboarding.includes('targetSelect=product==="rides"')) fail('onboarding de Corridas não hidrata dados do motorista no backend');
+if (!src.onboarding.includes('const d=found.data as Record<string,unknown>')) fail('onboarding de Corridas ainda depende de PII enviada pelo cliente');
 
 for (const forbidden of [
   'MerchantSplit:',
