@@ -15,9 +15,11 @@ function patch(relativePath, transform, verify, label) {
 
 patch(
   'src/assets/logo.png.asset.json',
-  (source) => source.replace('"url": "/apois-logo.svg"', '"url": "./apois-logo.svg"'),
-  (source) => source.includes('"url": "./apois-logo.svg"') && !source.includes('"url": "/apois-logo.svg"'),
-  'Entregador: logomarca resolve dentro do módulo aninhado',
+  (source) => source
+    .replace('"url": "/apois-logo.svg"', '"url": "/assets/apois-brand.png"')
+    .replace('"url": "./apois-logo.svg"', '"url": "/assets/apois-brand.png"'),
+  (source) => source.includes('"url": "/assets/apois-brand.png"') && !source.includes('"url": "/apois-logo.svg"') && !source.includes('"url": "./apois-logo.svg"'),
+  'Entregador: logomarca usa asset oficial copiado pelo shell Parceiro',
 );
 
 patch(
