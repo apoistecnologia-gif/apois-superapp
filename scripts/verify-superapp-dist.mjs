@@ -59,7 +59,7 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['a
 }
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',['grid-cols-[58px_minmax(0,1fr)_auto]','carro: Car','moto: Bike','fretes: Truck','guincho: Wrench','envios: Package','PRICING_CONFIG.LABELS[cat.key]'],'Categorias Corridas usam os cinco códigos oficiais em cards premium sem truncamento horizontal');
 requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
-requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
+requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','status === "motorista_chegou"','<SecurityCodeCard code={ride.security_code} />'],'Corrida ativa usa PassengerMap real e mostra PIN somente após chegada do motorista');
 requireMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['postgres_changes','canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)'],'Corridas mantém Realtime e bloqueia cancelamento após chegada/início da viagem');
 forbidMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"]'],'Corridas não permite cancelamento em viagem');
 
