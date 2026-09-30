@@ -27,7 +27,7 @@ async function googleRoute(origin: any, destination: any, stops: any[], key: str
     headers: {
       "X-Goog-Api-Key": key,
       "Content-Type": "application/json",
-      "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline",
+      "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction,routes.legs.steps.startLocation",
     },
     body: JSON.stringify({
       origin: { location: { latLng: { latitude: origin.lat, longitude: origin.lng } } },
@@ -46,6 +46,15 @@ async function googleRoute(origin: any, destination: any, stops: any[], key: str
   if (!route?.encodedPolyline && !route?.polyline?.encodedPolyline) throw new Error("google_route_empty");
   const distanceMeters = Number(route.distanceMeters);
   const durationSeconds = Number.parseInt(String(route.duration ?? "0").replace("s", ""), 10);
+  const steps = (route.legs ?? []).flatMap((leg: any) =>
+    (leg.steps ?? []).map((step: any) => ({
+      lat: Number(step.startLocation?.latLng?.latitude),
+      lng: Number(step.startLocation?.latLng?.longitude),
+      distanceMeters: Math.round(Number(step.distanceMeters ?? 0)),
+      instruction: String(step.navigationInstruction?.instructions ?? "").trim(),
+      maneuver: String(step.navigationInstruction?.maneuver ?? "").trim() || null,
+    })),
+  ).filter((step: any) => valid(step) && step.instruction);
   return {
     ok: true,
     distanceMeters,
@@ -54,6 +63,7 @@ async function googleRoute(origin: any, destination: any, stops: any[], key: str
     durationMinutes: Math.ceil(durationSeconds / 60),
     encodedPolyline: String(route.polyline?.encodedPolyline ?? route.encodedPolyline),
     provider: "google",
+    steps,
   };
 }
 
@@ -62,7 +72,7 @@ async function osrmRoute(origin: any, destination: any, stops: any[]) {
   const url = new URL(`https://router.project-osrm.org/route/v1/driving/${points}`);
   url.searchParams.set("overview", "full");
   url.searchParams.set("geometries", "polyline");
-  url.searchParams.set("steps", "false");
+  url.searchParams.set("steps", "true");
   const response = await fetch(url, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`osrm_http_${response.status}`);
   const payload = await response.json();
@@ -70,6 +80,42 @@ async function osrmRoute(origin: any, destination: any, stops: any[]) {
   if (!route?.geometry) throw new Error("osrm_route_empty");
   const distanceMeters = Math.round(Number(route.distance));
   const durationSeconds = Math.round(Number(route.duration));
+  const instructionFor = (step: any) => {
+    const type = String(step?.maneuver?.type ?? "");
+    const modifier = String(step?.maneuver?.modifier ?? "");
+    const road = String(step?.name ?? "").trim();
+    const roadText = road ? ` na ${road}` : "";
+    const direction =
+      modifier === "left" ? "à esquerda" :
+      modifier === "right" ? "à direita" :
+      modifier === "slight left" ? "levemente à esquerda" :
+      modifier === "slight right" ? "levemente à direita" :
+      modifier === "sharp left" ? "acentuadamente à esquerda" :
+      modifier === "sharp right" ? "acentuadamente à direita" :
+      modifier === "uturn" ? "faça o retorno" : "em frente";
+
+    if (type === "depart") return road ? `Siga pela ${road}` : "Siga em frente";
+    if (type === "arrive") return "Você chegou ao destino";
+    if (type === "roundabout" || type === "rotary") return road ? `Entre na rotatória e siga${roadText}` : "Entre na rotatória e siga a saída indicada";
+    if (type === "merge") return `Acesse a via ${direction}${roadText}`;
+    if (type === "fork") return `Mantenha-se ${direction}${roadText}`;
+    if (type === "turn" || type === "end of road" || type === "continue" || type === "new name") {
+      if (modifier === "straight") return road ? `Continue pela ${road}` : "Continue em frente";
+      return `Vire ${direction}${roadText}`;
+    }
+    return road ? `Continue pela ${road}` : "Continue em frente";
+  };
+
+  const steps = (route.legs ?? []).flatMap((leg: any) =>
+    (leg.steps ?? []).map((step: any) => ({
+      lat: Number(step?.maneuver?.location?.[1]),
+      lng: Number(step?.maneuver?.location?.[0]),
+      distanceMeters: Math.round(Number(step?.distance ?? 0)),
+      instruction: instructionFor(step),
+      maneuver: [step?.maneuver?.type, step?.maneuver?.modifier].filter(Boolean).join(":") || null,
+    })),
+  ).filter((step: any) => valid(step) && step.instruction);
+
   return {
     ok: true,
     distanceMeters,
@@ -78,6 +124,7 @@ async function osrmRoute(origin: any, destination: any, stops: any[]) {
     durationMinutes: Math.ceil(durationSeconds / 60),
     encodedPolyline: String(route.geometry),
     provider: "osrm",
+    steps,
   };
 }
 
