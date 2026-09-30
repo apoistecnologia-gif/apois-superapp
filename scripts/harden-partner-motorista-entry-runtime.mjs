@@ -58,7 +58,11 @@ writeFileSync(routeIndexPath, routeIndex, 'utf8');
 let shell = readFileSync(shellPath, 'utf8');
 shell = shell.replace(
   "motorista:'./modules/motorista/index.html#/motorista/login'",
+  "motorista:'/modules/motorista/index.html'",
+);
+shell = shell.replace(
   "motorista:'./modules/motorista/index.html'",
+  "motorista:'/modules/motorista/index.html'",
 );
 writeFileSync(shellPath, shell, 'utf8');
 
@@ -111,11 +115,11 @@ if (!finalIndex.includes('<base href="./">')) {
 if (!finalRouteIndex.includes('APP_ROLE === "driver"') || !finalRouteIndex.includes('to: "/motorista/login"')) {
   throw new Error('[FAIL] Motorista Parceiro: raiz não redireciona internamente ao login do Motorista.');
 }
-if (!finalShell.includes("motorista:'./modules/motorista/index.html'")) {
+if (!finalShell.includes("motorista:'/modules/motorista/index.html'")) {
   throw new Error('[FAIL] Motorista Parceiro: seletor ainda não abre a raiz limpa do módulo.');
 }
-if (finalShell.includes("motorista:'./modules/motorista/index.html#/motorista/login'")) {
-  throw new Error('[FAIL] Motorista Parceiro: cold start ainda usa hash profundo de login.');
+if (finalShell.includes("motorista:'./modules/motorista/index.html") || finalShell.includes("motorista:'/modules/motorista/index.html#/motorista/login'")) {
+  throw new Error('[FAIL] Motorista Parceiro: cold start ainda usa caminho relativo ou hash profundo de login.');
 }
 if (!finalBoundaries.includes('APOIS_MOTORISTA_SAFE_ERROR_CODE')) {
   throw new Error('[FAIL] Motorista Parceiro: diagnóstico seguro do ErrorBoundary não foi aplicado.');
