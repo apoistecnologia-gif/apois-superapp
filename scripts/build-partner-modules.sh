@@ -245,6 +245,12 @@ export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 bun install --frozen-lockfile
 bun run build
 require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output 'bundle Entregador usa o Supabase Entregas atual'
+require_contains 'br.com.apois.parceiro://auth/callback' .output 'bundle Entregador usa callback Google nativo do Parceiro'
+if grep -R -Fq 'https://localhost/modules/' .output; then
+  echo '[FAIL] bundle Entregador contém navegação absoluta inválida para https://localhost/modules/'
+  exit 1
+fi
+echo '[OK] validação Entregador: bundle não contém localhost/modules absoluto'
 if grep -R -Fq 'sbvhdgyuuperszlsllji.supabase.co' .output; then
   echo '[FAIL] bundle Entregador contém o Supabase Entregas aposentado'
   exit 1
