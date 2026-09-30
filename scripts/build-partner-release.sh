@@ -185,7 +185,9 @@ bun run typecheck
 bun run build
 require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output 'Bundle Entregador usa Supabase Entregas atual'
 forbid_bundle 'sbvhdgyuuperszlsllji.supabase.co' .output 'Bundle Entregador sem Supabase aposentado'
-require_contains 'br.com.apois.parceiro://auth/callback' .output 'Bundle Entregador usa callback Google do Parceiro'
+require_contains 'br.com.apois.parceiro' .output 'Bundle Entregador recebe scheme nativo do Parceiro'
+require_contains '://auth/callback' .output 'Bundle Entregador preserva rota de callback Google'
+require_contains 'VITE_APOIS_NATIVE_SCHEME' src/components/GoogleLoginButton.tsx 'Fonte Entregador deriva callback do scheme configurado'
 require_contains 'flowType' src/integrations/supabase/client.ts 'Entregador usa PKCE'
 require_contains 'pkce' src/integrations/supabase/client.ts 'Entregador PKCE presente'
 
