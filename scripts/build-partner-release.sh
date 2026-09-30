@@ -145,6 +145,7 @@ node "$ROOT/scripts/harden-partner-entregador-public-assets.mjs"
 node "$ROOT/scripts/harden-entregas-google-pkce.mjs"
 node "$ROOT/scripts/harden-partner-entregador-google-runtime.mjs"
 node "$ROOT/scripts/harden-partner-entregador-router.mjs"
+node "$ROOT/scripts/harden-partner-entregador-login-logo.mjs"
 node "$ROOT/scripts/harden-partner-entregador-hash-boundary.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
 # Umbrella: aplica jornada, concorrência, GPS/background, sessão, financeiro manual, privacidade e UI.
