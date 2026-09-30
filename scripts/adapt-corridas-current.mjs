@@ -1181,6 +1181,14 @@ function CorridasPage() {
 `,
 'Corridas: histórico deixa de ser placeholder e usa layout móvel real');
 
+patch('src/hooks/use-destination-search.tsx', (source) =>
+  source.replace('}, 300);', '}, 120);'),
+'Corridas: autocomplete reduz espera entre digitação e consulta');
+
+patch('src/hooks/use-pricing.tsx', (source) =>
+  source.replace('}, 500);', '}, 100);'),
+'Corridas: tarifa reduz espera após rota ficar disponível');
+
 requireMarkers('src/routes/_authenticated.inicio.tsx', ['onError={(event) => { event.currentTarget.style.display = "none"; }}', 'Motoristas disponíveis na região'], 'Corridas home sem avatar quebrado nem contagem fictícia');
 requireMarkers('src/integrations/supabase/client.ts', ['storageKey: "apois-superapp-corridas-auth-v1"'], 'Corridas auth isolado');
 requireMarkers('src/hooks/use-auth.tsx', ['.eq("auth_user_id", userId)', '.from("profile-photos")', 'createSignedUrl'], 'Corridas perfil usa domínio correto e foto privada assinada');
