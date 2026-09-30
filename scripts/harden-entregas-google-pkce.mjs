@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
+const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/entregas';
 
 function patch(relativePath, transform, verify, label) {
   const path = resolve(root, relativePath);
@@ -19,7 +20,7 @@ function patch(relativePath, transform, verify, label) {
 }
 
 patch(
-  '.work/entregas/src/integrations/supabase/client.ts',
+  `${workspace}/src/integrations/supabase/client.ts`,
   (source) => {
     let next = source;
     if (!next.includes('flowType: "pkce"')) {
@@ -37,7 +38,7 @@ patch(
 );
 
 patch(
-  '.work/entregas/src/routes/auth.callback.tsx',
+  `${workspace}/src/routes/auth.callback.tsx`,
   (source) => {
     let next = source;
     if (!next.includes('console.error("auth callback exchange failed"')) {
@@ -56,4 +57,4 @@ patch(
   'Entregas: callback preserva sessão já criada e não falha por troca duplicada',
 );
 
-console.log('[OK] Entregas: Google OAuth PKCE endurecido para o Superapp cliente.');
+console.log(`[OK] Entregas: Google OAuth PKCE endurecido em ${workspace}.`);
