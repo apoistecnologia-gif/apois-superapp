@@ -4,6 +4,7 @@ import {
   extractSafe2PayPixPublic,
   safe2PayFeePayer,
   safe2PayIsEnabled,
+  safe2PayMarketplaceReceiverId,
 } from "../_shared/safe2pay.ts";
 
 const cors = {
@@ -62,7 +63,7 @@ Deno.serve(async (req) => {
 
     const { data: ride, error: rideError } = await admin
       .from("rides")
-      .select("id,passenger_id,driver_id,accepted_driver_id,status,estimated_price,final_price,payment_method,payment_status,origin_name,destination_name")
+      .select("id,passenger_id,driver_id,accepted_driver_id,status,estimated_price,final_price,fare_amount_cents,processing_fee_cents,passenger_charge_cents,payment_method,payment_status,origin_name,destination_name")
       .eq("id", rideId)
       .eq("passenger_id", domainUser.id)
       .maybeSingle();
@@ -88,8 +89,17 @@ Deno.serve(async (req) => {
     if (!receiver?.safe2pay_receiver_id) return json(409, { error: "driver_safe2pay_receiver_not_ready" });
     if (receiver.environment !== "production") return json(409, { error: "driver_safe2pay_receiver_not_production" });
 
-    const amount = money(ride.final_price ?? ride.estimated_price);
-    if (!(amount > 0)) return json(409, { error: "ride_amount_invalid" });
+    const fareCents = Number(ride.fare_amount_cents ?? Math.round(money(ride.final_price ?? ride.estimated_price) * 100));
+    const processingFeeCents = Number(ride.processing_fee_cents ?? 0);
+    const passengerChargeCents = Number(ride.passenger_charge_cents ?? (fareCents + processingFeeCents));
+    if (!Number.isInteger(fareCents) || fareCents <= 0) return json(409, { error: "ride_fare_invalid" });
+    if (!Number.isInteger(processingFeeCents) || processingFeeCents < 0) return json(409, { error: "ride_processing_fee_invalid" });
+    if (!Number.isInteger(passengerChargeCents) || passengerChargeCents !== fareCents + processingFeeCents) {
+      return json(409, { error: "ride_passenger_charge_invalid" });
+    }
+    const fareAmount = fareCents / 100;
+    const processingFee = processingFeeCents / 100;
+    const amount = passengerChargeCents / 100;
 
     const cpf = digits(domainUser.cpf);
     if (cpf.length !== 11) return json(409, { error: "passenger_cpf_required" });
@@ -138,6 +148,25 @@ Deno.serve(async (req) => {
     const reference = `apois-ride-${ride.id}-${crypto.randomUUID()}`;
     const expiresAt = new Date(Date.now() + 600_000).toISOString();
     const feePayer = safe2PayFeePayer();
+    if (feePayer !== "platform") {
+      return json(503, { error: "safe2pay_fee_policy_incompatible", code: "DRIVER_MUST_RECEIVE_FULL_FARE" });
+    }
+    const marketplaceReceiverId = safe2PayMarketplaceReceiverId();
+    const splits = [
+      {
+        IdReceiver: Number(receiver.safe2pay_receiver_id),
+        CodeTaxType: 2 as const,
+        Amount: fareAmount,
+        IsPayTax: false,
+      },
+      ...(processingFee > 0 ? [{
+        IdReceiver: marketplaceReceiverId,
+        CodeTaxType: 2 as const,
+        Amount: processingFee,
+        IsPayTax: false,
+      }] : []),
+    ];
+
     const providerPayload = await createSafe2PayPix({
       reference,
       vendor: "APOIS Corridas",
@@ -154,12 +183,7 @@ Deno.serve(async (req) => {
         Quantity: 1,
       }],
       expirationSeconds: 600,
-      splits: [{
-        IdReceiver: Number(receiver.safe2pay_receiver_id),
-        CodeTaxType: 2,
-        Amount: amount,
-        IsPayTax: feePayer === "receiver",
-      }],
+      splits,
     });
 
     const publicPix = extractSafe2PayPixPublic(providerPayload);
