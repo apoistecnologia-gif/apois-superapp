@@ -35,12 +35,27 @@ patch(
 
 patch(
   '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
-  (source) => source.replace(
-    /\{(?:status\s*===\s*"motorista_a_caminho"|\["motorista_a_caminho",\s*"motorista_chegou"\]\.includes\(status\))\s*&&\s*\(\s*<SecurityCodeCard code=\{ride\.security_code\} \/>\s*\)\}/m,
-    '{status === "motorista_chegou" && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
-  ),
-  (source) =>
-    /\{status\s*===\s*"motorista_chegou"\s*&&\s*\(\s*<SecurityCodeCard code=\{ride\.security_code\} \/>\s*\)\}/m.test(source),
+  (source) => {
+    let next = source;
+    const currentRuntime = `                {["motorista_a_caminho", "motorista_chegou"].includes(status) && (
+                  <SecurityCodeCard code={ride.security_code} />
+                )}`;
+    const originalSnapshot = `                {status === "motorista_a_caminho" && (
+                  <SecurityCodeCard code={ride.security_code} />
+                )}`;
+    const desired = `                {status === "motorista_chegou" && (
+                  <SecurityCodeCard code={ride.security_code} />
+                )}`;
+
+    if (next.includes(desired)) return next;
+    if (next.includes(currentRuntime)) return next.replace(currentRuntime, desired);
+    if (next.includes(originalSnapshot)) return next.replace(originalSnapshot, desired);
+
+    throw new Error('[FAIL] passageiro: bloco SecurityCodeCard da corrida ativa não encontrado');
+  },
+  (source) => source.includes(`{status === "motorista_chegou" && (
+                  <SecurityCodeCard code={ride.security_code} />
+                )}`),
   'passageiro: cartão do PIN aparece somente quando motorista chegou',
 );
 
