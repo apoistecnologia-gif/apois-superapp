@@ -31,6 +31,7 @@ for (const script of [
   'harden-motorista-finance-boundary.mjs',
   'harden-motorista-payment-wait.mjs',
   'harden-partner-motorista-direct-earnings.mjs',
+  'harden-admin-motorista-safe2pay-onboarding.mjs',
 ]) {
   run(process.execPath, [resolve(root, `scripts/${script}`)], root, hardenerEnv);
 }
