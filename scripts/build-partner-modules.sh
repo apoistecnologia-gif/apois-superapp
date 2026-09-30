@@ -92,8 +92,21 @@ require_contains 'APOIS_PARTNER_DRIVER_HEADER_OPERATIONAL_GUARD' src/components/
 CORRIDAS_URL_VALUE="${CORRIDAS_VITE_SUPABASE_URL:-}"
 CORRIDAS_KEY_VALUE="${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
 CORRIDAS_MAPS_KEY_VALUE="${CORRIDAS_WEB_MAPS_API_KEY:-}"
-ENTREGAS_URL_VALUE="${VITE_SUPABASE_URL:-}"
-ENTREGAS_KEY_VALUE="${VITE_SUPABASE_PUBLISHABLE_KEY:-}"
+# O Entregador deve usar exclusivamente a configuração de release do projeto
+# Entregas atual. Não aceite fallback do snapshot protegido.
+ENTREGAS_URL_VALUE="${APOIS_ENTREGAS_VITE_SUPABASE_URL:-}"
+ENTREGAS_KEY_VALUE="${APOIS_ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
+if [ -z "$ENTREGAS_URL_VALUE" ] || [ -z "$ENTREGAS_KEY_VALUE" ]; then
+  echo '[FAIL] Entregador: APOIS_ENTREGAS_VITE_SUPABASE_URL e APOIS_ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY são obrigatórias.'
+  exit 1
+fi
+case "$ENTREGAS_URL_VALUE" in
+  *ptgkwyyolrdgnqketkjj.supabase.co) ;;
+  *)
+    echo '[FAIL] Entregador: APOIS_ENTREGAS_VITE_SUPABASE_URL não aponta para o projeto Entregas atual.'
+    exit 1
+    ;;
+esac
 if [ -z "$CORRIDAS_URL_VALUE" ] || [ -z "$CORRIDAS_KEY_VALUE" ] || [ -z "$CORRIDAS_MAPS_KEY_VALUE" ]; then
   echo '[FAIL] Motorista: variáveis CORRIDAS_VITE_SUPABASE_URL, CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY e CORRIDAS_WEB_MAPS_API_KEY são obrigatórias.'
   exit 1
