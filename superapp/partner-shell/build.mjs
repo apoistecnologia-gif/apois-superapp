@@ -125,6 +125,8 @@ forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclat
 
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
+requireMarker(finalShell, "/modules/motorista/index.html", 'shell ancora Motorista na raiz do WebView');
+requireMarker(finalShell, "/modules/entregador/index.html", 'shell ancora Entregador na raiz do WebView');
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 requireMarker(finalShell, 'apois-parceiro:operational-role', 'shell final mantém trava de função operacional');
 requireMarker(finalShell, 'function routeRole(requestedRole,target)', 'shell final protege seletor, push e deep link contra troca de função ativa');
