@@ -107,6 +107,8 @@ for (const [path, label, variable] of [
 }
 const authCallback = requireFile('.work/entregas/src/routes/auth.callback.tsx');
 if (authCallback) {
+  if (!authCallback.includes('const { data: beforeExchange } = await supabase.auth.getSession();') || !authCallback.includes('if (!beforeExchange.session)')) fail('callback Google Entregas ainda pode trocar o mesmo PKCE duas vezes');
+  else ok('callback Google Entregas reutiliza sessão já criada antes de trocar PKCE');
   if (authCallback.includes('setErrorMessage(providerError)')) fail('callback Entregas ainda exibe erro bruto do provedor');
   else if (!authCallback.includes('Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.')) fail('callback Entregas não possui mensagem pública segura');
   else ok('callback Entregas sanitiza falhas externas antes de exibir ao usuário');
