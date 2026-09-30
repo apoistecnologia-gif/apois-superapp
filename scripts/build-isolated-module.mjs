@@ -245,7 +245,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-passenger-camera-stability.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-passenger-trip.mjs')]);
-  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-live-trip.mjs')]);\n  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-terminal-reset.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-live-trip.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-terminal-reset.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-fast-active-poll.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-oauth-callback-handoff.mjs')]);
