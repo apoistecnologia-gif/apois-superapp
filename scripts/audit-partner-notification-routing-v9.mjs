@@ -47,7 +47,7 @@ requireAll('superapp/partner-shell/index.html', [
   "routeRole('motorista',operationalUrls.motorista)",
   "incoming.host==='module'&&path==='entregador'",
   "routeRole('entregador',operationalUrls.entregador)",
-  "const operationalUrls={motorista:'/modules/motorista/index.html#/motorista/app',entregador:'/modules/entregador/index.html'};",
+  "const operationalUrls={motorista:'/modules/motorista/index.html#/motorista/app',entregador:'/modules/entregador/index.html#/courier'};",
   "incoming.host==='auth' && (path==='callback'||path==='reset')",
 ], 'Shell trata deep links operacionais sem confundi-los com OAuth/reset');
 
