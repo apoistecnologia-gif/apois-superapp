@@ -275,7 +275,7 @@ workflows:
         PARTNER_VERSION_NAME: "1.0.0"
         EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"
         CORRIDAS_VITE_SUPABASE_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co"
-        VITE_SUPABASE_URL: "https://ptgkwyyolrdgnqketkjj.supabase.co"
+        APOIS_ENTREGAS_VITE_SUPABASE_URL: "https://ptgkwyyolrdgnqketkjj.supabase.co"
     scripts:
       - name: Install pinned Bun
         script: |
@@ -299,8 +299,8 @@ workflows:
           : "${CORRIDAS_VITE_SUPABASE_URL:?CORRIDAS_VITE_SUPABASE_URL is required}"
           : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY is required}"
           : "${CORRIDAS_WEB_MAPS_API_KEY:?CORRIDAS_WEB_MAPS_API_KEY is required}"
-          : "${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required for Entregas}"
-          : "${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY is required for Entregas}"
+          : "${APOIS_ENTREGAS_VITE_SUPABASE_URL:?APOIS_ENTREGAS_VITE_SUPABASE_URL is required for Entregas}"
+          : "${APOIS_ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY:?APOIS_ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY is required for Entregas}"
           : "${FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64:?Add Firebase google-services.json with br.com.apois.parceiro to Codemagic}"
           : "${PARTNER_VERSION_CODE:?PARTNER_VERSION_CODE is required for the partner release}"
           : "${PARTNER_VERSION_NAME:?PARTNER_VERSION_NAME is required for the partner release}"
