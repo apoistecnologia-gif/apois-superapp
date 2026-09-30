@@ -149,6 +149,9 @@ fi
 echo '[OK] validação Motorista: Supabase Entregas ausente do bundle'
 
 require_contains 'Continuar com Google' dist/client 'login Google presente'
+require_contains 'flowType' src/integrations/supabase/client.ts 'cliente Auth Motorista declara PKCE'
+require_contains 'pkce' src/integrations/supabase/client.ts 'cliente Auth Motorista usa PKCE'
+require_contains 'br.com.apois.parceiro://auth/motorista-google' dist/client 'bundle Motorista usa callback nativo do Parceiro'
 require_contains 'Esqueci minha senha' dist/client 'recuperação de senha presente'
 if grep -R -Eiq 'mercadopago|Mercado Pago|asaas-|openpix|pagbank' dist/client; then
   echo '[FAIL] provider financeiro aposentado permaneceu no bundle Motorista'
