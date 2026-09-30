@@ -29,8 +29,8 @@
     <div class="foot">APOIS • PARCEIROS</div>
   </main>
   <script>
-    const urls={motorista:'./modules/motorista/index.html',entregador:'./modules/entregador/index.html#/courier'};
-    const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html#/courier'};
+    const urls={motorista:'/modules/motorista/index.html',entregador:'/modules/entregador/index.html#/courier'};
+    const operationalUrls={motorista:'/modules/motorista/index.html#/motorista/app',entregador:'/modules/entregador/index.html#/courier'};
     const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
     const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
     const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
@@ -98,7 +98,7 @@
             return true;
           }
           try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
-          window.location.assign('./modules/motorista/index.html#/motorista/login');
+          window.location.assign('/modules/motorista/index.html#/motorista/login');
           return true;
         }
         if(isDriver && path==='redefinir-senha'){
@@ -129,7 +129,7 @@
           }
           try{sessionStorage.setItem(COURIER_AUTH_KEY,rawUrl);}catch{}
           const target=path==='reset'?'#/redefinir-senha'+suffix:'#/auth/callback'+suffix;
-          window.location.assign('./modules/entregador/index.html'+target);
+          window.location.assign('/modules/entregador/index.html'+target);
           return true;
         }
       }catch(error){console.error('[APOIS Parceiro] deep link inválido',error);}
