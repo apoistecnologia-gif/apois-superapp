@@ -80,25 +80,52 @@ patch(
 );
 
 patch(
-  '.work/corridas/src/components/rides/active/ActiveJourneyScreen.tsx',
+  '.work/corridas/src/components/rides/active/DriverCard.tsx',
   (source) => {
-    let out = source.replace(
-      'import { useMemo } from "react";',
-      'import { useEffect, useMemo, useState } from "react";\nimport { supabase } from "@/integrations/supabase/client";',
-    );
+    let out = source;
     out = out.replace(
-      '  const copy = statusCopy(status);\n  const showPin = ["motorista_a_caminho", "motorista_chegou"].includes(status) && Boolean(ride.security_code);',
-      '  const copy = statusCopy(status);\n  const showPin = ["motorista_a_caminho", "motorista_chegou"].includes(status) && Boolean(ride.security_code);\n  const [driverPhotoUrl, setDriverPhotoUrl] = useState<string | null>(null);\n\n  useEffect(() => {\n    let cancelled = false;\n    const raw = String(ride.driver_photo ?? "").trim();\n    if (!raw) { setDriverPhotoUrl(null); return () => { cancelled = true; }; }\n    if (/^https?:\\/\\//i.test(raw)) { setDriverPhotoUrl(raw); return () => { cancelled = true; }; }\n    void supabase.storage.from("profile-photos").createSignedUrl(raw, 60 * 60).then(({ data, error }) => {\n      if (cancelled) return;\n      if (error || !data?.signedUrl) {\n        console.warn("[ActiveRide] foto do motorista indisponível", error);\n        setDriverPhotoUrl(null);\n        return;\n      }\n      setDriverPhotoUrl(data.signedUrl);\n    });\n    return () => { cancelled = true; };\n  }, [ride.driver_photo]);',
+      'import React from "react";',
+      'import React, { useEffect, useState } from "react";\nimport { supabase } from "@/integrations/supabase/client";',
     );
+
     out = out.replace(
-      '{ride.driver_photo ? (\n                <img src={ride.driver_photo} alt="Foto do motorista" className="h-full w-full object-cover" />',
-      '{driverPhotoUrl ? (\n                <img src={driverPhotoUrl} onError={() => setDriverPhotoUrl(null)} alt="Foto do motorista" className="h-full w-full object-cover" />',
+      'export const DriverCard: React.FC<DriverCardProps> = ({ ride }) => {\n  if (!ride.driver_id && !ride.driver_name) return null;',
+      `export const DriverCard: React.FC<DriverCardProps> = ({ ride }) => {
+  const [driverPhotoUrl, setDriverPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const raw = String(ride.driver_photo ?? "").trim();
+    if (!raw) {
+      setDriverPhotoUrl(null);
+      return () => { cancelled = true; };
+    }
+    if (/^https?:\\/\\//i.test(raw)) {
+      setDriverPhotoUrl(raw);
+      return () => { cancelled = true; };
+    }
+    void supabase.storage.from("profile-photos").createSignedUrl(raw, 60 * 60).then(({ data, error }) => {
+      if (cancelled) return;
+      setDriverPhotoUrl(error || !data?.signedUrl ? null : data.signedUrl);
+    });
+    return () => { cancelled = true; };
+  }, [ride.driver_photo]);
+
+  if (!ride.driver_id && !ride.driver_name) return null;`,
     );
-    out = out.replace('src="/favicon.png"', 'src="./favicon.png"');
+
+    out = out.replace(
+      '{ride.driver_photo ? (\n          <img\n            src={ride.driver_photo}',
+      '{driverPhotoUrl ? (\n          <img\n            src={driverPhotoUrl}\n            onError={() => setDriverPhotoUrl(null)}',
+    );
+
     return out;
   },
-  (source) => source.includes('driverPhotoUrl') && source.includes('createSignedUrl(raw, 60 * 60)') && source.includes('src="./favicon.png"'),
-  'corridas passageiro: resolve foto privada e branding relativo na corrida ativa',
+  (source) =>
+    source.includes('driverPhotoUrl') &&
+    source.includes('createSignedUrl(raw, 60 * 60)') &&
+    source.includes('onError={() => setDriverPhotoUrl(null)}'),
+  'corridas passageiro: foto privada do motorista cai para fallback quando inválida',
 );
 
 console.log('[OK] corridas passageiro: foto do motorista, PIN protegido e branding corrigidos em .work');
