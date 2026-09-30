@@ -36,23 +36,57 @@ Deno.serve(async(req)=>{
    const b=obj(await req.json());
    const target=txt(b.target_id,"target_id",36); if(!U.test(target))return j(400,{error:"invalid_target_id"});
    const targetTable=product==="rides"?"drivers":"merchants", acct=product==="rides"?"driver_safe2pay_accounts":"merchant_safe2pay_accounts", key=product==="rides"?"driver_id":"merchant_id";
-   const found=await admin.from(targetTable).select("id").eq("id",target).maybeSingle(); if(!found.data)return j(404,{error:"target_not_found"});
+   const targetSelect=product==="rides"
+     ? "id,name,email,phone,cpf,birth_date,address,address_number,address_complement,province,postal_code,city,state"
+     : "id";
+   const found=await admin.from(targetTable).select(targetSelect).eq("id",target).maybeSingle(); if(!found.data)return j(404,{error:"target_not_found"});
    const old=await admin.from(acct).select("safe2pay_receiver_id,status").eq(key,target).maybeSingle();
    if(old.data?.safe2pay_receiver_id&&old.data.status==="active")return j(200,{ok:true,reused:true,receiverId:old.data.safe2pay_receiver_id,status:"active"});
    if(["provisioning","reconciliation_required"].includes(String(old.data?.status??"")))return j(409,{error:"safe2pay_reconciliation_required"});
-   const a=obj(b.Address);
-   const identity=txt(b.Identity,"identity",32).replace(/[.\/-]/g,"");
-   const rid=txt(b.ResponsibleIdentity??b.Identity,"responsible_identity",32).replace(/\D/g,"");
-   const phone=dig(b.ResponsiblePhone),zip=dig(a.ZipCode);
-   if(![11,14].includes(identity.length)||rid.length!==11||phone.length<10||phone.length>11||zip.length!==8)throw new Error("invalid_identity_data");
-   const requestBody={
-     Name:txt(b.Name,"name"),CommercialName:typeof b.CommercialName==="string"?b.CommercialName.trim():undefined,
-     Identity:identity,ResponsibleName:txt(b.ResponsibleName??b.Name,"responsible_name"),ResponsibleIdentity:rid,
-     ResponsibleBirthDate:txt(b.ResponsibleBirthDate,"responsible_birth_date",10),ResponsiblePhone:phone,Email:txt(b.Email,"email",254),
-     Address:{ZipCode:zip,Street:txt(a.Street,"street",150),Number:txt(a.Number,"number",15),District:txt(a.District,"district",60),
-       Complement:typeof a.Complement==="string"?a.Complement.trim()||undefined:undefined,Reference:typeof a.Reference==="string"?a.Reference.trim()||undefined:undefined},
-     IsPanelRestricted:true,IsTransferCheckingAccountDisabled:b.IsTransferCheckingAccountDisabled===true
-   };
+   let requestBody: Record<string, unknown>;
+   if(product==="rides"){
+     const d=found.data as Record<string,unknown>;
+     const identity=dig(d.cpf);
+     const phone=dig(d.phone);
+     const zip=dig(d.postal_code);
+     const birth=String(d.birth_date??"").trim();
+     if(identity.length!==11||phone.length<10||phone.length>11||zip.length!==8||!/^\d{4}-\d{2}-\d{2}$/.test(birth)){
+       return j(409,{error:"driver_safe2pay_profile_incomplete"});
+     }
+     requestBody={
+       Name:txt(d.name,"name"),
+       Identity:identity,
+       ResponsibleName:txt(d.name,"responsible_name"),
+       ResponsibleIdentity:identity,
+       ResponsibleBirthDate:birth,
+       ResponsiblePhone:phone,
+       Email:txt(d.email,"email",254),
+       Address:{
+         ZipCode:zip,
+         Street:txt(d.address,"street",150),
+         Number:txt(d.address_number,"number",15),
+         District:txt(d.province,"district",60),
+         Complement:typeof d.address_complement==="string"?d.address_complement.trim()||undefined:undefined,
+         Reference:[d.city,d.state].filter(Boolean).map(String).join(" - ").slice(0,100)||undefined
+       },
+       IsPanelRestricted:true,
+       IsTransferCheckingAccountDisabled:true
+     };
+   } else {
+     const a=obj(b.Address);
+     const identity=txt(b.Identity,"identity",32).replace(/[.\/-]/g,"");
+     const rid=txt(b.ResponsibleIdentity??b.Identity,"responsible_identity",32).replace(/\D/g,"");
+     const phone=dig(b.ResponsiblePhone),zip=dig(a.ZipCode);
+     if(![11,14].includes(identity.length)||rid.length!==11||phone.length<10||phone.length>11||zip.length!==8)throw new Error("invalid_identity_data");
+     requestBody={
+       Name:txt(b.Name,"name"),CommercialName:typeof b.CommercialName==="string"?b.CommercialName.trim():undefined,
+       Identity:identity,ResponsibleName:txt(b.ResponsibleName??b.Name,"responsible_name"),ResponsibleIdentity:rid,
+       ResponsibleBirthDate:txt(b.ResponsibleBirthDate,"responsible_birth_date",10),ResponsiblePhone:phone,Email:txt(b.Email,"email",254),
+       Address:{ZipCode:zip,Street:txt(a.Street,"street",150),Number:txt(a.Number,"number",15),District:txt(a.District,"district",60),
+         Complement:typeof a.Complement==="string"?a.Complement.trim()||undefined:undefined,Reference:typeof a.Reference==="string"?a.Reference.trim()||undefined:undefined},
+       IsPanelRestricted:true,IsTransferCheckingAccountDisabled:b.IsTransferCheckingAccountDisabled===true
+     };
+   }
    const fp=await hash({target,product,requestBody});
    const prep=await admin.from(acct).upsert({[key]:target,status:"provisioning",request_fingerprint:fp,provisioning_started_at:new Date().toISOString(),environment:"production",last_error_code:null},{onConflict:key});
    if(prep.error)return j(500,{error:"provisioning_state_failed"});
