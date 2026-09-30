@@ -162,6 +162,14 @@ export function safe2PayFeePayer(): "receiver" | "platform" {
   return value;
 }
 
+export function safe2PayMarketplaceReceiverId(): number {
+  const value = Number(env("SAFE2PAY_MARKETPLACE_RECEIVER_ID"));
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error("safe2pay_marketplace_receiver_id_not_configured");
+  }
+  return value;
+}
+
 function walk(value: unknown, visitor: (key: string, value: unknown) => void): void {
   if (Array.isArray(value)) {
     for (const item of value) walk(item, visitor);
