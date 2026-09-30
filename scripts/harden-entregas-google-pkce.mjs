@@ -42,13 +42,17 @@ patch(
     let next = source;
     if (!next.includes('console.error("auth callback exchange failed"')) {
       next = next.replace(
-        '        if (error) {\n          if (!cancelled)\n            setErrorMessage("Não foi possível confirmar este acesso. Solicite um novo link.");\n          return;\n        }',
-        '        if (error) {\n          console.error("auth callback exchange failed", error);\n          const { data: current } = await supabase.auth.getSession();\n          if (!current.session) {\n            if (!cancelled) setErrorMessage("Não foi possível confirmar este acesso. Tente entrar novamente.");\n            return;\n          }\n        }',
+        '        const { error } = await supabase.auth.exchangeCodeForSession(code);\n        if (error) {\n          if (!cancelled)\n            setErrorMessage("Não foi possível confirmar este acesso. Solicite um novo link.");\n          return;\n        }',
+        '        const { data: beforeExchange } = await supabase.auth.getSession();\n        if (!beforeExchange.session) {\n          const { error } = await supabase.auth.exchangeCodeForSession(code);\n          if (error) {\n            console.error("auth callback exchange failed", error);\n            const { data: current } = await supabase.auth.getSession();\n            if (!current.session) {\n              if (!cancelled) setErrorMessage("Não foi possível confirmar este acesso. Tente entrar novamente.");\n              return;\n            }\n          }\n        }',
       );
     }
     return next;
   },
-  (source) => source.includes('console.error("auth callback exchange failed"') && source.includes('if (!current.session)'),
+  (source) =>
+    source.includes('const { data: beforeExchange } = await supabase.auth.getSession();') &&
+    source.includes('if (!beforeExchange.session)') &&
+    source.includes('console.error("auth callback exchange failed"') &&
+    source.includes('if (!current.session)'),
   'Entregas: callback preserva sessão já criada e não falha por troca duplicada',
 );
 
