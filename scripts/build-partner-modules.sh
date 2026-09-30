@@ -228,6 +228,12 @@ export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 bun install --frozen-lockfile
 bun run build
+require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output 'bundle Entregador usa o Supabase Entregas atual'
+if grep -R -Fq 'sbvhdgyuuperszlsllji.supabase.co' .output; then
+  echo '[FAIL] bundle Entregador contém o Supabase Entregas aposentado'
+  exit 1
+fi
+echo '[OK] validação Entregador: Supabase aposentado ausente do bundle'
 
 HOST=127.0.0.1 PORT=4173 TSS_SHELL=true node .output/server/index.mjs >/tmp/apois-parceiro-entregador.log 2>&1 &
 SERVER_PID=$!
