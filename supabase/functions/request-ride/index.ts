@@ -290,7 +290,44 @@ Deno.serve(async (req: Request) => {
       .eq("status", "procurar_motorista")
       .lt("search_expires_at", staleCutoff);
 
-    if (!validPoint(body?.origin) || !validPoint(body?.destination)) return json({ error: "invalid_coordinates" }, 422);
+    if (!validPoint(body?.origin) || !validPoint(body?.destination)) return json({ error: "invalid_coordinates", message: "Origem ou destino inválido." }, 200);
+
+    const paymentMethod = String(body?.payment_method ?? "").trim().toLowerCase();
+    if (!["cash", "credit", "pix"].includes(paymentMethod)) {
+      console.error("[request-ride] invalid payment method", {
+        received: paymentMethod || "<empty>",
+        auth_user_id: auth.id,
+      });
+      return json({
+        ok: false,
+        error: "invalid_payment_method",
+        error_code: "invalid_payment_method",
+        message: "Selecione novamente a forma de pagamento antes de solicitar a corrida.",
+      }, 200);
+    }
+
+    if (paymentMethod === "pix") {
+      const { data: electronicSetting, error: electronicSettingError } = await admin
+        .from("app_settings")
+        .select("value")
+        .eq("key", "finance.ride_electronic_payments_enabled")
+        .maybeSingle();
+      if (electronicSettingError) throw electronicSettingError;
+      const raw = electronicSetting?.value;
+      const electronicEnabled =
+        raw === true ||
+        String(raw ?? "").trim().toLowerCase() === "true" ||
+        String(raw ?? "").trim() === "1";
+      if (!electronicEnabled) {
+        return json({
+          ok: false,
+          error: "electronic_payments_disabled",
+          error_code: "electronic_payments_disabled",
+          message: "PIX ainda não está liberado para corridas.",
+        }, 200);
+      }
+    }
+
     const category = String(body?.category ?? "").trim().toLowerCase();
     const allowed = new Set(["carros","motos","fretes","guincho","envios"]);
     if (!allowed.has(category)) return json({ error: "invalid_category" }, 422);
@@ -324,7 +361,7 @@ Deno.serve(async (req: Request) => {
       fare_amount_cents: Math.round(estimatedPrice * 100),
       distance_km: metrics.distanceKm,
       duration_min: metrics.durationMin,
-      payment_method: String(body?.payment_method ?? "").trim() || null,
+      payment_method: paymentMethod,
       payment_status: "pending",
       payment_provider: null,
       provider_payment_id: null,
@@ -350,7 +387,24 @@ Deno.serve(async (req: Request) => {
       payment_status: "pending",
     });
   } catch (error) {
-    console.error("[request-ride]", error instanceof Error ? error.message : "unknown");
-    return json({ error: "internal_error", message: "Não foi possível solicitar a corrida agora." }, 500);
+    const failure =
+      error instanceof Error
+        ? { name: error.name, message: error.message, stack: error.stack ?? null }
+        : (error && typeof error === "object")
+          ? {
+              code: "code" in error ? String((error as any).code ?? "") : "",
+              message: "message" in error ? String((error as any).message ?? "") : "",
+              details: "details" in error ? String((error as any).details ?? "") : "",
+              hint: "hint" in error ? String((error as any).hint ?? "") : "",
+            }
+          : { message: String(error ?? "unknown") };
+
+    console.error("[request-ride] failure", JSON.stringify(failure));
+    return json({
+      ok: false,
+      error: "internal_error",
+      error_code: "request_ride_internal_error",
+      message: "Não foi possível solicitar a corrida agora.",
+    }, 500);
   }
 });
