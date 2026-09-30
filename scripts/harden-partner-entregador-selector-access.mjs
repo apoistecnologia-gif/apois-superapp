@@ -7,12 +7,41 @@ const routePath = resolve(root, workspace, 'src/routes/courier.tsx');
 const viewsPath = resolve(root, workspace, 'src/components/CourierPremiumViews.tsx');
 
 let route = readFileSync(routePath, 'utf8');
+
+if (!route.includes('const leaveInitialApplication = async () => {')) {
+  const anchor = '  const submitApplication = async (event: React.FormEvent<HTMLFormElement>) => {';
+  if (!route.includes(anchor)) throw new Error('[FAIL] Entregador Parceiro: submitApplication não encontrado.');
+  const helper = `  const leaveInitialApplication = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Não foi possível trocar de conta agora. Tente novamente.");
+      return;
+    }
+    window.location.replace("../../index.html");
+  };
+
+`;
+  route = route.replace(anchor, helper + anchor);
+}
+
 route = route.replace(
   '        onBack={() => void logout()}\n',
-  `        onBack={() => window.location.replace('../../index.html')}\n`,
+  '        onBack={() => void leaveInitialApplication()}\n',
 );
-if (!route.includes(`onBack={() => window.location.replace('../../index.html')}`)) {
-  throw new Error('[FAIL] Entregador Parceiro: cadastro inicial ainda não volta ao seletor sem logout.');
+route = route.replace(
+  `        onBack={() => window.location.replace('../../index.html')}\n`,
+  '        onBack={() => void leaveInitialApplication()}\n',
+);
+
+for (const marker of [
+  'const leaveInitialApplication = async () => {',
+  'await supabase.auth.signOut();',
+  'window.location.replace("../../index.html");',
+  'onBack={() => void leaveInitialApplication()}',
+]) {
+  if (!route.includes(marker)) {
+    throw new Error(`[FAIL] Entregador Parceiro: troca de conta no cadastro inicial incompleta (${marker}).`);
+  }
 }
 writeFileSync(routePath, route, 'utf8');
 
@@ -33,4 +62,4 @@ for (const marker of [
 }
 writeFileSync(viewsPath, views, 'utf8');
 
-console.log('[OK] Entregador Parceiro: cadastro inicial e conta em análise/recusada/bloqueada podem voltar ao seletor Motorista/Entregador sem apagar a sessão do outro módulo.');
+console.log('[OK] Entregador Parceiro: cadastro inicial encerra somente a sessão Entregas ao voltar; análise/recusa/bloqueio pode voltar ao seletor preservando a sessão.');
