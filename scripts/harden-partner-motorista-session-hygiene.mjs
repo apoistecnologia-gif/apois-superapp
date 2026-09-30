@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const root = process.cwd();
 const workspace = process.env.APOIS_MOTORISTA_WORKSPACE || '.work/partner-motorista';
-const offlineRpc = `const { error: presenceError } = await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError) throw presenceError;`;
+const offlineRpc = `const { error: presenceError } = await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError && !["profile_missing", "driver_profile_missing"].includes(String(presenceError.message ?? ""))) throw presenceError;`;
 
 function patch(relativePath, transform, label) {
   const path = resolve(root, workspace, relativePath);
@@ -27,19 +27,19 @@ patch('src/routes/motorista.app.tsx', (source) => {
   }
   next = next.replace(
     '  async function handleLogout() {\n    await supabase.auth.signOut();\n    navigate({ to: "/" });\n  }',
-    `  async function handleLogout() {\n    if (activeRef.current) {\n      toast.error(\"Finalize a corrida ativa antes de sair da conta.\");\n      return;\n    }\n    try {\n      setDesiredOnline(false);\n      const { error: presenceError } = await (supabase as any).rpc(\"driver_set_presence\", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError) throw presenceError;\n      await unregisterCurrentDevice();\n      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      window.location.replace(\"../../index.html\");\n    } catch (error) {\n      if (import.meta.env.DEV) console.warn(\"[APOIS Motorista] falha ao sair\", error);\n      toast.error(\"Não foi possível confirmar que você ficou offline. Tente novamente antes de sair.\");\n    }\n  }`,
+    `  async function handleLogout() {\n    if (activeRef.current) {\n      toast.error(\"Finalize a corrida ativa antes de sair da conta.\");\n      return;\n    }\n    try {\n      setDesiredOnline(false);\n      const { error: presenceError } = await (supabase as any).rpc(\"driver_set_presence\", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError && !["profile_missing", "driver_profile_missing"].includes(String(presenceError.message ?? ""))) throw presenceError;\n      await unregisterCurrentDevice();\n      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      window.location.replace(\"../../index.html\");\n    } catch (error) {\n      if (import.meta.env.DEV) console.warn(\"[APOIS Motorista] falha ao sair\", error);\n      toast.error(\"Não foi possível confirmar que você ficou offline. Tente novamente antes de sair.\");\n    }\n  }`,
   );
   // Compatibilidade caso uma versão anterior deste hardener já tenha sido aplicada.
   next = next.replace(
     '      if (presenceError && import.meta.env.DEV) console.warn("[APOIS Motorista] falha ao confirmar offline no logout", presenceError);',
-    '      if (presenceError) throw presenceError;',
+    '      if (presenceError && !["profile_missing", "driver_profile_missing"].includes(String(presenceError.message ?? ""))) throw presenceError;',
   );
   for (const marker of [
     'Finalize a corrida ativa antes de sair da conta.',
     'setDesiredOnline(false);',
     'rpc("driver_set_presence"',
     '_online: false, _lat: null, _lng: null',
-    'if (presenceError) throw presenceError;',
+    'profile_missing", "driver_profile_missing',
     'await unregisterCurrentDevice();',
     'window.location.replace("../../index.html")',
   ]) {
@@ -65,7 +65,7 @@ patch('src/components/MovviHeader.tsx', (source) => {
     `      await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      }).catch(() => undefined);`,
     `      ${offlineRpc}`,
   );
-  for (const marker of ['driver_set_presence', 'if (presenceError) throw presenceError;', 'await unregisterCurrentDevice();', 'window.location.replace("../../index.html")']) {
+  for (const marker of ['driver_set_presence', 'profile_missing", "driver_profile_missing', 'await unregisterCurrentDevice();', 'window.location.replace("../../index.html")']) {
     if (!next.includes(marker)) throw new Error(`[FAIL] MovviHeader.tsx: logout incompleto (${marker})`);
   }
   return next;
@@ -87,7 +87,7 @@ patch('src/routes/motorista.perfil.tsx', (source) => {
     `      await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      }).catch(() => undefined);`,
     `      ${offlineRpc}`,
   );
-  for (const marker of ['driver_set_presence', 'if (presenceError) throw presenceError;', 'Sessão do Motorista encerrada.', 'window.location.replace("../../index.html")']) {
+  for (const marker of ['driver_set_presence', 'profile_missing", "driver_profile_missing', 'Sessão do Motorista encerrada.', 'window.location.replace("../../index.html")']) {
     if (!next.includes(marker)) throw new Error(`[FAIL] motorista.perfil.tsx: logout Parceiro incompleto (${marker})`);
   }
   return next;
@@ -99,12 +99,12 @@ patch('src/routes/motorista.configuracoes.tsx', (source) => {
   if (next.includes(logoutMarker) && !next.slice(next.indexOf('async function handleLogout'), next.indexOf('async function handleDeleteAccount')).includes('driver_set_presence')) {
     const insertionPoint = next.indexOf('      if (scope === "global") await unregisterAllDevices();', next.indexOf('async function handleLogout'));
     if (insertionPoint < 0) throw new Error('[FAIL] motorista.configuracoes.tsx: ponto de logout não encontrado');
-    const indentRpc = `      const { error: presenceError } = await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError) throw presenceError;\n\n`;
+    const indentRpc = `      const { error: presenceError } = await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError && !["profile_missing", "driver_profile_missing"].includes(String(presenceError.message ?? ""))) throw presenceError;\n\n`;
     next = next.slice(0, insertionPoint) + indentRpc + next.slice(insertionPoint);
   }
   next = next.replace(
     `      await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      }).catch(() => undefined);`,
-    `      const { error: presenceError } = await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError) throw presenceError;`,
+    `      const { error: presenceError } = await (supabase as any).rpc("driver_set_presence", {\n        _online: false, _lat: null, _lng: null, _heading: null, _speed: null,\n      });\n      if (presenceError && !["profile_missing", "driver_profile_missing"].includes(String(presenceError.message ?? ""))) throw presenceError;`,
   );
   next = next.replace(
     '      await navigate({ to: "/motorista/login", replace: true });\n    } catch (error) {',
@@ -117,7 +117,7 @@ patch('src/routes/motorista.configuracoes.tsx', (source) => {
   const logoutBlockStart = next.indexOf('async function handleLogout');
   const logoutBlockEnd = next.indexOf('async function handleDeleteAccount', logoutBlockStart);
   const logoutBlock = logoutBlockStart >= 0 && logoutBlockEnd > logoutBlockStart ? next.slice(logoutBlockStart, logoutBlockEnd) : '';
-  for (const marker of ['driver_set_presence', 'if (presenceError) throw presenceError;', 'unregisterCurrentDevice', 'window.location.replace("../../index.html")']) {
+  for (const marker of ['driver_set_presence', 'profile_missing", "driver_profile_missing', 'unregisterCurrentDevice', 'window.location.replace("../../index.html")']) {
     if (!logoutBlock.includes(marker)) throw new Error(`[FAIL] motorista.configuracoes.tsx: logout não confirma limpeza (${marker})`);
   }
   return next;
