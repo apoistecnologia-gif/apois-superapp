@@ -17,14 +17,14 @@ export const SUPABASE_URL = runtimeUrl;
 export const SUPABASE_PUBLISHABLE_KEY = runtimeKey;
 `;
 
-if (!source.includes('import.meta.env.VITE_SUPABASE_URL')) {
+if (!source.includes('import.meta.env["VITE_SUPABASE_URL"]')) {
   source = replacement;
 }
 
 if (source.includes('sbvhdgyuuperszlsllji.supabase.co')) {
   throw new Error('[FAIL] Entregador: config Supabase aposentada permaneceu no workspace');
 }
-if (!source.includes('import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY')) {
+if (!source.includes('import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]')) {
   throw new Error('[FAIL] Entregador: config não usa publishable key de release');
 }
 
