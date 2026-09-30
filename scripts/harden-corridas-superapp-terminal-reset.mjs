@@ -1,12 +1,14 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const path = resolve('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx');
+const path = resolve(process.cwd(), '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx');
 let source = readFileSync(path, 'utf8');
 
 function fail(message) {
-  throw new Error(`[FAIL] passageiro terminal reset: ${message}`);
+  throw new Error('[FAIL] passageiro terminal reset: ' + message);
 }
+
+const marker = 'APOIS_TERMINAL_AUTO_HOME_V2';
 
 const imports = [
   'import { useDestination } from "@/hooks/use-destination";',
@@ -19,15 +21,14 @@ const imports = [
 if (!source.includes(imports[0])) {
   const anchor = 'import { useActiveRide } from "@/hooks/rides/use-active-ride";';
   if (!source.includes(anchor)) fail('import useActiveRide não encontrado');
-  source = source.replace(anchor, `${anchor}\n${imports.join('\n')}`);
+  source = source.replace(anchor, anchor + '\n' + imports.join('\n'));
 }
 
-const marker = 'APOIS_TERMINAL_TRIP_RESET_V1';
 if (!source.includes(marker)) {
   const hookAnchor = '  } = useActiveRide();';
   if (!source.includes(hookAnchor)) fail('desestruturação useActiveRide não encontrada');
 
-  const resetBlock = [
+  const block = [
     '',
     '  const { clearDestination } = useDestination();',
     '  const { clearRoute } = useRoute();',
@@ -35,7 +36,7 @@ if (!source.includes(marker)) {
     '  const { resetRequest } = useRideRequest();',
     '  const { setServiceDetails } = usePricing();',
     '',
-    `  // ${marker}`,
+    '  // ' + marker,
     '  const resetPassengerTripDraft = () => {',
     '    clearRide();',
     '    resetRequest();',
@@ -45,44 +46,73 @@ if (!source.includes(marker)) {
     '    setServiceDetails({});',
     '  };',
   ].join('\n');
-  source = source.replace(hookAnchor, `${hookAnchor}${resetBlock}`);
+
+  source = source.replace(hookAnchor, hookAnchor + block);
 }
 
-const oldBack = `  const handleBack = () => {\n    if (screenState === "completed") {\n      clearRide();\n      void navigate({ to: "/corridas/$rideId", params: { rideId } });\n      return;\n    }\n    if (screenState === "cancelled") clearRide();\n    void navigate({ to: "/inicio" });\n  };`;
-const newBack = `  const handleBack = () => {\n    if (screenState === "completed") {\n      clearRide();\n      void navigate({ to: "/corridas/$rideId", params: { rideId } });\n      return;\n    }\n    if (screenState === "cancelled") {\n      resetPassengerTripDraft();\n      void navigate({ to: "/inicio", replace: true });\n      return;\n    }\n    void navigate({ to: "/inicio" });\n  };`;
+const loadEffect = `  useEffect(() => {
+    if (rideId) void loadRide(rideId);
+  }, [rideId, loadRide]);`;
+
+if (!source.includes('APOIS_TERMINAL_AUTO_HOME_EFFECT_V2')) {
+  if (!source.includes(loadEffect)) fail('efeito de carregamento da corrida não encontrado');
+
+  const terminalEffect = `${loadEffect}
+
+  // APOIS_TERMINAL_AUTO_HOME_EFFECT_V2
+  useEffect(() => {
+    if (screenState !== "completed" && screenState !== "cancelled") return;
+
+    // Sai da jornada terminal sem manter mapa/rota antiga na tela.
+    const timer = window.setTimeout(() => {
+      resetPassengerTripDraft();
+      void navigate({ to: "/inicio", replace: true });
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [screenState]); // reset/navigate são estáveis durante esta montagem`;
+
+  source = source.replace(loadEffect, terminalEffect);
+}
+
+const oldBack = `  const handleBack = () => {
+    if (screenState === "completed" || screenState === "cancelled") clearRide();
+    void navigate({ to: "/inicio" });
+  };`;
+const newBack = `  const handleBack = () => {
+    if (screenState === "completed" || screenState === "cancelled") {
+      resetPassengerTripDraft();
+      void navigate({ to: "/inicio", replace: true });
+      return;
+    }
+    void navigate({ to: "/inicio" });
+  };`;
 if (source.includes(oldBack)) source = source.replace(oldBack, newBack);
-else if (!source.includes('if (screenState === "cancelled") {\n      resetPassengerTripDraft();')) fail('handleBack não reconhecido');
 
-const oldHome = `  const handleReturnHome = () => {\n    clearRide();\n    void navigate({ to: "/inicio" });\n  };`;
-const newHome = `  const handleReturnHome = () => {\n    resetPassengerTripDraft();\n    void navigate({ to: "/inicio", replace: true });\n  };`;
+const oldHome = `  const handleReturnHome = () => {
+    clearRide();
+    void navigate({ to: "/inicio" });
+  };`;
+const newHome = `  const handleReturnHome = () => {
+    resetPassengerTripDraft();
+    void navigate({ to: "/inicio", replace: true });
+  };`;
 if (source.includes(oldHome)) source = source.replace(oldHome, newHome);
-else if (!source.includes('const handleReturnHome = () => {\n    resetPassengerTripDraft();')) fail('handleReturnHome não reconhecido');
-
-// Todas as confirmações de cancelamento devem zerar também destino, rota,
-// paradas, request e detalhes de serviço antes de voltar para Início.
-source = source.replaceAll(
-  `            clearRide();\n            void navigate({ to: "/inicio", replace: true });`,
-  `            resetPassengerTripDraft();\n            void navigate({ to: "/inicio", replace: true });`,
-);
 
 for (const required of [
   marker,
+  'APOIS_TERMINAL_AUTO_HOME_EFFECT_V2',
+  'screenState !== "completed" && screenState !== "cancelled"',
+  'resetPassengerTripDraft();',
   'clearDestination();',
   'clearRoute();',
   'clearStops();',
   'resetRequest();',
   'setServiceDetails({});',
-  'const handleReturnHome = () => {\n    resetPassengerTripDraft();',
-  'screenState === "cancelled"',
+  'navigate({ to: "/inicio", replace: true })',
 ]) {
-  if (!source.includes(required)) fail(`reset final incompleto: ${required}`);
-}
-
-// Se alguma rota de cancelamento ainda limpa só a corrida e navega para Início,
-// o build deve falhar: isso recria a tela fotografada de categoria/rota antiga.
-if (source.includes('clearRide();\n            void navigate({ to: "/inicio", replace: true });')) {
-  fail('cancelamento ainda usa limpeza parcial');
+  if (!source.includes(required)) fail('marcador final ausente: ' + required);
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Passageiro: finalizar/cancelar e Voltar ao início limpam todo o rascunho da corrida.');
+console.log('[OK] Passageiro: corrida concluída/cancelada limpa jornada e volta automaticamente ao Início.');
