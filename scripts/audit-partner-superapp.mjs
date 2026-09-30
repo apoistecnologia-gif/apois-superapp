@@ -164,7 +164,7 @@ requireAll('scripts/install-partner-launcher.mjs', [
 
 requireAll('superapp/partner-shell/index.html', [
   'PARTNER_PENDING_PUSH_KEY', 'consumePendingPartnerPush', 'pushNotificationActionPerformed',
-  'relayPartnerPush', './modules/entregador/index.html#/courier', './modules/motorista/index.html#/motorista/app',
+  'relayPartnerPush', '/modules/entregador/index.html#/courier', '/modules/motorista/index.html#/motorista/app',
   'if(isDelivery&&isRide)return false;',
 ], 'shell consome Push encaminhado, ignora ambíguos e abre o módulo correto');
 
