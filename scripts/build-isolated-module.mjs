@@ -243,6 +243,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-ride-lifecycle.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-eligibility-no-gateway.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-passenger-camera-stability.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-passenger-trip.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-live-trip.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-fast-active-poll.mjs')]);
