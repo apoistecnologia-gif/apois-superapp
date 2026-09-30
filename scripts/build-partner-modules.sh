@@ -206,6 +206,8 @@ export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
 export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
 node "$ROOT/scripts/harden-entregas-auth-entry.mjs"
+node "$ROOT/scripts/harden-entregas-google-pkce.mjs"
+node "$ROOT/scripts/harden-partner-entregador-google-runtime.mjs"
 node "$ROOT/scripts/harden-partner-entregador-router.mjs"
 node "$ROOT/scripts/harden-partner-entregador-hash-boundary.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
@@ -221,6 +223,9 @@ require_contains 'const COURIER_ACTION_TIMEOUT_MS = 20_000;' src/routes/courier.
 require_contains 'const transitionJobId = activeJob.id;' src/routes/courier.tsx 'mudança de etapa reconcilia a entrega correta'
 require_contains 'setCompletedJob({ ...deliveredJob, status: "delivered" });' src/routes/courier.tsx 'conclusão remove entrega ativa e abre resumo imediatamente'
 require_contains 'Atualização temporariamente indisponível' src/routes/courier.tsx 'falha de refresh preserva estado e mostra recuperação'
+require_contains 'flowType: "pkce"' src/integrations/supabase/client.ts 'Entregador usa PKCE no Google OAuth'
+require_contains 'detectSessionInUrl: false' src/integrations/supabase/client.ts 'Entregador faz callback OAuth manual'
+require_contains 'Browser.addListener("browserFinished"' src/components/GoogleLoginButton.tsx 'botão Google libera loading ao fechar navegador'
 if grep -Fq 'window.location.assign("/courier")' src/lib/courier-push.ts; then
   echo '[FAIL] Entregador ainda tenta abrir rota absoluta /courier dentro do bundle aninhado'
   exit 1
