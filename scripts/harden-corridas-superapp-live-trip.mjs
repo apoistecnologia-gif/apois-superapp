@@ -36,10 +36,11 @@ patch(
 patch(
   '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
   (source) => source.replace(
-    '{status === "motorista_a_caminho" && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
+    /\{(?:status\s*===\s*"motorista_a_caminho"|\["motorista_a_caminho",\s*"motorista_chegou"\]\.includes\(status\))\s*&&\s*\(\s*<SecurityCodeCard code=\{ride\.security_code\} \/>\s*\)\}/m,
     '{status === "motorista_chegou" && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
   ),
-  (source) => source.includes('status === "motorista_chegou"') && source.includes('<SecurityCodeCard code={ride.security_code} />'),
+  (source) =>
+    /\{status\s*===\s*"motorista_chegou"\s*&&\s*\(\s*<SecurityCodeCard code=\{ride\.security_code\} \/>\s*\)\}/m.test(source),
   'passageiro: cartão do PIN aparece somente quando motorista chegou',
 );
 
