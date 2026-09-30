@@ -6,8 +6,8 @@ const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/partner-entrega
 const configPath = resolve(root, workspace, 'src/integrations/supabase/config.ts');
 let source = readFileSync(configPath, 'utf8');
 
-const replacement = `const runtimeUrl = String(import.meta.env.VITE_SUPABASE_URL ?? "").trim();
-const runtimeKey = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "").trim();
+const replacement = `const runtimeUrl = String(import.meta.env["VITE_SUPABASE_URL"] ?? "").trim();
+const runtimeKey = String(import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "").trim();
 
 if (!runtimeUrl || !runtimeKey) {
   throw new Error("Supabase Entregas não configurado no build");
