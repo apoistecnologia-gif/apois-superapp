@@ -44,9 +44,8 @@ for (const field of ['IdReceiver','CodeTaxType','Amount','IsPayTax']) {
   if (!cfg.splitFields?.includes(field)) fail(`Safe2Pay: campo obrigatório de split ausente: ${field}`);
 }
 
-const fee = policy.unresolvedCommercialDecision;
-if (!fee || fee.key !== 'SAFE2PAY_PIX_FEE_PAYER') fail('Safe2Pay: decisão de fee payer não está explicitamente modelada');
-else ok('fee payer permanece decisão comercial explícita, sem valor inventado');
+if (policy.safe2pay?.feePayer !== 'platform') fail('Safe2Pay Corridas: fee payer deve ser platform para preservar 100% da tarifa do motorista');
+else ok('fee payer fixado em platform, preservando 100% da tarifa do motorista');
 
 if (failed) process.exit(1);
 ok('Safe2Pay é o único provider eletrônico alvo e providers legados permanecem aposentados.');
