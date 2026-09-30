@@ -60,7 +60,7 @@ const inputBlock = `              {/* PIN input — herói visual / APOIS_DRIVER
                   {[0, 1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className={`flex h-[72px] items-center justify-center rounded-[18px] border-2 bg-background/80 text-[34px] font-black tabular-nums transition ${pinCode.length > i ? "border-primary text-foreground shadow-[0_0_0_3px_rgba(246,190,28,0.08)]" : "border-border text-muted-foreground"}`}
+                      className={"flex h-[72px] items-center justify-center rounded-[18px] border-2 bg-background/80 text-[34px] font-black tabular-nums transition " + (pinCode.length > i ? "border-primary text-foreground shadow-[0_0_0_3px_rgba(246,190,28,0.08)]" : "border-border text-muted-foreground")}
                     >
                       {pinCode[i] ?? ""}
                     </div>
