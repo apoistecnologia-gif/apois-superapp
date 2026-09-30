@@ -12,6 +12,31 @@ function run(bin, args, cwd = root, env = process.env) {
   if (r.status !== 0) process.exit(r.status ?? 1);
 }
 
+if (!existsSync(resolve(root, 'sources/apois-corridas-motorista-admin/package.json'))) {
+  const token = process.env.APOIS_CORRIDAS_ADMIN_SUBMODULE_TOKEN?.trim()
+    || process.env.APOIS_GITHUB_SUBMODULE_TOKEN?.trim();
+  if (!token) {
+    console.error('[FAIL] sources/apois-corridas-motorista-admin não foi inicializado no checkout.');
+    console.error('Defina APOIS_CORRIDAS_ADMIN_SUBMODULE_TOKEN na Vercel com leitura em franciel046631/movvi-go-connect.');
+    process.exit(1);
+  }
+  console.log('[INFO] Inicializando submódulo Motorista/Admin com token dedicado...');
+  const authHeader = `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`;
+  run('git', [
+    '-c',
+    `http.https://github.com/.extraheader=${authHeader}`,
+    'submodule',
+    'update',
+    '--init',
+    '--recursive',
+    'sources/apois-corridas-motorista-admin',
+  ]);
+  if (!existsSync(resolve(root, 'sources/apois-corridas-motorista-admin/package.json'))) {
+    console.error('[FAIL] Falha ao inicializar sources/apois-corridas-motorista-admin mesmo com token configurado.');
+    process.exit(1);
+  }
+}
+
 const url = process.env.VITE_SUPABASE_URL?.trim() || process.env.CORRIDAS_VITE_SUPABASE_URL?.trim();
 const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || process.env.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
 
