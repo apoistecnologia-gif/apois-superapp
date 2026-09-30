@@ -60,14 +60,8 @@
       "controlled_low_value_production_pix",
       "fee_payer_decision"
     ],
-    "pixSandboxAvailable": false
-  },
-  "unresolvedCommercialDecision": {
-    "key": "SAFE2PAY_PIX_FEE_PAYER",
-    "allowed": [
-      "receiver",
-      "platform"
-    ],
-    "reason": "Safe2Pay separates split allocation from transaction-fee responsibility; production must not guess who pays the Pix fee."
+    "pixSandboxAvailable": false,
+    "feePayer": "platform",
+    "feePolicyReason": "APOIS Corridas mantém 100% da tarifa da corrida para o motorista; a taxa de processamento Pix é cobrada separadamente do passageiro e a conta principal assume a tarifa Safe2Pay."
   }
 }
