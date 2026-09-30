@@ -91,6 +91,16 @@
           routeRole('entregador',operationalUrls.entregador);
           return true;
         }
+        if(isPartner&&incoming.host==='auth'&&path==='motorista-google'){
+          const locked=operationalRole();
+          if(locked&&locked!=='motorista'){
+            window.location.replace(operationalHome(locked));
+            return true;
+          }
+          try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
+          window.location.assign('./modules/motorista/index.html#/motorista/login');
+          return true;
+        }
         if(isDriver && path==='redefinir-senha'){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
