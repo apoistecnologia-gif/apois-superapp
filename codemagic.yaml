@@ -347,6 +347,11 @@ workflows:
           MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
           grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
+          grep -R -Fq 'br.com.apois.parceiro://auth/motorista-google' superapp/partner-shell/dist/modules/motorista
+          if grep -R -Fq 'localhost:3000' superapp/partner-shell/dist/modules/motorista; then
+            echo '[FAIL] bundle Motorista contém callback OAuth localhost'
+            exit 1
+          fi
           test -s superapp/partner-shell/android/app/google-services.json
           test -s superapp/partner-shell/android/app/src/main/res/drawable/apois_partner_splash.xml
           grep -R -Fq 'windowSplashScreenBackground">#050505<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
