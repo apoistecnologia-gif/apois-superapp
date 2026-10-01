@@ -62,7 +62,16 @@ const env = {
   NITRO_PRESET: 'vercel',
 };
 
-run('bun', ['install', '--frozen-lockfile'], workspace, env);
+const frozenInstall = spawnSync('bun', ['install', '--frozen-lockfile'], {
+  cwd: workspace,
+  stdio: 'inherit',
+  env,
+});
+if (frozenInstall.error) throw frozenInstall.error;
+if (frozenInstall.status !== 0) {
+  console.warn('[WARN] Admin Corridas: bun.lock do pin não é reproduzível com Bun atual; usando instalação --no-save somente em .work/admin.');
+  run('bun', ['install', '--no-save'], workspace, env);
+}
 run('bun', ['run', 'typecheck'], workspace, env);
 run('bun', ['run', 'build'], workspace, env);
 
