@@ -173,38 +173,49 @@ if (existsSync(modernScreen)) {
     (source) => {
       let next = source;
 
+      // A rota pinada já mudou de forma algumas vezes. Em vez de depender da
+      // ordem exata das classes Tailwind, aplicamos apenas contratos estruturais.
       next = next.replace(
-        '<div className="flex flex-col min-h-screen bg-transparent relative">',
-        '<div className="flex h-[100svh] min-h-0 flex-col overflow-hidden bg-transparent relative">',
+        /<div className="[^"]*min-h-screen[^"]*bg-transparent[^"]*relative[^"]*">/,
+        '<div className="relative flex h-[100svh] min-h-0 flex-col overflow-hidden bg-transparent">',
       );
 
+      // Adiciona o modo estável ao primeiro BottomSheet da jornada, preservando
+      // todas as demais props, inclusive se outros hardeners já as alteraram.
       next = next.replace(
-        '<BottomSheet isOpen={isBottomSheetOpen} onClose={handleClose} preventClose={isSelecting}>',
-        '<BottomSheet isOpen={isBottomSheetOpen} onClose={handleClose} preventClose={isSelecting} keyboardStable>',
+        /<BottomSheet\b([^>]*?)>/,
+        (match, props) => /\bkeyboardStable\b/.test(props)
+          ? match
+          : `<BottomSheet${props} keyboardStable>`,
       );
 
+      // Container interno precisa poder encolher quando o teclado abre.
       next = next.replace(
-        '<div className="flex flex-col h-full">',
+        /<div className="flex flex-col h-full">/,
         '<div className="flex h-full min-h-0 flex-col overflow-hidden">',
       );
 
+      // A lista de resultados rola dentro do sheet, sem deslocar o viewport.
       next = next.replace(
-        '<div className="flex-1 mt-2">',
-        '<div className="flex-1 min-h-0 mt-2 overflow-y-auto overscroll-contain">',
-      );
-
-      next = next.replace(
-        'className="w-full h-14 pl-12 pr-12 bg-[#2a2a2a] border-2 border-yellow-500/30 focus:border-yellow-500 outline-none rounded-xl text-lg font-medium text-white placeholder:text-gray-500 transition-all"',
-        'className="w-full h-14 pl-12 pr-12 bg-[#2a2a2a] border-2 border-yellow-500/30 focus:border-yellow-500 outline-none rounded-xl text-lg font-medium text-white placeholder:text-gray-500 transition-colors"',
+        /<div className="flex-1 mt-2">/,
+        '<div className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain">',
       );
 
       return next;
     },
-    (source) =>
-      source.includes('h-[100svh]') &&
-      source.includes('keyboardStable') &&
-      source.includes('overflow-y-auto overscroll-contain') &&
-      source.includes('transition-colors'),
+    (source) => {
+      const hasStableSheet =
+        /<BottomSheet\b[^>]*\bkeyboardStable\b[^>]*>/.test(source);
+      const hasStableViewport =
+        source.includes('h-[100svh]') &&
+        source.includes('min-h-0') &&
+        source.includes('overflow-hidden');
+      const hasInternalScroll =
+        source.includes('overflow-y-auto') &&
+        source.includes('overscroll-contain');
+
+      return hasStableSheet && hasStableViewport && hasInternalScroll;
+    },
     'Corridas: busca de destino fica estável durante digitação e abertura do teclado',
   );
 }
