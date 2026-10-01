@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 const root = resolve('.');
 const workspace = resolve(root, '.work/admin');
-const output = resolve(root, '.output');
+const output = resolve(root, '.vercel/output');
 
 function run(bin, args, cwd = root, env = process.env) {
   const r = spawnSync(bin, args, { cwd, stdio: 'inherit', env });
@@ -75,12 +75,12 @@ if (frozenInstall.status !== 0) {
 run('bun', ['run', 'typecheck'], workspace, env);
 run('bun', ['run', 'build'], workspace, env);
 
-const built = resolve(workspace, '.output');
+const built = resolve(workspace, '.vercel/output');
 if (!existsSync(built)) {
-  console.error('[FAIL] Admin Corridas: .output não foi gerado');
+  console.error('[FAIL] Admin Corridas: .vercel/output não foi gerado');
   process.exit(1);
 }
-rmSync(output, { recursive: true, force: true });
+rmSync(resolve(root, '.vercel'), { recursive: true, force: true });
 cpSync(built, output, { recursive: true });
 
-console.log('[OK] Admin Corridas: build Vercel preparado em .output');
+console.log('[OK] Admin Corridas: Build Output API preparado em .vercel/output');
