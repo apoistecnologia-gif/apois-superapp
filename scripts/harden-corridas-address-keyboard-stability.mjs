@@ -15,85 +15,133 @@ function patch(relativePath, transform, verify, label) {
 
 patch(
   'src/components/ui/bottom-sheet/BottomSheet.tsx',
-  (source) => {
-    let next = source;
+  (_source) => `import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion, useAnimation, useDragControls } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-    if (!next.includes('keyboardStable?: boolean;')) {
-      if (next.includes('  maxHeight?: string;\n}')) {
-        next = next.replace(
-          '  maxHeight?: string;\n}',
-          '  maxHeight?: string;\n  keyboardStable?: boolean;\n}',
-        );
-      } else {
-        next = next.replace(
-          '  showBackdrop?: boolean;\n}',
-          '  showBackdrop?: boolean;\n  keyboardStable?: boolean;\n}',
-        );
-      }
+interface BottomSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  title?: string;
+  preventClose?: boolean;
+  showBackdrop?: boolean;
+  height?: string;
+  maxHeight?: string;
+  keyboardStable?: boolean;
+}
+
+export const BottomSheet: React.FC<BottomSheetProps> = ({
+  isOpen,
+  onClose,
+  children,
+  preventClose = false,
+  showBackdrop = true,
+  height,
+  maxHeight,
+  keyboardStable = false,
+}) => {
+  const controls = useAnimation();
+  const dragControls = useDragControls();
+  const [isClosing, setIsClosing] = useState(false);
+  const isPersistentMapSheet = preventClose && !showBackdrop;
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false);
+      void controls.start({ y: 0 });
     }
+  }, [isOpen, controls]);
 
-    if (!next.includes('keyboardStable = false,')) {
-      if (next.includes('  height,\n  maxHeight,\n}) => {')) {
-        next = next.replace(
-          '  height,\n  maxHeight,\n}) => {',
-          '  height,\n  maxHeight,\n  keyboardStable = false,\n}) => {',
-        );
-      } else {
-        next = next.replace(
-          '  showBackdrop = true,\n}) => {',
-          '  showBackdrop = true,\n  keyboardStable = false,\n}) => {',
-        );
-      }
+  const handleDragEnd = async (_event: unknown, info: { offset: { y: number }; velocity: { y: number } }) => {
+    if (keyboardStable) return;
+    const shouldClose = info.offset.y > 100 || info.velocity.y > 500;
+    if (shouldClose && !preventClose) {
+      setIsClosing(true);
+      await controls.start({ y: "100%" });
+      onClose();
+      return;
     }
+    void controls.start({ y: 0 });
+  };
 
-    next = next.replace(
-      '            initial={{ y: "100%" }}\n            animate={controls}\n            exit={{ y: "100%" }}',
-      '            initial={keyboardStable ? false : { y: "100%" }}\n            animate={keyboardStable ? { y: 0 } : controls}\n            exit={keyboardStable ? undefined : { y: "100%" }}',
-    );
+  return (
+    <AnimatePresence>
+      {isOpen ? (
+        <>
+          {showBackdrop ? (
+            <motion.button
+              type="button"
+              aria-label="Fechar painel"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={!preventClose ? onClose : undefined}
+              className="fixed inset-0 z-40 bg-black/60"
+            />
+          ) : null}
 
-    next = next.replace(
-      '            drag="y"\n            dragControls={dragControls}\n            dragListener={false}',
-      '            drag={keyboardStable ? false : "y"}\n            dragControls={dragControls}\n            dragListener={false}',
-    );
+          <motion.div
+            initial={keyboardStable ? false : { y: "100%" }}
+            animate={keyboardStable ? { y: 0 } : controls}
+            exit={keyboardStable ? undefined : { y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 240 }}
+            drag={keyboardStable ? false : "y"}
+            dragControls={dragControls}
+            dragListener={false}
+            dragConstraints={{ top: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
+            className={cn(
+              keyboardStable
+                ? "fixed top-[max(env(safe-area-inset-top),0px)] left-1/2 z-[60] flex w-full max-w-[430px] -translate-x-1/2 flex-col"
+                : "fixed bottom-0 left-1/2 z-[60] flex w-full max-w-[430px] -translate-x-1/2 flex-col",
+              "overflow-hidden rounded-t-[28px] border-x border-t border-white/5 bg-[#121212] shadow-[0_-12px_40px_rgba(0,0,0,0.6)]",
+            )}
+            style={{
+              height: keyboardStable
+                ? "85svh"
+                : isPersistentMapSheet
+                  ? "calc(100dvh - 168px)"
+                  : height,
+              maxHeight: keyboardStable
+                ? "85svh"
+                : isPersistentMapSheet
+                  ? "calc(100dvh - 148px)"
+                  : maxHeight ?? "calc(100dvh - max(16px, var(--app-safe-top)) - 8px)",
+              paddingBottom: keyboardStable
+                ? "max(env(safe-area-inset-bottom), 12px)"
+                : "max(12px, var(--app-safe-bottom))",
+            }}
+            aria-busy={isClosing}
+          >
+            <div
+              className="flex w-full shrink-0 justify-center py-2.5"
+              aria-hidden="true"
+              onPointerDown={(event) => {
+                if (!keyboardStable) dragControls.start(event);
+              }}
+            >
+              <div className="h-1 w-9 rounded-full bg-gray-600" />
+            </div>
 
-    next = next.replace(
-      '              "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[60]",',
-      '              keyboardStable\n                ? "fixed top-[max(env(safe-area-inset-top),0px)] left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[60]"\n                : "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[60]",',
-    );
-
-    next = next.replace(
-      '              "fixed bottom-0 left-1/2 z-[60] flex w-full max-w-[430px] -translate-x-1/2 flex-col",',
-      '              keyboardStable\n                ? "fixed top-[max(var(--app-safe-top),0px)] left-1/2 z-[60] flex w-full max-w-[430px] -translate-x-1/2 flex-col"\n                : "fixed bottom-0 left-1/2 z-[60] flex w-full max-w-[430px] -translate-x-1/2 flex-col",',
-    );
-
-    next = next.replace(
-      '              "h-auto max-h-[85vh]",',
-      '              keyboardStable ? "h-[85svh] max-h-[85svh]" : "h-auto max-h-[85vh]",',
-    );
-
-    next = next.replace(
-      '              height: isPersistentMapSheet ? "calc(100dvh - 168px)" : height,\n              maxHeight: isPersistentMapSheet\n                ? "calc(100dvh - 148px)"\n                : maxHeight ?? "calc(100dvh - max(16px, var(--app-safe-top)) - 8px)",',
-      '              height: keyboardStable\n                ? "85svh"\n                : isPersistentMapSheet\n                  ? "calc(100dvh - 168px)"\n                  : height,\n              maxHeight: keyboardStable\n                ? "85svh"\n                : isPersistentMapSheet\n                  ? "calc(100dvh - 148px)"\n                  : maxHeight ?? "calc(100dvh - max(16px, var(--app-safe-top)) - 8px)",',
-    );
-
-    next = next.replace(
-      '            style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}',
-      '            style={{ paddingBottom: keyboardStable ? "max(env(safe-area-inset-bottom), 12px)" : "calc(72px + env(safe-area-inset-bottom))" }}',
-    );
-
-    next = next.replace(
-      '              onPointerDown={(e) => dragControls.start(e)}',
-      '              onPointerDown={(e) => { if (!keyboardStable) dragControls.start(e); }}',
-    );
-
-    return next;
-  },
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {children}
+            </div>
+          </motion.div>
+        </>
+      ) : null}
+    </AnimatePresence>
+  );
+};
+`,
   (source) =>
     source.includes('keyboardStable?: boolean;') &&
     source.includes('keyboardStable = false') &&
     source.includes('initial={keyboardStable ? false : { y: "100%" }}') &&
-    source.includes('animate={keyboardStable ? { y: 0 } : controls}') &&
-    (source.includes('h-[85svh] max-h-[85svh]') || source.includes('"85svh"')),
+    source.includes('drag={keyboardStable ? false : "y"}') &&
+    source.includes('"85svh"') &&
+    source.includes('if (!keyboardStable) dragControls.start(event);'),
   'Corridas: BottomSheet suporta modo estável com teclado sem reposicionar a tela',
 );
 
