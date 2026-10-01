@@ -150,6 +150,51 @@ export function hardenRuntimeLogging(root, moduleName = 'module') {
       replacement: 'console.log("[request-ride] google key configured", { source: "GOOGLE_MAPS_PLATFORM_API_KEY" });',
     },
     {
+      paths: ['src/lib/geocode.functions.ts'],
+      search: 'if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] latitude:", data.lat);',
+      replacement: 'if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] latitude available");',
+    },
+    {
+      paths: ['src/lib/geocode.functions.ts'],
+      search: 'if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] longitude:", data.lng);',
+      replacement: 'if (import.meta.env.DEV) console.log("[APOIS Reverse Geocoding Diagnostic] longitude available");',
+    },
+    {
+      paths: ['src/routes/motorista.app.tsx'],
+      search: 'if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] localização:", { lat, lng, heading, speed, accuracy: pos.coords.accuracy });',
+      replacement: 'if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] localização atualizada");',
+    },
+    {
+      paths: ['src/routes/motorista.app.tsx'],
+      search: 'if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] GPS concedido:", { lat, lng });',
+      replacement: 'if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] GPS concedido");',
+    },
+    {
+      paths: ['src/routes/motorista.app.tsx'],
+      search: 'if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] activate ignorado — coord inválida:", { lat, lng });',
+      replacement: 'if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] activate ignorado — coordenada inválida");',
+    },
+    {
+      paths: ['src/routes/motorista.app.tsx'],
+      search: 'if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] GPS ok:", { lat: rawLat, lng: rawLng });',
+      replacement: 'if (import.meta.env.DEV) console.log("[APOIS MOTORISTA] GPS ok");',
+    },
+    {
+      paths: ['src/routes/motorista.app.tsx'],
+      search: 'if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev):", { lat: rawLat, lng: rawLng });',
+      replacement: 'if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS fora do Brasil — fallback automático para localização de teste (dev)");',
+    },
+    {
+      paths: ['src/routes/motorista.app.tsx'],
+      search: 'if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS fora do Brasil — bloqueando online:", { lat: rawLat, lng: rawLng });',
+      replacement: 'if (import.meta.env.DEV) console.warn("[APOIS MOTORISTA] GPS fora do Brasil — bloqueando online");',
+    },
+    {
+      paths: ['supabase/functions/dispatch-ride/index.ts'],
+      search: 'console.error("[dispatch-ride] push failed", response.status, await response.text());',
+      replacement: 'console.error("[dispatch-ride] push failed", { status: response.status });',
+    },
+    {
       paths: ['supabase/functions/customer-orders/index.ts'],
       search: 'console.error("customer-orders list failed", { code: error.code, userId: authData.user.id });',
       replacement: 'console.error("customer-orders list failed", { code: error.code });',
