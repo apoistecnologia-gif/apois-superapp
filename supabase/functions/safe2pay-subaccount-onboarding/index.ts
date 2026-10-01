@@ -22,16 +22,9 @@ Deno.serve(async(req)=>{
  const admin=createClient(url,srv,{auth:{persistSession:false,autoRefreshToken:false}});
  const au=await auth.auth.getUser(bearer); if(au.error||!au.data.user)return j(401,{error:"unauthorized"});
  const uid=au.data.user.id;
- let adminOk=false;
- if(product==="rides"){
-   const du=await admin.from("users").select("id").eq("auth_user_id",uid).maybeSingle();
-   const ids=[uid,du.data?.id].filter(Boolean) as string[];
-   const rr=await admin.from("user_roles").select("role").in("user_id",ids).in("role",["admin","super_admin"]).limit(1);
-   adminOk=Boolean(rr.data?.length);
- }else{
-   const rr=await admin.from("user_roles").select("role").eq("user_id",uid).in("role",["admin","super_admin"]).limit(1);
-   adminOk=Boolean(rr.data?.length);
- }
+ const profile=await admin.from("profiles").select("role,active").eq("user_id",uid).maybeSingle();
+ if(profile.error)return j(503,{error:"admin_authorization_unavailable"});
+ const adminOk=profile.data?.active===true && ["administrator","admin","super_admin"].includes(String(profile.data?.role??"").toLowerCase());
  if(!adminOk)return j(403,{error:"forbidden"});
  try{
    const b=obj(await req.json());
