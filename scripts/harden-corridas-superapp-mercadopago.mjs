@@ -23,8 +23,15 @@ function replaceRequired(path, search, replacement, label) {
 replaceRequired(
   '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
   '        "asaas-create-ride-pix",',
-  '        "ride-pix-checkout",',
-  'corridas: cartão Pix usa roteador de provedor em vez de Asaas direto',
+  '        "safe2pay-create-ride-pix",',
+  'corridas: cartão Pix usa Safe2Pay diretamente',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
+  '{ body: { rideId, action } },',
+  '{ body: { ride_id: rideId, action } },',
+  'corridas: payload Pix usa ride_id esperado pela Safe2Pay',
 );
 
 replaceRequired(
@@ -69,7 +76,7 @@ replaceRequired(
   '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
   '            <p className="mt-1 text-[11px] text-zinc-500">Pague por Pix para iniciar a busca do motorista.</p>',
   '            <p className="mt-1 text-[11px] text-zinc-500">Seu motorista está reservado. A corrida avança após a confirmação do Pix.</p>',
-  'corridas: tela aguardando pagamento reflete split Mercado Pago pós-aceite',
+  'corridas: tela aguardando pagamento reflete split Safe2Pay pós-aceite',
 );
 
 const cardPath = resolve(root, '.work/corridas/src/components/payments/RidePixPaymentCard.tsx');
@@ -81,4 +88,4 @@ if (!card.includes(auditMarker)) {
   console.log('[OK] corridas: marcadores legados preservados apenas para auditoria estática');
 }
 
-console.log('[OK] corridas: fluxo visual Pix preparado para Mercado Pago marketplace apenas em .work');
+console.log('[OK] corridas: fluxo visual Pix preparado para Safe2Pay marketplace apenas em .work');
