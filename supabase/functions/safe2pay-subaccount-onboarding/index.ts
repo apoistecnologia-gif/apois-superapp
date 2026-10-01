@@ -12,8 +12,9 @@ async function hash(v:unknown){const d=await crypto.subtle.digest("SHA-256",new 
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:H});
  if(req.method!=="POST")return j(405,{error:"method_not_allowed"});
- const product=(Deno.env.get("SAFE2PAY_ONBOARDING_PRODUCT")??"").toLowerCase();
- if(!["rides","orders"].includes(product))return j(500,{error:"onboarding_product_not_configured"});
+ const configuredProduct=(Deno.env.get("SAFE2PAY_ONBOARDING_PRODUCT")??"").toLowerCase();
+ const product=configuredProduct || "rides";
+ if(product!=="rides")return j(500,{error:"onboarding_product_mismatch",expected:"rides"});
  const url=Deno.env.get("SUPABASE_URL")??"",anon=Deno.env.get("SUPABASE_ANON_KEY")??"",srv=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
  const bearer=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"").trim();
  if(!url||!anon||!srv||!bearer)return j(401,{error:"unauthorized"});
