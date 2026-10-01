@@ -174,7 +174,7 @@ workflows:
         APOIS_STRICT_NATIVE_CONFIG: "1"
         APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"
         APOIS_SAFE2PAY_PIX_ENABLED: "0"
-        VITE_APOIS_SAFE2PAY_PIX_ENABLED: "0"
+        VITE_APOIS_SAFE2PAY_PIX_ENABLED: "1"
         CORRIDAS_VITE_SUPABASE_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co"
         VITE_SUPABASE_URL: "https://ptgkwyyolrdgnqketkjj.supabase.co"
         CORRIDAS_PUBLIC_APP_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co/functions/v1/public-ride-tracker"
