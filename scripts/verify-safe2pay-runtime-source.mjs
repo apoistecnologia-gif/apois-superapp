@@ -33,8 +33,19 @@ for (const marker of [
   'pix_copy_paste',
   'pix_qr_code_base64',
   'expires_at',
-  'IsPayTax: feePayer === "receiver"',
-]) if (!source.ride.includes(marker)) fail('ride charge sem ownership/receiver: ' + marker);
+  'SAFE2PAY_PIX_HOMOLOGATION_DRIVER_ONLY',
+  'IdReceiver: Number(',
+  'receiver.safe2pay_receiver_id',
+  'Amount: providerAmount',
+  'IsPayTax: false',
+]) if (!source.ride.includes(marker)) fail('ride charge sem ownership/receiver/homologação: ' + marker);
+
+if (source.ride.includes('safe2PayMarketplaceReceiverId')) {
+  fail('ride charge de homologação não pode depender do receiver principal da plataforma');
+}
+if (!source.ride.includes('!homologationDriverOnly') || !source.ride.includes('PLATFORM_RECEIVER_NOT_CONFIGURED')) {
+  fail('ride charge não permanece fail-closed fora da homologação sem receiver principal');
+}
 
 for (const marker of [
   '.eq("customer_user_id", authData.user.id)',
