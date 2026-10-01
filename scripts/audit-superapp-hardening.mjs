@@ -77,8 +77,21 @@ check('.apois/modules.json', [
   'harden-entregas-superapp-legal-routes.mjs',
   'harden-entregas-superapp-customer-ux.mjs',
   '"entregas": {',
-  '"install": ["bun", "install"]',
 ], 'cadeia de build Entregas executa todos os hardeners e reconcilia o lock somente na cópia .work');
+
+try {
+  const modules = JSON.parse(readFileSync(resolve('.apois/modules.json'), 'utf8'));
+  const entregasInstall = modules?.modules?.entregas?.install;
+  if (!Array.isArray(entregasInstall) || entregasInstall.join(' ') !== 'bun install') {
+    console.error('[FAIL] Entregas deve instalar dependências somente na cópia .work com bun install');
+    failed = true;
+  } else {
+    console.log('[OK] Entregas usa bun install somente na cópia .work');
+  }
+} catch (error) {
+  console.error('[FAIL] não foi possível validar semanticamente .apois/modules.json:', error instanceof Error ? error.message : String(error));
+  failed = true;
+}
 
 check('scripts/harden-entregas-superapp-account-security.mjs', [
   'await removeCustomerPushRegistration(true);',
