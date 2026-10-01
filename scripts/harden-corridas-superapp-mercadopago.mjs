@@ -36,6 +36,38 @@ replaceRequired(
 
 replaceRequired(
   '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
+  `      const { data, error: invokeError } = await supabase.functions.invoke<PixCheckout>(
+        "safe2pay-create-ride-pix",
+        { body: { ride_id: rideId, action } },
+      );`,
+  `      const { data: rawData, error: invokeError } = await supabase.functions.invoke<Record<string, any>>(
+        "safe2pay-create-ride-pix",
+        { body: { ride_id: rideId, action } },
+      );
+      const data: PixCheckout | null = rawData
+        ? {
+            ok: !rawData.error,
+            reused: Boolean(rawData.reused),
+            paymentId: rawData.transactionId ? String(rawData.transactionId) : undefined,
+            amountCents:
+              typeof rawData.amount === "number" && Number.isFinite(rawData.amount)
+                ? Math.round(rawData.amount * 100)
+                : undefined,
+            status:
+              String(rawData.status ?? "").toLowerCase() === "authorized"
+                ? "paid"
+                : String(rawData.status ?? ""),
+            pixPayload: rawData.pix?.copyPaste ?? null,
+            pixQrCodeBase64: rawData.pix?.qrCodeBase64 ?? null,
+            pixExpirationAt: rawData.expiresAt ?? null,
+            error: rawData.error ? String(rawData.error) : undefined,
+          }
+        : null;`,
+  'corridas: adapta resposta Safe2Pay ao contrato visual do cartão Pix',
+);
+
+replaceRequired(
+  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
   '        toast.success("Pagamento Pix confirmado pelo Asaas.");',
   '        toast.success("Pagamento Pix confirmado.");',
   'corridas: confirmação Pix não expõe provedor legado',
