@@ -35,6 +35,28 @@ if (homeIndex < 0 || responsiveIndex < 0 || brandIndex < 0 || !(homeIndex < resp
 }
 
 const build = read('scripts/build-isolated-module.mjs');
+const localBuildIndex = build.indexOf("harden-corridas-local-place-search.mjs");
+const nativeFastIndex = build.indexOf("harden-corridas-native-places-fastpath.mjs");
+if (localBuildIndex < 0 || nativeFastIndex < 0 || !(localBuildIndex < nativeFastIndex)) {
+  fail('fast-path nativo não executa depois da restrição local');
+} else {
+  ok('fast-path nativo executa depois da restrição local');
+}
+
+const nativeFast = read('scripts/harden-corridas-native-places-fastpath.mjs');
+for (const marker of [
+  'APOIS_NATIVE_PLACES_FASTPATH_V1',
+  'Promise.race([',
+  'resolveReady(false), 250',
+  'searchNativeFallback(',
+  'localityHint: localityHint || undefined',
+  'Capacitor.isNativePlatform() && !prediction?.place',
+  'placesService.initialize().catch(() => undefined)',
+]) {
+  if (!nativeFast.includes(marker)) fail('fast-path nativo sem marcador: ' + marker);
+}
+if (!failed) ok('autocomplete nativo pré-aquece Places, limita espera e mantém fallback autenticado');
+
 if (build.includes("run(process.execPath, [resolve(root, 'scripts/harden-corridas-fast-search-pricing-cta.mjs')])")) {
   fail('hardener duplicado fast-search-pricing-cta voltou à cadeia e conflita com responsive-flow');
 } else {
