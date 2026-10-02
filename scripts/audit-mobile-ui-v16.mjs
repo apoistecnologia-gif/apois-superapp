@@ -57,7 +57,6 @@ requireAll('scripts/harden-corridas-superapp-profile-ui.mjs', [
   'src/routes/_authenticated.perfil.tsx',
   'min-h-[68px]',
   'env(safe-area-inset-top)',
-  "await import('./harden-corridas-kit-visual.mjs')",
 ], 'Perfil Passageiro usa rota real, alvos tocáveis e safe area');
 
 requireAll('scripts/harden-corridas-kit-visual.mjs', [
@@ -72,7 +71,7 @@ requireAll('scripts/harden-corridas-kit-visual.mjs', [
 
 requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   'src/components/BottomNavigation.tsx',
-  "await import('./harden-corridas-superapp-profile-ui.mjs')",
+  'mobile-ui/base-complete',
   'pt-[max(env(safe-area-inset-top),0.75rem)]',
   'min-h-[88px]',
   'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
@@ -109,6 +108,10 @@ requireAll('scripts/harden-entregas-superapp-viewport.mjs', [
 
 requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs corridas',
+  'node scripts/harden-corridas-superapp-profile-ui.mjs',
+  'node scripts/harden-corridas-profile-actions.mjs',
+  'node scripts/harden-corridas-password-recovery.mjs',
+  'node scripts/harden-corridas-kit-visual.mjs',
   'APOIS_VISUAL_KIT_V1',
   'node scripts/harden-entregas-superapp-checkout-mobile-ui.mjs',
   'node scripts/harden-superapp-module-mobile-ui.mjs entregas',
