@@ -34,7 +34,7 @@ requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNaviga
 requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
 requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','apois-kit-home','Digite um endereço...','<CategorySelector />'],'Home Corridas usa mapa real, busca e visual APOIS');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',['APOIS_NATIVE_PASSENGER_MAP_V1','GoogleMap.create({','VITE_APOIS_ANDROID_MAPS_API_KEY','capacitor-google-map'],'Corridas usa Google Maps nativo no Android e mantém fallback web');
-requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['apois-kit-search-screen','suggestions.map','whitespace-normal break-words'],'Busca Corridas mantém sugestões visíveis e legíveis');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['APOIS_SEARCH_KEYBOARD_GUARD_V2','preventScroll: true','apois-kit-search-input','apois-kit-search-screen','apois-kit-search-results','suggestions.map','whitespace-normal break-words'],'Busca Corridas mantém campo fixo, sugestões visíveis e teclado estável');
 {
   const bottomSheet = requireFile('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx');
   if (bottomSheet) {
