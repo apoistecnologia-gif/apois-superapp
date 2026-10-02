@@ -278,6 +278,17 @@ ${legacyUtilityOverrides('.apois-customer-theme')}
   for (const file of ['src/system-theme.css','src/customer-theme.css']) {
     if (existsSync(resolve(ws,file))) replaceBlock(resolve(ws,file), block);
   }
+
+  const officialLogo = resolve(root, 'superapp/branding/apois-brand-v2.jpg');
+  if (!existsSync(officialLogo)) throw new Error('Logo oficial APOIS Brand V2 ausente');
+  const logoData = readFileSync(officialLogo).toString('base64');
+  const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" role="img" aria-label="APOIS">
+  <image href="data:image/jpeg;base64,${logoData}" width="384" height="384" preserveAspectRatio="xMidYMid slice"/>
+</svg>`;
+  for (const logoFile of ['public/apois-logo.svg', 'public/apois-logo-customer.svg']) {
+    const logoPath = resolve(ws, logoFile);
+    if (existsSync(logoPath)) writeFileSync(logoPath, logoSvg, 'utf8');
+  }
 }
 
 function motorista() {
