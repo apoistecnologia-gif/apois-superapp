@@ -55,6 +55,8 @@ requireText('.apois/modules.json', [
   'verify-corridas-ride-lifecycle-regressions.mjs',
   'harden-corridas-cancellation-policy.mjs',
   'harden-corridas-superapp-storage.mjs',
+  'harden-corridas-search-anchor-v4.mjs',
+  'harden-corridas-reference-login-v3.mjs',
   'harden-superapp-module-mobile-ui.mjs corridas',
   'APOIS_VISUAL_KIT_V1',
   'bun run build:capacitor',
