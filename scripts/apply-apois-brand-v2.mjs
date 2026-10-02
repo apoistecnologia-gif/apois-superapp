@@ -57,6 +57,46 @@ function walkText(dir, fn) {
   }
 }
 
+const BRAND_SOURCE = resolve(root, 'superapp/branding/apois-launcher.png');
+
+function requireBrandSource() {
+  if (!existsSync(BRAND_SOURCE)) throw new Error(`Logo oficial APOIS Brand V2 ausente: ${BRAND_SOURCE}`);
+  return readFileSync(BRAND_SOURCE);
+}
+
+function brandDataUrl() {
+  return `data:image/png;base64,${requireBrandSource().toString('base64')}`;
+}
+
+function syncPublicRasterBrand(ws) {
+  const publicDir = resolve(ws, 'public');
+  if (!existsSync(publicDir)) return;
+  const bytes = requireBrandSource();
+  for (const name of ['apois-brand-v2.png', 'favicon.png', 'apois-app-icon.png']) {
+    writeFileSync(resolve(publicDir, name), bytes);
+  }
+}
+
+function syncSvgBrandWrapper(ws) {
+  const publicDir = resolve(ws, 'public');
+  if (!existsSync(publicDir)) return;
+  const dataUrl = brandDataUrl();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="APOIS"><image href="${dataUrl}" width="512" height="512" preserveAspectRatio="xMidYMid meet"/></svg>\n`;
+  for (const name of ['apois-logo.svg', 'apois-logo-customer.svg']) {
+    if (existsSync(resolve(publicDir, name))) writeFileSync(resolve(publicDir, name), svg, 'utf8');
+  }
+}
+
+function syncEmbeddedBrandModule(ws) {
+  const logoModule = resolve(ws, 'src/assets/apoisLogoData.ts');
+  if (!existsSync(logoModule)) return;
+  writeFileSync(
+    logoModule,
+    `// APOIS_BRAND_V2_LOGO — arte oficial fornecida pelo projeto.\nexport const APOIS_LOGO_DATA_URL = "${brandDataUrl()}";\n`,
+    'utf8',
+  );
+}
+
 const vars = `
   --apois-black: ${p.black};
   --apois-black-secondary: ${p.blackSecondary};
@@ -142,6 +182,10 @@ ${compatibility}
 
 function passenger() {
   const ws = resolve(root, '.work/corridas');
+  syncPublicRasterBrand(ws);
+  patchText(resolve(ws, 'src/routes/_public.login.tsx'), (text) => text
+    .replace('import logo from "@/assets/logo.jpg";', `const logo = "${brandDataUrl()}";`)
+  );
   const styles = resolve(ws, 'src/styles.css');
   replaceBlock(styles, `
 @theme {
@@ -207,6 +251,8 @@ ${legacyUtilityOverrides('')}
 
 function entregas(workspace) {
   const ws = resolve(root, workspace);
+  syncPublicRasterBrand(ws);
+  syncSvgBrandWrapper(ws);
   const block = `
 .apois-system-theme,
 .apois-customer-theme {
@@ -236,6 +282,8 @@ ${legacyUtilityOverrides('.apois-customer-theme')}
 
 function motorista() {
   const ws = resolve(root, process.env.APOIS_MOTORISTA_WORKSPACE || '.work/partner-motorista');
+  syncPublicRasterBrand(ws);
+  syncEmbeddedBrandModule(ws);
   replaceBlock(resolve(ws, 'src/apois-motorista-theme.css'), `
 html[data-app-role="motorista"],
 html[data-app-role="motorista"].dark {
@@ -276,6 +324,8 @@ ${legacyUtilityOverrides('html[data-app-role="motorista"]')}
 
 function admin() {
   const ws = resolve(root, process.env.APOIS_ADMIN_WORKSPACE || '.work/admin');
+  syncPublicRasterBrand(ws);
+  syncEmbeddedBrandModule(ws);
   replaceBlock(resolve(ws, 'src/apois-admin-theme.css'), `
 .apois-admin-theme {
 ${vars}
