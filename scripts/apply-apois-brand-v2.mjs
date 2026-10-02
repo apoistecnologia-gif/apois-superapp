@@ -1,0 +1,321 @@
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { extname, resolve } from 'node:path';
+
+const root = process.cwd();
+const target = process.argv[2];
+if (!target) throw new Error('Uso: node scripts/apply-apois-brand-v2.mjs <corridas|entregas|motorista|entregador|admin|shell-client|shell-partner> [path]');
+
+const tokens = JSON.parse(readFileSync(resolve(root, 'design-system/apois-brand-v2.json'), 'utf8'));
+const p = tokens.palette;
+const s = tokens.semantic;
+const MARKER = '/* APOIS_BRAND_V2 */';
+
+function replaceBlock(path, block) {
+  if (!existsSync(path)) throw new Error(`Arquivo visual ausente: ${path}`);
+  const before = readFileSync(path, 'utf8');
+  const begin = `${MARKER} BEGIN`;
+  const end = `${MARKER} END`;
+  const wrapped = `${begin}\n${block.trim()}\n${end}`;
+  let after;
+  const start = before.indexOf(begin);
+  const finish = before.indexOf(end);
+  if (start >= 0 && finish > start) {
+    after = before.slice(0, start) + wrapped + before.slice(finish + end.length);
+  } else {
+    after = `${before.trimEnd()}\n\n${wrapped}\n`;
+  }
+  if (after !== before) writeFileSync(path, after, 'utf8');
+}
+
+function patchText(path, transform) {
+  if (!existsSync(path)) return;
+  const before = readFileSync(path, 'utf8');
+  const after = transform(before);
+  if (after !== before) writeFileSync(path, after, 'utf8');
+}
+
+function walkText(dir, fn) {
+  if (!existsSync(dir)) return;
+  for (const name of readdirSync(dir)) {
+    const path = resolve(dir, name);
+    const st = statSync(path);
+    if (st.isDirectory()) {
+      if (!['node_modules','.git','dist','.output','.tanstack'].includes(name)) walkText(path, fn);
+      continue;
+    }
+    if (!['.ts','.tsx','.css','.html','.js','.jsx','.mjs'].includes(extname(name))) continue;
+    patchText(path, fn);
+  }
+}
+
+const vars = `
+  --apois-black: ${p.black};
+  --apois-black-secondary: ${p.blackSecondary};
+  --apois-black-elevated: ${p.blackElevated};
+  --apois-red: ${p.red};
+  --apois-red-strong: ${p.redStrong};
+  --apois-red-dark: ${p.redDark};
+  --apois-white: ${p.white};
+  --apois-white-secondary: ${p.whiteSecondary};
+  --apois-text-muted: ${p.textMuted};
+  --apois-gold: ${p.gold};
+  --apois-gold-light: ${p.goldLight};
+  --apois-gold-dark: ${p.goldDark};
+  --background: ${s.background};
+  --foreground: ${s.textPrimary};
+  --surface: ${s.surface};
+  --surface-2: ${s.surfaceElevated};
+  --surface-elevated: ${s.surfaceElevated};
+  --card: ${s.surface};
+  --card-foreground: ${s.textPrimary};
+  --popover: ${s.surface};
+  --popover-foreground: ${s.textPrimary};
+  --primary-brand: ${s.primaryBrand};
+  --primary: ${s.primary};
+  --primary-hover: ${s.primaryHover};
+  --primary-strong: ${s.primaryStrong};
+  --primary-dark: ${s.primaryDark};
+  --primary-foreground: ${s.primaryForeground};
+  --secondary: ${s.secondary};
+  --secondary-foreground: ${s.secondaryForeground};
+  --accent: ${s.accent};
+  --accent-foreground: ${s.accentForeground};
+  --text-primary: ${s.textPrimary};
+  --text-secondary: ${s.textSecondary};
+  --muted: ${s.surfaceElevated};
+  --muted-foreground: ${s.textMuted};
+  --border: ${s.border};
+  --input: ${s.input};
+  --ring: ${s.ring};
+  --destructive: ${s.destructive};
+  --destructive-foreground: ${s.destructiveForeground};
+  --success: ${s.success};
+  --warning: ${s.warning};
+  --info: ${s.info};
+  --sidebar: ${s.surface};
+  --sidebar-foreground: ${s.textPrimary};
+  --sidebar-primary: ${s.primary};
+  --sidebar-primary-foreground: ${s.primaryForeground};
+  --sidebar-accent: ${s.surfaceElevated};
+  --sidebar-accent-foreground: ${s.textPrimary};
+  --sidebar-border: ${s.border};
+  --sidebar-ring: ${s.ring};
+`;
+
+const compatibility = `
+input:focus, textarea:focus, select:focus { border-color: var(--primary-brand); }
+::selection { background: color-mix(in srgb, var(--primary-brand) 30%, transparent); color: var(--text-primary); }
+`;
+
+function legacyUtilityOverrides(scope) {
+  const q = scope ? `${scope} ` : '';
+  const old = ['#39B54A','#6A1B9A','#1F7894','#35A9C9','#FFD700','#F6B900','#FACC15','#F6BE1C'];
+  const text = old.map(c => `${q}[class~="text-[${c}]"]`).join(',\n');
+  const bg = old.map(c => `${q}[class~="bg-[${c}]"]`).join(',\n');
+  const border = old.map(c => `${q}[class~="border-[${c}]"]`).join(',\n');
+  return `
+${text} { color: var(--primary-brand) !important; }
+${bg} { background: var(--primary) !important; color: var(--primary-foreground) !important; }
+${border} { border-color: var(--primary-brand) !important; }
+`;
+}
+
+function appCss(scope=':root, .dark') {
+  return `
+${scope} {
+${vars}
+  color-scheme: dark;
+}
+body { background: var(--background); color: var(--foreground); }
+${compatibility}
+`;
+}
+
+function passenger() {
+  const ws = resolve(root, '.work/corridas');
+  const styles = resolve(ws, 'src/styles.css');
+  replaceBlock(styles, `
+@theme {
+  --color-primary: ${s.primary};
+  --color-secondary: ${s.accent};
+  --color-surface: ${s.surface};
+  --color-apois-primary: ${s.primary};
+  --color-apois-primary-hover: ${s.primaryHover};
+  --color-apois-red: ${s.primaryBrand};
+  --color-apois-gold: ${s.accent};
+  --color-apois-gold-light: ${p.goldLight};
+  --color-apois-yellow: ${s.primary};
+}
+:root {
+${vars}
+}
+body { background-color: var(--background); color: var(--foreground); }
+input, textarea, select { background-color: var(--input); color: var(--text-primary); }
+input::placeholder, textarea::placeholder { color: var(--muted-foreground); }
+input:focus, textarea:focus, select:focus { border-color: var(--primary-brand); }
+${legacyUtilityOverrides('')}
+`);
+
+  walkText(resolve(ws, 'src'), (text) => text
+    .replaceAll('apois-yellow', 'apois-primary')
+    .replaceAll('#ffb800', p.red)
+    .replaceAll('#FFB800', p.red)
+    .replaceAll('#ff5c00', p.gold)
+    .replaceAll('#FF5C00', p.gold)
+    .replaceAll('rgba(255,184,0', 'rgba(245,34,45')
+    .replaceAll('rgba(255, 184, 0', 'rgba(245, 34, 45')
+  );
+
+  // CTA/auth antigos usavam Tailwind yellow genérico como cor de marca.
+  for (const file of [
+    'src/routes/_public.login.tsx',
+    'src/routes/_public.cadastro.tsx',
+    'src/routes/_public.recuperar-senha.tsx',
+    'src/routes/_public.redefinir-senha.tsx',
+    'src/routes/_authenticated.buscar-destino.tsx',
+    'src/routes/_authenticated.perfil.tsx',
+    'src/components/route/RouteSummary.tsx',
+    'src/components/rides/RideStopsInput.tsx'
+  ]) {
+    patchText(resolve(ws, file), (text) => text
+      .replaceAll('yellow-500', 'apois-primary')
+      .replaceAll('yellow-600', 'apois-primary-hover')
+    );
+  }
+
+  // Primary CTA foreground is white; semantic warning/success colors remain intact.
+  for (const file of [
+    'src/routes/_public.login.tsx',
+    'src/routes/_public.cadastro.tsx',
+    'src/routes/_public.recuperar-senha.tsx',
+    'src/routes/_public.redefinir-senha.tsx'
+  ]) {
+    patchText(resolve(ws, file), (text) => text
+      .replace(/(bg-(?:apois-primary|\[#F5222D\])[^"]*)\btext-black\b/g, '$1text-white')
+    );
+  }
+}
+
+function entregas(workspace) {
+  const ws = resolve(root, workspace);
+  const block = `
+.apois-system-theme,
+.apois-customer-theme {
+${vars}
+  color-scheme: dark;
+}
+.apois-system-theme body,
+.apois-customer-theme body { background: var(--background); color: var(--foreground); }
+.apois-system-theme input:focus,
+.apois-system-theme textarea:focus,
+.apois-system-theme select:focus,
+.apois-customer-theme input:focus,
+.apois-customer-theme textarea:focus,
+.apois-customer-theme select:focus { border-color: var(--primary-brand); }
+.apois-system-theme [class*="from-primary"][class*="to-accent"],
+.apois-customer-theme [class*="from-primary"][class*="to-accent"] {
+  background-image: linear-gradient(135deg, var(--primary), var(--primary-brand)) !important;
+  color: var(--primary-foreground) !important;
+}
+${legacyUtilityOverrides('.apois-system-theme')}
+${legacyUtilityOverrides('.apois-customer-theme')}
+`;
+  for (const file of ['src/system-theme.css','src/customer-theme.css']) {
+    if (existsSync(resolve(ws,file))) replaceBlock(resolve(ws,file), block);
+  }
+}
+
+function motorista() {
+  const ws = resolve(root, process.env.APOIS_MOTORISTA_WORKSPACE || '.work/partner-motorista');
+  replaceBlock(resolve(ws, 'src/apois-motorista-theme.css'), `
+html[data-app-role="motorista"],
+html[data-app-role="motorista"].dark {
+${vars}
+  --primary-glow: ${s.primaryStrong};
+  --color-status-inride: ${s.primaryBrand};
+  --color-status-arrived: ${s.accent};
+  --color-map-accent: ${s.primaryBrand};
+  --color-online: ${s.success};
+  --color-offline: ${s.textMuted};
+  color-scheme: dark;
+}
+html[data-app-role="motorista"] body {
+  background: radial-gradient(circle at 50% -15%, rgb(245 34 45 / .08), transparent 28rem), var(--background);
+}
+html[data-app-role="motorista"] input:focus,
+html[data-app-role="motorista"] textarea:focus,
+html[data-app-role="motorista"] select:focus {
+  border-color: var(--primary-brand);
+  box-shadow: 0 0 0 3px rgb(245 34 45 / .12);
+}
+html[data-app-role="motorista"] .driver-nav-active .driver-nav-indicator,
+html[data-app-role="motorista"] .driver-nav-active .driver-nav-icon { color: var(--primary-brand); }
+html[data-app-role="motorista"] .driver-nav-active .driver-nav-indicator { background: var(--primary-brand); }
+html[data-app-role="motorista"] .driver-menu-active .driver-menu-icon {
+  background: linear-gradient(145deg, ${s.primaryStrong}, ${s.primary} 58%, ${s.primaryDark});
+  color: var(--primary-foreground);
+}
+${legacyUtilityOverrides('html[data-app-role="motorista"]')}
+`);
+  patchText(resolve(ws, 'src/design-system/tokens.ts'), (text) => text
+    .replace('"#8DD92B"', `"${p.red}"`)
+    .replace('"#5FAF1A"', `"${p.redDark}"`)
+    .replace('"#05070D"', `"${p.black}"`)
+    .replace('"#121826"', `"${p.blackSecondary}"`)
+  );
+}
+
+function admin() {
+  const ws = resolve(root, process.env.APOIS_ADMIN_WORKSPACE || '.work/admin');
+  replaceBlock(resolve(ws, 'src/apois-admin-theme.css'), `
+.apois-admin-theme {
+${vars}
+  --primary-glow: ${s.primaryStrong};
+  --color-online: ${s.success};
+  --color-map-accent: ${s.primaryBrand};
+  color-scheme: dark;
+}
+.apois-admin-theme .admin-page-main,
+.apois-admin-theme .admin-page-header { color: var(--text-primary); }
+.apois-admin-theme input:focus,
+.apois-admin-theme textarea:focus,
+.apois-admin-theme select:focus { border-color: var(--primary-brand); }
+${legacyUtilityOverrides('.apois-admin-theme')}
+`);
+}
+
+function shell(path, partner=false) {
+  if (!existsSync(path)) throw new Error(`Shell ausente: ${path}`);
+  const before = readFileSync(path, 'utf8');
+  const id = 'apois-brand-v2-shell';
+  const style = `<style id="${id}">
+:root{--apois-black:${p.black};--apois-surface:${p.blackSecondary};--apois-surface-2:${p.blackElevated};--apois-red:${p.red};--apois-red-action:${s.primary};--apois-red-strong:${p.redStrong};--apois-gold:${p.gold};--apois-gold-light:${p.goldLight};--apois-text:#fff;--apois-muted:${p.textMuted};--gold:${p.gold};--gold2:${p.goldLight};--teal:${p.red}}
+html,body{background:${p.black}!important;color:#fff!important}
+.screen{background:radial-gradient(circle at 50% 10%,rgb(245 34 45 / .12),transparent 30rem),${p.black}!important}
+.logo-mark,.logo{border-color:rgb(217 165 32 / .35)!important;box-shadow:0 0 34px rgb(217 165 32 / .12)!important}
+.brand{background:linear-gradient(180deg,#fff,${p.whiteSecondary})!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;text-shadow:none!important}
+.service,.card{background:linear-gradient(180deg,${p.blackSecondary},${p.black})!important;border-color:rgb(245 34 45 / .42)!important}
+.action,.card button{background:linear-gradient(135deg,${s.primary},${p.red})!important;color:#fff!important;box-shadow:0 12px 28px -18px rgb(245 34 45 / .55)!important}
+.action:hover,.card button:hover{background:${s.primaryHover}!important}
+.vehicle,.delivery,.feature .ico,.closing strong span{color:${p.gold}!important}
+.corridas .badge{border-color:${p.red}!important;color:${p.red}!important}
+.entregas .badge{border-color:${p.gold}!important;color:${p.gold}!important}
+${partner ? '.brand h1{color:#fff}.brand p{color:'+p.textMuted+'}' : ''}
+</style>`;
+  let after = before.replace(new RegExp(`<style id="${id}">[\\s\\S]*?<\\/style>`), style);
+  if (!after.includes(`id="${id}"`)) after = after.replace('</head>', `${style}\n</head>`);
+  writeFileSync(path, after, 'utf8');
+}
+
+switch (target) {
+  case 'corridas': passenger(); break;
+  case 'entregas': entregas('.work/entregas'); break;
+  case 'entregador': entregas(process.env.APOIS_ENTREGAS_WORKSPACE || '.work/partner-entregador'); break;
+  case 'motorista': motorista(); break;
+  case 'admin': admin(); break;
+  case 'shell-client': shell(resolve(root, process.argv[3] || 'superapp/shell/index.html'), false); break;
+  case 'shell-partner': shell(resolve(root, process.argv[3] || 'superapp/partner-shell/index.html'), true); break;
+  default: throw new Error(`Target desconhecido: ${target}`);
+}
+
+console.log(`[OK] APOIS Brand V2 aplicado: ${target}`);
