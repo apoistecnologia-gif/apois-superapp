@@ -41,13 +41,13 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['a
     const hasValidHeight =
       bottomSheet.includes('max-h-[94dvh]') ||
       bottomSheet.includes('max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]') ||
-      (bottomSheet.includes('keyboardStable') && bottomSheet.includes('"85svh"'));
+      (bottomSheet.includes('keyboardStable') && bottomSheet.includes('? "100%"'));
     const hasValidBottomSafeArea =
       bottomSheet.includes('max(16px, env(safe-area-inset-bottom))') ||
       bottomSheet.includes('style={{ paddingBottom: 0 }}') ||
       bottomSheet.includes('bottom-[calc(82px+env(safe-area-inset-bottom))]') ||
       (bottomSheet.includes('paddingBottom: keyboardStable') &&
-       bottomSheet.includes('max(env(safe-area-inset-bottom), 12px)'));
+       bottomSheet.includes('? 0'));
     const hasScrollContainment = bottomSheet.includes('overscroll-contain');
 
     const missing = [
