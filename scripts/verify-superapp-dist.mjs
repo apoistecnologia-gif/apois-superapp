@@ -35,6 +35,10 @@ requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','.apois-ki
 requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','apois-kit-home','Digite um endereço...','<CategorySelector />'],'Home Corridas usa mapa real, busca e visual APOIS');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',['APOIS_NATIVE_PASSENGER_MAP_V1','GoogleMap.create({','VITE_APOIS_ANDROID_MAPS_API_KEY','capacitor-google-map'],'Corridas usa Google Maps nativo no Android e mantém fallback web');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['data-apois-search-fullscreen-v3="true"','aria-label="Buscar destino"','APOIS_SEARCH_KEYBOARD_GUARD_V2','preventScroll: true','apois-kit-search-input','apois-kit-search-screen','apois-kit-search-results','suggestions.map','whitespace-normal break-words'],'Busca Corridas usa viewport fullscreen estável, campo fixo e lista rolável');
+requireMarkers('.work/corridas/src/services/places/places-service.ts',['APOIS_LOCAL_PLACES_V1','locationRestriction','request.origin','localSuggestions','locationKey'],'Places Corridas restringe autocomplete à região/localidade atual');
+requireMarkers('.work/corridas/src/hooks/use-destination-search.tsx',['APOIS_LOCALITY_HINT_V1','useDestinationSearch(localityHint?: string | null)','locality || undefined','[currentPosition, locality]'],'Busca Corridas encaminha município atual ao Places');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['address: pickupAddress','useDestinationSearch(pickupAddress ?? pickupLabel)'],'Rota Corridas usa endereço atual para restringir sugestões');
+
 forbidMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['<BottomSheet isOpen={isBottomSheetOpen}'],'Busca Corridas não volta a usar BottomSheet durante digitação');
 {
   const searchRoute = requireFile('.work/corridas/src/routes/_authenticated.buscar-destino.tsx');
