@@ -75,6 +75,14 @@ for (const marker of [
 if (!failed) ok('CSS central expõe os tokens solicitados');
 
 const applicator = read('scripts/apply-apois-brand-v2.mjs');
+if (!applicator.includes("const MARKER_BEGIN = '/* APOIS_BRAND_V2_BEGIN */';") ||
+    !applicator.includes("const MARKER_END = '/* APOIS_BRAND_V2_END */';")) {
+  fail('aplicador Brand V2 não usa marcadores CSS válidos');
+}
+if (applicator.includes("const begin = \`\${MARKER} BEGIN\`;") ||
+    applicator.includes("const end = \`\${MARKER} END\`;")) {
+  fail('aplicador Brand V2 ainda pode emitir BEGIN/END como tokens CSS crus');
+}
 for (const marker of [
   "case 'corridas':",
   "case 'entregas':",
