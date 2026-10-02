@@ -38,7 +38,9 @@ if (!source.includes('@media(max-height:720px)')) {
 
 for (const marker of [
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:6px',
+  'class="brand-lockup"',
+  'class="brand-mark"',
+  'object-fit:contain',
   '@media(max-height:720px)',
   '.service{min-height:265px}',
   '--teal:#f2b414;',
