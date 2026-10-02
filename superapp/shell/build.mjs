@@ -8,6 +8,7 @@ const repoRoot = resolve(root, '../..');
 const dist = resolve(root, 'dist');
 const distIndex = resolve(dist, 'index.html');
 const officialBranding = resolve(root, '../branding/apois-wordmark-v3.svg');
+const officialMarking = resolve(root, '../branding/apois-mark-v3.svg');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
@@ -36,13 +37,16 @@ execFileSync(process.execPath, [resolve(repoRoot, 'scripts/apply-apois-brand-v2.
   stdio: 'inherit',
 });
 
-if (!existsSync(officialBranding)) {
-  console.error(`[FAIL] arte oficial APOIS não existe em ${officialBranding}`);
-  process.exit(1);
+for (const brandingAsset of [officialBranding, officialMarking]) {
+  if (!existsSync(brandingAsset)) {
+    console.error(`[FAIL] arte oficial APOIS não existe em ${brandingAsset}`);
+    process.exit(1);
+  }
 }
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
 cpSync(officialBranding, resolve(dist, 'assets/apois-wordmark-v3.svg'));
-console.log('[OK] wordmark APOIS V3 copiado para o shell cliente');
+cpSync(officialMarking, resolve(dist, 'assets/apois-mark-v3.svg'));
+console.log('[OK] marca APOIS V3 (wordmark + símbolo) copiada para o shell cliente');
 
 // Arquitetura oficial: este APK é exclusivamente do cliente.
 // Motorista e Entregador pertencem ao Superapp Parceiro e não entram aqui.
