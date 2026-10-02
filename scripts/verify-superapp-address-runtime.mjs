@@ -60,6 +60,9 @@ requireAll('supabase/functions/google-maps-address/index.ts', [
   'status: 429',
   'action === "reverse_geocode"',
   'action === "autocomplete"',
+  'const localityHint = String(body?.localityHint ?? "").trim();',
+  'url.searchParams.set("location",',
+  'url.searchParams.set("strictbounds", "true")',
   'action === "place_details"',
 ], 'Edge Function versionada aplica quota e preserva todas as ações de endereço');
 
