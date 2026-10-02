@@ -12,8 +12,8 @@ function requireMarkers(path,markers,label){const source=requireFile(path);if(!s
 function forbidMarkers(path,markers,label){const source=requireFile(path);if(!source)return;const found=markers.filter(m=>source.includes(m));if(found.length)fail(`${label}: ${found.join(' | ')}`);else ok(label);}
 function treeContains(dir,marker,extensions=/\.(?:html|css|js|mjs|json|svg)$/i){const fullDir=resolve(root,dir);if(!existsSync(fullDir))return false;const stack=[fullDir];while(stack.length){const current=stack.pop();for(const entry of readdirSync(current)){const path=resolve(current,entry);const stat=statSync(path);if(stat.isDirectory()){stack.push(path);continue;}if(!extensions.test(entry))continue;try{if(readFileSync(path,'utf8').includes(marker))return true;}catch{}}}return false;}
 
-for(const path of ['superapp/shell/dist/index.html','superapp/shell/dist/assets/apois-wordmark-v3.svg','superapp/shell/dist/modules/corridas/index.html','superapp/shell/dist/modules/entregas/index.html']){if(existsSync(resolve(root,path)))ok(path);else fail(`ausente: ${path}`);}
-requireMarkers('superapp/shell/index.html',['./assets/apois-wordmark-v3.svg',"return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';","path==='corridas-reset'","path==='email-change'"],'shell fonte mantém marca, sessão por módulo e deep links atuais');
+for(const path of ['superapp/shell/dist/index.html','superapp/shell/dist/assets/apois-wordmark-v3.svg','superapp/shell/dist/assets/apois-mark-v3.svg','superapp/shell/dist/modules/corridas/index.html','superapp/shell/dist/modules/entregas/index.html']){if(existsSync(resolve(root,path)))ok(path);else fail(`ausente: ${path}`);}
+requireMarkers('superapp/shell/index.html',['./assets/apois-mark-v3.svg','class="brand-lockup"',"return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';","path==='corridas-reset'","path==='email-change'"],'shell fonte mantém marca, sessão por módulo e deep links atuais');
 forbidMarkers('superapp/shell/index.html',['<div class="logo-mark">A</div>'],'shell não contém branding provisório');
 const shell=requireFile('superapp/shell/dist/index.html');if(shell){if(/\b(?:src|href)=["']\/(?!\/)/.test(shell))fail('shell final contém asset absoluto incompatível com WebView local');else ok('shell final usa recursos relativos');if(!shell.includes('data-apois-superapp-push-routing'))fail('shell final não recebeu roteamento global de Push');else ok('shell final contém roteamento global de Push');}
 
@@ -34,7 +34,7 @@ requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNaviga
 requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
 requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','apois-kit-home','Digite um endereço...','<CategorySelector />'],'Home Corridas usa mapa real, busca e visual APOIS');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',['APOIS_NATIVE_PASSENGER_MAP_V1','GoogleMap.create({','VITE_APOIS_ANDROID_MAPS_API_KEY','capacitor-google-map'],'Corridas usa Google Maps nativo no Android e mantém fallback web');
-requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['data-apois-search-fullscreen-v3="true"','aria-label="Buscar destino"','APOIS_SEARCH_KEYBOARD_GUARD_V2','preventScroll: true','apois-kit-search-input','apois-kit-search-screen','apois-kit-search-results','suggestions.map','whitespace-normal break-words'],'Busca Corridas usa viewport fullscreen estável, campo fixo e lista rolável');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['data-apois-search-fullscreen-v3="true"','aria-label="Buscar destino"','APOIS_SEARCH_VIEWPORT_V4','apois-kit-search-input','apois-kit-search-screen','apois-kit-search-results','suggestions.map','whitespace-normal break-words','pt-[max(12px,env(safe-area-inset-top))]'],'Busca Corridas usa viewport fullscreen estável, campo fixo e lista rolável');
 requireMarkers('.work/corridas/src/services/places/places-service.ts',['APOIS_LOCAL_PLACES_V1','locationRestriction','request.origin','localSuggestions','locationKey'],'Places Corridas restringe autocomplete à região/localidade atual');
 requireMarkers('.work/corridas/src/services/places/places-service.ts',['APOIS_NATIVE_PLACES_FASTPATH_V1','Promise.race([','resolveReady(false), 250','searchNativeFallback(','Capacitor.isNativePlatform() && !prediction?.place'],'Places Corridas usa fast-path nativo com fallback limitado');
 requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['function PlacesBootstrap()','placesService.initialize().catch(() => undefined)','<PlacesBootstrap />'],'Corridas pré-aquece Places antes de abrir a busca');
@@ -122,29 +122,33 @@ forbidMarkers(
   'checkout Entregas não contém provider financeiro aposentado',
 );
 requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['fixed bottom-0','min-h-[88px]','aria-label="Buscar"','<Search className="h-8 w-8" />'],'rodapé Entregas é fixo, legível e explícito');
-if(failed)
 requireMarkers('superapp/shell/index.html',[
-  './assets/apois-wordmark-v3.svg',
+  './assets/apois-mark-v3.svg',
+  'class="brand-lockup"',
   'O seu caminho.',
   'Do seu jeito.',
   'data-module="corridas"',
   'data-module="entregas"',
-],'shell cliente segue referência premium e usa wordmark íntegro');
+],'shell cliente segue referência premium e usa lockup íntegro');
 requireMarkers('.work/corridas/src/routes/_public.login.tsx',[
-  'data-apois-reference-login-v3="true"',
+  'data-apois-reference-login-v4="true"',
   'Entrar na APOIS',
-  'object-fit: contain !important',
+  './apois-mark-v3.svg',
   'Continuar com Google',
-],'login Corridas segue referência sem perder Google/senha');
+],'login Corridas segue referência V4 sem perder Google/senha');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
   'data-apois-search-fullscreen-v3="true"',
-  'data-apois-search-anchor-v4="true"',
-  'position: fixed !important',
-  'height: 100dvh !important',
-  'padding-top: max(42px, env(safe-area-inset-top)) !important',
-],'busca Corridas mantém fullscreen ancorado ao abrir teclado');
+  'APOIS_SEARCH_VIEWPORT_V4',
+  'h-full min-h-0',
+  'pt-[max(12px,env(safe-area-inset-top))]',
+  'overflow-y-auto overscroll-contain px-4',
+],'busca Corridas mantém viewport útil ancorado ao abrir teclado');
 forbidMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
   '.scrollIntoView(',
-],'busca Corridas não força scroll ao focar');
+  'window.scrollTo(0, 0)',
+  'position: fixed !important',
+  'height: 100dvh !important',
+],'busca Corridas não força scroll nem fixa 100dvh ao focar');
 
-process.exit(1);console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');
+if (failed) process.exit(1);
+console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');
