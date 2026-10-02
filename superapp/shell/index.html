@@ -6,36 +6,131 @@
   <meta name="theme-color" content="#050505" />
   <title>APOIS</title>
   <style>
-    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;background:#050505;--gold:#f2b414;--gold2:#ffcc43;--teal:#f2b414;--muted:#b5b5b5}
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}
-    button{font:inherit}.screen{position:relative;min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),18px) 16px max(env(safe-area-inset-bottom),20px);overflow-x:hidden;overflow-y:auto;background:linear-gradient(180deg,rgba(0,0,0,.08),#050505 44%),radial-gradient(circle at 17% 20%,rgba(242,180,20,.18),transparent 24%),radial-gradient(circle at 84% 34%,rgba(242,180,20,.10),transparent 26%),#050505}
-    .screen:before,.screen:after{content:"";position:absolute;pointer-events:none}.screen:before{inset:-8% -30% auto;height:360px;background:repeating-linear-gradient(8deg,transparent 0 34px,rgba(242,180,20,.16) 35px 37px,transparent 38px 72px);filter:blur(8px);opacity:.6;transform:rotate(-5deg)}.screen:after{left:-20%;right:-20%;top:300px;height:260px;background:radial-gradient(ellipse at center,rgba(255,183,13,.14),transparent 60%);filter:blur(14px)}
-    .content{position:relative;z-index:1}.top{display:flex;align-items:center;justify-content:center;min-height:116px;padding-top:4px}.logo-mark{width:94px;height:94px;border-radius:30px;display:grid;place-items:center;overflow:hidden;background:#050505;border:1px solid rgba(242,180,20,.24);box-shadow:0 0 34px rgba(242,180,20,.2)}.logo-mark img{display:block;width:100%;height:100%;object-fit:contain;padding:6px}.brand{text-align:center;margin-top:5px;font-size:42px;font-weight:1000;letter-spacing:.03em;background:linear-gradient(180deg,#ffd85d,#d99600);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 7px 26px rgba(242,180,20,.12)}.subtitle{margin-top:-2px;text-align:center;font-size:10px;letter-spacing:.48em;font-weight:800;color:#f4f4f4}
-    .hero{text-align:center;margin:16px auto 20px;max-width:430px}.hero h1{margin:0;font-size:clamp(29px,8.5vw,45px);line-height:1.04;font-weight:900;letter-spacing:-.035em}.hero h1 em{font-style:italic;color:var(--gold2)}.hero p{margin:10px auto 0;max-width:330px;color:#c7c7c7;font-size:14px;line-height:1.45}
-    .services{display:grid;grid-template-columns:1fr 1fr;gap:12px}.service{position:relative;min-height:320px;border-radius:28px;padding:14px;overflow:hidden;color:#fff;background:#090b0d;border:1.5px solid;box-shadow:0 18px 46px rgba(0,0,0,.42);text-align:left}.service.corridas{border-color:rgba(242,180,20,.95);box-shadow:0 0 0 1px rgba(242,180,20,.08) inset,0 16px 40px rgba(242,180,20,.10)}.service.entregas{border-color:rgba(242,180,20,.88);box-shadow:0 0 0 1px rgba(242,180,20,.07) inset,0 16px 40px rgba(242,180,20,.08)}
-    .photo{height:150px;border-radius:20px;position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;background:#111}.photo:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 36%,rgba(0,0,0,.92) 100%)}.corridas .photo{background:radial-gradient(circle at 68% 34%,rgba(255,188,22,.75),transparent 22%),linear-gradient(145deg,#2b2110,#080808 62%)}.entregas .photo{background:radial-gradient(circle at 68% 34%,rgba(242,180,20,.68),transparent 22%),linear-gradient(145deg,#2b2110,#080808 62%)}
-    .vehicle,.delivery{position:relative;z-index:1;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px;color:#f6be1c;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}.vehicle svg,.delivery svg{width:54px;height:54px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}.badge svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.badge{position:absolute;left:10px;top:10px;z-index:2;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:rgba(3,3,3,.72);backdrop-filter:blur(8px)}.corridas .badge{border:1px solid var(--gold);color:var(--gold)}.entregas .badge{border:1px solid var(--teal);color:var(--teal)}
-    .service h2{font-size:26px;margin:13px 0 4px;text-align:center;letter-spacing:-.03em}.service p{margin:0;text-align:center;color:#d1d1d1;font-size:12px;line-height:1.4;min-height:35px}.action{margin-top:14px;width:100%;height:48px;border:0;border-radius:17px;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer}.action:focus-visible{outline:3px solid #fff;outline-offset:3px}.corridas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}.service:active{transform:scale(.985)}
-    .features{margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.feature{min-height:82px;border-radius:18px;padding:10px 6px;background:linear-gradient(180deg,rgba(20,20,20,.96),rgba(8,9,10,.96));border:1px solid #30343a;text-align:center}.feature .ico{font-size:22px;color:var(--gold2);line-height:1;margin-bottom:8px}.feature b{display:block;font-size:11px;line-height:1.15}.feature span{display:block;font-size:9px;color:#bcbcbc;margin-top:2px;line-height:1.2}.closing{padding:18px 0 2px;text-align:center}.closing strong{font-size:28px;font-style:italic;font-weight:800}.closing strong span{color:var(--gold)}.closing small{display:block;margin-top:8px;font-size:9px;letter-spacing:.42em;color:#ddd}
-    @media(max-height:720px){.top{min-height:88px}.logo-mark{width:76px;height:76px}.brand{font-size:34px}.subtitle{font-size:9px}.hero{margin:10px auto 14px}.hero h1{font-size:28px}.hero p{margin-top:6px;font-size:12px}.service{min-height:265px}.photo{height:118px}.features{margin-top:10px}.feature{min-height:68px}.closing{padding-top:12px}.closing strong{font-size:24px}}
-    @media(max-width:380px){.screen{padding-left:12px;padding-right:12px}.services{gap:9px}.service{padding:10px;min-height:300px;border-radius:24px}.photo{height:135px}.service h2{font-size:23px}.service p{font-size:11px}.features{gap:6px}.feature{padding:8px 4px}.feature b{font-size:10px}.brand{font-size:38px}.logo-mark{width:84px;height:84px}}
-  </style>
+  :root{
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#fff;background:#08090B;
+    --bg:#08090B;--card:#111318;--elevated:#181A20;
+    --red:#F5222D;--red-strong:#FF1F2D;--red-dark:#9E1018;
+    --gold:#D9A520;--gold-light:#F4C44E;--muted:#A6A8AE;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:#fff}
+  body{min-height:100dvh;overflow-x:hidden}
+  button{font:inherit}
+  .screen{
+    position:relative;min-height:100dvh;max-width:520px;margin:0 auto;
+    padding:max(env(safe-area-inset-top),18px) 18px max(env(safe-area-inset-bottom),22px);
+    overflow:hidden;background:
+      radial-gradient(circle at 84% 8%,rgba(245,34,45,.22),transparent 30%),
+      radial-gradient(circle at 15% 32%,rgba(217,165,32,.10),transparent 25%),
+      linear-gradient(180deg,#08090B 0%,#0B0C0F 55%,#08090B 100%);
+  }
+  .screen:before{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.34;
+    background:
+      linear-gradient(180deg,transparent 0 44%,rgba(0,0,0,.30) 63%,rgba(0,0,0,.86) 100%),
+      repeating-linear-gradient(90deg,transparent 0 34px,rgba(255,255,255,.018) 35px 36px);
+  }
+  .screen:after{
+    content:"";position:absolute;left:-12%;right:-12%;bottom:0;height:34%;
+    background:
+      linear-gradient(108deg,transparent 0 33%,rgba(245,34,45,.65) 34% 34.8%,transparent 35.4% 100%),
+      linear-gradient(73deg,transparent 0 63%,rgba(217,165,32,.42) 64% 64.7%,transparent 65.3% 100%);
+    filter:blur(.2px);opacity:.72;pointer-events:none;
+  }
+  .content{position:relative;z-index:1}
+  .brandbar{display:flex;align-items:center;justify-content:center;padding:8px 0 2px}
+  .brand-logo{display:block;width:min(82vw,310px);height:auto;max-height:86px;object-fit:contain}
+  .brand-kicker{text-align:center;color:var(--gold-light);font-size:10px;font-weight:800;letter-spacing:.42em;margin-top:2px}
+  .hero{margin:24px 2px 18px}
+  .hero h1{margin:0;max-width:410px;font-size:clamp(36px,10.5vw,52px);line-height:.98;font-weight:950;letter-spacing:-.045em}
+  .hero h1 span{display:block;color:var(--red-strong)}
+  .hero p{margin:13px 0 0;max-width:350px;color:#D1D2D5;font-size:15px;line-height:1.45}
+  .services{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:19px}
+  .service{
+    position:relative;min-height:330px;border-radius:28px;padding:14px;
+    overflow:hidden;background:linear-gradient(180deg,rgba(24,26,32,.98),rgba(11,12,15,.99));
+    border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 48px rgba(0,0,0,.42);
+  }
+  .service:before{content:"";position:absolute;inset:-25% -25% auto;height:70%;filter:blur(12px);opacity:.42;pointer-events:none}
+  .service.corridas{border-color:rgba(245,34,45,.72);box-shadow:0 0 0 1px rgba(245,34,45,.12) inset,0 24px 48px rgba(0,0,0,.45)}
+  .service.corridas:before{background:radial-gradient(circle,rgba(245,34,45,.50),transparent 62%)}
+  .service.entregas{border-color:rgba(217,165,32,.55)}
+  .service.entregas:before{background:radial-gradient(circle,rgba(217,165,32,.45),transparent 62%)}
+  .visual{height:145px;border-radius:21px;position:relative;display:grid;place-items:center;overflow:hidden;background:#08090B}
+  .visual:before{content:"";position:absolute;inset:0;background:
+    linear-gradient(180deg,transparent 28%,rgba(0,0,0,.80) 100%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 24px)}
+  .visual svg{position:relative;z-index:1;width:84px;height:84px;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 12px 18px rgba(0,0,0,.55))}
+  .corridas .visual{color:var(--red-strong)}
+  .entregas .visual{color:var(--gold-light)}
+  .service h2{margin:18px 0 5px;font-size:27px;letter-spacing:-.03em}
+  .service p{margin:0;color:#BFC0C4;font-size:12px;line-height:1.45;min-height:37px}
+  .action{
+    position:absolute;left:14px;right:14px;bottom:14px;height:52px;border:0;border-radius:17px;
+    display:flex;align-items:center;justify-content:center;gap:12px;color:#fff;font-weight:900;font-size:16px;
+    cursor:pointer;transition:transform .15s ease,filter .15s ease
+  }
+  .action:active{transform:scale(.975)}.action:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .corridas .action{background:linear-gradient(135deg,var(--red),var(--red-strong));box-shadow:0 12px 28px rgba(245,34,45,.30)}
+  .entregas .action{background:linear-gradient(135deg,#A97808,var(--gold));box-shadow:0 12px 28px rgba(217,165,32,.20)}
+  .features{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+  .feature{min-height:78px;border-radius:18px;padding:10px 5px;background:rgba(17,19,24,.78);border:1px solid rgba(255,255,255,.08);text-align:center;backdrop-filter:blur(10px)}
+  .feature .ico{font-size:20px;color:var(--gold-light);margin-bottom:7px}.feature b{display:block;font-size:11px}.feature span{display:block;margin-top:2px;color:#8D9097;font-size:9px;line-height:1.15}
+  .closing{text-align:center;padding:18px 0 0}.closing strong{font-size:26px;font-style:italic}.closing strong span{color:var(--red-strong)}.closing small{display:block;margin-top:8px;color:#BFC0C4;font-size:9px;letter-spacing:.36em}
+  @media(max-width:380px){
+    .screen{padding-left:12px;padding-right:12px}.services{gap:9px}.service{min-height:315px;padding:11px;border-radius:24px}
+    .visual{height:132px}.service h2{font-size:23px}.action{left:11px;right:11px;bottom:11px}.brand-logo{max-height:76px}
+  }
+  @media(max-height:720px){
+    .hero{margin:12px 2px 14px}.hero h1{font-size:32px}.hero p{font-size:12px;margin-top:7px}
+    .service{min-height:270px}.visual{height:108px}.features{margin-top:10px}.feature{min-height:66px}.closing{padding-top:10px}
+  }
+</style>
 </head>
 <body>
   <main class="screen">
-    <div class="content">
-      <div class="top"><div class="logo-mark"><img src="./assets/apois-brand-v2.png" alt="APOIS" /></div></div>
-      <div class="brand">APOIS</div>
-      <div class="subtitle">TUDO EM UM SÓ APP</div>
-      <section class="hero"><h1>Para onde <em>vamos</em> hoje?</h1><p>Escolha o serviço que você precisa e resolva do seu jeito.</p></section>
-      <section class="services" aria-label="Serviços APOIS">
-        <article class="service corridas"><div class="photo"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14l-1.2-6.1a2 2 0 0 0-2-1.6H8.2a2 2 0 0 0-2 1.6L5 17Z"/><path d="M7 9.3 8.4 6h7.2L17 9.3M5 13H3.5M20.5 13H19"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></div><div class="vehicle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14l-1.2-6.1a2 2 0 0 0-2-1.6H8.2a2 2 0 0 0-2 1.6L5 17Z"/><path d="M7 9.3 8.4 6h7.2L17 9.3M5 13H3.5M20.5 13H19"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="m7 17 4-7h3l3 7M9 13h7M12 10l-2-3H7"/></svg></div></div><h2>Corridas</h2><p>Carro • Moto • Envios</p><button class="action" data-module="corridas" type="button">Acessar <span>→</span></button></article>
-        <article class="service entregas"><div class="photo"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg></div><div class="delivery"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="m7 17 4-7h3l3 7M9 13h7M12 10l-2-3H7"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></svg></div></div><h2>Entregas</h2><p>Restaurantes • Mercados • Lojas</p><button class="action" data-module="entregas" type="button">Acessar <span>→</span></button></article>
-      </section>
-      <section class="features" aria-label="Diferenciais"><div class="feature"><div class="ico">♢</div><b>Seguro</b><span>e confiável</span></div><div class="feature"><div class="ico">◷</div><b>Rápido</b><span>e prático</span></div><div class="feature"><div class="ico">⌖</div><b>Acompanhe</b><span>em tempo real</span></div><div class="feature"><div class="ico">★</div><b>Avalie</b><span>e ajude</span></div></section>
-      <div class="closing"><strong>Apois, <span>vamos?</span></strong><small>FEITO PARA VOCÊ</small></div>
+  <div class="content">
+    <div class="brandbar">
+      <img class="brand-logo" src="./assets/apois-wordmark-v3.svg" alt="APOIS" />
     </div>
-  </main>
+    <div class="brand-kicker">MOBILIDADE • ENTREGAS • CONEXÕES</div>
+
+    <section class="hero">
+      <h1>O seu caminho.<span>Do seu jeito.</span></h1>
+      <p>Escolha o serviço que melhor atende a sua necessidade e continue com a APOIS.</p>
+    </section>
+
+    <section class="services" aria-label="Serviços APOIS">
+      <article class="service corridas">
+        <div class="visual" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 17h14l-1.3-6.1a2 2 0 0 0-2-1.6H8.3a2 2 0 0 0-2 1.6L5 17Z"/><path d="M7 9.3 8.5 6h7L17 9.3M5 13H3.5M20.5 13H19"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+        </div>
+        <h2>Corridas</h2>
+        <p>Carro, moto, envios e mobilidade do seu jeito.</p>
+        <button class="action" data-module="corridas" type="button">Entrar em Corridas <span>→</span></button>
+      </article>
+
+      <article class="service entregas">
+        <div class="visual" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></svg>
+        </div>
+        <h2>Entregas</h2>
+        <p>Restaurantes, mercados, lojas e pedidos em um só lugar.</p>
+        <button class="action" data-module="entregas" type="button">Entrar em Entregas <span>→</span></button>
+      </article>
+    </section>
+
+    <section class="features" aria-label="Diferenciais APOIS">
+      <div class="feature"><div class="ico">◇</div><b>Seguro</b><span>e confiável</span></div>
+      <div class="feature"><div class="ico">◷</div><b>Rápido</b><span>e prático</span></div>
+      <div class="feature"><div class="ico">⌖</div><b>Acompanhe</b><span>em tempo real</span></div>
+      <div class="feature"><div class="ico">★</div><b>Avalie</b><span>e ajude</span></div>
+    </section>
+
+    <div class="closing"><strong>Apois, <span>vamos?</span></strong><small>FEITO PARA VOCÊ</small></div>
+  </div>
+</main>
   <script>
     const moduleUrls={corridas:'./modules/corridas/index.html',entregas:'./modules/entregas/index.html'};
     const LAST_MODULE_KEY='apois-superapp:last-module';
