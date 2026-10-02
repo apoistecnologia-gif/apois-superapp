@@ -5,6 +5,7 @@ const root = process.cwd();
 const workspace = process.env.APOIS_CORRIDAS_WORKSPACE || '.work/corridas';
 const homePath = resolve(root, workspace, 'src/routes/_authenticated.inicio.tsx');
 const stylesPath = resolve(root, workspace, 'src/styles.css');
+const bottomNavPath = resolve(root, workspace, 'src/components/BottomNavigation.tsx');
 
 function read(path) { return readFileSync(path, 'utf8'); }
 function write(path, content) { writeFileSync(path, content, 'utf8'); }
@@ -33,6 +34,7 @@ if (!styles.includes(cssMarker)) {
     '.apois-home-shortcut{min-height:48px;background:linear-gradient(180deg,rgb(17 19 24/.96),rgb(13 15 19/.96));border-color:rgb(255 255 255/.08);box-shadow:0 7px 20px rgb(0 0 0/.18)}',
     '.apois-home-shortcut-premium{border-color:color-mix(in srgb,var(--accent,#D9A520) 58%,transparent);background:linear-gradient(180deg,rgb(40 31 10/.42),rgb(17 19 24/.96));color:var(--accent,#D9A520)!important}',
     '.apois-home-shortcut-premium>div{background:var(--accent,#D9A520)!important;color:var(--accent-foreground,#08090B)!important}',
+    '.apois-home-bottom-nav{background:rgb(8 9 11/.96)!important;border-top-color:rgb(255 255 255/.08)!important;box-shadow:0 -10px 28px rgb(0 0 0/.45)!important}',
     '@media(max-height:700px){.apois-home-compact-panel{padding-top:12px}.apois-home-current-location{min-height:44px}.apois-home-search-compact{min-height:48px}.apois-home-shortcut{min-height:44px}}',
   ].join('\n');
   styles += compactCss + '\n';
@@ -87,6 +89,19 @@ for (const marker of ['apois-home-compact-header','apois-home-compact-header-car
 if (!read(stylesPath).includes('APOIS_HOME_COMPACT_V2')) throw new Error('[FAIL] Corridas Home compacta: CSS não registrado');
 if (!home.includes('<PassengerMap') || !home.includes('navigate({ to: "/buscar-destino"')) throw new Error('[FAIL] Corridas Home compacta: mapa/navegação funcional ausentes');
 if (!home.includes('<HomeWorkShortcuts />') || !home.includes('<CategorySelector />')) throw new Error('[FAIL] Corridas Home compacta: componentes funcionais obrigatórios desapareceram');
+
+let bottomNav = read(bottomNavPath);
+if (!bottomNav.includes('apois-home-bottom-nav')) {
+  bottomNav = bottomNav.replace(
+    'className="relative z-[100] grid w-full shrink-0 grid-cols-5',
+    'className="apois-home-bottom-nav relative z-[100] grid w-full shrink-0 grid-cols-5',
+  );
+}
+if (!bottomNav.includes('apois-home-bottom-nav') || !bottomNav.includes('min-h-[64px]')) {
+  throw new Error('[FAIL] Corridas Home compacta: rodapé perdeu identidade ou área de toque');
+}
+write(bottomNavPath, bottomNav);
+console.log('[OK] Corridas Home compacta: rodapé mantém área de toque e recebe acabamento mais limpo');
 
 write(homePath, home);
 console.log('[OK] APOIS_HOME_COMPACT_V2: Home Passageiro mais baixa, mapa mais exposto e fluxos preservados');
