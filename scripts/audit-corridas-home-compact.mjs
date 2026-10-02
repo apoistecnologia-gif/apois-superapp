@@ -35,19 +35,17 @@ for (const marker of [
 if (!failed) ok('hardener preserva mapa/fluxos e aplica composição compacta');
 
 const profileChain = read('scripts/harden-corridas-superapp-profile-ui.mjs');
-const kitIndex = profileChain.indexOf("await import('./harden-corridas-kit-visual.mjs');");
-const compactIndex = profileChain.indexOf("await import('./harden-corridas-home-compact.mjs');");
-if (kitIndex < 0 || compactIndex <= kitIndex) {
-  fail('Home compacta precisa rodar depois do kit visual existente');
-} else {
-  ok('ordem do build é kit visual -> Home compacta');
+if (!profileChain.includes("await import('./harden-corridas-kit-visual.mjs');")) {
+  fail('kit visual de Corridas deixou de ser aplicado antes da Home compacta');
 }
 
 const modules = read('.apois/modules.json');
-if (!modules.includes('harden-superapp-module-mobile-ui.mjs corridas')) {
-  fail('build Corridas não chama a cadeia visual que importa a Home compacta');
+const visualIndex = modules.indexOf('harden-superapp-module-mobile-ui.mjs corridas');
+const compactIndex = modules.indexOf('harden-corridas-home-compact.mjs');
+if (visualIndex < 0 || compactIndex <= visualIndex) {
+  fail('Home compacta precisa rodar diretamente depois da cadeia visual de Corridas');
 } else {
-  ok('build Corridas alcança a Home compacta');
+  ok('ordem do build é kit visual -> Home compacta por execução direta');
 }
 
 const packageJson = JSON.parse(read('package.json') || '{}');
