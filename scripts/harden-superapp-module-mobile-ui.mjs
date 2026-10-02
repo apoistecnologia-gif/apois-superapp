@@ -31,8 +31,7 @@ if (moduleName === 'corridas') {
     if (!bottomNav.includes(marker)) throw new Error(`[FAIL] Corridas: rodapé mobile incompleto (${marker})`);
   }
 
-  console.log('[APOIS-STAGE] mobile-ui/profile');
-  await import('./harden-corridas-superapp-profile-ui.mjs');
+  console.log('[APOIS-STAGE] mobile-ui/base-complete');
 } else {
   patch('.work/entregas/src/routes/inicio.tsx', (source) => {
     let next = source;
