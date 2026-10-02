@@ -111,6 +111,8 @@ for (const validator of [
   run(process.execPath, [resolve(root, validator)], { cwd: root, env: baseEnv });
 }
 
+run(process.execPath, [resolve(root, 'scripts/audit-apois-brand-v2.mjs')], { cwd: root, env: baseEnv });
+
 run('bun', ['run', 'typecheck'], { cwd: workspace, env: baseEnv });
 
 const lintStatus = run('bun', ['run', 'lint'], {
