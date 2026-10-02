@@ -194,12 +194,23 @@ Deno.serve(async (req: Request) => {
       const input = String(body?.input ?? "").trim();
       if (input.length < 3) return json({ predictions: [] });
 
+      const localityHint = String(body?.localityHint ?? "").trim();
+      const lat = Number(body?.lat);
+      const lng = Number(body?.lng);
+      const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
+      const localizedInput = localityHint ? `${input}, ${localityHint}` : input;
+
       if (apiKey) {
         try {
           const url = new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json");
-          url.searchParams.set("input", input);
+          url.searchParams.set("input", localizedInput);
           url.searchParams.set("components", "country:br");
           url.searchParams.set("language", "pt-BR");
+          if (hasLocation) {
+            url.searchParams.set("location", `${lat},${lng}`);
+            url.searchParams.set("radius", "50000");
+            url.searchParams.set("strictbounds", "true");
+          }
           url.searchParams.set("key", apiKey);
           const payload = await googleJson(url);
           if ((payload.predictions ?? []).length > 0) return json({ predictions: payload.predictions, provider: "google" });
@@ -208,9 +219,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const lat = Number(body?.lat);
-      const lng = Number(body?.lng);
-      const predictions = await nominatimSearch(input, lat, lng);
+      const predictions = await nominatimSearch(localizedInput, lat, lng);
       return json({ predictions, provider: "nominatim" });
     }
 
