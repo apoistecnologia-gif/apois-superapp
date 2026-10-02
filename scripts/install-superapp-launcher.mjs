@@ -3,24 +3,41 @@ import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSyn
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const legacySource = resolve('superapp/branding/apois-brand-v2.jpg');
-const foregroundSource = resolve('superapp/branding/apois-brand-v2.jpg');
+const legacySource = resolve('superapp/branding/apois-launcher.png');
+const foregroundSource = resolve('superapp/branding/apois-launcher-foreground.png');
 const resRoot = resolve('superapp/shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
 const stringsPath = resolve('superapp/shell/android/app/src/main/res/values/strings.xml');
 const APP_LABEL = process.env.APP_LABEL?.trim() || 'APOIS';
 
-for (const source of [legacySource, foregroundSource]) {
-  if (!existsSync(source)) throw new Error(`Arte oficial APOIS não encontrada: ${source}`);
-}
 if (!existsSync(resRoot)) throw new Error(`Recursos Android não encontrados: ${resRoot}`);
+
+function assertPng(path, label) {
+  if (!existsSync(path)) throw new Error(label + ': arquivo ausente: ' + path);
+  const bytes = readFileSync(path);
+  const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (bytes.length < pngSignature.length || pngSignature.some((value, index) => bytes[index] !== value)) {
+    throw new Error(label + ': saída não é PNG válido: ' + path);
+  }
+}
 
 function resizePng(source, size, output) {
   const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', output], { encoding: 'utf8' });
-  if (!result.error && result.status === 0 && existsSync(output)) return;
-  // sips is macOS-only. On Windows/Linux, retain the official PNG rather than
-  // falling back to a synthetic icon; Android accepts the source as a valid raster.
+  if (!result.error && result.status === 0 && existsSync(output)) {
+    assertPng(output, 'Launcher APOIS convertido');
+    return;
+  }
+  // Fora do macOS, a fonte versionada já é PNG válido e pode ser copiada sem
+  // mascarar JPEG/WebP como .png.
+  assertPng(source, 'Fonte launcher APOIS');
   copyFileSync(source, output);
+  assertPng(output, 'Launcher APOIS copiado');
+}
+
+
+for (const source of [legacySource, foregroundSource]) {
+  if (!existsSync(source)) throw new Error(`Arte oficial APOIS não encontrada: ${source}`);
+  assertPng(source, 'Arte nativa APOIS');
 }
 
 function removeStaleLauncherBitmaps(dir) {
