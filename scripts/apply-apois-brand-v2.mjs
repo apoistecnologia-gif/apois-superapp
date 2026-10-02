@@ -57,7 +57,7 @@ function walkText(dir, fn) {
   }
 }
 
-const BRAND_SOURCE = resolve(root, 'superapp/branding/apois-launcher.png');
+const BRAND_SOURCE = resolve(root, 'superapp/branding/apois-brand-v2.jpg');
 
 function requireBrandSource() {
   if (!existsSync(BRAND_SOURCE)) throw new Error(`Logo oficial APOIS Brand V2 ausente: ${BRAND_SOURCE}`);
@@ -65,16 +65,15 @@ function requireBrandSource() {
 }
 
 function brandDataUrl() {
-  return `data:image/png;base64,${requireBrandSource().toString('base64')}`;
+  return `data:image/jpeg;base64,${requireBrandSource().toString('base64')}`;
 }
 
 function syncPublicRasterBrand(ws) {
   const publicDir = resolve(ws, 'public');
   if (!existsSync(publicDir)) return;
-  const bytes = requireBrandSource();
-  for (const name of ['apois-brand-v2.png', 'favicon.png', 'apois-app-icon.png']) {
-    writeFileSync(resolve(publicDir, name), bytes);
-  }
+  // A arte oficial atual é JPEG. Não grave bytes JPEG em arquivos .png:
+  // mantenha os ícones legados até o pipeline Android convertê-los corretamente.
+  writeFileSync(resolve(publicDir, 'apois-brand-v2.jpg'), requireBrandSource());
 }
 
 function syncSvgBrandWrapper(ws) {
