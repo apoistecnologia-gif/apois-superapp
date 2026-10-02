@@ -77,6 +77,7 @@ requireText('scripts/build-isolated-module.mjs', [
   'scripts/adapt-module-for-superapp.mjs',
   'scripts/harden-corridas-superapp-runtime.mjs',
   'scripts/fix-corridas-superapp-ui.mjs',
+  'scripts/harden-corridas-native-places-fastpath.mjs',
   'scripts/harden-corridas-payment-methods.mjs',
   "'apois-superapp-corridas-auth-v1'",
   "'apois-superapp-entregas-auth-v1'",
