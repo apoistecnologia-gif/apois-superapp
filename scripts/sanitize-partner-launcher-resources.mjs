@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const resRoot = resolve('superapp/partner-shell/android/app/src/main/res');
-const officialLauncher = resolve('superapp/branding/apois-launcher.png');
+const officialLauncher = resolve('superapp/branding/apois-brand-v2.jpg');
 if (!existsSync(resRoot)) throw new Error(`Recursos Android do APOIS Parceiro ausentes: ${resRoot}`);
 if (!existsSync(officialLauncher)) throw new Error(`Arte oficial do APOIS ausente: ${officialLauncher}`);
 
