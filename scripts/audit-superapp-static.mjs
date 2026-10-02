@@ -202,7 +202,7 @@ requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
 ], 'gate Supabase rejeita projeto histórico no runtime/bundle');
 
 requireText('superapp/shell/build.mjs', [
-  "resolve(root, '../branding/apois-brand-v2.jpg')", "resolve(dist, 'assets/apois-brand-v2.jpg')",
+  "resolve(root, '../branding/apois-launcher.png')", "resolve(dist, 'assets/apois-brand-v2.png')",
 ], 'shell empacota marca oficial');
 requireText('superapp/shell/capacitor.config.ts', [
   "appId: 'br.com.apois.app'", "backgroundColor: '#050505'", 'overlaysWebView: false',
