@@ -52,7 +52,8 @@ patch(
   (source) => {
     let next = source
       .replace('    }, 500);', '    }, 60);')
-      .replace('    }, 300);', '    }, 60);');
+      .replace('    }, 300);', '    }, 60);')
+      .replace('    }, 100);', '    }, 60);');
 
     if (!next.includes('APOIS_PRICING_SEQ_V1')) {
       next = next.replace(
