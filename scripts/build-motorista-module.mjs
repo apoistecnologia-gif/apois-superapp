@@ -45,6 +45,7 @@ const env = {
   VITE_ENABLE_NATIVE_PUSH: process.env.APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1' ? 'true' : 'false',
 };
 
+run(process.execPath, [resolve(root, 'scripts/audit-apois-brand-v2.mjs')], root, env);
 run('bun', ['install'], workspace, env);
 run('bun', ['run', 'typecheck'], workspace, env);
 run('bun', ['run', 'build:motorista'], workspace, env);
