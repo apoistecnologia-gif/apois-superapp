@@ -94,23 +94,23 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             onDragEnd={handleDragEnd}
             className={cn(
               keyboardStable
-                ? "fixed top-[max(env(safe-area-inset-top),0px)] left-1/2 z-[60] flex w-full max-w-[430px] -translate-x-1/2 flex-col"
+                ? "relative z-[60] flex h-full min-h-0 w-full flex-col"
                 : "fixed bottom-0 left-1/2 z-[60] flex w-full max-w-[430px] -translate-x-1/2 flex-col",
               "overflow-hidden rounded-t-[28px] border-x border-t border-white/5 bg-[#121212] shadow-[0_-12px_40px_rgba(0,0,0,0.6)]",
             )}
             style={{
               height: keyboardStable
-                ? "85svh"
+                ? "100%"
                 : isPersistentMapSheet
                   ? "calc(100dvh - 168px)"
                   : height,
               maxHeight: keyboardStable
-                ? "85svh"
+                ? "100%"
                 : isPersistentMapSheet
                   ? "calc(100dvh - 148px)"
                   : maxHeight ?? "calc(100dvh - max(16px, var(--app-safe-top)) - 8px)",
               paddingBottom: keyboardStable
-                ? "max(env(safe-area-inset-bottom), 12px)"
+                ? 0
                 : "max(12px, var(--app-safe-bottom))",
             }}
             aria-busy={isClosing}
@@ -147,7 +147,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     source.includes('keyboardStable = false') &&
     source.includes('initial={keyboardStable ? false : { y: "100%" }}') &&
     source.includes('drag={keyboardStable ? false : "y"}') &&
-    source.includes('"85svh"') &&
+    source.includes('? "100%"') &&
     source.includes('keyboardStable') &&
     source.includes('? "flex flex-col overflow-hidden"') &&
     source.includes(': "overflow-y-auto overscroll-contain"') &&
@@ -181,8 +181,8 @@ if (existsSync(modernScreen)) {
   patch(
     'src/routes/_authenticated.buscar-destino.tsx',
     (source) => {
-      // O BottomSheet canônico já controla altura estável (85svh), animação e
-      // rolagem interna. Na rota legada basta ativar explicitamente esse modo.
+      // O BottomSheet canônico usa o viewport real da rota, sem camada fixed que
+      // brigue com o adjustResize do Android. Na rota legada basta ativar esse modo.
       // Fazemos isso sem depender da ordem das props ou das classes Tailwind.
       if (/<BottomSheet\\b[^>]*\\bkeyboardStable\\b[^>]*>/.test(source)) {
         return source;
