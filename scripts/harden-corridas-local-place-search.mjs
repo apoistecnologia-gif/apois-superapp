@@ -48,10 +48,10 @@ class PlacesService {`,
     next = next.replace(
       '    const cacheKey = `${normalizedQuery.toLowerCase()}`;',
       `    const locationKey = locationBias
-      ? `\${locationBias.lat.toFixed(3)},\${locationBias.lng.toFixed(3)}`
+      ? locationBias.lat.toFixed(3) + "," + locationBias.lng.toFixed(3)
       : "no-location";
     const localityKey = normalizeLocality(localityHint ?? "");
-    const cacheKey = `\${normalizedQuery.toLowerCase()}|\${locationKey}|\${localityKey}`;`,
+    const cacheKey = normalizedQuery.toLowerCase() + "|" + locationKey + "|" + localityKey;`,
     );
 
     next = next.replace(
@@ -90,7 +90,7 @@ class PlacesService {`,
       const localSuggestions = localityKey
         ? suggestions.filter((suggestion: PlaceSuggestion) => {
             const searchable = normalizeLocality(
-              `\${suggestion.secondaryText ?? ""} \${suggestion.fullText ?? ""}`,
+              (suggestion.secondaryText ?? "") + " " + (suggestion.fullText ?? ""),
             );
             return searchable.includes(localityKey);
           })
