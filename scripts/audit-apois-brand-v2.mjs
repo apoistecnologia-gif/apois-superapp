@@ -99,9 +99,9 @@ for (const marker of [
 if (!failed) ok('aplicador central atende Passageiro, Entregas, Parceiro, Admin e shells');
 
 for (const marker of [
-  'superapp/branding/apois-launcher.png',
+  'superapp/branding/apois-wordmark-v3.svg',
   "['public/apois-logo.svg', 'public/apois-logo-customer.svg']",
-  'data:image/png;base64',
+  'data:image/svg+xml;base64',
 ]) {
   if (!applicator.includes(marker)) fail('aplicador central não propaga a nova logomarca: ' + marker);
 }
