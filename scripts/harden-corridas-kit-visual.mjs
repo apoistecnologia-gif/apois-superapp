@@ -100,6 +100,27 @@ function replaceRequired(source, search, replacement, label) {
       throw new Error('[FAIL] Corridas visual: busca ocupa viewport dinâmica: padrão esperado não encontrado');
     }
   }
+  // APOIS_SEARCH_FULLSCREEN_V3
+  // A busca de destino não usa BottomSheet no Android. Ela ocupa a própria
+  // viewport da rota, deixando cabeçalho/input fora da área rolável e apenas
+  // os resultados com scroll. Isso elimina a disputa entre sheet, WebView e
+  // adjustResize que fazia o campo desaparecer/tremular.
+  if (source.includes('<BottomSheet isOpen={isBottomSheetOpen}')) {
+    source = source
+      .replace(
+        '<BottomSheet isOpen={isBottomSheetOpen} onClose={handleClose} preventClose={isSelecting}>',
+        '<section className="absolute inset-0 z-[60] flex min-h-0 flex-col overflow-hidden bg-[#07090d]" aria-label="Buscar destino">',
+      )
+      .replace(
+        '<div className="flex flex-col h-full">',
+        '<div className="flex min-h-0 flex-1 flex-col overflow-hidden">',
+      )
+      .replace(
+        /\s*<\/BottomSheet>\s*\n\s*<\/div>\s*\n\s*\);\s*\n\}/,
+        '\n      </section>\n    </div>\n  );\n}',
+      );
+  }
+
   // O Android/WebView estava rolando o documento inteiro para tentar manter o
   // input focado enquanto a lista de sugestões mudava. O guard abaixo mantém
   // o documento em scroll zero; somente a lista interna pode rolar.
@@ -138,7 +159,7 @@ function replaceRequired(source, search, replacement, label) {
     .replaceAll('text-xs text-gray-500 truncate', 'text-xs text-zinc-400 whitespace-normal break-words leading-snug')
     .replaceAll('border-b border-white/5', 'border border-white/8 bg-white/[0.025]');
 
-  for (const marker of ['APOIS_SEARCH_KEYBOARD_GUARD_V2', 'preventScroll: true', 'apois-kit-search-input', 'apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words']) {
+  for (const marker of ['APOIS_SEARCH_FULLSCREEN_V3', 'aria-label="Buscar destino"', 'APOIS_SEARCH_KEYBOARD_GUARD_V2', 'preventScroll: true', 'apois-kit-search-input', 'apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Busca incompleta (${marker})`);
   }
   write(path, source);
