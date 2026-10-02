@@ -100,17 +100,45 @@ function replaceRequired(source, search, replacement, label) {
       throw new Error('[FAIL] Corridas visual: busca ocupa viewport dinâmica: padrão esperado não encontrado');
     }
   }
+  // O Android/WebView estava rolando o documento inteiro para tentar manter o
+  // input focado enquanto a lista de sugestões mudava. O guard abaixo mantém
+  // o documento em scroll zero; somente a lista interna pode rolar.
+  if (!source.includes('APOIS_SEARCH_KEYBOARD_GUARD_V2')) {
+    source = source.replace(
+      '  const inputRef = useRef<HTMLInputElement>(null);',
+      `  const inputRef = useRef<HTMLInputElement>(null);
+
+  // APOIS_SEARCH_KEYBOARD_GUARD_V2
+  useEffect(() => {
+    if (!isBottomSheetOpen) return;
+    const pinDocument = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    pinDocument();
+    const frame = window.requestAnimationFrame(pinDocument);
+    return () => window.cancelAnimationFrame(frame);
+  }, [query, isBottomSheetOpen]);`,
+    );
+  }
+
   source = source
+    .replaceAll('inputRef.current?.focus();', 'inputRef.current?.focus({ preventScroll: true });\\n        window.requestAnimationFrame(() => window.scrollTo(0, 0));')
     .replaceAll('bg-[#1a1a1a]', 'bg-[#0b0e14]/96 backdrop-blur-xl')
     .replaceAll('bg-[#2a2a2a]', 'bg-[#11151d]')
-    .replace('className="sticky top-0 bg-[#0b0e14]/96 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="sticky top-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"')
-    .replace('className="flex-1 mt-2"', 'className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain"')
+    .replace('className="sticky top-0 bg-[#0b0e14]/96 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="shrink-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"')
+    .replace('className="sticky top-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"', 'className="shrink-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"')
+    .replace('className="flex-1 mt-2"', 'className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain [overflow-anchor:none]"')
+    .replace('className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain"', 'className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain [overflow-anchor:none]"')
+    .replace('className="w-full h-14 pl-12 pr-12 bg-[#11151d] border-2 border-yellow-500/30 focus:border-yellow-500 outline-none rounded-xl text-lg font-medium text-white placeholder:text-gray-500 transition-all"', 'className="apois-kit-search-input w-full h-14 pl-12 pr-12 bg-[#11151d] border-2 border-yellow-500/30 focus:border-yellow-500 outline-none rounded-xl text-lg font-medium text-white placeholder:text-gray-500 transition-colors [overflow-anchor:none]"')
+    .replace('className="w-full h-14 pl-12 pr-12 bg-[#2a2a2a] border-2 border-yellow-500/30 focus:border-yellow-500 outline-none rounded-xl text-lg font-medium text-white placeholder:text-gray-500 transition-all"', 'className="apois-kit-search-input w-full h-14 pl-12 pr-12 bg-[#11151d] border-2 border-yellow-500/30 focus:border-yellow-500 outline-none rounded-xl text-lg font-medium text-white placeholder:text-gray-500 transition-colors [overflow-anchor:none]"')
     .replace('<motion.div key="results" className="space-y-1">', '<motion.div key="results" className="space-y-2 pb-6">')
     .replaceAll('font-bold text-white text-sm truncate', 'font-bold text-white text-sm whitespace-normal break-words leading-snug')
     .replaceAll('text-xs text-gray-500 truncate', 'text-xs text-zinc-400 whitespace-normal break-words leading-snug')
     .replaceAll('border-b border-white/5', 'border border-white/8 bg-white/[0.025]');
 
-  for (const marker of ['apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words']) {
+  for (const marker of ['APOIS_SEARCH_KEYBOARD_GUARD_V2', 'preventScroll: true', 'apois-kit-search-input', 'apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Busca incompleta (${marker})`);
   }
   write(path, source);
