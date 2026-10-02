@@ -122,4 +122,29 @@ forbidMarkers(
   'checkout Entregas não contém provider financeiro aposentado',
 );
 requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['fixed bottom-0','min-h-[88px]','aria-label="Buscar"','<Search className="h-8 w-8" />'],'rodapé Entregas é fixo, legível e explícito');
-if(failed)process.exit(1);console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');
+if(failed)
+requireMarkers('superapp/shell/index.html',[
+  './assets/apois-wordmark-v3.svg',
+  'O seu caminho.',
+  'Do seu jeito.',
+  'data-module="corridas"',
+  'data-module="entregas"',
+],'shell cliente segue referência premium e usa wordmark íntegro');
+requireMarkers('.work/corridas/src/routes/_public.login.tsx',[
+  'data-apois-reference-login-v3="true"',
+  'Entrar na APOIS',
+  'object-fit: contain !important',
+  'Continuar com Google',
+],'login Corridas segue referência sem perder Google/senha');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
+  'data-apois-search-fullscreen-v3="true"',
+  'data-apois-search-anchor-v4="true"',
+  'position: fixed !important',
+  'height: 100dvh !important',
+  'padding-top: max(42px, env(safe-area-inset-top)) !important',
+],'busca Corridas mantém fullscreen ancorado ao abrir teclado');
+forbidMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
+  '.scrollIntoView(',
+],'busca Corridas não força scroll ao focar');
+
+process.exit(1);console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');
