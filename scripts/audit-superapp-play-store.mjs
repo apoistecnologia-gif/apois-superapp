@@ -67,11 +67,15 @@ requireAll('scripts/harden-superapp-android-security.mjs', [
 
 requireAll('scripts/install-superapp-launcher.mjs', [
   "import './harden-superapp-android-security.mjs';",
+  "superapp/branding/apois-launcher.png",
+  "superapp/branding/apois-launcher-foreground.png",
+  'function assertPng(path, label)',
+  'pngSignature',
   'ic_launcher_foreground.png',
   'ic_launcher_round.png',
   'android:allowBackup="false"',
   'android:usesCleartextTraffic="false"',
-], 'launcher/adaptive icon executa após hardening Android');
+], 'launcher/adaptive icon usa fontes PNG válidas após hardening Android');
 
 requireAll('codemagic.yaml', [
   'android-superapp-experimental:',
