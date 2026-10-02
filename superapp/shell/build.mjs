@@ -7,7 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = resolve(root, '../..');
 const dist = resolve(root, 'dist');
 const distIndex = resolve(dist, 'index.html');
-const officialBranding = resolve(root, '../branding/apois-launcher.png');
+const officialBranding = resolve(root, '../branding/apois-brand-v2.jpg');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
@@ -41,7 +41,7 @@ if (!existsSync(officialBranding)) {
   process.exit(1);
 }
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
-cpSync(officialBranding, resolve(dist, 'assets/apois-brand.png'));
+cpSync(officialBranding, resolve(dist, 'assets/apois-brand-v2.jpg'));
 console.log('[OK] arte oficial APOIS copiada para o shell cliente');
 
 // Arquitetura oficial: este APK é exclusivamente do cliente.
