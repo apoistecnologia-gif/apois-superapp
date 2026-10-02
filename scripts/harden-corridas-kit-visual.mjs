@@ -127,11 +127,14 @@ function replaceRequired(source, search, replacement, label) {
   const legacyHeight = '"h-auto max-h-[85vh]",';
   const visualHeight = '"h-auto max-h-[94dvh]",';
   const hardenedHeight = '"h-auto max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]",';
+  const keyboardStableHeight =
+    source.includes('keyboardStable') &&
+    source.includes('"85svh"');
 
   if (source.includes(legacyHeight)) {
     source = source.replace(legacyHeight, visualHeight);
     console.log('[OK] Corridas visual: BottomSheet usa altura dinâmica');
-  } else if (source.includes(visualHeight) || source.includes(hardenedHeight)) {
+  } else if (source.includes(visualHeight) || source.includes(hardenedHeight) || keyboardStableHeight) {
     console.log('[OK] Corridas visual: BottomSheet usa altura dinâmica (já endurecido)');
   } else {
     throw new Error('[FAIL] Corridas visual: BottomSheet usa altura dinâmica: padrão esperado não encontrado');
@@ -140,11 +143,14 @@ function replaceRequired(source, search, replacement, label) {
   const legacyPadding = 'style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}';
   const visualPadding = 'style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}';
   const hardenedPadding = 'style={{ paddingBottom: 0 }}';
+  const keyboardStablePadding =
+    source.includes('paddingBottom: keyboardStable') &&
+    source.includes('max(env(safe-area-inset-bottom), 12px)');
 
   if (source.includes(legacyPadding)) {
     source = source.replace(legacyPadding, visualPadding);
     console.log('[OK] Corridas visual: BottomSheet remove rodapé fantasma');
-  } else if (source.includes(visualPadding) || source.includes(hardenedPadding)) {
+  } else if (source.includes(visualPadding) || source.includes(hardenedPadding) || keyboardStablePadding) {
     console.log('[OK] Corridas visual: BottomSheet remove rodapé fantasma (já endurecido)');
   } else {
     throw new Error('[FAIL] Corridas visual: BottomSheet remove rodapé fantasma: padrão esperado não encontrado');
