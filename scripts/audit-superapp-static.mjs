@@ -55,8 +55,8 @@ requireText('.apois/modules.json', [
   'verify-corridas-ride-lifecycle-regressions.mjs',
   'harden-corridas-cancellation-policy.mjs',
   'harden-corridas-superapp-storage.mjs',
-  'harden-corridas-search-anchor-v4.mjs',
   'harden-corridas-reference-login-v3.mjs',
+  'harden-corridas-reference-ui-v4.mjs',
   'harden-superapp-module-mobile-ui.mjs corridas',
   'APOIS_VISUAL_KIT_V1',
   'bun run build:capacitor',
@@ -205,7 +205,8 @@ requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
 ], 'gate Supabase rejeita projeto histórico no runtime/bundle');
 
 requireText('superapp/shell/build.mjs', [
-  "resolve(root, '../branding/apois-wordmark-v3.svg')", "resolve(dist, 'assets/apois-wordmark-v3.svg')",
+  "resolve(root, '../branding/apois-wordmark-v3.svg')", "resolve(root, '../branding/apois-mark-v3.svg')",
+  "resolve(dist, 'assets/apois-wordmark-v3.svg')", "resolve(dist, 'assets/apois-mark-v3.svg')",
 ], 'shell empacota marca oficial');
 requireText('superapp/shell/capacitor.config.ts', [
   "appId: 'br.com.apois.app'", "backgroundColor: '#050505'", 'overlaysWebView: false',
