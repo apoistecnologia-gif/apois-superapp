@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
-const branding = resolve(root, '../branding/apois-launcher.png');
+const branding = resolve(root, '../branding/apois-wordmark-v3.svg');
 
 function readTextTree(directory) {
   let output = '';
@@ -47,7 +47,7 @@ if (!existsSync(branding)) {
   process.exit(1);
 }
 
-const brandDataUrl = `data:image/png;base64,${readFileSync(branding).toString('base64')}`;
+const brandDataUrl = `data:image/svg+xml;base64,${readFileSync(branding).toString('base64')}`;
 console.log('[OK] seletor parceiro usa diretamente a logomarca central APOIS Brand V2');
 
 const templatePath = resolve(root, 'index.html');
