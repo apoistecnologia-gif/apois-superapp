@@ -83,6 +83,7 @@ for (const script of [
     : [resolve(root, `scripts/${script}`)];
   run(process.execPath, args);
 }
+run(process.execPath, [resolve(root, 'scripts/apply-apois-brand-v2.mjs'), 'entregas']);
 
 const baseEnv = {
   ...process.env,
