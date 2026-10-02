@@ -36,6 +36,14 @@ requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['Passenger
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',['APOIS_NATIVE_PASSENGER_MAP_V1','GoogleMap.create({','VITE_APOIS_ANDROID_MAPS_API_KEY','capacitor-google-map'],'Corridas usa Google Maps nativo no Android e mantém fallback web');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['APOIS_SEARCH_KEYBOARD_GUARD_V2','preventScroll: true','apois-kit-search-input','apois-kit-search-screen','apois-kit-search-results','suggestions.map','whitespace-normal break-words'],'Busca Corridas mantém campo fixo, sugestões visíveis e teclado estável');
 {
+  const searchRoute = requireFile('.work/corridas/src/routes/_authenticated.buscar-destino.tsx');
+  if (searchRoute?.includes('focus({ preventScroll: true });\\n')) {
+    fail('Busca Corridas contém escape literal \\n após focus preventScroll');
+  } else if (searchRoute) {
+    ok('Busca Corridas compila guard de foco com quebra de linha real');
+  }
+}
+{
   const bottomSheet = requireFile('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx');
   if (bottomSheet) {
     const hasValidHeight =
