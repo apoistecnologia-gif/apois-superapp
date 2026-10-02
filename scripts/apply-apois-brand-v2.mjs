@@ -58,6 +58,7 @@ function walkText(dir, fn) {
 }
 
 const BRAND_SOURCE = resolve(root, 'superapp/branding/apois-wordmark-v3.svg');
+const MARK_SOURCE = resolve(root, 'superapp/branding/apois-mark-v3.svg');
 
 function requireBrandSource() {
   if (!existsSync(BRAND_SOURCE)) throw new Error(`Logo oficial APOIS Brand V2 ausente: ${BRAND_SOURCE}`);
