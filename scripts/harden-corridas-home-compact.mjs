@@ -45,7 +45,21 @@ if (!styles.includes(cssMarker)) {
 let home = read(homePath);
 home = replaceRequired(home, '<div className="relative z-20 pt-[calc(env(safe-area-inset-top)+12px)] px-4">', '<div className="apois-home-compact-header relative z-20 px-3">', 'Corridas Home compacta: cabeçalho ocupa menos altura');
 home = replaceRequired(home, 'className="bg-black/75 backdrop-blur-xl border border-white/10 rounded-[22px] px-2.5 py-2 shadow-[0_16px_40px_rgba(0,0,0,.42)] flex items-center justify-between"', 'className="apois-home-compact-header-card flex items-center justify-between rounded-[20px] border px-2 py-1.5 backdrop-blur-xl"', 'Corridas Home compacta: card superior reduzido');
-home = replaceRequired(home, 'className="w-10 h-10 rounded-full border-2 border-green-500 overflow-hidden bg-zinc-800"', 'className="apois-home-avatar h-9 w-9 overflow-hidden rounded-full border-2 bg-zinc-800"', 'Corridas Home compacta: avatar menor com acabamento premium');
+if (!home.includes('apois-home-avatar')) {
+  const avatarCandidates = [
+    'className="relative w-10 h-10 rounded-full border-2 border-apois-yellow/70 overflow-hidden bg-zinc-800"',
+    'className="w-10 h-10 rounded-full border-2 border-green-500 overflow-hidden bg-zinc-800"',
+  ];
+  const avatarSource = avatarCandidates.find((candidate) => home.includes(candidate));
+  if (!avatarSource) {
+    throw new Error('[FAIL] Corridas Home compacta: avatar menor com acabamento premium: padrão esperado não encontrado');
+  }
+  home = home.replace(
+    avatarSource,
+    'className="apois-home-avatar relative h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 bg-zinc-800"',
+  );
+}
+console.log('[OK] Corridas Home compacta: avatar menor com acabamento premium');
 home = home.replace('className="flex items-center gap-3"', 'className="flex min-w-0 items-center gap-2.5"')
   .replace('className="text-sm font-bold text-white tracking-tight"', 'className="truncate text-[13px] font-bold tracking-tight text-white"')
   .replace('className="text-[10px] text-zinc-400 font-semibold"', 'className="truncate text-[9px] font-semibold text-zinc-400"')
