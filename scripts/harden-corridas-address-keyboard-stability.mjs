@@ -184,12 +184,12 @@ if (existsSync(modernScreen)) {
       // O BottomSheet canônico usa o viewport real da rota, sem camada fixed que
       // brigue com o adjustResize do Android. Na rota legada basta ativar esse modo.
       // Fazemos isso sem depender da ordem das props ou das classes Tailwind.
-      if (/<BottomSheet\\b[^>]*\\bkeyboardStable\\b[^>]*>/.test(source)) {
+      if (/<BottomSheet\b[^>]*\bkeyboardStable\b[^>]*>/.test(source)) {
         return source;
       }
 
       const next = source.replace(
-        /<BottomSheet\\b([^>]*?)>/,
+        /<BottomSheet\b([^>]*?)>/,
         (_match, props) => `<BottomSheet${props} keyboardStable>`,
       );
 
@@ -199,7 +199,7 @@ if (existsSync(modernScreen)) {
       return next;
     },
     (source) => {
-      const stableSheet = /<BottomSheet\\b[^>]*\\bkeyboardStable\\b[^>]*>/.test(source);
+      const stableSheet = /<BottomSheet\b[^>]*\bkeyboardStable\b[^>]*>/.test(source);
       const stableViewport =
         source.includes('relative min-h-0 flex-1 overflow-hidden') ||
         source.includes('h-[100svh]') ||
