@@ -20,7 +20,10 @@ if (source.includes('PassengerProfileCenter')) throw new Error('[FAIL] Corridas:
 writeFileSync(path, source, 'utf8');
 console.log('[OK] Corridas: Perfil real alinhado à viewport móvel e identidade APOIS');
 
+console.log('[APOIS-STAGE] mobile-ui/profile-actions');
 await import('./harden-corridas-profile-actions.mjs');
+console.log('[APOIS-STAGE] mobile-ui/password-recovery');
 await import('./harden-corridas-password-recovery.mjs');
 // Última etapa visual de Corridas: roda depois dos hardeners funcionais e antes do build.
+console.log('[APOIS-STAGE] mobile-ui/kit-visual');
 await import('./harden-corridas-kit-visual.mjs');
