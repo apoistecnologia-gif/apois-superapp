@@ -125,7 +125,14 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               <div className="h-1 w-9 rounded-full bg-gray-600" />
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div
+              className={cn(
+                "min-h-0 flex-1 px-3.5 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                keyboardStable
+                  ? "flex flex-col overflow-hidden"
+                  : "overflow-y-auto overscroll-contain",
+              )}
+            >
               {children}
             </div>
           </motion.div>
@@ -141,6 +148,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     source.includes('initial={keyboardStable ? false : { y: "100%" }}') &&
     source.includes('drag={keyboardStable ? false : "y"}') &&
     source.includes('"85svh"') &&
+    source.includes('keyboardStable') &&
+    source.includes('? "flex flex-col overflow-hidden"') &&
+    source.includes(': "overflow-y-auto overscroll-contain"') &&
     source.includes('if (!keyboardStable) dragControls.start(event);'),
   'Corridas: BottomSheet suporta modo estável com teclado sem reposicionar a tela',
 );
