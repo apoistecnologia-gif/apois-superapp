@@ -7,7 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = resolve(root, '../..');
 const dist = resolve(root, 'dist');
 const distIndex = resolve(dist, 'index.html');
-const officialBranding = resolve(root, '../branding/apois-launcher.png');
+const officialBranding = resolve(root, '../branding/apois-wordmark-v3.svg');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
@@ -41,8 +41,8 @@ if (!existsSync(officialBranding)) {
   process.exit(1);
 }
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
-cpSync(officialBranding, resolve(dist, 'assets/apois-brand-v2.png'));
-console.log('[OK] arte oficial APOIS copiada para o shell cliente');
+cpSync(officialBranding, resolve(dist, 'assets/apois-wordmark-v3.svg'));
+console.log('[OK] wordmark APOIS V3 copiado para o shell cliente');
 
 // Arquitetura oficial: este APK é exclusivamente do cliente.
 // Motorista e Entregador pertencem ao Superapp Parceiro e não entram aqui.
