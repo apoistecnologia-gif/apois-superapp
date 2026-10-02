@@ -1,0 +1,52 @@
+{
+  "name": "APOIS Brand V2",
+  "version": "2.0.0",
+  "palette": {
+    "black": "#08090B",
+    "blackSecondary": "#111318",
+    "blackElevated": "#181A20",
+    "red": "#F5222D",
+    "redStrong": "#FF1F2D",
+    "redDark": "#9E1018",
+    "white": "#FFFFFF",
+    "whiteSecondary": "#F3F3F3",
+    "textMuted": "#A6A8AE",
+    "gold": "#D9A520",
+    "goldLight": "#F4C44E",
+    "goldDark": "#A97808"
+  },
+  "semantic": {
+    "background": "#08090B",
+    "surface": "#111318",
+    "surfaceElevated": "#181A20",
+    "primaryBrand": "#F5222D",
+    "primary": "#D91E27",
+    "primaryHover": "#F5222D",
+    "primaryStrong": "#FF1F2D",
+    "primaryDark": "#9E1018",
+    "primaryForeground": "#FFFFFF",
+    "secondary": "#181A20",
+    "secondaryForeground": "#FFFFFF",
+    "accent": "#D9A520",
+    "accentHover": "#F4C44E",
+    "accentDark": "#A97808",
+    "accentForeground": "#08090B",
+    "textPrimary": "#FFFFFF",
+    "textSecondary": "#F3F3F3",
+    "textMuted": "#A6A8AE",
+    "border": "#2A2D34",
+    "input": "#181A20",
+    "ring": "#F5222D",
+    "destructive": "#E5484D",
+    "destructiveForeground": "#FFFFFF",
+    "success": "#2FB171",
+    "warning": "#F4C44E",
+    "info": "#4C9AFF"
+  },
+  "usage": {
+    "black": 55,
+    "whiteGray": 25,
+    "red": 15,
+    "gold": 5
+  }
+}
