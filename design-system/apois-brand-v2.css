@@ -1,0 +1,62 @@
+/* APOIS BRAND V2 — source of truth generated from apois-brand-v2.json */
+:root {
+  --apois-black: #08090B;
+  --apois-black-secondary: #111318;
+  --apois-black-elevated: #181A20;
+  --apois-red: #F5222D;
+  --apois-red-strong: #FF1F2D;
+  --apois-red-dark: #9E1018;
+  --apois-white: #FFFFFF;
+  --apois-white-secondary: #F3F3F3;
+  --apois-text-muted: #A6A8AE;
+  --apois-gold: #D9A520;
+  --apois-gold-light: #F4C44E;
+  --apois-gold-dark: #A97808;
+
+  --background: #08090B;
+  --foreground: #FFFFFF;
+  --surface: #111318;
+  --surface-2: #181A20;
+  --surface-elevated: #181A20;
+  --card: #111318;
+  --card-foreground: #FFFFFF;
+  --popover: #111318;
+  --popover-foreground: #FFFFFF;
+
+  --primary-brand: #F5222D;
+  --primary: #D91E27;
+  --primary-hover: #F5222D;
+  --primary-strong: #FF1F2D;
+  --primary-dark: #9E1018;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #181A20;
+  --secondary-foreground: #FFFFFF;
+  --accent: #D9A520;
+  --accent-foreground: #08090B;
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #F3F3F3;
+  --muted: #181A20;
+  --muted-foreground: #A6A8AE;
+  --border: #2A2D34;
+  --input: #181A20;
+  --ring: #F5222D;
+
+  --destructive: #E5484D;
+  --destructive-foreground: #FFFFFF;
+  --success: #2FB171;
+  --warning: #F4C44E;
+  --info: #4C9AFF;
+
+  --sidebar: #111318;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #D91E27;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #181A20;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #2A2D34;
+  --sidebar-ring: #F5222D;
+
+  color-scheme: dark;
+}
