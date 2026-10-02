@@ -129,7 +129,7 @@ function replaceRequired(source, search, replacement, label) {
   const hardenedHeight = '"h-auto max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]",';
   const keyboardStableHeight =
     source.includes('keyboardStable') &&
-    source.includes('"85svh"');
+    source.includes('? "100%"');
 
   if (source.includes(legacyHeight)) {
     source = source.replace(legacyHeight, visualHeight);
@@ -145,7 +145,7 @@ function replaceRequired(source, search, replacement, label) {
   const hardenedPadding = 'style={{ paddingBottom: 0 }}';
   const keyboardStablePadding =
     source.includes('paddingBottom: keyboardStable') &&
-    source.includes('max(env(safe-area-inset-bottom), 12px)');
+    source.includes('? 0');
 
   if (source.includes(legacyPadding)) {
     source = source.replace(legacyPadding, visualPadding);
@@ -194,7 +194,7 @@ for (const [path, markers] of [
     'max-h-[94dvh]',
     'max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]',
     'keyboardStable',
-    '"85svh"',
+    '? "100%"',
   ]],
   ['src/components/pricing/CategorySelector.tsx', ['grid-cols-[58px_minmax(0,1fr)_auto]']],
 ]) {
