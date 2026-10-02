@@ -35,6 +35,7 @@ for (const script of [
 ]) {
   run(process.execPath, [resolve(root, `scripts/${script}`)], root, hardenerEnv);
 }
+run(process.execPath, [resolve(root, 'scripts/apply-apois-brand-v2.mjs'), 'motorista'], root, hardenerEnv);
 
 const env = {
   ...process.env,
