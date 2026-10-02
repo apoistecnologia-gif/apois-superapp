@@ -15,21 +15,25 @@ function patch(relativePath, transform, verify, label) {
 
 patch(
   'src/hooks/use-destination-search.tsx',
-  (source) => source.replace('}, 300);', '}, 100);'),
+  (source) => source
+    .replace('}, 300);', '}, 100);')
+    .replace('}, 120);', '}, 100);'),
   (source) => source.includes('}, 100);') && source.includes('searchSeq'),
   'Corridas: sugestões de endereço reduzem debounce sem aceitar resposta antiga',
 );
 
 patch(
   'src/hooks/use-route.tsx',
-  (source) => source.replace('    }, 500);', '    }, 120);'),
+  (source) => source
+    .replace('    }, 500);', '    }, 120);'),
   (source) => source.includes('    }, 120);') && source.includes('calculateRoute();'),
   'Corridas: cálculo de rota inicia mais rápido após destino',
 );
 
 patch(
   'src/hooks/use-pricing.tsx',
-  (source) => source.replace('    }, 500);', '    }, 100);'),
+  (source) => source
+    .replace('    }, 500);', '    }, 100);'),
   (source) => source.includes('    }, 100);') && source.includes('calculatePricing();'),
   'Corridas: cálculo de preços reduz espera artificial',
 );
