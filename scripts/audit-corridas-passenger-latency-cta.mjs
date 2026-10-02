@@ -13,6 +13,7 @@ for (const marker of [
   ".replace('}, 120);', '}, 80);')",
   "'    }, 100);'",
   'APOIS_PRICING_SEQ_V1',
+  ".replace('    }, 100);', '    }, 60);')",
   "'    }, 60);'",
   'apois-ride-confirm-cta',
   'sticky bottom-0 z-30',
