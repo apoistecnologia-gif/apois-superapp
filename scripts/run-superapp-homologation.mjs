@@ -14,6 +14,7 @@ const stages = [
   ['audit-entregas-brand-v24', process.execPath, ['scripts/audit-entregas-brand-sweep-v24.mjs']],
   ['audit-brand-v2', process.execPath, ['scripts/audit-apois-brand-v2.mjs']],
   ['audit-corridas-home-compact', process.execPath, ['scripts/audit-corridas-home-compact.mjs']],
+  ['audit-corridas-passenger-latency-cta', process.execPath, ['scripts/audit-corridas-passenger-latency-cta.mjs']],
   ['verify-pins', 'npm', ['run', 'verify:pins']],
   ['audit-hardening', 'npm', ['run', 'audit:hardening']],
   ['audit-play-store', 'npm', ['run', 'audit:play-store']],
