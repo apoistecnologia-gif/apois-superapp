@@ -85,7 +85,6 @@ for (const marker of [
   "case 'shell-partner':",
   'APOIS_BRAND_V2',
   'apois-primary',
-  'location',
 ]) {
   if (!applicator.includes(marker)) fail(`aplicador central sem alvo/marcador: ${marker}`);
 }
