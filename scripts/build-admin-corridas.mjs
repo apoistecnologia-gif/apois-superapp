@@ -76,6 +76,7 @@ if (frozenInstall.status !== 0) {
   console.warn('[WARN] Admin Corridas: bun.lock do pin não é reproduzível com Bun atual; usando instalação --no-save somente em .work/admin.');
   run('bun', ['install', '--no-save'], workspace, env);
 }
+run(process.execPath, [resolve(root, 'scripts/audit-apois-brand-v2.mjs')], root, env);
 run('bun', ['run', 'typecheck'], workspace, env);
 run('bun', ['run', 'build'], workspace, env);
 
