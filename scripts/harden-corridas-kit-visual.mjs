@@ -193,6 +193,8 @@ for (const [path, markers] of [
   ['src/components/ui/bottom-sheet/BottomSheet.tsx', [
     'max-h-[94dvh]',
     'max-h-[calc(100dvh-82px-env(safe-area-inset-bottom)-12px)]',
+    'keyboardStable',
+    '"85svh"',
   ]],
   ['src/components/pricing/CategorySelector.tsx', ['grid-cols-[58px_minmax(0,1fr)_auto]']],
 ]) {
