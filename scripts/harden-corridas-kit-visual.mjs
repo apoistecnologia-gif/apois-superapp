@@ -124,7 +124,7 @@ function replaceRequired(source, search, replacement, label) {
   }
 
   source = source
-    .replaceAll('inputRef.current?.focus();', 'inputRef.current?.focus({ preventScroll: true });\\n        window.requestAnimationFrame(() => window.scrollTo(0, 0));')
+    .replaceAll('inputRef.current?.focus();', 'inputRef.current?.focus({ preventScroll: true });\n        window.requestAnimationFrame(() => window.scrollTo(0, 0));')
     .replaceAll('bg-[#1a1a1a]', 'bg-[#0b0e14]/96 backdrop-blur-xl')
     .replaceAll('bg-[#2a2a2a]', 'bg-[#11151d]')
     .replace('className="sticky top-0 bg-[#0b0e14]/96 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="shrink-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"')
