@@ -109,7 +109,7 @@ function replaceRequired(source, search, replacement, label) {
     source = source
       .replace(
         '<BottomSheet isOpen={isBottomSheetOpen} onClose={handleClose} preventClose={isSelecting}>',
-        '<section className="absolute inset-0 z-[60] flex min-h-0 flex-col overflow-hidden bg-[#07090d]" aria-label="Buscar destino">',
+        '<section data-apois-search-fullscreen-v3="true" className="absolute inset-0 z-[60] flex min-h-0 flex-col overflow-hidden bg-[#07090d]" aria-label="Buscar destino">',
       )
       .replace(
         '<div className="flex flex-col h-full">',
@@ -159,7 +159,7 @@ function replaceRequired(source, search, replacement, label) {
     .replaceAll('text-xs text-gray-500 truncate', 'text-xs text-zinc-400 whitespace-normal break-words leading-snug')
     .replaceAll('border-b border-white/5', 'border border-white/8 bg-white/[0.025]');
 
-  for (const marker of ['APOIS_SEARCH_FULLSCREEN_V3', 'aria-label="Buscar destino"', 'APOIS_SEARCH_KEYBOARD_GUARD_V2', 'preventScroll: true', 'apois-kit-search-input', 'apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words']) {
+  for (const marker of ['data-apois-search-fullscreen-v3="true"', 'aria-label="Buscar destino"', 'APOIS_SEARCH_KEYBOARD_GUARD_V2', 'preventScroll: true', 'apois-kit-search-input', 'apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Busca incompleta (${marker})`);
   }
   write(path, source);
