@@ -171,51 +171,26 @@ if (existsSync(modernScreen)) {
   patch(
     'src/routes/_authenticated.buscar-destino.tsx',
     (source) => {
-      let next = source;
+      // O BottomSheet canônico já controla altura estável (85svh), animação e
+      // rolagem interna. Na rota legada basta ativar explicitamente esse modo.
+      // Fazemos isso sem depender da ordem das props ou das classes Tailwind.
+      if (/<BottomSheet\\b[^>]*\\bkeyboardStable\\b[^>]*>/.test(source)) {
+        return source;
+      }
 
-      // A rota pinada já mudou de forma algumas vezes. Em vez de depender da
-      // ordem exata das classes Tailwind, aplicamos apenas contratos estruturais.
-      next = next.replace(
-        /<div className="[^"]*min-h-screen[^"]*bg-transparent[^"]*relative[^"]*">/,
-        '<div className="relative flex h-[100svh] min-h-0 flex-col overflow-hidden bg-transparent">',
+      const next = source.replace(
+        /<BottomSheet\\b([^>]*?)>/,
+        (_match, props) => `<BottomSheet${props} keyboardStable>`,
       );
 
-      // Adiciona o modo estável ao primeiro BottomSheet da jornada, preservando
-      // todas as demais props, inclusive se outros hardeners já as alteraram.
-      next = next.replace(
-        /<BottomSheet\b([^>]*?)>/,
-        (match, props) => /\bkeyboardStable\b/.test(props)
-          ? match
-          : `<BottomSheet${props} keyboardStable>`,
-      );
-
-      // Container interno precisa poder encolher quando o teclado abre.
-      next = next.replace(
-        /<div className="flex flex-col h-full">/,
-        '<div className="flex h-full min-h-0 flex-col overflow-hidden">',
-      );
-
-      // A lista de resultados rola dentro do sheet, sem deslocar o viewport.
-      next = next.replace(
-        /<div className="flex-1 mt-2">/,
-        '<div className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain">',
-      );
+      if (next === source) {
+        throw new Error('[FAIL] Corridas: BottomSheet não encontrado na rota de busca de destino');
+      }
 
       return next;
     },
-    (source) => {
-      const hasStableSheet =
-        /<BottomSheet\b[^>]*\bkeyboardStable\b[^>]*>/.test(source);
-      const hasStableViewport =
-        source.includes('h-[100svh]') &&
-        source.includes('min-h-0') &&
-        source.includes('overflow-hidden');
-      const hasInternalScroll =
-        source.includes('overflow-y-auto') &&
-        source.includes('overscroll-contain');
-
-      return hasStableSheet && hasStableViewport && hasInternalScroll;
-    },
+    (source) =>
+      /<BottomSheet\\b[^>]*\\bkeyboardStable\\b[^>]*>/.test(source),
     'Corridas: busca de destino fica estável durante digitação e abertura do teclado',
   );
 }
