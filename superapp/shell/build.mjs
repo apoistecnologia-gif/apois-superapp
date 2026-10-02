@@ -30,6 +30,11 @@ for (const hardener of [
 ]) {
   runShellHardener(hardener);
 }
+execFileSync(process.execPath, [resolve(repoRoot, 'scripts/apply-apois-brand-v2.mjs'), 'shell-client', distIndex], {
+  cwd: repoRoot,
+  env: process.env,
+  stdio: 'inherit',
+});
 
 if (!existsSync(officialBranding)) {
   console.error(`[FAIL] arte oficial APOIS não existe em ${officialBranding}`);
@@ -88,7 +93,7 @@ const moduleBridgeScript = `
     button.style.borderRadius = '14px';
     button.style.border = '1px solid rgba(255,255,255,.14)';
     button.style.background = 'rgba(5,5,5,.88)';
-    button.style.color = '#f2b414';
+    button.style.color = 'var(--primary-brand, #F5222D)';
     button.style.fontSize = '24px';
     button.style.fontWeight = '900';
     button.style.boxShadow = '0 8px 26px rgba(0,0,0,.38)';
