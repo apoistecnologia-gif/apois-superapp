@@ -31,7 +31,8 @@ if (!styles.includes(cssMarker)) {
     '.apois-home-current-location{background:linear-gradient(180deg,rgb(17 19 24/.96),rgb(12 14 18/.96));border:1px solid rgb(255 255 255/.08);border-radius:17px;box-shadow:0 8px 24px rgb(0 0 0/.22)}',
     '.apois-home-search-compact{min-height:52px;background:linear-gradient(180deg,rgb(17 19 24/.97),rgb(14 16 20/.97));border-color:color-mix(in srgb,var(--primary-brand,#F5222D) 58%,transparent);box-shadow:0 10px 26px rgb(0 0 0/.25)}',
     '.apois-home-shortcut{min-height:48px;background:linear-gradient(180deg,rgb(17 19 24/.96),rgb(13 15 19/.96));border-color:rgb(255 255 255/.08);box-shadow:0 7px 20px rgb(0 0 0/.18)}',
-    '.apois-home-shortcut-premium{border-color:color-mix(in srgb,var(--accent,#D9A520) 58%,transparent);background:linear-gradient(180deg,rgb(40 31 10/.42),rgb(17 19 24/.96))}',
+    '.apois-home-shortcut-premium{border-color:color-mix(in srgb,var(--accent,#D9A520) 58%,transparent);background:linear-gradient(180deg,rgb(40 31 10/.42),rgb(17 19 24/.96));color:var(--accent,#D9A520)!important}',
+    '.apois-home-shortcut-premium>div{background:var(--accent,#D9A520)!important;color:var(--accent-foreground,#08090B)!important}',
     '@media(max-height:700px){.apois-home-compact-panel{padding-top:12px}.apois-home-current-location{min-height:44px}.apois-home-search-compact{min-height:48px}.apois-home-shortcut{min-height:44px}}',
   ].join('\n');
   styles += compactCss + '\n';
