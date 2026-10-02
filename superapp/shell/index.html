@@ -40,7 +40,9 @@
   }
   .content{position:relative;z-index:1}
   .brandbar{display:flex;align-items:center;justify-content:center;padding:8px 0 2px}
-  .brand-logo{display:block;width:min(82vw,310px);height:auto;max-height:86px;object-fit:contain}
+  .brand-lockup{display:flex;align-items:center;justify-content:center;gap:9px;min-height:72px}
+  .brand-mark{display:block;width:58px;height:58px;object-fit:contain;flex:0 0 auto}
+  .brand-name{font-size:43px;line-height:1;font-weight:900;letter-spacing:.16em;color:#fff}
   .brand-kicker{text-align:center;color:var(--gold-light);font-size:10px;font-weight:800;letter-spacing:.42em;margin-top:2px}
   .hero{margin:24px 2px 18px}
   .hero h1{margin:0;max-width:410px;font-size:clamp(36px,10.5vw,52px);line-height:.98;font-weight:950;letter-spacing:-.045em}
@@ -80,7 +82,7 @@
   .closing{text-align:center;padding:18px 0 0}.closing strong{font-size:26px;font-style:italic}.closing strong span{color:var(--red-strong)}.closing small{display:block;margin-top:8px;color:#BFC0C4;font-size:9px;letter-spacing:.36em}
   @media(max-width:380px){
     .screen{padding-left:12px;padding-right:12px}.services{gap:9px}.service{min-height:315px;padding:11px;border-radius:24px}
-    .visual{height:132px}.service h2{font-size:23px}.action{left:11px;right:11px;bottom:11px}.brand-logo{max-height:76px}
+    .visual{height:132px}.service h2{font-size:23px}.action{left:11px;right:11px;bottom:11px}.brand-mark{width:50px;height:50px}.brand-name{font-size:37px}
   }
   @media(max-height:720px){
     .hero{margin:12px 2px 14px}.hero h1{font-size:32px}.hero p{font-size:12px;margin-top:7px}
@@ -91,9 +93,7 @@
 <body>
   <main class="screen">
   <div class="content">
-    <div class="brandbar">
-      <img class="brand-logo" src="./assets/apois-wordmark-v3.svg" alt="APOIS" />
-    </div>
+    <div class="brandbar"><div class="brand-lockup" aria-label="APOIS"><img class="brand-mark" src="./assets/apois-mark-v3.svg" alt="" aria-hidden="true" /><span class="brand-name">POIS</span></div></div>
     <div class="brand-kicker">MOBILIDADE • ENTREGAS • CONEXÕES</div>
 
     <section class="hero">
