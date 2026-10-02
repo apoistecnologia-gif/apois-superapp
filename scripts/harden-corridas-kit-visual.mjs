@@ -105,12 +105,24 @@ function replaceRequired(source, search, replacement, label) {
   // viewport da rota, deixando cabeçalho/input fora da área rolável e apenas
   // os resultados com scroll. Isso elimina a disputa entre sheet, WebView e
   // adjustResize que fazia o campo desaparecer/tremular.
-  if (source.includes('<BottomSheet isOpen={isBottomSheetOpen}')) {
+  if (
+    source.includes('<BottomSheet isOpen={isBottomSheetOpen}') &&
+    !source.includes('data-apois-search-fullscreen-v3="true"')
+  ) {
+    const sectionOpen =
+      '<section data-apois-search-fullscreen-v3="true" className="absolute inset-0 z-[60] flex min-h-0 flex-col overflow-hidden bg-[#07090d]" aria-label="Buscar destino">';
+
+    for (const opening of [
+      '<BottomSheet isOpen={isBottomSheetOpen} onClose={handleClose} preventClose={isSelecting}>',
+      '<BottomSheet isOpen={isBottomSheetOpen} onClose={handleClose} preventClose={isSelecting} keyboardStable>',
+    ]) {
+      if (source.includes(opening)) {
+        source = source.replace(opening, sectionOpen);
+        break;
+      }
+    }
+
     source = source
-      .replace(
-        '<BottomSheet isOpen={isBottomSheetOpen} onClose={handleClose} preventClose={isSelecting}>',
-        '<section data-apois-search-fullscreen-v3="true" className="absolute inset-0 z-[60] flex min-h-0 flex-col overflow-hidden bg-[#07090d]" aria-label="Buscar destino">',
-      )
       .replace(
         '<div className="flex flex-col h-full">',
         '<div className="flex min-h-0 flex-1 flex-col overflow-hidden">',
