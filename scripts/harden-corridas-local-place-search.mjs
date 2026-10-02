@@ -160,7 +160,11 @@ export function useDestinationSearch(localityHint?: string | null) {`,
         );`,
     );
 
-    next = next.replace('    [location],', '    [currentPosition, locality],');
+    if (!next.includes('    [currentPosition, locality],')) {
+      next = next
+        .replace('    [location],', '    [currentPosition, locality],')
+        .replace('    [currentPosition],', '    [currentPosition, locality],');
+    }
 
     return next;
   },
