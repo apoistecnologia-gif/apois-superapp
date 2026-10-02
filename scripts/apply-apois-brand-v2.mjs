@@ -286,7 +286,11 @@ ${legacyUtilityOverrides('.apois-admin-theme')}
 
 function shell(path, partner=false) {
   if (!existsSync(path)) throw new Error(`Shell ausente: ${path}`);
-  const before = readFileSync(path, 'utf8');
+  const original = readFileSync(path, 'utf8');
+  const before = original.replace(
+    /<meta name="theme-color" content="[^"]*" \/>/,
+    `<meta name="theme-color" content="${p.black}" />`,
+  );
   const id = 'apois-brand-v2-shell';
   const style = `<style id="${id}">
 :root{--apois-black:${p.black};--apois-surface:${p.blackSecondary};--apois-surface-2:${p.blackElevated};--apois-red:${p.red};--apois-red-action:${s.primary};--apois-red-strong:${p.redStrong};--apois-gold:${p.gold};--apois-gold-light:${p.goldLight};--apois-text:#fff;--apois-muted:${p.textMuted};--gold:${p.gold};--gold2:${p.goldLight};--teal:${p.red}}
