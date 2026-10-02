@@ -19,7 +19,7 @@ for(const marker of [
 ]) if(!hardener.includes(marker)) fail('Corridas Safe2Pay hardener sem '+marker);
 
 const charge=read('supabase/functions/safe2pay-create-ride-pix/index.ts');
-const chargeCompact=charge.replace(/\\s+/g,' ');
+const chargeCompact=charge.replace(/\s+/g,' ');
 for(const marker of [
   'ride.payment_method !== "pix"',
   'ride.status !== "aguardando_pagamento"',
@@ -27,8 +27,8 @@ for(const marker of [
 ]) if(!charge.includes(marker)) fail('ride charge sem contrato: '+marker);
 
 for(const [label,pattern] of [
-  ['payment_provider safe2pay', /payment_provider:\\s*"safe2pay"/],
-  ['payment_status publicPix', /payment_status:\\s*publicPix\\.statusCode\\s*===\\s*"3"\\s*\\?\\s*"paid"\\s*:\\s*"pending"/],
+  ['payment_provider safe2pay', /payment_provider:\s*"safe2pay"/],
+  ['payment_status publicPix', /payment_status:\s*publicPix\.statusCode\s*===\s*"3"\s*\?\s*"paid"\s*:\s*"pending"/],
 ]) if(!pattern.test(chargeCompact)) fail('ride charge sem contrato: '+label);
 
 const webhook=read('supabase/functions/safe2pay-webhook/index.ts');
