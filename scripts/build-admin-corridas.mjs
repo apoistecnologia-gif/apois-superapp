@@ -54,6 +54,10 @@ run(process.execPath, [resolve(root, 'scripts/harden-admin-motorista-safe2pay-on
   ...process.env,
   APOIS_ADMIN_WORKSPACE: '.work/admin',
 });
+run(process.execPath, [resolve(root, 'scripts/apply-apois-brand-v2.mjs'), 'admin'], root, {
+  ...process.env,
+  APOIS_ADMIN_WORKSPACE: '.work/admin',
+});
 
 const env = {
   ...process.env,
