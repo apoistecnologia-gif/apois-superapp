@@ -132,7 +132,7 @@ if (checkout) {
 }
 const shellSource = requireFile('superapp/shell/index.html');
 if (shellSource) {
-  if (!shellSource.includes('./assets/apois-brand.png')) fail('shell ainda não usa a arte oficial APOIS');
+  if (!shellSource.includes('./assets/apois-brand-v2.jpg')) fail('shell ainda não usa a arte oficial APOIS');
   else if (shellSource.includes('<div class="logo-mark">A</div>')) fail('shell ainda contém marca provisória em texto'); else ok('shell usa arte oficial APOIS');
   if (!shellSource.includes("return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';")) fail('entrada dos módulos não é determinística por sessão'); else ok('shell envia sessão válida para Início e sessão ausente para Login');
 }
