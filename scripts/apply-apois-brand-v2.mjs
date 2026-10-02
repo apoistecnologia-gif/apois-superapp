@@ -57,7 +57,7 @@ function walkText(dir, fn) {
   }
 }
 
-const BRAND_SOURCE = resolve(root, 'superapp/branding/apois-brand-v2.jpg');
+const BRAND_SOURCE = resolve(root, 'superapp/branding/apois-launcher.png');
 
 function requireBrandSource() {
   if (!existsSync(BRAND_SOURCE)) throw new Error(`Logo oficial APOIS Brand V2 ausente: ${BRAND_SOURCE}`);
@@ -65,7 +65,7 @@ function requireBrandSource() {
 }
 
 function brandDataUrl() {
-  return `data:image/jpeg;base64,${requireBrandSource().toString('base64')}`;
+  return `data:image/png;base64,${requireBrandSource().toString('base64')}`;
 }
 
 function syncPublicRasterBrand(ws) {
@@ -73,7 +73,7 @@ function syncPublicRasterBrand(ws) {
   if (!existsSync(publicDir)) return;
   // A arte oficial atual é JPEG. Não grave bytes JPEG em arquivos .png:
   // mantenha os ícones legados até o pipeline Android convertê-los corretamente.
-  writeFileSync(resolve(publicDir, 'apois-brand-v2.jpg'), requireBrandSource());
+  writeFileSync(resolve(publicDir, 'apois-brand-v2.png'), requireBrandSource());
 }
 
 function syncSvgBrandWrapper(ws) {
@@ -278,7 +278,7 @@ ${legacyUtilityOverrides('.apois-customer-theme')}
     if (existsSync(resolve(ws,file))) replaceBlock(resolve(ws,file), block);
   }
 
-  const officialLogo = resolve(root, 'superapp/branding/apois-brand-v2.jpg');
+  const officialLogo = resolve(root, 'superapp/branding/apois-launcher.png');
   if (!existsSync(officialLogo)) throw new Error('Logo oficial APOIS Brand V2 ausente');
   const logoData = readFileSync(officialLogo).toString('base64');
   const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" role="img" aria-label="APOIS">
