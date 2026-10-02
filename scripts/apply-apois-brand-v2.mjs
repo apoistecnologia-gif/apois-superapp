@@ -8,19 +8,28 @@ if (!target) throw new Error('Uso: node scripts/apply-apois-brand-v2.mjs <corrid
 const tokens = JSON.parse(readFileSync(resolve(root, 'design-system/apois-brand-v2.json'), 'utf8'));
 const p = tokens.palette;
 const s = tokens.semantic;
-const MARKER = '/* APOIS_BRAND_V2 */';
+const MARKER_BEGIN = '/* APOIS_BRAND_V2_BEGIN */';
+const MARKER_END = '/* APOIS_BRAND_V2_END */';
+const LEGACY_MARKER_BEGIN = '/* APOIS_BRAND_V2 */ BEGIN';
+const LEGACY_MARKER_END = '/* APOIS_BRAND_V2 */ END';
 
 function replaceBlock(path, block) {
   if (!existsSync(path)) throw new Error(`Arquivo visual ausente: ${path}`);
-  const before = readFileSync(path, 'utf8');
-  const begin = `${MARKER} BEGIN`;
-  const end = `${MARKER} END`;
-  const wrapped = `${begin}\n${block.trim()}\n${end}`;
+  let before = readFileSync(path, 'utf8');
+
+  // Migra qualquer saída antiga inválida para marcadores CSS válidos.
+  // O formato "/* APOIS_BRAND_V2 */ BEGIN" deixava BEGIN/END como tokens
+  // CSS crus e o LightningCSS encerrava o build com "Unexpected end of input".
+  before = before
+    .replaceAll(LEGACY_MARKER_BEGIN, MARKER_BEGIN)
+    .replaceAll(LEGACY_MARKER_END, MARKER_END);
+
+  const wrapped = `${MARKER_BEGIN}\n${block.trim()}\n${MARKER_END}`;
   let after;
-  const start = before.indexOf(begin);
-  const finish = before.indexOf(end);
+  const start = before.indexOf(MARKER_BEGIN);
+  const finish = before.indexOf(MARKER_END);
   if (start >= 0 && finish > start) {
-    after = before.slice(0, start) + wrapped + before.slice(finish + end.length);
+    after = before.slice(0, start) + wrapped + before.slice(finish + MARKER_END.length);
   } else {
     after = `${before.trimEnd()}\n\n${wrapped}\n`;
   }
