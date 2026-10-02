@@ -282,7 +282,7 @@ ${legacyUtilityOverrides('.apois-customer-theme')}
   if (!existsSync(officialLogo)) throw new Error('Logo oficial APOIS Brand V2 ausente');
   const logoData = readFileSync(officialLogo).toString('base64');
   const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" role="img" aria-label="APOIS">
-  <image href="data:image/jpeg;base64,${logoData}" width="384" height="384" preserveAspectRatio="xMidYMid slice"/>
+  <image href="data:image/svg+xml;base64,${logoData}" width="384" height="384" preserveAspectRatio="xMidYMid meet"/>
 </svg>`;
   for (const logoFile of ['public/apois-logo.svg', 'public/apois-logo-customer.svg']) {
     const logoPath = resolve(ws, logoFile);
