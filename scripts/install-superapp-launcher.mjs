@@ -3,8 +3,8 @@ import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSyn
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const legacySource = resolve('superapp/branding/apois-launcher.png');
-const foregroundSource = resolve('superapp/branding/apois-launcher-foreground.png');
+const legacySource = resolve('superapp/branding/apois-brand-v2.jpg');
+const foregroundSource = resolve('superapp/branding/apois-brand-v2.jpg');
 const resRoot = resolve('superapp/shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
 const stringsPath = resolve('superapp/shell/android/app/src/main/res/values/strings.xml');
