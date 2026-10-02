@@ -1,4 +1,5 @@
 import '../../scripts/harden-partner-shell-startup.mjs';
+import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -66,7 +67,13 @@ if (!shellHtml.includes('__APOIS_BRAND_DATA_URL__')) {
   process.exit(1);
 }
 shellHtml = shellHtml.replace('__APOIS_BRAND_DATA_URL__', brandDataUrl);
-writeFileSync(resolve(dist, 'index.html'), shellHtml, 'utf8');
+const distIndex = resolve(dist, 'index.html');
+writeFileSync(distIndex, shellHtml, 'utf8');
+execFileSync(process.execPath, [resolve(root, '../../scripts/apply-apois-brand-v2.mjs'), 'shell-partner', distIndex], {
+  cwd: resolve(root, '../..'),
+  env: process.env,
+  stdio: 'inherit',
+});
 
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
 cpSync(branding, resolve(dist, 'assets/apois-brand.png'));
