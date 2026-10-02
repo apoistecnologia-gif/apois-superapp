@@ -249,6 +249,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-terminal-reset.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-fast-active-poll.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-local-place-search.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-oauth-callback-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-safe2pay-payment-flow.mjs')]);
