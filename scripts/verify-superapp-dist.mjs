@@ -125,6 +125,7 @@ requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['fixed bottom-0
 requireMarkers('superapp/shell/index.html',[
   './assets/apois-mark-v3.svg',
   'class="brand-lockup"',
+  'data-apois-reference-home-v4="true"',
   'O seu caminho.',
   'Do seu jeito.',
   'data-module="corridas"',
