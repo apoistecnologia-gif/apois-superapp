@@ -21,6 +21,8 @@ for (const marker of [
   'apois-home-current-location',
   'apois-home-search-compact',
   'apois-home-shortcut-premium',
+  'apois-home-bottom-nav',
+  'min-h-[64px]',
   'text-[28px]',
   'min-h-11',
   '<PassengerMap',
