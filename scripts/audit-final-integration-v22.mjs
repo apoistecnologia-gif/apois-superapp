@@ -123,12 +123,14 @@ requireAll('scripts/harden-superapp-shell-iconography.mjs', [
 
 requireAll('scripts/harden-entregas-superapp-customer-ux.mjs', [
   "import './harden-entregas-superapp-brand-theme.mjs';",
-], 'Entregas aplica identidade preto/dourado antes da UX interna');
+], 'Entregas aplica identidade visual central antes da UX interna');
 requireAll('scripts/harden-entregas-superapp-brand-theme.mjs', [
-  'APOIS_CUSTOMER_GOLD_V1',
-  '--primary: oklch(0.82 0.16 84)',
-  "replaceAll('#35A9C9', '#F6BE1C')",
-], 'Cliente Entregas converte tema e logomarca antiga para identidade APOIS');
+  'APOIS_CUSTOMER_UNIFIED_LIGHT_V1',
+  '--background: #F7F7F8',
+  '--primary: #E51B23',
+  '--border: #E2E4E8',
+  "replaceAll('#35A9C9', '#E51B23')",
+], 'Cliente Entregas converte apenas identidade antiga para a paleta APOIS clara');
 
 requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
   "import './harden-entregas-customer-auth-mobile-ui.mjs';",
@@ -169,10 +171,11 @@ requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   '@media(max-width:380px)',
 ], 'seletor Parceiro V4 está protegido para telas baixas/estreitas e segue a referência aprovada');
 requireAll('scripts/harden-partner-entregador-theme.mjs', [
-  'APOIS_PARTNER_COURIER_GOLD_V1',
-  '--primary: oklch(0.82 0.16 84)',
-  '#f6be1c',
-], 'Entregador preserva a mesma identidade preto/dourado do ecossistema APOIS');
+  'APOIS_PARTNER_COURIER_UNIFIED_LIGHT_V1',
+  '--background:#F7F7F8',
+  '--primary:#E51B23',
+  '--border:#E2E4E8',
+], 'Entregador preserva a mesma identidade clara vermelho/preto/branco do ecossistema APOIS');
 
 const workflowsDir = resolve('.github/workflows');
 if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
