@@ -25,7 +25,7 @@ function replaceRequired(source, search, replacement, label) {
   const path = 'src/styles.css';
   let source = read(path);
   if (!source.includes('APOIS_VISUAL_KIT_V1')) {
-    source += `\n\n/* APOIS_VISUAL_KIT_V1 */\n.apois-kit-home { background:#07090d; }\n.apois-kit-home-panel {\n  background:linear-gradient(180deg,rgba(8,10,14,.82) 0%,rgba(7,9,13,.97) 24%,#050608 100%);\n  border-top:1px solid rgba(255,184,0,.18);\n  border-radius:30px 30px 0 0;\n  box-shadow:0 -20px 50px rgba(0,0,0,.58);\n}\n.apois-kit-search-screen { background:#07090d; }\n.apois-kit-search-results { scrollbar-width:none; }\n.apois-kit-search-results::-webkit-scrollbar { display:none; }\n.apois-kit-category-list { scrollbar-width:none; }\n.apois-kit-category-list::-webkit-scrollbar { display:none; }\n`;
+    source += `\n\n/* APOIS_VISUAL_KIT_V1 */\n.apois-kit-home { background:#F7F7F8; }\n.apois-kit-home-panel {\n  background:linear-gradient(180deg,rgba(247,247,248,.78) 0%,rgba(255,255,255,.97) 24%,#FFFFFF 100%);\n  border-top:1px solid #E2E4E8;\n  border-radius:30px 30px 0 0;\n  box-shadow:0 -12px 34px rgba(17,17,17,.08);\n}\n.apois-kit-search-screen { background:#F7F7F8; }\n.apois-kit-search-results { scrollbar-width:none; }\n.apois-kit-search-results::-webkit-scrollbar { display:none; }\n.apois-kit-category-list { scrollbar-width:none; }\n.apois-kit-category-list::-webkit-scrollbar { display:none; }\n`;
     write(path, source);
   }
   console.log('[OK] Corridas: APOIS_VISUAL_KIT_V1 registrado');
@@ -159,7 +159,7 @@ function replaceRequired(source, search, replacement, label) {
     .replaceAll('inputRef.current?.focus();', 'inputRef.current?.focus({ preventScroll: true });\n        window.requestAnimationFrame(() => window.scrollTo(0, 0));')
     .replaceAll('bg-[#1a1a1a]', 'bg-white/96 backdrop-blur-xl')
     .replaceAll('bg-[#2a2a2a]', 'bg-white')
-    .replace('className="sticky top-0 bg-[#0b0e14]/96 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="shrink-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"')
+    .replace('className="sticky top-0 bg-[#0b0e14]/96 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="shrink-0 z-30 bg-white/96 pt-2 pb-3 backdrop-blur-xl border-b border-[#E2E4E8]"')
     .replace('className="sticky top-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"', 'className="shrink-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"')
     .replace('className="flex-1 mt-2"', 'className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain [overflow-anchor:none]"')
     .replace('className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain"', 'className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain [overflow-anchor:none]"')
