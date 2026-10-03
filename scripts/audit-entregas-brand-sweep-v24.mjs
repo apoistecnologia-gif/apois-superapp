@@ -13,19 +13,18 @@ function read(path) {
 
 const sweep = read('scripts/harden-entregas-brand-sweep.mjs');
 for (const marker of [
-  "legacyGreenHex = ['#39B54A', '#39b54a']",
   "legacyPurpleHex = ['#6A1B9A', '#6a1b9a']",
   "legacyTealHex = ['#35A9C9', '#35a9c9', '#1F7894', '#1f7894']",
-  ".replaceAll('rgba(57,181,74,', 'rgba(246,190,28,')",
-  ".replaceAll('rgba(106,27,154,', 'rgba(200,138,8,')",
-  ".replaceAll('rgba(53,169,201,', 'rgba(246,190,28,')",
-  "/apois.*logo.*\\.svg$/i",
-  ".replaceAll('#39B54A', '#F6BE1C')",
-  'Estados semânticos continuam livres para green/red/amber',
+  "legacyGoldHex = ['#FFD700', '#F6B900', '#FACC15', '#F6BE1C', '#C88A08']",
+  "replaceAll(value, '#E51B23')",
+  "replace('const BRAND_GREEN = \"#39B54A\";', 'const BRAND_GREEN = \"#E51B23\";')",
+  '/apois.*logo.*\\.svg$/i',
+  "replaceAll('#39B54A', '#E51B23')",
+  'Verde semântico continua preservado',
 ]) {
   if (!sweep.includes(marker)) fail(`sweep incompleto: ${marker}`);
 }
-if (!failed) ok('varredura remove cores explícitas da marca antiga, converte logos e preserva classes semânticas de estado');
+if (!failed) ok('varredura remove somente identidade antiga e não converte verde semântico de forma genérica');
 
 const customerUx = read('scripts/harden-entregas-superapp-customer-ux.mjs');
 if (!customerUx.includes("import './harden-entregas-brand-sweep.mjs';")) fail('Cliente Entregas não executa brand sweep no pipeline');
@@ -35,17 +34,18 @@ const courierMap = read('scripts/harden-partner-entregador-map.mjs');
 for (const marker of [
   "import './harden-partner-entregador-theme.mjs';",
   "import './harden-entregas-brand-sweep.mjs';",
-  'const APOIS_GOLD = "#F6BE1C";',
+  'const APOIS_PRIMARY = "#E51B23";',
+  'strokeColor: APOIS_PRIMARY',
   "source.includes('const BRAND_PURPLE') || source.includes('const BRAND_GREEN')",
 ]) {
   if (!courierMap.includes(marker)) fail(`Entregador sem proteção final: ${marker}`);
 }
-if (!failed) ok('Entregador aplica tema, varredura e rota dourada sem constantes antigas');
+if (!failed) ok('Entregador aplica tema, varredura e rota própria em vermelho APOIS');
 
 const brandTheme = read('scripts/harden-entregas-superapp-brand-theme.mjs');
-for (const marker of ['APOIS_CUSTOMER_GOLD_V1', '#F6BE1C', '#C88A08', '#050505']) {
+for (const marker of ['APOIS_CUSTOMER_UNIFIED_LIGHT_V1','#E51B23','#F7F7F8','#FFFFFF','#E2E4E8']) {
   if (!brandTheme.includes(marker)) fail(`tema Cliente sem marcador ${marker}`);
 }
-if (!failed) ok('tema Cliente preserva base preto/dourado oficial');
+if (!failed) ok('tema Cliente usa a base clara unificada');
 
 process.exit(failed ? 1 : 0);
