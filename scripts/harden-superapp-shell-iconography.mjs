@@ -14,7 +14,7 @@ const boxSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 
 if (!isReferenceV4) {
   source = source.replace(
     '.vehicle,.delivery{position:relative;z-index:1;margin-bottom:20px;font-size:62px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}',
-    '.vehicle,.delivery{position:relative;z-index:1;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px;color:#f6be1c;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}.vehicle svg,.delivery svg{width:54px;height:54px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}.badge svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
+    '.vehicle,.delivery{position:relative;z-index:1;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px;color:#E51B23;filter:drop-shadow(0 8px 12px rgba(17,17,17,.10))}.vehicle svg,.delivery svg{width:54px;height:54px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}.badge svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
   );
   source = source.replace('<div class="badge">🚘</div><div class="vehicle">🚗🏍️</div>', `<div class="badge">${carSvg}</div><div class="vehicle">${carSvg}${motoSvg}</div>`);
   source = source.replace('<div class="badge">🛍</div><div class="delivery">🛵📦</div>', `<div class="badge">${bagSvg}</div><div class="delivery">${motoSvg}${boxSvg}</div>`);
