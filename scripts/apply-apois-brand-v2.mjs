@@ -169,6 +169,30 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary-brand); 
 ::selection { background: color-mix(in srgb, var(--primary-brand) 30%, transparent); color: var(--text-primary); }
 `;
 
+// Somente ações já identificadas como primárias da APOIS. Google, controles
+// semânticos, switches e elementos do mapa não participam destes seletores.
+function primaryControlStates(scope = '') {
+  const q = scope ? `${scope} ` : '';
+  const driverLegacy = scope === 'html[data-app-role="motorista"]' ? ', [class~="bg-[#F6BE1C]"]' : '';
+  const control = `${q}:is(button, a[role="button"]):is([class~="bg-primary"], [class~="bg-apois-primary"], [class~="bg-[#E51B23]"], [class~="bg-[var(--primary)]"]${driverLegacy}):not([role="switch"]):not([role="checkbox"]):not([role="radio"]):not(.gm-style *)`;
+  const enabled = `${control}:not(:disabled):not([aria-disabled="true"])`;
+  return `
+/* APOIS_PRIMARY_CONTROL_STATES */
+${control} { background-color: var(--apois-primary) !important; color: var(--apois-white) !important; }
+@media (hover: hover) {
+  ${enabled}:hover { background-color: var(--apois-primary-hover) !important; }
+}
+${enabled}:active { background-color: var(--apois-primary-pressed) !important; }
+${control}:is(:disabled, [aria-disabled="true"]) {
+  background-color: var(--apois-surface-secondary) !important;
+  background-image: none !important;
+  color: var(--apois-text-disabled) !important;
+  box-shadow: none !important;
+  opacity: 1;
+}
+`;
+}
+
 function legacyUtilityOverrides(scope) {
   const q = scope ? `${scope} ` : '';
   const old = ['#6A1B9A','#1F7894','#35A9C9','#FFD700','#F6B900','#FACC15','#F6BE1C'];
@@ -182,6 +206,44 @@ ${border} { border-color: var(--primary-brand) !important; }
 `;
 }
 
+function driverBrandDetails() {
+  const q = 'html[data-app-role="motorista"]';
+  // Classes do branding dourado nos overlays/CTAs dos hardeners existentes.
+  // Mantemos as classes e todos os seletores usados pelos audits.
+  const softBackgrounds = [8, 10, 12].map(alpha =>
+    `${q} [class~="bg-[#F6BE1C]/${alpha}"] { background-color: color-mix(in srgb, var(--apois-primary) ${alpha}%, transparent) !important; }`
+  ).join('\n');
+  const brandBorders = [15, 18, 20, 25, 30, 55].map(alpha =>
+    `${q} [class~="border-[#F6BE1C]/${alpha}"] { border-color: color-mix(in srgb, var(--apois-primary) ${alpha}%, transparent) !important; }`
+  ).join('\n');
+  const brandRings = [20, 40].flatMap(alpha => ['', 'focus-visible:', 'focus-within:'].map(prefix =>
+    `${q} [class~="${prefix}ring-[#F6BE1C]/${alpha}"] { --tw-ring-color: color-mix(in srgb, var(--apois-primary) ${alpha}%, transparent); }`
+  )).join('\n');
+  return `
+/* APOIS_DRIVER_BRAND_DETAILS */
+${q} .surface-card { background: var(--apois-surface); border-color: var(--apois-border); box-shadow: 0 12px 28px rgb(17 17 17 / .08); }
+${q} ::selection { background: var(--apois-primary-soft); color: var(--apois-text); }
+${q} *:not(.gm-style *) { scrollbar-color: color-mix(in srgb, var(--apois-primary) 28%, transparent) transparent; }
+${q} *:not(.gm-style *)::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--apois-primary) 28%, transparent); }
+${q} .driver-nav-active .driver-nav-icon { background: var(--apois-primary-soft); }
+${q} .driver-nav-active .driver-nav-indicator { box-shadow: 0 4px 12px rgb(17 17 17 / .08); }
+${q} .driver-menu-active .driver-menu-icon { box-shadow: 0 8px 20px rgb(17 17 17 / .08); }
+${q} .driver-menu-active p:first-of-type { color: var(--apois-text); }
+${q} :is(button, a):not(.gm-style *):focus-visible { outline-color: var(--apois-primary); }
+${q} :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select):not(.gm-style *) {
+  background-color: var(--apois-surface);
+  color: var(--apois-text);
+  border-color: var(--apois-border);
+  caret-color: var(--apois-primary);
+}
+${q} :is(input, textarea):not(.gm-style *)::placeholder { color: var(--apois-text-disabled); }
+${q} [class~="ring-[#F6BE1C]"] { --tw-ring-color: var(--apois-primary); }
+${softBackgrounds}
+${brandBorders}
+${brandRings}
+`;
+}
+
 function appCss(scope=':root, .dark') {
   return `
 ${scope} {
@@ -190,6 +252,7 @@ ${vars}
 }
 body { background: var(--background); color: var(--foreground); }
 ${compatibility}
+${primaryControlStates()}
 `;
 }
 
@@ -220,6 +283,7 @@ input, textarea, select { background-color: var(--input); color: var(--text-prim
 input::placeholder, textarea::placeholder { color: var(--muted-foreground); }
 input:focus, textarea:focus, select:focus { border-color: var(--primary-brand); }
 ${legacyUtilityOverrides('')}
+${primaryControlStates()}
 `);
 
   walkText(resolve(ws, 'src'), (text) => text
@@ -311,6 +375,8 @@ ${vars}
 }
 ${legacyUtilityOverrides('.apois-system-theme')}
 ${legacyUtilityOverrides('.apois-customer-theme')}
+${primaryControlStates('.apois-system-theme')}
+${primaryControlStates('.apois-customer-theme')}
 `;
   for (const file of ['src/system-theme.css','src/customer-theme.css']) {
     if (existsSync(resolve(ws,file))) replaceBlock(resolve(ws,file), block);
@@ -361,6 +427,8 @@ html[data-app-role="motorista"] .driver-menu-active .driver-menu-icon {
   color: var(--primary-foreground);
 }
 ${legacyUtilityOverrides('html[data-app-role="motorista"]')}
+${driverBrandDetails()}
+${primaryControlStates('html[data-app-role="motorista"]')}
 `);
   patchText(resolve(ws, 'src/design-system/tokens.ts'), (text) => text
     .replace('"#8DD92B"', `"${p.red}"`)
@@ -388,6 +456,7 @@ ${vars}
 .apois-admin-theme textarea:focus,
 .apois-admin-theme select:focus { border-color: var(--primary-brand); }
 ${legacyUtilityOverrides('.apois-admin-theme')}
+${primaryControlStates('.apois-admin-theme')}
 `);
 }
 
@@ -403,7 +472,9 @@ function shell(path, partner=false) {
 :root{
   --apois-primary:${p.primary};
   --apois-primary-hover:${p.primaryHover};
+  --apois-primary-pressed:${p.primaryPressed};
   --apois-primary-soft:${p.primarySoft};
+  --apois-white:${p.white};
   --apois-black:${p.black};
   --apois-black-secondary:${p.blackSecondary};
   --apois-background:${p.background};
@@ -411,6 +482,7 @@ function shell(path, partner=false) {
   --apois-surface-secondary:${p.surfaceSecondary};
   --apois-border:${p.border};
   --apois-text:${s.textPrimary};
+  --apois-text-disabled:${p.textDisabled};
   --apois-muted:${p.textSecondary};
   --red:${p.primary};
   --red-strong:${p.primary};
@@ -433,6 +505,12 @@ html,body{background:${p.background}!important;color:${s.textPrimary}!important;
   box-shadow:0 10px 24px rgb(229 27 35 / .18)!important
 }
 .action:hover,.card button:hover,.role-card button:hover{background:${p.primaryHover}!important}
+.action:not(:disabled):not([aria-disabled="true"]):active,
+.card button:not(:disabled):not([aria-disabled="true"]):active,
+.role-card button:not(:disabled):not([aria-disabled="true"]):active{background:var(--apois-primary-pressed)!important}
+.action:is(:disabled,[aria-disabled="true"]),
+.card button:is(:disabled,[aria-disabled="true"]),
+.role-card button:is(:disabled,[aria-disabled="true"]){background:var(--apois-surface-secondary)!important;color:var(--apois-text-disabled)!important;box-shadow:none!important;opacity:1}
 .corridas .badge,.entregas .badge,.role-icon{border-color:${p.primary}!important;color:${p.primary}!important;background:${p.primarySoft}!important}
 .vehicle,.delivery,.feature .ico,.closing strong span,.partner-heading h1 span,.role-title strong span{color:${p.primary}!important}
 ${partner ? '.partner-screen::before,.partner-screen::after{opacity:.08!important}.partner-heading p,.role-copy{color:'+p.textSecondary+'!important}' : ''}
