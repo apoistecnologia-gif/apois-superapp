@@ -72,9 +72,9 @@ function brandDataUrl() {
 function syncPublicRasterBrand(ws) {
   const publicDir = resolve(ws, 'public');
   if (!existsSync(publicDir)) return;
-  // A arte oficial atual é JPEG. Não grave bytes JPEG em arquivos .png:
-  // mantenha os ícones legados até o pipeline Android convertê-los corretamente.
+  if (!existsSync(MARK_SOURCE)) throw new Error(`Símbolo oficial APOIS ausente: ${MARK_SOURCE}`);
   writeFileSync(resolve(publicDir, 'apois-wordmark-v3.svg'), requireBrandSource());
+  writeFileSync(resolve(publicDir, 'apois-mark-v3.svg'), readFileSync(MARK_SOURCE));
 }
 
 function syncSvgBrandWrapper(ws) {
