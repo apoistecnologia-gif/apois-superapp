@@ -264,6 +264,13 @@ ${q} .driver-nav-active .driver-nav-icon { background: var(--apois-primary-soft)
 ${q} .driver-nav-active .driver-nav-indicator { box-shadow: 0 4px 12px rgb(17 17 17 / .08); }
 ${q} .driver-menu-active .driver-menu-icon { box-shadow: 0 8px 20px rgb(17 17 17 / .08); }
 ${q} .driver-menu-active p:first-of-type { color: var(--apois-text); }
+${q} [class*="rgba(141,217,43,0.7)"]:not(.gm-style *) { box-shadow: 0 0 8px rgb(17 17 17 / .08) !important; }
+${q} [class*="rgba(141,217,43,0.55)"]:not(.gm-style *) { filter: drop-shadow(0 0 8px rgb(17 17 17 / .08)) !important; }
+${q} [class~="shadow-[0_0_0_3px_rgba(246,190,28,0.08)]"] { box-shadow: 0 0 0 3px color-mix(in srgb, var(--apois-primary) 8%, transparent); }
+${q} [role="status"][class~="bg-[#050607]"] { background-color: var(--apois-background); color: var(--apois-text); }
+${q} section[aria-label="Recebimento direto ao motorista"] { background-color: var(--apois-surface); }
+${q} section[aria-label="Recebimento direto ao motorista"] [class~="text-zinc-400"] { color: var(--apois-text-secondary); }
+${q} [role="status"][class~="bg-[#050607]"] [class~="border-t-[#F6BE1C]"] { border-top-color: var(--apois-primary); }
 ${q} :is(button, a):not(.gm-style *):focus-visible { outline-color: var(--apois-primary); }
 ${q} :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select):not(.gm-style *) {
   background-color: var(--apois-surface);
@@ -272,6 +279,10 @@ ${q} :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):no
   caret-color: var(--apois-primary);
 }
 ${q} :is(input, textarea):not(.gm-style *)::placeholder { color: var(--apois-text-disabled); }
+${q} :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select):not(.gm-style *):focus {
+  border-color: var(--apois-primary);
+  outline-color: var(--apois-primary);
+}
 ${q} [class~="ring-[#F6BE1C]"] { --tw-ring-color: var(--apois-primary); }
 ${softBackgrounds}
 ${brandBorders}
@@ -542,7 +553,7 @@ html,body{background:${p.background}!important;color:${s.textPrimary}!important;
 .action,.card button,.role-card button{
   background:${p.primary}!important;
   color:${p.white}!important;
-  box-shadow:0 10px 24px rgb(229 27 35 / .18)!important
+  box-shadow:0 10px 24px rgb(17 17 17 / .08)!important
 }
 .action:hover,.card button:hover,.role-card button:hover{background:${p.primaryHover}!important}
 .action:not(:disabled):not([aria-disabled="true"]):active,
