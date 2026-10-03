@@ -19,19 +19,21 @@ function check(path, required, label) {
 
 check('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "import './harden-superapp-shell-iconography.mjs';",
-  ".replace('--teal:#15d5ca;', '--teal:#f2b414;')",
+  "data-apois-reference-home-v4",
+  "class=\"brand-lockup\"",
+  "class=\"brand-mark\"",
+  ".visual svg",
   "source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes('#09b8b0')",
-  'object-fit:contain;padding:6px',
-  '.vehicle svg,.delivery svg',
-], 'Seletor Cliente transforma a paleta antiga em preto/dourado e protege logo sem corte');
+], 'Seletor Cliente reconhece Home V4, protege marca sem corte e rejeita teal legado');
 
 check('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
   'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
   '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
-  'Carro • Moto • Envios',
+  "data-apois-reference-home-v4",
+  ".visual svg",
   '<strong>Apois, <span>vamos?</span></strong>',
-], 'Seletor substitui emojis por SVG determinístico e valida categorias/slogan finais');
+], 'Seletor aceita a iconografia SVG nativa da Home V4 e preserva slogan final');
 
 check('scripts/harden-partner-shell-mobile-ui.mjs', [
   'object-fit:contain;padding:8px',
