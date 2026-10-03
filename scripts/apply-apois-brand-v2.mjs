@@ -98,22 +98,35 @@ function syncEmbeddedBrandModule(ws) {
 }
 
 const vars = `
+  --apois-primary: ${p.primary};
+  --apois-primary-hover: ${p.primaryHover};
+  --apois-primary-pressed: ${p.primaryPressed};
+  --apois-primary-soft: ${p.primarySoft};
   --apois-black: ${p.black};
   --apois-black-secondary: ${p.blackSecondary};
-  --apois-black-elevated: ${p.blackElevated};
-  --apois-red: ${p.red};
-  --apois-red-strong: ${p.redStrong};
-  --apois-red-dark: ${p.redDark};
   --apois-white: ${p.white};
-  --apois-white-secondary: ${p.whiteSecondary};
-  --apois-text-muted: ${p.textMuted};
-  --apois-gold: ${p.gold};
-  --apois-gold-light: ${p.goldLight};
-  --apois-gold-dark: ${p.goldDark};
+  --apois-background: ${p.background};
+  --apois-surface: ${s.surface};
+  --apois-surface-secondary: ${p.surfaceSecondary};
+  --apois-border: ${p.border};
+  --apois-text: ${s.textPrimary};
+  --apois-text-secondary: ${p.textSecondary};
+  --apois-text-disabled: ${p.textDisabled};
+
+  /* aliases técnicos temporários para hardeners antigos */
+  --apois-red: ${p.primary};
+  --apois-red-strong: ${p.primary};
+  --apois-red-dark: ${p.primaryHover};
+  --apois-white-secondary: ${p.background};
+  --apois-text-muted: ${p.textDisabled};
+  --apois-gold: ${p.primary};
+  --apois-gold-light: ${p.primarySoft};
+  --apois-gold-dark: ${p.primaryHover};
+
   --background: ${s.background};
   --foreground: ${s.textPrimary};
   --surface: ${s.surface};
-  --surface-2: ${s.surfaceElevated};
+  --surface-2: ${p.surfaceSecondary};
   --surface-elevated: ${s.surfaceElevated};
   --card: ${s.surface};
   --card-foreground: ${s.textPrimary};
@@ -131,7 +144,7 @@ const vars = `
   --accent-foreground: ${s.accentForeground};
   --text-primary: ${s.textPrimary};
   --text-secondary: ${s.textSecondary};
-  --muted: ${s.surfaceElevated};
+  --muted: ${p.surfaceSecondary};
   --muted-foreground: ${s.textMuted};
   --border: ${s.border};
   --input: ${s.input};
@@ -145,8 +158,8 @@ const vars = `
   --sidebar-foreground: ${s.textPrimary};
   --sidebar-primary: ${s.primary};
   --sidebar-primary-foreground: ${s.primaryForeground};
-  --sidebar-accent: ${s.surfaceElevated};
-  --sidebar-accent-foreground: ${s.textPrimary};
+  --sidebar-accent: ${s.accent};
+  --sidebar-accent-foreground: ${s.accentForeground};
   --sidebar-border: ${s.border};
   --sidebar-ring: ${s.ring};
 `;
@@ -158,7 +171,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary-brand); 
 
 function legacyUtilityOverrides(scope) {
   const q = scope ? `${scope} ` : '';
-  const old = ['#39B54A','#6A1B9A','#1F7894','#35A9C9','#FFD700','#F6B900','#FACC15','#F6BE1C'];
+  const old = ['#6A1B9A','#1F7894','#35A9C9','#FFD700','#F6B900','#FACC15','#F6BE1C'];
   const text = old.map(c => `${q}[class~="text-[${c}]"]`).join(',\n');
   const bg = old.map(c => `${q}[class~="bg-[${c}]"]`).join(',\n');
   const border = old.map(c => `${q}[class~="border-[${c}]"]`).join(',\n');
@@ -173,7 +186,7 @@ function appCss(scope=':root, .dark') {
   return `
 ${scope} {
 ${vars}
-  color-scheme: dark;
+  color-scheme: light;
 }
 body { background: var(--background); color: var(--foreground); }
 ${compatibility}
@@ -190,13 +203,13 @@ function passenger() {
   replaceBlock(styles, `
 @theme {
   --color-primary: ${s.primary};
-  --color-secondary: ${s.accent};
+  --color-secondary: ${p.blackSecondary};
   --color-surface: ${s.surface};
   --color-apois-primary: ${s.primary};
   --color-apois-primary-hover: ${s.primaryHover};
   --color-apois-red: ${s.primaryBrand};
-  --color-apois-gold: ${s.accent};
-  --color-apois-gold-light: ${p.goldLight};
+  --color-apois-gold: ${s.primary};
+  --color-apois-gold-light: ${s.primarySoft};
   --color-apois-yellow: ${s.primary};
 }
 :root {
@@ -213,10 +226,10 @@ ${legacyUtilityOverrides('')}
     .replaceAll('apois-yellow', 'apois-primary')
     .replaceAll('#ffb800', p.red)
     .replaceAll('#FFB800', p.red)
-    .replaceAll('#ff5c00', p.gold)
-    .replaceAll('#FF5C00', p.gold)
-    .replaceAll('rgba(255,184,0', 'rgba(245,34,45')
-    .replaceAll('rgba(255, 184, 0', 'rgba(245, 34, 45')
+    .replaceAll('#ff5c00', p.primary)
+    .replaceAll('#FF5C00', p.primary)
+    .replaceAll('rgba(255,184,0', 'rgba(229,27,35')
+    .replaceAll('rgba(255, 184, 0', 'rgba(229, 27, 35')
   );
 
   // CTA/auth antigos usavam Tailwind yellow genérico como cor de marca.
@@ -257,7 +270,7 @@ function entregas(workspace) {
 .apois-system-theme,
 .apois-customer-theme {
 ${vars}
-  color-scheme: dark;
+  color-scheme: light;
 }
 .apois-system-theme body,
 .apois-customer-theme body { background: var(--background); color: var(--foreground); }
@@ -305,16 +318,16 @@ ${vars}
   --color-map-accent: ${s.primaryBrand};
   --color-online: ${s.success};
   --color-offline: ${s.textMuted};
-  color-scheme: dark;
+  color-scheme: light;
 }
 html[data-app-role="motorista"] body {
-  background: radial-gradient(circle at 50% -15%, rgb(245 34 45 / .08), transparent 28rem), var(--background);
+  background: radial-gradient(circle at 50% -15%, rgb(229 27 35 / .055), transparent 28rem), var(--background);
 }
 html[data-app-role="motorista"] input:focus,
 html[data-app-role="motorista"] textarea:focus,
 html[data-app-role="motorista"] select:focus {
   border-color: var(--primary-brand);
-  box-shadow: 0 0 0 3px rgb(245 34 45 / .12);
+  box-shadow: 0 0 0 3px rgb(229 27 35 / .12);
 }
 html[data-app-role="motorista"] .driver-nav-active .driver-nav-indicator,
 html[data-app-role="motorista"] .driver-nav-active .driver-nav-icon { color: var(--primary-brand); }
@@ -328,8 +341,8 @@ ${legacyUtilityOverrides('html[data-app-role="motorista"]')}
   patchText(resolve(ws, 'src/design-system/tokens.ts'), (text) => text
     .replace('"#8DD92B"', `"${p.red}"`)
     .replace('"#5FAF1A"', `"${p.redDark}"`)
-    .replace('"#05070D"', `"${p.black}"`)
-    .replace('"#121826"', `"${p.blackSecondary}"`)
+    .replace('"#05070D"', `"${p.background}"`)
+    .replace('"#121826"', `"${s.surface}"`)
   );
 }
 
@@ -343,7 +356,7 @@ ${vars}
   --primary-glow: ${s.primaryStrong};
   --color-online: ${s.success};
   --color-map-accent: ${s.primaryBrand};
-  color-scheme: dark;
+  color-scheme: light;
 }
 .apois-admin-theme .admin-page-main,
 .apois-admin-theme .admin-page-header { color: var(--text-primary); }
@@ -359,22 +372,46 @@ function shell(path, partner=false) {
   const original = readFileSync(path, 'utf8');
   const before = original.replace(
     /<meta name="theme-color" content="[^"]*" \/>/,
-    `<meta name="theme-color" content="${p.black}" />`,
+    `<meta name="theme-color" content="${p.white}" />`,
   );
   const id = 'apois-brand-v2-shell';
   const style = `<style id="${id}">
-:root{--apois-black:${p.black};--apois-surface:${p.blackSecondary};--apois-surface-2:${p.blackElevated};--apois-red:${p.red};--apois-red-action:${s.primary};--apois-red-strong:${p.redStrong};--apois-gold:${p.gold};--apois-gold-light:${p.goldLight};--apois-text:#fff;--apois-muted:${p.textMuted};--gold:${p.gold};--gold2:${p.goldLight};--teal:${p.red}}
-html,body{background:${p.black}!important;color:#fff!important}
-.screen{background:radial-gradient(circle at 50% 10%,rgb(245 34 45 / .12),transparent 30rem),${p.black}!important}
-.logo-mark,.logo{border-color:rgb(217 165 32 / .35)!important;box-shadow:0 0 34px rgb(217 165 32 / .12)!important}
-.brand{background:linear-gradient(180deg,#fff,${p.whiteSecondary})!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;text-shadow:none!important}
-.service,.card{background:linear-gradient(180deg,${p.blackSecondary},${p.black})!important;border-color:rgb(245 34 45 / .42)!important}
-.action,.card button{background:linear-gradient(135deg,${s.primary},${p.red})!important;color:#fff!important;box-shadow:0 12px 28px -18px rgb(245 34 45 / .55)!important}
-.action:hover,.card button:hover{background:${s.primaryHover}!important}
-.vehicle,.delivery,.feature .ico,.closing strong span{color:${p.gold}!important}
-.corridas .badge{border-color:${p.red}!important;color:${p.red}!important}
-.entregas .badge{border-color:${p.gold}!important;color:${p.gold}!important}
-${partner ? '.brand h1{color:#fff}.brand p{color:'+p.textMuted+'}' : ''}
+:root{
+  --apois-primary:${p.primary};
+  --apois-primary-hover:${p.primaryHover};
+  --apois-primary-soft:${p.primarySoft};
+  --apois-black:${p.black};
+  --apois-black-secondary:${p.blackSecondary};
+  --apois-background:${p.background};
+  --apois-surface:${s.surface};
+  --apois-surface-secondary:${p.surfaceSecondary};
+  --apois-border:${p.border};
+  --apois-text:${s.textPrimary};
+  --apois-muted:${p.textSecondary};
+  --red:${p.primary};
+  --red-strong:${p.primary};
+  --gold:${p.primary};
+  --gold2:${p.primarySoft};
+  --teal:${p.primary}
+}
+html,body{background:${p.background}!important;color:${s.textPrimary}!important;color-scheme:light!important}
+.screen,.partner-screen{background:${p.background}!important;color:${s.textPrimary}!important}
+.brand,.brand-name,.partner-heading h1,.role-title strong{color:${s.textPrimary}!important;text-shadow:none!important}
+.brand-kicker,.partner-tagline,.foot{color:${p.textSecondary}!important}
+.service,.card,.role-card{
+  background:${s.surface}!important;
+  border-color:${p.border}!important;
+  box-shadow:0 10px 28px rgb(17 17 17 / .08)!important
+}
+.action,.card button,.role-card button{
+  background:${p.primary}!important;
+  color:${p.white}!important;
+  box-shadow:0 10px 24px rgb(229 27 35 / .18)!important
+}
+.action:hover,.card button:hover,.role-card button:hover{background:${p.primaryHover}!important}
+.corridas .badge,.entregas .badge,.role-icon{border-color:${p.primary}!important;color:${p.primary}!important;background:${p.primarySoft}!important}
+.vehicle,.delivery,.feature .ico,.closing strong span,.partner-heading h1 span,.role-title strong span{color:${p.primary}!important}
+${partner ? '.partner-screen::before,.partner-screen::after{opacity:.08!important}.partner-heading p,.role-copy{color:'+p.textSecondary+'!important}' : ''}
 </style>`;
   let after = before.replace(new RegExp(`<style id="${id}">[\\s\\S]*?<\\/style>`), style);
   if (!after.includes(`id="${id}"`)) after = after.replace('</head>', `${style}\n</head>`);
@@ -392,4 +429,4 @@ switch (target) {
   default: throw new Error(`Target desconhecido: ${target}`);
 }
 
-console.log(`[OK] APOIS Brand V2 aplicado: ${target}`);
+console.log(`[OK] Identidade visual APOIS unificada aplicada: ${target}`);
