@@ -154,11 +154,15 @@ requireAll('superapp/partner-shell/build.mjs', [
 ], 'shell Parceiro inclui somente os dois papéis e bloqueia superfícies legadas');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
+  'data-apois-partner-reference-v4',
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:8px',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
-], 'seletor Parceiro está protegido para telas baixas/estreitas');
+  'class="partner-mark"',
+  'class="partner-wordmark"',
+  'class="role-card motorista"',
+  'class="role-card entregador"',
+  '@media(max-height:780px)',
+  '@media(max-width:380px)',
+], 'seletor Parceiro V4 está protegido para telas baixas/estreitas e segue a referência aprovada');
 requireAll('scripts/harden-partner-entregador-theme.mjs', [
   'APOIS_PARTNER_COURIER_GOLD_V1',
   '--primary: oklch(0.82 0.16 84)',
