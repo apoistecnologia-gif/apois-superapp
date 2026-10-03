@@ -14,7 +14,7 @@ function ensure(condition, message) {
   if (!condition) throw new Error('[FAIL] ' + message);
 }
 
-// LOGIN — referência visual: preto premium, vermelho dominante e dourado moderado.
+// LOGIN — referência visual APOIS clara: branco/cinza predominante, preto estrutural e vermelho de ação.
 // Mantém toda a lógica de autenticação existente; troca apenas o JSX final.
 {
   const path = 'src/routes/_public.login.tsx';
@@ -29,68 +29,68 @@ function ensure(condition, message) {
   ensure(returnStart >= 0 && returnEnd > returnStart, 'Corridas login: bloco JSX final não localizado');
 
   const jsx = `  return (
-    <div data-apois-reference-login-v4="true" className="relative flex min-h-0 flex-1 overflow-hidden bg-[#08090B] text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_8%,rgba(245,34,45,.18),transparent_30%),radial-gradient(circle_at_15%_72%,rgba(217,165,32,.10),transparent_28%),linear-gradient(180deg,#08090B_0%,#0B0C0F_55%,#08090B_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[28%] opacity-60 [background:linear-gradient(108deg,transparent_0_35%,rgba(245,34,45,.55)_35.5%_36%,transparent_36.5%_100%),linear-gradient(73deg,transparent_0_63%,rgba(217,165,32,.34)_63.5%_64%,transparent_64.5%_100%)]" />
+    <div data-apois-reference-login-v4="true" className="relative flex min-h-0 flex-1 overflow-hidden bg-[#F7F7F8] text-[#111111]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_8%,rgba(229,27,35,.08),transparent_30%),linear-gradient(180deg,#FFFFFF_0%,#F7F7F8_58%,#F1F2F4_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[22%] opacity-40 [background:linear-gradient(108deg,transparent_0_35%,rgba(229,27,35,.10)_35.5%_36%,transparent_36.5%_100%)]" />
 
       <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-[430px] flex-col overflow-y-auto px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(18px,env(safe-area-inset-top))]">
         <div className="mb-4 flex items-center justify-center">
           <div className="flex items-center gap-2" aria-label="APOIS">
             <svg data-apois-logo-mark-v4="true" viewBox="0 0 512 512" aria-hidden="true" className="h-12 w-12 shrink-0" focusable="false">
-              <path d="M75 401 213 101h78L154 401Z" fill="#F5222D" />
-              <path d="M258 101h78l139 300h-94Z" fill="#FF1F2D" />
-              <path d="M156 319h213l43 82H118Z" fill="#9E1018" />
-              <path d="M246 175 214 246h48l31-71Z" fill="#F4C44E" />
-              <path d="M288 252 260 315h48l28-63Z" fill="#F4C44E" />
+              <path d="M75 401 213 101h78L154 401Z" fill="#E51B23" />
+              <path d="M258 101h78l139 300h-94Z" fill="#C9141B" />
+              <path d="M156 319h213l43 82H118Z" fill="#111111" />
+              <path d="M246 175 214 246h48l31-71Z" fill="#242424" />
+              <path d="M288 252 260 315h48l28-63Z" fill="#242424" />
             </svg>
-            <span className="text-[34px] font-black leading-none tracking-[0.15em] text-white">POIS</span>
+            <span className="text-[34px] font-black leading-none tracking-[0.15em] text-[#111111]">POIS</span>
           </div>
         </div>
 
-        <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#F5222D]/45 bg-[#F5222D]/10 px-4 py-2 text-xs font-black tracking-wide text-white shadow-[0_0_28px_rgba(245,34,45,.12)]">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-[#F5222D]/15 text-[#FF1F2D]">●</span>
+        <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#E51B23]/20 bg-[#FFF1F2] px-4 py-2 text-xs font-black tracking-wide text-[#111111] shadow-[0_8px_24px_rgba(17,17,17,.05)]">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-[#FFF1F2] text-[#E51B23]">●</span>
           Corridas
         </div>
 
         <div className="mb-6 text-center">
           <h1 className="text-[32px] font-black leading-tight tracking-[-0.035em]">Entrar na APOIS</h1>
-          <p className="mx-auto mt-2 max-w-[330px] text-sm leading-6 text-[#A6A8AE]">Acesse sua conta e continue sua jornada com mais mobilidade.</p>
+          <p className="mx-auto mt-2 max-w-[330px] text-sm leading-6 text-[#666B73]">Acesse sua conta e continue sua jornada com mais mobilidade.</p>
         </div>
 
         <form onSubmit={handleLogin} className="w-full space-y-4" noValidate>
           <div className="space-y-1.5">
-            <label htmlFor="login-email" className="ml-1 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">E-mail</label>
-            <Input id="login-email" type="email" inputMode="email" autoCapitalize="none" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} className="h-14 w-full rounded-2xl border-white/10 bg-[#111318] px-4 text-white placeholder:text-zinc-600 focus:border-[#F5222D] focus:ring-1 focus:ring-[#F5222D]" autoComplete="email" />
+            <label htmlFor="login-email" className="ml-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#666B73]">E-mail</label>
+            <Input id="login-email" type="email" inputMode="email" autoCapitalize="none" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} className="h-14 w-full rounded-2xl border-[#E2E4E8] bg-white px-4 text-[#111111] placeholder:text-[#9CA1A9] focus:border-[#E51B23] focus:ring-1 focus:ring-[#E51B23]" autoComplete="email" />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="login-password" className="ml-1 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">Senha</label>
+            <label htmlFor="login-password" className="ml-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#666B73]">Senha</label>
             <div className="relative">
-              <Input id="login-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} className="h-14 w-full rounded-2xl border-white/10 bg-[#111318] px-4 pr-12 text-white placeholder:text-zinc-600 focus:border-[#F5222D] focus:ring-1 focus:ring-[#F5222D]" autoComplete="current-password" />
-              <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-zinc-500 active:bg-white/5" aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}>
+              <Input id="login-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} className="h-14 w-full rounded-2xl border-[#E2E4E8] bg-white px-4 pr-12 text-[#111111] placeholder:text-[#9CA1A9] focus:border-[#E51B23] focus:ring-1 focus:ring-[#E51B23]" autoComplete="current-password" />
+              <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-[#666B73] active:bg-[#F1F2F4]" aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}>
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
           <div className="flex justify-end pt-1">
-            <Link to="/recuperar-senha" className="text-sm font-bold text-[#FF1F2D] transition active:opacity-70">Esqueci minha senha?</Link>
+            <Link to="/recuperar-senha" className="text-sm font-bold text-[#E51B23] transition active:opacity-70">Esqueci minha senha?</Link>
           </div>
 
-          <button type="submit" disabled={loading} className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#F5222D] to-[#FF1F2D] text-base font-black uppercase tracking-[0.12em] text-white shadow-[0_14px_34px_rgba(245,34,45,.24)] transition active:scale-[0.985] disabled:opacity-50">
+          <button type="submit" disabled={loading} className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-[#E51B23] text-base font-black uppercase tracking-[0.12em] text-white shadow-[0_12px_28px_rgba(229,27,35,.18)] active:bg-[#C9141B] transition active:scale-[0.985] disabled:opacity-50">
             {loading ? <Loader2 className="animate-spin" /> : "Entrar"}
           </button>
         </form>
 
         <div className="w-full"><PassengerGoogleLoginButton /></div>
 
-        <div className="mt-7 rounded-2xl border border-[#D9A520]/20 bg-[#D9A520]/[0.035] px-4 py-4 text-center">
-          <span className="text-sm text-zinc-500">Ainda não tem uma conta?</span>
-          <Link to="/cadastro" className="mt-1 block text-sm font-black uppercase tracking-[0.12em] text-[#F4C44E] transition active:opacity-70">Criar minha conta</Link>
+        <div className="mt-7 rounded-2xl border border-[#E2E4E8] bg-white px-4 py-4 text-center">
+          <span className="text-sm text-[#666B73]">Ainda não tem uma conta?</span>
+          <Link to="/cadastro" className="mt-1 block text-sm font-black uppercase tracking-[0.12em] text-[#E51B23] transition active:opacity-70">Criar minha conta</Link>
         </div>
 
         <div className="mt-auto pt-7 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-zinc-700">Mobilidade que te leva mais longe</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#9CA1A9]">Mobilidade que te leva mais longe</p>
         </div>
       </div>
     </div>
@@ -152,19 +152,19 @@ function ensure(condition, message) {
   source = source
     .replaceAll('inputRef.current?.focus({ preventScroll: true });\n        window.requestAnimationFrame(() => window.scrollTo(0, 0));', 'inputRef.current?.focus({ preventScroll: true });')
     .replace(
-      'className="apois-kit-search-screen relative min-h-0 flex-1 overflow-hidden bg-[#07090d]"',
-      'className="apois-kit-search-screen relative h-full min-h-0 flex-1 overflow-hidden bg-[#07090d]"',
+      'className="apois-kit-search-screen relative min-h-0 flex-1 overflow-hidden bg-[#F7F7F8]"',
+      'className="apois-kit-search-screen relative h-full min-h-0 flex-1 overflow-hidden bg-[#F7F7F8]"',
     )
     .replace(
-      'className="apois-kit-search-screen flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#07090d] relative"',
-      'className="apois-kit-search-screen relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#07090d]"',
+      'className="apois-kit-search-screen flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#F7F7F8] relative"',
+      'className="apois-kit-search-screen relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#F7F7F8]"',
     )
     .replace(
-      'className="absolute inset-0 z-[60] flex min-h-0 flex-col overflow-hidden bg-[#07090d]"',
-      'className="relative z-[60] flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#07090d]"',
+      'className="absolute inset-0 z-[60] flex min-h-0 flex-col overflow-hidden bg-[#F7F7F8]"',
+      'className="relative z-[60] flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#F7F7F8]"',
     )
     .replace(
-      'className="shrink-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"',
+      'className="shrink-0 z-30 bg-white/96 pt-2 pb-3 backdrop-blur-xl"',
       'className="z-30 shrink-0 bg-[#0b0e14]/96 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-xl"',
     )
     .replace(
