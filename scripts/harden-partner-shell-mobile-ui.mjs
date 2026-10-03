@@ -8,8 +8,8 @@ const isReferenceV4 = source.includes('data-apois-partner-reference-v4="true"');
 
 if (!isReferenceV4) {
   source = source.replace(
-    '*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}body{min-height:100dvh}',
-    '*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}',
+    '*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#F7F7F8;color:#111111}body{min-height:100dvh}',
+    '*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#F7F7F8;color:#111111}body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}',
   );
   source = source.replace(
     '.logo img{display:block;width:100%;height:100%;object-fit:cover}',
@@ -61,5 +61,5 @@ if (isReferenceV4 && (/class="logo"/.test(source) || /object-fit:cover/.test(sou
 
 writeFileSync(path, source, 'utf8');
 console.log(isReferenceV4
-  ? '[OK] Shell Parceiro V4: referência premium aplicada, marca íntegra e cartões Motorista/Entregador responsivos.'
+  ? '[OK] Shell Parceiro V4: identidade APOIS clara aplicada, marca íntegra e cartões Motorista/Entregador responsivos.'
   : '[OK] Shell Parceiro: logo não corta, seletor adapta telas baixas/estreitas e permanece rolável.');
