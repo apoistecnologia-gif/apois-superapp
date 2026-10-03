@@ -35,6 +35,7 @@ for (const [target, workspace, stylesheet] of [
       }
       const ws = resolve(fixture, workspace);
       mkdirSync(resolve(ws, 'src/hooks'), { recursive: true });
+      mkdirSync(resolve(ws, 'src/routes'), { recursive: true });
       mkdirSync(resolve(ws, 'public'), { recursive: true });
       writeFileSync(resolve(ws, stylesheet), '/* tema existente preservado */\n');
       if (target === 'entregas') writeFileSync(resolve(ws, 'src/system-theme.css'), '/* tema sistema */\n');
@@ -42,6 +43,9 @@ for (const [target, workspace, stylesheet] of [
       const session = 'export const session = useSession();\nexport const channel = subscribeRealtime(session);\n';
       writeFileSync(resolve(ws, 'src/contracts.ts'), operational);
       writeFileSync(resolve(ws, 'src/hooks/use-session.ts'), session);
+      const appScript = '<script type="module" src="/src/main.tsx"></script>';
+      writeFileSync(resolve(ws, 'index.html'), `<html><head><meta name="theme-color" content="#05070D" /><link rel="icon" href="/favicon.png" type="image/png" /></head><body><div id="apois-fallback-loading" style="background:black;color:white"><p>Carregando APOIS...</p></div>${appScript}</body></html>`);
+      writeFileSync(resolve(ws, 'src/routes/__root.tsx'), 'export const head = { links: [{ rel: "icon", href: "/favicon.png", type: "image/png" }, { rel: "stylesheet", href: appCss }], meta: [{ name: "theme-color", content: "#05070D" }] };\n');
       const run = () => spawnSync(process.execPath, [resolve(root, 'scripts/apply-apois-brand-v2.mjs'), target], {
         cwd: fixture, encoding: 'utf8', env: {
           ...process.env, APOIS_MOTORISTA_WORKSPACE: workspace,
@@ -59,6 +63,12 @@ for (const [target, workspace, stylesheet] of [
       assert.match(css, /:not\(\.gm-style \*\)/);
       assert.equal(read(resolve(ws, 'src/contracts.ts')), operational);
       assert.equal(read(resolve(ws, 'src/hooks/use-session.ts')), session);
+      const html = read(resolve(ws, 'index.html'));
+      assert.ok(html.includes(appScript));
+      assert.match(html, /href="\.\/apois-mark-v3\.svg"/);
+      assert.match(html, /name="theme-color" content="#FFFFFF"/);
+      assert.match(html, /#apois-fallback-loading \{ background: var\(--apois-background, #F7F7F8\) !important/);
+      assert.match(read(resolve(ws, 'src/routes/__root.tsx')), /href: "\/apois-mark-v3\.svg", type: "image\/svg\+xml"/);
       assert.equal(read(resolve(ws, 'public/apois-mark-v3.svg')), read(resolve(root, 'superapp/branding/apois-mark-v3.svg')));
       if (target === 'motorista') {
         assert.match(css, /APOIS_DRIVER_BRAND_DETAILS/);

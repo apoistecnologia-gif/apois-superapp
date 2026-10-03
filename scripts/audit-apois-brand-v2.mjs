@@ -101,6 +101,8 @@ for (const marker of [
   '--apois-primary:',
   'APOIS_PRIMARY_CONTROL_STATES',
   'APOIS_DRIVER_BRAND_DETAILS',
+  'apois-brand-bootstrap',
+  'syncDocumentBrand(ws);',
   '--apois-primary-pressed:',
   '${primaryControlStates()}',
   "${primaryControlStates('.apois-system-theme')}",
@@ -116,6 +118,13 @@ for (const marker of [
   if (!applicator.includes(marker)) fail(`aplicador central sem marcador: ${marker}`);
 }
 if (!failed) ok('aplicador central cobre Passageiro, Entregas, Parceiro, Admin e shells');
+
+for (const path of ['superapp/shell/index.html', 'superapp/partner-shell/index.html']) {
+  const html = read(path);
+  if (!html.includes('<link rel="icon" type="image/svg+xml" href="./assets/apois-mark-v3.svg" />')) {
+    fail(`${path} não reutiliza o símbolo oficial como favicon`);
+  }
+}
 
 const modules = read('.apois/modules.json');
 for (const marker of ['apply-apois-brand-v2.mjs corridas','apply-apois-brand-v2.mjs entregas']) {

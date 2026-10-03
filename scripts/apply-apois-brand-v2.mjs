@@ -75,6 +75,41 @@ function syncPublicRasterBrand(ws) {
   if (!existsSync(MARK_SOURCE)) throw new Error(`Símbolo oficial APOIS ausente: ${MARK_SOURCE}`);
   writeFileSync(resolve(publicDir, 'apois-wordmark-v3.svg'), requireBrandSource());
   writeFileSync(resolve(publicDir, 'apois-mark-v3.svg'), readFileSync(MARK_SOURCE));
+  syncDocumentBrand(ws);
+}
+
+function syncDocumentBrand(ws) {
+  const icon = '<link rel="icon" type="image/svg+xml" href="./apois-mark-v3.svg" />';
+  const bootstrap = `<style id="apois-brand-bootstrap">
+#apois-fallback-loading { background: var(--apois-background, ${p.background}) !important; color: var(--apois-text, ${s.textPrimary}) !important; }
+#apois-fallback-loading p { color: var(--apois-primary, ${p.primary}) !important; }
+</style>`;
+  for (const file of ['index.html', 'index.mobile.html']) {
+    patchText(resolve(ws, file), source => {
+      let next = source.replace(/<meta\b(?=[^>]*\bname=["']theme-color["'])[^>]*>/gi, `<meta name="theme-color" content="${p.white}" />`);
+      const oldIcon = /<link\b(?=[^>]*\brel=["'](?:shortcut )?icon["'])[^>]*>/gi;
+      if (oldIcon.test(next)) next = next.replace(oldIcon, icon);
+      else next = next.replace('</head>', `${icon}\n</head>`);
+      const oldBootstrap = /<style id="apois-brand-bootstrap">[\s\S]*?<\/style>/;
+      if (oldBootstrap.test(next)) next = next.replace(oldBootstrap, bootstrap);
+      else next = next.replace('</head>', `${bootstrap}\n</head>`);
+      return next;
+    });
+  }
+  // Metadata SSR: somente href/type de favicon e a cor do chrome do navegador.
+  // Os builds móveis já normalizam os links absolutos do HTML renderizado.
+  patchText(resolve(ws, 'src/routes/__root.tsx'), source => {
+    let next = source.replace('{ name: "theme-color", content: "#05070D" }', `{ name: "theme-color", content: "${p.white}" }`);
+    for (const href of ['/favicon.png', './favicon.png', '/favicon.ico', './favicon.ico']) {
+      for (const type of ['image/png', 'image/x-icon', 'image/vnd.microsoft.icon']) {
+        next = next.replace(`{ rel: "icon", href: "${href}", type: "${type}" }`, '{ rel: "icon", href: "/apois-mark-v3.svg", type: "image/svg+xml" }');
+      }
+    }
+    if (!/rel:\s*["']icon["']/.test(next)) {
+      next = next.replace('{ rel: "stylesheet", href: appCss },', '{ rel: "icon", href: "/apois-mark-v3.svg", type: "image/svg+xml" },\n      { rel: "stylesheet", href: appCss },');
+    }
+    return next;
+  });
 }
 
 function syncSvgBrandWrapper(ws) {
