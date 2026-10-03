@@ -113,10 +113,18 @@ const required = [
   'linear-gradient(135deg,#F5222D,#FF1F2D)',
   'object-fit: contain !important',
   'Entrar na APOIS',
-  'Continuar com Google',
+  'PassengerGoogleLoginButton',
+  '<PassengerGoogleLoginButton />',
+  'to="/recuperar-senha"',
 ];
 const missing = required.filter((marker) => !next.includes(marker));
 if (missing.length) throw new Error('[FAIL] Corridas reference login V3: ' + missing.join(' | '));
+
+const googleButtonPath = resolve(root, workspace, 'src/components/auth/PassengerGoogleLoginButton.tsx');
+const googleButton = readFileSync(googleButtonPath, 'utf8');
+if (!googleButton.includes('Continuar com Google')) {
+  throw new Error('[FAIL] Corridas reference login V3: componente Google perdeu rótulo canônico');
+}
 
 if (next !== before) writeFileSync(path, next, 'utf8');
 console.log('[OK] Corridas login V3 segue referência premium sem alterar handlers de senha/Google/recuperação.');
