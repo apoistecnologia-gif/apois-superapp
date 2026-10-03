@@ -107,16 +107,19 @@ forbidAll('superapp/shell/build.mjs', ['partner-motorista', 'partner-entregador'
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "import './harden-superapp-shell-iconography.mjs';",
-  '--teal:#f2b414;',
-  'object-fit:contain;padding:6px',
+  'data-apois-reference-home-v4',
+  'class="brand-lockup"',
+  'class="brand-mark"',
+  '.visual svg',
   '@media(max-height:720px)',
-], 'seletor Cliente usa cadeia final preto/dourado, logo contida e viewport pequena');
+], 'seletor Cliente usa Home V4, lockup íntegro e viewport pequena');
 requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
   'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
-  'Carro • Moto • Envios',
+  'data-apois-reference-home-v4',
+  '.visual svg',
   '<strong>Apois, <span>vamos?</span></strong>',
-], 'copy e iconografia oficiais são aplicadas antes do mobile hardening');
+], 'copy e iconografia V4 são validadas antes do mobile hardening');
 
 requireAll('scripts/harden-entregas-superapp-customer-ux.mjs', [
   "import './harden-entregas-superapp-brand-theme.mjs';",
