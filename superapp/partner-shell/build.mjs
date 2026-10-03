@@ -130,6 +130,15 @@ forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saqu
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
 
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
+requireMarker(finalShell, 'data-apois-partner-reference-v4="true"', 'shell final segue a referência visual Parceiro V4');
+requireMarker(finalShell, 'class="partner-mark"', 'shell final mantém símbolo APOIS destacado');
+requireMarker(finalShell, 'class="partner-wordmark"', 'shell final mantém wordmark APOIS sem recorte');
+requireMarker(finalShell, 'class="role-card motorista"', 'shell final exibe card premium Motorista');
+requireMarker(finalShell, 'class="role-card entregador"', 'shell final exibe card premium Entregador');
+requireMarker(finalShell, 'Entrar como motorista', 'shell final mantém CTA Motorista');
+requireMarker(finalShell, 'Entrar como entregador', 'shell final mantém CTA Entregador');
+forbidMarker(finalShell, '__APOIS_BRAND_DATA_URL__', 'shell final não deixa placeholder do wordmark');
+forbidMarker(finalShell, '__APOIS_MARK_DATA_URL__', 'shell final não deixa placeholder do símbolo');
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
 requireMarker(finalShell, "/modules/motorista/index.html", 'shell ancora Motorista na raiz do WebView');
 requireMarker(finalShell, "/modules/entregador/index.html", 'shell ancora Entregador na raiz do WebView');
