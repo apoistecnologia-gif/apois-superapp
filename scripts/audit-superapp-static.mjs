@@ -210,7 +210,7 @@ requireText('superapp/shell/build.mjs', [
   "resolve(dist, 'assets/apois-wordmark-v3.svg')", "resolve(dist, 'assets/apois-mark-v3.svg')",
 ], 'shell empacota marca oficial');
 requireText('superapp/shell/capacitor.config.ts', [
-  "appId: 'br.com.apois.app'", "backgroundColor: '#050505'", 'overlaysWebView: false',
+  "appId: 'br.com.apois.app'", "backgroundColor: '#FFFFFF'", "style: 'DARK'", 'overlaysWebView: false',
 ], 'Capacitor usa package unificado e fundo correto');
 requireText('codemagic.yaml', [
   'android-superapp-experimental:', 'APP_PACKAGE: "br.com.apois.app"',
