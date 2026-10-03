@@ -34,7 +34,7 @@ if (!source.includes('APOIS_PERSISTENT_CONFIRM_CTA_V2')) {
               type="button"
               onClick={handleReview}
               disabled={!checkout.readiness || !!routeError}
-              aria-label={`Confirmar ${selectedCategory?.name || "Solicitação"}`}
+              aria-label={"Confirmar " + (selectedCategory?.name || "Solicitação")}
               className={cn(
                 "apois-ride-confirm-cta flex min-h-[56px] w-full items-center justify-center gap-2 rounded-[17px] px-5 py-3.5 text-base font-black transition-all active:scale-[0.985]",
                 checkout.readiness && !routeError
@@ -62,6 +62,7 @@ for (const marker of [
   'z-[120]',
   'onClick={handleReview}',
   'disabled={!checkout.readiness || !!routeError}',
+  'aria-label={"Confirmar " + (selectedCategory?.name || "Solicitação")}',
   'Confirmar {selectedCategory?.name || "Solicitação"}',
   'pb-28',
 ]) {
