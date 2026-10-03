@@ -65,35 +65,34 @@ patch('src/routes/motorista.app.tsx', (source) => {
     'Pagamento confirmado. Siga até o ponto de embarque.',
   );
 
-  // Cards de navegação: preto/grafite + dourado APOIS, eliminando o branco com
-  // texto claro que ficou ilegível no APK de campo.
+  // Cards de navegação: superfície branca, borda discreta e texto preto; nenhuma lógica alterada.
   next = next
     .replaceAll(
       'rounded-[22px] border border-white/70 bg-white/85 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150',
-      'rounded-[22px] border border-white/10 bg-[#080B11]/95 px-4 py-3 text-white shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl backdrop-saturate-150',
+      'rounded-[22px] border border-[#E2E4E8] bg-white/95 px-4 py-3 text-[#111111] shadow-[0_12px_32px_-18px_rgba(17,17,17,0.18)] backdrop-blur-xl backdrop-saturate-150',
     )
     .replaceAll(
       'rounded-[22px] bg-white/85 border border-white/70 backdrop-blur-md backdrop-saturate-150 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)]',
-      'rounded-[22px] bg-[#080B11]/95 border border-white/10 backdrop-blur-xl backdrop-saturate-150 px-4 py-3 text-white shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]',
+      'rounded-[22px] bg-white/95 border border-[#E2E4E8] backdrop-blur-xl backdrop-saturate-150 px-4 py-3 text-[#111111] shadow-[0_12px_32px_-18px_rgba(17,17,17,0.18)]',
     )
     .replaceAll(
       'rounded-[22px] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150',
       'rounded-[22px] border border-white/10 bg-[#080B11]/95 px-4 py-3 text-white shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl backdrop-saturate-150',
     )
-    .replaceAll('className="h-9 w-px bg-black/10"', 'className="h-9 w-px bg-white/10"')
+    .replaceAll('className="h-9 w-px bg-black/10"', 'className="h-9 w-px bg-black/10"')
     .replaceAll(
       'className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-black/[0.04] text-black/60 ring-1 ring-black/10 transition hover:bg-black/[0.08] hover:text-destructive disabled:opacity-50"',
-      'className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.06] text-white/75 ring-1 ring-white/10 transition hover:bg-white/[0.10] hover:text-destructive disabled:opacity-50"',
+      'className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F1F2F4] text-[#666B73] ring-1 ring-[#E2E4E8] transition hover:bg-[#FFF1F2] hover:text-destructive disabled:opacity-50"',
     );
 
-  // TopStat é usado nos cards escuros de navegação; força contraste alto.
+  // TopStat mantém hierarquia em cards claros; highlight continua usando o token primary.
   next = next.replace(
     'className={`flex items-center gap-1.5 ${highlight ? "text-primary" : "text-foreground/85"}`}',
-    'className={`flex items-center gap-1.5 ${highlight ? "text-primary" : "text-white/90"}`}',
+    'className={`flex items-center gap-1.5 ${highlight ? "text-primary" : "text-foreground/85"}`}',
   );
   next = next.replace(
     'className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>',
-    'className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">{label}</div>',
+    'className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#666B73]">{label}</div>',
   );
 
   // Fase "indo até o passageiro" fica explícita e não parece que o motorista
@@ -108,12 +107,12 @@ patch('src/routes/motorista.app.tsx', (source) => {
 
   next = next.replaceAll(
     'className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#F6BE1C] text-[15px] font-bold uppercase tracking-[0.06em] text-black shadow-[0_10px_22px_-14px_rgba(246,190,28,0.45)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"',
-    'className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#F6BE1C] text-[15px] font-black uppercase tracking-[0.06em] text-black shadow-[0_14px_32px_-14px_rgba(246,190,28,0.55)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"',
+    'className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#E51B23] text-[15px] font-black uppercase tracking-[0.06em] text-white shadow-[0_12px_28px_-14px_rgba(229,27,35,0.32)] transition active:scale-[0.98] active:bg-[#C9141B] hover:bg-[#C9141B] disabled:cursor-not-allowed disabled:bg-[#F1F2F4] disabled:text-[#9CA1A9]"',
   );
 
   next = next.replaceAll(
     'bg-[#0B0F17]/95 backdrop-blur-xl',
-    'bg-[#080B11]/[.97] backdrop-blur-xl',
+    'bg-white/[.97] border border-[#E2E4E8] backdrop-blur-xl',
   );
 
   const requiredMarkers = [
@@ -122,7 +121,7 @@ patch('src/routes/motorista.app.tsx', (source) => {
     'route_polyline_empty',
     'nearDestination',
     'Pagamento confirmado. Siga até o ponto de embarque.',
-    'bg-[#080B11]/95',
+    'bg-white/95',
     'Siga a rota até o ponto de embarque',
     'Confirmar chegada',
   ];
