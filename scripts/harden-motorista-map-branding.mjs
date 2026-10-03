@@ -24,13 +24,13 @@ patch('src/components/mapMarkers.tsx', (source) => {
     if (!next.includes(marker)) throw new Error('mapMarkers.tsx: PIN_PATH não encontrado');
     next = next.replace(
       marker,
-      `${marker}\n// Identidade da localização ativa: pin preto APOIS com A dourado no centro.\nconst APOIS_DRIVER_LOCATION_A_PATH = "M7.6 14.4 L11.05 5.7 C11.4 4.8 12.6 4.8 12.95 5.7 L16.4 14.4 M9.15 10.9 H14.85";`,
+      `${marker}\n// Identidade da localização ativa: pin APOIS com base preta e acento vermelho no centro.\nconst APOIS_DRIVER_LOCATION_A_PATH = "M7.6 14.4 L11.05 5.7 C11.4 4.8 12.6 4.8 12.95 5.7 L16.4 14.4 M9.15 10.9 H14.85";`,
     );
   }
 
   const oldReturn = `  if (!validPosition(position) || !validPosition(display)) return null;\n  return <>\n    <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol("CIRCLE"), scale: 15, fillColor: safeDriverColor, fillOpacity: 0.1, strokeColor: safeDriverColor, strokeOpacity: 0.28, strokeWeight: 1.2 }} />\n    <CarShape position={display} heading={displayHeading} scale={safeDriverScale} bodyColor={safeDriverColor} outlineColor="#090A0B" zBase={10000} />\n  </>;`;
 
-  const brandedReturn = `  if (!validPosition(position) || !validPosition(display)) return null;\n  const brandedScale = Math.max(1.45, Math.min(2.15, safeDriverScale));\n  return <>\n    <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol("CIRCLE"), scale: 10 * brandedScale, fillColor: safeDriverColor, fillOpacity: 0.08, strokeColor: safeDriverColor, strokeOpacity: 0.26, strokeWeight: 1.2 }} />\n    <Marker\n      position={display}\n      clickable={false}\n      title="APOIS • localização do motorista"\n      zIndex={10000}\n      icon={{ path: PIN_PATH, fillColor: "#080B11", fillOpacity: 1, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.2, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n    <Marker\n      position={display}\n      clickable={false}\n      zIndex={10001}\n      icon={{ path: APOIS_DRIVER_LOCATION_A_PATH, fillOpacity: 0, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.35, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n  </>;`;
+  const brandedReturn = `  if (!validPosition(position) || !validPosition(display)) return null;\n  const brandedScale = Math.max(1.45, Math.min(2.15, safeDriverScale));\n  return <>\n    <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol("CIRCLE"), scale: 10 * brandedScale, fillColor: safeDriverColor, fillOpacity: 0.08, strokeColor: safeDriverColor, strokeOpacity: 0.26, strokeWeight: 1.2 }} />\n    <Marker\n      position={display}\n      clickable={false}\n      title="APOIS • localização do motorista"\n      zIndex={10000}\n      icon={{ path: PIN_PATH, fillColor: "#111111", fillOpacity: 1, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.2, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n    <Marker\n      position={display}\n      clickable={false}\n      zIndex={10001}\n      icon={{ path: APOIS_DRIVER_LOCATION_A_PATH, fillOpacity: 0, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.35, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n  </>;`;
 
   if (!next.includes(brandedReturn)) {
     if (!next.includes(oldReturn)) throw new Error('mapMarkers.tsx: retorno do InterpolatedDriverMarker não encontrado');
@@ -38,6 +38,6 @@ patch('src/components/mapMarkers.tsx', (source) => {
   }
 
   return next;
-}, 'motorista: marcador de localização APOIS com A dourado');
+}, 'motorista: marcador de localização APOIS com acento vermelho');
 
 console.log(`[OK] branding de mapa do Motorista concluído em ${workspace}`);
