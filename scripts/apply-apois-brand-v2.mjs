@@ -412,7 +412,9 @@ ${vars}
   color-scheme: light;
 }
 .apois-system-theme body,
-.apois-customer-theme body { background: var(--background); color: var(--foreground); }
+.apois-system-theme body > div,
+.apois-customer-theme body,
+.apois-customer-theme body > div { background: var(--background); color: var(--foreground); }
 .apois-system-theme input:focus,
 .apois-system-theme textarea:focus,
 .apois-system-theme select:focus,
@@ -420,10 +422,31 @@ ${vars}
 .apois-customer-theme textarea:focus,
 .apois-customer-theme select:focus { border-color: var(--primary-brand); }
 .apois-system-theme [class*="from-primary"][class*="to-accent"],
-.apois-customer-theme [class*="from-primary"][class*="to-accent"] {
+.apois-system-theme [class*="from-primary"][class*="via-primary"][class*="to-accent"],
+.apois-customer-theme [class*="from-primary"][class*="to-accent"],
+.apois-customer-theme [class*="from-primary"][class*="via-primary"][class*="to-accent"] {
   background-image: linear-gradient(135deg, var(--primary), var(--primary-brand)) !important;
   color: var(--primary-foreground) !important;
 }
+/* Mesma especificidade dos temas dos pins: cards e efeitos antigos não usam
+ * somente variáveis. Gráficos (--chart-*) e estados operacionais permanecem. */
+${['.apois-system-theme', '.apois-customer-theme'].map(scope => `
+${scope} .apois-customer-card,
+${scope} .apois-system-card {
+  background: var(--apois-surface);
+  border-color: var(--apois-border);
+  box-shadow: 0 12px 34px rgb(17 17 17 / .08);
+}
+${scope} .apois-customer-soft-glow,
+${scope} .apois-system-soft-glow { box-shadow: 0 10px 30px rgb(17 17 17 / .08); }
+${scope} [class*="rgba(57,181,74"],
+${scope} [class*="rgba(106,27,154"],
+${scope} [class*="rgba(31,120,148"],
+${scope} [class*="rgba(53,169,201"] { --tw-shadow-color: rgb(17 17 17 / .08) !important; }
+${scope} [class~="ring-[#FFD700]"],
+${scope} [class~="ring-[#F6B900]"],
+${scope} [class~="ring-[#FACC15]"] { --tw-ring-color: var(--apois-primary) !important; }
+`).join('\n')}
 ${legacyUtilityOverrides('.apois-system-theme')}
 ${legacyUtilityOverrides('.apois-customer-theme')}
 ${primaryControlStates('.apois-system-theme')}
