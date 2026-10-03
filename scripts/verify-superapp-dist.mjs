@@ -133,13 +133,20 @@ requireMarkers('superapp/shell/index.html',[
 ],'shell cliente segue referência premium e usa lockup íntegro');
 requireMarkers('.work/corridas/src/routes/_public.login.tsx',[
   'data-apois-reference-login-v4="true"',
+  'data-apois-logo-mark-v4="true"',
+  'viewBox="0 0 512 512"',
   'Entrar na APOIS',
-  './apois-mark-v3.svg',
   'PassengerGoogleLoginButton',
   '<PassengerGoogleLoginButton />',
   'onSubmit={handleLogin}',
   'to="/recuperar-senha"',
-],'login Corridas segue referência V4 sem perder Google/senha');
+],'login Corridas segue referência V4 com símbolo vetorial inline e sem perder Google/senha');
+forbidMarkers('.work/corridas/src/routes/_public.login.tsx',[
+  'src="./apois-mark-v3.svg"',
+],'login Corridas não depende de asset relativo para a marca');
+for(const path of ['.work/corridas/dist/apois-wordmark-v3.svg','.work/corridas/dist/apois-mark-v3.svg']){
+  if(existsSync(resolve(root,path))) ok(path); else fail(`asset de marca Corridas ausente: ${path}`);
+}
 requireMarkers('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx',[
   'Continuar com Google',
   'signInWithOAuth',
