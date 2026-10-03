@@ -37,7 +37,8 @@ for (const [target, workspace, stylesheet] of [
       mkdirSync(resolve(ws, 'src/hooks'), { recursive: true });
       mkdirSync(resolve(ws, 'src/routes'), { recursive: true });
       mkdirSync(resolve(ws, 'public'), { recursive: true });
-      writeFileSync(resolve(ws, stylesheet), '/* tema existente preservado */\n');
+      const legacyAvatar = '.apois-home-avatar{border-color:var(--accent,#D9A520);box-shadow:0 0 0 1px rgb(217 165 32/.10),0 8px 20px rgb(0 0 0/.32)}';
+      writeFileSync(resolve(ws, stylesheet), `/* tema existente preservado */\n${target === 'corridas' ? legacyAvatar : ''}\n`);
       if (target === 'entregas') writeFileSync(resolve(ws, 'src/system-theme.css'), '/* tema sistema */\n');
       const operational = 'export const status = { online: "#16A34A", warning: "#F59E0B", info: "#2563EB" };\nexport const google = ["#4285F4", "#34A853", "#FBBC05", "#EA4335"];\nexport const actions = { onSubmit: handleLogin, onAccept: handleAccept, request_key: "unchanged" };\n';
       const session = 'export const session = useSession();\nexport const channel = subscribeRealtime(session);\n';
@@ -70,6 +71,11 @@ for (const [target, workspace, stylesheet] of [
       assert.match(html, /#apois-fallback-loading \{ background: var\(--apois-background, #F7F7F8\) !important/);
       assert.match(read(resolve(ws, 'src/routes/__root.tsx')), /href: "\/apois-mark-v3\.svg", type: "image\/svg\+xml"/);
       assert.equal(read(resolve(ws, 'public/apois-mark-v3.svg')), read(resolve(root, 'superapp/branding/apois-mark-v3.svg')));
+      if (target === 'corridas') {
+        assert.ok(css.indexOf('.apois-home-avatar {') > css.indexOf('rgb(217 165 32/.10)'), 'o acabamento novo deve vir depois do hardener compacto');
+        assert.match(css, /\.apois-home-avatar \{\s*border-color: var\(--apois-primary\);/);
+        assert.match(css, /0 0 0 1px color-mix\(in srgb, var\(--apois-primary\) 10%, transparent\), 0 8px 20px rgb\(17 17 17 \/ \.08\)/);
+      }
       if (target === 'motorista') {
         assert.match(css, /APOIS_DRIVER_BRAND_DETAILS/);
         assert.match(css, /\[class~="bg-\[#F6BE1C\]\/8"\].*var\(--apois-primary\) 8%/);

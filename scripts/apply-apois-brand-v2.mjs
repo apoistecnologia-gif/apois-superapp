@@ -319,6 +319,11 @@ input::placeholder, textarea::placeholder { color: var(--muted-foreground); }
 input:focus, textarea:focus, select:focus { border-color: var(--primary-brand); }
 ${legacyUtilityOverrides('')}
 ${primaryControlStates()}
+/* Acabamento do avatar próprio; não alcança overlays ou marcadores do mapa. */
+.apois-home-avatar {
+  border-color: var(--apois-primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--apois-primary) 10%, transparent), 0 8px 20px rgb(17 17 17 / .08);
+}
 `);
 
   walkText(resolve(ws, 'src'), (text) => text
