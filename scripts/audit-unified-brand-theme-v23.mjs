@@ -13,16 +13,17 @@ function read(path) {
 
 const customerTheme = read('scripts/harden-entregas-superapp-brand-theme.mjs');
 for (const marker of [
-  'APOIS_CUSTOMER_GOLD_V1',
-  '--primary: oklch(0.82 0.16 84)',
-  '#f6be1c',
-  '#050505',
-  "replaceAll('#1F7894', '#C88A08')",
-  "replaceAll('#35A9C9', '#F6BE1C')",
+  'APOIS_CUSTOMER_UNIFIED_LIGHT_V1',
+  '--background: #F7F7F8',
+  '--primary: #E51B23',
+  '--border: #E2E4E8',
+  'color-scheme: light',
+  "replaceAll('#1F7894', '#111111')",
+  "replaceAll('#35A9C9', '#E51B23')",
 ]) {
   if (!customerTheme.includes(marker)) fail(`Cliente Entregas sem regra de marca: ${marker}`);
 }
-if (!failed) ok('Cliente Entregas converte tema e logomarca interna para preto/dourado');
+if (!failed) ok('Cliente Entregas usa branco/cinza, preto e vermelho APOIS');
 
 const customerUx = read('scripts/harden-entregas-superapp-customer-ux.mjs');
 if (!customerUx.startsWith("import './harden-entregas-superapp-brand-theme.mjs';")) {
@@ -30,16 +31,40 @@ if (!customerUx.startsWith("import './harden-entregas-superapp-brand-theme.mjs';
 } else ok('tema de Entregas é aplicado antes das correções UX');
 
 const courierTheme = read('scripts/harden-partner-entregador-theme.mjs');
-for (const marker of ['APOIS_PARTNER_COURIER_GOLD_V1', '--primary: oklch(0.82 0.16 84)', '#f6be1c']) {
-  if (!courierTheme.includes(marker)) fail(`Entregador sem regra preto/dourado: ${marker}`);
+for (const marker of [
+  'APOIS_PARTNER_COURIER_UNIFIED_LIGHT_V1',
+  '--background:#F7F7F8',
+  '--primary:#E51B23',
+  'color-scheme:light',
+]) {
+  if (!courierTheme.includes(marker)) fail(`Entregador sem identidade unificada: ${marker}`);
 }
-if (!failed) ok('Entregador permanece no mesmo preto/dourado do Parceiro');
+if (!failed) ok('Entregador usa a mesma identidade do restante do ecossistema');
 
-const shellTheme = read('scripts/harden-superapp-shell-mobile-ui.mjs');
-if (!shellTheme.includes(".replace('--teal:#15d5ca;', '--teal:#f2b414;')")) fail('seletor Cliente não converte teal para dourado');
-else ok('seletor Superapp permanece alinhado ao preto/dourado');
+const driverApplicator = read('scripts/apply-apois-brand-v2.mjs');
+for (const marker of [
+  'html[data-app-role="motorista"]',
+  '--color-online: ${s.success};',
+  '--color-map-accent: ${s.primaryBrand};',
+  'color-scheme: light;',
+]) {
+  if (!driverApplicator.includes(marker)) fail(`Motorista sem regra visual central: ${marker}`);
+}
+if (!failed) ok('Motorista usa identidade central e mantém verde somente para online/sucesso');
 
-const packageJson = JSON.parse(read('package.json'));
+const shell = read('superapp/shell/index.html');
+for (const marker of ['--bg:#F7F7F8','--red:#E51B23','--border:#E2E4E8','background:#FFFFFF']) {
+  if (!shell.includes(marker)) fail(`Shell Cliente sem identidade clara: ${marker}`);
+}
+if (!failed) ok('Shell Cliente usa branco/cinza predominante e vermelho de ação');
+
+const partnerShell = read('superapp/partner-shell/index.html');
+for (const marker of ['background:#F7F7F8','--red:#E51B23','--surface:#FFFFFF','--border:#E2E4E8']) {
+  if (!partnerShell.includes(marker)) fail(`Shell Parceiro sem identidade clara: ${marker}`);
+}
+if (!failed) ok('Shell Parceiro usa a mesma identidade do Superapp');
+
+const packageJson = JSON.parse(read('package.json') || '{}');
 const uiAudit = String(packageJson.scripts?.['audit:ui'] ?? '');
 if (!uiAudit.includes('audit-unified-brand-theme-v23.mjs')) fail('audit:ui não inclui v23');
 else ok('v23 está encadeada no gate visual');
