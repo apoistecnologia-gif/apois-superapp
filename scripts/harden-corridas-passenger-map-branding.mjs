@@ -24,8 +24,8 @@ patch('src/components/map/ActiveRideMap.tsx', (source) => {
     .replace('{ featureType: "water", elementType: "geometry", stylers: [{ color: "#0d2532" }] },', '{ featureType: "water", elementType: "geometry", stylers: [{ color: "#082b3a" }] },')
     .replace('{ featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#67808c" }] },', '{ featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#7ca0af" }] },');
 
-  // Padroniza rota e destino no dourado oficial APOIS.
-  next = next.replaceAll('"#FFB800"', '"#F6BE1C"');
+  // Padroniza rota e destino próprios no vermelho oficial APOIS.
+  next = next.replaceAll('"#FFB800"', '"#E51B23"');
   next = next.replace('strokeWeight: 5,', 'strokeWeight: 6,');
 
   if (!next.includes('function buildApoisDriverLocationIcon')) {
@@ -36,7 +36,7 @@ patch('src/components/map/ActiveRideMap.tsx', (source) => {
       marker,
       '',
       'function buildApoisDriverLocationIcon(maps: any) {',
-      '  const svg = \'<svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52" aria-hidden="true"><g id="APOIS_DRIVER_LOCATION_A"><path d="M22 2C11.5 2 3 10.5 3 21c0 14.5 19 29 19 29s19-14.5 19-29C41 10.5 32.5 2 22 2Z" fill="#080B11" stroke="#F6BE1C" stroke-width="2.5"/><circle cx="22" cy="21" r="11" fill="#F6BE1C"/><text x="22" y="27" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="#080B11">A</text></g></svg>\';',
+      '  const svg = \'<svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52" aria-hidden="true"><g id="APOIS_DRIVER_LOCATION_A"><path d="M22 2C11.5 2 3 10.5 3 21c0 14.5 19 29 19 29s19-14.5 19-29C41 10.5 32.5 2 22 2Z" fill="#111111" stroke="#E51B23" stroke-width="2.5"/><circle cx="22" cy="21" r="11" fill="#E51B23"/><text x="22" y="27" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="#111111">A</text></g></svg>\';',
       '  return {',
       '    url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),',
       '    scaledSize: new maps.Size(44, 52),',
@@ -59,7 +59,7 @@ patch('src/components/map/ActiveRideMap.tsx', (source) => {
 
   const requiredMarkers = [
     'featureType: "water"',
-    'strokeColor: "#F6BE1C"',
+    'strokeColor: "#E51B23"',
     'APOIS_DRIVER_LOCATION_A',
     'new maps.Size(44, 52)',
     'driverMarkerRef.current.setPosition(driverLocation)',
@@ -69,6 +69,6 @@ patch('src/components/map/ActiveRideMap.tsx', (source) => {
   }
 
   return next;
-}, 'passageiro: rota dourada, água visível e marcador APOIS compacto em tempo real');
+}, 'passageiro: rota vermelha APOIS, água visível e marcador APOIS compacto em tempo real');
 
 console.log(`[OK] branding de mapa do Passageiro concluído em ${workspace}`);
