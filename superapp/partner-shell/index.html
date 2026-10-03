@@ -6,27 +6,143 @@
   <meta name="theme-color" content="#050505" />
   <title>APOIS Parceiro</title>
   <style>
-    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;background:#050505;--gold:#f6be1c}
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}
-    .screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),20px) 18px max(env(safe-area-inset-bottom),20px);display:flex;flex-direction:column;justify-content:center;background:radial-gradient(circle at 50% 18%,rgba(246,190,28,.18),transparent 25%),#050505}
-    .brand{text-align:center}.logo{width:126px;height:126px;margin:0 auto 16px;border-radius:50%;overflow:hidden;border:1px solid rgba(246,190,28,.22);background:#000;box-shadow:0 16px 34px -22px rgba(246,190,28,.65)}.logo img{display:block;width:100%;height:100%;object-fit:contain;padding:8px}.brand h1{margin:0;font-size:34px;line-height:1;font-weight:950}.brand p{margin:10px auto 0;color:#b8b8b8;font-size:14px;max-width:330px;line-height:1.45}
-    .choices{display:grid;gap:14px;margin-top:34px}.card{width:100%;border:1px solid rgba(246,190,28,.42);border-radius:26px;background:linear-gradient(180deg,#111,#090909);padding:20px;text-align:left;color:white;box-shadow:0 14px 34px -28px rgba(246,190,28,.5)}.card strong{display:block;font-size:22px}.card span{display:block;margin-top:6px;font-size:13px;color:#b9b9b9;line-height:1.4}.card button{margin-top:18px;width:100%;height:52px;border:0;border-radius:16px;font:inherit;font-weight:900;background:linear-gradient(135deg,#f7ca48,#f6be1c 56%,#c88a08);color:#050505;box-shadow:0 12px 28px -18px rgba(246,190,28,.9)}.card button:focus-visible{outline:3px solid rgba(246,190,28,.5);outline-offset:3px}.foot{text-align:center;margin-top:28px;color:#777;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
-    @media(max-height:700px){.screen{justify-content:flex-start}.logo{width:92px;height:92px;margin-bottom:10px}.brand h1{font-size:29px}.brand p{margin-top:7px;font-size:13px}.choices{margin-top:20px;gap:10px}.card{border-radius:22px;padding:15px}.card strong{font-size:19px}.card span{margin-top:4px;font-size:12px}.card button{margin-top:12px;height:48px}.foot{margin-top:18px}}
-    @media(max-width:360px){.screen{padding-left:14px;padding-right:14px}.brand h1{font-size:28px}.card{padding:14px}.card strong{font-size:18px}}
+    :root{
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:#fff;background:#050505;
+      --red:#F5222D;--red-strong:#FF1F2D;--red-dark:#9E1018;
+      --gold:#D9A520;--gold-light:#F4C44E;--surface:#111318;--muted:#A6A8AE
+    }
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff}
+    body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}
+    button{font:inherit}
+    .partner-screen{
+      position:relative;isolation:isolate;min-height:100dvh;max-width:520px;margin:0 auto;
+      padding:max(env(safe-area-inset-top),18px) 18px max(env(safe-area-inset-bottom),24px);
+      overflow:hidden;background:
+        radial-gradient(circle at 18% 4%,rgba(245,34,45,.22),transparent 24%),
+        radial-gradient(circle at 82% 21%,rgba(217,165,32,.11),transparent 26%),
+        linear-gradient(180deg,#070707 0%,#09090b 52%,#050505 100%)
+    }
+    .partner-screen::before{
+      content:"";position:absolute;inset:0;z-index:-2;opacity:.62;pointer-events:none;
+      background:
+        linear-gradient(115deg,transparent 0 17%,rgba(245,34,45,.74) 17.2% 17.55%,transparent 17.75% 100%),
+        linear-gradient(68deg,transparent 0 74%,rgba(217,165,32,.58) 74.2% 74.5%,transparent 74.7% 100%),
+        repeating-linear-gradient(90deg,transparent 0 31px,rgba(255,255,255,.016) 32px 33px)
+    }
+    .partner-screen::after{
+      content:"";position:absolute;left:-20%;right:-20%;bottom:-68px;height:230px;z-index:-1;pointer-events:none;
+      background:
+        radial-gradient(ellipse at 50% 100%,transparent 0 32%,rgba(245,34,45,.88) 33% 34%,transparent 35% 44%,rgba(217,165,32,.58) 45% 46%,transparent 47%);
+      filter:blur(.2px);opacity:.8
+    }
+    .partner-content{position:relative;z-index:1;display:flex;min-height:calc(100dvh - max(env(safe-area-inset-top),18px) - max(env(safe-area-inset-bottom),24px));flex-direction:column}
+    .partner-brand{text-align:center;padding-top:4px}
+    .partner-mark{display:block;width:118px;height:118px;margin:0 auto 4px;object-fit:contain;filter:drop-shadow(0 12px 30px rgba(245,34,45,.24))}
+    .partner-wordmark{display:block;width:min(72vw,286px);height:auto;max-height:88px;margin:-8px auto 0;object-fit:contain}
+    .partner-tagline{margin-top:-4px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.34em;text-transform:uppercase}
+    .partner-tagline span{color:var(--gold-light)}
+    .partner-heading{margin:30px auto 0;text-align:center}
+    .partner-heading h1{margin:0;font-size:38px;line-height:1.02;font-weight:950;letter-spacing:-.035em}
+    .partner-heading h1 span{color:var(--red-strong)}
+    .partner-heading .dash{display:block;width:28px;height:3px;margin:10px auto 12px;border-radius:999px;background:var(--gold-light);box-shadow:0 0 18px rgba(244,196,78,.35)}
+    .partner-heading p{max-width:390px;margin:0 auto;color:#c7c8cc;font-size:15px;line-height:1.45}
+    .choices{display:grid;gap:16px;margin-top:28px}
+    .role-card{
+      position:relative;overflow:hidden;min-height:236px;border-radius:30px;padding:20px 20px 18px;
+      background:linear-gradient(180deg,rgba(17,19,24,.98),rgba(7,8,10,.98));
+      box-shadow:0 18px 44px -28px rgba(0,0,0,.92)
+    }
+    .role-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(5,5,5,.98) 0 49%,rgba(5,5,5,.76) 62%,rgba(5,5,5,.15) 100%)}
+    .role-card.motorista{border:1px solid rgba(245,34,45,.86);box-shadow:0 0 0 1px rgba(245,34,45,.12),0 18px 42px -26px rgba(245,34,45,.55)}
+    .role-card.entregador{border:1px solid rgba(217,165,32,.88);box-shadow:0 0 0 1px rgba(217,165,32,.12),0 18px 42px -26px rgba(217,165,32,.48)}
+    .role-card .role-art{
+      position:absolute;z-index:0;right:-18px;top:8px;width:57%;height:190px;opacity:.92;
+      color:var(--red-strong);filter:drop-shadow(0 0 22px rgba(245,34,45,.18))
+    }
+    .role-card.entregador .role-art{color:var(--gold-light);filter:drop-shadow(0 0 22px rgba(217,165,32,.16))}
+    .role-card .role-art svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}
+    .role-content{position:relative;z-index:2;max-width:74%}
+    .role-title{display:flex;align-items:center;gap:10px}
+    .role-icon{display:grid;width:46px;height:46px;place-items:center;border-radius:50%;border:1px solid currentColor;background:rgba(245,34,45,.08);color:var(--red-strong);box-shadow:0 0 24px rgba(245,34,45,.14)}
+    .entregador .role-icon{background:rgba(217,165,32,.08);color:var(--gold-light);box-shadow:0 0 24px rgba(217,165,32,.12)}
+    .role-icon svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8}
+    .role-title strong{font-size:25px;line-height:1.05;font-weight:950}
+    .role-title strong span{color:var(--red-strong)}
+    .entregador .role-title strong span{color:var(--gold-light)}
+    .role-copy{margin:16px 0 0;color:#d3d4d8;font-size:15px;line-height:1.38;max-width:250px}
+    .role-card button{
+      position:relative;z-index:3;margin-top:18px;width:100%;min-height:58px;border:0;border-radius:18px;
+      color:#fff;font-weight:950;font-size:16px;letter-spacing:-.01em;cursor:pointer;
+      transition:transform .15s ease,filter .15s ease
+    }
+    .role-card button:active{transform:scale(.985)}.role-card button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+    .motorista button{background:linear-gradient(135deg,var(--red),var(--red-strong));box-shadow:0 14px 30px -18px rgba(245,34,45,.72)}
+    .entregador button{background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#08090B;box-shadow:0 14px 30px -18px rgba(217,165,32,.7)}
+    .foot{margin-top:24px;padding-bottom:4px;text-align:center;color:#b7b9be;font-size:10px;font-weight:800;letter-spacing:.34em;text-transform:uppercase}
+    .foot::after{content:"";display:block;width:24px;height:2px;margin:12px auto 0;border-radius:999px;background:var(--gold-light)}
+    @media(max-height:780px){
+      .partner-screen{padding-top:max(env(safe-area-inset-top),12px);padding-bottom:max(env(safe-area-inset-bottom),16px)}
+      .partner-mark{width:88px;height:88px}.partner-wordmark{max-height:62px}.partner-tagline{font-size:9px}
+      .partner-heading{margin-top:18px}.partner-heading h1{font-size:31px}.partner-heading p{font-size:13px}
+      .choices{margin-top:18px;gap:12px}.role-card{min-height:192px;padding:16px;border-radius:24px}
+      .role-card .role-art{height:160px}.role-title strong{font-size:21px}.role-copy{margin-top:10px;font-size:13px}
+      .role-card button{min-height:50px;margin-top:12px}.foot{margin-top:16px}
+    }
+    @media(max-width:380px){
+      .partner-screen{padding-left:13px;padding-right:13px}.partner-heading h1{font-size:32px}
+      .role-card{padding:15px}.role-content{max-width:78%}.role-title{gap:8px}.role-icon{width:40px;height:40px}.role-title strong{font-size:21px}
+      .role-copy{font-size:13px}.role-card .role-art{right:-28px;width:62%}
+    }
   </style>
 </head>
 <body>
-  <main class="screen">
-    <section class="brand">
-      <div class="logo"><img src="__APOIS_BRAND_DATA_URL__" alt="APOIS Brasil" /></div>
-      <h1>APOIS Parceiro</h1>
-      <p>Escolha como você trabalha na APOIS. Motoristas e entregadores usam este aplicativo.</p>
-    </section>
-    <section class="choices">
-      <article class="card motorista"><strong>Sou Motorista</strong><span>Fique online, receba corridas e acompanhe seus ganhos e recebimentos.</span><button data-module="motorista" type="button">Entrar como motorista →</button></article>
-      <article class="card entregador"><strong>Sou Entregador</strong><span>Fique disponível, receba entregas e acompanhe suas rotas e pedidos.</span><button data-module="entregador" type="button">Entrar como entregador →</button></article>
-    </section>
-    <div class="foot">APOIS • PARCEIROS</div>
+  <main class="partner-screen" data-apois-partner-reference-v4="true">
+    <div class="partner-content">
+      <section class="partner-brand" aria-label="APOIS Parceiro">
+        <img class="partner-mark" src="__APOIS_MARK_DATA_URL__" alt="" aria-hidden="true" />
+        <img class="partner-wordmark" src="__APOIS_BRAND_DATA_URL__" alt="APOIS" />
+        <div class="partner-tagline">APOIS, <span>VAMOS?</span></div>
+      </section>
+
+      <section class="partner-heading">
+        <h1>APOIS <span>Parceiro</span></h1>
+        <span class="dash" aria-hidden="true"></span>
+        <p>Escolha como você deseja trabalhar na APOIS.<br />Motoristas e entregadores usam este aplicativo.</p>
+      </section>
+
+      <section class="choices" aria-label="Escolha como trabalhar">
+        <article class="role-card motorista">
+          <div class="role-art" aria-hidden="true">
+            <svg viewBox="0 0 240 150"><path d="M22 103h196l-12-42c-3-11-12-19-23-20L74 37c-14 0-25 8-31 20L22 103Z"/><path d="M55 62 76 34h90l28 31M31 87h178M57 104h112"/><circle cx="60" cy="108" r="17"/><circle cx="181" cy="108" r="17"/><path d="M84 48h78M104 48l-7 30M151 48l8 30"/></svg>
+          </div>
+          <div class="role-content">
+            <div class="role-title">
+              <span class="role-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 17h14l-1.2-6.1a2 2 0 0 0-2-1.6H8.2a2 2 0 0 0-2 1.6L5 17Z"/><path d="M7 9.3 8.4 6h7.2L17 9.3"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span>
+              <strong>Sou <span>Motorista</span></strong>
+            </div>
+            <p class="role-copy">Fique online, receba corridas e acompanhe seus ganhos e recebimentos.</p>
+          </div>
+          <button data-module="motorista" type="button">Entrar como motorista &nbsp;→</button>
+        </article>
+
+        <article class="role-card entregador">
+          <div class="role-art" aria-hidden="true">
+            <svg viewBox="0 0 240 160"><circle cx="61" cy="117" r="25"/><circle cx="183" cy="117" r="25"/><path d="m73 117 35-58h31l32 58M96 82h63M111 59l-17-23H72M133 59l17-21h21M98 117h62"/><path d="M144 31h43l16 33h-53Z"/><path d="M174 31v33"/></svg>
+          </div>
+          <div class="role-content">
+            <div class="role-title">
+              <span class="role-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="m7 17 4-7h3l3 7M9 13h7M12 10l-2-3H7"/></svg></span>
+              <strong>Sou <span>Entregador</span></strong>
+            </div>
+            <p class="role-copy">Fique disponível, receba entregas e acompanhe suas rotas e pedidos.</p>
+          </div>
+          <button data-module="entregador" type="button">Entrar como entregador &nbsp;→</button>
+        </article>
+      </section>
+
+      <div class="foot">APOIS • PARCEIROS</div>
+    </div>
   </main>
   <script>
     const urls={motorista:'/modules/motorista/index.html',entregador:'/modules/entregador/index.html'};
