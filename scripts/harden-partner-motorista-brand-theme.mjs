@@ -21,7 +21,7 @@ patch('src/lib/theme.tsx', (source) => {
   const listenerStart = next.indexOf('  // Listen to system changes while in "system" mode');
   const syncStart = next.indexOf('  // Sync from Supabase user preferences on auth/state change', listenerStart);
   if (listenerStart >= 0 && syncStart > listenerStart) {
-    next = next.slice(0, listenerStart) + `  // APOIS Parceiro mantém a identidade clara vermelho/preto/branco independentemente do tema do aparelho.\n  useEffect(() => {\n    applyThemeClass(\"dark\");\n  }, [mode]);\n\n` + next.slice(syncStart);
+    next = next.slice(0, listenerStart) + `  // APOIS Parceiro mantém a identidade clara vermelho/preto/branco independentemente do tema do aparelho.\n  useEffect(() => {\n    applyThemeClass(\"light\");\n  }, [mode]);\n\n` + next.slice(syncStart);
   }
   if (next.includes('mq.matches ? "dark" : "light"')) {
     throw new Error('[FAIL] theme.tsx: listener do sistema ainda pode sobrescrever a identidade visual APOIS');
@@ -49,3 +49,4 @@ patch('src/routes/motorista.configuracoes.tsx', (source) => {
 }, 'motorista: configurações não exibem seletor de tema que não deve alterar a identidade da marca');
 
 console.log(`[OK] identidade clara vermelho/preto/branco do Motorista protegida em ${workspace}`);
+

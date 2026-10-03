@@ -34,6 +34,12 @@ for (const marker of [
     failed = true;
   }
 }
+// Verifica o código emitido, e não apenas o texto da mensagem de erro.
+if (!theme.includes(String.raw`applyThemeClass(\"light\");`) || theme.includes(String.raw`applyThemeClass(\"dark\");`)) {
+  console.error('[FAIL] Motorista marca v4: hardener precisa emitir light no efeito visual');
+  failed = true;
+}
+
 for (const marker of [
   'void Browser.open({ url })',
   'Capacitor.isNativePlatform()',
@@ -47,3 +53,4 @@ for (const marker of [
 }
 if (!failed) console.log('[OK] Motorista marca v4: identidade visual APOIS fica travada no tema claro unificado e links externos usam Browser nativo no Android.');
 process.exit(failed ? 1 : 0);
+
