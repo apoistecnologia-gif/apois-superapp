@@ -55,15 +55,15 @@ forbidAll('scripts/configure-partner-android.mjs', [
 
 requireAll('scripts/install-partner-splash.mjs', [
   '<shape android:shape="rectangle">',
-  '<solid android:color="#050505" />',
+  '<solid android:color="#FFFFFF" />',
   '@mipmap/ic_launcher',
   'windowSplashScreenBackground',
   'windowSplashScreenAnimatedIcon',
   "finalSplash.includes('android:drawable=\"#050505\"')",
-], 'Splash usa drawable XML válido e identidade APOIS');
+], 'Splash usa drawable XML válido e identidade APOIS clara');
 forbidAll('scripts/install-partner-splash.mjs', [
-  '<item android:drawable="#050505" />',
-], 'Splash não usa literal de cor inválido no atributo drawable');
+  '<item android:drawable="#FFFFFF" />',
+], 'Splash claro não usa literal de cor inválido no atributo drawable');
 
 requireAll('scripts/harden-partner-location-notification-routing.mjs', [
   "{ file: 'DriverLocationService.java', module: 'motorista' }",
