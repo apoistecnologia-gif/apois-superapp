@@ -135,8 +135,16 @@ requireMarkers('.work/corridas/src/routes/_public.login.tsx',[
   'data-apois-reference-login-v4="true"',
   'Entrar na APOIS',
   './apois-mark-v3.svg',
-  'Continuar com Google',
+  'PassengerGoogleLoginButton',
+  '<PassengerGoogleLoginButton />',
+  'onSubmit={handleLogin}',
+  'to="/recuperar-senha"',
 ],'login Corridas segue referência V4 sem perder Google/senha');
+requireMarkers('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx',[
+  'Continuar com Google',
+  'signInWithOAuth',
+  'provider: "google"',
+],'CTA Google Corridas permanece no componente OAuth canônico');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
   'data-apois-search-fullscreen-v3="true"',
   'APOIS_SEARCH_VIEWPORT_V4',
