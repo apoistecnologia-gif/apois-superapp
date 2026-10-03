@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
 const branding = resolve(root, '../branding/apois-wordmark-v3.svg');
+const marking = resolve(root, '../branding/apois-mark-v3.svg');
 
 function readTextTree(directory) {
   let output = '';
@@ -42,21 +43,28 @@ function forbidMarker(source, marker, label) {
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 
-if (!existsSync(branding)) {
-  console.error(`[FAIL] branding APOIS ausente em ${branding}`);
-  process.exit(1);
+for (const asset of [branding, marking]) {
+  if (!existsSync(asset)) {
+    console.error(`[FAIL] branding APOIS ausente em ${asset}`);
+    process.exit(1);
+  }
 }
 
 const brandDataUrl = `data:image/svg+xml;base64,${readFileSync(branding).toString('base64')}`;
-console.log('[OK] seletor parceiro usa diretamente a logomarca central APOIS Brand V2');
+const markDataUrl = `data:image/svg+xml;base64,${readFileSync(marking).toString('base64')}`;
+console.log('[OK] seletor parceiro usa wordmark + símbolo oficiais APOIS');
 
 const templatePath = resolve(root, 'index.html');
 let shellHtml = readFileSync(templatePath, 'utf8');
-if (!shellHtml.includes('__APOIS_BRAND_DATA_URL__')) {
-  console.error('[FAIL] placeholder da logo APOIS não encontrado no shell parceiro');
-  process.exit(1);
+for (const placeholder of ['__APOIS_BRAND_DATA_URL__', '__APOIS_MARK_DATA_URL__']) {
+  if (!shellHtml.includes(placeholder)) {
+    console.error(`[FAIL] placeholder da marca APOIS não encontrado no shell parceiro: ${placeholder}`);
+    process.exit(1);
+  }
 }
-shellHtml = shellHtml.replace('__APOIS_BRAND_DATA_URL__', brandDataUrl);
+shellHtml = shellHtml
+  .replace('__APOIS_BRAND_DATA_URL__', brandDataUrl)
+  .replace('__APOIS_MARK_DATA_URL__', markDataUrl);
 const distIndex = resolve(dist, 'index.html');
 writeFileSync(distIndex, shellHtml, 'utf8');
 execFileSync(process.execPath, [resolve(root, '../../scripts/apply-apois-brand-v2.mjs'), 'shell-partner', distIndex], {
@@ -66,7 +74,8 @@ execFileSync(process.execPath, [resolve(root, '../../scripts/apply-apois-brand-v
 });
 
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
-cpSync(branding, resolve(dist, 'assets/apois-brand.png'));
+cpSync(branding, resolve(dist, 'assets/apois-wordmark-v3.svg'));
+cpSync(marking, resolve(dist, 'assets/apois-mark-v3.svg'));
 
 const modules = [
   ['motorista', resolve(root, '../../.work/partner-motorista/dist/client')],
