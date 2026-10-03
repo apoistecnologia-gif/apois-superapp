@@ -4,7 +4,7 @@
 
 Repositório: `franciel046631/apois-superapp`. Branch: `fix/producao-consolidacao-20260921`.
 Base confirmada: `9b7051dbea509ffb6bf43125014e8d9334c8338a`.
-Último commit de código desta revisão: `b9b18c523097b64a2e1d8fbba295165f5f4e78ce`.
+Último commit de código desta revisão: `23eb1e040bfed2d6c055e58592dc76437331adfb`.
 
 **Implementação incremental publicada; homologação do ecossistema e auditoria do bundle final ainda pendentes.**
 Não interpretar aprovação de auditorias estáticas ou fixtures como aprovação de APK, autenticação real, corrida/entrega real ou operação financeira.
@@ -75,7 +75,7 @@ As fixtures executam o aplicador real para Corridas, Entregas, Entregador, Motor
 4. Conferir em navegador/aparelho: autenticação e-mail/Google, cadastro/logout/senha, mapas/GPS, notificações/realtime, aceitar/rejeitar/iniciar/finalizar, perfil/uploads, menus/modais/bottom sheets e superfícies Admin/Estabelecimento. Sem novos pagamentos reais por esta tarefa.
 5. Homologar Android/Capacitor e passar CodeMagic antes de declarar APK aprovado. PNGs/raster legados e o resultado visual de todos os documentos/superfícies ainda exigem conferência no artefato real.
 
-## Ocorrências restantes no código versionado
+## Inventário inicial de ocorrências (snapshot anterior à continuação)
 
 Busca textual nos arquivos de código de `design-system`, `superapp` e `scripts`, com as famílias hex históricas conhecidas. SVGs oficiais e HTMLs fonte dos shells não contêm os hex históricos desta busca. Os nomes/hex que permanecem não foram apagados indiscriminadamente: abaixo há localização e motivo de cada linha encontrada. Não se presume que todo literal em uma string de hardener seja uma cor visível no produto final.
 
@@ -237,3 +237,56 @@ Busca textual nos arquivos de código de `design-system`, `superapp` e `scripts`
 | `scripts/tests/brand-applicator.test.mjs:75` | `#F6BE1C` | Entrada de regressão para confirmar que uma classe antiga recebe a identidade atual. |
 | `scripts/tests/brand-applicator.test.mjs:76` | `#F6BE1C` | Entrada de regressão para confirmar que uma classe antiga recebe a identidade atual. |
 | `scripts/tests/brand-applicator.test.mjs:77` | `#F6BE1C` | Entrada de regressão para confirmar que uma classe antiga recebe a identidade atual. |
+
+
+## Continuação — revisão de cascata e detalhes visuais
+
+| Commit | Arquivo | Alteração |
+| --- | --- | --- |
+| `ce84e02f95eed96819cd1f7f95ae132e476bf049` | Aplicador central e teste de aplicação | Avatar Passageiro: borda/halo da marca e sombra discreta; fixture inclui a declaração antiga e verifica a ordem da sobreposição. |
+| `3257637560c2e086652aef51668d8c6624154d36` | `scripts/apply-apois-brand-v2.mjs` | Motorista: foco após a regra de input claro, sombras de navegação/PIN, loader de ganhos e card de recebimento direto. Shells: sombra preta suave nos CTAs. |
+| `23eb1e040bfed2d6c055e58592dc76437331adfb` | `scripts/apply-apois-brand-v2.mjs` | Entregas: fundo raiz, cards próprios, brilhos, rings de branding e gradiente de três etapas. Regras específicas antigas do pin agora têm sobreposição correspondente. |
+
+Os temas `src/system-theme.css`, `src/customer-theme.css`, `src/apois-motorista-theme.css` e `src/apois-admin-theme.css` foram consultados somente nos pins protegidos registrados acima. Nenhuma escrita foi feita nesses repositórios. O tema Admin usa tokens na seleção/foco; não foi necessário alterar seu layout. Os tokens `--chart-*` de Entregas permanecem para preservar distinção entre séries.
+
+Validação da continuação: `audit:ui` passou; a suíte de 13 testes passou após o bloco Motorista; os 7 testes do aplicador passaram novamente após o bloco Entregas. Auditorias Motorista V4 e Partner Reference V4 passaram. O preflight foi reexecutado e continua falhando por ausência dos três diretórios `sources`; builds reais, lint/TypeScript dos módulos, navegador, `verify:dist`, Android e fluxos reais continuam pendentes. Não há conclusão global nem aprovação de APK.
+
+### Busca final ampliada no Superapp
+
+Inclui hex históricos e RGB/RGBA dourado/verde de marca; não representa busca em módulos completos ou bundles. As ocorrências anteriores continuam classificadas na tabela de snapshot. As linhas atuais, inclusive seletores adicionados, estão abaixo. Os novos seletores mantêm o literal antigo para reconhecer a classe existente e emitem tokens novos; não são valores da nova paleta. Fixtures mantêm exemplos antigos para reproduzir a migração. Hardeners antigos ainda contêm estilos intermediários: somente o build completo permite provar quais sobrevivem na cascata final. Não foram declarados todos resolvidos.
+
+| Arquivo | Linhas atuais |
+| --- | --- |
+| `scripts/add-motorista-superapp-shell.mjs` | 15 |
+| `scripts/apply-apois-brand-v2.mjs` | 211, 233, 249, 252, 255, 267, 268, 269, 273, 286, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 399, 446, 447, 448, 508, 509 |
+| `scripts/audit-apois-brand-v2.mjs` | 85 |
+| `scripts/audit-apois-reference-ui-v3.mjs` | 13 |
+| `scripts/audit-entregas-brand-sweep-v24.mjs` | 16, 17, 18 |
+| `scripts/audit-final-integration-v22.mjs` | 132 |
+| `scripts/audit-partner-superapp.mjs` | 147 |
+| `scripts/audit-unified-brand-theme-v23.mjs` | 21, 22 |
+| `scripts/build-partner-modules.sh` | 192, 224, 308 |
+| `scripts/harden-corridas-home-compact.mjs` | 27, 28, 30, 33, 35, 36 |
+| `scripts/harden-corridas-passenger-map-branding.mjs` | 28 |
+| `scripts/harden-corridas-superapp-runtime.mjs` | 223 |
+| `scripts/harden-entregas-brand-sweep.mjs` | 12, 13, 14, 51, 71, 72, 73, 74, 75, 76, 77, 98 |
+| `scripts/harden-entregas-merchant-direct-finance.mjs` | 46 |
+| `scripts/harden-entregas-merchant-order-controls.mjs` | 22 |
+| `scripts/harden-entregas-superapp-brand-theme.mjs` | 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 106, 107, 109, 110, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 197, 210 |
+| `scripts/harden-motorista-direct-mercadopago.mjs` | 38 |
+| `scripts/harden-motorista-field-mercadopago.mjs` | 73, 74 |
+| `scripts/harden-motorista-field-runtime.mjs` | 100, 116 |
+| `scripts/harden-motorista-finance-boundary.mjs` | 135, 136, 138, 141, 155, 160, 166, 183, 184, 187, 194, 195 |
+| `scripts/harden-motorista-payment-wait.mjs` | 42 |
+| `scripts/harden-motorista-ride-flow-ui.mjs` | 109 |
+| `scripts/harden-motorista-route-integrity.mjs` | 15 |
+| `scripts/harden-motorista-superapp-mercadopago.mjs` | 163, 167, 192 |
+| `scripts/harden-partner-entregador-map.mjs` | 41 |
+| `scripts/harden-partner-entregador-theme.mjs` | 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66 |
+| `scripts/harden-partner-motorista-direct-earnings.mjs` | 32, 111 |
+| `scripts/harden-partner-motorista-onboarding.mjs` | 28, 29 |
+| `scripts/harden-partner-motorista-pin-ui.mjs` | 63 |
+| `scripts/harden-partner-motorista-profile-switch.mjs` | 30, 31 |
+| `scripts/harden-partner-motorista-settings-cleanup.mjs` | 36 |
+| `scripts/normalize-partner-entregador-route-map-touch.mjs` | 13 |
+| `scripts/tests/brand-applicator.test.mjs` | 40, 75, 81, 82, 83 |
