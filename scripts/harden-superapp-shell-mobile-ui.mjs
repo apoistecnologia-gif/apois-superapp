@@ -19,15 +19,15 @@ source = source.replace(
 );
 
 source = source
-  .replace('--teal:#15d5ca;', '--teal:#f2b414;')
-  .replaceAll('rgba(21,213,202,.1)', 'rgba(242,180,20,.10)')
-  .replaceAll('rgba(21,213,202,.88)', 'rgba(242,180,20,.88)')
-  .replaceAll('rgba(21,213,202,.07)', 'rgba(242,180,20,.07)')
-  .replaceAll('rgba(21,213,202,.08)', 'rgba(242,180,20,.08)')
-  .replaceAll('rgba(23,220,209,.7)', 'rgba(242,180,20,.68)')
-  .replace('linear-gradient(145deg,#0d2f32,#080808 62%)', 'linear-gradient(145deg,#2b2110,#080808 62%)')
-  .replace('linear-gradient(135deg,#1ee1d4,#09b8b0)', 'linear-gradient(135deg,#f7c847,#e9a90e)')
-  .replace('.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#04100f}', '.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}');
+  .replace('--teal:#15d5ca;', '--teal:#E51B23;')
+  .replaceAll('rgba(21,213,202,.1)', 'rgba(229,27,35,.10)')
+  .replaceAll('rgba(21,213,202,.88)', 'rgba(229,27,35,.88)')
+  .replaceAll('rgba(21,213,202,.07)', 'rgba(229,27,35,.07)')
+  .replaceAll('rgba(21,213,202,.08)', 'rgba(229,27,35,.08)')
+  .replaceAll('rgba(23,220,209,.7)', 'rgba(229,27,35,.20)')
+  .replace('linear-gradient(145deg,#0d2f32,#080808 62%)', 'linear-gradient(145deg,#FFFFFF,#F1F2F4 62%)')
+  .replace('linear-gradient(135deg,#1ee1d4,#09b8b0)', 'linear-gradient(135deg,#E51B23,#C9141B)')
+  .replace('.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#04100f}', '.entregas .action{background:#E51B23;color:#FFFFFF}');
 
 if (!source.includes('@media(max-height:720px)')) {
   source = source.replace(
@@ -51,8 +51,8 @@ const requiredMarkers = isReferenceV4
       'object-fit:contain;padding:6px',
       '@media(max-height:720px)',
       '.service{min-height:265px}',
-      '--teal:#f2b414;',
-      '.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}',
+      '--teal:#E51B23;',
+      '.entregas .action{background:#E51B23;color:#FFFFFF}',
       '.vehicle svg,.delivery svg',
     ];
 
@@ -64,4 +64,4 @@ if (source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes(
 }
 
 writeFileSync(path, source, 'utf8');
-console.log(`[OK] Shell cliente: seletor preto/dourado, ícones consistentes, logo sem corte e layout responsivo (${path}).`);
+console.log(`[OK] Shell cliente: seletor claro vermelho/preto/branco, ícones consistentes, logo sem corte e layout responsivo (${path}).`);
