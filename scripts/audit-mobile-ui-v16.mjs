@@ -33,10 +33,14 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
 ], 'Seletor Cliente adapta conteúdo e marca a aparelhos baixos');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
+  'data-apois-partner-reference-v4',
   'overflow-x:hidden;overflow-y:auto',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
-], 'Seletor Parceiro mantém rolagem e breakpoints móveis');
+  '@media(max-height:780px)',
+  '@media(max-width:380px)',
+  'class="partner-mark"',
+  'class="role-card motorista"',
+  'class="role-card entregador"',
+], 'Seletor Parceiro V4 mantém referência premium, rolagem e breakpoints móveis');
 
 requireAll('scripts/fix-corridas-superapp-ui.mjs', [
   'src/components/BottomNavigation.tsx',
