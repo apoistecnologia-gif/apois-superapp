@@ -26,11 +26,10 @@ if (!next.includes('data-apois-reference-login-v3="true"')) {
           position: relative !important;
           min-height: 100dvh !important;
           overflow-x: hidden !important;
-          color: #FFFFFF !important;
+          color: #111111 !important;
           background:
-            radial-gradient(circle at 78% 8%, rgba(245,34,45,.22), transparent 28%),
-            radial-gradient(circle at 20% 25%, rgba(217,165,32,.09), transparent 24%),
-            linear-gradient(180deg, #08090B 0%, #0B0C0F 52%, #08090B 100%) !important;
+            radial-gradient(circle at 78% 8%, rgba(229,27,35,.08), transparent 28%),
+            linear-gradient(180deg, #FFFFFF 0%, #F7F7F8 58%, #F1F2F4 100%) !important;
           padding-top: max(18px, env(safe-area-inset-top)) !important;
         }
         [data-apois-reference-login-v3="true"]::before {
@@ -42,8 +41,8 @@ if (!next.includes('data-apois-reference-login-v3="true"')) {
           height: 42%;
           opacity: .42;
           background:
-            linear-gradient(180deg, transparent 0 58%, rgba(8,9,11,.72) 86%, #08090B 100%),
-            repeating-linear-gradient(90deg, transparent 0 31px, rgba(255,255,255,.025) 32px 33px);
+            linear-gradient(180deg, transparent 0 58%, rgba(247,247,248,.72) 86%, #F7F7F8 100%),
+            repeating-linear-gradient(90deg, transparent 0 31px, rgba(17,17,17,.018) 32px 33px);
         }
         [data-apois-reference-login-v3="true"]::after {
           content: "";
@@ -52,8 +51,8 @@ if (!next.includes('data-apois-reference-login-v3="true"')) {
           z-index: 0;
           left: -15%; right: -15%; top: 32%;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #F5222D 30%, #D9A520 70%, transparent);
-          box-shadow: 0 0 28px rgba(245,34,45,.35);
+          background: linear-gradient(90deg, transparent, #E51B23 30%, #C9141B 70%, transparent);
+          box-shadow: 0 0 22px rgba(229,27,35,.12);
           transform: rotate(-4deg);
         }
         [data-apois-reference-login-v3="true"] > * {
@@ -77,28 +76,28 @@ if (!next.includes('data-apois-reference-login-v3="true"')) {
           box-shadow: none !important;
         }
         [data-apois-reference-login-v3="true"] form {
-          border: 1px solid rgba(255,255,255,.06);
-          background: rgba(17,19,24,.62);
+          border: 1px solid #E2E4E8;
+          background: rgba(255,255,255,.94);
           backdrop-filter: blur(14px);
           border-radius: 28px;
-          box-shadow: 0 24px 60px rgba(0,0,0,.36);
+          box-shadow: 0 18px 44px rgba(17,17,17,.08);
         }
         [data-apois-reference-login-v3="true"] input {
           min-height: 56px !important;
-          border-color: rgba(255,255,255,.16) !important;
-          background: #111318 !important;
-          color: #FFFFFF !important;
+          border-color: #E2E4E8 !important;
+          background: #FFFFFF !important;
+          color: #111111 !important;
         }
         [data-apois-reference-login-v3="true"] input:focus {
-          border-color: #F5222D !important;
-          box-shadow: 0 0 0 2px rgba(245,34,45,.16) !important;
+          border-color: #E51B23 !important;
+          box-shadow: 0 0 0 3px rgba(229,27,35,.10) !important;
         }
         [data-apois-reference-login-v3="true"] form button[type="submit"] {
           min-height: 56px !important;
           border-radius: 16px !important;
-          background: linear-gradient(135deg,#F5222D,#FF1F2D) !important;
+          background: #E51B23 !important;
           color: #FFFFFF !important;
-          box-shadow: 0 14px 32px rgba(245,34,45,.28) !important;
+          box-shadow: 0 12px 28px rgba(229,27,35,.18) !important;
         }
       \`}</style>`;
   next = next.slice(0, insertedEnd) + style + next.slice(insertedEnd);
@@ -110,7 +109,7 @@ next = next
 
 const required = [
   'data-apois-reference-login-v3="true"',
-  'linear-gradient(135deg,#F5222D,#FF1F2D)',
+  'background: #E51B23 !important',
   'object-fit: contain !important',
   'Entrar na APOIS',
   'PassengerGoogleLoginButton',
