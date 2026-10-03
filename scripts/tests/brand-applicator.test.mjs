@@ -74,6 +74,7 @@ for (const [target, workspace, stylesheet] of [
         assert.match(css, /APOIS_DRIVER_BRAND_DETAILS/);
         assert.match(css, /\[class~="bg-\[#F6BE1C\]\/8"\].*var\(--apois-primary\) 8%/);
         assert.match(css, /\[class~="border-\[#F6BE1C\]\/25"\].*var\(--apois-primary\) 25%/);
+        assert.match(css, /\[class~="focus-within:border-\[#F6BE1C\]\/55"\]:focus-within.*var\(--apois-primary\) 55%/);
       }
       const after = snapshot(ws);
       const second = run();

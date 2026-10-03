@@ -248,9 +248,9 @@ function driverBrandDetails() {
   const softBackgrounds = [8, 10, 12].map(alpha =>
     `${q} [class~="bg-[#F6BE1C]/${alpha}"] { background-color: color-mix(in srgb, var(--apois-primary) ${alpha}%, transparent) !important; }`
   ).join('\n');
-  const brandBorders = [15, 18, 20, 25, 30, 55].map(alpha =>
-    `${q} [class~="border-[#F6BE1C]/${alpha}"] { border-color: color-mix(in srgb, var(--apois-primary) ${alpha}%, transparent) !important; }`
-  ).join('\n');
+  const brandBorders = [15, 18, 20, 25, 30, 55].flatMap(alpha => ['', 'focus-visible:', 'focus-within:'].map(prefix =>
+    `${q} [class~="${prefix}border-[#F6BE1C]/${alpha}"]${prefix ? ':' + prefix.slice(0, -1) : ''} { border-color: color-mix(in srgb, var(--apois-primary) ${alpha}%, transparent) !important; }`
+  )).join('\n');
   const brandRings = [20, 40].flatMap(alpha => ['', 'focus-visible:', 'focus-within:'].map(prefix =>
     `${q} [class~="${prefix}ring-[#F6BE1C]/${alpha}"] { --tw-ring-color: color-mix(in srgb, var(--apois-primary) ${alpha}%, transparent); }`
   )).join('\n');
