@@ -29,7 +29,7 @@ if (!source.includes('APOIS_PERSISTENT_CONFIRM_CTA_V2')) {
       {/* APOIS_PERSISTENT_CONFIRM_CTA_V2 — CTA sempre visível acima da navegação inferior. */}
       {(hasDestination || route) && !isFormOpen && !isPaymentListOpen && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(70px+env(safe-area-inset-bottom)+10px)] z-[120] mx-auto w-full max-w-[430px] px-4">
-          <div className="pointer-events-auto rounded-[22px] border border-white/8 bg-[#08090B]/94 p-2 shadow-[0_-12px_36px_rgba(0,0,0,.48)] backdrop-blur-xl">
+          <div className="pointer-events-auto rounded-[22px] border border-[#E2E4E8] bg-white/96 p-2 shadow-[0_-10px_30px_rgba(17,17,17,.10)] backdrop-blur-xl">
             <button
               type="button"
               onClick={handleReview}
@@ -38,8 +38,8 @@ if (!source.includes('APOIS_PERSISTENT_CONFIRM_CTA_V2')) {
               className={cn(
                 "apois-ride-confirm-cta flex min-h-[56px] w-full items-center justify-center gap-2 rounded-[17px] px-5 py-3.5 text-base font-black transition-all active:scale-[0.985]",
                 checkout.readiness && !routeError
-                  ? "bg-gradient-to-r from-[#F5222D] to-[#FF1F2D] text-white shadow-[0_12px_28px_rgba(245,34,45,.30)]"
-                  : "bg-zinc-800 text-zinc-500"
+                  ? "bg-[#E51B23] text-white shadow-[0_10px_24px_rgba(229,27,35,.20)] active:bg-[#C9141B]"
+                  : "bg-[#F1F2F4] text-[#9CA1A9]"
               )}
             >
               Confirmar {selectedCategory?.name || "Solicitação"}
