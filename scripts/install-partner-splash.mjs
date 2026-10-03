@@ -7,8 +7,8 @@ if (!existsSync(resRoot)) throw new Error(`Recursos Android do APOIS Parceiro au
 const drawableDir = join(resRoot, 'drawable');
 mkdirSync(drawableDir, { recursive: true });
 
-// Não reutilizamos o splash branco/padrão criado pelo template Android.
-// O fundo pertence à identidade do host Parceiro e a marca fica centralizada,
+// Não reutilizamos o splash genérico criado pelo template Android.
+// O fundo branco pertence à identidade atual do host Parceiro e a marca fica centralizada,
 // sem esticar a arte nem transformar o launcher em uma tela inteira borrada.
 // O atributo android:drawable de <item> espera referência de drawable; por isso
 // o fundo sólido é um <shape>, evitando erro de AAPT com literal #FFFFFF.
@@ -90,4 +90,4 @@ if (allStyles.includes('@drawable/splash')) throw new Error('Splash padrão do t
 // o AAPT2 encontre duas definições de color/ic_launcher_background.
 await import('./sanitize-partner-launcher-resources.mjs');
 
-console.log('[OK] Splash Android do APOIS Parceiro usa drawable XML válido, fundo preto e marca oficial centralizada, sem splash padrão/branco do template.');
+console.log('[OK] Splash Android do APOIS Parceiro usa drawable XML válido, fundo branco e marca oficial centralizada, sem splash genérico do template.');
