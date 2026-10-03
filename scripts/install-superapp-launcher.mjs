@@ -39,7 +39,7 @@ for (const stale of [
 
 const backgroundDrawable = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#08090B" />
+    <solid android:color="#FFFFFF" />
 </shape>
 `;
 writeFileSync(join(drawableDir, 'apois_launcher_background.xml'), backgroundDrawable, 'utf8');
@@ -50,11 +50,11 @@ const markVector = `<?xml version="1.0" encoding="utf-8"?>
     android:height="108dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <path android:fillColor="#F5222D" android:pathData="M86,386 L210,118 L270,118 L150,386 Z" />
-    <path android:fillColor="#FF1F2D" android:pathData="M250,118 L310,118 L430,386 L355,386 Z" />
-    <path android:fillColor="#9E1018" android:pathData="M148,314 L356,314 L390,386 L116,386 Z" />
-    <path android:fillColor="#F4C44E" android:pathData="M238,181 L215,232 L256,232 L278,181 Z" />
-    <path android:fillColor="#F4C44E" android:pathData="M275,248 L254,294 L295,294 L315,248 Z" />
+    <path android:fillColor="#E51B23" android:pathData="M86,386 L210,118 L270,118 L150,386 Z" />
+    <path android:fillColor="#C9141B" android:pathData="M250,118 L310,118 L430,386 L355,386 Z" />
+    <path android:fillColor="#111111" android:pathData="M148,314 L356,314 L390,386 L116,386 Z" />
+    <path android:fillColor="#242424" android:pathData="M238,181 L215,232 L256,232 L278,181 Z" />
+    <path android:fillColor="#242424" android:pathData="M275,248 L254,294 L295,294 L315,248 Z" />
 </vector>
 `;
 writeFileSync(join(drawableDir, 'apois_launcher_mark.xml'), markVector, 'utf8');
@@ -86,7 +86,7 @@ writeFileSync(join(adaptiveDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
 
 const splashXml = `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/black" />
+    <item android:drawable="@android:color/white" />
     <item android:gravity="center">
         <inset
             android:drawable="@drawable/apois_launcher_mark"
@@ -121,5 +121,5 @@ const splashInstalled = readFileSync(join(drawableDir, 'splash.xml'), 'utf8');
 const markInstalled = readFileSync(join(drawableDir, 'apois_launcher_mark.xml'), 'utf8');
 if (!adaptiveInstalled.includes('@drawable/apois_launcher_mark')) throw new Error('Ícone adaptativo não usa o símbolo vetorial APOIS.');
 if (!splashInstalled.includes('@drawable/apois_launcher_mark')) throw new Error('Splash não usa o símbolo vetorial APOIS.');
-if (!markInstalled.includes('#F5222D') || !markInstalled.includes('#F4C44E')) throw new Error('Símbolo APOIS perdeu vermelho/dourado oficiais.');
+if (!markInstalled.includes('#E51B23') || !markInstalled.includes('#111111')) throw new Error('Símbolo APOIS perdeu vermelho/preto oficiais.');
 console.log(`[OK] Launcher ${APP_LABEL} usa símbolo vetorial APOIS dedicado, sem crop de wordmark/bitmap.`);
