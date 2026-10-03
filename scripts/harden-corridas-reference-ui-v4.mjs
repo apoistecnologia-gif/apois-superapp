@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
+const clientWordmark = readFileSync(resolve(root, 'superapp/branding/apois-wordmark-client-20261003.png')).toString('base64');
 const workspace = process.env.APOIS_CORRIDAS_WORKSPACE || '.work/corridas';
 
 function read(relativePath) {
@@ -36,14 +37,7 @@ function ensure(condition, message) {
       <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-[430px] flex-col overflow-y-auto px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(18px,env(safe-area-inset-top))]">
         <div className="mb-4 flex items-center justify-center">
           <div className="flex items-center gap-2" aria-label="APOIS">
-            <svg data-apois-logo-mark-v4="true" viewBox="0 0 512 512" aria-hidden="true" className="h-12 w-12 shrink-0" focusable="false">
-              <path d="M75 401 213 101h78L154 401Z" fill="#E51B23" />
-              <path d="M258 101h78l139 300h-94Z" fill="#C9141B" />
-              <path d="M156 319h213l43 82H118Z" fill="#111111" />
-              <path d="M246 175 214 246h48l31-71Z" fill="#242424" />
-              <path d="M288 252 260 315h48l28-63Z" fill="#242424" />
-            </svg>
-            <span className="text-[34px] font-black leading-none tracking-[0.15em] text-[#111111]">POIS</span>
+            <img data-apois-logo-mark-v4="true" src="data:image/png;base64,${clientWordmark}" alt="APOIS, vamos?" className="h-auto w-full max-w-[280px] object-contain" />
           </div>
         </div>
 
@@ -101,7 +95,7 @@ function ensure(condition, message) {
   source += '\n}\n';
 
   ensure(source.includes('data-apois-reference-login-v4="true"'), 'Corridas login: marcador visual V4 ausente');
-  ensure(source.includes('data-apois-logo-mark-v4="true"'), 'Corridas login: símbolo APOIS vetorial inline ausente');
+  ensure(source.includes('data-apois-logo-mark-v4="true"'), 'Corridas login: logomarca oficial inline ausente');
   ensure(!source.includes('src="./apois-mark-v3.svg"'), 'Corridas login: símbolo ainda depende de asset relativo');
   ensure(source.includes('<PassengerGoogleLoginButton />'), 'Corridas login: Google OAuth desapareceu');
   ensure(source.includes('to="/recuperar-senha"'), 'Corridas login: recuperação de senha desapareceu');
@@ -185,3 +179,4 @@ function ensure(condition, message) {
 }
 
 console.log('[OK] APOIS_REFERENCE_UI_V4: login e busca corrigidos pela referência visual atual.');
+
