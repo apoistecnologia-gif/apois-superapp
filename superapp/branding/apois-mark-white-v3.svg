@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">APOIS</title>
+  <desc id="desc">Variação técnica do símbolo APOIS para fundo escuro</desc>
+  <path d="M75 401 213 101h78L154 401Z" fill="#E51B23"/>
+  <path d="M258 101h78l139 300h-94Z" fill="#C9141B"/>
+  <path d="M156 319h213l43 82H118Z" fill="#FFFFFF"/>
+  <path d="M246 175 214 246h48l31-71Z" fill="#F1F2F4"/>
+  <path d="M288 252 260 315h48l28-63Z" fill="#F1F2F4"/>
+</svg>
