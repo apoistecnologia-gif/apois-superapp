@@ -40,7 +40,24 @@ check('scripts/harden-partner-shell-mobile-ui.mjs', [
   'class="partner-mark"',
   'class="partner-wordmark"',
   'object-fit:contain',
+  '#F7F7F8',
+  '#111111',
   '@media(max-height:780px)',
-], 'Seletor Parceiro V4 usa símbolo + wordmark sem recorte em telas pequenas');
+], 'Seletor Parceiro V4 usa símbolo + wordmark e base clara sem recorte');
 
 process.exit(failed ? 1 : 0);
+
+
+check('superapp/shell/index.html', [
+  '--bg:#F7F7F8',
+  '--red:#E51B23',
+  '--border:#E2E4E8',
+  'background:#FFFFFF',
+], 'Shell Cliente fonte usa a identidade clara oficial');
+
+check('superapp/partner-shell/index.html', [
+  'background:#F7F7F8',
+  '--red:#E51B23',
+  '--surface:#FFFFFF',
+  '--border:#E2E4E8',
+], 'Shell Parceiro fonte usa a mesma identidade clara oficial');
