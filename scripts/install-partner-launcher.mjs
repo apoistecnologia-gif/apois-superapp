@@ -6,12 +6,9 @@ import './harden-partner-location-startup-ack.mjs';
 import './harden-partner-location-session-sync.mjs';
 import './harden-partner-location-notification-routing.mjs';
 // verify-partner-native-plugins roda via await no fim, depois de todos os hardeners.
-import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
 
-const legacySource = resolve('superapp/branding/apois-brand-v2.jpg');
-const foregroundSource = resolve('superapp/branding/apois-brand-v2.jpg');
 const resRoot = resolve('superapp/partner-shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/partner-shell/android/app/src/main/AndroidManifest.xml');
 const mainActivityPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/MainActivity.java');
@@ -20,18 +17,7 @@ const driverLocationServicePath = resolve('superapp/partner-shell/android/app/sr
 const courierLocationPluginPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationPlugin.java');
 const courierLocationServicePath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationService.java');
 
-for (const source of [legacySource, foregroundSource]) {
-  if (!existsSync(source)) throw new Error(`Arte oficial APOIS não encontrada: ${source}`);
-}
 if (!existsSync(resRoot)) throw new Error(`Recursos Android do APOIS Parceiro não encontrados: ${resRoot}`);
-
-function resizePng(source, size, output) {
-  const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(size), String(size), source, '--out', output], { encoding: 'utf8' });
-  if (!result.error && result.status === 0 && existsSync(output)) return;
-  // sips is macOS-only. On Windows/Linux, retain the official PNG rather than
-  // falling back to a synthetic icon; Android accepts the source as a valid raster.
-  copyFileSync(source, output);
-}
 
 function removeStaleLauncherBitmaps(dir) {
   if (!existsSync(dir)) return;
@@ -41,29 +27,8 @@ function removeStaleLauncherBitmaps(dir) {
   }
 }
 
-// O visual do launcher vem EXCLUSIVAMENTE das artes oficiais da APOIS.
-// Não desenhe/substitua o A por vetor genérico: isso descaracteriza a marca.
-const densities = [
-  { dir: 'mipmap-mdpi', legacy: 48, foreground: 108 },
-  { dir: 'mipmap-hdpi', legacy: 72, foreground: 162 },
-  { dir: 'mipmap-xhdpi', legacy: 96, foreground: 216 },
-  { dir: 'mipmap-xxhdpi', legacy: 144, foreground: 324 },
-  { dir: 'mipmap-xxxhdpi', legacy: 192, foreground: 432 },
-];
-for (const density of densities) {
-  const dir = join(resRoot, density.dir);
-  mkdirSync(dir, { recursive: true });
-  removeStaleLauncherBitmaps(dir);
-
-  const legacyTmp = `/tmp/apois-partner-launcher-${density.legacy}.png`;
-  const foregroundTmp = `/tmp/apois-partner-launcher-foreground-${density.foreground}.png`;
-  resizePng(legacySource, density.legacy, legacyTmp);
-  resizePng(foregroundSource, density.foreground, foregroundTmp);
-  copyFileSync(legacyTmp, join(dir, 'ic_launcher.png'));
-  copyFileSync(legacyTmp, join(dir, 'ic_launcher_round.png'));
-  copyFileSync(foregroundTmp, join(dir, 'ic_launcher_foreground.png'));
-  rmSync(legacyTmp, { force: true });
-  rmSync(foregroundTmp, { force: true });
+for (const density of ['mipmap-mdpi','mipmap-hdpi','mipmap-xhdpi','mipmap-xxhdpi','mipmap-xxxhdpi']) {
+  removeStaleLauncherBitmaps(join(resRoot, density));
 }
 
 const drawableDir = join(resRoot, 'drawable');
@@ -73,32 +38,66 @@ mkdirSync(drawableDir, { recursive: true });
 mkdirSync(legacyAnyDpi, { recursive: true });
 mkdirSync(adaptiveDir, { recursive: true });
 
-// Remove o A artificial criado nas builds anteriores.
-rmSync(join(drawableDir, 'apois_launcher_a.xml'), { force: true });
-rmSync(join(drawableDir, 'apois_launcher_a_monochrome.xml'), { force: true });
-rmSync(join(drawableDir, 'ic_launcher_monochrome.xml'), { force: true });
+for (const stale of [
+  'apois_launcher_a.xml',
+  'apois_launcher_a_monochrome.xml',
+  'ic_launcher_monochrome.xml',
+  'ic_launcher_foreground.xml',
+]) {
+  rmSync(join(drawableDir, stale), { force: true });
+}
 
 const backgroundDrawable = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#050505" />
+    <solid android:color="#FFFFFF" />
 </shape>
 `;
 writeFileSync(join(drawableDir, 'apois_launcher_background.xml'), backgroundDrawable, 'utf8');
 
-// Legacy deve usar o raster oficial. XML anydpi antigo pode ganhar prioridade em
-// alguns launchers, então é removido deliberadamente.
-rmSync(join(legacyAnyDpi, 'ic_launcher.xml'), { force: true });
-rmSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), { force: true });
+const markVector = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path android:fillColor="#E51B23" android:pathData="M86,386 L210,118 L270,118 L150,386 Z" />
+    <path android:fillColor="#C9141B" android:pathData="M250,118 L310,118 L430,386 L355,386 Z" />
+    <path android:fillColor="#111111" android:pathData="M148,314 L356,314 L390,386 L116,386 Z" />
+    <path android:fillColor="#242424" android:pathData="M238,181 L215,232 L256,232 L278,181 Z" />
+    <path android:fillColor="#242424" android:pathData="M275,248 L254,294 L295,294 L315,248 Z" />
+</vector>
+`;
+writeFileSync(join(drawableDir, 'apois_launcher_mark.xml'), markVector, 'utf8');
+
+const legacyXml = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/apois_launcher_background" />
+    <item android:gravity="center">
+        <inset
+            android:drawable="@drawable/apois_launcher_mark"
+            android:insetLeft="18dp"
+            android:insetTop="18dp"
+            android:insetRight="18dp"
+            android:insetBottom="18dp" />
+    </item>
+</layer-list>
+`;
+writeFileSync(join(legacyAnyDpi, 'ic_launcher.xml'), legacyXml, 'utf8');
+writeFileSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), legacyXml, 'utf8');
 
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/apois_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <foreground android:drawable="@drawable/apois_launcher_mark" />
 </adaptive-icon>
 `;
 writeFileSync(join(adaptiveDir, 'ic_launcher.xml'), adaptiveXml, 'utf8');
 writeFileSync(join(adaptiveDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
 
+const installedMark = readFileSync(join(drawableDir, 'apois_launcher_mark.xml'), 'utf8');
+if (!installedMark.includes('#E51B23') || !installedMark.includes('#111111')) {
+  throw new Error('Launcher Parceiro não usa o símbolo oficial vermelho/preto da identidade APOIS.');
+}
 const manifest = readFileSync(manifestPath, 'utf8');
 if (!manifest.includes('android:icon="@mipmap/ic_launcher"')) throw new Error('Manifest Parceiro não aponta para @mipmap/ic_launcher');
 if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) throw new Error('Manifest Parceiro não aponta para @mipmap/ic_launcher_round');
@@ -142,4 +141,4 @@ if (!mainActivity.includes('registerPlugin(DriverLocationPlugin.class)')) throw 
 if (!mainActivity.includes('registerPlugin(CourierLocationPlugin.class)')) throw new Error('CourierLocationPlugin não registrado no host Parceiro.');
 
 await import('./verify-partner-native-plugins.mjs');
-console.log('[OK] Launcher APOIS Parceiro usa a arte oficial da marca; A vetorial genérico removido; runtime nativo validado.');
+console.log('[OK] Launcher APOIS Parceiro usa símbolo vetorial oficial vermelho/preto sobre fundo branco; runtime nativo preservado e validado.');
