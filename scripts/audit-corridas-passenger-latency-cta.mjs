@@ -27,12 +27,33 @@ if (!failed) ok('hardener canônico cobre autocomplete, rota, pricing e CTA sem 
 const modules = read('.apois/modules.json');
 const homeIndex = modules.indexOf('harden-corridas-home-compact.mjs');
 const responsiveIndex = modules.indexOf('harden-corridas-responsive-flow.mjs');
+const persistentCtaIndex = modules.indexOf('harden-corridas-persistent-confirm-cta-v2.mjs');
 const brandIndex = modules.indexOf('apply-apois-brand-v2.mjs corridas');
-if (homeIndex < 0 || responsiveIndex < 0 || brandIndex < 0 || !(homeIndex < responsiveIndex && responsiveIndex < brandIndex)) {
-  fail('cadeia Corridas não executa responsive-flow na ordem esperada');
+if (
+  homeIndex < 0 ||
+  responsiveIndex < 0 ||
+  persistentCtaIndex < 0 ||
+  brandIndex < 0 ||
+  !(homeIndex < responsiveIndex && responsiveIndex < persistentCtaIndex && persistentCtaIndex < brandIndex)
+) {
+  fail('cadeia Corridas não executa CTA persistente após responsive-flow e antes do Brand V2');
 } else {
-  ok('build Corridas executa responsive-flow após Home compacta e antes do Brand V2');
+  ok('build Corridas executa CTA persistente após responsive-flow e antes do Brand V2');
 }
+
+const persistentCta = read('scripts/harden-corridas-persistent-confirm-cta-v2.mjs');
+for (const marker of [
+  'APOIS_PERSISTENT_CONFIRM_CTA_V2',
+  'bottom-[calc(70px+env(safe-area-inset-bottom)+10px)]',
+  'z-[120]',
+  'onClick={handleReview}',
+  'disabled={!checkout.readiness || !!routeError}',
+  'Confirmar {selectedCategory?.name || "Solicitação"}',
+  'pb-28',
+]) {
+  if (!persistentCta.includes(marker)) fail('CTA persistente sem marcador: ' + marker);
+}
+if (!failed) ok('CTA final fica acima da navegação e preserva handle/readiness canônicos');
 
 const build = read('scripts/build-isolated-module.mjs');
 const localBuildIndex = build.indexOf("harden-corridas-local-place-search.mjs");
