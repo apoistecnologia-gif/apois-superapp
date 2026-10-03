@@ -144,14 +144,19 @@ requireAll('.apois/modules.json', [
 ], 'pipeline dos módulos executa os hardeners móveis antes da compilação');
 
 requireAll('superapp/partner-shell/build.mjs', [
+  "resolve(root, '../branding/apois-wordmark-v3.svg')",
+  "resolve(root, '../branding/apois-mark-v3.svg')",
   "['motorista', resolve(root, '../../.work/partner-motorista/dist/client')]",
   "['entregador', resolve(root, '../../.work/partner-entregador/.output/public')]",
+  'data-apois-partner-reference-v4="true"',
+  'class="role-card motorista"',
+  'class="role-card entregador"',
   "forbidMarker(driverBundle, 'Chat em breve'",
   "forbidMarker(driverBundle, 'Abrir menu'",
   "forbidMarker(driverBundle, 'Solicitar saque'",
   "forbidMarker(courierBundle, 'Solicitar saque'",
   'apois-parceiro:operational-role',
-], 'shell Parceiro inclui somente os dois papéis e bloqueia superfícies legadas');
+], 'shell Parceiro inclui somente os dois papéis, empacota marca V3 e preserva a referência V4');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'data-apois-partner-reference-v4',
