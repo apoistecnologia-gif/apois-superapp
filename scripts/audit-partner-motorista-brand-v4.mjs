@@ -25,7 +25,7 @@ for (const marker of [
   }
 }
 for (const marker of [
-  'applyThemeClass("dark");',
+  'applyThemeClass("light");',
   'mq.matches ? "dark" : "light"',
   'title="Tema"',
 ]) {
@@ -45,5 +45,5 @@ for (const marker of [
     failed = true;
   }
 }
-if (!failed) console.log('[OK] Motorista marca v4: identidade preto/dourado fica travada em escuro e links externos usam Browser nativo no Android.');
+if (!failed) console.log('[OK] Motorista marca v4: identidade visual APOIS fica travada no tema claro unificado e links externos usam Browser nativo no Android.');
 process.exit(failed ? 1 : 0);
