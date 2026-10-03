@@ -1,62 +1,65 @@
-/* APOIS BRAND V2 — source of truth generated from apois-brand-v2.json */
+/* APOIS — source of truth da identidade visual unificada */
 :root {
-  --apois-black: #08090B;
-  --apois-black-secondary: #111318;
-  --apois-black-elevated: #181A20;
-  --apois-red: #F5222D;
-  --apois-red-strong: #FF1F2D;
-  --apois-red-dark: #9E1018;
+  --apois-primary: #E51B23;
+  --apois-primary-hover: #C9141B;
+  --apois-primary-pressed: #A90F15;
+  --apois-primary-soft: #FFF1F2;
+
+  --apois-black: #111111;
+  --apois-black-secondary: #242424;
   --apois-white: #FFFFFF;
-  --apois-white-secondary: #F3F3F3;
-  --apois-text-muted: #A6A8AE;
-  --apois-gold: #D9A520;
-  --apois-gold-light: #F4C44E;
-  --apois-gold-dark: #A97808;
+  --apois-background: #F7F7F8;
+  --apois-surface: #FFFFFF;
+  --apois-surface-secondary: #F1F2F4;
+  --apois-border: #E2E4E8;
+  --apois-text: #111111;
+  --apois-text-secondary: #666B73;
+  --apois-text-disabled: #9CA1A9;
 
-  --background: #08090B;
-  --foreground: #FFFFFF;
-  --surface: #111318;
-  --surface-2: #181A20;
-  --surface-elevated: #181A20;
-  --card: #111318;
-  --card-foreground: #FFFFFF;
-  --popover: #111318;
-  --popover-foreground: #FFFFFF;
+  --background: #F7F7F8;
+  --foreground: #111111;
+  --surface: #FFFFFF;
+  --surface-2: #F1F2F4;
+  --surface-elevated: #FFFFFF;
+  --card: #FFFFFF;
+  --card-foreground: #111111;
+  --popover: #FFFFFF;
+  --popover-foreground: #111111;
 
-  --primary-brand: #F5222D;
-  --primary: #D91E27;
-  --primary-hover: #F5222D;
-  --primary-strong: #FF1F2D;
-  --primary-dark: #9E1018;
+  --primary-brand: #E51B23;
+  --primary: #E51B23;
+  --primary-hover: #C9141B;
+  --primary-strong: #E51B23;
+  --primary-dark: #C9141B;
   --primary-foreground: #FFFFFF;
 
-  --secondary: #181A20;
-  --secondary-foreground: #FFFFFF;
-  --accent: #D9A520;
-  --accent-foreground: #08090B;
+  --secondary: #FFFFFF;
+  --secondary-foreground: #111111;
+  --accent: #FFF1F2;
+  --accent-foreground: #E51B23;
 
-  --text-primary: #FFFFFF;
-  --text-secondary: #F3F3F3;
-  --muted: #181A20;
-  --muted-foreground: #A6A8AE;
-  --border: #2A2D34;
-  --input: #181A20;
-  --ring: #F5222D;
+  --text-primary: #111111;
+  --text-secondary: #666B73;
+  --muted: #F1F2F4;
+  --muted-foreground: #9CA1A9;
+  --border: #E2E4E8;
+  --input: #FFFFFF;
+  --ring: #E51B23;
 
-  --destructive: #E5484D;
+  --destructive: #D92D20;
   --destructive-foreground: #FFFFFF;
-  --success: #2FB171;
-  --warning: #F4C44E;
-  --info: #4C9AFF;
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --info: #2563EB;
 
-  --sidebar: #111318;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #D91E27;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #E51B23;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #181A20;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #2A2D34;
-  --sidebar-ring: #F5222D;
+  --sidebar-accent: #FFF1F2;
+  --sidebar-accent-foreground: #E51B23;
+  --sidebar-border: #E2E4E8;
+  --sidebar-ring: #E51B23;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
