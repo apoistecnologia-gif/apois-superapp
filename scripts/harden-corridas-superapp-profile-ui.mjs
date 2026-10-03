@@ -6,7 +6,7 @@ let source = readFileSync(path, 'utf8');
 
 source = source
   .replace('className="p-6 pt-12 flex flex-col items-center border-b border-gray-900"', 'className="border-b border-white/8 px-6 pb-6 pt-[max(env(safe-area-inset-top),1.25rem)] flex flex-col items-center"')
-  .replaceAll('bg-[#121212]', 'bg-[#11151d]')
+  .replaceAll('bg-[#121212]', 'bg-white')
   .replaceAll('rounded-xl', 'rounded-2xl')
   .replace('className="w-full flex items-center justify-between p-4', 'className="w-full min-h-[68px] flex items-center justify-between p-4')
   .replace('className="text-xs font-bold text-gray-500 px-2 pt-4 pb-2 uppercase tracking-wider"', 'className="px-2 pb-2 pt-4 text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500"')
