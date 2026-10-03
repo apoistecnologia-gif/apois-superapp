@@ -36,8 +36,11 @@ check('scripts/harden-superapp-shell-iconography.mjs', [
 ], 'Seletor aceita a iconografia SVG nativa da Home V4 e preserva slogan final');
 
 check('scripts/harden-partner-shell-mobile-ui.mjs', [
-  'object-fit:contain;padding:8px',
-  '@media(max-height:700px)',
-], 'Seletor Parceiro mantém a mesma marca sem recorte em telas pequenas');
+  'data-apois-partner-reference-v4',
+  'class="partner-mark"',
+  'class="partner-wordmark"',
+  'object-fit:contain',
+  '@media(max-height:780px)',
+], 'Seletor Parceiro V4 usa símbolo + wordmark sem recorte em telas pequenas');
 
 process.exit(failed ? 1 : 0);
