@@ -33,6 +33,18 @@ requireMarkers('.work/corridas/src/components/BottomNavigation.tsx',['grid-cols-
 requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNavigation','pathname === "/buscar-destino"','pathname.startsWith("/corrida/")'],'Corridas não sobrepõe rodapé nas jornadas fullscreen');
 requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
 requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','apois-kit-home','Digite um endereço...','<CategorySelector />'],'Home Corridas usa mapa real, busca e visual APOIS');
+requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',[
+  'APOIS_PERSISTENT_CONFIRM_CTA_V2',
+  'bottom-[calc(70px+env(safe-area-inset-bottom)+10px)]',
+  'z-[120]',
+  'onClick={handleReview}',
+  'disabled={!checkout.readiness || !!routeError}',
+  'Confirmar {selectedCategory?.name || "Solicitação"}',
+  'pb-28',
+],'CTA Corridas permanece visível acima da navegação após preço/categoria');
+forbidMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',[
+  'apois-ride-confirm-cta sticky bottom-0',
+],'CTA Corridas não depende mais de sticky no fim do conteúdo');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',['APOIS_NATIVE_PASSENGER_MAP_V1','GoogleMap.create({','VITE_APOIS_ANDROID_MAPS_API_KEY','capacitor-google-map'],'Corridas usa Google Maps nativo no Android e mantém fallback web');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['data-apois-search-fullscreen-v3="true"','aria-label="Buscar destino"','APOIS_SEARCH_VIEWPORT_V4','apois-kit-search-input','apois-kit-search-screen','apois-kit-search-results','suggestions.map','whitespace-normal break-words','pt-[max(12px,env(safe-area-inset-top))]'],'Busca Corridas usa viewport fullscreen estável, campo fixo e lista rolável');
 requireMarkers('.work/corridas/src/services/places/places-service.ts',['APOIS_LOCAL_PLACES_V1','locationRestriction','request.origin','localSuggestions','locationKey'],'Places Corridas restringe autocomplete à região/localidade atual');
