@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 let failed = false;
-const fail = (message) => { console.error(`[FAIL] APOIS Brand V2: ${message}`); failed = true; };
-const ok = (message) => console.log(`[OK] APOIS Brand V2: ${message}`);
+const fail = (message) => { console.error(`[FAIL] APOIS Visual Identity: ${message}`); failed = true; };
+const ok = (message) => console.log(`[OK] APOIS Visual Identity: ${message}`);
 
 function read(path) {
   const full = resolve(path);
@@ -16,7 +16,6 @@ function luminance(hex) {
   const linear = rgb.map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
   return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
 }
-
 function contrast(a, b) {
   const la = luminance(a);
   const lb = luminance(b);
@@ -25,23 +24,23 @@ function contrast(a, b) {
 
 const tokens = JSON.parse(read('design-system/apois-brand-v2.json') || '{}');
 const requiredPalette = {
-  black: '#08090B',
-  blackSecondary: '#111318',
-  blackElevated: '#181A20',
-  red: '#F5222D',
-  redStrong: '#FF1F2D',
-  redDark: '#9E1018',
-  white: '#FFFFFF',
-  whiteSecondary: '#F3F3F3',
-  textMuted: '#A6A8AE',
-  gold: '#D9A520',
-  goldLight: '#F4C44E',
-  goldDark: '#A97808',
+  primary:'#E51B23',
+  primaryHover:'#C9141B',
+  primaryPressed:'#A90F15',
+  primarySoft:'#FFF1F2',
+  black:'#111111',
+  blackSecondary:'#242424',
+  white:'#FFFFFF',
+  background:'#F7F7F8',
+  surfaceSecondary:'#F1F2F4',
+  border:'#E2E4E8',
+  textSecondary:'#666B73',
+  textDisabled:'#9CA1A9',
 };
 for (const [key, value] of Object.entries(requiredPalette)) {
   if (tokens?.palette?.[key] !== value) fail(`token ${key} deveria ser ${value}`);
 }
-if (!failed) ok('paleta oficial preto/vermelho/branco/dourado está centralizada');
+if (!failed) ok('paleta clara oficial vermelho/preto/branco/cinzas está centralizada');
 
 for (const semantic of [
   'background','surface','surfaceElevated','primaryBrand','primary','primaryHover',
@@ -50,7 +49,7 @@ for (const semantic of [
 ]) {
   if (!tokens?.semantic?.[semantic]) fail(`token semântico ausente: ${semantic}`);
 }
-if (!failed) ok('tokens semânticos cobrem superfícies, ações, texto, estrutura e feedback');
+if (!failed) ok('tokens semânticos cobrem ação, superfície, estrutura e feedback sem substituir status');
 
 const actionContrast = contrast(tokens.semantic.primary, tokens.semantic.primaryForeground);
 if (actionContrast < 4.5) fail(`CTA primário não atende contraste AA normal (${actionContrast.toFixed(2)}:1)`);
@@ -58,32 +57,40 @@ else ok(`CTA primário com texto branco atende contraste AA (${actionContrast.to
 
 const css = read('design-system/apois-brand-v2.css');
 for (const marker of [
-  '--background: #08090B',
-  '--surface: #111318',
-  '--surface-elevated: #181A20',
-  '--primary-brand: #F5222D',
-  '--primary: #D91E27',
-  '--accent: #D9A520',
-  '--text-primary: #FFFFFF',
-  '--text-secondary: #F3F3F3',
-  '--muted-foreground: #A6A8AE',
-  '--success: #2FB171',
-  '--warning: #F4C44E',
+  '--apois-primary: #E51B23',
+  '--apois-primary-hover: #C9141B',
+  '--apois-primary-soft: #FFF1F2',
+  '--background: #F7F7F8',
+  '--surface: #FFFFFF',
+  '--surface-2: #F1F2F4',
+  '--border: #E2E4E8',
+  '--text-primary: #111111',
+  '--text-secondary: #666B73',
+  '--muted-foreground: #9CA1A9',
+  '--success: #16A34A',
+  '--warning: #F59E0B',
+  '--info: #2563EB',
+  'color-scheme: light',
 ]) {
   if (!css.includes(marker)) fail(`CSS central sem marcador: ${marker}`);
 }
-if (!failed) ok('CSS central expõe os tokens solicitados');
+if (!failed) ok('CSS central expõe identidade clara e preserva tokens semânticos');
+
+const wordmark = read('superapp/branding/apois-wordmark-v3.svg');
+const mark = read('superapp/branding/apois-mark-v3.svg');
+for (const [label, source] of [['wordmark',wordmark],['mark',mark]]) {
+  for (const marker of ['#E51B23','#C9141B','#111111']) {
+    if (!source.includes(marker)) fail(`${label} sem cor oficial ${marker}`);
+  }
+  for (const forbidden of ['#F5222D','#FF1F2D','#9E1018','#D9A520','#F4C44E','#A97808']) {
+    if (source.includes(forbidden)) fail(`${label} ainda contém cor da identidade anterior: ${forbidden}`);
+  }
+}
+if (!failed) ok('assets oficiais preservam geometria e usam vermelho/preto da nova identidade');
 
 const applicator = read('scripts/apply-apois-brand-v2.mjs');
-if (!applicator.includes("const MARKER_BEGIN = '/* APOIS_BRAND_V2_BEGIN */';") ||
-    !applicator.includes("const MARKER_END = '/* APOIS_BRAND_V2_END */';")) {
-  fail('aplicador Brand V2 não usa marcadores CSS válidos');
-}
-if (applicator.includes("const begin = \`\${MARKER} BEGIN\`;") ||
-    applicator.includes("const end = \`\${MARKER} END\`;")) {
-  fail('aplicador Brand V2 ainda pode emitir BEGIN/END como tokens CSS crus');
-}
 for (const marker of [
+  "const MARKER_BEGIN = '/* APOIS_BRAND_V2_BEGIN */';",
   "case 'corridas':",
   "case 'entregas':",
   "case 'entregador':",
@@ -91,29 +98,23 @@ for (const marker of [
   "case 'admin':",
   "case 'shell-client':",
   "case 'shell-partner':",
-  'APOIS_BRAND_V2',
-  'apois-primary',
+  '--apois-primary:',
+  'color-scheme: light',
+  "superapp/branding/apois-wordmark-v3.svg",
+  "superapp/branding/apois-mark-v3.svg",
 ]) {
-  if (!applicator.includes(marker)) fail(`aplicador central sem alvo/marcador: ${marker}`);
+  if (!applicator.includes(marker)) fail(`aplicador central sem marcador: ${marker}`);
 }
-if (!failed) ok('aplicador central atende Passageiro, Entregas, Parceiro, Admin e shells');
-
-for (const marker of [
-  'superapp/branding/apois-wordmark-v3.svg',
-  "['public/apois-logo.svg', 'public/apois-logo-customer.svg']",
-  'data:image/svg+xml;base64',
-]) {
-  if (!applicator.includes(marker)) fail('aplicador central não propaga a nova logomarca: ' + marker);
-}
-if (!failed) ok('nova logomarca APOIS é propagada para Shells e Entregas');
+if (!failed) ok('aplicador central cobre Passageiro, Entregas, Parceiro, Admin e shells');
 
 const modules = read('.apois/modules.json');
-for (const marker of [
-  'apply-apois-brand-v2.mjs corridas',
-  'apply-apois-brand-v2.mjs entregas',
-]) {
-  if (!modules.includes(marker)) fail(`cadeia de módulos não aplica Brand V2: ${marker}`);
+for (const marker of ['apply-apois-brand-v2.mjs corridas','apply-apois-brand-v2.mjs entregas']) {
+  if (!modules.includes(marker)) fail(`cadeia de módulos não aplica identidade: ${marker}`);
 }
+const corridasUi = modules.indexOf('harden-corridas-reference-ui-v4.mjs');
+const corridasBrand = modules.indexOf('apply-apois-brand-v2.mjs corridas');
+if (!(corridasUi >= 0 && corridasBrand > corridasUi)) fail('Corridas não aplica identidade central como última camada visual');
+else ok('Corridas aplica a identidade central depois dos hardeners visuais');
 
 for (const [path, markers] of [
   ['scripts/build-partner-release.sh', ['apply-apois-brand-v2.mjs" motorista','apply-apois-brand-v2.mjs" entregador']],
@@ -127,11 +128,21 @@ for (const [path, markers] of [
   const source = read(path);
   for (const marker of markers) if (!source.includes(marker)) fail(`${path} sem ${marker}`);
 }
-if (!failed) ok('todas as cadeias de build relevantes aplicam a identidade centralizada');
+if (!failed) ok('cadeias de build relevantes continuam aplicando somente a camada visual central');
+
+const superLauncher = read('scripts/install-superapp-launcher.mjs');
+for (const marker of ['#FFFFFF','#E51B23','#111111','apois_launcher_mark']) {
+  if (!superLauncher.includes(marker)) fail(`launcher Superapp sem ${marker}`);
+}
+const partnerLauncher = read('scripts/install-partner-launcher.mjs');
+for (const marker of ['#FFFFFF','#E51B23','#111111','apois_launcher_mark']) {
+  if (!partnerLauncher.includes(marker)) fail(`launcher Parceiro sem ${marker}`);
+}
+if (!failed) ok('launcher/splash usam símbolo oficial vermelho/preto sobre fundo branco');
 
 const packageJson = JSON.parse(read('package.json') || '{}');
 if (!String(packageJson.scripts?.['audit:ui'] ?? '').includes('audit-apois-brand-v2.mjs')) {
-  fail('audit:ui não inclui o gate APOIS Brand V2');
-} else ok('gate visual Brand V2 está encadeado no audit:ui');
+  fail('audit:ui não inclui o gate da identidade APOIS');
+} else ok('gate visual central está encadeado no audit:ui');
 
 process.exit(failed ? 1 : 0);
