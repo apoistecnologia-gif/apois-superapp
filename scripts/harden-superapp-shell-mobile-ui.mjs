@@ -36,17 +36,27 @@ if (!source.includes('@media(max-height:720px)')) {
   );
 }
 
-for (const marker of [
-  'overflow-x:hidden;overflow-y:auto',
-  'class="brand-lockup"',
-  'class="brand-mark"',
-  'object-fit:contain',
-  '@media(max-height:720px)',
-  '.service{min-height:265px}',
-  '--teal:#f2b414;',
-  '.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}',
-  '.vehicle svg,.delivery svg',
-]) {
+const isReferenceV4 = source.includes('data-apois-reference-home-v4="true"');
+const requiredMarkers = isReferenceV4
+  ? [
+      'overflow-x:hidden;overflow-y:auto',
+      'class="brand-lockup"',
+      'class="brand-mark"',
+      '.visual svg',
+      '@media(max-height:720px)',
+      '.entregas .action',
+    ]
+  : [
+      'overflow-x:hidden;overflow-y:auto',
+      'object-fit:contain;padding:6px',
+      '@media(max-height:720px)',
+      '.service{min-height:265px}',
+      '--teal:#f2b414;',
+      '.entregas .action{background:linear-gradient(135deg,#f7c847,#e9a90e);color:#050505}',
+      '.vehicle svg,.delivery svg',
+    ];
+
+for (const marker of requiredMarkers) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Shell cliente: ajuste mobile/identidade ausente (${marker})`);
 }
 if (source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes('#09b8b0')) {
