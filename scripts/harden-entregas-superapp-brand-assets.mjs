@@ -1,9 +1,13 @@
-import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-const source = resolve('superapp/branding/apois-client-red-logo.png');
+const source = resolve('superapp/branding/apois-client-red-logo.b64');
 if (!existsSync(source) || statSync(source).size < 1024) {
   throw new Error('[FAIL] Entregas: arte oficial APOIS ausente ou inválida');
+}
+const brandBytes = Buffer.from(readFileSync(source, 'utf8').trim(), 'base64');
+if (brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
+  throw new Error('[FAIL] Entregas: base64 da marca APOIS não gerou PNG válido');
 }
 
 for (const target of [
@@ -13,8 +17,8 @@ for (const target of [
 ]) {
   const full = resolve(target);
   mkdirSync(dirname(full), { recursive: true });
-  copyFileSync(source, full);
-  if (!existsSync(full) || statSync(full).size !== statSync(source).size) {
+  writeFileSync(full, brandBytes);
+  if (!existsSync(full) || statSync(full).size !== brandBytes.length) {
     throw new Error(`[FAIL] Entregas: não foi possível instalar asset oficial em ${target}`);
   }
   console.log(`[OK] Entregas: asset oficial instalado em ${target}`);
