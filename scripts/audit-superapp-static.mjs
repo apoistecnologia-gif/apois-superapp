@@ -134,6 +134,8 @@ requireText('scripts/fix-corridas-superapp-ui.mjs', [
 requireText('scripts/build-isolated-module.mjs', [
   'function peekPendingOAuthProduct()',
   "path === 'callback' && peekPendingOAuthProduct() === 'corridas'",
+  "function storeCorridasGoogleCallback(rawUrl)",
+  "window.location.replace('../corridas/index.html#/login')",
   "window.location.replace('../entregas/index.html')",
 ], 'callback Google de Corridas permanece no módulo Corridas e callbacks genéricos de Entregas continuam encaminhados');
 
