@@ -111,7 +111,7 @@ fi
 # externo pode manter VITE_* do módulo Entregador; essas variáveis não podem
 # contaminar o bundle Motorista, que deve usar exclusivamente o projeto Corridas.
 case "$CORRIDAS_URL_VALUE" in
-  *vqtucstyduxrqjgyigfk.supabase.co) ;;
+  *tbbzkrfupmqdywnzgnms.supabase.co) ;;
   *)
     echo '[FAIL] Motorista: CORRIDAS_VITE_SUPABASE_URL não aponta para o projeto Corridas esperado.'
     exit 1
