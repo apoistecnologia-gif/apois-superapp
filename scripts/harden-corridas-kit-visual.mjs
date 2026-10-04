@@ -260,31 +260,6 @@ function replaceRequired(source, search, replacement, label) {
   console.log('[OK] Corridas: sugestões permanecem na área útil sem exigir arrastar a tela');
 }
 
-// MAPA — preserva funcionalidade e deixa loading/erro coerentes com o mock claro.
-{
-  const path = 'src/components/map/PassengerMap.tsx';
-  let source = read(path);
-  source = source
-    .replace('bg-zinc-200', 'bg-[#EEF1F4]')
-    .replaceAll('"#FFB800"', '"#E51B23"')
-    .replace('if (origin) addCircleMarker(origin, "Sua localização", "#E51B23");', 'if (origin) addCircleMarker(origin, "Sua localização", "#2563EB");')
-    .replace('if (destination) addCircleMarker(destination, "Destino", "#111111", 9);', 'if (destination) addCircleMarker(destination, "Destino", "#E51B23", 9);')
-    .replace('bg-zinc-100/90', 'bg-white/90')
-    .replace('border-zinc-200 border-t-apois-yellow', 'border-[#E2E4E8] border-t-[#E51B23]')
-    .replace('text-zinc-700', 'text-[#4F555D]')
-    .replace('bg-zinc-950/90 p-6 text-center', 'bg-white/90 p-6 text-center backdrop-blur-sm')
-    .replace('max-w-xs space-y-4 rounded-3xl border border-white/10 bg-zinc-900 p-6 shadow-2xl', 'max-w-xs space-y-4 rounded-[24px] border border-[#E2E4E8] bg-white p-6 shadow-[0_18px_45px_rgba(17,17,17,.12)]')
-    .replace('text-sm font-black uppercase tracking-tight text-apois-yellow', 'text-sm font-black uppercase tracking-tight text-[#E51B23]')
-    .replace('text-xs leading-relaxed text-zinc-300', 'text-xs leading-relaxed text-[#666B73]')
-    .replace('rounded-xl bg-apois-yellow px-4 py-3 text-xs font-black text-black', 'rounded-xl bg-[#E51B23] px-4 py-3 text-xs font-black text-white')
-    .replace(
-      'const isConfigError = code.includes("configuration_missing") || code.includes("api_key_empty");',
-      'const isConfigError = code.includes("configuration_missing") || code.includes("api_key_empty") || code.includes("maps_auth_failure");',
-    );
-  write(path, source);
-  console.log('[OK] Corridas visual: mapa indisponível permanece claro e não transforma a Home em tela preta');
-}
-
 // RODAPÉ — mantém os cinco destinos funcionais, mas em branco/vermelho.
 {
   const path = 'src/components/BottomNavigation.tsx';
