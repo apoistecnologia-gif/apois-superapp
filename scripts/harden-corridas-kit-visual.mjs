@@ -315,6 +315,8 @@ function replaceRequired(source, search, replacement, label) {
 
 for (const [path, marker] of [
   ['src/styles.css', 'APOIS_VISUAL_KIT_V1'],
+  ['src/styles.css', 'APOIS_REFERENCE_HOME_V2'],
+  ['src/routes/_authenticated.inicio.tsx', 'data-apois-reference-home-v2'],
   ['src/routes/_authenticated.inicio.tsx', 'apois-kit-home-panel'],
   ['src/routes/_authenticated.buscar-destino.tsx', 'apois-kit-search-results'],
   ['src/components/ui/bottom-sheet/BottomSheet.tsx', 'max-h-[94dvh]'],
