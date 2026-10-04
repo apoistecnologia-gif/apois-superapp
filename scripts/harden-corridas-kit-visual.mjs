@@ -146,7 +146,7 @@ function replaceRequired(source, search, replacement, label) {
       <button
         type="button"
         onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })}
-        className="relative z-30 mx-4 mt-4 flex min-h-[76px] items-center gap-4 rounded-[24px] border border-[#E2E4E8] bg-white/96 px-4 text-left shadow-[0_14px_34px_rgba(17,17,17,.13)] backdrop-blur-md active:scale-[.99]"
+        className="relative z-30 mx-4 mt-4 flex min-h-[76px] items-center gap-4 rounded-[24px] border border-[#E2E4E8] bg-white/95 px-4 text-left shadow-[0_14px_34px_rgba(17,17,17,.13)] backdrop-blur-md active:scale-[.99]"
       >
         <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#FFF1F2] text-[#E51B23]"><MapPin size={27} fill="currentColor" /></div>
         <div className="min-w-0 flex-1">
@@ -219,7 +219,7 @@ function replaceRequired(source, search, replacement, label) {
   if (!source.includes('data-apois-reference-home-v2')) throw new Error('[FAIL] Corridas visual V2 não entrou na Home');
   console.log('[OK] Corridas: Home operacional alinhada ao mock aprovado sem alterar lógica de corrida');
 
-  for (const marker of ['PassengerMap', 'apois-kit-home', 'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Digite um endereço...', '<CategorySelector />']) {
+  for (const marker of ['PassengerMap', 'data-apois-reference-home-v2', 'apois-kit-home', 'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Digite seu destino', '<CategorySelector />', 'Solicitar corrida']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Home incompleta (${marker})`);
   }
   if (source.includes('🌙') || source.includes('👋')) throw new Error('[FAIL] Corridas visual: emojis decorativos permaneceram na Home');
@@ -234,18 +234,18 @@ function replaceRequired(source, search, replacement, label) {
   source = replaceRequired(
     source,
     'className="flex flex-col min-h-screen bg-transparent relative"',
-    'className="apois-kit-search-screen flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#07090d] relative"',
+    'className="apois-kit-search-screen flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#F7F7F8] text-[#111111] relative"',
     'Corridas visual: busca ocupa viewport dinâmica',
   );
   source = source
-    .replaceAll('bg-[#1a1a1a]', 'bg-[#0b0e14]/96 backdrop-blur-xl')
-    .replaceAll('bg-[#2a2a2a]', 'bg-[#11151d]')
-    .replace('className="sticky top-0 bg-[#0b0e14]/96 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="sticky top-0 z-30 bg-[#0b0e14]/96 pt-2 pb-3 backdrop-blur-xl"')
+    .replaceAll('bg-[#1a1a1a]', 'bg-white/95 backdrop-blur-xl')
+    .replaceAll('bg-[#2a2a2a]', 'bg-white')
+    .replace('className="sticky top-0 bg-white/95 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="sticky top-0 z-30 bg-white/95 pt-2 pb-3 backdrop-blur-xl"')
     .replace('className="flex-1 mt-2"', 'className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain"')
     .replace('<motion.div key="results" className="space-y-1">', '<motion.div key="results" className="space-y-2 pb-6">')
-    .replaceAll('font-bold text-white text-sm truncate', 'font-bold text-white text-sm whitespace-normal break-words leading-snug')
-    .replaceAll('text-xs text-gray-500 truncate', 'text-xs text-zinc-400 whitespace-normal break-words leading-snug')
-    .replaceAll('border-b border-white/5', 'border border-white/8 bg-white/[0.025]');
+    .replaceAll('font-bold text-white text-sm truncate', 'font-bold text-[#111111] text-sm whitespace-normal break-words leading-snug')
+    .replaceAll('text-xs text-gray-500 truncate', 'text-xs text-[#666B73] whitespace-normal break-words leading-snug')
+    .replaceAll('border-b border-white/5', 'border border-[#E2E4E8] bg-white');
 
   for (const marker of ['apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Busca incompleta (${marker})`);
@@ -262,10 +262,10 @@ function replaceRequired(source, search, replacement, label) {
     .replace('bg-zinc-200', 'bg-[#EEF1F4]')
     .replaceAll('"#FFB800"', '"#E51B23"')
     .replace('if (origin) addCircleMarker(origin, "Sua localização", "#E51B23");', 'if (origin) addCircleMarker(origin, "Sua localização", "#2563EB");')
-    .replace('bg-zinc-100/90', 'bg-white/88')
+    .replace('bg-zinc-100/90', 'bg-white/90')
     .replace('border-zinc-200 border-t-apois-yellow', 'border-[#E2E4E8] border-t-[#E51B23]')
     .replace('text-zinc-700', 'text-[#4F555D]')
-    .replace('bg-zinc-950/90 p-6 text-center', 'bg-white/88 p-6 text-center backdrop-blur-sm')
+    .replace('bg-zinc-950/90 p-6 text-center', 'bg-white/90 p-6 text-center backdrop-blur-sm')
     .replace('max-w-xs space-y-4 rounded-3xl border border-white/10 bg-zinc-900 p-6 shadow-2xl', 'max-w-xs space-y-4 rounded-[24px] border border-[#E2E4E8] bg-white p-6 shadow-[0_18px_45px_rgba(17,17,17,.12)]')
     .replace('text-sm font-black uppercase tracking-tight text-apois-yellow', 'text-sm font-black uppercase tracking-tight text-[#E51B23]')
     .replace('text-xs leading-relaxed text-zinc-300', 'text-xs leading-relaxed text-[#666B73]')
