@@ -90,7 +90,7 @@ requireAll('superapp/shell/build.mjs', [
   "import '../../scripts/harden-superapp-shell-mobile-ui.mjs';",
   "['corridas', resolve(root, '../../.work/corridas/dist')]",
   "['entregas', resolve(root, '../../.work/entregas/.output/public')]",
-  "../branding/apois-client-red-logo.png",
+  "../branding/apois-client-red-logo.b64",
 ], 'shell Cliente aplica identidade/mobile, usa marca exclusiva e inclui somente Passageiro + Cliente Entregas');
 forbidAll('superapp/shell/build.mjs', ['partner-motorista', 'partner-entregador', "['motorista'", "['entregador'"], 'shell Cliente não copia módulos de parceiro');
 
