@@ -128,16 +128,16 @@ const launcherForegroundXml = `<?xml version="1.0" encoding="utf-8"?>
     android:viewportWidth="432"
     android:viewportHeight="432">
     <path
-        android:fillColor="#D4A62A"
+        android:fillColor="#E51B23"
         android:pathData="M78,374 L176,68 L226,68 L128,374 Z" />
     <path
-        android:fillColor="#F1C84B"
+        android:fillColor="#FF3941"
         android:pathData="M204,68 L254,68 L354,374 L304,374 Z" />
     <path
-        android:fillColor="#D9AB2B"
+        android:fillColor="#C9141B"
         android:pathData="M116,298 C168,248 248,226 328,238 L311,269 C243,258 174,277 129,317 Z" />
     <path
-        android:fillColor="#C69218"
+        android:fillColor="#A90F16"
         android:pathData="M168,314 C216,278 271,265 317,271 L304,294 C262,291 221,302 183,333 Z" />
 </vector>
 `;
@@ -176,7 +176,7 @@ const adaptiveIconXml = `<?xml version="1.0" encoding="utf-8"?>
 // Android/Capacitor durante a abertura do Superapp.
 const splashXml = `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/black" />
+    <item android:drawable="@android:color/white" />
     <item android:gravity="center">
         <inset
             android:drawable="@drawable/ic_launcher_foreground"
@@ -201,7 +201,7 @@ writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher_round.xml'), adaptiveIconXml,
 // place. Creating a second copy in values/colors.xml makes aapt merge fail with
 // a duplicate color resource during assembleRelease.
 const launcherBackgroundPath = join(valuesDir, 'ic_launcher_background.xml');
-const launcherBackgroundColor = '<color name="ic_launcher_background">#050505</color>';
+const launcherBackgroundColor = '<color name="ic_launcher_background">#FFFFFF</color>';
 if (existsSync(launcherBackgroundPath)) {
   let backgroundValues = readFileSync(launcherBackgroundPath, 'utf8');
   if (/<color name="ic_launcher_background">[^<]*<\/color>/.test(backgroundValues)) {
