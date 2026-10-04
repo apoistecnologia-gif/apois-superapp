@@ -307,6 +307,8 @@ function injectSuperappBridge(indexPath, moduleName) {
   console.log(`[OK] ${moduleName}: bridge do Superapp injetado`);
 }
 
+let protectedCorridasMapRuntimeAfterVisual = null;
+
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), name]);
 if (name === 'corridas') {
   // The pinned Corridas snapshot contains a protected historical .env. Never
@@ -347,6 +349,9 @@ if (name === 'corridas') {
       process.exit(1);
     }
   }
+  protectedCorridasMapRuntimeAfterVisual = new Map(
+    protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
+  );
   console.log('[OK] Corridas: migração visual preservou byte a byte Maps/GPS/Places');
 }
 if (name === 'entregas') {
@@ -414,6 +419,17 @@ if (name === 'entregas') {
 for (const command of [config.install, config.build]) {
   const [bin, ...args] = command;
   run(bin, args, { cwd, env });
+}
+
+if (name === 'corridas' && protectedCorridasMapRuntimeAfterVisual) {
+  for (const [path, before] of protectedCorridasMapRuntimeAfterVisual) {
+    const after = readFileSync(resolve(root, path), 'utf8');
+    if (after !== before) {
+      console.error(`[FAIL] pipeline pós-visual alterou runtime protegido do mapa: ${path}`);
+      process.exit(1);
+    }
+  }
+  console.log('[OK] Corridas: build final preservou byte a byte Maps/GPS/Places');
 }
 
 if (config.render) {
