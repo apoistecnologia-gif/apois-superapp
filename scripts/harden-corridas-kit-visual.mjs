@@ -37,12 +37,21 @@ function replaceRequired(source, search, replacement, label) {
   let source = read(path);
 
   if (!source.includes('apois-kit-home ')) {
-    source = replaceRequired(
-      source,
-      '<div className="relative flex-1 bg-[#0A0D14] overflow-hidden flex flex-col">',
-      '<div className="apois-kit-home relative flex-1 overflow-hidden bg-[#07090d] flex flex-col">',
-      'Corridas visual: raiz da Home usa kit oficial',
-    );
+    if (source.includes('<div className="relative flex-1 bg-[#0A0D14] overflow-hidden flex flex-col">')) {
+      source = source.replace(
+        '<div className="relative flex-1 bg-[#0A0D14] overflow-hidden flex flex-col">',
+        '<div className="apois-kit-home relative flex-1 overflow-hidden bg-[#07090d] flex flex-col">',
+      );
+      console.log('[OK] Corridas visual: raiz da Home usa kit oficial (tema legado)');
+    } else if (source.includes('<div className="relative flex-1 bg-[#F7F7F8] overflow-hidden flex flex-col">')) {
+      source = source.replace(
+        '<div className="relative flex-1 bg-[#F7F7F8] overflow-hidden flex flex-col">',
+        '<div className="apois-kit-home relative flex-1 bg-[#F7F7F8] overflow-hidden flex flex-col">',
+      );
+      console.log('[OK] Corridas visual: raiz da Home usa kit oficial (tema vermelho/branco)');
+    } else {
+      throw new Error('[FAIL] Corridas visual: raiz da Home incompatível com os temas suportados');
+    }
   }
 
   source = source
@@ -55,6 +64,10 @@ function replaceRequired(source, search, replacement, label) {
     .replace(
       '<div className="bg-gradient-to-t from-black via-[#0A0D14] to-transparent pt-8 px-4 pb-4">',
       '<div className="apois-kit-home-panel bg-gradient-to-t from-black via-[#07090d] to-transparent pt-8 px-4 pb-4">',
+    )
+    .replace(
+      '<div className="bg-gradient-to-t from-white via-white/95 to-transparent pt-8 px-4 pb-4">',
+      '<div className="apois-kit-home-panel bg-gradient-to-t from-white via-white/95 to-transparent pt-8 px-4 pb-4">',
     )
     .replace('className="text-3xl font-black text-white tracking-tighter leading-tight"', 'className="text-[30px] font-black text-white tracking-[-0.04em] leading-tight"')
     .replace('className="w-full bg-[#1A1D24] border border-white/5 rounded-2xl p-4', 'className="w-full bg-[#11151d]/95 border border-apois-yellow/15 rounded-[22px] p-4')
@@ -120,12 +133,15 @@ function replaceRequired(source, search, replacement, label) {
   write(path, source);
 }
 
-// CATEGORIAS — cinco modalidades em cards verticais, sem corte horizontal.
+// CATEGORIAS — preserve a versão ilustrada vermelho/branco quando ela já foi aplicada.
 {
   const path = 'src/components/pricing/CategorySelector.tsx';
-  const content = `import React from "react";\nimport { useRideCategories } from "@/hooks/use-ride-categories";\nimport { usePricing } from "@/hooks/use-pricing";\nimport { PRICING_CONFIG } from "@/services/pricing/pricing-config";\nimport { cn } from "@/lib/utils";\nimport { Car, Bike, Truck, Wrench, Package, Check } from "lucide-react";\nimport { RideCategoryCode } from "@/types/pricing";\n\nconst IconMap: Record<RideCategoryCode, React.ElementType> = {\n  carro: Car,\n  moto: Bike,\n  fretes: Truck,\n  guincho: Wrench,\n  envios: Package,\n};\n\nconst descriptions: Partial<Record<RideCategoryCode, string>> = {\n  carro: "Conforto para o dia a dia",\n  moto: "Agilidade para chegar mais rápido",\n  fretes: "Fretes e mudanças com espaço para volumes",\n  guincho: "Transporte e apoio para o seu veículo",\n  envios: "Documentos e pequenos objetos",\n};\n\nexport const CategorySelector: React.FC = () => {\n  const { categories, selectedCategory, selectCategory, isLoading: categoriesLoading } = useRideCategories();\n  const { estimates, status: pricingStatus } = usePricing();\n\n  if (categoriesLoading) {\n    return <div className="grid gap-3">{[1,2,3].map((i) => <div key={i} className="h-[92px] animate-pulse rounded-[22px] border border-white/8 bg-white/[0.035]" />)}</div>;\n  }\n  if (categories.length === 0) {\n    return <div className="rounded-[22px] border border-white/8 bg-white/[0.03] px-5 py-6 text-center text-sm text-zinc-400">Não há categorias disponíveis para esta rota no momento.</div>;\n  }\n\n  return (\n    <div className="apois-kit-category-list grid gap-3 pb-1">\n      {categories.map((cat) => {\n        const isSelected = selectedCategory?.id === cat.id;\n        const Icon = IconMap[cat.key] || Car;\n        const categoryLabel = PRICING_CONFIG.LABELS[cat.key] || cat.name;\n        const estimate = estimates.find((e) => e.categoryId === cat.id);\n        const isAvailable = estimate?.available !== false;\n        return (\n          <button key={cat.id} type="button" onClick={() => isAvailable && selectCategory(cat)} disabled={!isAvailable} aria-pressed={isSelected}\n            className={cn("group grid min-h-[92px] w-full grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-3 rounded-[22px] border px-3.5 py-3 text-left transition-all active:scale-[0.985]", isSelected ? "border-apois-yellow/70 bg-apois-yellow/[0.10] shadow-[0_12px_34px_rgba(246,190,28,.10)]" : isAvailable ? "border-white/8 bg-[#11151d]" : "cursor-not-allowed border-white/5 bg-white/[0.02] opacity-45")}>\n            <div className={cn("flex h-[58px] w-[58px] items-center justify-center rounded-[18px] border", isSelected ? "border-apois-yellow/35 bg-apois-yellow/15 text-apois-yellow" : "border-white/8 bg-black/30 text-zinc-300")}><Icon size={28} strokeWidth={2.1} /></div>\n            <div className="min-w-0">\n              <div className="flex items-center gap-2"><span className="text-[15px] font-black leading-tight text-white">{categoryLabel}</span>{isSelected ? <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-apois-yellow text-black"><Check size={13} strokeWidth={3} /></span> : null}</div>\n              <p className="mt-1 text-[11px] leading-snug text-zinc-500">{descriptions[cat.key] || "Categoria disponível para esta rota"}</p>\n            </div>\n            <div className="min-w-[78px] text-right"><span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-zinc-600">Estimativa</span><span className={cn("mt-1 block text-sm font-black", isSelected ? "text-apois-yellow" : "text-white")}>{!isAvailable ? "Indisponível" : pricingStatus === "loading" ? "..." : estimate ? PRICING_CONFIG.CURRENCY_FORMAT.format(estimate.estimatedPrice) : "..."}</span></div>\n          </button>\n        );\n      })}\n    </div>\n  );\n};\n`;
-  write(path, content);
-  console.log('[OK] Corridas: categorias oficiais renderizadas sem overflow horizontal');
+  const current = read(path);
+  if (current.includes('serviceImage') && current.includes('border-[#E51B23]')) {
+    console.log('[OK] Corridas: CategorySelector ilustrado vermelho/branco preservado');
+  } else {
+    throw new Error('[FAIL] Corridas visual: CategorySelector vermelho/branco esperado não foi encontrado');
+  }
 }
 
 for (const [path, marker] of [
@@ -133,9 +149,9 @@ for (const [path, marker] of [
   ['src/routes/_authenticated.inicio.tsx', 'apois-kit-home-panel'],
   ['src/routes/_authenticated.buscar-destino.tsx', 'apois-kit-search-results'],
   ['src/components/ui/bottom-sheet/BottomSheet.tsx', 'max-h-[94dvh]'],
-  ['src/components/pricing/CategorySelector.tsx', 'grid-cols-[58px_minmax(0,1fr)_auto]'],
+  ['src/components/pricing/CategorySelector.tsx', 'serviceImage'],
 ]) {
   if (!read(path).includes(marker)) throw new Error(`[FAIL] Corridas visual: marcador ausente em ${path} (${marker})`);
 }
 
-console.log('[OK] APOIS_VISUAL_KIT_V1: Home, busca, BottomSheet e categorias aplicados no snapshot real');
+console.log('[OK] APOIS_VISUAL_KIT_V1: Home, busca, BottomSheet e categorias compatíveis com a identidade vermelho/branco');
