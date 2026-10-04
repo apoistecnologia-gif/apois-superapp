@@ -57,6 +57,8 @@ requireText('.apois/modules.json', [
   'harden-corridas-superapp-storage.mjs',
   'harden-superapp-module-mobile-ui.mjs corridas',
   'APOIS_VISUAL_KIT_V1',
+  'APOIS_REFERENCE_HOME_V2',
+  'data-apois-reference-home-v2',
   'bun run build:capacitor',
   'harden-entregas-payment-provider-boundary.mjs',
   'bun run build:customer',
@@ -130,7 +132,9 @@ requireText('scripts/fix-corridas-superapp-ui.mjs', [
 ], 'UI Corridas adapta navegação e perfil reais');
 
 requireText('scripts/harden-corridas-kit-visual.mjs', [
-  'APOIS_VISUAL_KIT_V1', 'apois-kit-home-panel', '<HomeWorkShortcuts />',
+  'APOIS_VISUAL_KIT_V1', 'APOIS_REFERENCE_HOME_V2', 'data-apois-reference-home-v2',
+  'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Solicitar corrida',
+  '"Sua localização", "#2563EB"', 'bg-white/90 p-6 text-center',
   'apois-kit-search-results', 'max-h-[94dvh]', 'serviceImage', 'border-[#E51B23]',
 ], 'kit visual oficial continua aplicado com a nova identidade vermelho/branco');
 
