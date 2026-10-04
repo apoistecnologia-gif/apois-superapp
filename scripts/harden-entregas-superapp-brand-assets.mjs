@@ -1,7 +1,7 @@
 import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-const source = resolve('superapp/branding/apois-launcher.png');
+const source = resolve('superapp/branding/apois-client-red-logo.png');
 if (!existsSync(source) || statSync(source).size < 1024) {
   throw new Error('[FAIL] Entregas: arte oficial APOIS ausente ou inválida');
 }
@@ -9,6 +9,7 @@ if (!existsSync(source) || statSync(source).size < 1024) {
 for (const target of [
   '.work/entregas/public/apois-app-icon.png',
   '.work/entregas/public/favicon.png',
+  '.work/entregas/src/assets/apois-client-red-logo.png',
 ]) {
   const full = resolve(target);
   mkdirSync(dirname(full), { recursive: true });

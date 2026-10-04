@@ -31,7 +31,9 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "'--red:#E51B23'",
   "'--red-dark:#C9141B'",
   "'@media(max-height:760px)'",
-], 'Seletor Cliente adapta conteúdo e nova marca APOIS a aparelhos baixos');
+  "'min-height:126px'",
+  "'aspect-ratio:1/1'",
+], 'Seletor Cliente adapta conteúdo, limita a logo e protege o título em aparelhos baixos');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',

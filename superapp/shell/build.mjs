@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
-const officialBranding = resolve(root, '../branding/apois-launcher.png');
+const officialBranding = resolve(root, '../branding/apois-client-red-logo.png');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
@@ -67,12 +67,12 @@ const moduleBridgeScript = `
     button.style.width = '44px';
     button.style.height = '44px';
     button.style.borderRadius = '14px';
-    button.style.border = '1px solid rgba(255,255,255,.14)';
-    button.style.background = 'rgba(5,5,5,.88)';
-    button.style.color = '#f2b414';
+    button.style.border = '1px solid rgba(229,27,35,.20)';
+    button.style.background = 'rgba(255,255,255,.96)';
+    button.style.color = '#E51B23';
     button.style.fontSize = '24px';
     button.style.fontWeight = '900';
-    button.style.boxShadow = '0 8px 26px rgba(0,0,0,.38)';
+    button.style.boxShadow = '0 8px 24px rgba(17,17,17,.14)';
     button.style.backdropFilter = 'blur(10px)';
     button.style.webkitBackdropFilter = 'blur(10px)';
     button.style.display = 'grid';

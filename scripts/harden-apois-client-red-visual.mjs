@@ -17,7 +17,7 @@ function must(path, markers) {
   for (const marker of markers) if (!source.includes(marker)) throw new Error(`[FAIL] APOIS red visual: ${path} sem ${marker}`);
 }
 
-const brandSource = resolve(root, 'superapp/branding/apois-launcher.png');
+const brandSource = resolve(root, 'superapp/branding/apois-client-red-logo.png');
 const brandTarget = file('src/assets/apois-brand.png');
 mkdirSync(dirname(brandTarget), { recursive: true });
 copyFileSync(brandSource, brandTarget);

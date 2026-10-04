@@ -112,6 +112,80 @@ for (const forbidden of ['#6A1B9A', '#39B54A', '#f6be1c', '#F6BE1C', '#c88a08', 
 const loginPath = resolve(root, workspace, 'src/routes/login.tsx');
 if (!existsSync(loginPath)) throw new Error(`login.tsx do Entregas ausente: ${loginPath}`);
 let loginSource = readFileSync(loginPath, 'utf8');
+
+// APOIS_CUSTOMER_LOGIN_LIGHT_V3
+// Corrige apenas a apresentação do login do Cliente no workspace descartável.
+// O fluxo handleLogin, reset, Google OAuth, cadastro e isolamento de sessão não é reimplementado.
+if (!loginSource.includes('import apoisClientBrand from "@/assets/apois-client-red-logo.png";')) {
+  loginSource = loginSource.replace(
+    'import logoAsset from "@/assets/logo.png.asset.json";',
+    'import logoAsset from "@/assets/logo.png.asset.json";\nimport apoisClientBrand from "@/assets/apois-client-red-logo.png";',
+  );
+}
+loginSource = loginSource
+  .replace(
+    '<div className="min-h-dvh w-full overflow-y-auto bg-black text-white">',
+    '<div data-apois-customer-login-red-v3 className="min-h-dvh w-full overflow-y-auto bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF8F8_58%,#FFF1F2_100%)] text-[#111111]">',
+  )
+  .replace(
+    'className="-ml-2 rounded-full p-2 transition-colors hover:bg-white/10"\n          aria-label="Voltar"\n        >\n          <ChevronLeft className="h-5 w-5 text-white" />',
+    'className="-ml-2 grid h-11 w-11 place-items-center rounded-full border border-[#E2E4E8] bg-white text-[#111111] shadow-sm transition-colors active:bg-[#FFF1F2]"\n          aria-label="Voltar"\n        >\n          <ChevronLeft className="h-5 w-5 text-[#111111]" />',
+  )
+  .replace(
+    'className="mx-auto flex w-full max-w-md flex-col px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-8"',
+    'className="mx-auto flex w-full max-w-md flex-col px-5 pb-[max(env(safe-area-inset-bottom),2rem)] pt-3"',
+  )
+  .replace(
+    '            src={logoAsset.url}\n            alt="APOIS ENTREGA"\n            className="mb-5 h-20 w-auto object-contain"',
+    '            src={apoisClientBrand}\n            alt="APOIS"\n            className="mb-4 h-28 w-28 object-contain"',
+  )
+  .replace(
+    'className="text-sm font-black uppercase tracking-[0.24em] text-accent"',
+    'className="text-xs font-black uppercase tracking-[0.24em] text-[#E51B23]"',
+  )
+  .replace(
+    'className="mt-3 text-3xl font-black leading-tight text-white"',
+    'className="mt-2 text-3xl font-black leading-tight text-[#111111]"',
+  )
+  .replace(
+    'className="mt-10 space-y-5"',
+    'className="mt-6 space-y-5 rounded-[28px] border border-[#E2E4E8] bg-white p-5 shadow-[0_18px_55px_rgba(17,17,17,0.10)]"',
+  )
+  .replaceAll(
+    'className="ml-1 text-sm font-medium text-zinc-400"',
+    'className="ml-1 text-sm font-bold text-[#555B63]"',
+  )
+  .replace(
+    'className="h-14 rounded-2xl border-zinc-800 bg-zinc-900/50 px-4 text-base text-white placeholder:text-zinc-600 focus:border-accent focus:ring-accent"',
+    'className="h-14 rounded-2xl border-[#E2E4E8] bg-[#F7F7F8] px-4 text-base text-[#111111] placeholder:text-[#9CA1A9] focus:border-[#E51B23] focus:ring-[#E51B23]"',
+  )
+  .replace(
+    'className="h-14 rounded-2xl border-zinc-800 bg-zinc-900/50 px-4 pr-12 text-base text-white placeholder:text-zinc-600 focus:border-accent focus:ring-accent"',
+    'className="h-14 rounded-2xl border-[#E2E4E8] bg-[#F7F7F8] px-4 pr-12 text-base text-[#111111] placeholder:text-[#9CA1A9] focus:border-[#E51B23] focus:ring-[#E51B23]"',
+  )
+  .replace(
+    'className="text-sm font-bold text-primary hover:underline disabled:opacity-50"',
+    'className="text-sm font-bold text-[#E51B23] hover:underline disabled:opacity-50"',
+  )
+  .replace(
+    'className="h-14 w-full rounded-2xl bg-gradient-to-r from-primary to-accent text-lg font-black text-white shadow-[0_12px_35px_rgba(200,138,8,0.18)] transition-transform hover:opacity-95 active:scale-[0.98]"',
+    'className="h-14 w-full rounded-2xl bg-[#E51B23] text-lg font-black text-white shadow-[0_12px_32px_rgba(229,27,35,0.22)] transition-transform hover:bg-[#C9141B] active:scale-[0.98]"',
+  )
+  .replaceAll(
+    'data-apois-google-login-after-form className="mt-3"',
+    'data-apois-google-login-after-form className="mt-3 rounded-[18px] border border-[#E2E4E8] bg-white shadow-sm"',
+  );
+
+for (const required of [
+  'data-apois-customer-login-red-v3',
+  'src={apoisClientBrand}',
+  'bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF8F8_58%,#FFF1F2_100%)]',
+  '<GoogleLoginButton />',
+  'Esqueci minha senha',
+  'Criar minha conta',
+]) {
+  if (!loginSource.includes(required)) throw new Error(`login.tsx: visual claro do Cliente incompleto (${required})`);
+}
 loginSource = loginSource
   .replaceAll('shadow-[0_12px_35px_rgba(57,181,74,0.18)]', 'shadow-[0_12px_35px_rgba(201,20,27,0.18)]')
   .replaceAll('shadow-[0_12px_35px_rgba(200,138,8,0.18)]', 'shadow-[0_12px_35px_rgba(201,20,27,0.18)]')

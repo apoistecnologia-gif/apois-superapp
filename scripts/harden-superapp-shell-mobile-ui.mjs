@@ -20,6 +20,8 @@ for (const marker of [
   'O seu caminho,',
   'do seu jeito.',
   '@media(max-height:760px)',
+  'min-height:126px',
+  'aspect-ratio:1/1',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Shell cliente: identidade vermelha ausente (${marker})`);
 }

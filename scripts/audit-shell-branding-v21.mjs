@@ -23,7 +23,15 @@ check('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "'--red-dark:#C9141B'",
   "'<h2>Corridas</h2>'",
   "'<h2>Entregas</h2>'",
-], 'Seletor Cliente valida a nova identidade vermelho/branco e mantém Corridas/Entregas');
+  "'min-height:126px'",
+  "'aspect-ratio:1/1'",
+], 'Seletor Cliente valida a nova identidade vermelho/branco, logo contida e mantém Corridas/Entregas');
+
+check('superapp/shell/build.mjs', [
+  "../branding/apois-client-red-logo.png",
+  "rgba(255,255,255,.96)",
+  "#E51B23",
+], 'Shell Cliente empacota a logo vermelha exclusiva e usa switcher claro');
 
 check('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",

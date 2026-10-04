@@ -90,7 +90,8 @@ requireAll('superapp/shell/build.mjs', [
   "import '../../scripts/harden-superapp-shell-mobile-ui.mjs';",
   "['corridas', resolve(root, '../../.work/corridas/dist')]",
   "['entregas', resolve(root, '../../.work/entregas/.output/public')]",
-], 'shell Cliente aplica identidade/mobile e inclui somente Passageiro + Cliente Entregas');
+  "../branding/apois-client-red-logo.png",
+], 'shell Cliente aplica identidade/mobile, usa marca exclusiva e inclui somente Passageiro + Cliente Entregas');
 forbidAll('superapp/shell/build.mjs', ['partner-motorista', 'partner-entregador', "['motorista'", "['entregador'"], 'shell Cliente não copia módulos de parceiro');
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
@@ -100,7 +101,9 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "'@media(max-height:760px)'",
   "'O seu caminho,'",
   "'do seu jeito.'",
-], 'seletor Cliente usa a nova identidade vermelho/branco e viewport pequena');
+  "'min-height:126px'",
+  "'aspect-ratio:1/1'",
+], 'seletor Cliente usa a nova identidade vermelho/branco, logo contida e viewport pequena');
 requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
   "'<div class=\"visual\">'",
@@ -115,7 +118,9 @@ requireAll('scripts/harden-entregas-superapp-brand-theme.mjs', [
   'APOIS_CUSTOMER_RED_V2',
   '--primary: oklch(0.59 0.24 27)',
   "replaceAll('#35A9C9', '#E51B23')",
-], 'Cliente Entregas converte tema e logomarca antiga para a nova identidade APOIS vermelha');
+  'APOIS_CUSTOMER_LOGIN_LIGHT_V3',
+  'data-apois-customer-login-red-v3',
+], 'Cliente Entregas converte tema e login para a nova identidade APOIS vermelha/clara');
 
 requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
   "import './harden-entregas-customer-auth-mobile-ui.mjs';",
