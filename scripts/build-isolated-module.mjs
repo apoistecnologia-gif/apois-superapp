@@ -58,6 +58,7 @@ function injectSuperappBridge(indexPath, moduleName) {
     : 'apois-superapp-entregas-auth-v1';
   const authDeepLinkKey = 'apois-superapp:last-auth-deeplink';
   const corridasRecoveryKey = 'apois-superapp:corridas-recovery-url';
+  const corridasGoogleForwardKey = 'apois-superapp:corridas-google-url';
   const entregasAuthForwardKey = 'apois-superapp:entregas-auth-url';
   const oauthPendingKey = 'apois-superapp:pending-oauth-product';
   const entregasGoogleForwardKey = 'apois-superapp:entregas-google-url';
@@ -180,6 +181,15 @@ function injectSuperappBridge(indexPath, moduleName) {
     }
   }
 
+  function storeCorridasGoogleCallback(rawUrl) {
+    try {
+      localStorage.setItem(corridasGoogleForwardKey, JSON.stringify({ url: rawUrl, createdAt: Date.now() }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function storeEntregasGoogleCallback(rawUrl) {
     try {
       localStorage.setItem(entregasGoogleForwardKey, JSON.stringify({ url: rawUrl, createdAt: Date.now() }));
@@ -221,11 +231,22 @@ function injectSuperappBridge(indexPath, moduleName) {
         return true;
       }
       if (path === 'callback') {
-        const pendingProduct = consumePendingOAuthProduct();
-        if (pendingProduct === 'entregas' && storeEntregasGoogleCallback(rawUrl)) {
-          void browserPlugin?.close?.().catch(() => undefined);
-          window.dispatchEvent(new CustomEvent('apois:entregas-google-callback', { detail: { url: rawUrl } }));
-          return true;
+        const pendingProduct = peekPendingOAuthProduct();
+        if (pendingProduct === 'corridas') {
+          consumePendingOAuthProduct();
+          if (storeCorridasGoogleCallback(rawUrl)) {
+            void browserPlugin?.close?.().catch(() => undefined);
+            window.location.replace('../corridas/index.html#/login');
+            return true;
+          }
+        }
+        if (pendingProduct === 'entregas') {
+          consumePendingOAuthProduct();
+          if (storeEntregasGoogleCallback(rawUrl)) {
+            void browserPlugin?.close?.().catch(() => undefined);
+            window.dispatchEvent(new CustomEvent('apois:entregas-google-callback', { detail: { url: rawUrl } }));
+            return true;
+          }
         }
       }
       if (path === 'email-change') {
