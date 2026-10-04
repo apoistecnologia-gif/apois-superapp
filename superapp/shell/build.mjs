@@ -20,7 +20,7 @@ const officialBrandingBytes = Buffer.from(readFileSync(officialBranding, 'utf8')
 const pngSignature = officialBrandingBytes.subarray(0, 8).toString('hex');
 const pngWidth = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(16) : 0;
 const pngHeight = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(20) : 0;
-if (pngSignature !== '89504e470d0a1a0a' || officialBrandingBytes.length < 1024 || pngWidth < 64 || pngHeight < 64) {
+if (pngSignature !== '89504e470d0a1a0a' || officialBrandingBytes.length !== 23158 || pngWidth !== 128 || pngHeight !== 128) {
   console.error('[FAIL] arte oficial APOIS em base64 não decodifica para um PNG válido');
   process.exit(1);
 }
