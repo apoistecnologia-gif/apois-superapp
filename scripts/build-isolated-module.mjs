@@ -59,6 +59,9 @@ function injectSuperappBridge(indexPath, moduleName) {
   const authDeepLinkKey = 'apois-superapp:last-auth-deeplink';
   const corridasRecoveryKey = 'apois-superapp:corridas-recovery-url';
   const entregasAuthForwardKey = 'apois-superapp:entregas-auth-url';
+  const oauthPendingKey = 'apois-superapp:pending-oauth-product';
+  const entregasGoogleForwardKey = 'apois-superapp:entregas-google-url';
+  const oauthHandoffTtlMs = 120000;
   const appPlugin = window.Capacitor?.Plugins?.App;
   const browserPlugin = window.Capacitor?.Plugins?.Browser;
   if (moduleName === 'entregas') window.__APOIS_SUPERAPP_AUTH_BRIDGE__ = true;
@@ -142,6 +145,33 @@ function injectSuperappBridge(indexPath, moduleName) {
     return query ? '?' + query : '';
   }
 
+  function consumePendingOAuthProduct() {
+    try {
+      const stored = localStorage.getItem(oauthPendingKey);
+      if (!stored) return null;
+      const envelope = JSON.parse(stored);
+      const age = Date.now() - Number(envelope?.createdAt);
+      if (!['corridas', 'entregas'].includes(envelope?.product) || age < 0 || age > oauthHandoffTtlMs) {
+        localStorage.removeItem(oauthPendingKey);
+        return null;
+      }
+      localStorage.removeItem(oauthPendingKey);
+      return envelope.product;
+    } catch {
+      try { localStorage.removeItem(oauthPendingKey); } catch {}
+      return null;
+    }
+  }
+
+  function storeEntregasGoogleCallback(rawUrl) {
+    try {
+      localStorage.setItem(entregasGoogleForwardKey, JSON.stringify({ url: rawUrl, createdAt: Date.now() }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function routeAuthDeepLink(rawUrl) {
     if (typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
     try {
@@ -168,6 +198,14 @@ function injectSuperappBridge(indexPath, moduleName) {
         try { sessionStorage.setItem(corridasRecoveryKey, rawUrl); } catch {}
         window.location.replace('../corridas/index.html');
         return true;
+      }
+      if (path === 'callback') {
+        const pendingProduct = consumePendingOAuthProduct();
+        if (pendingProduct === 'entregas' && storeEntregasGoogleCallback(rawUrl)) {
+          void browserPlugin?.close?.().catch(() => undefined);
+          window.dispatchEvent(new CustomEvent('apois:entregas-google-callback', { detail: { url: rawUrl } }));
+          return true;
+        }
       }
       if (path === 'email-change') {
         if (!params.has('next')) params.set('next', '/perfil/dados-pessoais');
@@ -251,6 +289,7 @@ if (name === 'corridas') {
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-google-oauth-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
 }
 
