@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
-const officialBranding = resolve(root, '../branding/apois-client-red-logo.png');
+const officialBranding = resolve(root, '../branding/apois-client-red-logo.b64');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
@@ -16,9 +16,17 @@ if (!existsSync(officialBranding)) {
   console.error(`[FAIL] arte oficial APOIS não existe em ${officialBranding}`);
   process.exit(1);
 }
+const officialBrandingBytes = Buffer.from(readFileSync(officialBranding, 'utf8').trim(), 'base64');
+const pngSignature = officialBrandingBytes.subarray(0, 8).toString('hex');
+const pngWidth = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(16) : 0;
+const pngHeight = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(20) : 0;
+if (pngSignature !== '89504e470d0a1a0a' || officialBrandingBytes.length < 1024 || pngWidth < 64 || pngHeight < 64) {
+  console.error('[FAIL] arte oficial APOIS em base64 não decodifica para um PNG válido');
+  process.exit(1);
+}
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
-cpSync(officialBranding, resolve(dist, 'assets/apois-brand.png'));
-console.log('[OK] arte oficial APOIS copiada para o shell cliente');
+writeFileSync(resolve(dist, 'assets/apois-brand.png'), officialBrandingBytes);
+console.log(`[OK] arte oficial APOIS decodificada para o shell cliente (${pngWidth}x${pngHeight})`);
 
 // Arquitetura oficial: este APK é exclusivamente do cliente.
 // Motorista e Entregador pertencem ao Superapp Parceiro e não entram aqui.
