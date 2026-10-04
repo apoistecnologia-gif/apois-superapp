@@ -185,13 +185,13 @@ requireText('supabase/corridas-forward-migrations/20260905131500_harden_driver_w
 ], 'migration forward-only protege idempotência da taxa e ownership da carteira');
 
 requireText('scripts/verify-superapp-release-requirements.mjs', [
-  "APOIS_STRICT_NATIVE_CONFIG === '1'", 'vqtucstyduxrqjgyigfk',
+  "APOIS_STRICT_NATIVE_CONFIG === '1'", 'tbbzkrfupmqdywnzgnms',
   'CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY',
   '20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql',
-], 'release estrito exige Supabase canônico, chaves Maps e migrations forward obrigatórias');
+], 'release estrito exige Supabase canônico atual, chaves Maps e migrations forward obrigatórias');
 requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
-  'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
-], 'gate Supabase rejeita projeto histórico no runtime/bundle');
+  'tbbzkrfupmqdywnzgnms', 'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
+], 'gate Supabase valida projeto atual, preserva snapshot conhecido e rejeita projeto histórico no runtime/bundle');
 
 requireText('superapp/shell/build.mjs', [
   "resolve(root, '../branding/apois-launcher.png')", "resolve(dist, 'assets/apois-brand.png')",
