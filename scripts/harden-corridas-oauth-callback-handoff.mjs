@@ -85,7 +85,23 @@ replaceRequired(
   'marcador OAuth pendente mudou',
 );
 
-for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);']) {
+replaceRequired(
+  `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+          if (!alive || handlingRef.current) return;
+          clearPendingProduct();
+          setLoading(false);
+        });`,
+  `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+          window.setTimeout(() => {
+            if (!alive || handlingRef.current || handledUrlRef.current) return;
+            clearPendingProduct();
+            setLoading(false);
+          }, 2500);
+        });`,
+  'browserFinished não pode apagar o marcador antes de appUrlOpen',
+);
+
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);', 'handledUrlRef.current) return;', '}, 2500);']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] OAuth Corridas incompleto: ${marker}`);
 }
 writeFileSync(path, source, 'utf8');
