@@ -22,5 +22,3 @@ console.log('[OK] Corridas: Perfil real alinhado à viewport móvel e identidade
 
 await import('./harden-corridas-profile-actions.mjs');
 await import('./harden-corridas-password-recovery.mjs');
-// Última etapa visual de Corridas: roda depois dos hardeners funcionais e antes do build.
-await import('./harden-corridas-kit-visual.mjs');
