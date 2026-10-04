@@ -70,8 +70,6 @@ requireAll('scripts/harden-corridas-kit-visual.mjs', [
   'apois-kit-home-panel',
   '<HomeWorkShortcuts />',
   'Solicitar corrida',
-  '"Sua localização", "#2563EB"',
-  'bg-white/90 p-6 text-center',
   'apois-kit-search-results',
   'max-h-[94dvh]',
   'max(16px, env(safe-area-inset-bottom))',
