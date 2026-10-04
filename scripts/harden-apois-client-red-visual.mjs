@@ -17,6 +17,18 @@ function must(path, markers) {
   for (const marker of markers) if (!source.includes(marker)) throw new Error(`[FAIL] APOIS red visual: ${path} sem ${marker}`);
 }
 
+// MAP_RUNTIME_PRESERVATION_V1
+// A migração de identidade visual não tem autorização para alterar o runtime do mapa.
+const mapRuntimeFiles = [
+  'src/components/map/PassengerMap.tsx',
+  'src/services/google/google-maps-loader.ts',
+  'src/hooks/use-location.tsx',
+  'src/services/places/places-service.ts',
+];
+const mapRuntimeBefore = new Map(
+  mapRuntimeFiles.map((path) => [path, readFileSync(file(path), 'utf8')]),
+);
+
 const brandSource = resolve(root, 'superapp/branding/apois-client-red-logo.b64');
 const brandTarget = file('src/assets/apois-brand.png');
 mkdirSync(dirname(brandTarget), { recursive: true });
@@ -239,5 +251,13 @@ must('src/components/pricing/CategorySelector.tsx',['serviceImage','estimatedPic
 must('src/routes/_public.login.tsx',['PassengerGoogleLoginButton','Esqueci minha senha','Criar conta','bg-[#E51B23]']);
 must('src/routes/_authenticated.inicio.tsx',['PassengerMap','Solicitar corrida','brandLogo','<CategorySelector />']);
 must('src/styles.css',['--color-primary: #E51B23','--color-apois-red: #E51B23']);
+
+for (const [path, before] of mapRuntimeBefore) {
+  const after = readFileSync(file(path), 'utf8');
+  if (after !== before) {
+    throw new Error(`[FAIL] APOIS red visual tentou alterar runtime protegido do mapa: ${path}`);
+  }
+}
+console.log('[OK] APOIS red visual preservou byte a byte o runtime de Maps/GPS/Places.');
 
 console.log('[OK] APOIS Cliente Corridas: identidade vermelho/branco aplicada sem alterar autenticação, mapa, pricing ou request ride.');
