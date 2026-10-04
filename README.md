@@ -126,6 +126,8 @@ CORRIDAS_ANDROID_MAPS_API_KEY
 CORRIDAS_WEB_MAPS_API_KEY
 ```
 
+No APK Cliente, o mapa de Corridas atual é renderizado pela **Maps JavaScript API dentro do WebView**. O Capacitor é fixado na origem WebView `https://localhost`; portanto a chave `CORRIDAS_WEB_MAPS_API_KEY` precisa ser uma chave de Website/HTTP referrer que autorize essa origem e tenha Maps JavaScript API (e Places quando usado) habilitada. A chave Android separada não substitui essa chave Web no `PassengerMap` atual.
+
 ## UI móvel
 
 Os builds executam auditorias de interface para impedir regressões conhecidas:
