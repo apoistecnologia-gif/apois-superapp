@@ -60,8 +60,9 @@ requireAll('scripts/harden-corridas-superapp-profile-ui.mjs', [
   'src/routes/_authenticated.perfil.tsx',
   'min-h-[68px]',
   'env(safe-area-inset-top)',
-  "await import('./harden-corridas-kit-visual.mjs')",
-], 'Perfil Passageiro usa rota real, alvos tocáveis e safe area');
+  "await import('./harden-corridas-profile-actions.mjs')",
+  "await import('./harden-corridas-password-recovery.mjs')",
+], 'Perfil Passageiro usa rota real, alvos tocáveis e safe area sem reaplicar a Home visual');
 
 requireAll('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1',
