@@ -68,8 +68,9 @@ requireAll('scripts/harden-corridas-kit-visual.mjs', [
   'apois-kit-search-results',
   'max-h-[94dvh]',
   'max(16px, env(safe-area-inset-bottom))',
-  'grid-cols-[58px_minmax(0,1fr)_auto]',
-], 'Corridas aplica kit visual à Home, busca, BottomSheet e categorias');
+  'serviceImage',
+  'border-[#E51B23]',
+], 'Corridas aplica kit visual vermelho/branco à Home, busca, BottomSheet e categorias');
 
 requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   'src/components/BottomNavigation.tsx',
