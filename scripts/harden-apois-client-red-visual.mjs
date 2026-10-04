@@ -21,8 +21,13 @@ const brandSource = resolve(root, 'superapp/branding/apois-client-red-logo.b64')
 const brandTarget = file('src/assets/apois-brand.png');
 mkdirSync(dirname(brandTarget), { recursive: true });
 const brandBytes = Buffer.from(readFileSync(brandSource, 'utf8').trim(), 'base64');
-if (brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
-  throw new Error('[FAIL] APOIS red visual: logo base64 não gerou PNG válido');
+if (
+  brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
+  brandBytes.length !== 23158 ||
+  brandBytes.readUInt32BE(16) !== 128 ||
+  brandBytes.readUInt32BE(20) !== 128
+) {
+  throw new Error('[FAIL] APOIS red visual: logo base64 não gerou o PNG oficial 128x128');
 }
 writeFileSync(brandTarget, brandBytes);
 
