@@ -87,7 +87,17 @@ if (!html.includes("pendingProduct==='corridas'")) {
 writeFileSync(path, html, 'utf8');
 }
 
-if (!html.includes("path==='corridas-google'")) throw new Error('[FAIL] shell cliente: callback Google Corridas ausente');
-if (!html.includes("pendingProduct==='corridas'")) throw new Error('[FAIL] shell cliente: callback compartilhado não diferencia Corridas');
-if (!html.includes("localStorage.getItem('apois-superapp:pending-oauth-product')")) throw new Error('[FAIL] shell cliente: marcador OAuth Corridas não é persistente');
-console.log('[OK] shell cliente encaminha OAuth Google de Corridas pelo callback permitido com marcador persistente');
+if (alreadyHardened) {
+  if (!html.includes('hasPendingCorridas()&&storeCorridasGoogle()')) {
+    throw new Error('[FAIL] shell cliente: callback PKCE endurecido não diferencia Corridas');
+  }
+  if (!html.includes('const CORRIDAS_GOOGLE_KEY=')) {
+    throw new Error('[FAIL] shell cliente: chave persistente do handoff Google Corridas ausente');
+  }
+  console.log('[OK] shell cliente usa handoff PKCE endurecido para diferenciar Corridas no callback compartilhado');
+} else {
+  if (!html.includes("path==='corridas-google'")) throw new Error('[FAIL] shell cliente: callback Google Corridas ausente');
+  if (!html.includes("pendingProduct==='corridas'")) throw new Error('[FAIL] shell cliente: callback compartilhado não diferencia Corridas');
+  if (!html.includes("localStorage.getItem('apois-superapp:pending-oauth-product')")) throw new Error('[FAIL] shell cliente: marcador OAuth Corridas não é persistente');
+  console.log('[OK] shell cliente encaminha OAuth Google de Corridas pelo callback permitido com marcador persistente');
+}
