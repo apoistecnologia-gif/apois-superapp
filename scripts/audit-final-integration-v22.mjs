@@ -103,14 +103,14 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
 ], 'seletor Cliente usa a nova identidade vermelho/branco e viewport pequena');
 requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
-  "'<div class=\\\"visual\\\">'",
-  "'<svg viewBox=\\\"0 0 320 210\\\"'",
+  "'<div class=\"visual\">'",
+  "'<svg viewBox=\"0 0 320 210\"'",
   '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
 ], 'copy e ilustrações oficiais são validadas antes do mobile hardening');
 
 requireAll('scripts/harden-entregas-superapp-customer-ux.mjs', [
   "import './harden-entregas-superapp-brand-theme.mjs';",
-], 'Entregas aplica identidade preto/dourado antes da UX interna');
+], 'Entregas aplica a nova identidade do Cliente antes da UX interna');
 requireAll('scripts/harden-entregas-superapp-brand-theme.mjs', [
   'APOIS_CUSTOMER_RED_V2',
   '--primary: oklch(0.59 0.24 27)',
