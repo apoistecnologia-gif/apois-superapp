@@ -80,9 +80,15 @@ workflows:
           test -s superapp/shell/dist/modules/entregas/index.html
           test ! -e superapp/shell/dist/modules/motorista
           grep -R -Fq 'public-ride-tracker' superapp/shell/dist/modules/corridas
-          grep -R -Fq 'create-merchant-mercadopago-pix' superapp/shell/dist/modules/entregas
-          grep -R -Fq 'process-superapp-refund' superapp/shell/dist/modules/entregas
-          echo '[OK] Superapp Cliente contém somente Corridas + Entregas e integrações financeiras endurecidas'
+          if grep -R -Fq 'create-merchant-mercadopago-pix' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] bundle Entregas reintroduziu create-merchant-mercadopago-pix aposentado'
+            exit 1
+          fi
+          if grep -R -Fq 'process-superapp-refund' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] bundle Entregas reintroduziu process-superapp-refund aposentado'
+            exit 1
+          fi
+          echo '[OK] Superapp Cliente contém somente Corridas + Entregas e não reintroduz gateways legados no bundle'
       - name: Create and harden Capacitor Android project
         script: |
           set -euo pipefail
