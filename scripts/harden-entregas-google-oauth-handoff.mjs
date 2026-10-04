@@ -40,7 +40,7 @@ replaceRequired(
 
 replaceRequired(
   '  const handleNativeCallback = async (callbackUrl: string) => {\n    if (!callbackUrl.startsWith(nativeCallback)) return;\n\n    try {',
-  '  const handleNativeCallback = async (callbackUrl: string) => {\n    if (!callbackUrl.startsWith(nativeCallback) || callbackInFlightRef.current) return;\n    callbackInFlightRef.current = true;\n\n    try {',
+  '  const handleNativeCallback = async (callbackUrl: string) => {\n    if (!callbackUrl.startsWith(nativeCallback) || callbackInFlightRef.current) return;\n    callbackInFlightRef.current = true;\n    try { window.localStorage.removeItem(APOIS_GOOGLE_FORWARD_KEY); } catch { /* fallback já consumido */ }\n\n    try {',
   'callback não possui guard de concorrência',
 );
 
