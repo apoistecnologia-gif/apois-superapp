@@ -225,6 +225,13 @@ requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
   'tbbzkrfupmqdywnzgnms', 'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
 ], 'gate Supabase valida projeto atual, preserva snapshot conhecido e rejeita projeto histórico no runtime/bundle');
 
+requireText('scripts/install-superapp-launcher.mjs', [
+  'apois-client-red-logo.b64',
+  '89504e470d0a1a0a',
+  '@mipmap/ic_launcher_foreground',
+  '@android:color/white',
+], 'launcher Cliente usa a mesma marca vermelha do shell e não o asset legado');
+
 requireText('superapp/shell/build.mjs', [
   "resolve(root, '../branding/apois-client-red-logo.b64')", "resolve(dist, 'assets/apois-brand.png')",
 ], 'shell empacota marca oficial');
@@ -233,7 +240,7 @@ forbidText('superapp/shell/build.mjs', [
   'apois-superapp-entregas-back-navigation',
 ], 'shell não registra segundo handler Android Voltar em Entregas');
 requireText('superapp/shell/capacitor.config.ts', [
-  "appId: 'br.com.apois.app'", "backgroundColor: '#050505'", 'overlaysWebView: false',
+  "appId: 'br.com.apois.app'", "backgroundColor: '#FFFFFF'", 'overlaysWebView: false',
 ], 'Capacitor usa package unificado e fundo correto');
 requireText('codemagic.yaml', [
   'android-superapp-experimental:', 'APP_PACKAGE: "br.com.apois.app"',
