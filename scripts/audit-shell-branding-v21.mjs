@@ -19,23 +19,22 @@ function check(path, required, label) {
 
 check('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "import './harden-superapp-shell-iconography.mjs';",
-  ".replace('--teal:#15d5ca;', '--teal:#f2b414;')",
-  "source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes('#09b8b0')",
-  'object-fit:contain;padding:6px',
-  '.vehicle svg,.delivery svg',
-], 'Seletor Cliente transforma a paleta antiga em preto/dourado e protege logo sem corte');
+  "'--red:#E51B23'",
+  "'--red-dark:#C9141B'",
+  "'<h2>Corridas</h2>'",
+  "'<h2>Entregas</h2>'",
+], 'Seletor Cliente valida a nova identidade vermelho/branco e mantém Corridas/Entregas');
 
 check('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
-  'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
   '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
-  'Carro • Moto • Envios',
-  '<strong>Apois, <span>vamos?</span></strong>',
-], 'Seletor substitui emojis por SVG determinístico e valida categorias/slogan finais');
+  "'<div class=\"visual\">'",
+  "'<svg viewBox=\"0 0 320 210\"'",
+], 'Seletor usa ilustrações próprias em vez de emojis');
 
 check('scripts/harden-partner-shell-mobile-ui.mjs', [
   'object-fit:contain;padding:8px',
   '@media(max-height:700px)',
-], 'Seletor Parceiro mantém a mesma marca sem recorte em telas pequenas');
+], 'Seletor Parceiro permanece independente da migração visual do Cliente');
 
 process.exit(failed ? 1 : 0);
