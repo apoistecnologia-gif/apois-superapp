@@ -131,6 +131,12 @@ requireText('scripts/fix-corridas-superapp-ui.mjs', [
   'src/routes/_authenticated.tsx', 'hideBottomNavigation',
 ], 'UI Corridas adapta navegação e perfil reais');
 
+requireText('scripts/build-isolated-module.mjs', [
+  'function peekPendingOAuthProduct()',
+  "path === 'callback' && peekPendingOAuthProduct() === 'corridas'",
+  "window.location.replace('../entregas/index.html')",
+], 'callback Google de Corridas permanece no módulo Corridas e callbacks genéricos de Entregas continuam encaminhados');
+
 requireText('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1', 'APOIS_REFERENCE_HOME_V2', 'data-apois-reference-home-v2',
   'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Solicitar corrida',
