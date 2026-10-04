@@ -25,7 +25,7 @@ function replaceRequired(source, search, replacement, label) {
   const path = 'src/styles.css';
   let source = read(path);
   if (!source.includes('APOIS_VISUAL_KIT_V1')) {
-    source += `\n\n/* APOIS_VISUAL_KIT_V1 */\n.apois-kit-home { background:#07090d; }\n.apois-kit-home-panel {\n  background:linear-gradient(180deg,rgba(8,10,14,.82) 0%,rgba(7,9,13,.97) 24%,#050608 100%);\n  border-top:1px solid rgba(255,184,0,.18);\n  border-radius:30px 30px 0 0;\n  box-shadow:0 -20px 50px rgba(0,0,0,.58);\n}\n.apois-kit-search-screen { background:#07090d; }\n.apois-kit-search-results { scrollbar-width:none; }\n.apois-kit-search-results::-webkit-scrollbar { display:none; }\n.apois-kit-category-list { scrollbar-width:none; }\n.apois-kit-category-list::-webkit-scrollbar { display:none; }\n`;
+    source += `\n\n/* APOIS_VISUAL_KIT_V1 */\n/* APOIS_REFERENCE_HOME_V2 */\n.apois-kit-home { background:#eef1f4; color:#111; }\n.apois-kit-home-panel {\n  background:rgba(255,255,255,.985);\n  border-top:1px solid #e2e4e8;\n  border-radius:32px 32px 0 0;\n  box-shadow:0 -16px 44px rgba(17,17,17,.14);\n}\n.apois-kit-search-screen { background:#f7f7f8; color:#111; }\n.apois-kit-search-results { scrollbar-width:none; }\n.apois-kit-search-results::-webkit-scrollbar { display:none; }\n.apois-kit-category-list { scrollbar-width:none; }\n.apois-kit-category-list::-webkit-scrollbar { display:none; }\n`;
     write(path, source);
   }
   console.log('[OK] Corridas: APOIS_VISUAL_KIT_V1 registrado');
@@ -84,6 +84,141 @@ function replaceRequired(source, search, replacement, label) {
     source = replaceRequired(source, shortcutsEnd, replacement, 'Corridas visual: Casa e Trabalho aparecem na Home');
   }
 
+
+  // HOME V2 — aproxima a tela operacional do mock aprovado: mapa claro predominante,
+  // cabeçalho enxuto, busca flutuante e painel branco inferior. A lógica de
+  // autenticação, GPS, destino, categorias, pagamentos, cupom e solicitação é preservada.
+  source = source
+    .replace(
+      'import { MapPin, ChevronRight, Settings2, RefreshCw, Navigation, AlertCircle, Home, Briefcase } from "lucide-react";',
+      'import { MapPin, ChevronRight, Settings2, RefreshCw, Navigation, AlertCircle, Home, Briefcase, Bell } from "lucide-react";',
+    )
+    .replace('const { route, status: routeStatus, error: routeError } = useRoute();', 'const { route, error: routeError } = useRoute();')
+    .replace('const { location, refreshLocation, isLoading: isLocating, permissionState, error: locationError } = useLocation();', 'const { location, refreshLocation, isLoading: isLocating, error: locationError } = useLocation();')
+    .replace(
+      'bg-zinc-900/80 p-4 rounded-2xl border border-white/5 flex items-center gap-3 cursor-pointer active:scale-95 transition-all',
+      'bg-white p-3 rounded-2xl border border-[#E2E4E8] flex items-center gap-3 cursor-pointer active:scale-95 transition-all shadow-sm',
+    )
+    .replaceAll('homeFav ? "bg-blue-500/20 text-blue-400" : "bg-zinc-800 text-zinc-600"', 'homeFav ? "bg-[#FFF1F2] text-[#E51B23]" : "bg-[#F1F2F4] text-[#666B73]"')
+    .replaceAll('workFav ? "bg-orange-500/20 text-orange-400" : "bg-zinc-800 text-zinc-600"', 'workFav ? "bg-[#FFF1F2] text-[#E51B23]" : "bg-[#F1F2F4] text-[#666B73]"')
+    .replaceAll('text-xs font-black text-white uppercase tracking-tighter', 'text-xs font-black text-[#111111] uppercase tracking-tighter')
+    .replaceAll('text-[10px] text-zinc-500 truncate w-[80px]', 'text-[10px] text-[#666B73] truncate w-[80px]');
+
+  const inicioIndex = source.indexOf('function InicioPage() {');
+  const returnIndex = source.indexOf('  return (', inicioIndex);
+  const returnEnd = source.lastIndexOf('\n  );\n}');
+  if (inicioIndex < 0 || returnIndex < 0 || returnEnd < returnIndex) {
+    throw new Error('[FAIL] Corridas visual V2: não foi possível localizar o retorno da Home');
+  }
+
+  const referenceHome = `  return (
+    <div data-apois-reference-home-v2 className="apois-kit-home relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#EEF1F4] text-[#111111]">
+      <div className="absolute inset-0 z-0 bg-[#EEF1F4]">
+        <PassengerMap
+          origin={location ? { lat: location.latitude, lng: location.longitude } : undefined}
+          destination={destination ? { lat: destination.latitude, lng: destination.longitude } : undefined}
+          encodedPolyline={route?.encodedPolyline}
+          driverLocation={undefined}
+          isStatic={false}
+        />
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-40 bg-gradient-to-b from-white/95 via-white/70 to-transparent" />
+
+      <header className="relative z-30 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),14px)]">
+        <div className="flex items-center gap-2.5">
+          <img src={brandLogo} alt="APOIS" className="h-12 w-12 rounded-full object-contain shadow-sm" />
+          <div className="leading-none">
+            <div className="text-[24px] font-black tracking-[-0.05em] text-[#111111]">AP<span className="text-[#E51B23]">O</span>IS</div>
+            <div className="mt-1 text-[9px] font-black tracking-[0.34em] text-[#666B73]">VAMOS?</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => navigate({ to: "/notificacoes" })} className="grid h-12 w-12 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_8px_22px_rgba(17,17,17,.10)] active:scale-95" aria-label="Notificações">
+            <Bell size={21} />
+          </button>
+          <button type="button" onClick={() => navigate({ to: "/perfil" })} className="h-12 w-12 overflow-hidden rounded-full border-2 border-white bg-[#F1F2F4] shadow-[0_8px_22px_rgba(17,17,17,.12)] active:scale-95" aria-label="Abrir perfil">
+            {profile?.avatar_url ? <img src={profile.avatar_url} alt="Foto do passageiro" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-sm font-black text-[#E51B23]">{readString(profile?.full_name || profile?.name, "P")[0]}</span>}
+          </button>
+        </div>
+      </header>
+
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })}
+        className="relative z-30 mx-4 mt-4 flex min-h-[76px] items-center gap-4 rounded-[24px] border border-[#E2E4E8] bg-white/96 px-4 text-left shadow-[0_14px_34px_rgba(17,17,17,.13)] backdrop-blur-md active:scale-[.99]"
+      >
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#FFF1F2] text-[#E51B23]"><MapPin size={27} fill="currentColor" /></div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[20px] font-black leading-tight text-[#111111]">Para onde vamos?</div>
+          <div className="mt-1 truncate text-sm font-medium text-[#666B73]">{destination?.label || destination?.formattedAddress || "Digite seu destino"}</div>
+        </div>
+        <ChevronRight className="shrink-0 text-[#666B73]" size={25} />
+      </button>
+
+      <div className="absolute right-4 top-[43%] z-30 flex flex-col gap-3">
+        {locationError ? <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-extrabold text-[#E51B23] shadow-md">GPS</div> : null}
+        <button type="button" onClick={() => refreshLocation()} disabled={isLocating} className="grid h-12 w-12 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,.15)] active:scale-90 disabled:opacity-50" aria-label="Centralizar minha localização">
+          <Navigation className={cn("h-5 w-5", isLocating && "animate-pulse")} />
+        </button>
+      </div>
+
+      <section className="apois-kit-home-panel relative z-40 mt-auto max-h-[50dvh] overflow-y-auto overscroll-contain rounded-t-[32px] border-t border-[#E2E4E8] bg-white px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_44px_rgba(17,17,17,.14)]">
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-[#C9CDD3]" />
+
+        <div className="rounded-[22px] border border-[#E2E4E8] bg-white px-4">
+          <button type="button" onClick={() => refreshLocation()} className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#ECEEF1] text-left">
+            <span className="relative grid h-9 w-9 place-items-center"><span className="h-4 w-4 rounded-full border-[5px] border-[#2563EB] bg-white" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Local de partida</span><span className="block truncate text-[16px] font-extrabold text-[#111111]">{currentAddressText}</span></span>
+            <ChevronRight size={22} className="text-[#777D85]" />
+          </button>
+          <button type="button" onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })} className="flex min-h-[68px] w-full items-center gap-3 text-left">
+            <span className="grid h-9 w-9 place-items-center text-[#E51B23]"><MapPin size={29} fill="currentColor" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Destino</span><span className="block truncate text-[16px] font-extrabold text-[#111111]">{destination?.label || destination?.formattedAddress || "Digite seu destino"}</span></span>
+            <ChevronRight size={22} className="text-[#777D85]" />
+          </button>
+        </div>
+
+        <div className="mt-4"><CategorySelector /></div>
+
+        {(hasDestination || route) ? (
+          <div className="mt-4 space-y-4">
+            {routeError ? <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"><AlertCircle size={17} />{routeError}</div> : null}
+            <RideStopsInput />
+            {selectedCategory && ["fretes", "guincho", "envios"].includes(selectedCategory.code) ? (
+              <button type="button" onClick={() => setIsFormOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#E2E4E8] bg-white px-3 text-xs font-extrabold text-[#E51B23]"><Settings2 size={15} />Detalhes do serviço</button>
+            ) : null}
+            <PaymentMethodSelector onOpenList={() => setIsPaymentListOpen(true)} />
+            <CouponInput />
+            <FareDetails />
+            <CheckoutSummary />
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={handleReview}
+          disabled={!checkout.readiness || !!routeError}
+          className={cn(
+            "mt-4 flex min-h-[58px] w-full items-center justify-center gap-2 rounded-[20px] text-[18px] font-black shadow-[0_12px_30px_rgba(229,27,35,.24)] transition active:scale-[.99]",
+            checkout.readiness && !routeError ? "bg-[#E51B23] text-white" : "bg-[#E6E8EB] text-[#9AA0A8]"
+          )}
+        >
+          Solicitar corrida <ChevronRight size={23} strokeWidth={3} />
+        </button>
+
+        <div className="mt-4"><HomeWorkShortcuts /></div>
+      </section>
+
+      <ServiceDetailsForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
+      <PaymentMethodList isOpen={isPaymentListOpen} onClose={() => setIsPaymentListOpen(false)} />
+    </div>
+  );`;
+
+  source = source.slice(0, returnIndex) + referenceHome + source.slice(returnEnd + '\n  );'.length);
+  if (!source.includes('data-apois-reference-home-v2')) throw new Error('[FAIL] Corridas visual V2 não entrou na Home');
+  console.log('[OK] Corridas: Home operacional alinhada ao mock aprovado sem alterar lógica de corrida');
+
   for (const marker of ['PassengerMap', 'apois-kit-home', 'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Digite um endereço...', '<CategorySelector />']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Home incompleta (${marker})`);
   }
@@ -117,6 +252,38 @@ function replaceRequired(source, search, replacement, label) {
   }
   write(path, source);
   console.log('[OK] Corridas: sugestões permanecem na área útil sem exigir arrastar a tela');
+}
+
+// MAPA — preserva funcionalidade e deixa loading/erro coerentes com o mock claro.
+{
+  const path = 'src/components/map/PassengerMap.tsx';
+  let source = read(path);
+  source = source
+    .replace('bg-zinc-200', 'bg-[#EEF1F4]')
+    .replaceAll('"#FFB800"', '"#E51B23"')
+    .replace('if (origin) addCircleMarker(origin, "Sua localização", "#E51B23");', 'if (origin) addCircleMarker(origin, "Sua localização", "#2563EB");')
+    .replace('bg-zinc-100/90', 'bg-white/88')
+    .replace('border-zinc-200 border-t-apois-yellow', 'border-[#E2E4E8] border-t-[#E51B23]')
+    .replace('text-zinc-700', 'text-[#4F555D]')
+    .replace('bg-zinc-950/90 p-6 text-center', 'bg-white/88 p-6 text-center backdrop-blur-sm')
+    .replace('max-w-xs space-y-4 rounded-3xl border border-white/10 bg-zinc-900 p-6 shadow-2xl', 'max-w-xs space-y-4 rounded-[24px] border border-[#E2E4E8] bg-white p-6 shadow-[0_18px_45px_rgba(17,17,17,.12)]')
+    .replace('text-sm font-black uppercase tracking-tight text-apois-yellow', 'text-sm font-black uppercase tracking-tight text-[#E51B23]')
+    .replace('text-xs leading-relaxed text-zinc-300', 'text-xs leading-relaxed text-[#666B73]')
+    .replace('rounded-xl bg-apois-yellow px-4 py-3 text-xs font-black text-black', 'rounded-xl bg-[#E51B23] px-4 py-3 text-xs font-black text-white');
+  write(path, source);
+  console.log('[OK] Corridas visual: mapa indisponível permanece claro e não transforma a Home em tela preta');
+}
+
+// RODAPÉ — mantém os cinco destinos funcionais, mas em branco/vermelho.
+{
+  const path = 'src/components/BottomNavigation.tsx';
+  let source = read(path);
+  source = source
+    .replace('border-t border-white/10 bg-black', 'border-t border-[#E2E4E8] bg-white')
+    .replace('shadow-[0_-10px_30px_rgba(0,0,0,0.55)]', 'shadow-[0_-8px_26px_rgba(17,17,17,0.10)]')
+    .replaceAll('text-zinc-500', 'text-[#8A9098]');
+  write(path, source);
+  console.log('[OK] Corridas visual: rodapé funcional usa superfície branca e destaque vermelho');
 }
 
 // BOTTOM SHEET — remove a reserva fixa de 72px que escondia conteúdo quando o
