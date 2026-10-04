@@ -57,7 +57,9 @@ function replaceRequired(source, search, replacement, label) {
   source = source
     .replace('bg-[#1A1D24]/80 backdrop-blur-md border border-white/5 rounded-full px-2 py-1.5 shadow-2xl', 'bg-black/75 backdrop-blur-xl border border-white/10 rounded-[22px] px-2.5 py-2 shadow-[0_16px_40px_rgba(0,0,0,.42)]')
     .replace('<span className="text-zinc-400">🌙</span>\n                ', '')
-    .replace('{readString(profile?.full_name || profile?.name, "Franciel").split(" ")[0]} 👋', '{readString(profile?.full_name || profile?.name, "Franciel").split(" ")[0]}')
+    .replace('<span className="text-[#666B73]">🌙</span>\n                ', '')
+    .replaceAll('🌙', '')
+    .replaceAll('👋', '')
     .replace('text-green-500 fill-green-500/20', 'text-apois-yellow fill-apois-yellow/20')
     .replace('text-[10px] text-zinc-500 font-medium">1 motorista próximo', 'text-[10px] text-zinc-400 font-semibold">1 motorista próximo')
     .replace('className="w-12 h-12 bg-[#1A1D24] border border-white/10 rounded-full', 'className="w-12 h-12 bg-black/80 backdrop-blur-xl border border-apois-yellow/20 rounded-full')
