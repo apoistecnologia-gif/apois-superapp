@@ -47,6 +47,7 @@
     const AUTH_DEEP_LINK_KEY='apois-superapp:last-auth-deeplink';
     const CORRIDAS_RECOVERY_KEY='apois-superapp:corridas-recovery-url';
     const CORRIDAS_GOOGLE_KEY='apois-superapp:corridas-google-url';
+    const ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url';
     const OAUTH_PENDING_KEY='apois-superapp:pending-oauth-product';
     const OAUTH_HANDOFF_TTL_MS=120000;
     const clearExpiredCorridasGoogle=()=>{
@@ -141,11 +142,41 @@
         const hasPendingCorridas=()=>{
           try{
             const stored=localStorage.getItem(OAUTH_PENDING_KEY);
-            localStorage.removeItem(OAUTH_PENDING_KEY);
             if(!stored)return false;
             const envelope=JSON.parse(stored);
             const age=Date.now()-Number(envelope?.createdAt);
-            return envelope?.product==='corridas'&&age>=0&&age<=OAUTH_HANDOFF_TTL_MS;
+            if(envelope?.product==='corridas'&&age>=0&&age<=OAUTH_HANDOFF_TTL_MS){
+              localStorage.removeItem(OAUTH_PENDING_KEY);
+              return true;
+            }
+            if(age<0||age>OAUTH_HANDOFF_TTL_MS)localStorage.removeItem(OAUTH_PENDING_KEY);
+            return false;
+          }catch{try{localStorage.removeItem(OAUTH_PENDING_KEY);}catch{}return false;}
+        };
+        const hasPendingEntregas=()=>{
+          try{
+            const stored=localStorage.getItem(OAUTH_PENDING_KEY);
+            if(!stored)return false;
+            const envelope=JSON.parse(stored);
+            const age=Date.now()-Number(envelope?.createdAt);
+            if(envelope?.product==='entregas'&&age>=0&&age<=OAUTH_HANDOFF_TTL_MS){
+              localStorage.removeItem(OAUTH_PENDING_KEY);
+              return true;
+            }
+            if(age<0||age>OAUTH_HANDOFF_TTL_MS)localStorage.removeItem(OAUTH_PENDING_KEY);
+            return false;
+          }catch{try{localStorage.removeItem(OAUTH_PENDING_KEY);}catch{}return false;}
+        };
+        const storeEntregasGoogle=()=>{
+          const codes=params.getAll('code');
+          const hasSingleCode=codes.length===1&&Boolean(codes[0]?.trim());
+          const hasTokenPair=Boolean(params.get('access_token')&&params.get('refresh_token'));
+          if(!hasSingleCode&&!hasTokenPair)return false;
+          try{
+            const envelope=JSON.stringify({url:rawUrl,createdAt:Date.now()});
+            localStorage.setItem(ENTREGAS_GOOGLE_KEY,envelope);
+            window.setTimeout(()=>{try{if(localStorage.getItem(ENTREGAS_GOOGLE_KEY)===envelope)localStorage.removeItem(ENTREGAS_GOOGLE_KEY);}catch{}},OAUTH_HANDOFF_TTL_MS);
+            return true;
           }catch{return false;}
         };
         if(path==='corridas-google'){
@@ -173,6 +204,11 @@
             if(hasPendingCorridas()&&storeCorridasGoogle()){
               void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
               window.location.replace('./modules/corridas/index.html#/login');
+              return true;
+            }
+            if(hasPendingEntregas()&&storeEntregasGoogle()){
+              void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
+              window.location.replace('./modules/entregas/index.html#/login');
               return true;
             }
           }catch{}
