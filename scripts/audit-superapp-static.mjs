@@ -82,7 +82,10 @@ requireText('scripts/build-isolated-module.mjs', [
   "'apois-superapp-entregas-auth-v1'",
   "appPlugin.addListener('backButton'",
   "appPlugin.addListener('appStateChange'",
-], 'build isolado prepara, adapta e integra sessão/back button sem editar submódulo');
+  'harden-entregas-google-oauth-handoff.mjs',
+  "apois:entregas-google-callback",
+  "apois-superapp:entregas-google-url",
+], 'build isolado prepara, adapta e integra sessão/back button/OAuth sem editar submódulo');
 
 requireText('scripts/harden-corridas-auth-profile-resolution.mjs', [
   '.eq("auth_user_id", userId)',
@@ -103,6 +106,14 @@ requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
   'br.com.apois.app://auth/callback',
   'br.com.apois.app://auth/corridas-google',
 ], 'Google OAuth Corridas usa PKCE, callback determinístico, dedupe e cleanup/cancelamento');
+
+requireText('scripts/harden-entregas-google-oauth-handoff.mjs', [
+  'APOIS_GOOGLE_PENDING_KEY',
+  'APOIS_GOOGLE_FORWARD_KEY',
+  'consumeForwardedGoogleCallback',
+  'product: "entregas"',
+  'apois:entregas-google-callback',
+], 'Google OAuth Entregas mantém callback no módulo dono e possui handoff persistente');
 
 requireText('scripts/harden-corridas-superapp-runtime.mjs', [
   'VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED', 'RIDE_STATUS_ORDER', 'lastAcceptedStatusRef',
