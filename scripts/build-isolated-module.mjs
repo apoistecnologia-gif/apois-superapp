@@ -284,7 +284,28 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-oauth-callback-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
+
+  const protectedMapRuntimePaths = [
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    '.work/corridas/src/services/google/google-maps-loader.ts',
+    '.work/corridas/src/hooks/use-location.tsx',
+    '.work/corridas/src/services/places/places-service.ts',
+  ];
+  const protectedMapRuntimeBeforeVisual = new Map(
+    protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
+  );
+
   run(process.execPath, [resolve(root, 'scripts/harden-apois-client-red-visual.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-kit-visual.mjs')]);
+
+  for (const [path, before] of protectedMapRuntimeBeforeVisual) {
+    const after = readFileSync(resolve(root, path), 'utf8');
+    if (after !== before) {
+      console.error(`[FAIL] migração visual alterou runtime protegido do mapa: ${path}`);
+      process.exit(1);
+    }
+  }
+  console.log('[OK] Corridas: migração visual preservou byte a byte Maps/GPS/Places');
 }
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
