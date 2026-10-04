@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const strict = process.env.APOIS_STRICT_NATIVE_CONFIG === '1';
-const canonicalUrl = 'https://vqtucstyduxrqjgyigfk.supabase.co';
+const canonicalUrl = 'https://tbbzkrfupmqdywnzgnms.supabase.co';
 let failed = false;
 function fail(message) { failed = true; console.error(`[FAIL] ${message}`); }
 function warn(message) { console.warn(`[WARN] ${message}`); }
