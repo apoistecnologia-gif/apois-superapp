@@ -137,6 +137,14 @@ requireText('scripts/harden-corridas-kit-visual.mjs', [
   'apois-kit-search-results', 'max-h-[94dvh]', 'serviceImage', 'border-[#E51B23]',
 ], 'kit visual oficial continua aplicado com a nova identidade vermelho/branco');
 
+requireText('scripts/build-isolated-module.mjs', [
+  "harden-apois-client-red-visual.mjs",
+  "harden-corridas-kit-visual.mjs",
+  'protectedMapRuntimeBeforeVisual',
+  'migração visual preservou byte a byte Maps/GPS/Places',
+], 'visual Corridas roda uma vez no pipeline isolado e protege Maps/GPS/Places');
+
+
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
 ], 'nome legado do hardener delega para um único boundary financeiro');
