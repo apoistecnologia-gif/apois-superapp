@@ -145,6 +145,23 @@ function injectSuperappBridge(indexPath, moduleName) {
     return query ? '?' + query : '';
   }
 
+  function peekPendingOAuthProduct() {
+    try {
+      const stored = localStorage.getItem(oauthPendingKey);
+      if (!stored) return null;
+      const envelope = JSON.parse(stored);
+      const age = Date.now() - Number(envelope?.createdAt);
+      if (!['corridas', 'entregas'].includes(envelope?.product) || age < 0 || age > oauthHandoffTtlMs) {
+        localStorage.removeItem(oauthPendingKey);
+        return null;
+      }
+      return envelope.product;
+    } catch {
+      try { localStorage.removeItem(oauthPendingKey); } catch {}
+      return null;
+    }
+  }
+
   function consumePendingOAuthProduct() {
     try {
       const stored = localStorage.getItem(oauthPendingKey);
@@ -178,6 +195,10 @@ function injectSuperappBridge(indexPath, moduleName) {
       const { path, params } = parseAuthDeepLink(rawUrl);
 
       if (moduleName === 'corridas') {
+        // O callback genérico também é usado pelo Google de Corridas. Quando
+        // Corridas iniciou o OAuth, o próprio PassengerGoogleLoginButton deve
+        // receber appUrlOpen/getLaunchUrl e trocar o PKCE no cliente Corridas.
+        if (path === 'callback' && peekPendingOAuthProduct() === 'corridas') return false;
         if (path === 'reset' || path === 'callback' || path === 'email-change') {
           try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
           window.location.replace('../entregas/index.html');
