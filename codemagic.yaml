@@ -64,7 +64,9 @@ workflows:
           npm run audit:hardening
           npm run audit:play-store
           npm run audit:release-integrity
-          echo '[OK] auditorias obrigatórias concluídas sem falhas'
+          npm run verify:rides-push-firebase
+          npm run verify:release-requirements
+          echo '[OK] auditorias e gates de release concluídos sem falhas'
       - name: Build Corridas + Entregas + shell cliente
         script: |
           set -euo pipefail
