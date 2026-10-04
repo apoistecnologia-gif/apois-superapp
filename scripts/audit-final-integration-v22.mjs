@@ -95,25 +95,27 @@ forbidAll('superapp/shell/build.mjs', ['partner-motorista', 'partner-entregador'
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "import './harden-superapp-shell-iconography.mjs';",
-  '--teal:#f2b414;',
-  'object-fit:contain;padding:6px',
-  '@media(max-height:720px)',
-], 'seletor Cliente usa cadeia final preto/dourado, logo contida e viewport pequena');
+  "'--red:#E51B23'",
+  "'--red-dark:#C9141B'",
+  "'@media(max-height:760px)'",
+  "'O seu caminho,'",
+  "'do seu jeito.'",
+], 'seletor Cliente usa a nova identidade vermelho/branco e viewport pequena');
 requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
-  'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
-  'Carro • Moto • Envios',
-  '<strong>Apois, <span>vamos?</span></strong>',
-], 'copy e iconografia oficiais são aplicadas antes do mobile hardening');
+  "'<div class=\\\"visual\\\">'",
+  "'<svg viewBox=\\\"0 0 320 210\\\"'",
+  '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
+], 'copy e ilustrações oficiais são validadas antes do mobile hardening');
 
 requireAll('scripts/harden-entregas-superapp-customer-ux.mjs', [
   "import './harden-entregas-superapp-brand-theme.mjs';",
 ], 'Entregas aplica identidade preto/dourado antes da UX interna');
 requireAll('scripts/harden-entregas-superapp-brand-theme.mjs', [
-  'APOIS_CUSTOMER_GOLD_V1',
-  '--primary: oklch(0.82 0.16 84)',
-  "replaceAll('#35A9C9', '#F6BE1C')",
-], 'Cliente Entregas converte tema e logomarca antiga para identidade APOIS');
+  'APOIS_CUSTOMER_RED_V2',
+  '--primary: oklch(0.59 0.24 27)',
+  "replaceAll('#35A9C9', '#E51B23')",
+], 'Cliente Entregas converte tema e logomarca antiga para a nova identidade APOIS vermelha');
 
 requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
   "import './harden-entregas-customer-auth-mobile-ui.mjs';",
