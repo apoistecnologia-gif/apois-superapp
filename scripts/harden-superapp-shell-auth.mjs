@@ -4,7 +4,9 @@ import { resolve } from 'node:path';
 const path = resolve('superapp/shell/index.html');
 let html = readFileSync(path, 'utf8');
 
-if (html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const storeCorridasGoogle=()=>{')) {
+const alreadyHardened = html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const storeCorridasGoogle=()=>{');
+
+if (alreadyHardened) {
   for (const marker of [
     "params.getAll('code')",
     'codes.length!==1',
@@ -21,8 +23,7 @@ if (html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const 
     if (!html.includes(marker)) throw new Error(`[FAIL] shell cliente: handoff OAuth endurecido incompleto (${marker})`);
   }
   console.log('[OK] shell cliente encaminha somente authorization code PKCE com TTL e consumo único');
-  process.exit(0);
-}
+} else {
 
 const oldResetBlock = `        if(path==='corridas-reset'){
           try{sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl);}catch{}
@@ -84,6 +85,7 @@ if (!html.includes("pendingProduct==='corridas'")) {
 }
 
 writeFileSync(path, html, 'utf8');
+}
 
 if (!html.includes("path==='corridas-google'")) throw new Error('[FAIL] shell cliente: callback Google Corridas ausente');
 if (!html.includes("pendingProduct==='corridas'")) throw new Error('[FAIL] shell cliente: callback compartilhado não diferencia Corridas');
