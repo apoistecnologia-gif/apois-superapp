@@ -120,8 +120,8 @@ requireText('scripts/fix-corridas-superapp-ui.mjs', [
 
 requireText('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1', 'apois-kit-home-panel', '<HomeWorkShortcuts />',
-  'apois-kit-search-results', 'max-h-[94dvh]', 'grid-cols-[58px_minmax(0,1fr)_auto]',
-], 'kit visual oficial continua aplicado sem redesign geral');
+  'apois-kit-search-results', 'max-h-[94dvh]', 'serviceImage', 'border-[#E51B23]',
+], 'kit visual oficial continua aplicado com a nova identidade vermelho/branco');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
