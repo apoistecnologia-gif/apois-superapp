@@ -140,5 +140,17 @@ if (push) {
   }
 }
 
+const moduleBridge = read('scripts/build-isolated-module.mjs');
+if (moduleBridge) {
+  for (const marker of [
+    'function peekPendingOAuthProduct()',
+    "path === 'callback' && peekPendingOAuthProduct() === 'corridas'",
+    "window.location.replace('../entregas/index.html')",
+  ]) {
+    if (!moduleBridge.includes(marker)) fail(`bridge OAuth Corridas regrediu: ${marker}`);
+  }
+}
+if (!failed) ok('Corridas OAuth: bridge do módulo não desvia callback Google de Corridas para Entregas.');
+
 if (failed) process.exit(1);
 ok('Regressões críticas de Auth/Google/identidade backend Corridas verificadas.');
