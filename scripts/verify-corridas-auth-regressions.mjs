@@ -145,6 +145,8 @@ if (moduleBridge) {
   for (const marker of [
     'function peekPendingOAuthProduct()',
     "path === 'callback' && peekPendingOAuthProduct() === 'corridas'",
+    "function storeCorridasGoogleCallback(rawUrl)",
+    "window.location.replace('../corridas/index.html#/login')",
     "window.location.replace('../entregas/index.html')",
   ]) {
     if (!moduleBridge.includes(marker)) fail(`bridge OAuth Corridas regrediu: ${marker}`);
