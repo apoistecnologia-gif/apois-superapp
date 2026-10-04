@@ -157,8 +157,8 @@ patch('src/hooks/use-ride-categories.tsx', (source) =>
     .replace('  }, []);\n\n  const selectCategory', '  }, [fetchCategories]);\n\n  const selectCategory'),
 'Corridas: categorias mantêm callback estável e efeito com dependência correta');
 
-patch('src/services/google/google-maps-loader.ts', (source) => {
-  let next = source
+patch('src/services/google/google-maps-loader.ts', (source) =>
+  source
     .replace(
       '            googleWindow.google?.maps?.importLibrary\n              ? finish()\n              : finish(new Error("maps_api_unavailable"));',
       '            if (googleWindow.google?.maps?.importLibrary) finish();\n            else finish(new Error("maps_api_unavailable"));',
@@ -166,24 +166,8 @@ patch('src/services/google/google-maps-loader.ts', (source) => {
     .replace(
       '        googleWindow.google?.maps?.importLibrary\n          ? finish()\n          : finish(new Error("maps_api_unavailable"));',
       '        if (googleWindow.google?.maps?.importLibrary) finish();\n        else finish(new Error("maps_api_unavailable"));',
-    );
-
-  if (!next.includes('maps_auth_failure')) {
-    next = next.replace(
-      '    this.loadPromise = new Promise<void>((resolve, reject) => {\n      let settled = false;',
-      '    this.loadPromise = new Promise<void>((resolve, reject) => {\n      let settled = false;\n      const previousAuthFailure = googleWindow.gm_authFailure;',
-    );
-    next = next.replace(
-      '      const timeoutId = window.setTimeout(',
-      '      googleWindow.gm_authFailure = () => {\n        try { previousAuthFailure?.(); } catch {}\n        finish(new Error("maps_auth_failure"));\n      };\n\n      const timeoutId = window.setTimeout(',
-    );
-    next = next.replace(
-      '      script.id = SCRIPT_ID;\n      script.async = true;',
-      '      script.id = SCRIPT_ID;\n      script.referrerPolicy = "strict-origin-when-cross-origin";\n      script.async = true;',
-    );
-  }
-  return next;
-}, 'Corridas: loader de Maps detecta falha de autorização e fixa política de referrer do WebView');
+    ),
+'Corridas: loader de Maps usa controle de fluxo explícito');
 
 requireMarkers('src/integrations/supabase/client.ts', ['storageKey: "apois-superapp-corridas-auth-v1"'], 'Corridas auth isolado');
 requireMarkers('src/hooks/use-location.tsx', ['apois-superapp-corridas-last-location'], 'Corridas localização isolada');
