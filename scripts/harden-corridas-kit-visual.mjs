@@ -99,8 +99,14 @@ function replaceRequired(source, search, replacement, label) {
       'bg-zinc-900/80 p-4 rounded-2xl border border-white/5 flex items-center gap-3 cursor-pointer active:scale-95 transition-all',
       'bg-white p-3 rounded-2xl border border-[#E2E4E8] flex items-center gap-3 cursor-pointer active:scale-95 transition-all shadow-sm',
     )
+    .replace(
+      'bg-zinc-900/80 p-4 rounded-2xl border border-[#E2E4E8] flex items-center gap-3 cursor-pointer active:scale-95 transition-all',
+      'bg-white p-3 rounded-2xl border border-[#E2E4E8] flex items-center gap-3 cursor-pointer active:scale-95 transition-all shadow-sm',
+    )
     .replaceAll('homeFav ? "bg-blue-500/20 text-blue-400" : "bg-zinc-800 text-zinc-600"', 'homeFav ? "bg-[#FFF1F2] text-[#E51B23]" : "bg-[#F1F2F4] text-[#666B73]"')
+    .replaceAll('homeFav ? "bg-blue-500/20 text-blue-400" : "bg-zinc-800 text-[#9CA1A9]"', 'homeFav ? "bg-[#FFF1F2] text-[#E51B23]" : "bg-[#F1F2F4] text-[#666B73]"')
     .replaceAll('workFav ? "bg-orange-500/20 text-orange-400" : "bg-zinc-800 text-zinc-600"', 'workFav ? "bg-[#FFF1F2] text-[#E51B23]" : "bg-[#F1F2F4] text-[#666B73]"')
+    .replaceAll('workFav ? "bg-orange-500/20 text-orange-400" : "bg-zinc-800 text-[#9CA1A9]"', 'workFav ? "bg-[#FFF1F2] text-[#E51B23]" : "bg-[#F1F2F4] text-[#666B73]"')
     .replaceAll('text-xs font-black text-white uppercase tracking-tighter', 'text-xs font-black text-[#111111] uppercase tracking-tighter')
     .replaceAll('text-[10px] text-zinc-500 truncate w-[80px]', 'text-[10px] text-[#666B73] truncate w-[80px]');
 
@@ -262,6 +268,7 @@ function replaceRequired(source, search, replacement, label) {
     .replace('bg-zinc-200', 'bg-[#EEF1F4]')
     .replaceAll('"#FFB800"', '"#E51B23"')
     .replace('if (origin) addCircleMarker(origin, "Sua localização", "#E51B23");', 'if (origin) addCircleMarker(origin, "Sua localização", "#2563EB");')
+    .replace('if (destination) addCircleMarker(destination, "Destino", "#111111", 9);', 'if (destination) addCircleMarker(destination, "Destino", "#E51B23", 9);')
     .replace('bg-zinc-100/90', 'bg-white/90')
     .replace('border-zinc-200 border-t-apois-yellow', 'border-[#E2E4E8] border-t-[#E51B23]')
     .replace('text-zinc-700', 'text-[#4F555D]')
