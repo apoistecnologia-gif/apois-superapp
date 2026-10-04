@@ -149,7 +149,9 @@ requireText('scripts/build-isolated-module.mjs', [
   "harden-apois-client-red-visual.mjs",
   "harden-corridas-kit-visual.mjs",
   'protectedMapRuntimeBeforeVisual',
+  'protectedCorridasMapRuntimeAfterVisual',
   'migração visual preservou byte a byte Maps/GPS/Places',
+  'build final preservou byte a byte Maps/GPS/Places',
 ], 'visual Corridas roda uma vez no pipeline isolado e protege Maps/GPS/Places');
 
 
