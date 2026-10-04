@@ -70,7 +70,7 @@ const moduleBridgeScript = `
     button.innerHTML = '<span aria-hidden="true">⇄</span>';
     button.style.position = 'fixed';
     button.style.right = '14px';
-    button.style.top = 'calc(max(env(safe-area-inset-top), 12px) + 56px)';
+    button.style.top = 'calc(max(env(safe-area-inset-top), 12px) + 154px)';
     button.style.zIndex = '2147483646';
     button.style.width = '44px';
     button.style.height = '44px';
