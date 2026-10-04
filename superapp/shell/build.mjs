@@ -147,57 +147,7 @@ for (const moduleName of ['corridas', 'entregas']) {
   console.log(`[OK] alternador de módulos injetado em ${moduleName}`);
 }
 
-// O shell entra nos módulos usando location.replace(), portanto o WebView não mantém
-// uma entrada anterior no histórico. No Android isso fazia o botão nativo "Voltar"
-// ficar sem efeito dentro do módulo Entregas. Injetamos um handler apenas no bundle
-// embarcado do Superapp, sem alterar o comportamento do APK independente de Entregas.
-const entregasIndex = resolve(dist, 'modules/entregas/index.html');
-if (existsSync(entregasIndex)) {
-  const backNavigationScript = `
-<script id="apois-superapp-entregas-back-navigation">
-(function () {
-  var appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
-  if (!appPlugin || typeof appPlugin.addListener !== 'function') return;
-
-  function routePath() {
-    var hash = String(window.location.hash || '').replace(/^#/, '');
-    var path = hash.split('?')[0] || '/';
-    return path.charAt(0) === '/' ? path : '/' + path;
-  }
-
-  Promise.resolve(appPlugin.addListener('backButton', function () {
-    var path = routePath();
-
-    // Login/cadastro públicos voltam para a tela inicial do APOIS Entregas.
-    if (path === '/login' || path === '/register' || path === '/cadastro' || path === '/recuperar-senha') {
-      window.location.hash = '#/';
-      return;
-    }
-
-    // Na tela inicial do Entregas, voltar retorna ao seletor Corridas/Entregas.
-    if (path === '/') {
-      window.location.replace('../../index.html');
-      return;
-    }
-
-    // Demais telas respeitam o histórico do módulo; sem histórico, retornam ao início.
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.hash = '#/';
-    }
-  })).catch(function () {});
-})();
-</script>`;
-
-  const html = readFileSync(entregasIndex, 'utf8');
-  if (!html.includes('apois-superapp-entregas-back-navigation')) {
-    const patched = html.includes('</body>')
-      ? html.replace('</body>', `${backNavigationScript}\n</body>`)
-      : `${html}\n${backNavigationScript}\n`;
-    writeFileSync(entregasIndex, patched, 'utf8');
-    console.log('[OK] navegação do botão Voltar Android injetada no módulo Entregas');
-  }
-}
-
+// A navegação física do Android já é tratada pelo bridge injetado em
+// build-isolated-module.mjs. Não registrar um segundo listener aqui: dois
+// backButton handlers causam navegação dupla/race no módulo Entregas.
 console.log(`[OK] shell cliente gerado em ${dist}: Corridas + Entregas`);
