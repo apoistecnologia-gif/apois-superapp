@@ -65,8 +65,13 @@ requireAll('scripts/harden-corridas-superapp-profile-ui.mjs', [
 
 requireAll('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1',
+  'APOIS_REFERENCE_HOME_V2',
+  'data-apois-reference-home-v2',
   'apois-kit-home-panel',
   '<HomeWorkShortcuts />',
+  'Solicitar corrida',
+  '"Sua localização", "#2563EB"',
+  'bg-white/90 p-6 text-center',
   'apois-kit-search-results',
   'max-h-[94dvh]',
   'max(16px, env(safe-area-inset-bottom))',
