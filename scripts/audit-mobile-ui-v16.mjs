@@ -28,9 +28,10 @@ function forbidAll(path, markers, label) {
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:6px',
-  '@media(max-height:720px)',
-], 'Seletor Cliente adapta conteúdo e marca a aparelhos baixos');
+  "'--red:#E51B23'",
+  "'--red-dark:#C9141B'",
+  "'@media(max-height:760px)'",
+], 'Seletor Cliente adapta conteúdo e nova marca APOIS a aparelhos baixos');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
