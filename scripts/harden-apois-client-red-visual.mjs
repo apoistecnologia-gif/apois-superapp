@@ -17,10 +17,14 @@ function must(path, markers) {
   for (const marker of markers) if (!source.includes(marker)) throw new Error(`[FAIL] APOIS red visual: ${path} sem ${marker}`);
 }
 
-const brandSource = resolve(root, 'superapp/branding/apois-client-red-logo.png');
+const brandSource = resolve(root, 'superapp/branding/apois-client-red-logo.b64');
 const brandTarget = file('src/assets/apois-brand.png');
 mkdirSync(dirname(brandTarget), { recursive: true });
-copyFileSync(brandSource, brandTarget);
+const brandBytes = Buffer.from(readFileSync(brandSource, 'utf8').trim(), 'base64');
+if (brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
+  throw new Error('[FAIL] APOIS red visual: logo base64 não gerou PNG válido');
+}
+writeFileSync(brandTarget, brandBytes);
 
 const serviceAssetDir = file('src/assets/services');
 mkdirSync(serviceAssetDir, { recursive: true });
