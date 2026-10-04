@@ -165,7 +165,7 @@ loginSource = loginSource
   )
   .replace(
     'className="text-sm font-bold text-primary hover:underline disabled:opacity-50"',
-    'className="text-sm font-bold text-[#E51B23] hover:underline disabled:opacity-50"',
+    'className="inline-flex min-h-11 items-center rounded-xl px-2 text-sm font-bold text-[#E51B23] hover:bg-[#FFF1F2] disabled:opacity-50"',
   )
   .replace(
     'className="h-14 w-full rounded-2xl bg-gradient-to-r from-primary to-accent text-lg font-black text-white shadow-[0_12px_35px_rgba(200,138,8,0.18)] transition-transform hover:opacity-95 active:scale-[0.98]"',
