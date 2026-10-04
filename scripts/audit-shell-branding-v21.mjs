@@ -28,7 +28,7 @@ check('scripts/harden-superapp-shell-mobile-ui.mjs', [
 ], 'Seletor Cliente valida a nova identidade vermelho/branco, logo contida e mantém Corridas/Entregas');
 
 check('superapp/shell/build.mjs', [
-  "../branding/apois-client-red-logo.png",
+  "../branding/apois-client-red-logo.b64",
   "rgba(255,255,255,.96)",
   "#E51B23",
 ], 'Shell Cliente empacota a logo vermelha exclusiva e usa switcher claro');
