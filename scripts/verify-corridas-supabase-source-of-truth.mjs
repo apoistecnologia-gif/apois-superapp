@@ -1,9 +1,10 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const CANONICAL_REF = 'vqtucstyduxrqjgyigfk';
+const CANONICAL_REF = 'tbbzkrfupmqdywnzgnms';
 const CANONICAL_URL = `https://${CANONICAL_REF}.supabase.co`;
 const HISTORICAL_REF = 'zjphbuvcapwyuynadgdt';
+const PROTECTED_SNAPSHOT_REF = 'vqtucstyduxrqjgyigfk';
 const root = process.cwd();
 let failed = false;
 
@@ -25,8 +26,13 @@ if (!configuredUrl) {
 const configPath = resolve(root, 'sources/apois-corridas-passageiro/supabase/config.toml');
 if (existsSync(configPath)) {
   const config = readFileSync(configPath, 'utf8');
-  if (!config.includes(CANONICAL_REF)) fail('supabase/config.toml do snapshot não aponta para o projeto canônico');
-  else ok('supabase/config.toml do snapshot aponta para o projeto canônico');
+  if (!config.includes(PROTECTED_SNAPSHOT_REF) && !config.includes(CANONICAL_REF)) {
+    fail('supabase/config.toml do snapshot não aponta para um ref conhecido');
+  } else if (config.includes(PROTECTED_SNAPSHOT_REF)) {
+    ok('supabase/config.toml preserva o ref do snapshot protegido; runtime é validado separadamente contra o projeto atual');
+  } else {
+    ok('supabase/config.toml do snapshot já aponta para o projeto atual');
+  }
 }
 
 const TEXT_EXTENSIONS = new Set(['.ts','.tsx','.js','.jsx','.mjs','.cjs','.json','.toml','.env','.html','.css','.md','.txt','.sql']);
@@ -60,4 +66,4 @@ scanDirectory(resolve(root, '.work/corridas/dist'), 'bundle Corridas');
 scanDirectory(resolve(root, 'superapp/shell/dist/modules/corridas'), 'bundle final Corridas');
 
 if (failed) process.exit(1);
-ok('Source of truth Supabase Corridas validado sem alterar o .env histórico protegido.');
+ok('Source of truth Supabase Corridas validado contra o projeto atual sem alterar o snapshot protegido.');
