@@ -93,6 +93,7 @@ if (!publicAppUrl) {
 
 const androidMapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim() || '';
 const webMapsKey = process.env.CORRIDAS_WEB_MAPS_API_KEY?.trim() || '';
+ok('Maps JavaScript WebView origin esperado: https://localhost');
 validateGoogleKey(androidMapsKey, 'CORRIDAS_ANDROID_MAPS_API_KEY', 'Google Maps Android key do Superapp');
 validateGoogleKey(webMapsKey, 'CORRIDAS_WEB_MAPS_API_KEY', 'Google Maps JavaScript/Places key do Superapp');
 
