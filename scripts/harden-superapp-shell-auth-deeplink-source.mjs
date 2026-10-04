@@ -9,6 +9,12 @@ if (!before.includes('const OAUTH_HANDOFF_TTL_MS=120000;')) {
 if (!before.includes('clearExpiredCorridasGoogle()') || !before.includes('localStorage.getItem(CORRIDAS_GOOGLE_KEY)===envelope')) {
   throw new Error('Shell perdeu a remoção ativa do authorization code expirado.');
 }
+if (
+  !before.includes("ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url'") ||
+  !before.includes('hasPendingEntregas()&&storeEntregasGoogle()')
+) {
+  throw new Error('Shell perdeu o handoff Google do Cliente Entregas.');
+}
 const oldBlock = `          const previous=sessionStorage.getItem(AUTH_DEEP_LINK_KEY);\n          if(previous===rawUrl)return true;\n          sessionStorage.setItem(AUTH_DEEP_LINK_KEY,rawUrl);`;
 const newBlock = `          const previousRaw=sessionStorage.getItem(AUTH_DEEP_LINK_KEY);\n          if(previousRaw){try{const previous=JSON.parse(previousRaw);if(previous?.url===rawUrl&&Date.now()-Number(previous?.at||0)<5000)return true;}catch{}}\n          sessionStorage.setItem(AUTH_DEEP_LINK_KEY,JSON.stringify({url:rawUrl,at:Date.now()}));`;
 
