@@ -62,10 +62,10 @@ if (!mapServiceSource.includes('upsertDriverMarker(')) {
   mapServiceSource = mapServiceSource.slice(0, index) + driverMethods + mapServiceSource.slice(index);
 }
 
-if (!mapServiceSource.includes('this.destinationMarkerId.delete(mapId);\\n      this.driverMarkerId.delete(mapId);')) {
+if (!mapServiceSource.includes('this.destinationMarkerId.delete(mapId);\n      this.driverMarkerId.delete(mapId);')) {
   mapServiceSource = mapServiceSource.replace(
     '      this.destinationMarkerId.delete(mapId);',
-    '      this.destinationMarkerId.delete(mapId);\\n      this.driverMarkerId.delete(mapId);',
+    '      this.destinationMarkerId.delete(mapId);\n      this.driverMarkerId.delete(mapId);',
   );
 }
 
