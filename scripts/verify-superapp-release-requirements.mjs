@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 const strict = process.env.APOIS_STRICT_NATIVE_CONFIG === '1';
 const canonicalUrl = 'https://tbbzkrfupmqdywnzgnms.supabase.co';
+const entregasCanonicalUrl = 'https://ptgkwyyolrdgnqketkjj.supabase.co';
 let failed = false;
 function fail(message) { failed = true; console.error(`[FAIL] ${message}`); }
 function warn(message) { console.warn(`[WARN] ${message}`); }
@@ -27,6 +28,21 @@ if (!supabaseUrl) {
 } else if (supabaseUrl !== canonicalUrl) {
   fail(`CORRIDAS_VITE_SUPABASE_URL deve ser ${canonicalUrl}`);
 } else ok('Supabase Corridas canônico configurado');
+
+const isolatedBuilderPath = resolve('scripts/build-isolated-module.mjs');
+if (!existsSync(isolatedBuilderPath)) {
+  fail('builder isolado do Superapp ausente');
+} else {
+  const isolatedBuilder = readFileSync(isolatedBuilderPath, 'utf8');
+  for (const marker of ['ptgkwyyolrdgnqketkjj', entregasCanonicalUrl, 'env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL']) {
+    if (!isolatedBuilder.includes(marker)) fail(`Entregas não está fixado no Supabase canônico (${marker})`);
+  }
+  if (isolatedBuilder.includes("ENTREGAS_CANONICAL_REF = 'sbvhdgyuuperszlsllji'")) {
+    fail('Entregas ainda aponta para projeto Supabase aposentado');
+  } else {
+    ok('Supabase Entregas canônico fixado no builder do Cliente');
+  }
+}
 
 for (const name of ['CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY']) {
   const value = process.env[name]?.trim() || '';
