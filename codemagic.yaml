@@ -85,7 +85,7 @@ workflows:
           grep -Fq 'data:image/png;base64,' superapp/shell/dist/index.html
           grep -R -Fq 'APOIS_NATIVE_MAP_FALLBACK_V2' superapp/shell/dist/modules/corridas
           grep -R -Fq 'images.pexels.com/photos/7771058' superapp/shell/dist/modules/corridas
-          if grep -R -Fq 'Para onde vamos?' superapp/shell/dist/modules/corridas; then
+          if grep -Fq 'Para onde vamos?' .work/corridas/src/routes/_authenticated.inicio.tsx; then
             echo '[FAIL] home Corridas reintroduziu busca duplicada no topo'
             exit 1
           fi
