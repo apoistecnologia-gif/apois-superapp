@@ -2,21 +2,80 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
-let source = readFileSync(target, 'utf8');
-
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
+
+let source = readFileSync(target, 'utf8');
 let mapServiceSource = readFileSync(mapServicePath, 'utf8');
+
+// Native Android maps are rendered below the WebView. Keep the native map bright
+// and make the WebView/page transparent only on native builds.
 if (mapServiceSource.includes('styles: MAP_STYLE_DARK')) {
   mapServiceSource = mapServiceSource
     .replace('import { MAP_STYLE_DARK, DEFAULT_ZOOM } from "./map-config";', 'import { DEFAULT_ZOOM } from "./map-config";')
     .replace('styles: MAP_STYLE_DARK,', 'styles: [],');
-  writeFileSync(mapServicePath, mapServiceSource, 'utf8');
-}
-if (!readFileSync(mapServicePath, 'utf8').includes('styles: []')) {
-  throw new Error('[FAIL] Native map: estilo claro não foi aplicado ao mapa do passageiro');
 }
 
-if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V1')) {
+if (!mapServiceSource.includes('driverMarkerId: Map<string, string>')) {
+  mapServiceSource = mapServiceSource.replace(
+    '  private destinationMarkerId: Map<string, string> = new Map();',
+    '  private destinationMarkerId: Map<string, string> = new Map();\n  private driverMarkerId: Map<string, string> = new Map();',
+  );
+}
+
+if (!mapServiceSource.includes('upsertDriverMarker(')) {
+  const anchor = '  public async removeDestinationMarker(mapId: string): Promise<void> {';
+  const driverMethods = `  public async upsertDriverMarker(mapId: string, coordinate: MapCoordinates): Promise<void> {
+    const map = this.maps.get(mapId);
+    if (!map) return;
+
+    const existingId = this.driverMarkerId.get(mapId);
+    try {
+      if (existingId) await map.removeMarker(existingId);
+      const markerId = await map.addMarker({
+        coordinate,
+        title: "Motorista",
+        opacity: 1,
+      });
+      this.driverMarkerId.set(mapId, markerId);
+    } catch (error) {
+      console.error("Error upserting driver marker:", error);
+    }
+  }
+
+  public async removeDriverMarker(mapId: string): Promise<void> {
+    const map = this.maps.get(mapId);
+    if (!map) return;
+
+    const id = this.driverMarkerId.get(mapId);
+    if (!id) return;
+    try {
+      await map.removeMarker(id);
+    } finally {
+      this.driverMarkerId.delete(mapId);
+    }
+  }
+
+`;
+  const index = mapServiceSource.indexOf(anchor);
+  if (index < 0) throw new Error('[FAIL] Native map: destination marker method anchor not found');
+  mapServiceSource = mapServiceSource.slice(0, index) + driverMethods + mapServiceSource.slice(index);
+}
+
+if (!mapServiceSource.includes('this.driverMarkerId.delete(mapId);')) {
+  mapServiceSource = mapServiceSource.replace(
+    '      this.destinationMarkerId.delete(mapId);',
+    '      this.destinationMarkerId.delete(mapId);\n      this.driverMarkerId.delete(mapId);',
+  );
+}
+
+writeFileSync(mapServicePath, mapServiceSource, 'utf8');
+mapServiceSource = readFileSync(mapServicePath, 'utf8');
+
+for (const marker of ['styles: []', 'upsertDriverMarker(', 'removeDriverMarker(', 'driverMarkerId']) {
+  if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing marker: ${marker}`);
+}
+
+if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   source = source.replace(
     'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";',
     'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";\nimport { Capacitor } from "@capacitor/core";\nimport { mapService } from "@/services/maps/map-service";',
@@ -24,7 +83,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V1')) {
 
   source = source.replace(
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);',
-    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V1',
+    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V2',
   );
 
   source = source.replace(
@@ -37,35 +96,93 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V1')) {
     '  }, [isStatic, nativeApiKey, origin, reloadKey]);',
   );
 
+  const initEffectAnchor = '  useEffect(() => {\n    void initializeMap();';
+  const transparentEffect = `  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const previousHtml = document.documentElement.style.backgroundColor;
+    const previousBody = document.body.style.backgroundColor;
+    document.documentElement.style.backgroundColor = "transparent";
+    document.body.style.backgroundColor = "transparent";
+    return () => {
+      document.documentElement.style.backgroundColor = previousHtml;
+      document.body.style.backgroundColor = previousBody;
+    };
+  }, []);
+
+`;
+  const initEffectIndex = source.indexOf(initEffectAnchor);
+  if (initEffectIndex < 0) throw new Error('[FAIL] Native map: initialize effect anchor not found');
+  source = source.slice(0, initEffectIndex) + transparentEffect + source.slice(initEffectIndex);
+
   source = source.replace(
     '      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);',
     '      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);\n      if (nativeModeRef.current) void mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);',
   );
 
-  const nativeEffect = '\n  useEffect(() => {\n    if (!nativeModeRef.current || status !== "ready") return;\n    const mapId = nativeMapIdRef.current;\n    void (async () => {\n      if (origin) await mapService.upsertPickupMarker(mapId, origin);\n      if (destination) await mapService.upsertDestinationMarker(mapId, destination);\n      else await mapService.removeDestinationMarker(mapId);\n\n      const points = route?.decodedPoints?.map((point) => ({ lat: point.lat, lng: point.lng })) ?? [];\n      if (points.length > 1) {\n        await mapService.upsertRoutePolyline(mapId, points);\n        await mapService.fitRouteBounds(mapId, points);\n      } else {\n        await mapService.removeRoutePolyline(mapId);\n        if (origin && destination) await mapService.fitPickupAndDestination(mapId, origin, destination, 110);\n        else if (origin) await mapService.setCamera(mapId, { coordinate: origin, zoom: 16 });\n      }\n    })().catch((error) => console.error("[PassengerMap] Native marker/route sync failed", error));\n  }, [destination, origin, route?.decodedPoints, status]);\n';
+  const nativeEffect = `
+  useEffect(() => {
+    if (!nativeModeRef.current || status !== "ready") return;
+    const mapId = nativeMapIdRef.current;
+    void (async () => {
+      if (origin) await mapService.upsertPickupMarker(mapId, origin);
+      if (destination) await mapService.upsertDestinationMarker(mapId, destination);
+      else await mapService.removeDestinationMarker(mapId);
 
-  const effectAnchor = '  useEffect(() => {\n    if (!mapRef.current || status !== "ready") return;\n    const maps = (window as any).google?.maps;';
-  const idx = source.indexOf(effectAnchor);
-  if (idx < 0) throw new Error('[FAIL] Native map: marker effect anchor not found');
-  source = source.slice(0, idx) + nativeEffect + source.slice(idx);
+      if (validDriverLocation) await mapService.upsertDriverMarker(mapId, validDriverLocation);
+      else await mapService.removeDriverMarker(mapId);
+
+      const points = route?.decodedPoints?.map((point) => ({ lat: point.lat, lng: point.lng })) ?? [];
+      if (points.length > 1) {
+        await mapService.upsertRoutePolyline(mapId, points);
+        await mapService.fitRouteBounds(mapId, points);
+      } else {
+        await mapService.removeRoutePolyline(mapId);
+        if (origin && destination) await mapService.fitPickupAndDestination(mapId, origin, destination, 110);
+        else if (origin) await mapService.setCamera(mapId, { coordinate: origin, zoom: 16 });
+        else if (validDriverLocation) await mapService.setCamera(mapId, { coordinate: validDriverLocation, zoom: 16 });
+      }
+    })().catch((error) => console.error("[PassengerMap] Native marker/route sync failed", error));
+  }, [destination, origin, route?.decodedPoints, status, validDriverLocation]);
+
+`;
+
+  const jsEffectAnchor = '  useEffect(() => {\n    if (!mapRef.current || status !== "ready") return;\n    const maps = (window as any).google?.maps;';
+  const jsEffectIndex = source.indexOf(jsEffectAnchor);
+  if (jsEffectIndex < 0) throw new Error('[FAIL] Native map: JS marker effect anchor not found');
+  source = source.slice(0, jsEffectIndex) + nativeEffect + source.slice(jsEffectIndex);
 
   source = source.replace(
     '  const retry = () => {\n    googleMapsLoader.reset();',
     '  const retry = () => {\n    if (nativeModeRef.current) void mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);\n    nativeModeRef.current = false;\n    googleMapsLoader.reset();',
   );
 
+  source = source
+    .replace(
+      'className="relative h-full min-h-[320px] w-full overflow-hidden bg-zinc-200"',
+      'className="relative h-full min-h-[320px] w-full overflow-hidden bg-transparent"',
+    )
+    .replace(
+      'className="absolute inset-0 h-full w-full" aria-label="Mapa da corrida"',
+      'className="absolute inset-0 h-full w-full bg-transparent" aria-label="Mapa da corrida"',
+    );
+
   writeFileSync(target, source, 'utf8');
 }
 
+source = readFileSync(target, 'utf8');
 for (const marker of [
-  'APOIS_NATIVE_MAP_FALLBACK_V1',
+  'APOIS_NATIVE_MAP_FALLBACK_V2',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
   'mapService.upsertPickupMarker',
   'mapService.upsertDestinationMarker',
+  'mapService.upsertDriverMarker',
+  'document.body.style.backgroundColor = "transparent"',
+  'bg-transparent',
   'Native Google Map ready',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Native map hardener missing marker: ${marker}`);
 }
-console.log('[OK] Corridas: Android usa mapa nativo quando disponível e mantém JS Maps como fallback web.');
+
+console.log('[OK] Corridas: Android usa mapa nativo claro/transparente, sincroniza motorista e mantém JS Maps como fallback web.');
