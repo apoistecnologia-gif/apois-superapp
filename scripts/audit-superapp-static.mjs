@@ -155,6 +155,7 @@ requireText('scripts/build-isolated-module.mjs', [
 
 requireText('scripts/harden-corridas-native-map.mjs', [
   'APOIS_NATIVE_MAP_FALLBACK_V2',
+  'APOIS_MAP_CAMERA_PADDING_V1',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
@@ -162,6 +163,7 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'missing marker PNGs removed',
   'PolylineDecoder',
   'displayRoutePoints',
+  'bottom: 240',
   'encodedPolyline,\\n  driverLocation,',
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
@@ -285,6 +287,11 @@ forbidText('superapp/shell/build.mjs', [
 requireText('superapp/shell/capacitor.config.ts', [
   "appId: 'br.com.apois.app'", "backgroundColor: '#00000000'", 'overlaysWebView: false',
 ], 'Capacitor usa package unificado e fundo correto');
+requireText('scripts/configure-superapp-android.mjs', [
+  'mapsMetaPattern',
+  'Google Maps Android key materializada no AndroidManifest.',
+  "com.google.android.geo.API_KEY",
+], 'Android sempre materializa a Maps key do release no manifest, mesmo se o metadata já existir');
 requireText('codemagic.yaml', [
   'android-superapp-experimental:', 'APP_PACKAGE: "br.com.apois.app"',
   'APOIS_STRICT_NATIVE_CONFIG: "1"', 'npm run verify:pins', 'APOIS-Superapp.apk',
