@@ -39,10 +39,16 @@ requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',[
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'const serviceImage: Record<RideCategoryCode, string>',
   'APOIS_CATEGORY_STUDIO_V1',
+  'vGHP86zk7D_small.jpg',
+  'kyjjmkQI3H.jpg',
+  'removalist_5ca69cd22a98b.jpg',
+  '0250-0020-EQ-OMBRE_2.PNG',
+  'Big_Boy_Velocity_150_Cargo_Update.png',
   'PRICING_CONFIG.LABELS[cat.key]',
   'w-28 shrink-0',
   'h-[74px]',
   'object-contain object-center',
+  'APOIS',
   'border-[#E51B23]',
 ],'Categorias Corridas usam cinco fotos reais e cards compactos');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
