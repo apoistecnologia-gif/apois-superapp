@@ -50,7 +50,7 @@ requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'border-[#E51B23]',
 ],'Categorias Corridas usam cinco fotos reais e cards compactos');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
-  'APOIS_NATIVE_MAP_FALLBACK_V2',
+  'APOIS_NATIVE_MAP_FALLBACK_V3',
   'APOIS_MAP_CAMERA_PADDING_V1',
   '[isStatic, nativeApiKey, reloadKey]',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
@@ -58,9 +58,9 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'mapService.createMap',
   'mapService.upsertDriverMarker',
   'PolylineDecoder',
-  'POLYLINE_IMPORT_DEDUP_V1',
+  'PolylineDecoder deve ser importado exatamente uma vez',
   'displayedRoutePoints',
-  'APOIS_ROUTE_POINTS_PRECEDENCE_V1',
+  'if (encodedPolyline)',
   'bottom: 240',
   'encodedPolyline,\\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
