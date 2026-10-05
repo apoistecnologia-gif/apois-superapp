@@ -193,14 +193,10 @@ requireText('scripts/build-isolated-module.mjs', [
 
 
 requireText('scripts/harden-apois-client-red-visual.mjs', [
-  'photos/7771058',
-  'photos/9209161',
-  'photos/29594086',
-  'photos/28447796',
-  'photos/6867937',
+  'APOIS_CATEGORY_STUDIO_V1',
   '"w-28 shrink-0',
-  'h-[62px]',
-  'object-cover object-center',
+  'h-[74px]',
+  'object-contain object-center',
 ], 'categorias Corridas usam fotos reais e cards compactos');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
