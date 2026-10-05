@@ -200,6 +200,15 @@ requireText('scripts/build-isolated-module.mjs', [
 ], 'visual Corridas roda uma vez no pipeline isolado e protege Maps/GPS/Places');
 
 
+
+requireText('scripts/harden-corridas-pickup-address-display.mjs', [
+  'geocodingService.resolvePickupAddress',
+  'address || pickupLabel || pickupShortLabel',
+  'Identificando seu endereço...',
+  'Toque para tentar identificar o endereço',
+  'Home ainda usa fallback genérico "Sua localização atual"',
+], 'Local de partida usa reverse geocoding real e não exibe fallback genérico');
+
 requireText('scripts/harden-apois-client-red-visual.mjs', [
   'APOIS_CATEGORY_STUDIO_V3',
   'import carImage from "@/assets/services/car.svg"',
