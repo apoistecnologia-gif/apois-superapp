@@ -85,6 +85,14 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   );
 
   source = source.replace(
+    'const PassengerMap: React.FC<PassengerMapProps> = ({\n  origin: customOrigin,\n  destination: customDestination,\n  driverLocation,',
+    'const PassengerMap: React.FC<PassengerMapProps> = ({\n  origin: customOrigin,\n  destination: customDestination,\n  encodedPolyline,\n  driverLocation,',
+  );
+  if (!source.includes('encodedPolyline,\n  driverLocation,')) {
+    throw new Error('[FAIL] Native map: PassengerMap receives encodedPolyline');
+  }
+
+  source = source.replace(
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);',
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V2',
   );
@@ -206,6 +214,7 @@ for (const marker of [
   'mapService.upsertDriverMarker',
   'PolylineDecoder',
   'displayRoutePoints',
+  'encodedPolyline,\n  driverLocation,',
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
