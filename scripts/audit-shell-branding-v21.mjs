@@ -37,8 +37,10 @@ check('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
   '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
   "'<div class=\"visual\">'",
-  "'<svg viewBox=\"0 0 320 210\"'",
-], 'Seletor usa ilustrações próprias em vez de emojis');
+  "'class=\"vehicle-photo\"'",
+  "'alt=\"Carro APOIS\"'",
+  "'alt=\"Moto de entregas APOIS\"'",
+], 'Seletor usa veículos reais adesivados APOIS em vez de desenhos/emojis');
 
 check('scripts/harden-partner-shell-mobile-ui.mjs', [
   'object-fit:contain;padding:8px',
