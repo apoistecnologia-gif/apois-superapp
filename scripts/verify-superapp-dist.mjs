@@ -38,15 +38,11 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['a
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'const serviceImage: Record<RideCategoryCode, string>',
-  'photos/7771058',
-  'photos/9209161',
-  'photos/29594086',
-  'photos/28447796',
-  'photos/6867937',
+  'APOIS_CATEGORY_STUDIO_V1',
   'PRICING_CONFIG.LABELS[cat.key]',
   'w-28 shrink-0',
-  'h-[62px]',
-  'object-cover object-center',
+  'h-[74px]',
+  'object-contain object-center',
   'border-[#E51B23]',
 ],'Categorias Corridas usam cinco fotos reais e cards compactos');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
@@ -87,7 +83,7 @@ const visualBundleMarkers=['apois-kit-home','apois-kit-search-screen','apois-kit
 const missingVisualBundleMarkers=visualBundleMarkers.filter(marker=>!treeContains('superapp/shell/dist/modules/corridas',marker));
 if(missingVisualBundleMarkers.length)fail(`bundle Corridas final não contém identificadores do kit visual: ${missingVisualBundleMarkers.join(' | ')}`);else ok('bundle Corridas final contém identificadores do APOIS_VISUAL_KIT_V1');
 if(!treeContains('superapp/shell/dist/modules/corridas','apois-kit-search-screen'))fail('bundle Corridas final não contém a busca visual nova');else ok('bundle Corridas final contém a busca visual nova');
-if(!treeContains('superapp/shell/dist/modules/corridas','images.pexels.com/photos/7771058'))fail('bundle Corridas final perdeu fotos reais das categorias');else ok('bundle Corridas final contém fotos reais das categorias');
+if(!treeContains('superapp/shell/dist/modules/corridas','pic.52112.com/180806/JPG-180806_120/vGHP86zk7D_small.jpg'))fail('bundle Corridas final perdeu imagem real de Carro');else ok('bundle Corridas final contém imagem real de Carro');
 if(!treeContains('superapp/shell/dist/modules/corridas','Continuar com Google'))fail('bundle Corridas final perdeu o botão Google');else ok('bundle Corridas final contém login com Google');
 if(!treeContains('superapp/shell/dist/modules/corridas','corridas-google'))fail('bundle Corridas final perdeu callback Google do Superapp');else ok('bundle Corridas final contém callback Google nativo');
 
