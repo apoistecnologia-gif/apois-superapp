@@ -15,9 +15,9 @@ if (alreadyHardened) {
     'JSON.stringify({url:rawUrl,createdAt:Date.now()})',
     'clearExpiredCorridasGoogle()',
     'window.setTimeout(()=>{try{if(localStorage.getItem(CORRIDAS_GOOGLE_KEY)===envelope)',
-    'if(hasPendingCorridas())',
+    'const pendingCorridas=hasPendingCorridas();',
     'const stored=storeCorridasGoogle();',
-    'if(hasPendingEntregas())',
+    'const pendingEntregas=hasPendingEntregas();',
     'const stored=storeEntregasGoogle();',
     "ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url'",
     "window.location.replace('./modules/corridas/index.html#/login')",
@@ -95,9 +95,9 @@ writeFileSync(path, html, 'utf8');
 
 if (alreadyHardened) {
   for (const marker of [
-    'if(hasPendingCorridas())',
+    'const pendingCorridas=hasPendingCorridas();',
     'const stored=storeCorridasGoogle();',
-    'if(hasPendingEntregas())',
+    'const pendingEntregas=hasPendingEntregas();',
     'const stored=storeEntregasGoogle();',
     'const CORRIDAS_GOOGLE_KEY=',
     'const ENTREGAS_GOOGLE_KEY=',
