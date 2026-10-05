@@ -59,6 +59,32 @@ if (!existsSync(isolatedBuilderPath)) {
   }
 }
 
+const nativeMapHardenerPath = resolve('scripts/harden-corridas-native-map.mjs');
+if (!existsSync(nativeMapHardenerPath)) {
+  fail('hardener mapa nativo Corridas ausente');
+} else {
+  const nativeMapHardener = readFileSync(nativeMapHardenerPath, 'utf8');
+  for (const marker of [
+    'APOIS_NATIVE_MAP_FALLBACK_V2',
+    'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
+    'Capacitor.isNativePlatform()',
+    'mapService.createMap',
+    'PolylineDecoder',
+    'displayRoutePoints',
+    'upsertDriverMarker',
+    'document.body.style.backgroundColor = "transparent"',
+    'strokeColor: "#E51B23"',
+    'assets/markers/',
+  ]) {
+    if (!nativeMapHardener.includes(marker)) fail(`hardener mapa nativo Corridas sem marcador obrigatório (${marker})`);
+  }
+  if (!nativeMapHardener.includes("referências a marker PNG inexistente permaneceram")) {
+    fail('hardener mapa nativo não bloqueia assets de marcador inexistentes');
+  } else {
+    ok('hardener mapa nativo Corridas versionado com transparência, rota ativa e fallback seguro');
+  }
+}
+
 for (const name of ['CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY']) {
   const value = process.env[name]?.trim() || '';
   if (!value) {
