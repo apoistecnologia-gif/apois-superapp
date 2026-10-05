@@ -110,7 +110,8 @@ requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
   'br.com.apois.app://auth/callback',
   'br.com.apois.app://auth/corridas-google',
   'JSON.stringify({ product: \\"corridas\\", createdAt: Date.now() })',
-], 'Google OAuth Corridas usa PKCE, envelope de handoff, callback determinístico, dedupe e cleanup/cancelamento');
+  'browserFinished pode chegar',
+], 'Google OAuth Corridas usa PKCE, envelope persistente sem race de browserFinished, callback determinístico, dedupe e cleanup/cancelamento');
 
 requireText('scripts/harden-entregas-google-oauth-handoff.mjs', [
   'APOIS_GOOGLE_PENDING_KEY',
