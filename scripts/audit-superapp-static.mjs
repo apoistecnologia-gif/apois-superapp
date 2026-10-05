@@ -316,3 +316,12 @@ requireText('.env.example', [
 ], 'ambiente documenta URL pública, Maps e Firebase unificado');
 
 process.exit(failed ? 1 : 0);
+
+
+requireText('scripts/fix-corridas-superapp-ui.mjs', [
+  'APOIS_RESUME_AUTH_SNAPSHOT_V1',
+  'APOIS_RESUME_AUTH_GUARD_V1',
+  'persistedBootSession?.user ?? null',
+  'useState<Session | null>(() => persistedBootSession)',
+  'session?.user',
+], 'Corridas reidrata sessão local ao retomar sem exibir verificação em tela cheia');
