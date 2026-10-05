@@ -3,6 +3,16 @@ import { resolve } from 'node:path';
 
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
+const routeConfigPath = resolve('.work/corridas/src/services/routes/route-config.ts');
+let routeConfigSource = readFileSync(routeConfigPath, 'utf8');
+routeConfigSource = routeConfigSource
+  .replace('TOP: 100,', 'TOP: 72,')
+  .replace('RIGHT: 50,', 'RIGHT: 28,')
+  .replace('BOTTOM: 350,', 'BOTTOM: 220,')
+  .replace('LEFT: 50,', 'LEFT: 28,');
+writeFileSync(routeConfigPath, routeConfigSource, 'utf8');
+// APOIS_MAP_CAMERA_PADDING_V1
+
 
 let source = readFileSync(target, 'utf8');
 let mapServiceSource = readFileSync(mapServicePath, 'utf8');
@@ -84,7 +94,12 @@ for (const marker of ['styles: []', 'upsertDriverMarker(', 'removeDriverMarker('
   if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing marker: ${marker}`);
 }
 
-source = source.replaceAll('"#FFB800"', '"#E51B23"');
+source = source
+  .replaceAll('"#FFB800"', '"#E51B23"')
+  .replace(
+    'mapRef.current.fitBounds(bounds, { top: 170, right: 40, bottom: 330, left: 40 });',
+    'mapRef.current.fitBounds(bounds, { top: 120, right: 28, bottom: 240, left: 28 });',
+  );
 
 if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   source = source.replace(
@@ -214,6 +229,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
 source = readFileSync(target, 'utf8');
 for (const marker of [
   'APOIS_NATIVE_MAP_FALLBACK_V2',
+  'APOIS_MAP_CAMERA_PADDING_V1',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
@@ -223,6 +239,7 @@ for (const marker of [
   'missing marker PNGs removed',
   'PolylineDecoder',
   'displayRoutePoints',
+  'bottom: 240',
   'encodedPolyline,\n  driverLocation,',
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
