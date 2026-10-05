@@ -1,9 +1,12 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
 const routeConfigPath = resolve('.work/corridas/src/services/routes/route-config.ts');
+const locationPath = resolve('.work/corridas/src/hooks/use-location.tsx');
+const markerDir = resolve('.work/corridas/public/assets/markers');
+const pickupMarkerPath = resolve(markerDir, 'apois-location.svg');
 
 function replaceRequired(source, search, replacement, label) {
   if (source.includes(replacement)) return source;
@@ -18,6 +21,74 @@ function ensureSingleLine(source, line, anchor) {
   return normalized.replace(anchor, `${anchor}\n${line}`);
 }
 
+// Ask for location permission on first use and prefer a fresh high-accuracy fix.
+let locationSource = readFileSync(locationPath, 'utf8');
+if (!locationSource.includes('APOIS_PRECISE_LOCATION_V1')) {
+  locationSource = locationSource.replace(
+    '  const requestPermission = useCallback(async () => {',
+    '  // APOIS_PRECISE_LOCATION_V1\n  const requestPermission = useCallback(async () => {',
+  );
+  locationSource = locationSource.replace(
+    'const status = await Geolocation.requestPermissions({ permissions: ["location"] });',
+    'const status = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });',
+  );
+  const oldStart = `    const start = async () => {
+      const permission = await checkPermissions();
+      if (!mountedRef.current || permission !== "granted") return;
+
+      await refreshLocation();`;
+  const newStart = `    const start = async () => {
+      let permission = await checkPermissions();
+      if (!mountedRef.current) return;
+
+      if (permission === "prompt" || permission === "unknown") {
+        try {
+          const requested = await Geolocation.requestPermissions({
+            permissions: ["location", "coarseLocation"],
+          });
+          permission = normalizePermission(requested.location);
+          if (mountedRef.current) setPermissionState(permission);
+        } catch (permissionError) {
+          console.warn("[LocationProvider] Startup permission request failed", permissionError);
+        }
+      }
+
+      if (!mountedRef.current || permission !== "granted") {
+        if (mountedRef.current && permission !== "denied") {
+          setError("Permita a localização precisa para mostrarmos seu ponto exato no mapa.");
+        }
+        return;
+      }
+
+      await refreshLocation();`;
+  if (!locationSource.includes(oldStart)) {
+    throw new Error('[FAIL] localização Corridas: bloco start não encontrado');
+  }
+  locationSource = locationSource.replace(oldStart, newStart);
+  locationSource = locationSource
+    .replace('maximumAge: 5_000,', 'maximumAge: 0,')
+    .replace('maximumAge: 30_000,', 'maximumAge: 10_000,');
+  writeFileSync(locationPath, locationSource, 'utf8');
+}
+locationSource = readFileSync(locationPath, 'utf8');
+for (const marker of [
+  'APOIS_PRECISE_LOCATION_V1',
+  'permissions: ["location", "coarseLocation"]',
+  'enableHighAccuracy: true',
+  'maximumAge: 0',
+  'Geolocation.watchPosition(',
+]) {
+  if (!locationSource.includes(marker)) throw new Error(`[FAIL] localização Corridas sem marcador: ${marker}`);
+}
+
+// Branded pickup marker materialized into Vite public assets.
+mkdirSync(markerDir, { recursive: true });
+writeFileSync(
+  pickupMarkerPath,
+  `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="78" viewBox="0 0 64 78"><defs><filter id="s" x="-30%" y="-20%" width="160%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#111111" flood-opacity=".22"/></filter></defs><g filter="url(#s)"><path d="M32 2C15.4 2 2 15.4 2 32c0 21.6 30 44 30 44s30-22.4 30-44C62 15.4 48.6 2 32 2Z" fill="#E51B23" stroke="#fff" stroke-width="4"/><circle cx="32" cy="31" r="15" fill="#fff"/><path d="M23 42 31.4 19h3.2L43 42h-6l-1.7-5H30.6l-1.7 5H23Zm9.1-10h1.8L33 28.8 32.1 32Z" fill="#E51B23"/></g></svg>`,
+  'utf8',
+);
+
 // Camera padding: keep most of the map visible above the compact bottom sheet.
 let routeConfigSource = readFileSync(routeConfigPath, 'utf8');
 routeConfigSource = routeConfigSource
@@ -29,11 +100,27 @@ writeFileSync(routeConfigPath, routeConfigSource, 'utf8');
 
 // Native map service: bright map, APOIS red route, driver marker support and no missing PNG assets.
 let mapServiceSource = readFileSync(mapServicePath, 'utf8');
+const nativeStyle = `const APOIS_MAP_STYLE_LIGHT_NATIVE = [
+  { elementType: "geometry", stylers: [{ color: "#F4F5F7" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#4B5563" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#FFFFFF" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFFFF" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#E3E6EA" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#ECEFF2" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#EEF1F2" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#E8F3EC" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#DDEBF5" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] }
+];`;
+if (!mapServiceSource.includes('APOIS_MAP_STYLE_LIGHT_NATIVE')) {
+  mapServiceSource = mapServiceSource.replace('class MapService {', nativeStyle + '\n\nclass MapService {');
+}
+
 mapServiceSource = mapServiceSource
   .replace('import { MAP_STYLE_DARK, DEFAULT_ZOOM } from "./map-config";', 'import { DEFAULT_ZOOM } from "./map-config";')
-  .replace('styles: MAP_STYLE_DARK,', 'styles: [],')
+  .replace('styles: MAP_STYLE_DARK,', 'styles: APOIS_MAP_STYLE_LIGHT_NATIVE,')
   .replace('strokeColor: ROUTE_CONFIG.STYLE.STROKE_COLOR,', 'strokeColor: "#E51B23",')
-  .replace('        iconUrl: "assets/markers/pickup.png",\n', '')
+  .replace('        iconUrl: "assets/markers/pickup.png",\n', '        iconUrl: "assets/markers/apois-location.svg",\n')
   .replace('        iconUrl: "assets/markers/destination.png",\n', '');
 
 if (!mapServiceSource.includes('driverMarkerId: Map<string, string>')) {
@@ -86,7 +173,7 @@ if (!mapServiceSource.includes('this.destinationMarkerId.delete(mapId);\n      t
     'cleanup do marcador do motorista não pôde ser inserido',
   );
 }
-if (mapServiceSource.includes('assets/markers/')) {
+if (mapServiceSource.includes('assets/markers/pickup.png') || mapServiceSource.includes('assets/markers/destination.png')) {
   throw new Error('[FAIL] Native map: referência a marker PNG inexistente permaneceu');
 }
 writeFileSync(mapServicePath, mapServiceSource, 'utf8');
@@ -261,6 +348,19 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V3')) {
     );
 }
 
+source = source.replace(
+  'const easeOutCubic = (progress: number): number => 1 - Math.pow(1 - progress, 3);',
+  "const easeOutCubic = (progress: number): number => 1 - Math.pow(1 - progress, 3);\n\nconst APOIS_MAP_STYLE_LIGHT_JS = [\n  { elementType: \"geometry\", stylers: [{ color: \"#F4F5F7\" }] },\n  { elementType: \"labels.text.fill\", stylers: [{ color: \"#4B5563\" }] },\n  { elementType: \"labels.text.stroke\", stylers: [{ color: \"#FFFFFF\" }] },\n  { featureType: \"road\", elementType: \"geometry\", stylers: [{ color: \"#FFFFFF\" }] },\n  { featureType: \"road\", elementType: \"geometry.stroke\", stylers: [{ color: \"#E3E6EA\" }] },\n  { featureType: \"road.highway\", elementType: \"geometry\", stylers: [{ color: \"#ECEFF2\" }] },\n  { featureType: \"poi.park\", elementType: \"geometry\", stylers: [{ color: \"#E8F3EC\" }] },\n  { featureType: \"water\", elementType: \"geometry\", stylers: [{ color: \"#DDEBF5\" }] },\n  { featureType: \"transit\", stylers: [{ visibility: \"off\" }] },\n];",
+);
+source = source.replace(
+  'backgroundColor: "#e5e7eb",',
+  'backgroundColor: "#F4F5F7",\n        styles: APOIS_MAP_STYLE_LIGHT_JS,',
+);
+source = source.replace(
+  'if (origin) addCircleMarker(origin, "Sua localização", "#E51B23");',
+  'if (origin) {\n      const marker = new maps.Marker({\n        map: mapRef.current,\n        position: origin,\n        title: "Sua localização",\n        optimized: true,\n        zIndex: 80,\n        label: { text: "A", color: "#FFFFFF", fontWeight: "900", fontSize: "13px" },\n        icon: {\n          path: "M 0,-18 C -10,-18 -17,-10 -17,0 C -17,12 0,28 0,28 C 0,28 17,12 17,0 C 17,-10 10,-18 0,-18 Z",\n          scale: 1,\n          fillColor: "#E51B23",\n          fillOpacity: 1,\n          strokeColor: "#FFFFFF",\n          strokeWeight: 3,\n          labelOrigin: new maps.Point(0, 0),\n        },\n      });\n      staticMarkersRef.current.push(marker);\n      bounds.extend(origin);\n      pointCount += 1;\n    }',
+);
+
 source = source
   .replaceAll('"#FFB800"', '"#E51B23"')
   .replace(
@@ -289,6 +389,9 @@ const requiredPassengerMarkers = [
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
+  'APOIS_MAP_STYLE_LIGHT_JS',
+  'label: { text: "A"',
+  'strokeColor: "#E51B23"',
   'Native Google Map ready',
 ];
 for (const marker of requiredPassengerMarkers) {
@@ -304,10 +407,10 @@ for (const marker of ['TOP: 72', 'RIGHT: 28', 'BOTTOM: 220', 'LEFT: 28']) {
 }
 
 mapServiceSource = readFileSync(mapServicePath, 'utf8');
-for (const marker of ['styles: []', 'strokeColor: "#E51B23"', 'upsertDriverMarker(', 'removeDriverMarker(']) {
+for (const marker of ['APOIS_MAP_STYLE_LIGHT_NATIVE', 'styles: APOIS_MAP_STYLE_LIGHT_NATIVE', 'strokeColor: "#E51B23"', 'iconUrl: "assets/markers/apois-location.svg"', 'upsertDriverMarker(', 'removeDriverMarker(']) {
   if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing marker: ${marker}`);
 }
-if (mapServiceSource.includes('assets/markers/')) {
+if (mapServiceSource.includes('assets/markers/pickup.png') || mapServiceSource.includes('assets/markers/destination.png')) {
   throw new Error('[FAIL] Native map service reintroduziu marker PNG inexistente');
 }
 
