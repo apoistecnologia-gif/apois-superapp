@@ -66,7 +66,7 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
 ],'PassengerMap usa Google Maps nativo no Android com fallback JS');
-const passengerMapSource = read('.work/corridas/src/components/map/PassengerMap.tsx');
+const passengerMapSource = requireFile('.work/corridas/src/components/map/PassengerMap.tsx') ?? '';
 const polylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
 if ((passengerMapSource.split(polylineImport).length - 1) !== 1) {
   fail('PassengerMap não pode duplicar PolylineDecoder');
