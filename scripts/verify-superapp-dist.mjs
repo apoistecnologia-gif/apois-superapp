@@ -18,6 +18,8 @@ forbidMarkers('superapp/shell/index.html',['<div class="logo-mark">A</div>'],'sh
 const shell=requireFile('superapp/shell/dist/index.html');if(shell){if(/\b(?:src|href)=["']\/(?!\/)/.test(shell))fail('shell final contém asset absoluto incompatível com WebView local');else ok('shell final usa recursos relativos');if(!shell.includes('data-apois-superapp-push-routing'))fail('shell final não recebeu roteamento global de Push');else ok('shell final contém roteamento global de Push');}
 
 requireMarkers('.work/corridas/src/integrations/supabase/client.ts',['storageKey: "apois-superapp-corridas-auth-v1"'],'Corridas usa namespace de sessão próprio');
+requireMarkers('.work/corridas/src/hooks/use-auth.tsx',['APOIS_RESUME_AUTH_SNAPSHOT_V1','apois-superapp-corridas-auth-v1','persistedBootSession?.user ?? null','useState<Session | null>(() => persistedBootSession)'],'retomada Corridas reidrata sessão persistida sem tela cheia');
+requireMarkers('.work/corridas/src/components/auth/AuthGuard.tsx',['APOIS_RESUME_AUTH_GUARD_V1','session?.user'],'AuthGuard Corridas preserva a tela ao voltar do segundo plano');
 requireMarkers('.work/corridas/src/routes/_public.login.tsx',['PassengerGoogleLoginButton','<PassengerGoogleLoginButton />','to="/recuperar-senha"'],'Corridas login oferece Google, senha e recuperação');
 const googleAuth=requireFile('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx');
 if(googleAuth){
