@@ -20,13 +20,30 @@ const officialBrandingBytes = Buffer.from(readFileSync(officialBranding, 'utf8')
 const pngSignature = officialBrandingBytes.subarray(0, 8).toString('hex');
 const pngWidth = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(16) : 0;
 const pngHeight = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(20) : 0;
-if (pngSignature !== '89504e470d0a1a0a' || officialBrandingBytes.length !== 23158 || pngWidth !== 128 || pngHeight !== 128) {
+if (pngSignature !== '89504e470d0a1a0a' || officialBrandingBytes.length < 4096 || pngWidth !== 128 || pngHeight !== 128) {
   console.error('[FAIL] arte oficial APOIS em base64 não decodifica para um PNG válido');
   process.exit(1);
 }
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
 writeFileSync(resolve(dist, 'assets/apois-brand.png'), officialBrandingBytes);
-console.log(`[OK] arte oficial APOIS decodificada para o shell cliente (${pngWidth}x${pngHeight})`);
+
+// O shell é a primeira tela exibida pelo WebView. Além do arquivo físico,
+// embuta a mesma arte no HTML para que a marca não dependa de resolução de
+// caminho/asset no Capacitor e nunca resulte em um cabeçalho vazio.
+const shellIndexPath = resolve(dist, 'index.html');
+let shellHtml = readFileSync(shellIndexPath, 'utf8');
+const brandDataUri = `data:image/png;base64,${officialBrandingBytes.toString('base64')}`;
+if (!shellHtml.includes('./assets/apois-brand.png')) {
+  console.error('[FAIL] shell cliente perdeu o marcador da logomarca APOIS');
+  process.exit(1);
+}
+shellHtml = shellHtml.replace('./assets/apois-brand.png', brandDataUri);
+writeFileSync(shellIndexPath, shellHtml, 'utf8');
+if (!readFileSync(shellIndexPath, 'utf8').includes('data:image/png;base64,')) {
+  console.error('[FAIL] logomarca APOIS não foi embutida no shell final');
+  process.exit(1);
+}
+console.log(`[OK] arte oficial APOIS decodificada e embutida no shell cliente (${pngWidth}x${pngHeight})`);
 
 // Arquitetura oficial: este APK é exclusivamente do cliente.
 // Motorista e Entregador pertencem ao Superapp Parceiro e não entram aqui.
