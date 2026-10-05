@@ -84,6 +84,7 @@ requireText('scripts/build-isolated-module.mjs', [
   "'apois-superapp-entregas-auth-v1'",
   "appPlugin.addListener('backButton'",
   "appPlugin.addListener('appStateChange'",
+  'harden-entregas-supabase-runtime.mjs',
   'harden-entregas-google-oauth-handoff.mjs',
   "apois:entregas-google-callback",
   "apois-superapp:entregas-google-url",
@@ -112,6 +113,13 @@ requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
   'JSON.stringify({ product: \\"corridas\\", createdAt: Date.now() })',
   'browserFinished pode chegar',
 ], 'Google OAuth Corridas usa PKCE, envelope persistente sem race de browserFinished, callback determinístico, dedupe e cleanup/cancelamento');
+
+requireText('scripts/harden-entregas-supabase-runtime.mjs', [
+  'ptgkwyyolrdgnqketkjj',
+  'import.meta.env["VITE_SUPABASE_URL"]',
+  'import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]',
+  "retiredRef = 'sbvhdgyuuperszlsllji'",
+], 'Entregas remove o Supabase aposentado hardcoded antes do build e exige o projeto de produção');
 
 requireText('scripts/harden-entregas-google-oauth-handoff.mjs', [
   'flowType: "pkce"',
