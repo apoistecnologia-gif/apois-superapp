@@ -49,10 +49,18 @@ if (!existsSync(isolatedBuilderPath)) {
   fail('builder isolado do Superapp ausente');
 } else {
   const isolatedBuilder = readFileSync(isolatedBuilderPath, 'utf8');
-  for (const marker of ['ptgkwyyolrdgnqketkjj', entregasCanonicalUrl, 'env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL']) {
-    if (!isolatedBuilder.includes(marker)) fail(`Entregas não está fixado no Supabase canônico (${marker})`);
-  }
-  if (isolatedBuilder.includes("ENTREGAS_CANONICAL_REF = 'sbvhdgyuuperszlsllji'")) {
+  const requiredEntregasBuilderMarkers = [
+    "const ENTREGAS_CANONICAL_REF = 'ptgkwyyolrdgnqketkjj'",
+    'const ENTREGAS_CANONICAL_URL = `https://${ENTREGAS_CANONICAL_REF}.supabase.co`',
+    'env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL',
+    'env.VITE_SUPABASE_PUBLISHABLE_KEY = entregasPublishableKey',
+  ];
+  const missingEntregasBuilderMarkers = requiredEntregasBuilderMarkers.filter(
+    (marker) => !isolatedBuilder.includes(marker),
+  );
+  if (missingEntregasBuilderMarkers.length) {
+    fail(`Entregas não está fixado no Supabase canônico (${missingEntregasBuilderMarkers.join(' | ')})`);
+  } else if (isolatedBuilder.includes("ENTREGAS_CANONICAL_REF = 'sbvhdgyuuperszlsllji'")) {
     fail('Entregas ainda aponta para projeto Supabase aposentado');
   } else {
     ok('Supabase Entregas canônico fixado no builder do Cliente');
