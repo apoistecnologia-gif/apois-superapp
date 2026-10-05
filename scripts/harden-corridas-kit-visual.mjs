@@ -233,10 +233,11 @@ function replaceRequired(source, search, replacement, label) {
   source = source
     .replaceAll('bg-[#1a1a1a]', 'bg-white/95 backdrop-blur-xl')
     .replaceAll('bg-[#2a2a2a]', 'bg-white')
-    .replace(
-      'className="w-full h-14 pl-12 pr-12 bg-white border-2 border-[#E51B23]/25 focus:border-[#E51B23] outline-none rounded-xl text-lg font-medium text-white placeholder:text-gray-500 transition-all"',
-      'className="w-full h-14 pl-12 pr-12 bg-white border-2 border-[#E51B23]/25 focus:border-[#E51B23] outline-none rounded-xl text-lg font-semibold text-[#111111] caret-[#E51B23] placeholder:text-[#9AA0A8] transition-all"',
-    )
+    // A busca pode chegar aqui já parcialmente clara por hardeners anteriores.
+    // Normalize o texto do input por fragmentos, sem depender da classe completa.
+    .replaceAll('text-lg font-medium text-white', 'text-lg font-semibold text-[#111111] caret-[#E51B23]')
+    .replaceAll('text-lg font-medium text-[#111111]', 'text-lg font-semibold text-[#111111] caret-[#E51B23]')
+    .replaceAll('placeholder:text-gray-500', 'placeholder:text-[#9AA0A8]')
     .replace('className="sticky top-0 bg-white/95 backdrop-blur-xl pt-2 pb-4 z-30"', 'className="sticky top-0 z-30 bg-white/95 pt-2 pb-3 backdrop-blur-xl"')
     .replace('className="flex-1 mt-2"', 'className="apois-kit-search-results min-h-0 flex-1 mt-2 overflow-y-auto overscroll-contain"')
     .replace('<motion.div key="results" className="space-y-1">', '<motion.div key="results" className="space-y-2 pb-6">')
@@ -244,7 +245,7 @@ function replaceRequired(source, search, replacement, label) {
     .replaceAll('text-xs text-gray-500 truncate', 'text-xs text-[#666B73] whitespace-normal break-words leading-snug')
     .replaceAll('border-b border-white/5', 'border border-[#E2E4E8] bg-white');
 
-  for (const marker of ['apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words', 'text-[#111111] caret-[#E51B23] placeholder:text-[#9AA0A8]']) {
+  for (const marker of ['apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words', 'text-[#111111]', 'caret-[#E51B23]', 'placeholder:text-[#9AA0A8]']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Busca incompleta (${marker})`);
   }
   write(path, source);
