@@ -185,7 +185,8 @@ requireText('scripts/harden-corridas-native-map.mjs', [
 requireText('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1', 'APOIS_REFERENCE_HOME_V2', 'data-apois-reference-home-v2',
   'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Solicitar corrida',
-  'apois-kit-search-results', 'max-h-[94dvh]', 'max-h-[38dvh]', 'h-10 w-10 rounded-full object-contain', 'Local de partida', 'Destino',
+  'apois-kit-search-results',
+  'text-[#111111] caret-[#E51B23] placeholder:text-[#9AA0A8]', 'max-h-[94dvh]', 'max-h-[38dvh]', 'h-10 w-10 rounded-full object-contain', 'Local de partida', 'Destino',
   'bg-transparent text-[#111111]', 'absolute inset-0 z-0 bg-transparent',
 ], 'kit visual oficial mantém mapa predominante, painel compacto e destino apenas no bottom sheet');
 
