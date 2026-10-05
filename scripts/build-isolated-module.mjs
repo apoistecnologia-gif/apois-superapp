@@ -359,6 +359,7 @@ if (name === 'corridas') {
   console.log('[OK] Corridas: migração visual preservou byte a byte Maps/GPS/Places');
 }
 if (name === 'entregas') {
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-google-oauth-handoff.mjs')]);
