@@ -72,6 +72,8 @@ patch('src/routes/_public.redefinir-senha.tsx', (source) => replacePairs(source,
 ]), 'redefinição de senha migra para vermelho/branco');
 
 patch('src/routes/_authenticated.buscar-destino.tsx', (source) => replacePairs(source, [
+  ['text-lg font-medium text-white placeholder:text-gray-500', 'text-lg font-semibold text-[#111111] caret-[#E51B23] placeholder:text-[#9AA0A8]'],
+
   ['text-orange-400', 'text-[#E51B23]'],
   ['text-yellow-500', 'text-[#E51B23]'],
   ['border-yellow-500/30', 'border-[#E51B23]/25'],
