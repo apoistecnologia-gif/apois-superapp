@@ -5,6 +5,7 @@ const config: CapacitorConfig = {
   appName: 'APOIS Cliente',
   webDir: 'dist',
   android: {
+    backgroundColor: '#00000000',
     allowMixedContent: false,
   },
   plugins: {
