@@ -133,7 +133,7 @@ if (!existsSync(nativeMapHardenerPath)) {
   ]) {
     if (!nativeMapHardener.includes(marker)) fail(`hardener mapa nativo Corridas sem marcador obrigatório (${marker})`);
   }
-  if (!nativeMapHardener.includes("referências a marker PNG inexistente permaneceram")) {
+  if (!nativeMapHardener.includes("referência a marker PNG inexistente permaneceu")) {
     fail('hardener mapa nativo não bloqueia assets de marcador inexistentes');
   } else {
     ok('hardener mapa nativo Corridas versionado com transparência, rota ativa e fallback seguro');
