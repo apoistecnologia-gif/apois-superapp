@@ -60,13 +60,15 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'displayedRoutePoints',
   'if (encodedPolyline)',
   'bottom: 240',
-  'encodedPolyline,\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
 ],'PassengerMap usa Google Maps nativo no Android com fallback JS');
 const passengerMapSource = requireFile('.work/corridas/src/components/map/PassengerMap.tsx') ?? '';
+if (!/const PassengerMap:[\s\S]*?\{[\s\S]*?encodedPolyline,\s*driverLocation,/.test(passengerMapSource)) {
+  fail('PassengerMap recebe encodedPolyline no destructuring');
+} else ok('PassengerMap recebe encodedPolyline no destructuring');
 const polylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
 if ((passengerMapSource.split(polylineImport).length - 1) !== 1) {
   fail('PassengerMap não pode duplicar PolylineDecoder');
