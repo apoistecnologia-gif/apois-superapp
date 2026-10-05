@@ -198,5 +198,10 @@ assert.ok(passengerSource.indexOf('providerError') < passengerSource.indexOf('co
 assert.ok(driverSource.indexOf('providerError') < driverSource.indexOf('const code = singlePkceCode(params)'), 'erro OAuth precede exchange Motorista');
 assert.match(shellSource, /clearExpiredCorridasGoogle\(\)/, 'shell: purge de callback expirado no relaunch');
 assert.match(shellSource, /localStorage\.getItem\(CORRIDAS_GOOGLE_KEY\)===envelope/, 'shell: timer não remove callback mais novo');
+assert.equal(shellSource.includes('let shellAppUrlListenerHandle=null;'), true, 'shell mantém handle do appUrlOpen');
+assert.equal(shellSource.includes('removeShellAppUrlListener();'), true, 'shell remove listener antes de entrar no módulo');
+assert.equal(shellSource.includes("lastModule==='corridas'"), true, 'shell usa último módulo Corridas como fallback de ownership');
+assert.equal(shellSource.includes('callback OAuth genérico sem proprietário; não redirecionando para outro produto'), true, 'shell não desvia callback genérico órfão para Entregas');
+
 
 console.log('[PASS] contratos locais de OAuth Corridas validados');
