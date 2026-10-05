@@ -4,58 +4,56 @@ import { resolve } from 'node:path';
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
 const routeConfigPath = resolve('.work/corridas/src/services/routes/route-config.ts');
-let const finalPolylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
-const finalPolylineImportCount = source.split(finalPolylineImport).length - 1;
-if (finalPolylineImportCount !== 1) {
-  throw new Error(`[FAIL] Native PassengerMap: PolylineDecoder import duplicado/ausente (${finalPolylineImportCount})`);
-}
-if (!source.includes('const displayedRoutePoints = useMemo(() => {\n    if (encodedPolyline)')) {
-  throw new Error('[FAIL] Native PassengerMap: polyline persistida não tem precedência');
+
+function replaceRequired(source, search, replacement, label) {
+  if (source.includes(replacement)) return source;
+  if (!source.includes(search)) throw new Error(`[FAIL] Native map: ${label}`);
+  return source.replace(search, replacement);
 }
 
-routeConfigSource = readFileSync(routeConfigPath, 'utf8');
+function ensureSingleLine(source, line, anchor) {
+  const lines = source.split('\n').filter((value) => value !== line);
+  const normalized = lines.join('\n');
+  if (!normalized.includes(anchor)) throw new Error(`[FAIL] Native map: import anchor ausente para ${line}`);
+  return normalized.replace(anchor, `${anchor}\n${line}`);
+}
+
+// Camera padding: keep most of the map visible above the compact bottom sheet.
+let routeConfigSource = readFileSync(routeConfigPath, 'utf8');
 routeConfigSource = routeConfigSource
   .replace('TOP: 100,', 'TOP: 72,')
   .replace('RIGHT: 50,', 'RIGHT: 28,')
   .replace('BOTTOM: 350,', 'BOTTOM: 220,')
   .replace('LEFT: 50,', 'LEFT: 28,');
 writeFileSync(routeConfigPath, routeConfigSource, 'utf8');
-// APOIS_MAP_CAMERA_PADDING_V1
 
-
-let source = readFileSync(target, 'utf8');
+// Native map service: bright map, APOIS red route, driver marker support and no missing PNG assets.
 let mapServiceSource = readFileSync(mapServicePath, 'utf8');
-
-// Native Android maps are rendered below the WebView. Keep the native map bright
-// and make the WebView/page transparent only on native builds.
-if (mapServiceSource.includes('styles: MAP_STYLE_DARK')) {
-  mapServiceSource = mapServiceSource
-    .replace('import { MAP_STYLE_DARK, DEFAULT_ZOOM } from "./map-config";', 'import { DEFAULT_ZOOM } from "./map-config";')
-    .replace('styles: MAP_STYLE_DARK,', 'styles: [],')
-    .replace('strokeColor: ROUTE_CONFIG.STYLE.STROKE_COLOR,', 'strokeColor: "#E51B23",');
-}
+mapServiceSource = mapServiceSource
+  .replace('import { MAP_STYLE_DARK, DEFAULT_ZOOM } from "./map-config";', 'import { DEFAULT_ZOOM } from "./map-config";')
+  .replace('styles: MAP_STYLE_DARK,', 'styles: [],')
+  .replace('strokeColor: ROUTE_CONFIG.STYLE.STROKE_COLOR,', 'strokeColor: "#E51B23",')
+  .replace('        iconUrl: "assets/markers/pickup.png",\n', '')
+  .replace('        iconUrl: "assets/markers/destination.png",\n', '');
 
 if (!mapServiceSource.includes('driverMarkerId: Map<string, string>')) {
-  mapServiceSource = mapServiceSource.replace(
+  mapServiceSource = replaceRequired(
+    mapServiceSource,
     '  private destinationMarkerId: Map<string, string> = new Map();',
     '  private destinationMarkerId: Map<string, string> = new Map();\n  private driverMarkerId: Map<string, string> = new Map();',
+    'estado do marcador do motorista não pôde ser inserido',
   );
 }
 
-if (!mapServiceSource.includes('upsertDriverMarker(')) {
+if (!mapServiceSource.includes('public async upsertDriverMarker(')) {
   const anchor = '  public async removeDestinationMarker(mapId: string): Promise<void> {';
-  const driverMethods = `  public async upsertDriverMarker(mapId: string, coordinate: MapCoordinates): Promise<void> {
+  const methods = `  public async upsertDriverMarker(mapId: string, coordinate: MapCoordinates): Promise<void> {
     const map = this.maps.get(mapId);
     if (!map) return;
-
     const existingId = this.driverMarkerId.get(mapId);
     try {
       if (existingId) await map.removeMarker(existingId);
-      const markerId = await map.addMarker({
-        coordinate,
-        title: "Motorista",
-        opacity: 1,
-      });
+      const markerId = await map.addMarker({ coordinate, title: "Motorista", opacity: 1 });
       this.driverMarkerId.set(mapId, markerId);
     } catch (error) {
       console.error("Error upserting driver marker:", error);
@@ -65,7 +63,6 @@ if (!mapServiceSource.includes('upsertDriverMarker(')) {
   public async removeDriverMarker(mapId: string): Promise<void> {
     const map = this.maps.get(mapId);
     if (!map) return;
-
     const id = this.driverMarkerId.get(mapId);
     if (!id) return;
     try {
@@ -77,80 +74,66 @@ if (!mapServiceSource.includes('upsertDriverMarker(')) {
 
 `;
   const index = mapServiceSource.indexOf(anchor);
-  if (index < 0) throw new Error('[FAIL] Native map: destination marker method anchor not found');
-  mapServiceSource = mapServiceSource.slice(0, index) + driverMethods + mapServiceSource.slice(index);
+  if (index < 0) throw new Error('[FAIL] Native map: âncora do marcador de destino ausente');
+  mapServiceSource = mapServiceSource.slice(0, index) + methods + mapServiceSource.slice(index);
 }
 
 if (!mapServiceSource.includes('this.destinationMarkerId.delete(mapId);\n      this.driverMarkerId.delete(mapId);')) {
-  mapServiceSource = mapServiceSource.replace(
+  mapServiceSource = replaceRequired(
+    mapServiceSource,
     '      this.destinationMarkerId.delete(mapId);',
     '      this.destinationMarkerId.delete(mapId);\n      this.driverMarkerId.delete(mapId);',
+    'cleanup do marcador do motorista não pôde ser inserido',
   );
 }
-
-mapServiceSource = mapServiceSource
-  .replace('        iconUrl: "assets/markers/pickup.png",\n', '')
-  .replace('        iconUrl: "assets/markers/destination.png",\n', '');
 if (mapServiceSource.includes('assets/markers/')) {
-  throw new Error('[FAIL] Native map: referências a marker PNG inexistente permaneceram');
+  throw new Error('[FAIL] Native map: referência a marker PNG inexistente permaneceu');
 }
-// missing marker PNGs removed
-
 writeFileSync(mapServicePath, mapServiceSource, 'utf8');
-mapServiceSource = readFileSync(mapServicePath, 'utf8');
 
-for (const marker of ['styles: []', 'upsertDriverMarker(', 'removeDriverMarker(', 'driverMarkerId']) {
-  if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing marker: ${marker}`);
+// PassengerMap: the Corridas adapter already restores persisted polylines.
+// This hardener layers native Android rendering on top without duplicating imports/state.
+let source = readFileSync(target, 'utf8');
+
+source = ensureSingleLine(
+  source,
+  'import { Capacitor } from "@capacitor/core";',
+  'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";',
+);
+source = ensureSingleLine(
+  source,
+  'import { mapService } from "@/services/maps/map-service";',
+  'import { Capacitor } from "@capacitor/core";',
+);
+source = ensureSingleLine(
+  source,
+  'import { PolylineDecoder } from "@/services/routes/polyline-decoder";',
+  'import { googleMapsLoader } from "@/services/google/google-maps-loader";',
+);
+
+const polylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
+if ((source.split(polylineImport).length - 1) !== 1) {
+  throw new Error('[FAIL] Native map: PolylineDecoder deve ser importado exatamente uma vez');
 }
 
-source = source
-  .replaceAll('"#FFB800"', '"#E51B23"')
-  .replace(
-    'mapRef.current.fitBounds(bounds, { top: 170, right: 40, bottom: 330, left: 40 });',
-    'mapRef.current.fitBounds(bounds, { top: 120, right: 28, bottom: 240, left: 28 });',
+if (!source.includes('  encodedPolyline,\n  driverLocation,')) {
+  source = replaceRequired(
+    source,
+    '  destination: customDestination,\n  driverLocation,',
+    '  destination: customDestination,\n  encodedPolyline,\n  driverLocation,',
+    'encodedPolyline não pôde ser ligado ao PassengerMap',
   );
+}
 
-if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
-  source = source.replace(
-    'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";',
-    'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";\nimport { Capacitor } from "@capacitor/core";\nimport { mapService } from "@/services/maps/map-service";',
-  );
-
-  const polylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
-  const polylineImportCount = source.split(polylineImport).length - 1;
-  if (polylineImportCount === 0) {
-    source = source.replace(
-      'import { googleMapsLoader } from "@/services/google/google-maps-loader";',
-      'import { googleMapsLoader } from "@/services/google/google-maps-loader";\n' + polylineImport,
-    );
-  } else if (polylineImportCount > 1) {
-    let kept = false;
-    source = source.split('\n').filter((line) => {
-      if (line !== polylineImport) return true;
-      if (kept) return false;
-      kept = true;
-      return true;
-    }).join('\n');
-  }
-  if ((source.split(polylineImport).length - 1) !== 1) {
-    throw new Error('[FAIL] Native map: PolylineDecoder import deve existir exatamente uma vez');
-  }
-  // POLYLINE_IMPORT_DEDUP_V1
-
-  source = source.replace(
-    'const PassengerMap: React.FC<PassengerMapProps> = ({\n  origin: customOrigin,\n  destination: customDestination,\n  driverLocation,',
-    'const PassengerMap: React.FC<PassengerMapProps> = ({\n  origin: customOrigin,\n  destination: customDestination,\n  encodedPolyline,\n  driverLocation,',
-  );
-  if (!source.includes('encodedPolyline,\n  driverLocation,')) {
-    throw new Error('[FAIL] Native map: PassengerMap receives encodedPolyline');
-  }
-
-  source = source.replace(
+if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V3')) {
+  source = replaceRequired(
+    source,
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);',
-    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V2',
+    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V3',
+    'estado nativo não pôde ser inserido',
   );
 
-  const legacyDisplayedRoutePoints = `  const displayedRoutePoints = useMemo(() => {
+  const legacyPoints = `  const displayedRoutePoints = useMemo(() => {
     if (route?.decodedPoints && route.decodedPoints.length > 1) return route.decodedPoints;
     if (!encodedPolyline) return [];
     try {
@@ -160,7 +143,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
       return [];
     }
   }, [encodedPolyline, route?.decodedPoints]);`;
-  const preferredDisplayedRoutePoints = `  const displayedRoutePoints = useMemo(() => {
+  const preferredPoints = `  const displayedRoutePoints = useMemo(() => {
     if (encodedPolyline) {
       try {
         return PolylineDecoder.decode(encodedPolyline);
@@ -171,23 +154,28 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
     if (route?.decodedPoints && route.decodedPoints.length > 1) return route.decodedPoints;
     return [];
   }, [encodedPolyline, route?.decodedPoints]);`;
-  if (source.includes(legacyDisplayedRoutePoints)) {
-    source = source.replace(legacyDisplayedRoutePoints, preferredDisplayedRoutePoints);
+  if (source.includes(legacyPoints)) source = source.replace(legacyPoints, preferredPoints);
+  if (!source.includes(preferredPoints)) {
+    if (source.includes('  const validDriverLocation = useMemo<Coordinate | null>(() => {')) {
+      source = source.replace(
+        '  const validDriverLocation = useMemo<Coordinate | null>(() => {',
+        preferredPoints + '\n\n  const validDriverLocation = useMemo<Coordinate | null>(() => {',
+      );
+    } else {
+      throw new Error('[FAIL] Native map: displayedRoutePoints ausente');
+    }
   }
-  if (!source.includes(preferredDisplayedRoutePoints)) {
-    throw new Error('[FAIL] Native map: displayedRoutePoints não foi materializado pelo adaptador');
-  }
-  // APOIS_ROUTE_POINTS_PRECEDENCE_V1
 
-  source = source.replace(
+  source = replaceRequired(
+    source,
     '  const initializeMap = useCallback(async (): Promise<void> => {\n    console.log("[PassengerMap] Initializing map...", { reloadKey, hasElement: !!mapElementRef.current });\n    if (!mapElementRef.current) return;\n    setStatus("loading");',
     '  const initializeMap = useCallback(async (): Promise<void> => {\n    console.log("[PassengerMap] Initializing map...", { reloadKey, hasElement: !!mapElementRef.current });\n    if (!mapElementRef.current) return;\n    setStatus("loading");\n\n    if (Capacitor.isNativePlatform() && nativeApiKey) {\n      try {\n        nativeModeRef.current = true;\n        mapElementRef.current.id = nativeMapIdRef.current;\n        await mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);\n        await mapService.createMap(mapElementRef.current, nativeApiKey, origin ?? DEFAULT_CENTER);\n        if (origin) await mapService.upsertPickupMarker(nativeMapIdRef.current, origin);\n        setStatus("ready");\n        console.log("[PassengerMap] Native Google Map ready");\n        return;\n      } catch (nativeError) {\n        nativeModeRef.current = false;\n        console.error("[PassengerMap] Native map failed, falling back to JS map", nativeError);\n      }\n    }',
+    'inicialização nativa não pôde ser inserida',
   );
 
-  source = source.replace(
-    '  }, [isStatic, origin, reloadKey]);',
-    '  }, [isStatic, nativeApiKey, reloadKey]);',
-  );
+  source = source
+    .replace('  }, [isStatic, origin, reloadKey]);', '  }, [isStatic, nativeApiKey, reloadKey]);')
+    .replace('  }, [isStatic, nativeApiKey, origin, reloadKey]);', '  }, [isStatic, nativeApiKey, reloadKey]);');
 
   const initEffectAnchor = '  useEffect(() => {\n    void initializeMap();';
   const transparentEffect = `  useEffect(() => {
@@ -211,14 +199,18 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   }, []);
 
 `;
-  const initEffectIndex = source.indexOf(initEffectAnchor);
-  if (initEffectIndex < 0) throw new Error('[FAIL] Native map: initialize effect anchor not found');
-  source = source.slice(0, initEffectIndex) + transparentEffect + source.slice(initEffectIndex);
+  const initIndex = source.indexOf(initEffectAnchor);
+  if (initIndex < 0) throw new Error('[FAIL] Native map: effect de inicialização ausente');
+  source = source.slice(0, initIndex) + transparentEffect + source.slice(initIndex);
 
-  source = source.replace(
-    '      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);',
-    '      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);\n      if (nativeModeRef.current) void mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);',
-  );
+  if (!source.includes('void mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);')) {
+    source = replaceRequired(
+      source,
+      '      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);',
+      '      if (driverAnimationRef.current !== null) cancelAnimationFrame(driverAnimationRef.current);\n      if (nativeModeRef.current) void mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);',
+      'cleanup do mapa nativo não pôde ser inserido',
+    );
+  }
 
   const nativeEffect = `
   useEffect(() => {
@@ -246,26 +238,17 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   }, [destination, displayedRoutePoints, origin, status, validDriverLocation]);
 
 `;
-
   const jsEffectAnchor = '  useEffect(() => {\n    if (!mapRef.current || status !== "ready") return;\n    const maps = (window as any).google?.maps;';
-  const jsEffectIndex = source.indexOf(jsEffectAnchor);
-  if (jsEffectIndex < 0) throw new Error('[FAIL] Native map: JS marker effect anchor not found');
-  source = source.slice(0, jsEffectIndex) + nativeEffect + source.slice(jsEffectIndex);
+  const jsIndex = source.indexOf(jsEffectAnchor);
+  if (jsIndex < 0) throw new Error('[FAIL] Native map: effect JS ausente');
+  source = source.slice(0, jsIndex) + nativeEffect + source.slice(jsIndex);
 
-  source = source.replace(
+  source = replaceRequired(
+    source,
     '  const retry = () => {\n    googleMapsLoader.reset();',
     '  const retry = () => {\n    if (nativeModeRef.current) void mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);\n    nativeModeRef.current = false;\n    googleMapsLoader.reset();',
+    'retry nativo não pôde ser inserido',
   );
-
-  source = source
-    .replaceAll(
-      'if (route?.decodedPoints && route.decodedPoints.length > 1) {\n      const path = route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));',
-      'if (displayedRoutePoints.length > 1) {\n      const path = displayedRoutePoints;',
-    )
-    .replace(
-      '}, [destination, orderedStops, origin, route?.decodedPoints, status]);',
-      '}, [destination, displayRoutePoints, orderedStops, origin, status]);',
-    );
 
   source = source
     .replace(
@@ -276,13 +259,21 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
       'className="absolute inset-0 h-full w-full" aria-label="Mapa da corrida"',
       'className="absolute inset-0 h-full w-full bg-transparent" aria-label="Mapa da corrida"',
     );
-
-  writeFileSync(target, source, 'utf8');
 }
 
+source = source
+  .replaceAll('"#FFB800"', '"#E51B23"')
+  .replace(
+    'mapRef.current.fitBounds(bounds, { top: 170, right: 40, bottom: 330, left: 40 });',
+    'mapRef.current.fitBounds(bounds, { top: 120, right: 28, bottom: 240, left: 28 });',
+  );
+
+writeFileSync(target, source, 'utf8');
+
+// Final invariants.
 source = readFileSync(target, 'utf8');
-for (const marker of [
-  'APOIS_NATIVE_MAP_FALLBACK_V2',
+const requiredPassengerMarkers = [
+  'APOIS_NATIVE_MAP_FALLBACK_V3',
   '[isStatic, nativeApiKey, reloadKey]',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
@@ -290,8 +281,8 @@ for (const marker of [
   'mapService.upsertPickupMarker',
   'mapService.upsertDestinationMarker',
   'mapService.upsertDriverMarker',
-  'PolylineDecoder',
   'displayedRoutePoints',
+  'if (encodedPolyline)',
   'bottom: 240',
   'encodedPolyline,\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
@@ -299,8 +290,12 @@ for (const marker of [
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
   'Native Google Map ready',
-]) {
+];
+for (const marker of requiredPassengerMarkers) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Native PassengerMap missing marker: ${marker}`);
+}
+if ((source.split(polylineImport).length - 1) !== 1) {
+  throw new Error('[FAIL] Native PassengerMap: PolylineDecoder duplicado após hardening');
 }
 
 routeConfigSource = readFileSync(routeConfigPath, 'utf8');
@@ -310,10 +305,10 @@ for (const marker of ['TOP: 72', 'RIGHT: 28', 'BOTTOM: 220', 'LEFT: 28']) {
 
 mapServiceSource = readFileSync(mapServicePath, 'utf8');
 for (const marker of ['styles: []', 'strokeColor: "#E51B23"', 'upsertDriverMarker(', 'removeDriverMarker(']) {
-  if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing final marker: ${marker}`);
+  if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing marker: ${marker}`);
 }
 if (mapServiceSource.includes('assets/markers/')) {
   throw new Error('[FAIL] Native map service reintroduziu marker PNG inexistente');
 }
 
-console.log('[OK] Corridas: Android usa mapa nativo claro/transparente, sincroniza motorista e mantém JS Maps como fallback web.');
+console.log('[OK] Corridas: mapa nativo V3 sem import duplicado, rota persistida, motorista e fallback web.');
