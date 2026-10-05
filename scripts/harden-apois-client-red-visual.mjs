@@ -63,11 +63,11 @@ import { RideCategoryCode } from "@/types/pricing";
 
 // Fotografias reais (Pexels, licença gratuita) para evitar aparência de desenho.
 const serviceImage: Record<RideCategoryCode, string> = {
-  carro: "https://images.pexels.com/photos/31943401/pexels-photo-31943401.jpeg?auto=compress&cs=tinysrgb&w=480",
-  moto: "https://images.pexels.com/photos/12036802/pexels-photo-12036802.jpeg?auto=compress&cs=tinysrgb&w=480",
-  fretes: "https://images.pexels.com/photos/31049388/pexels-photo-31049388.jpeg?auto=compress&cs=tinysrgb&w=480",
+  carro: "https://images.pexels.com/photos/7771058/pexels-photo-7771058.jpeg?auto=compress&cs=tinysrgb&w=480",
+  moto: "https://images.pexels.com/photos/9209161/pexels-photo-9209161.jpeg?auto=compress&cs=tinysrgb&w=480",
+  fretes: "https://images.pexels.com/photos/29594086/pexels-photo-29594086.jpeg?auto=compress&cs=tinysrgb&w=480",
   guincho: "https://images.pexels.com/photos/10061763/pexels-photo-10061763.jpeg?auto=compress&cs=tinysrgb&w=480",
-  envios: "https://images.pexels.com/photos/33915709/pexels-photo-33915709.jpeg?auto=compress&cs=tinysrgb&w=480",
+  envios: "https://images.pexels.com/photos/6867937/pexels-photo-6867937.jpeg?auto=compress&cs=tinysrgb&w=480",
 };
 
 export const CategorySelector: React.FC = () => {
