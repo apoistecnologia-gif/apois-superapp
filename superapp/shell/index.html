@@ -148,7 +148,6 @@
             const envelope=JSON.parse(stored);
             const age=Date.now()-Number(envelope?.createdAt);
             if(envelope?.product==='corridas'&&age>=0&&age<=OAUTH_HANDOFF_TTL_MS){
-              localStorage.removeItem(OAUTH_PENDING_KEY);
               return true;
             }
             if(age<0||age>OAUTH_HANDOFF_TTL_MS)localStorage.removeItem(OAUTH_PENDING_KEY);
@@ -162,7 +161,6 @@
             const envelope=JSON.parse(stored);
             const age=Date.now()-Number(envelope?.createdAt);
             if(envelope?.product==='entregas'&&age>=0&&age<=OAUTH_HANDOFF_TTL_MS){
-              localStorage.removeItem(OAUTH_PENDING_KEY);
               return true;
             }
             if(age<0||age>OAUTH_HANDOFF_TTL_MS)localStorage.removeItem(OAUTH_PENDING_KEY);
@@ -203,12 +201,18 @@
         }
         if(path==='callback'){
           try{
-            if(hasPendingCorridas()&&storeCorridasGoogle()){
+            if(hasPendingCorridas()){
+              const stored=storeCorridasGoogle();
+              if(!stored)console.error('[APOIS] callback Google Corridas sem code/erro válido');
+              try{localStorage.removeItem(OAUTH_PENDING_KEY);}catch{}
               void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
               window.location.replace('./modules/corridas/index.html#/login');
               return true;
             }
-            if(hasPendingEntregas()&&storeEntregasGoogle()){
+            if(hasPendingEntregas()){
+              const stored=storeEntregasGoogle();
+              if(!stored)console.error('[APOIS] callback Google Entregas sem sessão válida');
+              try{localStorage.removeItem(OAUTH_PENDING_KEY);}catch{}
               void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
               window.location.replace('./modules/entregas/index.html#/login');
               return true;
