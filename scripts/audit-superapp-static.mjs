@@ -164,6 +164,7 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'missing marker PNGs removed',
   'PolylineDecoder',
   'displayRoutePoints',
+  'if (encodedPolyline) {',
   'bottom: 240',
   'encodedPolyline,\\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
