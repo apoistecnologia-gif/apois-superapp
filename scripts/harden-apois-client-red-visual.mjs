@@ -44,6 +44,11 @@ if (
 writeFileSync(brandTarget, brandBytes);
 write('src/assets/apoisBrandData.ts', `const apoisBrandData = "data:image/png;base64,${brandBytes.toString('base64')}";\nexport default apoisBrandData;\n`);
 
+const categorySpriteSource = resolve(root, 'superapp/branding/categories/apois-vehicles.webp');
+const categorySpriteTarget = file('public/assets/categories/apois-vehicles.webp');
+mkdirSync(dirname(categorySpriteTarget), { recursive: true });
+copyFileSync(categorySpriteSource, categorySpriteTarget);
+
 const serviceAssetDir = file('src/assets/services');
 mkdirSync(serviceAssetDir, { recursive: true });
 
@@ -61,14 +66,16 @@ import { PRICING_CONFIG } from "@/services/pricing/pricing-config";
 import { cn } from "@/lib/utils";
 import { RideCategoryCode } from "@/types/pricing";
 
-// APOIS_CATEGORY_STUDIO_V1
-// Veículos reais, cada categoria com imagem própria e fundo branco/estúdio.
-const serviceImage: Record<RideCategoryCode, string> = {
-  carro: "https://pic.52112.com/180806/JPG-180806_120/vGHP86zk7D_small.jpg",
-  moto: "https://www.fahrschule-arnold.info/upload/large/02-zweirad-fuehrerschein_large_kyjjmkQI3H.jpg",
-  fretes: "https://www.findamover.com.au/uploads/providerimages/removalist_5ca69cd22a98b.jpg",
-  guincho: "https://www.jige-international.com/medias/articles/0250-0020-EQ/hd/0250-0020-EQ-OMBRE_2.PNG",
-  envios: "https://www.deliverybikeparts.co.za/cdn/shop/collections/Big_Boy_Velocity_150_Cargo_Update.png?v=1754112866&width=535",
+// APOIS_CATEGORY_STUDIO_V2
+// Um único asset local versionado contém cinco veículos distintos, realistas,
+// isolados e com transparência. Sem hotlink externo e sem fundo cinza embutido.
+const serviceSprite = "/assets/categories/apois-vehicles.webp";
+const serviceSpritePosition: Record<RideCategoryCode, string> = {
+  carro: "0% 50%",
+  moto: "25% 50%",
+  fretes: "50% 50%",
+  guincho: "75% 50%",
+  envios: "100% 50%",
 };
 
 export const CategorySelector: React.FC = () => {
@@ -101,17 +108,17 @@ export const CategorySelector: React.FC = () => {
               !isAvailable && "opacity-50 grayscale"
             )}
           >
-            <div className="relative h-[74px] overflow-hidden rounded-[16px] border border-[#ECEDEF] bg-white shadow-[inset_0_-10px_24px_rgba(17,17,17,.035)]">
-              <div className="absolute inset-x-2 bottom-1 h-4 rounded-full bg-black/5 blur-md" aria-hidden="true" />
-              <img
-                src={serviceImage[cat.key] ?? serviceImage.carro}
-                alt={label}
-                loading="eager"
-                className="relative z-[1] h-full w-full object-contain object-center p-1.5 drop-shadow-[0_8px_7px_rgba(17,17,17,.14)]"
+            <div className="h-[74px] overflow-hidden rounded-[16px] bg-white">
+              <div
+                role="img"
+                aria-label={label}
+                className="h-full w-full bg-no-repeat drop-shadow-[0_7px_8px_rgba(17,17,17,.16)]"
+                style={{
+                  backgroundImage: `url(${serviceSprite})`,
+                  backgroundSize: "500% 100%",
+                  backgroundPosition: serviceSpritePosition[cat.key] ?? serviceSpritePosition.carro,
+                }}
               />
-              <span className="absolute bottom-1.5 right-1.5 z-[2] rounded-full bg-[#E51B23] px-1.5 py-0.5 text-[7px] font-black tracking-[.12em] text-white shadow-sm">
-                APOIS
-              </span>
             </div>
             <div className="px-0.5 pb-0.5 pt-1.5">
               <div className="truncate text-[13px] font-extrabold text-[#111111]">{label}</div>
