@@ -34,6 +34,7 @@ if (moduleName === 'corridas') {
   await import('./harden-corridas-superapp-profile-ui.mjs');
   await import('./harden-corridas-last-visual-pass.mjs');
   await import('./harden-corridas-final-red-surfaces.mjs');
+  await import('./harden-corridas-final-shell-surfaces.mjs');
 } else {
   patch('.work/entregas/src/routes/inicio.tsx', (source) => {
     let next = source;
