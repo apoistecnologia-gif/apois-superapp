@@ -11,7 +11,7 @@ if (!before.includes('clearExpiredCorridasGoogle()') || !before.includes('localS
 }
 if (
   !before.includes("ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url'") ||
-  !before.includes('if(hasPendingEntregas())') ||
+  !(before.includes('if(hasPendingEntregas())') || before.includes('const pendingEntregas=hasPendingEntregas();')) ||
   !before.includes('const stored=storeEntregasGoogle();') ||
   !before.includes("window.location.replace('./modules/entregas/index.html#/login')")
 ) {
