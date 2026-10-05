@@ -325,3 +325,13 @@ requireText('scripts/fix-corridas-superapp-ui.mjs', [
   'useState<Session | null>(() => persistedBootSession)',
   'session?.user',
 ], 'Corridas reidrata sessão local ao retomar sem exibir verificação em tela cheia');
+
+
+requireText('superapp/shell/index.html', [
+  'let shellAppUrlListenerHandle=null;',
+  'removeShellAppUrlListener();',
+  "window.addEventListener('pagehide',removeShellAppUrlListener",
+  "window.addEventListener('beforeunload',removeShellAppUrlListener",
+  "lastModule==='corridas'",
+  "callback OAuth genérico sem proprietário; não redirecionando para outro produto",
+], 'shell remove stale OAuth listener e preserva ownership Corridas no callback genérico');
