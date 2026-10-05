@@ -154,7 +154,7 @@ requireText('scripts/build-isolated-module.mjs', [
 ], 'callback Google de Corridas permanece no módulo Corridas e callbacks genéricos de Entregas continuam encaminhados');
 
 requireText('scripts/harden-corridas-native-map.mjs', [
-  'APOIS_NATIVE_MAP_FALLBACK_V2',
+  'APOIS_NATIVE_MAP_FALLBACK_V3',
   'APOIS_MAP_CAMERA_PADDING_V1',
   '[isStatic, nativeApiKey, reloadKey]',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
@@ -163,9 +163,9 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'mapService.upsertDriverMarker',
   'missing marker PNGs removed',
   'PolylineDecoder',
-  'POLYLINE_IMPORT_DEDUP_V1',
+  'PolylineDecoder deve ser importado exatamente uma vez',
   'displayedRoutePoints',
-  'APOIS_ROUTE_POINTS_PRECEDENCE_V1',
+  'if (encodedPolyline)',
   'bottom: 240',
   'encodedPolyline,\\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
