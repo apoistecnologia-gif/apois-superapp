@@ -117,6 +117,11 @@ function replaceRequired(source, search, replacement, label) {
     throw new Error('[FAIL] Corridas visual V2: não foi possível localizar o retorno da Home');
   }
 
+  source = source.replace(
+    '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);',
+    '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);\n  const [avatarFailed, setAvatarFailed] = useState(false);',
+  );
+
   const referenceHome = `  return (
     <div data-apois-reference-home-v2 className="apois-kit-home relative flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent text-[#111111]">
       <div className="absolute inset-0 z-0 bg-transparent">
@@ -144,14 +149,14 @@ function replaceRequired(source, search, replacement, label) {
             <Bell size={21} />
           </button>
           <button type="button" onClick={() => navigate({ to: "/perfil" })} className="h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-[#F1F2F4] shadow-[0_8px_22px_rgba(17,17,17,.12)] active:scale-95" aria-label="Abrir perfil">
-            {profile?.avatar_url ? <img src={profile.avatar_url} alt="Foto do passageiro" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-sm font-black text-[#E51B23]">{readString(profile?.full_name || profile?.name, "P")[0]}</span>}
+            {profile?.avatar_url && !avatarFailed ? <img src={profile.avatar_url} onError={() => setAvatarFailed(true)} alt="" aria-hidden="true" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-sm font-black text-[#E51B23]">{readString(profile?.full_name || profile?.name, "P")[0]}</span>}
           </button>
         </div>
       </header>
 
       <div className="absolute right-4 top-[38%] z-30 flex flex-col gap-3">
         {locationError ? <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-extrabold text-[#E51B23] shadow-md">GPS</div> : null}
-        <button type="button" onClick={() => refreshLocation()} disabled={isLocating} className="grid h-10 w-10 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,.15)] active:scale-90 disabled:opacity-50" aria-label="Centralizar minha localização">
+        <button type="button" onClick={() => { refreshLocation(); void refreshAddress(); }} disabled={isLocating} className="grid h-10 w-10 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,.15)] active:scale-90 disabled:opacity-50" aria-label="Centralizar minha localização">
           <Navigation className={cn("h-5 w-5", isLocating && "animate-pulse")} />
         </button>
       </div>
@@ -160,7 +165,7 @@ function replaceRequired(source, search, replacement, label) {
         <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[#C9CDD3]" />
 
         <div className="rounded-[20px] border border-[#E2E4E8] bg-white px-3">
-          <button type="button" onClick={() => refreshLocation()} className="flex min-h-[54px] w-full items-center gap-3 border-b border-[#ECEEF1] text-left">
+          <button type="button" onClick={() => { refreshLocation(); void refreshAddress(); }} className="flex min-h-[54px] w-full items-center gap-3 border-b border-[#ECEEF1] text-left">
             <span className="relative grid h-8 w-8 place-items-center"><span className="h-3.5 w-3.5 rounded-full border-[4px] border-[#2563EB] bg-white" /></span>
             <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Local de partida</span><span className="block truncate text-[15px] font-extrabold text-[#111111]">{currentAddressText}</span></span>
             <ChevronRight size={20} className="text-[#777D85]" />
