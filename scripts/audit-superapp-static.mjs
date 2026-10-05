@@ -113,6 +113,7 @@ requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
   'br.com.apois.app://auth/corridas-google',
   'JSON.stringify({ product: \\"corridas\\", createdAt: Date.now() })',
   'browserFinished pode chegar',
+  'providerError',
 ], 'Google OAuth Corridas usa PKCE, envelope persistente sem race de browserFinished, callback determinístico, dedupe e cleanup/cancelamento');
 
 requireText('scripts/harden-entregas-supabase-runtime.mjs', [
