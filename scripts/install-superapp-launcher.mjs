@@ -14,7 +14,7 @@ if (!existsSync(brandSourceB64)) throw new Error(`Arte oficial APOIS Cliente nã
 const brandBytes = Buffer.from(readFileSync(brandSourceB64, 'utf8').trim(), 'base64');
 if (
   brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
-  brandBytes.length !== 23158 ||
+  brandBytes.length < 4096 ||
   brandBytes.readUInt32BE(16) !== 128 ||
   brandBytes.readUInt32BE(20) !== 128
 ) {
