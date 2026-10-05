@@ -51,14 +51,12 @@ requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
 ],'Categorias Corridas usam cinco fotos reais e cards compactos');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'APOIS_NATIVE_MAP_FALLBACK_V3',
-  'APOIS_MAP_CAMERA_PADDING_V1',
   '[isStatic, nativeApiKey, reloadKey]',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
   'mapService.upsertDriverMarker',
   'PolylineDecoder',
-  'PolylineDecoder deve ser importado exatamente uma vez',
   'displayedRoutePoints',
   'if (encodedPolyline)',
   'bottom: 240',
@@ -68,6 +66,12 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
 ],'PassengerMap usa Google Maps nativo no Android com fallback JS');
+const passengerMapSource = read('.work/corridas/src/components/map/PassengerMap.tsx');
+const polylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
+if ((passengerMapSource.split(polylineImport).length - 1) !== 1) {
+  fail('PassengerMap não pode duplicar PolylineDecoder');
+} else ok('PassengerMap contém exatamente um import de PolylineDecoder');
+
 requireMarkers('.work/corridas/src/services/maps/map-service.ts',['styles: []','strokeColor: "#E51B23"','upsertDriverMarker(','removeDriverMarker('],'Mapa nativo do passageiro usa estilo claro, rota vermelha e marcador do motorista');
 requireMarkers('.work/corridas/src/services/routes/route-config.ts',['TOP: 72','RIGHT: 28','BOTTOM: 220','LEFT: 28'],'Câmera da rota preserva mais área útil do mapa com painel compacto');
 forbidMarkers('.work/corridas/src/services/maps/map-service.ts',['assets/markers/pickup.png','assets/markers/destination.png'],'Mapa nativo não depende de marker PNG inexistente');
