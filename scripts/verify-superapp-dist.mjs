@@ -59,6 +59,7 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'mapService.upsertDriverMarker',
   'PolylineDecoder',
   'displayRoutePoints',
+  'if (encodedPolyline) {',
   'bottom: 240',
   'encodedPolyline,\\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
