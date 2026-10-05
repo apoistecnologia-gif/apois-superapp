@@ -159,7 +159,12 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
   'mapService.upsertDriverMarker',
+  'PolylineDecoder',
+  'displayRoutePoints',
+  'encodedPolyline,\\n  driverLocation,',
+  'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
+  'strokeColor: "#E51B23"',
   'styles: []',
 ], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
 
