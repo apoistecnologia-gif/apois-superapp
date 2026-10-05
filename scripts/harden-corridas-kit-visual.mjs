@@ -131,19 +131,19 @@ function replaceRequired(source, search, replacement, label) {
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-40 bg-gradient-to-b from-white/95 via-white/70 to-transparent" />
 
-      <header className="relative z-30 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),14px)]">
+      <header className="relative z-30 flex items-center justify-between px-3 pt-[max(env(safe-area-inset-top),10px)]">
         <div className="flex items-center gap-2.5">
-          <img src={brandLogo} alt="APOIS" className="h-12 w-12 rounded-full object-contain shadow-sm" />
+          <img src={brandLogo} alt="APOIS" className="h-10 w-10 rounded-full object-contain shadow-sm" />
           <div className="leading-none">
-            <div className="text-[24px] font-black tracking-[-0.05em] text-[#111111]">AP<span className="text-[#E51B23]">O</span>IS</div>
-            <div className="mt-1 text-[9px] font-black tracking-[0.34em] text-[#666B73]">VAMOS?</div>
+            <div className="text-[21px] font-black tracking-[-0.05em] text-[#111111]">AP<span className="text-[#E51B23]">O</span>IS</div>
+            <div className="mt-0.5 text-[8px] font-black tracking-[0.34em] text-[#666B73]">VAMOS?</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => navigate({ to: "/notificacoes" })} className="grid h-12 w-12 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_8px_22px_rgba(17,17,17,.10)] active:scale-95" aria-label="Notificações">
+          <button type="button" onClick={() => navigate({ to: "/notificacoes" })} className="grid h-10 w-10 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_8px_22px_rgba(17,17,17,.10)] active:scale-95" aria-label="Notificações">
             <Bell size={21} />
           </button>
-          <button type="button" onClick={() => navigate({ to: "/perfil" })} className="h-12 w-12 overflow-hidden rounded-full border-2 border-white bg-[#F1F2F4] shadow-[0_8px_22px_rgba(17,17,17,.12)] active:scale-95" aria-label="Abrir perfil">
+          <button type="button" onClick={() => navigate({ to: "/perfil" })} className="h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-[#F1F2F4] shadow-[0_8px_22px_rgba(17,17,17,.12)] active:scale-95" aria-label="Abrir perfil">
             {profile?.avatar_url ? <img src={profile.avatar_url} alt="Foto do passageiro" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-sm font-black text-[#E51B23]">{readString(profile?.full_name || profile?.name, "P")[0]}</span>}
           </button>
         </div>
@@ -151,7 +151,7 @@ function replaceRequired(source, search, replacement, label) {
 
       <div className="absolute right-4 top-[38%] z-30 flex flex-col gap-3">
         {locationError ? <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-extrabold text-[#E51B23] shadow-md">GPS</div> : null}
-        <button type="button" onClick={() => refreshLocation()} disabled={isLocating} className="grid h-12 w-12 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,.15)] active:scale-90 disabled:opacity-50" aria-label="Centralizar minha localização">
+        <button type="button" onClick={() => refreshLocation()} disabled={isLocating} className="grid h-10 w-10 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,.15)] active:scale-90 disabled:opacity-50" aria-label="Centralizar minha localização">
           <Navigation className={cn("h-5 w-5", isLocating && "animate-pulse")} />
         </button>
       </div>
