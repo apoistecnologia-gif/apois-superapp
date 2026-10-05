@@ -194,9 +194,15 @@ requireText('scripts/build-isolated-module.mjs', [
 
 requireText('scripts/harden-apois-client-red-visual.mjs', [
   'APOIS_CATEGORY_STUDIO_V1',
+  'vGHP86zk7D_small.jpg',
+  'kyjjmkQI3H.jpg',
+  'removalist_5ca69cd22a98b.jpg',
+  '0250-0020-EQ-OMBRE_2.PNG',
+  'Big_Boy_Velocity_150_Cargo_Update.png',
   '"w-28 shrink-0',
   'h-[74px]',
   'object-contain object-center',
+  'APOIS',
 ], 'categorias Corridas usam fotos reais e cards compactos');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
