@@ -44,15 +44,10 @@ if (
 writeFileSync(brandTarget, brandBytes);
 write('src/assets/apoisBrandData.ts', `const apoisBrandData = "data:image/png;base64,${brandBytes.toString('base64')}";\nexport default apoisBrandData;\n`);
 
-const categorySpriteSource = resolve(root, 'superapp/branding/categories/apois-vehicles.webp');
-const categorySpriteTarget = file('public/assets/categories/apois-vehicles.webp');
-mkdirSync(dirname(categorySpriteTarget), { recursive: true });
-copyFileSync(categorySpriteSource, categorySpriteTarget);
-
 const serviceAssetDir = file('src/assets/services');
 mkdirSync(serviceAssetDir, { recursive: true });
 
-const svg = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#f1f2f4"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-opacity=".22"/></filter></defs><rect width="320" height="180" rx="28" fill="url(#g)"/>${body}</svg>`;
+const svg = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><defs><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-opacity=".18"/></filter></defs>${body}</svg>`;
 write('src/assets/services/car.svg', svg(`<g filter="url(#s)" transform="translate(35 52)"><path d="M25 64 43 29c5-10 14-16 26-16h112c13 0 24 7 29 19l14 32 16 8v28H9V74l16-10Z" fill="#f7f7f8" stroke="#222" stroke-width="4"/><path d="M60 32h112c8 0 13 4 17 12l9 20H43l11-21c2-6 4-11 6-11Z" fill="#cbd5df"/><path d="M116 32v32" stroke="#59616b" stroke-width="3"/><circle cx="55" cy="102" r="18" fill="#1e2228"/><circle cx="195" cy="102" r="18" fill="#1e2228"/><circle cx="55" cy="102" r="8" fill="#c7ccd2"/><circle cx="195" cy="102" r="8" fill="#c7ccd2"/><path d="M22 79h25M204 79h28" stroke="#E51B23" stroke-width="7" stroke-linecap="round"/></g>`));
 write('src/assets/services/moto.svg', svg(`<g filter="url(#s)" transform="translate(55 38)"><circle cx="52" cy="95" r="31" fill="#1d2228"/><circle cx="169" cy="95" r="31" fill="#1d2228"/><circle cx="52" cy="95" r="16" fill="#c9ced4"/><circle cx="169" cy="95" r="16" fill="#c9ced4"/><path d="m55 92 35-55h52l26 58M86 49h66M116 39l-18-25H73" fill="none" stroke="#222" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M91 58h50l-18 28H73Z" fill="#E51B23"/><path d="M127 28h36" stroke="#E51B23" stroke-width="8" stroke-linecap="round"/></g>`));
 write('src/assets/services/freight.svg', svg(`<g filter="url(#s)" transform="translate(26 48)"><path d="M16 24h150v72H16z" fill="#f7f7f8" stroke="#222" stroke-width="4"/><path d="M166 47h47l32 31v18h-79z" fill="#eceff2" stroke="#222" stroke-width="4"/><path d="M184 55h24l18 19h-42z" fill="#cbd5df"/><path d="M31 38h57v42H31z" fill="#E51B23"/><path d="M100 38h51v8h-51z" fill="#d2d6db"/><circle cx="55" cy="103" r="17" fill="#1e2228"/><circle cx="196" cy="103" r="17" fill="#1e2228"/><circle cx="55" cy="103" r="7" fill="#c7ccd2"/><circle cx="196" cy="103" r="7" fill="#c7ccd2"/></g>`));
@@ -65,17 +60,21 @@ import { usePricing } from "@/hooks/use-pricing";
 import { PRICING_CONFIG } from "@/services/pricing/pricing-config";
 import { cn } from "@/lib/utils";
 import { RideCategoryCode } from "@/types/pricing";
+import carImage from "@/assets/services/car.svg";
+import motoImage from "@/assets/services/moto.svg";
+import freightImage from "@/assets/services/freight.svg";
+import towImage from "@/assets/services/tow.svg";
+import deliveryImage from "@/assets/services/delivery.svg";
 
-// APOIS_CATEGORY_STUDIO_V2
-// Um único asset local versionado contém cinco veículos distintos, realistas,
-// isolados e com transparência. Sem hotlink externo e sem fundo cinza embutido.
-const serviceSprite = "/assets/categories/apois-vehicles.webp";
-const serviceSpritePosition: Record<RideCategoryCode, string> = {
-  carro: "0% 50%",
-  moto: "25% 50%",
-  fretes: "50% 50%",
-  guincho: "75% 50%",
-  envios: "100% 50%",
+// APOIS_CATEGORY_STUDIO_V3
+// Cada categoria usa um asset local próprio, transparente e versionado.
+// Isso evita recorte incorreto de sprite no WebView e impede Carro/Moto de exibirem a mesma imagem.
+const serviceImage: Record<RideCategoryCode, string> = {
+  carro: carImage,
+  moto: motoImage,
+  fretes: freightImage,
+  guincho: towImage,
+  envios: deliveryImage,
 };
 
 export const CategorySelector: React.FC = () => {
@@ -96,6 +95,7 @@ export const CategorySelector: React.FC = () => {
         const estimate = estimates.find((e) => e.categoryId === cat.id);
         const isAvailable = estimate?.available !== false && cat.isActive;
         const label = PRICING_CONFIG.LABELS[cat.key] || cat.name;
+        const imageSrc = serviceImage[cat.key] ?? serviceImage.carro;
         return (
           <button
             key={cat.id}
@@ -108,16 +108,13 @@ export const CategorySelector: React.FC = () => {
               !isAvailable && "opacity-50 grayscale"
             )}
           >
-            <div className="h-[74px] overflow-hidden rounded-[16px] bg-white">
-              <div
-                role="img"
-                aria-label={label}
-                className="h-full w-full bg-no-repeat drop-shadow-[0_7px_8px_rgba(17,17,17,.16)]"
-                style={{
-                  backgroundImage: "url(" + serviceSprite + ")",
-                  backgroundSize: "500% 100%",
-                  backgroundPosition: serviceSpritePosition[cat.key] ?? serviceSpritePosition.carro,
-                }}
+            <div className="flex h-[74px] items-center justify-center overflow-hidden rounded-[16px] bg-transparent">
+              <img
+                src={imageSrc}
+                alt=""
+                aria-hidden="true"
+                className="h-full w-full object-contain p-0.5 drop-shadow-[0_7px_8px_rgba(17,17,17,.14)]"
+                draggable={false}
               />
             </div>
             <div className="px-0.5 pb-0.5 pt-1.5">
