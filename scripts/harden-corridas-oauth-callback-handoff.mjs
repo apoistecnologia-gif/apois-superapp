@@ -58,7 +58,7 @@ if (!source.includes('function consumeForwardedCallback()')) {
 }
 const legacyConsumerCode = '    if (!params.get("code") || params.has("access_token") || params.has("refresh_token")) return null;';
 const intermediateConsumerCode = '    const codes = params.getAll("code");\n    if (codes.length !== 1 || !codes[0]?.trim() || params.has("access_token") || params.has("refresh_token")) return null;';
-const exactConsumerCode = '    if (!singlePkceCode(params) || params.has("access_token") || params.has("refresh_token")) return null;';
+const exactConsumerCode = '    const providerError = params.get("error_description") || params.get("error");\n    if ((!singlePkceCode(params) && !providerError) || params.has("access_token") || params.has("refresh_token")) return null;';
 if (source.includes(legacyConsumerCode)) source = source.replace(legacyConsumerCode, intermediateConsumerCode);
 if (source.includes(intermediateConsumerCode)) source = source.replace(intermediateConsumerCode, exactConsumerCode);
 if (!source.includes(exactConsumerCode)) throw new Error('[FAIL] OAuth Corridas: validação consume-once do code mudou');
@@ -100,17 +100,16 @@ const browserFinishedIntermediate = `        browserFinishedListenerRef.current 
           setLoading(false);
         });`;
 const browserFinishedSafe = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
-          window.setTimeout(() => {
-            if (!alive || handlingRef.current || handledUrlRef.current) return;
-            clearPendingProduct();
-            setLoading(false);
-          }, 2500);
+          if (!alive || handlingRef.current) return;
+          // browserFinished pode chegar antes de appUrlOpen/getLaunchUrl no Android.
+          // Preserve o envelope até o callback real; o TTL expira sozinho e um novo login sobrescreve o estado.
+          setLoading(false);
         });`;
 if (source.includes(browserFinishedUnsafe)) source = source.replace(browserFinishedUnsafe, browserFinishedSafe);
 if (source.includes(browserFinishedIntermediate)) source = source.replace(browserFinishedIntermediate, browserFinishedSafe);
 if (!source.includes(browserFinishedSafe)) throw new Error('[FAIL] OAuth Corridas: browserFinished seguro não foi materializado');
 
-for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);', 'handledUrlRef.current) return;', '}, 2500);']) {
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);', 'handledUrlRef.current) return;', 'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl', 'providerError']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] OAuth Corridas incompleto: ${marker}`);
 }
 writeFileSync(path, source, 'utf8');
