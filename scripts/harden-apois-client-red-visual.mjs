@@ -86,11 +86,7 @@ import { usePricing } from "@/hooks/use-pricing";
 import { PRICING_CONFIG } from "@/services/pricing/pricing-config";
 import { cn } from "@/lib/utils";
 import { RideCategoryCode } from "@/types/pricing";
-import carImage from "@/assets/services/car.webp";
-import motoImage from "@/assets/services/moto.webp";
-import freightImage from "@/assets/services/freight.webp";
-import towImage from "@/assets/services/tow.webp";
-import deliveryImage from "@/assets/services/delivery.webp";
+import { carImage, motoImage, freightImage, towImage, deliveryImage } from "@/assets/categoryVehicleData";
 
 // APOIS_CATEGORY_REALISTIC_V5_INLINE
 // Cada categoria usa um veículo realista próprio, versionado localmente.
