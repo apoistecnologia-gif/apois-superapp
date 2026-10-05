@@ -50,6 +50,12 @@
     const ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url';
     const OAUTH_PENDING_KEY='apois-superapp:pending-oauth-product';
     const OAUTH_HANDOFF_TTL_MS=120000;
+    let shellAppUrlListenerHandle=null;
+    const removeShellAppUrlListener=()=>{
+      const handle=shellAppUrlListenerHandle;
+      shellAppUrlListenerHandle=null;
+      if(handle?.remove)void handle.remove().catch(()=>undefined);
+    };
     const clearExpiredCorridasGoogle=()=>{
       try{
         const stored=localStorage.getItem(CORRIDAS_GOOGLE_KEY);
@@ -105,6 +111,7 @@
       const destination=moduleDestination(moduleName);
       if(!destination)return;
       try{localStorage.setItem(LAST_MODULE_KEY,moduleName);}catch{}
+      removeShellAppUrlListener();
       window.dispatchEvent(new CustomEvent('apois:module-selected',{detail:{module:moduleName}}));
       window.location.replace(destination);
     }
@@ -201,7 +208,12 @@
         }
         if(path==='callback'){
           try{
-            if(hasPendingCorridas()){
+            const pendingCorridas=hasPendingCorridas();
+            const pendingEntregas=hasPendingEntregas();
+            let lastModule=null;
+            try{lastModule=localStorage.getItem(LAST_MODULE_KEY);}catch{}
+
+            if(pendingCorridas||(!pendingEntregas&&lastModule==='corridas')){
               const stored=storeCorridasGoogle();
               if(!stored)console.error('[APOIS] callback Google Corridas sem code/erro válido');
               try{localStorage.removeItem(OAUTH_PENDING_KEY);}catch{}
@@ -209,7 +221,7 @@
               window.location.replace('./modules/corridas/index.html#/login');
               return true;
             }
-            if(hasPendingEntregas()){
+            if(pendingEntregas||lastModule==='entregas'){
               const stored=storeEntregasGoogle();
               if(!stored)console.error('[APOIS] callback Google Entregas sem sessão válida');
               try{localStorage.removeItem(OAUTH_PENDING_KEY);}catch{}
@@ -217,9 +229,11 @@
               window.location.replace('./modules/entregas/index.html#/login');
               return true;
             }
-          }catch{}
-          window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix()}`);
-          return true;
+          }catch(error){
+            console.error('[APOIS] falha ao resolver proprietário do callback OAuth',error);
+          }
+          console.error('[APOIS] callback OAuth genérico sem proprietário; não redirecionando para outro produto');
+          return false;
         }
       }catch(error){
         console.error('[APOIS] deep link inválido',error);
@@ -229,8 +243,12 @@
 
     const appPlugin=window.Capacitor?.Plugins?.App;
     if(appPlugin){
-      appPlugin.addListener('appUrlOpen',({url})=>{relayAuthDeepLink(url);}).catch(()=>undefined);
+      appPlugin.addListener('appUrlOpen',({url})=>{relayAuthDeepLink(url);})
+        .then((handle)=>{shellAppUrlListenerHandle=handle;})
+        .catch(()=>undefined);
       appPlugin.getLaunchUrl().then((result)=>{if(result?.url)relayAuthDeepLink(result.url);}).catch(()=>undefined);
+      window.addEventListener('pagehide',removeShellAppUrlListener,{once:true});
+      window.addEventListener('beforeunload',removeShellAppUrlListener,{once:true});
     }
   </script>
 </body>
