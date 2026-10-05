@@ -12,7 +12,8 @@ let mapServiceSource = readFileSync(mapServicePath, 'utf8');
 if (mapServiceSource.includes('styles: MAP_STYLE_DARK')) {
   mapServiceSource = mapServiceSource
     .replace('import { MAP_STYLE_DARK, DEFAULT_ZOOM } from "./map-config";', 'import { DEFAULT_ZOOM } from "./map-config";')
-    .replace('styles: MAP_STYLE_DARK,', 'styles: [],');
+    .replace('styles: MAP_STYLE_DARK,', 'styles: [],')
+    .replace('strokeColor: ROUTE_CONFIG.STYLE.STROKE_COLOR,', 'strokeColor: "#E51B23",');
 }
 
 if (!mapServiceSource.includes('driverMarkerId: Map<string, string>')) {
@@ -75,15 +76,22 @@ for (const marker of ['styles: []', 'upsertDriverMarker(', 'removeDriverMarker('
   if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing marker: ${marker}`);
 }
 
+source = source.replaceAll('"#FFB800"', '"#E51B23"');
+
 if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   source = source.replace(
     'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";',
-    'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";\nimport { Capacitor } from "@capacitor/core";\nimport { mapService } from "@/services/maps/map-service";',
+    'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";\nimport { Capacitor } from "@capacitor/core";\nimport { mapService } from "@/services/maps/map-service";\nimport { PolylineDecoder } from "@/services/routes/polyline-decoder";',
   );
 
   source = source.replace(
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);',
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V2',
+  );
+
+  source = source.replace(
+    '  const validDriverLocation = useMemo<Coordinate | null>(() => {',
+    "  const displayRoutePoints = useMemo(() => {\n    if (route?.decodedPoints?.length && route.decodedPoints.length > 1) {\n      return route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));\n    }\n    if (!encodedPolyline) return [];\n    try {\n      return PolylineDecoder.decode(encodedPolyline).map((point) => ({ lat: point.lat, lng: point.lng }));\n    } catch {\n      return [];\n    }\n  }, [encodedPolyline, route?.decodedPoints]);\n\n  const validDriverLocation = useMemo<Coordinate | null>(() => {",
   );
 
   source = source.replace(
@@ -99,11 +107,19 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   const initEffectAnchor = '  useEffect(() => {\n    void initializeMap();';
   const transparentEffect = `  useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+    const changed: Array<{ element: HTMLElement; backgroundColor: string }> = [];
+    let element: HTMLElement | null = containerRef.current;
+    while (element) {
+      changed.push({ element, backgroundColor: element.style.backgroundColor });
+      element.style.backgroundColor = "transparent";
+      element = element.parentElement;
+    }
     const previousHtml = document.documentElement.style.backgroundColor;
     const previousBody = document.body.style.backgroundColor;
     document.documentElement.style.backgroundColor = "transparent";
     document.body.style.backgroundColor = "transparent";
     return () => {
+      for (const entry of changed) entry.element.style.backgroundColor = entry.backgroundColor;
       document.documentElement.style.backgroundColor = previousHtml;
       document.body.style.backgroundColor = previousBody;
     };
@@ -131,7 +147,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
       if (validDriverLocation) await mapService.upsertDriverMarker(mapId, validDriverLocation);
       else await mapService.removeDriverMarker(mapId);
 
-      const points = route?.decodedPoints?.map((point) => ({ lat: point.lat, lng: point.lng })) ?? [];
+      const points = displayRoutePoints;
       if (points.length > 1) {
         await mapService.upsertRoutePolyline(mapId, points);
         await mapService.fitRouteBounds(mapId, points);
@@ -142,7 +158,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
         else if (validDriverLocation) await mapService.setCamera(mapId, { coordinate: validDriverLocation, zoom: 16 });
       }
     })().catch((error) => console.error("[PassengerMap] Native marker/route sync failed", error));
-  }, [destination, origin, route?.decodedPoints, status, validDriverLocation]);
+  }, [destination, displayRoutePoints, origin, status, validDriverLocation]);
 
 `;
 
@@ -155,6 +171,16 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
     '  const retry = () => {\n    googleMapsLoader.reset();',
     '  const retry = () => {\n    if (nativeModeRef.current) void mapService.destroyMap(nativeMapIdRef.current).catch(() => undefined);\n    nativeModeRef.current = false;\n    googleMapsLoader.reset();',
   );
+
+  source = source
+    .replaceAll(
+      'if (route?.decodedPoints && route.decodedPoints.length > 1) {\n      const path = route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));',
+      'if (displayRoutePoints.length > 1) {\n      const path = displayRoutePoints;',
+    )
+    .replace(
+      '}, [destination, orderedStops, origin, route?.decodedPoints, status]);',
+      '}, [destination, displayRoutePoints, orderedStops, origin, status]);',
+    );
 
   source = source
     .replace(
@@ -178,6 +204,9 @@ for (const marker of [
   'mapService.upsertPickupMarker',
   'mapService.upsertDestinationMarker',
   'mapService.upsertDriverMarker',
+  'PolylineDecoder',
+  'displayRoutePoints',
+  'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
   'Native Google Map ready',
