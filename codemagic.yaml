@@ -84,8 +84,14 @@ workflows:
           test ! -e superapp/shell/dist/modules/motorista || { echo '[FAIL] módulo Motorista apareceu no Cliente'; exit 1; }
           grep -Fq 'data:image/png;base64,' superapp/shell/dist/index.html || { echo '[FAIL] logo inline ausente no shell'; exit 1; }
           grep -Fq 'APOIS_NATIVE_MAP_FALLBACK_V3' .work/corridas/src/components/map/PassengerMap.tsx || { echo '[FAIL] hardener de mapa nativo V3 ausente no workspace final'; exit 1; }
-          test -s superapp/shell/dist/modules/corridas/assets/categories/apois-vehicles.webp || { echo '[FAIL] sprite local dos cinco veículos não chegou ao bundle Corridas'; exit 1; }
-          grep -R -Fq '/assets/categories/apois-vehicles.webp' superapp/shell/dist/modules/corridas || { echo '[FAIL] CategorySelector não referencia o sprite local de veículos'; exit 1; }
+          for asset in car moto freight tow delivery; do
+            find superapp/shell/dist/modules/corridas/assets -type f -name "*${asset}*.webp" -size +0c | grep -q . || { echo "[FAIL] veículo realista ${asset} não chegou ao bundle Corridas"; exit 1; }
+          done
+          grep -Fq 'APOIS_CATEGORY_REALISTIC_V4' .work/corridas/src/components/pricing/CategorySelector.tsx || { echo '[FAIL] CategorySelector não usa os veículos realistas V4'; exit 1; }
+          if grep -R -Fq '/assets/categories/apois-vehicles.webp' superapp/shell/dist/modules/corridas; then
+            echo '[FAIL] bundle Corridas ainda referencia o sprite antigo de veículos'
+            exit 1
+          fi
           if grep -Fq 'Para onde vamos?' .work/corridas/src/routes/_authenticated.inicio.tsx; then
             echo '[FAIL] home Corridas reintroduziu busca duplicada no topo'
             exit 1
