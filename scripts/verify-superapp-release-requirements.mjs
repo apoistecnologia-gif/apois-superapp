@@ -130,6 +130,12 @@ if (!existsSync(nativeMapHardenerPath)) {
     'if (encodedPolyline)',
     'upsertDriverMarker',
     'document.body.style.backgroundColor = "transparent"',
+    'APOIS_MAP_STYLE_LIGHT_NATIVE',
+    'APOIS_MAP_STYLE_LIGHT_JS',
+    'APOIS_PRECISE_LOCATION_V1',
+    'permissions: ["location", "coarseLocation"]',
+    'apois-location.svg',
+    'label: { text: "A"',
     'strokeColor: "#E51B23"',
     'assets/markers/',
   ]) {
