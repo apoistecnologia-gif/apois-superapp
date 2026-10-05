@@ -67,6 +67,28 @@ if (!existsSync(isolatedBuilderPath)) {
   }
 }
 
+const googleOauthGeneratorPath = resolve('scripts/harden-corridas-superapp-google-auth.mjs');
+const oauthHandoffPath = resolve('scripts/harden-corridas-oauth-callback-handoff.mjs');
+if (!existsSync(googleOauthGeneratorPath) || !existsSync(oauthHandoffPath)) {
+  fail('hardener OAuth Corridas ausente');
+} else {
+  const googleOauthGenerator = readFileSync(googleOauthGeneratorPath, 'utf8');
+  const oauthHandoff = readFileSync(oauthHandoffPath, 'utf8');
+  const requiredOauthMarkers = [
+    'JSON.stringify({ product: "corridas", createdAt: Date.now() })',
+    'const pendingEnvelope =',
+    'const pendingEnvelopeHardened =',
+    'if (source.includes(pendingEnvelope))',
+  ];
+  const combinedOauth = googleOauthGenerator + '\n' + oauthHandoff;
+  const missingOauthMarkers = requiredOauthMarkers.filter((marker) => !combinedOauth.includes(marker));
+  if (missingOauthMarkers.length) {
+    fail(`OAuth Corridas hardeners incompatíveis (${missingOauthMarkers.join(' | ')})`);
+  } else {
+    ok('OAuth Corridas hardeners compatíveis com envelope pendente idempotente');
+  }
+}
+
 const nativeMapHardenerPath = resolve('scripts/harden-corridas-native-map.mjs');
 if (!existsSync(nativeMapHardenerPath)) {
   fail('hardener mapa nativo Corridas ausente');
