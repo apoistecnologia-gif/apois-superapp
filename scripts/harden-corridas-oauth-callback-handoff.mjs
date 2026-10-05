@@ -85,21 +85,27 @@ replaceRequired(
   'marcador OAuth pendente mudou',
 );
 
-replaceRequired(
-  `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+const browserFinishedUnsafe = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
           if (!alive || handlingRef.current) return;
           clearPendingProduct();
           setLoading(false);
-        });`,
-  `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+        });`;
+const browserFinishedIntermediate = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+          if (!alive || handlingRef.current) return;
+          // Não apague o envelope aqui: no Android browserFinished pode chegar
+          // antes de appUrlOpen/getLaunchUrl. O TTL expira sozinho e um novo OAuth sobrescreve o produto pendente.
+          setLoading(false);
+        });`;
+const browserFinishedSafe = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
           window.setTimeout(() => {
             if (!alive || handlingRef.current || handledUrlRef.current) return;
             clearPendingProduct();
             setLoading(false);
           }, 2500);
-        });`,
-  'browserFinished não pode apagar o marcador antes de appUrlOpen',
-);
+        });`;
+if (source.includes(browserFinishedUnsafe)) source = source.replace(browserFinishedUnsafe, browserFinishedSafe);
+if (source.includes(browserFinishedIntermediate)) source = source.replace(browserFinishedIntermediate, browserFinishedSafe);
+if (!source.includes(browserFinishedSafe)) throw new Error('[FAIL] OAuth Corridas: browserFinished seguro não foi materializado');
 
 for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);', 'handledUrlRef.current) return;', '}, 2500);']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] OAuth Corridas incompleto: ${marker}`);
