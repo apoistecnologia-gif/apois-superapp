@@ -4,7 +4,16 @@ import { resolve } from 'node:path';
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
 const routeConfigPath = resolve('.work/corridas/src/services/routes/route-config.ts');
-let routeConfigSource = readFileSync(routeConfigPath, 'utf8');
+let const finalPolylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
+const finalPolylineImportCount = source.split(finalPolylineImport).length - 1;
+if (finalPolylineImportCount !== 1) {
+  throw new Error(`[FAIL] Native PassengerMap: PolylineDecoder import duplicado/ausente (${finalPolylineImportCount})`);
+}
+if (!source.includes('const displayedRoutePoints = useMemo(() => {\n    if (encodedPolyline)')) {
+  throw new Error('[FAIL] Native PassengerMap: polyline persistida não tem precedência');
+}
+
+routeConfigSource = readFileSync(routeConfigPath, 'utf8');
 routeConfigSource = routeConfigSource
   .replace('TOP: 100,', 'TOP: 72,')
   .replace('RIGHT: 50,', 'RIGHT: 28,')
@@ -282,9 +291,7 @@ for (const marker of [
   'mapService.upsertDestinationMarker',
   'mapService.upsertDriverMarker',
   'PolylineDecoder',
-  'POLYLINE_IMPORT_DEDUP_V1',
   'displayedRoutePoints',
-  'APOIS_ROUTE_POINTS_PRECEDENCE_V1',
   'bottom: 240',
   'encodedPolyline,\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
