@@ -1,6 +1,18 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+const clientPath = resolve('.work/entregas/src/integrations/supabase/client.ts');
+let clientSource = readFileSync(clientPath, 'utf8');
+if (!clientSource.includes('flowType: "pkce"')) {
+  const authAnchor = '    detectSessionInUrl: true,';
+  if (!clientSource.includes(authAnchor)) throw new Error('[FAIL] Entregas Google OAuth: cliente Supabase sem âncora de Auth para PKCE');
+  clientSource = clientSource.replace(authAnchor, `${authAnchor}\n    flowType: "pkce",`);
+  writeFileSync(clientPath, clientSource, 'utf8');
+}
+if (!readFileSync(clientPath, 'utf8').includes('flowType: "pkce"')) {
+  throw new Error('[FAIL] Entregas Google OAuth: PKCE não foi ativado');
+}
+
 const path = resolve('.work/entregas/src/components/GoogleLoginButton.tsx');
 let source = readFileSync(path, 'utf8');
 
@@ -90,4 +102,4 @@ for (const marker of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregas Google OAuth: callback nativo permanece no próprio módulo, com handoff persistente e sem corrida com a rota genérica.');
+console.log('[OK] Entregas Google OAuth: PKCE + callback nativo permanecem no próprio módulo, com handoff persistente e sem corrida com a rota genérica.');
