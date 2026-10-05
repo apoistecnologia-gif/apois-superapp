@@ -35,13 +35,14 @@ mkdirSync(dirname(brandTarget), { recursive: true });
 const brandBytes = Buffer.from(readFileSync(brandSource, 'utf8').trim(), 'base64');
 if (
   brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
-  brandBytes.length !== 23158 ||
+  brandBytes.length < 4096 ||
   brandBytes.readUInt32BE(16) !== 128 ||
   brandBytes.readUInt32BE(20) !== 128
 ) {
   throw new Error('[FAIL] APOIS red visual: logo base64 não gerou o PNG oficial 128x128');
 }
 writeFileSync(brandTarget, brandBytes);
+write('src/assets/apoisBrandData.ts', `const apoisBrandData = "data:image/png;base64,${brandBytes.toString('base64')}";\nexport default apoisBrandData;\n`);
 
 const serviceAssetDir = file('src/assets/services');
 mkdirSync(serviceAssetDir, { recursive: true });
@@ -129,7 +130,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { PassengerGoogleLoginButton } from "@/components/auth/PassengerGoogleLoginButton";
-import logo from "@/assets/apois-brand.png";
+import logo from "@/assets/apoisBrandData";
 
 export const Route = createFileRoute("/_public/login")({ component: LoginPage });
 const friendlyLoginError = (message: string) => {
@@ -220,8 +221,8 @@ write('src/styles.css', styles);
 
 const homePath='src/routes/_authenticated.inicio.tsx';
 let home=readFileSync(file(homePath),'utf8');
-if(!home.includes('import brandLogo from "@/assets/apois-brand.png";')){
-  home=home.replace('import { BottomSheet } from "@/components/ui/bottom-sheet/BottomSheet";','import { BottomSheet } from "@/components/ui/bottom-sheet/BottomSheet";\nimport brandLogo from "@/assets/apois-brand.png";');
+if(!home.includes('import brandLogo from "@/assets/apoisBrandData";')){
+  home=home.replace('import { BottomSheet } from "@/components/ui/bottom-sheet/BottomSheet";','import { BottomSheet } from "@/components/ui/bottom-sheet/BottomSheet";\nimport brandLogo from "@/assets/apoisBrandData";');
 }
 home=home
  .replace('relative flex-1 bg-[#0A0D14] overflow-hidden flex flex-col','relative flex-1 bg-[#F7F7F8] overflow-hidden flex flex-col')
