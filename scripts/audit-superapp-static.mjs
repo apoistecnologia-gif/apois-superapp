@@ -154,10 +154,12 @@ requireText('scripts/build-isolated-module.mjs', [
 ], 'callback Google de Corridas permanece no módulo Corridas e callbacks genéricos de Entregas continuam encaminhados');
 
 requireText('scripts/harden-corridas-native-map.mjs', [
-  'APOIS_NATIVE_MAP_FALLBACK_V1',
+  'APOIS_NATIVE_MAP_FALLBACK_V2',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
+  'mapService.upsertDriverMarker',
+  'document.body.style.backgroundColor = "transparent"',
   'styles: []',
 ], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
 
@@ -178,11 +180,11 @@ requireText('scripts/build-isolated-module.mjs', [
 
 
 requireText('scripts/harden-apois-client-red-visual.mjs', [
-  'photos/31943401',
-  'photos/12036802',
-  'photos/31049388',
+  'photos/7771058',
+  'photos/9209161',
+  'photos/29594086',
   'photos/10061763',
-  'photos/33915709',
+  'photos/6867937',
   '"w-28 shrink-0',
   'h-[62px]',
   'object-cover object-center',
@@ -274,7 +276,7 @@ forbidText('superapp/shell/build.mjs', [
   'apois-superapp-entregas-back-navigation',
 ], 'shell não registra segundo handler Android Voltar em Entregas');
 requireText('superapp/shell/capacitor.config.ts', [
-  "appId: 'br.com.apois.app'", "backgroundColor: '#FFFFFF'", 'overlaysWebView: false',
+  "appId: 'br.com.apois.app'", "backgroundColor: '#00000000'", 'overlaysWebView: false',
 ], 'Capacitor usa package unificado e fundo correto');
 requireText('codemagic.yaml', [
   'android-superapp-experimental:', 'APP_PACKAGE: "br.com.apois.app"',
