@@ -46,20 +46,29 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
 ],'Busca Corridas mantém sugestões visíveis e texto digitado legível sobre fundo branco');
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
-  'const serviceImage: Record<RideCategoryCode, string>',
-  'APOIS_CATEGORY_STUDIO_V1',
-  'vGHP86zk7D_small.jpg',
-  'kyjjmkQI3H.jpg',
-  'removalist_5ca69cd22a98b.jpg',
-  '0250-0020-EQ-OMBRE_2.PNG',
-  'Big_Boy_Velocity_150_Cargo_Update.png',
+  'APOIS_CATEGORY_STUDIO_V2',
+  'serviceSprite = "/assets/categories/apois-vehicles.webp"',
+  'carro: "0% 50%"',
+  'moto: "25% 50%"',
+  'fretes: "50% 50%"',
+  'guincho: "75% 50%"',
+  'envios: "100% 50%"',
   'PRICING_CONFIG.LABELS[cat.key]',
   'w-28 shrink-0',
   'h-[74px]',
-  'object-contain object-center',
-  'APOIS',
+  'backgroundSize: "500% 100%"',
+  'bg-no-repeat',
   'border-[#E51B23]',
-],'Categorias Corridas usam cinco fotos reais e cards compactos');
+],'Categorias Corridas usam cinco veículos locais distintos e sem fundo cinza embutido');
+requireFile('.work/corridas/public/assets/categories/apois-vehicles.webp');
+forbidMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
+  'images.pexels.com',
+  'pic.52112.com',
+  'fahrschule-arnold.info',
+  'findamover.com.au',
+  'jige-international.com',
+  'deliverybikeparts.co.za',
+],'Categorias Corridas não dependem de imagens externas/hotlink');
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'APOIS_NATIVE_MAP_FALLBACK_V3',
   '[isStatic, nativeApiKey, reloadKey]',
