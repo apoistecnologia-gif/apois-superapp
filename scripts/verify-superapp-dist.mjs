@@ -52,6 +52,7 @@ requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
 requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'APOIS_NATIVE_MAP_FALLBACK_V2',
   'APOIS_MAP_CAMERA_PADDING_V1',
+  '[isStatic, nativeApiKey, reloadKey]',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
