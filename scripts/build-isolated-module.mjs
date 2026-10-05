@@ -8,6 +8,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(resolve(root, '.apois/modules.json'), 'utf8'));
 const name = process.argv[2];
 
+const ENTREGAS_CANONICAL_REF = 'ptgkwyyolrdgnqketkjj';
+const ENTREGAS_CANONICAL_URL = `https://${ENTREGAS_CANONICAL_REF}.supabase.co`;
+const ENTREGAS_CANONICAL_PUBLISHABLE_KEY = 'sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY';
+
 if (!name || !manifest.modules[name]) {
   console.error(`Uso: node scripts/build-isolated-module.mjs <${Object.keys(manifest.modules).join('|')}>`);
   process.exit(1);
@@ -406,6 +410,21 @@ if (name === 'corridas') {
 }
 
 if (name === 'entregas') {
+  const requestedEntregasUrl = process.env.ENTREGAS_VITE_SUPABASE_URL?.trim().replace(/\/$/, '');
+  if (requestedEntregasUrl && requestedEntregasUrl !== ENTREGAS_CANONICAL_URL) {
+    console.error(`[FAIL] entregas: ENTREGAS_VITE_SUPABASE_URL deve apontar para ${ENTREGAS_CANONICAL_REF}; recebido ${requestedEntregasUrl}`);
+    process.exit(1);
+  }
+  const requestedEntregasKey = process.env.ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const entregasPublishableKey = requestedEntregasKey || ENTREGAS_CANONICAL_PUBLISHABLE_KEY;
+  if (!entregasPublishableKey.startsWith('sb_publishable_')) {
+    console.error('[FAIL] entregas: publishable key do projeto canônico é inválida');
+    process.exit(1);
+  }
+  env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL;
+  env.VITE_SUPABASE_PUBLISHABLE_KEY = entregasPublishableKey;
+  console.log(`[OK] entregas: Supabase canônico aplicado ao bundle (${ENTREGAS_CANONICAL_REF})`);
+
   env.VITE_APOIS_SUPERAPP_PUSH_ENABLED = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim()
     ? '1'
     : '0';
