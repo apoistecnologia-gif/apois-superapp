@@ -118,8 +118,8 @@ function replaceRequired(source, search, replacement, label) {
   }
 
   const referenceHome = `  return (
-    <div data-apois-reference-home-v2 className="apois-kit-home relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#EEF1F4] text-[#111111]">
-      <div className="absolute inset-0 z-0 bg-[#EEF1F4]">
+    <div data-apois-reference-home-v2 className="apois-kit-home relative flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent text-[#111111]">
+      <div className="absolute inset-0 z-0 bg-transparent">
         <PassengerMap
           origin={location ? { lat: location.latitude, lng: location.longitude } : undefined}
           destination={destination ? { lat: destination.latitude, lng: destination.longitude } : undefined}
