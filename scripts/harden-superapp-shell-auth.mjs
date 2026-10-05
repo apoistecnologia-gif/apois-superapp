@@ -9,15 +9,18 @@ const alreadyHardened = html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && h
 if (alreadyHardened) {
   for (const marker of [
     "params.getAll('code')",
-    'codes.length!==1',
-    "params.has('access_token')",
-    "params.has('refresh_token')",
+    "const providerError=params.get('error_description')||params.get('error')",
+    'const hasSingleCode=codes.length===1&&Boolean(codes[0]?.trim())',
+    "(!hasSingleCode&&!providerError)||params.has('access_token')||params.has('refresh_token')",
     'JSON.stringify({url:rawUrl,createdAt:Date.now()})',
     'clearExpiredCorridasGoogle()',
     'window.setTimeout(()=>{try{if(localStorage.getItem(CORRIDAS_GOOGLE_KEY)===envelope)',
-    'hasPendingCorridas()&&storeCorridasGoogle()',
-    'hasPendingEntregas()&&storeEntregasGoogle()',
+    'if(hasPendingCorridas())',
+    'const stored=storeCorridasGoogle();',
+    'if(hasPendingEntregas())',
+    'const stored=storeEntregasGoogle();',
     "ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url'",
+    "window.location.replace('./modules/corridas/index.html#/login')",
     "window.location.replace('./modules/entregas/index.html#/login')",
     "if(path==='corridas-reset')",
     'sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl)',
@@ -91,13 +94,19 @@ writeFileSync(path, html, 'utf8');
 }
 
 if (alreadyHardened) {
-  if (!html.includes('hasPendingCorridas()&&storeCorridasGoogle()')) {
-    throw new Error('[FAIL] shell cliente: callback PKCE endurecido não diferencia Corridas');
+  for (const marker of [
+    'if(hasPendingCorridas())',
+    'const stored=storeCorridasGoogle();',
+    'if(hasPendingEntregas())',
+    'const stored=storeEntregasGoogle();',
+    'const CORRIDAS_GOOGLE_KEY=',
+    'const ENTREGAS_GOOGLE_KEY=',
+  ]) {
+    if (!html.includes(marker)) {
+      throw new Error(`[FAIL] shell cliente: callback OAuth atual perdeu marcador (${marker})`);
+    }
   }
-  if (!html.includes('const CORRIDAS_GOOGLE_KEY=')) {
-    throw new Error('[FAIL] shell cliente: chave persistente do handoff Google Corridas ausente');
-  }
-  console.log('[OK] shell cliente usa handoff PKCE endurecido para diferenciar Corridas no callback compartilhado');
+  console.log('[OK] shell cliente usa handoff OAuth atual para diferenciar Corridas e Entregas no callback compartilhado');
 } else {
   if (!html.includes("path==='corridas-google'")) throw new Error('[FAIL] shell cliente: callback Google Corridas ausente');
   if (!html.includes("pendingProduct==='corridas'")) throw new Error('[FAIL] shell cliente: callback compartilhado não diferencia Corridas');
