@@ -79,14 +79,14 @@ export const CategorySelector: React.FC = () => {
   const { estimates, status: pricingStatus } = usePricing();
 
   if (categoriesLoading) {
-    return <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">{[1,2,3].map((i)=><div key={i} className="h-40 w-36 shrink-0 animate-pulse rounded-[22px] bg-[#F1F2F4]" />)}</div>;
+    return <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">{[1,2,3].map((i)=><div key={i} className="h-28 w-28 shrink-0 animate-pulse rounded-[18px] bg-[#F1F2F4]" />)}</div>;
   }
   if (categories.length === 0) {
     return <div className="rounded-2xl bg-[#F7F7F8] px-4 py-5 text-center text-sm text-[#666B73]">Não há categorias disponíveis para esta rota no momento.</div>;
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide scroll-smooth">
+    <div className="flex gap-2.5 overflow-x-auto pb-1.5 scrollbar-hide scroll-smooth">
       {categories.map((cat) => {
         const isSelected = selectedCategory?.id === cat.id;
         const estimate = estimates.find((e) => e.categoryId === cat.id);
@@ -99,20 +99,20 @@ export const CategorySelector: React.FC = () => {
             onClick={() => isAvailable && selectCategory(cat)}
             disabled={!isAvailable}
             className={cn(
-              "w-36 shrink-0 overflow-hidden rounded-[22px] border bg-white p-2.5 text-left shadow-[0_8px_24px_rgba(17,17,17,.06)] transition active:scale-[.98]",
+              "w-28 shrink-0 overflow-hidden rounded-[18px] border bg-white p-2 text-left shadow-[0_8px_24px_rgba(17,17,17,.06)] transition active:scale-[.98]",
               isSelected ? "border-[#E51B23] ring-1 ring-[#E51B23]" : "border-[#E2E4E8]",
               !isAvailable && "opacity-50 grayscale"
             )}
           >
-            <div className="h-[86px] overflow-hidden rounded-[16px] bg-[#F7F7F8]">
+            <div className="h-[62px] overflow-hidden rounded-[14px] bg-[#F7F7F8]">
               <img src={serviceImage[cat.key] ?? carImage} alt={label} className="h-full w-full object-contain" />
             </div>
-            <div className="px-1 pb-1 pt-2">
-              <div className="truncate text-[14px] font-extrabold text-[#111111]">{label}</div>
-              <div className={cn("mt-0.5 text-[14px] font-black", isSelected ? "text-[#E51B23]" : "text-[#242424]")}>
+            <div className="px-0.5 pb-0.5 pt-1.5">
+              <div className="truncate text-[13px] font-extrabold text-[#111111]">{label}</div>
+              <div className={cn("mt-0.5 text-[12px] font-black", isSelected ? "text-[#E51B23]" : "text-[#242424]")}>
                 {!isAvailable ? "Indisponível" : pricingStatus === "loading" ? "Calculando..." : estimate ? PRICING_CONFIG.CURRENCY_FORMAT.format(estimate.estimatedPrice) : "..."}
               </div>
-              {estimate?.estimatedPickupMinutes != null ? <div className="mt-0.5 text-xs font-medium text-[#666B73]">{estimate.estimatedPickupMinutes} min</div> : null}
+              {estimate?.estimatedPickupMinutes != null ? <div className="mt-0.5 text-[10px] font-medium text-[#666B73]">{estimate.estimatedPickupMinutes} min</div> : null}
             </div>
           </button>
         );
