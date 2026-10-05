@@ -36,12 +36,20 @@ if (!xml.includes('android:scheme="br.com.apois.app"')) {
 }
 
 const mapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
-if (mapsKey && !xml.includes('com.google.android.geo.API_KEY')) {
-  xml = xml.replace(
-    '</application>',
-    `        <meta-data android:name="com.google.android.geo.API_KEY" android:value="${mapsKey.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}" />\n    </application>`,
-  );
-} else if (!xml.includes('com.google.android.geo.API_KEY')) {
+const mapsMetaPattern = /<meta-data\s+android:name=["']com\.google\.android\.geo\.API_KEY["']\s+android:value=["'][^"']*["']\s*\/>/;
+if (mapsKey) {
+  const escapedMapsKey = mapsKey.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
+  const mapsMeta = `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${escapedMapsKey}" />`;
+  if (mapsMetaPattern.test(xml)) {
+    xml = xml.replace(mapsMetaPattern, mapsMeta);
+  } else {
+    xml = xml.replace('</application>', `        ${mapsMeta}\n    </application>`);
+  }
+  if (!xml.includes(escapedMapsKey)) {
+    throw new Error('Google Maps Android key não foi materializada no AndroidManifest.');
+  }
+  console.log('[OK] Google Maps Android key materializada no AndroidManifest.');
+} else if (!mapsMetaPattern.test(xml)) {
   // Google Maps SDK aborts the process when its metadata is absent. Keep the
   // debug/local shell launchable without inventing a credential; the runtime
   // will surface the Maps configuration state instead of crashing startup.
