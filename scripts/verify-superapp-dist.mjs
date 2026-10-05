@@ -40,7 +40,9 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
   'apois-kit-search-screen',
   'suggestions.map',
   'whitespace-normal break-words',
-  'text-[#111111] caret-[#E51B23] placeholder:text-[#9AA0A8]',
+  'text-[#111111]',
+  'caret-[#E51B23]',
+  'placeholder:text-[#9AA0A8]',
 ],'Busca Corridas mantém sugestões visíveis e texto digitado legível sobre fundo branco');
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
