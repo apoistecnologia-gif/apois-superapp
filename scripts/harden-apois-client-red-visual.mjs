@@ -61,13 +61,14 @@ import { PRICING_CONFIG } from "@/services/pricing/pricing-config";
 import { cn } from "@/lib/utils";
 import { RideCategoryCode } from "@/types/pricing";
 
-// Fotografias reais (Pexels, licença gratuita) para evitar aparência de desenho.
+// APOIS_CATEGORY_STUDIO_V1
+// Veículos reais, cada categoria com imagem própria e fundo branco/estúdio.
 const serviceImage: Record<RideCategoryCode, string> = {
-  carro: "https://images.pexels.com/photos/7771058/pexels-photo-7771058.jpeg?auto=compress&cs=tinysrgb&w=480",
-  moto: "https://images.pexels.com/photos/9209161/pexels-photo-9209161.jpeg?auto=compress&cs=tinysrgb&w=480",
-  fretes: "https://images.pexels.com/photos/29594086/pexels-photo-29594086.jpeg?auto=compress&cs=tinysrgb&w=480",
-  guincho: "https://images.pexels.com/photos/28447796/pexels-photo-28447796.jpeg?auto=compress&cs=tinysrgb&w=480",
-  envios: "https://images.pexels.com/photos/6867937/pexels-photo-6867937.jpeg?auto=compress&cs=tinysrgb&w=480",
+  carro: "https://pic.52112.com/180806/JPG-180806_120/vGHP86zk7D_small.jpg",
+  moto: "https://www.fahrschule-arnold.info/upload/large/02-zweirad-fuehrerschein_large_kyjjmkQI3H.jpg",
+  fretes: "https://www.findamover.com.au/uploads/providerimages/removalist_5ca69cd22a98b.jpg",
+  guincho: "https://www.jige-international.com/medias/articles/0250-0020-EQ/hd/0250-0020-EQ-OMBRE_2.PNG",
+  envios: "https://www.deliverybikeparts.co.za/cdn/shop/collections/Big_Boy_Velocity_150_Cargo_Update.png?v=1754112866&width=535",
 };
 
 export const CategorySelector: React.FC = () => {
@@ -100,8 +101,17 @@ export const CategorySelector: React.FC = () => {
               !isAvailable && "opacity-50 grayscale"
             )}
           >
-            <div className="h-[62px] overflow-hidden rounded-[14px] bg-[#F7F7F8]">
-              <img src={serviceImage[cat.key] ?? serviceImage.carro} alt={label} className="h-full w-full object-cover object-center" />
+            <div className="relative h-[74px] overflow-hidden rounded-[16px] border border-[#ECEDEF] bg-white shadow-[inset_0_-10px_24px_rgba(17,17,17,.035)]">
+              <div className="absolute inset-x-2 bottom-1 h-4 rounded-full bg-black/5 blur-md" aria-hidden="true" />
+              <img
+                src={serviceImage[cat.key] ?? serviceImage.carro}
+                alt={label}
+                loading="eager"
+                className="relative z-[1] h-full w-full object-contain object-center p-1.5 drop-shadow-[0_8px_7px_rgba(17,17,17,.14)]"
+              />
+              <span className="absolute bottom-1.5 right-1.5 z-[2] rounded-full bg-[#E51B23] px-1.5 py-0.5 text-[7px] font-black tracking-[.12em] text-white shadow-sm">
+                APOIS
+              </span>
             </div>
             <div className="px-0.5 pb-0.5 pt-1.5">
               <div className="truncate text-[13px] font-extrabold text-[#111111]">{label}</div>
