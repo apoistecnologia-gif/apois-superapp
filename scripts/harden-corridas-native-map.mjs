@@ -104,8 +104,29 @@ source = source
 if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   source = source.replace(
     'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";',
-    'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";\nimport { Capacitor } from "@capacitor/core";\nimport { mapService } from "@/services/maps/map-service";\nimport { PolylineDecoder } from "@/services/routes/polyline-decoder";',
+    'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";\nimport { Capacitor } from "@capacitor/core";\nimport { mapService } from "@/services/maps/map-service";',
   );
+
+  const polylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
+  const polylineImportCount = source.split(polylineImport).length - 1;
+  if (polylineImportCount === 0) {
+    source = source.replace(
+      'import { googleMapsLoader } from "@/services/google/google-maps-loader";',
+      'import { googleMapsLoader } from "@/services/google/google-maps-loader";\n' + polylineImport,
+    );
+  } else if (polylineImportCount > 1) {
+    let kept = false;
+    source = source.split('\n').filter((line) => {
+      if (line !== polylineImport) return true;
+      if (kept) return false;
+      kept = true;
+      return true;
+    }).join('\n');
+  }
+  if ((source.split(polylineImport).length - 1) !== 1) {
+    throw new Error('[FAIL] Native map: PolylineDecoder import deve existir exatamente uma vez');
+  }
+  // POLYLINE_IMPORT_DEDUP_V1
 
   source = source.replace(
     'const PassengerMap: React.FC<PassengerMapProps> = ({\n  origin: customOrigin,\n  destination: customDestination,\n  driverLocation,',
@@ -120,10 +141,34 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V2',
   );
 
-  source = source.replace(
-    '  const validDriverLocation = useMemo<Coordinate | null>(() => {',
-    "  const displayRoutePoints = useMemo(() => {\n    if (encodedPolyline) {\n      try {\n        return PolylineDecoder.decode(encodedPolyline).map((point) => ({ lat: point.lat, lng: point.lng }));\n      } catch {}\n    }\n    if (route?.decodedPoints?.length && route.decodedPoints.length > 1) {\n      return route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));\n    }\n    return [];\n  }, [encodedPolyline, route?.decodedPoints]);\n\n  const validDriverLocation = useMemo<Coordinate | null>(() => {",
-  );
+  const legacyDisplayedRoutePoints = `  const displayedRoutePoints = useMemo(() => {
+    if (route?.decodedPoints && route.decodedPoints.length > 1) return route.decodedPoints;
+    if (!encodedPolyline) return [];
+    try {
+      return PolylineDecoder.decode(encodedPolyline);
+    } catch (error) {
+      console.warn("[PassengerMap] Polyline persistida inválida", error);
+      return [];
+    }
+  }, [encodedPolyline, route?.decodedPoints]);`;
+  const preferredDisplayedRoutePoints = `  const displayedRoutePoints = useMemo(() => {
+    if (encodedPolyline) {
+      try {
+        return PolylineDecoder.decode(encodedPolyline);
+      } catch (error) {
+        console.warn("[PassengerMap] Polyline persistida inválida", error);
+      }
+    }
+    if (route?.decodedPoints && route.decodedPoints.length > 1) return route.decodedPoints;
+    return [];
+  }, [encodedPolyline, route?.decodedPoints]);`;
+  if (source.includes(legacyDisplayedRoutePoints)) {
+    source = source.replace(legacyDisplayedRoutePoints, preferredDisplayedRoutePoints);
+  }
+  if (!source.includes(preferredDisplayedRoutePoints)) {
+    throw new Error('[FAIL] Native map: displayedRoutePoints não foi materializado pelo adaptador');
+  }
+  // APOIS_ROUTE_POINTS_PRECEDENCE_V1
 
   source = source.replace(
     '  const initializeMap = useCallback(async (): Promise<void> => {\n    console.log("[PassengerMap] Initializing map...", { reloadKey, hasElement: !!mapElementRef.current });\n    if (!mapElementRef.current) return;\n    setStatus("loading");',
@@ -178,7 +223,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
       if (validDriverLocation) await mapService.upsertDriverMarker(mapId, validDriverLocation);
       else await mapService.removeDriverMarker(mapId);
 
-      const points = displayRoutePoints;
+      const points = displayedRoutePoints;
       if (points.length > 1) {
         await mapService.upsertRoutePolyline(mapId, points);
         await mapService.fitRouteBounds(mapId, points);
@@ -189,7 +234,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
         else if (validDriverLocation) await mapService.setCamera(mapId, { coordinate: validDriverLocation, zoom: 16 });
       }
     })().catch((error) => console.error("[PassengerMap] Native marker/route sync failed", error));
-  }, [destination, displayRoutePoints, origin, status, validDriverLocation]);
+  }, [destination, displayedRoutePoints, origin, status, validDriverLocation]);
 
 `;
 
@@ -206,7 +251,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   source = source
     .replaceAll(
       'if (route?.decodedPoints && route.decodedPoints.length > 1) {\n      const path = route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));',
-      'if (displayRoutePoints.length > 1) {\n      const path = displayRoutePoints;',
+      'if (displayedRoutePoints.length > 1) {\n      const path = displayedRoutePoints;',
     )
     .replace(
       '}, [destination, orderedStops, origin, route?.decodedPoints, status]);',
@@ -237,8 +282,9 @@ for (const marker of [
   'mapService.upsertDestinationMarker',
   'mapService.upsertDriverMarker',
   'PolylineDecoder',
-  'displayRoutePoints',
-  'if (encodedPolyline) {',
+  'POLYLINE_IMPORT_DEDUP_V1',
+  'displayedRoutePoints',
+  'APOIS_ROUTE_POINTS_PRECEDENCE_V1',
   'bottom: 240',
   'encodedPolyline,\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
