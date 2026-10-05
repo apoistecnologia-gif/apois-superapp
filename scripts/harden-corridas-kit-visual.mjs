@@ -149,46 +149,33 @@ function replaceRequired(source, search, replacement, label) {
         </div>
       </header>
 
-      <button
-        type="button"
-        onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })}
-        className="relative z-30 mx-4 mt-4 flex min-h-[76px] items-center gap-4 rounded-[24px] border border-[#E2E4E8] bg-white/95 px-4 text-left shadow-[0_14px_34px_rgba(17,17,17,.13)] backdrop-blur-md active:scale-[.99]"
-      >
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#FFF1F2] text-[#E51B23]"><MapPin size={27} fill="currentColor" /></div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[20px] font-black leading-tight text-[#111111]">Para onde vamos?</div>
-          <div className="mt-1 truncate text-sm font-medium text-[#666B73]">{destination?.label || destination?.formattedAddress || "Digite seu destino"}</div>
-        </div>
-        <ChevronRight className="shrink-0 text-[#666B73]" size={25} />
-      </button>
-
-      <div className="absolute right-4 top-[43%] z-30 flex flex-col gap-3">
+      <div className="absolute right-4 top-[38%] z-30 flex flex-col gap-3">
         {locationError ? <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-extrabold text-[#E51B23] shadow-md">GPS</div> : null}
         <button type="button" onClick={() => refreshLocation()} disabled={isLocating} className="grid h-12 w-12 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,.15)] active:scale-90 disabled:opacity-50" aria-label="Centralizar minha localização">
           <Navigation className={cn("h-5 w-5", isLocating && "animate-pulse")} />
         </button>
       </div>
 
-      <section className="apois-kit-home-panel relative z-40 mt-auto max-h-[50dvh] overflow-y-auto overscroll-contain rounded-t-[32px] border-t border-[#E2E4E8] bg-white px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_44px_rgba(17,17,17,.14)]">
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-[#C9CDD3]" />
+      <section className="apois-kit-home-panel relative z-40 mt-auto max-h-[38dvh] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-[#E2E4E8] bg-white px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-16px_44px_rgba(17,17,17,.14)]">
+        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[#C9CDD3]" />
 
-        <div className="rounded-[22px] border border-[#E2E4E8] bg-white px-4">
-          <button type="button" onClick={() => refreshLocation()} className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#ECEEF1] text-left">
-            <span className="relative grid h-9 w-9 place-items-center"><span className="h-4 w-4 rounded-full border-[5px] border-[#2563EB] bg-white" /></span>
-            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Local de partida</span><span className="block truncate text-[16px] font-extrabold text-[#111111]">{currentAddressText}</span></span>
-            <ChevronRight size={22} className="text-[#777D85]" />
+        <div className="rounded-[20px] border border-[#E2E4E8] bg-white px-3">
+          <button type="button" onClick={() => refreshLocation()} className="flex min-h-[54px] w-full items-center gap-3 border-b border-[#ECEEF1] text-left">
+            <span className="relative grid h-8 w-8 place-items-center"><span className="h-3.5 w-3.5 rounded-full border-[4px] border-[#2563EB] bg-white" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Local de partida</span><span className="block truncate text-[15px] font-extrabold text-[#111111]">{currentAddressText}</span></span>
+            <ChevronRight size={20} className="text-[#777D85]" />
           </button>
-          <button type="button" onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })} className="flex min-h-[68px] w-full items-center gap-3 text-left">
-            <span className="grid h-9 w-9 place-items-center text-[#E51B23]"><MapPin size={29} fill="currentColor" /></span>
-            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Destino</span><span className="block truncate text-[16px] font-extrabold text-[#111111]">{destination?.label || destination?.formattedAddress || "Digite seu destino"}</span></span>
-            <ChevronRight size={22} className="text-[#777D85]" />
+          <button type="button" onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })} className="flex min-h-[54px] w-full items-center gap-3 text-left">
+            <span className="grid h-8 w-8 place-items-center text-[#E51B23]"><MapPin size={24} fill="currentColor" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Destino</span><span className="block truncate text-[15px] font-extrabold text-[#111111]">{destination?.label || destination?.formattedAddress || "Digite seu destino"}</span></span>
+            <ChevronRight size={20} className="text-[#777D85]" />
           </button>
         </div>
 
-        <div className="mt-4"><CategorySelector /></div>
+        <div className="mt-2.5"><CategorySelector /></div>
 
         {(hasDestination || route) ? (
-          <div className="mt-4 space-y-4">
+          <div className="mt-3 space-y-3">
             {routeError ? <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"><AlertCircle size={17} />{routeError}</div> : null}
             <RideStopsInput />
             {selectedCategory && ["fretes", "guincho", "envios"].includes(selectedCategory.code) ? (
@@ -206,14 +193,14 @@ function replaceRequired(source, search, replacement, label) {
           onClick={handleReview}
           disabled={!checkout.readiness || !!routeError}
           className={cn(
-            "mt-4 flex min-h-[58px] w-full items-center justify-center gap-2 rounded-[20px] text-[18px] font-black shadow-[0_12px_30px_rgba(229,27,35,.24)] transition active:scale-[.99]",
+            "mt-3 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[18px] text-[16px] font-black shadow-[0_12px_30px_rgba(229,27,35,.24)] transition active:scale-[.99]",
             checkout.readiness && !routeError ? "bg-[#E51B23] text-white" : "bg-[#E6E8EB] text-[#9AA0A8]"
           )}
         >
           Solicitar corrida <ChevronRight size={23} strokeWidth={3} />
         </button>
 
-        <div className="mt-4"><HomeWorkShortcuts /></div>
+        <div className="mt-3"><HomeWorkShortcuts /></div>
       </section>
 
       <ServiceDetailsForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
@@ -225,7 +212,7 @@ function replaceRequired(source, search, replacement, label) {
   if (!source.includes('data-apois-reference-home-v2')) throw new Error('[FAIL] Corridas visual V2 não entrou na Home');
   console.log('[OK] Corridas: Home operacional alinhada ao mock aprovado sem alterar lógica de corrida');
 
-  for (const marker of ['PassengerMap', 'data-apois-reference-home-v2', 'apois-kit-home', 'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Digite seu destino', '<CategorySelector />', 'Solicitar corrida']) {
+  for (const marker of ['PassengerMap', 'data-apois-reference-home-v2', 'apois-kit-home', 'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Local de partida', 'Destino', '<CategorySelector />', 'Solicitar corrida']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Home incompleta (${marker})`);
   }
   if (source.includes('🌙') || source.includes('👋')) throw new Error('[FAIL] Corridas visual: emojis decorativos permaneceram na Home');
