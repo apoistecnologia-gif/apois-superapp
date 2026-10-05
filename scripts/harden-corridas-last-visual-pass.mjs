@@ -11,5 +11,7 @@ source = source.replaceAll('focus-visible:ring-yellow-500', 'focus-visible:ring-
 source = source.replaceAll('hover:bg-[#1a1a1a]', 'hover:bg-[#FFF7F7]');
 source = source.replaceAll('text-gray-700', 'text-[#8A9098]');
 source = source.replaceAll('text-gray-500', 'text-[#666B73]');
+source = source.replaceAll('rounded-2xl bg-white p-4 text-left transition-colors', 'rounded-2xl border border-[#E2E4E8] bg-white p-4 text-left shadow-sm transition-colors');
+source = source.replaceAll('rounded-2xl bg-white p-4 text-left', 'rounded-2xl border border-[#E2E4E8] bg-white p-4 text-left shadow-sm');
 writeFileSync(target, source, 'utf8');
 console.log('[OK] Corridas: acabamento vermelho/branco do Perfil aplicado no fim do pipeline.');
