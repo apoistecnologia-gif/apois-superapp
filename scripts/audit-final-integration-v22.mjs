@@ -107,9 +107,11 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
 requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
   "'<div class=\"visual\">'",
-  "'<svg viewBox=\"0 0 320 210\"'",
+  "'class=\"vehicle-photo\"'",
+  "'alt=\"Carro APOIS\"'",
+  "'alt=\"Moto de entregas APOIS\"'",
   '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
-], 'copy e ilustrações oficiais são validadas antes do mobile hardening');
+], 'copy e veículos reais adesivados APOIS são validados antes do mobile hardening');
 
 requireAll('scripts/harden-entregas-superapp-customer-ux.mjs', [
   "import './harden-entregas-superapp-brand-theme.mjs';",
