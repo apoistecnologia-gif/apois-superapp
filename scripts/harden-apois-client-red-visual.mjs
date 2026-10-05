@@ -114,7 +114,7 @@ export const CategorySelector: React.FC = () => {
                 aria-label={label}
                 className="h-full w-full bg-no-repeat drop-shadow-[0_7px_8px_rgba(17,17,17,.16)]"
                 style={{
-                  backgroundImage: `url(${serviceSprite})`,
+                  backgroundImage: "url(" + serviceSprite + ")",
                   backgroundSize: "500% 100%",
                   backgroundPosition: serviceSpritePosition[cat.key] ?? serviceSpritePosition.carro,
                 }}
