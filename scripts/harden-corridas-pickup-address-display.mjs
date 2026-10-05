@@ -70,7 +70,7 @@ const newBlock = `      const { data: reverse, error: reverseError } = await sup
       const routeName = typeof routeComponent?.long_name === "string" ? routeComponent.long_name.trim() : "";
       const number = typeof numberComponent?.long_name === "string" ? numberComponent.long_name.trim() : "";
       const exactShortLabel = routeName
-        ? `${routeName}${number ? `, ${number}` : ""}`
+        ? routeName + (number ? ", " + number : "")
         : exactAddress.split(",")[0]?.trim() || exactAddress;
 
       if (import.meta.env.DEV) {
