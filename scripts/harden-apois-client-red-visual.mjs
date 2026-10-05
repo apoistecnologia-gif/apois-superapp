@@ -60,18 +60,14 @@ import { usePricing } from "@/hooks/use-pricing";
 import { PRICING_CONFIG } from "@/services/pricing/pricing-config";
 import { cn } from "@/lib/utils";
 import { RideCategoryCode } from "@/types/pricing";
-import carImage from "@/assets/services/car.svg";
-import motoImage from "@/assets/services/moto.svg";
-import freightImage from "@/assets/services/freight.svg";
-import towImage from "@/assets/services/tow.svg";
-import deliveryImage from "@/assets/services/delivery.svg";
 
+// Fotografias reais (Pexels, licença gratuita) para evitar aparência de desenho.
 const serviceImage: Record<RideCategoryCode, string> = {
-  carro: carImage,
-  moto: motoImage,
-  fretes: freightImage,
-  guincho: towImage,
-  envios: deliveryImage,
+  carro: "https://images.pexels.com/photos/31943401/pexels-photo-31943401.jpeg?auto=compress&cs=tinysrgb&w=480",
+  moto: "https://images.pexels.com/photos/12036802/pexels-photo-12036802.jpeg?auto=compress&cs=tinysrgb&w=480",
+  fretes: "https://images.pexels.com/photos/31049388/pexels-photo-31049388.jpeg?auto=compress&cs=tinysrgb&w=480",
+  guincho: "https://images.pexels.com/photos/10061763/pexels-photo-10061763.jpeg?auto=compress&cs=tinysrgb&w=480",
+  envios: "https://images.pexels.com/photos/33915709/pexels-photo-33915709.jpeg?auto=compress&cs=tinysrgb&w=480",
 };
 
 export const CategorySelector: React.FC = () => {
@@ -105,7 +101,7 @@ export const CategorySelector: React.FC = () => {
             )}
           >
             <div className="h-[62px] overflow-hidden rounded-[14px] bg-[#F7F7F8]">
-              <img src={serviceImage[cat.key] ?? carImage} alt={label} className="h-full w-full object-contain" />
+              <img src={serviceImage[cat.key] ?? serviceImage.carro} alt={label} className="h-full w-full object-cover object-center" />
             </div>
             <div className="px-0.5 pb-0.5 pt-1.5">
               <div className="truncate text-[13px] font-extrabold text-[#111111]">{label}</div>
