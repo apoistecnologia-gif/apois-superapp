@@ -190,7 +190,7 @@ requireText('scripts/harden-apois-client-red-visual.mjs', [
   'photos/7771058',
   'photos/9209161',
   'photos/29594086',
-  'photos/10061763',
+  'photos/28447796',
   'photos/6867937',
   '"w-28 shrink-0',
   'h-[62px]',
