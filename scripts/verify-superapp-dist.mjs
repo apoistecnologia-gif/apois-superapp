@@ -76,9 +76,22 @@ if ((passengerMapSource.split(polylineImport).length - 1) !== 1) {
   fail('PassengerMap não pode duplicar PolylineDecoder');
 } else ok('PassengerMap contém exatamente um import de PolylineDecoder');
 
-requireMarkers('.work/corridas/src/services/maps/map-service.ts',['styles: []','strokeColor: "#E51B23"','upsertDriverMarker(','removeDriverMarker('],'Mapa nativo do passageiro usa estilo claro, rota vermelha e marcador do motorista');
+requireMarkers('.work/corridas/src/services/maps/map-service.ts',['APOIS_MAP_STYLE_LIGHT_NATIVE','styles: APOIS_MAP_STYLE_LIGHT_NATIVE','strokeColor: "#E51B23"','iconUrl: "assets/markers/apois-location.svg"','upsertDriverMarker(','removeDriverMarker('],'Mapa nativo do passageiro usa estilo claro APOIS, rota vermelha e marcador do passageiro/motorista');
 requireMarkers('.work/corridas/src/services/routes/route-config.ts',['TOP: 72','RIGHT: 28','BOTTOM: 220','LEFT: 28'],'Câmera da rota preserva mais área útil do mapa com painel compacto');
 forbidMarkers('.work/corridas/src/services/maps/map-service.ts',['assets/markers/pickup.png','assets/markers/destination.png'],'Mapa nativo não depende de marker PNG inexistente');
+requireMarkers('.work/corridas/src/hooks/use-location.tsx',[
+  'APOIS_PRECISE_LOCATION_V1',
+  'permissions: ["location", "coarseLocation"]',
+  'enableHighAccuracy: true',
+  'maximumAge: 0',
+  'Geolocation.watchPosition(',
+],'localização Corridas solicita permissão precisa e acompanha GPS em alta precisão');
+requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
+  'APOIS_MAP_STYLE_LIGHT_JS',
+  'label: { text: "A"',
+  'strokeColor: "#E51B23"',
+],'Mapa JS usa identidade clara APOIS, marcador A e rota vermelha');
+
 
 requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
 requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
