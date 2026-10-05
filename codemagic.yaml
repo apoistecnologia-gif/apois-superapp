@@ -82,6 +82,12 @@ workflows:
           test -s superapp/shell/dist/modules/corridas/index.html
           test -s superapp/shell/dist/modules/entregas/index.html
           test ! -e superapp/shell/dist/modules/motorista
+          grep -Fq 'data:image/png;base64,' superapp/shell/dist/index.html
+          grep -R -Fq 'ptgkwyyolrdgnqketkjj.supabase.co' superapp/shell/dist/modules/entregas
+          if grep -R -Fq 'sbvhdgyuuperszlsllji.supabase.co' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] bundle Entregas ainda contém o Supabase aposentado'
+            exit 1
+          fi
           grep -R -Fq 'public-ride-tracker' superapp/shell/dist/modules/corridas
           if grep -R -Fq 'create-merchant-mercadopago-pix' superapp/shell/dist/modules/entregas; then
             echo '[FAIL] bundle Entregas reintroduziu create-merchant-mercadopago-pix aposentado'
