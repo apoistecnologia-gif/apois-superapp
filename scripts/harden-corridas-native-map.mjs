@@ -69,6 +69,14 @@ if (!mapServiceSource.includes('this.destinationMarkerId.delete(mapId);\n      t
   );
 }
 
+mapServiceSource = mapServiceSource
+  .replace('        iconUrl: "assets/markers/pickup.png",\n', '')
+  .replace('        iconUrl: "assets/markers/destination.png",\n', '');
+if (mapServiceSource.includes('assets/markers/')) {
+  throw new Error('[FAIL] Native map: referências a marker PNG inexistente permaneceram');
+}
+// missing marker PNGs removed
+
 writeFileSync(mapServicePath, mapServiceSource, 'utf8');
 mapServiceSource = readFileSync(mapServicePath, 'utf8');
 
@@ -212,6 +220,7 @@ for (const marker of [
   'mapService.upsertPickupMarker',
   'mapService.upsertDestinationMarker',
   'mapService.upsertDriverMarker',
+  'missing marker PNGs removed',
   'PolylineDecoder',
   'displayRoutePoints',
   'encodedPolyline,\n  driverLocation,',
