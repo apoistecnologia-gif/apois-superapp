@@ -201,17 +201,20 @@ requireText('scripts/build-isolated-module.mjs', [
 
 
 requireText('scripts/harden-apois-client-red-visual.mjs', [
-  'APOIS_CATEGORY_STUDIO_V1',
-  'vGHP86zk7D_small.jpg',
-  'kyjjmkQI3H.jpg',
-  'removalist_5ca69cd22a98b.jpg',
-  '0250-0020-EQ-OMBRE_2.PNG',
-  'Big_Boy_Velocity_150_Cargo_Update.png',
+  'APOIS_CATEGORY_STUDIO_V2',
+  'superapp/branding/categories/apois-vehicles.webp',
+  'public/assets/categories/apois-vehicles.webp',
+  'serviceSprite = "/assets/categories/apois-vehicles.webp"',
+  'carro: "0% 50%"',
+  'moto: "25% 50%"',
+  'fretes: "50% 50%"',
+  'guincho: "75% 50%"',
+  'envios: "100% 50%"',
+  'backgroundSize: "500% 100%"',
   '"w-28 shrink-0',
   'h-[74px]',
-  'object-contain object-center',
-  'APOIS',
-], 'categorias Corridas usam fotos reais e cards compactos');
+  'bg-no-repeat',
+], 'categorias Corridas usam cinco veículos locais distintos, transparentes e sem hotlink');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
