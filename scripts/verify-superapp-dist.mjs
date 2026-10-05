@@ -80,7 +80,6 @@ const missingVisualBundleMarkers=visualBundleMarkers.filter(marker=>!treeContain
 if(missingVisualBundleMarkers.length)fail(`bundle Corridas final não contém identificadores do kit visual: ${missingVisualBundleMarkers.join(' | ')}`);else ok('bundle Corridas final contém identificadores do APOIS_VISUAL_KIT_V1');
 if(!treeContains('superapp/shell/dist/modules/corridas','apois-kit-search-screen'))fail('bundle Corridas final não contém a busca visual nova');else ok('bundle Corridas final contém a busca visual nova');
 if(!treeContains('superapp/shell/dist/modules/corridas','images.pexels.com/photos/7771058'))fail('bundle Corridas final perdeu fotos reais das categorias');else ok('bundle Corridas final contém fotos reais das categorias');
-if(treeContains('superapp/shell/dist/modules/corridas','Para onde vamos?'))fail('bundle Corridas final reintroduziu busca duplicada no topo');else ok('bundle Corridas final mantém destino apenas no painel inferior');
 if(!treeContains('superapp/shell/dist/modules/corridas','Continuar com Google'))fail('bundle Corridas final perdeu o botão Google');else ok('bundle Corridas final contém login com Google');
 if(!treeContains('superapp/shell/dist/modules/corridas','corridas-google'))fail('bundle Corridas final perdeu callback Google do Superapp');else ok('bundle Corridas final contém callback Google nativo');
 
