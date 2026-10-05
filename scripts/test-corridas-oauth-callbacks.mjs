@@ -58,7 +58,7 @@ async function finishDriver({ rawUrl, closeBrowser, exchange, profile }) {
 }
 
 const now = 2_000_000;
-const validPassenger = 'br.com.apois.app://auth/callback?code=valid-code';
+const validPassenger = 'br.com.apois.app://auth/corridas-google?code=valid-code';
 const storage = memoryStorage();
 
 assert.equal(validatePkceCallback(validPassenger, 'passenger'), true, 'callback válido');
@@ -126,7 +126,7 @@ const actualPassengerUri = new Function(
   'CALLBACK',
   'LEGACY_CALLBACK',
   `return (${executable(extractNamedFunction(passengerSource, 'isCorridasCallback'))});`,
-)('br.com.apois.app://auth/callback', 'br.com.apois.app://auth/corridas-google');
+)('br.com.apois.app://auth/corridas-google', 'br.com.apois.app://auth/callback');
 const actualDriverUri = new Function(
   `return (${executable(extractNamedFunction(driverSource, 'isDriverCallback'))});`,
 )();
@@ -178,8 +178,8 @@ assert.equal(actualConsumer(), validPassenger, 'consumer real aceita envelope v�
 assert.equal(actualConsumer(), null, 'consumer real impede replay');
 storage.setItem(PASSENGER_KEY, JSON.stringify({ url: validPassenger, createdAt: actualNow - TTL_MS - 1 }));
 assert.equal(actualConsumer(), null, 'consumer real rejeita e remove envelope expirado');
-const callbackA = 'br.com.apois.app://auth/callback?code=A';
-const callbackB = 'br.com.apois.app://auth/callback?code=B';
+const callbackA = 'br.com.apois.app://auth/corridas-google?code=A';
+const callbackB = 'br.com.apois.app://auth/corridas-google?code=B';
 storage.setItem(PASSENGER_KEY, JSON.stringify({ url: callbackA, createdAt: Date.now() }));
 storage.setItem(PASSENGER_KEY, JSON.stringify({ url: callbackB, createdAt: Date.now() }));
 assert.equal(actualConsumer(), callbackB, 'concorrência usa explicitamente o callback mais recente');
