@@ -55,10 +55,14 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
   'mapService.upsertDriverMarker',
+  'PolylineDecoder',
+  'displayRoutePoints',
+  'encodedPolyline,\\n  driverLocation,',
+  'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
 ],'PassengerMap usa Google Maps nativo no Android com fallback JS');
-requireMarkers('.work/corridas/src/services/maps/map-service.ts',['styles: []'],'Mapa nativo do passageiro usa estilo claro');
+requireMarkers('.work/corridas/src/services/maps/map-service.ts',['styles: []','strokeColor: "#E51B23"','upsertDriverMarker(','removeDriverMarker('],'Mapa nativo do passageiro usa estilo claro, rota vermelha e marcador do motorista');
 
 requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
 requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
