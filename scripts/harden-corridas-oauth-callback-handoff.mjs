@@ -109,7 +109,7 @@ if (source.includes(browserFinishedUnsafe)) source = source.replace(browserFinis
 if (source.includes(browserFinishedIntermediate)) source = source.replace(browserFinishedIntermediate, browserFinishedSafe);
 if (!source.includes(browserFinishedSafe)) throw new Error('[FAIL] OAuth Corridas: browserFinished seguro não foi materializado');
 
-for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);', 'handledUrlRef.current) return;', 'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl', 'providerError']) {
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);', 'handlingRef.current || handledUrlRef.current === rawUrl', 'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl', 'providerError']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] OAuth Corridas incompleto: ${marker}`);
 }
 writeFileSync(path, source, 'utf8');
