@@ -116,10 +116,10 @@ let loginSource = readFileSync(loginPath, 'utf8');
 // APOIS_CUSTOMER_LOGIN_LIGHT_V3
 // Corrige apenas a apresentação do login do Cliente no workspace descartável.
 // O fluxo handleLogin, reset, Google OAuth, cadastro e isolamento de sessão não é reimplementado.
-if (!loginSource.includes('import apoisClientBrand from "@/assets/apois-client-red-logo.png";')) {
+if (!loginSource.includes('import apoisClientBrand from "@/assets/apoisClientBrandData";')) {
   loginSource = loginSource.replace(
     'import logoAsset from "@/assets/logo.png.asset.json";',
-    'import logoAsset from "@/assets/logo.png.asset.json";\nimport apoisClientBrand from "@/assets/apois-client-red-logo.png";',
+    'import logoAsset from "@/assets/logo.png.asset.json";\nimport apoisClientBrand from "@/assets/apoisClientBrandData";',
   );
 }
 loginSource = loginSource
