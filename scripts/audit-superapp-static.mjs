@@ -201,20 +201,21 @@ requireText('scripts/build-isolated-module.mjs', [
 
 
 requireText('scripts/harden-apois-client-red-visual.mjs', [
-  'APOIS_CATEGORY_STUDIO_V2',
-  'superapp/branding/categories/apois-vehicles.webp',
-  'public/assets/categories/apois-vehicles.webp',
-  'serviceSprite = "/assets/categories/apois-vehicles.webp"',
-  'carro: "0% 50%"',
-  'moto: "25% 50%"',
-  'fretes: "50% 50%"',
-  'guincho: "75% 50%"',
-  'envios: "100% 50%"',
-  'backgroundSize: "500% 100%"',
-  '"w-28 shrink-0',
-  'h-[74px]',
-  'bg-no-repeat',
-], 'categorias Corridas usam cinco veículos locais distintos, transparentes e sem hotlink');
+  'APOIS_CATEGORY_STUDIO_V3',
+  'import carImage from "@/assets/services/car.svg"',
+  'import motoImage from "@/assets/services/moto.svg"',
+  'import freightImage from "@/assets/services/freight.svg"',
+  'import towImage from "@/assets/services/tow.svg"',
+  'import deliveryImage from "@/assets/services/delivery.svg"',
+  'carro: carImage',
+  'moto: motoImage',
+  'fretes: freightImage',
+  'guincho: towImage',
+  'envios: deliveryImage',
+  'const imageSrc = serviceImage[cat.key] ?? serviceImage.carro',
+  'object-contain',
+  'bg-transparent',
+], 'categorias Corridas usam cinco assets locais individuais, transparentes e sem sprite/hotlink');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
