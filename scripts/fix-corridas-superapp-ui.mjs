@@ -29,7 +29,7 @@ patch('.work/corridas/src/components/BottomNavigation.tsx', (source) => {
   let next = source;
   next = next.replace(
     'relative w-full bg-black border-t border-white/10 flex justify-around py-3 px-2 z-[100] pb-[calc(12px+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] shrink-0',
-    'relative z-[100] grid w-full shrink-0 grid-cols-5 border-t border-white/10 bg-black px-2 pt-2.5 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,0.55)]',
+    'relative z-[100] grid w-full shrink-0 grid-cols-5 border-t border-white/10 bg-black px-2 pt-2.5 pb-[max(44px,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,0.55)]',
   );
   next = next.replace(
     'className={`flex flex-col items-center gap-1 transition-all active:scale-90 ${',
@@ -66,7 +66,7 @@ patch('.work/corridas/src/routes/_authenticated.tsx', (source) => {
 
 requireMarkers(
   '.work/corridas/src/components/BottomNavigation.tsx',
-  ['grid-cols-5', 'min-h-[64px]', '<item.icon size={24}', 'Início', 'Corridas', 'Carteira', 'Notificações', 'Perfil'],
+  ['grid-cols-5', 'min-h-[64px]', 'pb-[max(44px,env(safe-area-inset-bottom))]', '<item.icon size={24}', 'Início', 'Corridas', 'Carteira', 'Notificações', 'Perfil'],
   'Corridas mantém cinco destinos oficiais no rodapé',
 );
 requireMarkers(
