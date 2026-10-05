@@ -87,7 +87,9 @@ requireText('scripts/build-isolated-module.mjs', [
   'harden-entregas-google-oauth-handoff.mjs',
   "apois:entregas-google-callback",
   "apois-superapp:entregas-google-url",
-], 'build isolado prepara, adapta e integra sessão/back button/OAuth sem editar submódulo');
+  "ENTREGAS_CANONICAL_REF = 'ptgkwyyolrdgnqketkjj'",
+  'env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL',
+], 'build isolado prepara, adapta e integra sessão/back button/OAuth e fixa Supabase Entregas sem editar submódulo');
 
 requireText('scripts/harden-corridas-auth-profile-resolution.mjs', [
   '.eq("auth_user_id", userId)',
@@ -107,7 +109,8 @@ requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
   'App.getLaunchUrl()',
   'br.com.apois.app://auth/callback',
   'br.com.apois.app://auth/corridas-google',
-], 'Google OAuth Corridas usa PKCE, callback determinístico, dedupe e cleanup/cancelamento');
+  'JSON.stringify({ product: \\"corridas\\", createdAt: Date.now() })',
+], 'Google OAuth Corridas usa PKCE, envelope de handoff, callback determinístico, dedupe e cleanup/cancelamento');
 
 requireText('scripts/harden-entregas-google-oauth-handoff.mjs', [
   'APOIS_GOOGLE_PENDING_KEY',
@@ -217,10 +220,10 @@ requireText('supabase/corridas-forward-migrations/20260905131500_harden_driver_w
 ], 'migration forward-only protege idempotência da taxa e ownership da carteira');
 
 requireText('scripts/verify-superapp-release-requirements.mjs', [
-  "APOIS_STRICT_NATIVE_CONFIG === '1'", 'tbbzkrfupmqdywnzgnms',
+  "APOIS_STRICT_NATIVE_CONFIG === '1'", 'tbbzkrfupmqdywnzgnms', 'ptgkwyyolrdgnqketkjj',
   'CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY',
   '20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql',
-], 'release estrito exige Supabase canônico atual, chaves Maps e migrations forward obrigatórias');
+], 'release estrito exige Supabase canônico de Corridas e Entregas, chaves Maps e migrations forward obrigatórias');
 requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
   'tbbzkrfupmqdywnzgnms', 'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
 ], 'gate Supabase valida projeto atual, preserva snapshot conhecido e rejeita projeto histórico no runtime/bundle');
@@ -234,7 +237,8 @@ requireText('scripts/install-superapp-launcher.mjs', [
 
 requireText('superapp/shell/build.mjs', [
   "resolve(root, '../branding/apois-client-red-logo.b64')", "resolve(dist, 'assets/apois-brand.png')",
-], 'shell empacota marca oficial');
+  'brandDataUri', 'data:image/png;base64,',
+], 'shell empacota e embute marca oficial');
 
 forbidText('superapp/shell/build.mjs', [
   'apois-superapp-entregas-back-navigation',
