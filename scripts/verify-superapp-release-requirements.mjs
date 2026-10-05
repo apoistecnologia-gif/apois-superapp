@@ -118,14 +118,14 @@ if (!existsSync(nativeMapHardenerPath)) {
 } else {
   const nativeMapHardener = readFileSync(nativeMapHardenerPath, 'utf8');
   for (const marker of [
-    'APOIS_NATIVE_MAP_FALLBACK_V2',
+    'APOIS_NATIVE_MAP_FALLBACK_V3',
     'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
     'Capacitor.isNativePlatform()',
     'mapService.createMap',
     'PolylineDecoder',
     'displayedRoutePoints',
-    'POLYLINE_IMPORT_DEDUP_V1',
-    'APOIS_ROUTE_POINTS_PRECEDENCE_V1',
+    'PolylineDecoder deve ser importado exatamente uma vez',
+    'if (encodedPolyline)',
     'upsertDriverMarker',
     'document.body.style.backgroundColor = "transparent"',
     'strokeColor: "#E51B23"',
