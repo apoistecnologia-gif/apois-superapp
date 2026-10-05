@@ -8,6 +8,7 @@ let source = readFileSync(path, 'utf8');
 // mas impede que o Perfil volte ao tema preto/amarelo depois do hardener mobile.
 source = source
   .replace('className="flex flex-col min-h-screen bg-black text-white pb-24"', 'className="flex min-h-screen flex-col bg-[#F7F7F8] pb-24 text-[#111111]"')
+  .replace('className="flex min-h-0 flex-1 flex-col bg-black text-white"', 'className="flex min-h-0 flex-1 flex-col bg-[#F7F7F8] text-[#111111]"')
   .replace('className="p-6 pt-12 flex flex-col items-center border-b border-gray-900"', 'className="flex flex-col items-center border-b border-[#E2E4E8] bg-white px-6 pb-6 pt-[max(env(safe-area-inset-top),1.25rem)]"')
   .replace('border-2 border-yellow-500 p-1', 'border-2 border-[#E51B23] p-1')
   .replace('bg-gray-800 text-yellow-500 text-3xl font-bold', 'bg-[#FFF1F2] text-[#E51B23] text-3xl font-bold')
@@ -30,7 +31,11 @@ source = source
 
 if (!source.includes('min-h-[68px]')) throw new Error('[FAIL] Corridas: Perfil sem alvos de toque adequados');
 if (!source.includes('env(safe-area-inset-top)')) throw new Error('[FAIL] Corridas: Perfil sem safe area superior');
-if (!source.includes('bg-[#F7F7F8]') || !source.includes('border-[#E51B23]')) {
+if (
+  !source.includes('bg-[#F7F7F8]') ||
+  !source.includes('text-[#111111]') ||
+  !source.includes('border-[#E51B23]')
+) {
   throw new Error('[FAIL] Corridas: Perfil não recebeu a identidade vermelho/branco');
 }
 if (source.includes('PassengerProfileCenter')) throw new Error('[FAIL] Corridas: Perfil obsoleto reapareceu');
