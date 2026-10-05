@@ -102,6 +102,8 @@ if (!existsSync(googleOauthGeneratorPath) || !existsSync(oauthHandoffPath)) {
     'const pendingEnvelope =',
     'const pendingEnvelopeHardened =',
     'if (source.includes(pendingEnvelope))',
+    'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl',
+    'providerError',
   ];
   const combinedOauth = googleOauthGenerator + '\n' + oauthHandoff;
   const missingOauthMarkers = requiredOauthMarkers.filter((marker) => !combinedOauth.includes(marker));
