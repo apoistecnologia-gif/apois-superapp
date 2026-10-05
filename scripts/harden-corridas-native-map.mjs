@@ -138,6 +138,8 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
   const initEffectAnchor = '  useEffect(() => {\n    void initializeMap();';
   const transparentEffect = `  useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+    const previousHtml = document.documentElement.style.backgroundColor;
+    const previousBody = document.body.style.backgroundColor;
     const changed: Array<{ element: HTMLElement; backgroundColor: string }> = [];
     let element: HTMLElement | null = containerRef.current;
     while (element) {
@@ -145,8 +147,6 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
       element.style.backgroundColor = "transparent";
       element = element.parentElement;
     }
-    const previousHtml = document.documentElement.style.backgroundColor;
-    const previousBody = document.body.style.backgroundColor;
     document.documentElement.style.backgroundColor = "transparent";
     document.body.style.backgroundColor = "transparent";
     return () => {
@@ -242,6 +242,7 @@ for (const marker of [
   'displayRoutePoints',
   'bottom: 240',
   'encodedPolyline,\n  driverLocation,',
+  'const previousHtml = document.documentElement.style.backgroundColor',
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
   'bg-transparent',
