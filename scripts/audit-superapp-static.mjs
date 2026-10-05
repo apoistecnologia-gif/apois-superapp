@@ -171,7 +171,14 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
   'strokeColor: "#E51B23"',
-  'styles: []',
+  'APOIS_MAP_STYLE_LIGHT_NATIVE',
+  'styles: APOIS_MAP_STYLE_LIGHT_NATIVE',
+  'APOIS_MAP_STYLE_LIGHT_JS',
+  'label: { text: "A"',
+  'iconUrl: "assets/markers/apois-location.svg"',
+  'APOIS_PRECISE_LOCATION_V1',
+  'permissions: ["location", "coarseLocation"]',
+  'maximumAge: 0',
   'referência a marker PNG inexistente permaneceu',
 ], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
 
