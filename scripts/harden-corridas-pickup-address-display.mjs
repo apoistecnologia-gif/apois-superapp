@@ -14,9 +14,9 @@ const hookPath = 'src/hooks/use-pickup-address.tsx';
 let hook = read(hookPath);
 
 const oldImport = 'import { getReverseGeocoding } from "@/lib/geocoding";';
-const newImport = 'import { geocodingService } from "@/services/geocoding/geocoding-service";';
+const newImport = 'import { supabase } from "@/integrations/supabase/client";';
 if (hook.includes(oldImport)) hook = hook.replace(oldImport, newImport);
-if (!hook.includes(newImport)) throw new Error('[FAIL] Corridas pickup: serviço de geocodificação não foi ligado ao hook');
+if (!hook.includes(newImport)) throw new Error('[FAIL] Corridas pickup: cliente Supabase não foi ligado ao hook');
 
 const oldBlock = `      const formattedAddress = await getReverseGeocoding(location);
 
@@ -37,26 +37,49 @@ const oldBlock = `      const formattedAddress = await getReverseGeocoding(locat
       }
       setStatus("success");`;
 
-const newBlock = `      const resolved = await geocodingService.resolvePickupAddress({
-        lat: location.latitude,
-        lng: location.longitude,
-      });
+const newBlock = `      const { data: reverse, error: reverseError } = await supabase.functions.invoke(
+        "google-maps-address",
+        {
+          body: {
+            action: "reverse_geocode",
+            lat: location.latitude,
+            lng: location.longitude,
+          },
+        },
+      );
+      if (reverseError) throw reverseError;
+
+      const firstResult =
+        reverse && typeof reverse === "object" && Array.isArray((reverse as { results?: unknown[] }).results)
+          ? (reverse as { results: Array<{ formatted_address?: unknown; address_components?: Array<{ long_name?: unknown; types?: unknown[] }> }> }).results[0]
+          : undefined;
+
+      const exactAddress =
+        typeof firstResult?.formatted_address === "string"
+          ? firstResult.formatted_address.trim()
+          : "";
+
+      if (!exactAddress) throw new Error("Endereço atual não identificado");
+
+      const routeComponent = firstResult?.address_components?.find(
+        (component) => Array.isArray(component.types) && component.types.includes("route"),
+      );
+      const numberComponent = firstResult?.address_components?.find(
+        (component) => Array.isArray(component.types) && component.types.includes("street_number"),
+      );
+      const routeName = typeof routeComponent?.long_name === "string" ? routeComponent.long_name.trim() : "";
+      const number = typeof numberComponent?.long_name === "string" ? numberComponent.long_name.trim() : "";
+      const exactShortLabel = routeName
+        ? `${routeName}${number ? `, ${number}` : ""}`
+        : exactAddress.split(",")[0]?.trim() || exactAddress;
 
       if (import.meta.env.DEV) {
-        console.log("[usePickupAddress] Reverse geocoding success");
-      }
-
-      const exactAddress = (resolved.address || resolved.label || "").trim();
-      const exactShortLabel = (resolved.shortLabel || resolved.components?.rua || exactAddress.split(",")[0] || "").trim();
-      const exactLabel = (resolved.label || exactAddress).trim();
-
-      if (!exactAddress) {
-        throw new Error("Endereço atual não identificado");
+        console.log("[usePickupAddress] Reverse geocoding success", exactAddress);
       }
 
       setAddress(exactAddress);
-      setPickupShortLabel(exactShortLabel || exactAddress);
-      setPickupLabel(exactLabel || exactAddress);
+      setPickupShortLabel(exactShortLabel);
+      setPickupLabel(exactAddress);
       setStatus("success");`;
 
 if (!hook.includes(oldBlock) && !hook.includes('const exactAddress = (resolved.address || resolved.label || "").trim();')) {
@@ -100,9 +123,9 @@ home = home.replace(
 write(homePath, home);
 
 for (const marker of [
-  'geocodingService.resolvePickupAddress',
-  'const exactAddress = (resolved.address || resolved.label || "").trim();',
-  'setPickupShortLabel(exactShortLabel || exactAddress)',
+  '"google-maps-address"',
+  'action: "reverse_geocode"',
+  'setPickupShortLabel(exactShortLabel)',
 ]) {
   if (!read(hookPath).includes(marker)) throw new Error(`[FAIL] Corridas pickup: marcador ausente no hook (${marker})`);
 }
