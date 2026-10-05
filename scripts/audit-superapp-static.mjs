@@ -80,6 +80,7 @@ requireText('scripts/build-isolated-module.mjs', [
   'scripts/harden-corridas-superapp-runtime.mjs',
   'scripts/fix-corridas-superapp-ui.mjs',
   'scripts/harden-corridas-payment-methods.mjs',
+  'scripts/harden-corridas-native-map.mjs',
   "'apois-superapp-corridas-auth-v1'",
   "'apois-superapp-entregas-auth-v1'",
   "appPlugin.addListener('backButton'",
@@ -152,11 +153,19 @@ requireText('scripts/build-isolated-module.mjs', [
   "window.location.replace('../entregas/index.html')",
 ], 'callback Google de Corridas permanece no módulo Corridas e callbacks genéricos de Entregas continuam encaminhados');
 
+requireText('scripts/harden-corridas-native-map.mjs', [
+  'APOIS_NATIVE_MAP_FALLBACK_V1',
+  'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
+  'Capacitor.isNativePlatform()',
+  'mapService.createMap',
+  'styles: []',
+], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
+
 requireText('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1', 'APOIS_REFERENCE_HOME_V2', 'data-apois-reference-home-v2',
   'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Solicitar corrida',
-  'apois-kit-search-results', 'max-h-[94dvh]', 'serviceImage', 'border-[#E51B23]',
-], 'kit visual oficial continua aplicado com a nova identidade vermelho/branco');
+  'apois-kit-search-results', 'max-h-[94dvh]', 'max-h-[38dvh]', 'Local de partida', 'Destino',
+], 'kit visual oficial mantém mapa predominante, painel compacto e destino apenas no bottom sheet');
 
 requireText('scripts/build-isolated-module.mjs', [
   "harden-apois-client-red-visual.mjs",
@@ -167,6 +176,17 @@ requireText('scripts/build-isolated-module.mjs', [
   'build final preservou byte a byte Maps/GPS/Places',
 ], 'visual Corridas roda uma vez no pipeline isolado e protege Maps/GPS/Places');
 
+
+requireText('scripts/harden-apois-client-red-visual.mjs', [
+  'photos/31943401',
+  'photos/12036802',
+  'photos/31049388',
+  'photos/10061763',
+  'photos/33915709',
+  '"w-28 shrink-0',
+  'h-[62px]',
+  'object-cover object-center',
+], 'categorias Corridas usam fotos reais e cards compactos');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
