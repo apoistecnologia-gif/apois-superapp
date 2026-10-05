@@ -60,7 +60,7 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
   'displayedRoutePoints',
   'if (encodedPolyline)',
   'bottom: 240',
-  'encodedPolyline,\\n  driverLocation,',
+  'encodedPolyline,\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
   'const changed: Array<{ element: HTMLElement',
   'document.body.style.backgroundColor = "transparent"',
