@@ -40,8 +40,9 @@ workflows:
           set -euo pipefail
           : "${CORRIDAS_VITE_SUPABASE_URL:?Add CORRIDAS_VITE_SUPABASE_URL to Codemagic}"
           : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?Add CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY to Codemagic}"
-          : "${VITE_SUPABASE_URL:?Existing APOIS Entregas VITE_SUPABASE_URL is required}"
-          : "${VITE_SUPABASE_PUBLISHABLE_KEY:?Existing APOIS Entregas publishable key is required}"
+          # O Cliente Entregas é fixado no projeto de produção pelo builder e
+          # não herda mais VITE_SUPABASE_* genéricos/legados do ambiente.
+          echo '[OK] Entregas usa Supabase canônico fixado e validado pelo pipeline'
           : "${CORRIDAS_WEB_MAPS_API_KEY:?Add CORRIDAS_WEB_MAPS_API_KEY to Codemagic}"
           : "${CORRIDAS_ANDROID_MAPS_API_KEY:?Add CORRIDAS_ANDROID_MAPS_API_KEY to Codemagic}"
           : "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:?Add unified Firebase google-services.json for br.com.apois.app to Codemagic}"
