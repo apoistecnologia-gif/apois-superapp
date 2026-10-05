@@ -10,7 +10,9 @@ if (/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)) {
 }
 for (const marker of [
   '<div class="visual">',
-  '<svg viewBox="0 0 320 210"',
+  'class="vehicle-photo"',
+  'alt="Carro APOIS"',
+  'alt="Moto de entregas APOIS"',
   '<h2>Corridas</h2>',
   '<h2>Entregas</h2>',
   'APOIS • VAMOS?',
@@ -19,4 +21,4 @@ for (const marker of [
 }
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Shell Cliente: serviços usam ilustrações vetoriais próprias e não emojis.');
+console.log('[OK] Shell Cliente: serviços usam veículos reais adesivados APOIS e não emojis/desenhos.');
