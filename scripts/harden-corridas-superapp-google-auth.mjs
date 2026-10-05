@@ -68,7 +68,7 @@ for (const marker of [
   'App.getLaunchUrl()',
   'appUrlListenerRef.current?.remove()',
   'browserFinishedListenerRef.current?.remove()',
-  'JSON.stringify({ product: \\"corridas\\", createdAt: Date.now() })',
+  'JSON.stringify({ product: "corridas", createdAt: Date.now() })',
 ]) {
   if (!component.includes(marker)) throw new Error(`[FAIL] corridas Google OAuth incompleto: ${marker}`);
 }
