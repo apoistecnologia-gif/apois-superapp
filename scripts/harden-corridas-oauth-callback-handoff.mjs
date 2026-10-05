@@ -79,11 +79,14 @@ replaceRequired(
   'consumo legado do callback mudou',
 );
 replaceRequired('  }, []);\n\n  const login = async () => {', '  }, [handle]);\n\n  const login = async () => {', 'dependência do listener mudou');
-replaceRequired(
-  '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, "corridas"); } catch {}',
-  '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch { /* appUrlOpen direto permanece disponível */ }',
-  'marcador OAuth pendente mudou',
-);
+const pendingLegacy = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, "corridas"); } catch {}';
+const pendingEnvelope = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch {}';
+const pendingEnvelopeHardened = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch { /* appUrlOpen direto permanece disponível */ }';
+if (source.includes(pendingLegacy)) source = source.replace(pendingLegacy, pendingEnvelopeHardened);
+if (source.includes(pendingEnvelope)) source = source.replace(pendingEnvelope, pendingEnvelopeHardened);
+if (!source.includes(pendingEnvelopeHardened)) {
+  throw new Error('[FAIL] OAuth Corridas: marcador OAuth pendente mudou');
+}
 
 const browserFinishedUnsafe = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
           if (!alive || handlingRef.current) return;
