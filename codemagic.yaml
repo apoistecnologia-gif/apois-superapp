@@ -117,6 +117,12 @@ workflows:
           bunx cap sync android
           cd ../..
           node scripts/configure-superapp-android.mjs
+          MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
+          grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
+          if grep -Fq 'android:name="com.google.android.geo.API_KEY" android:value=""' "$MANIFEST"; then
+            echo '[FAIL] Google Maps Android key ficou vazia no AndroidManifest'
+            exit 1
+          fi
           node scripts/install-superapp-launcher.mjs
           grep -Fq "versionCode ${APP_VERSION_CODE}" superapp/shell/android/app/build.gradle
           grep -Fq "versionName \"${APP_VERSION_NAME}\"" superapp/shell/android/app/build.gradle
