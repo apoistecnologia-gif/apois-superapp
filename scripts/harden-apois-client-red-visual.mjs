@@ -62,6 +62,24 @@ for (const [name, source] of Object.entries(realisticCategoryAssets)) {
   copyFileSync(source, file(`src/assets/services/${name}.webp`));
 }
 
+const categoryData = Object.fromEntries(
+  Object.entries(realisticCategoryAssets).map(([name, source]) => [
+    name,
+    `data:image/webp;base64,${readFileSync(source).toString('base64')}`,
+  ]),
+);
+write(
+  'src/assets/categoryVehicleData.ts',
+  [
+    `export const carImage = ${JSON.stringify(categoryData.car)};`,
+    `export const motoImage = ${JSON.stringify(categoryData.moto)};`,
+    `export const freightImage = ${JSON.stringify(categoryData.freight)};`,
+    `export const towImage = ${JSON.stringify(categoryData.tow)};`,
+    `export const deliveryImage = ${JSON.stringify(categoryData.delivery)};`,
+    '',
+  ].join('\n'),
+);
+
 write('src/components/pricing/CategorySelector.tsx', `import React from "react";
 import { useRideCategories } from "@/hooks/use-ride-categories";
 import { usePricing } from "@/hooks/use-pricing";
@@ -74,7 +92,7 @@ import freightImage from "@/assets/services/freight.webp";
 import towImage from "@/assets/services/tow.webp";
 import deliveryImage from "@/assets/services/delivery.webp";
 
-// APOIS_CATEGORY_REALISTIC_V4
+// APOIS_CATEGORY_REALISTIC_V5_INLINE
 // Cada categoria usa um veículo realista próprio, versionado localmente.
 // Identidade APOIS aplicada no próprio veículo, sem selo/wordmark repetido nos cards.
 const serviceImage: Record<RideCategoryCode, string> = {
