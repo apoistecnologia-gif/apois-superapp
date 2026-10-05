@@ -357,7 +357,7 @@ source = source.replace(
   'backgroundColor: "#F4F5F7",\n        styles: APOIS_MAP_STYLE_LIGHT_JS,',
 );
 source = source.replace(
-  'if (origin) addCircleMarker(origin, "Sua localização", "#E51B23");',
+  'if (origin) addCircleMarker(origin, "Sua localização", "#FFB800");',
   'if (origin) {\n      const marker = new maps.Marker({\n        map: mapRef.current,\n        position: origin,\n        title: "Sua localização",\n        optimized: true,\n        zIndex: 80,\n        label: { text: "A", color: "#FFFFFF", fontWeight: "900", fontSize: "13px" },\n        icon: {\n          path: "M 0,-18 C -10,-18 -17,-10 -17,0 C -17,12 0,28 0,28 C 0,28 17,12 17,0 C 17,-10 10,-18 0,-18 Z",\n          scale: 1,\n          fillColor: "#E51B23",\n          fillOpacity: 1,\n          strokeColor: "#FFFFFF",\n          strokeWeight: 3,\n          labelOrigin: new maps.Point(0, 0),\n        },\n      });\n      staticMarkersRef.current.push(marker);\n      bounds.extend(origin);\n      pointCount += 1;\n    }',
 );
 
