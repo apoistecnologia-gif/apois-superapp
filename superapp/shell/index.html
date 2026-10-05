@@ -131,7 +131,9 @@
         const suffix=()=>{const query=params.toString();return query?`?${query}`:'';};
         const storeCorridasGoogle=()=>{
           const codes=params.getAll('code');
-          if(codes.length!==1||!codes[0]?.trim()||params.has('access_token')||params.has('refresh_token'))return false;
+          const providerError=params.get('error_description')||params.get('error');
+          const hasSingleCode=codes.length===1&&Boolean(codes[0]?.trim());
+          if((!hasSingleCode&&!providerError)||params.has('access_token')||params.has('refresh_token'))return false;
           try{
             const envelope=JSON.stringify({url:rawUrl,createdAt:Date.now()});
             localStorage.setItem(CORRIDAS_GOOGLE_KEY,envelope);
