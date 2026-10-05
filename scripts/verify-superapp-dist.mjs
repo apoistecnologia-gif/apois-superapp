@@ -34,7 +34,12 @@ requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNaviga
 requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','APOIS_REFERENCE_HOME_V2','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
 requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','data-apois-reference-home-v2','apois-kit-home','Local de partida','Destino','max-h-[38dvh]', 'h-10 w-10 rounded-full object-contain','bg-transparent','<CategorySelector />','Solicitar corrida'],'Home Corridas usa mapa predominante, destino só no painel inferior e visual APOIS V2 aprovado');
 forbidMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['Para onde vamos?'],'Home Corridas não duplica campo de destino no topo');
-requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['apois-kit-search-screen','suggestions.map','whitespace-normal break-words'],'Busca Corridas mantém sugestões visíveis e legíveis');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
+  'apois-kit-search-screen',
+  'suggestions.map',
+  'whitespace-normal break-words',
+  'text-[#111111] caret-[#E51B23] placeholder:text-[#9AA0A8]',
+],'Busca Corridas mantém sugestões visíveis e texto digitado legível sobre fundo branco');
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'const serviceImage: Record<RideCategoryCode, string>',
