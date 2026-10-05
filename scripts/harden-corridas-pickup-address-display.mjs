@@ -37,50 +37,7 @@ const oldBlock = `      const formattedAddress = await getReverseGeocoding(locat
       }
       setStatus("success");`;
 
-const newBlock = `      const { data: reverse, error: reverseError } = await supabase.functions.invoke(
-        "google-maps-address",
-        {
-          body: {
-            action: "reverse_geocode",
-            lat: location.latitude,
-            lng: location.longitude,
-          },
-        },
-      );
-      if (reverseError) throw reverseError;
-
-      const firstResult =
-        reverse && typeof reverse === "object" && Array.isArray((reverse as { results?: unknown[] }).results)
-          ? (reverse as { results: Array<{ formatted_address?: unknown; address_components?: Array<{ long_name?: unknown; types?: unknown[] }> }> }).results[0]
-          : undefined;
-
-      const exactAddress =
-        typeof firstResult?.formatted_address === "string"
-          ? firstResult.formatted_address.trim()
-          : "";
-
-      if (!exactAddress) throw new Error("Endereço atual não identificado");
-
-      const routeComponent = firstResult?.address_components?.find(
-        (component) => Array.isArray(component.types) && component.types.includes("route"),
-      );
-      const numberComponent = firstResult?.address_components?.find(
-        (component) => Array.isArray(component.types) && component.types.includes("street_number"),
-      );
-      const routeName = typeof routeComponent?.long_name === "string" ? routeComponent.long_name.trim() : "";
-      const number = typeof numberComponent?.long_name === "string" ? numberComponent.long_name.trim() : "";
-      const exactShortLabel = routeName
-        ? routeName + (number ? ", " + number : "")
-        : exactAddress.split(",")[0]?.trim() || exactAddress;
-
-      if (import.meta.env.DEV) {
-        console.log("[usePickupAddress] Reverse geocoding success", exactAddress);
-      }
-
-      setAddress(exactAddress);
-      setPickupShortLabel(exactShortLabel);
-      setPickupLabel(exactAddress);
-      setStatus("success");`;
+const newBlock = "      const { data: reverse, error: reverseError } = await supabase.functions.invoke(\n        \"google-maps-address\",\n        {\n          body: {\n            action: \"reverse_geocode\",\n            lat: location.latitude,\n            lng: location.longitude,\n          },\n        },\n      );\n      if (reverseError) throw reverseError;\n\n      const firstResult =\n        reverse && typeof reverse === \"object\" && Array.isArray((reverse as { results?: unknown[] }).results)\n          ? (reverse as { results: Array<{ formatted_address?: unknown; address_components?: Array<{ long_name?: unknown; types?: unknown[] }> }> }).results[0]\n          : undefined;\n\n      const exactAddress =\n        typeof firstResult?.formatted_address === \"string\"\n          ? firstResult.formatted_address.trim()\n          : \"\";\n\n      if (!exactAddress) throw new Error(\"Endereço atual não identificado\");\n\n      const routeComponent = firstResult?.address_components?.find(\n        (component) => Array.isArray(component.types) && component.types.includes(\"route\"),\n      );\n      const numberComponent = firstResult?.address_components?.find(\n        (component) => Array.isArray(component.types) && component.types.includes(\"street_number\"),\n      );\n      const routeName = typeof routeComponent?.long_name === \"string\" ? routeComponent.long_name.trim() : \"\";\n      const number = typeof numberComponent?.long_name === \"string\" ? numberComponent.long_name.trim() : \"\";\n      const exactShortLabel = routeName\n        ? routeName + (number ? \", \" + number : \"\")\n        : exactAddress.split(\",\")[0]?.trim() || exactAddress;\n\n      if (import.meta.env.DEV) {\n        console.log(\"[usePickupAddress] Reverse geocoding success\", exactAddress);\n      }\n\n      setAddress(exactAddress);\n      setPickupShortLabel(exactShortLabel);\n      setPickupLabel(exactAddress);\n      setStatus(\"success\");";
 
 if (!hook.includes(oldBlock) && !hook.includes('const exactAddress = (resolved.address || resolved.label || "").trim();')) {
   throw new Error('[FAIL] Corridas pickup: bloco legado de reverse geocoding não encontrado');
