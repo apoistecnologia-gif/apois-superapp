@@ -67,6 +67,29 @@ if (!existsSync(isolatedBuilderPath)) {
   }
 }
 
+const profileFixPath = resolve('scripts/fix-corridas-superapp-ui.mjs');
+const profileThemePath = resolve('scripts/harden-corridas-superapp-profile-ui.mjs');
+if (!existsSync(profileFixPath) || !existsSync(profileThemePath)) {
+  fail('hardener Perfil Corridas ausente');
+} else {
+  const profileFix = readFileSync(profileFixPath, 'utf8');
+  const profileTheme = readFileSync(profileThemePath, 'utf8');
+  const requiredProfileMarkers = [
+    'flex min-h-0 flex-1 flex-col bg-black text-white',
+    'flex min-h-0 flex-1 flex-col bg-[#F7F7F8] text-[#111111]',
+    'border-[#E51B23]',
+    'min-h-[68px]',
+    'env(safe-area-inset-top)',
+  ];
+  const combinedProfile = profileFix + '\n' + profileTheme;
+  const missingProfileMarkers = requiredProfileMarkers.filter((marker) => !combinedProfile.includes(marker));
+  if (missingProfileMarkers.length) {
+    fail(`Perfil Corridas hardeners incompatíveis (${missingProfileMarkers.join(' | ')})`);
+  } else {
+    ok('Perfil Corridas hardeners compatíveis com viewport pós-adaptação e identidade vermelho/branco');
+  }
+}
+
 const googleOauthGeneratorPath = resolve('scripts/harden-corridas-superapp-google-auth.mjs');
 const oauthHandoffPath = resolve('scripts/harden-corridas-oauth-callback-handoff.mjs');
 if (!existsSync(googleOauthGeneratorPath) || !existsSync(oauthHandoffPath)) {
