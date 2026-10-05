@@ -119,7 +119,8 @@ function replaceRequired(source, search, replacement, label) {
 
   source = source.replace(
     '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);',
-    '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);\n  const [avatarFailed, setAvatarFailed] = useState(false);',
+    `  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);`,
   );
 
   const referenceHome = `  return (
