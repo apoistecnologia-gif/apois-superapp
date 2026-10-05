@@ -41,7 +41,7 @@ requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'photos/7771058',
   'photos/9209161',
   'photos/29594086',
-  'photos/10061763',
+  'photos/28447796',
   'photos/6867937',
   'PRICING_CONFIG.LABELS[cat.key]',
   'w-28 shrink-0',
