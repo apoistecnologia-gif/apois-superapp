@@ -210,12 +210,18 @@ requireText('scripts/harden-corridas-pickup-address-display.mjs', [
 ], 'Local de partida usa reverse geocoding real e não exibe fallback genérico');
 
 requireText('scripts/harden-apois-client-red-visual.mjs', [
-  'APOIS_CATEGORY_STUDIO_V3',
-  'import carImage from "@/assets/services/car.svg"',
-  'import motoImage from "@/assets/services/moto.svg"',
-  'import freightImage from "@/assets/services/freight.svg"',
-  'import towImage from "@/assets/services/tow.svg"',
-  'import deliveryImage from "@/assets/services/delivery.svg"',
+  'APOIS_CATEGORY_REALISTIC_ASSETS_V4',
+  'superapp/branding/categories/car-realistic.webp',
+  'superapp/branding/categories/moto-realistic.webp',
+  'superapp/branding/categories/freight-realistic.webp',
+  'superapp/branding/categories/tow-realistic.webp',
+  'superapp/branding/categories/delivery-realistic.webp',
+  'import carImage from "@/assets/services/car.webp"',
+  'import motoImage from "@/assets/services/moto.webp"',
+  'import freightImage from "@/assets/services/freight.webp"',
+  'import towImage from "@/assets/services/tow.webp"',
+  'import deliveryImage from "@/assets/services/delivery.webp"',
+  'APOIS_CATEGORY_REALISTIC_V4',
   'carro: carImage',
   'moto: motoImage',
   'fretes: freightImage',
@@ -223,8 +229,9 @@ requireText('scripts/harden-apois-client-red-visual.mjs', [
   'envios: deliveryImage',
   'const imageSrc = serviceImage[cat.key] ?? serviceImage.carro',
   'object-contain',
-  'bg-transparent',
-], 'categorias Corridas usam cinco assets locais individuais, transparentes e sem sprite/hotlink');
+  'w-[124px]',
+  'h-[84px]',
+], 'categorias Corridas usam cinco veículos realistas individuais da APOIS, sem sprite, hotlink ou wordmark repetido');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
