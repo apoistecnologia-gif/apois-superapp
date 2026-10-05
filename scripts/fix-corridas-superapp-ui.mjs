@@ -86,3 +86,89 @@ requireMarkers(
 );
 
 console.log('[OK] Corridas: UI base alinhada ao snapshot atual com Google Login restaurado');
+
+
+patch('.work/corridas/src/hooks/use-auth.tsx', (source) => {
+  let next = source;
+  if (!next.includes('APOIS_RESUME_AUTH_SNAPSHOT_V1')) {
+    const anchor = 'const PROFILE_RETRY_DELAYS_MS = [0, 350, 900];';
+    const helper = `const PROFILE_RETRY_DELAYS_MS = [0, 350, 900];
+const SUPERAPP_CORRIDAS_AUTH_STORAGE_KEY = "apois-superapp-corridas-auth-v1";
+
+// APOIS_RESUME_AUTH_SNAPSHOT_V1
+const readPersistedSessionSnapshot = (): Session | null => {
+  try {
+    const raw = window.localStorage.getItem(SUPERAPP_CORRIDAS_AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as any;
+    const candidate = parsed?.currentSession ?? parsed?.session ?? parsed;
+    if (!candidate?.access_token || !candidate?.user?.id) return null;
+    return candidate as Session;
+  } catch {
+    return null;
+  }
+};
+
+const persistedBootSession = typeof window !== "undefined" ? readPersistedSessionSnapshot() : null;`;
+
+    if (!next.includes(anchor)) throw new Error('Corridas: âncora de auth bootstrap não encontrada.');
+    next = next.replace(anchor, helper)
+      .replace(
+        '  const [user, setUser] = useState<User | null>(null);',
+        '  const [user, setUser] = useState<User | null>(() => persistedBootSession?.user ?? null);',
+      )
+      .replace(
+        '  const [session, setSession] = useState<Session | null>(null);',
+        '  const [session, setSession] = useState<Session | null>(() => persistedBootSession);',
+      )
+      .replace(
+        '  const [authState, setAuthState] = useState<AuthState>("initializing");',
+        '  const [authState, setAuthState] = useState<AuthState>(() => persistedBootSession?.user ? "authenticated" : "initializing");',
+      )
+      .replace(
+        '  const [isLoading, setIsLoading] = useState(true);',
+        '  const [isLoading, setIsLoading] = useState(() => !persistedBootSession?.user);',
+      );
+  }
+  return next;
+}, 'Corridas: sessão persistida é reidratada antes da validação assíncrona');
+
+patch('.work/corridas/src/components/auth/AuthGuard.tsx', (source) => {
+  let next = source;
+  if (!next.includes('APOIS_RESUME_AUTH_GUARD_V1')) {
+    next = next
+      .replace(
+        '  const { authState } = useAuth();',
+        '  const { authState, session } = useAuth();',
+      )
+      .replace(
+        '  const { authState, error, refreshSession, signOut } = useAuth();',
+        '  const { authState, session, error, refreshSession, signOut } = useAuth();',
+      )
+      .replace(
+        '  if (authState === "initializing") {',
+        '  // APOIS_RESUME_AUTH_GUARD_V1\n  if (authState === "initializing" && !session?.user) {',
+      )
+      .replace(
+        '  if (authState === "initializing" || authState === "loading_profile") {',
+        '  // APOIS_RESUME_AUTH_GUARD_V1\n  if ((authState === "initializing" || authState === "loading_profile") && !session?.user) {',
+      )
+      .replace(
+        '  if (authState !== "authenticated") return null;',
+        '  if (authState !== "authenticated" && !(session?.user && authState === "loading_profile")) return null;',
+      );
+  }
+  return next;
+}, 'Corridas: retorno do segundo plano preserva a tela atual enquanto a sessão é revalidada');
+
+requireMarkers('.work/corridas/src/hooks/use-auth.tsx', [
+  'APOIS_RESUME_AUTH_SNAPSHOT_V1',
+  'apois-superapp-corridas-auth-v1',
+  'persistedBootSession?.user ?? null',
+  'useState<Session | null>(() => persistedBootSession)',
+], 'Corridas: bootstrap de sessão sem flash de autenticação');
+
+requireMarkers('.work/corridas/src/components/auth/AuthGuard.tsx', [
+  'APOIS_RESUME_AUTH_GUARD_V1',
+  'session?.user',
+], 'Corridas: AuthGuard não bloqueia retomada com sessão persistida');
