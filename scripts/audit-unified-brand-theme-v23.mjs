@@ -20,7 +20,7 @@ for (const marker of [
   "replaceAll('#35A9C9', '#E51B23')",
   'APOIS_CUSTOMER_LOGIN_LIGHT_V3',
   'data-apois-customer-login-red-v3',
-  'apois-client-red-logo.png',
+  'apoisClientBrandData',
 ]) {
   if (!customerTheme.includes(marker)) fail(`Cliente Entregas sem regra de marca vermelha: ${marker}`);
 }
