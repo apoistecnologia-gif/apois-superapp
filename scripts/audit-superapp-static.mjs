@@ -114,12 +114,13 @@ requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
 ], 'Google OAuth Corridas usa PKCE, envelope persistente sem race de browserFinished, callback determinístico, dedupe e cleanup/cancelamento');
 
 requireText('scripts/harden-entregas-google-oauth-handoff.mjs', [
+  'flowType: "pkce"',
   'APOIS_GOOGLE_PENDING_KEY',
   'APOIS_GOOGLE_FORWARD_KEY',
   'consumeForwardedGoogleCallback',
   'product: "entregas"',
   'apois:entregas-google-callback',
-], 'Google OAuth Entregas mantém callback no módulo dono e possui handoff persistente');
+], 'Google OAuth Entregas usa PKCE, mantém callback no módulo dono e possui handoff persistente');
 
 requireText('scripts/harden-corridas-superapp-runtime.mjs', [
   'VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED', 'RIDE_STATUS_ORDER', 'lastAcceptedStatusRef',
