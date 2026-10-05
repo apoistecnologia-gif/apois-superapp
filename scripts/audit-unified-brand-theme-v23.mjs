@@ -48,4 +48,26 @@ const uiAudit = String(packageJson.scripts?.['audit:ui'] ?? '');
 if (!uiAudit.includes('audit-unified-brand-theme-v23.mjs')) fail('audit:ui não inclui v23');
 else ok('v23 está encadeada no gate visual');
 
+const corridasMobile = read('scripts/harden-superapp-module-mobile-ui.mjs');
+for (const marker of [
+  "harden-corridas-last-visual-pass.mjs",
+  "harden-corridas-final-red-surfaces.mjs",
+  "harden-corridas-final-shell-surfaces.mjs",
+  "harden-corridas-public-shell-surfaces.mjs",
+]) {
+  if (!corridasMobile.includes(marker)) fail(`Corridas sem acabamento visual final: ${marker}`);
+}
+if (!failed) ok('Corridas aplica acabamentos finais vermelho/branco antes do build Capacitor');
+
+const corridasFinal = read('scripts/harden-corridas-final-red-surfaces.mjs');
+for (const marker of [
+  'APOIS_CORRIDAS_FINAL_RED_SURFACES_V1',
+  'src/routes/_authenticated.revisar-solicitacao.tsx',
+  'src/routes/_authenticated.corrida.$rideId.tsx',
+  'src/components/payments/PaymentMethodSelector.tsx',
+]) {
+  if (!corridasFinal.includes(marker)) fail(`Corridas final red sem cobertura: ${marker}`);
+}
+if (!failed) ok('Corridas cobre revisão, pagamento e corrida ativa sem tocar runtime de mapa');
+
 process.exit(failed ? 1 : 0);
