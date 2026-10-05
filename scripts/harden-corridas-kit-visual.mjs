@@ -257,6 +257,7 @@ function replaceRequired(source, search, replacement, label) {
   let source = read(path);
   source = source
     .replace('border-t border-white/10 bg-black', 'border-t border-[#E2E4E8] bg-white')
+    .replace('pb-[max(12px,env(safe-area-inset-bottom))]', 'pb-[max(44px,env(safe-area-inset-bottom))]')
     .replace('shadow-[0_-10px_30px_rgba(0,0,0,0.55)]', 'shadow-[0_-8px_26px_rgba(17,17,17,0.10)]')
     .replaceAll('text-zinc-500', 'text-[#8A9098]');
   write(path, source);
