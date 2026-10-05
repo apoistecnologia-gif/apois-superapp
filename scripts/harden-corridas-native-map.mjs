@@ -122,7 +122,7 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
 
   source = source.replace(
     '  const validDriverLocation = useMemo<Coordinate | null>(() => {',
-    "  const displayRoutePoints = useMemo(() => {\n    if (route?.decodedPoints?.length && route.decodedPoints.length > 1) {\n      return route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));\n    }\n    if (!encodedPolyline) return [];\n    try {\n      return PolylineDecoder.decode(encodedPolyline).map((point) => ({ lat: point.lat, lng: point.lng }));\n    } catch {\n      return [];\n    }\n  }, [encodedPolyline, route?.decodedPoints]);\n\n  const validDriverLocation = useMemo<Coordinate | null>(() => {",
+    "  const displayRoutePoints = useMemo(() => {\n    if (encodedPolyline) {\n      try {\n        return PolylineDecoder.decode(encodedPolyline).map((point) => ({ lat: point.lat, lng: point.lng }));\n      } catch {}\n    }\n    if (route?.decodedPoints?.length && route.decodedPoints.length > 1) {\n      return route.decodedPoints.map((point) => ({ lat: point.lat, lng: point.lng }));\n    }\n    return [];\n  }, [encodedPolyline, route?.decodedPoints]);\n\n  const validDriverLocation = useMemo<Coordinate | null>(() => {",
   );
 
   source = source.replace(
@@ -240,6 +240,7 @@ for (const marker of [
   'missing marker PNGs removed',
   'PolylineDecoder',
   'displayRoutePoints',
+  'if (encodedPolyline) {',
   'bottom: 240',
   'encodedPolyline,\n  driverLocation,',
   'const previousHtml = document.documentElement.style.backgroundColor',
