@@ -229,7 +229,6 @@ if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V2')) {
 source = readFileSync(target, 'utf8');
 for (const marker of [
   'APOIS_NATIVE_MAP_FALLBACK_V2',
-  'APOIS_MAP_CAMERA_PADDING_V1',
   '[isStatic, nativeApiKey, reloadKey]',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
@@ -237,7 +236,6 @@ for (const marker of [
   'mapService.upsertPickupMarker',
   'mapService.upsertDestinationMarker',
   'mapService.upsertDriverMarker',
-  'missing marker PNGs removed',
   'PolylineDecoder',
   'displayRoutePoints',
   'if (encodedPolyline) {',
@@ -249,7 +247,20 @@ for (const marker of [
   'bg-transparent',
   'Native Google Map ready',
 ]) {
-  if (!source.includes(marker)) throw new Error(`[FAIL] Native map hardener missing marker: ${marker}`);
+  if (!source.includes(marker)) throw new Error(`[FAIL] Native PassengerMap missing marker: ${marker}`);
+}
+
+routeConfigSource = readFileSync(routeConfigPath, 'utf8');
+for (const marker of ['TOP: 72', 'RIGHT: 28', 'BOTTOM: 220', 'LEFT: 28']) {
+  if (!routeConfigSource.includes(marker)) throw new Error(`[FAIL] Native map route config missing marker: ${marker}`);
+}
+
+mapServiceSource = readFileSync(mapServicePath, 'utf8');
+for (const marker of ['styles: []', 'strokeColor: "#E51B23"', 'upsertDriverMarker(', 'removeDriverMarker(']) {
+  if (!mapServiceSource.includes(marker)) throw new Error(`[FAIL] Native map service missing final marker: ${marker}`);
+}
+if (mapServiceSource.includes('assets/markers/')) {
+  throw new Error('[FAIL] Native map service reintroduziu marker PNG inexistente');
 }
 
 console.log('[OK] Corridas: Android usa mapa nativo claro/transparente, sincroniza motorista e mantém JS Maps como fallback web.');
