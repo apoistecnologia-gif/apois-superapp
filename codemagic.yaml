@@ -83,8 +83,8 @@ workflows:
           test -s superapp/shell/dist/modules/entregas/index.html
           test ! -e superapp/shell/dist/modules/motorista
           grep -Fq 'data:image/png;base64,' superapp/shell/dist/index.html
-          grep -R -Fq 'APOIS_NATIVE_MAP_FALLBACK_V1' superapp/shell/dist/modules/corridas
-          grep -R -Fq 'images.pexels.com/photos/31943401' superapp/shell/dist/modules/corridas
+          grep -R -Fq 'APOIS_NATIVE_MAP_FALLBACK_V2' superapp/shell/dist/modules/corridas
+          grep -R -Fq 'images.pexels.com/photos/7771058' superapp/shell/dist/modules/corridas
           if grep -R -Fq 'Para onde vamos?' superapp/shell/dist/modules/corridas; then
             echo '[FAIL] home Corridas reintroduziu busca duplicada no topo'
             exit 1
