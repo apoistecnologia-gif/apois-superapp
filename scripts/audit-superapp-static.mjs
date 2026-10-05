@@ -159,6 +159,7 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
   'mapService.upsertDriverMarker',
+  'missing marker PNGs removed',
   'PolylineDecoder',
   'displayRoutePoints',
   'encodedPolyline,\\n  driverLocation,',
