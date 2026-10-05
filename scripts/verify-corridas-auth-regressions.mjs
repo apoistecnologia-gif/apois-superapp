@@ -20,7 +20,7 @@ if (!googleHardener.includes('br.com.apois.app://auth/callback')) fail('callback
 if (!googleHardener.includes('br.com.apois.app://auth/corridas-google')) fail('callback legado compatível ausente');
 
 const oauthHandoffHardener = read('scripts/harden-corridas-oauth-callback-handoff.mjs');
-for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', 'handledUrlRef.current) return;', '}, 2500);']) {
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', 'handlingRef.current || handledUrlRef.current === rawUrl', 'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl']) {
   if (!oauthHandoffHardener.includes(marker)) fail(`hardener final Google Passageiro sem ${marker}`);
 }
 const buildPipeline = read('scripts/build-isolated-module.mjs');
