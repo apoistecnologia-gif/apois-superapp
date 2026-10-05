@@ -46,21 +46,26 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
 ],'Busca Corridas mantém sugestões visíveis e texto digitado legível sobre fundo branco');
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
-  'APOIS_CATEGORY_STUDIO_V2',
-  'serviceSprite = "/assets/categories/apois-vehicles.webp"',
-  'carro: "0% 50%"',
-  'moto: "25% 50%"',
-  'fretes: "50% 50%"',
-  'guincho: "75% 50%"',
-  'envios: "100% 50%"',
+  'APOIS_CATEGORY_REALISTIC_V4',
+  'import carImage from "@/assets/services/car.webp"',
+  'import motoImage from "@/assets/services/moto.webp"',
+  'import freightImage from "@/assets/services/freight.webp"',
+  'import towImage from "@/assets/services/tow.webp"',
+  'import deliveryImage from "@/assets/services/delivery.webp"',
+  'carro: carImage',
+  'moto: motoImage',
+  'fretes: freightImage',
+  'guincho: towImage',
+  'envios: deliveryImage',
   'PRICING_CONFIG.LABELS[cat.key]',
-  'w-28 shrink-0',
-  'h-[74px]',
-  'backgroundSize: "500% 100%"',
-  'bg-no-repeat',
+  'w-[124px]',
+  'h-[84px]',
+  'object-contain',
   'border-[#E51B23]',
-],'Categorias Corridas usam cinco veículos locais distintos e sem fundo cinza embutido');
-requireFile('.work/corridas/public/assets/categories/apois-vehicles.webp');
+],'Categorias Corridas usam cinco veículos realistas locais distintos da APOIS');
+for (const asset of ['car.webp','moto.webp','freight.webp','tow.webp','delivery.webp']) {
+  requireFile(`.work/corridas/src/assets/services/${asset}`);
+}
 forbidMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'images.pexels.com',
   'pic.52112.com',
