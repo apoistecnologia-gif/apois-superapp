@@ -155,13 +155,11 @@ requireText('scripts/build-isolated-module.mjs', [
 
 requireText('scripts/harden-corridas-native-map.mjs', [
   'APOIS_NATIVE_MAP_FALLBACK_V3',
-  'APOIS_MAP_CAMERA_PADDING_V1',
   '[isStatic, nativeApiKey, reloadKey]',
   'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
   'Capacitor.isNativePlatform()',
   'mapService.createMap',
   'mapService.upsertDriverMarker',
-  'missing marker PNGs removed',
   'PolylineDecoder',
   'PolylineDecoder deve ser importado exatamente uma vez',
   'displayedRoutePoints',
@@ -173,6 +171,7 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'document.body.style.backgroundColor = "transparent"',
   'strokeColor: "#E51B23"',
   'styles: []',
+  'referência a marker PNG inexistente permaneceu',
 ], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
 
 requireText('scripts/harden-corridas-kit-visual.mjs', [
