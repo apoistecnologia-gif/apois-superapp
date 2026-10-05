@@ -125,7 +125,10 @@ const visualBundleMarkers=['apois-kit-home','apois-kit-search-screen','apois-kit
 const missingVisualBundleMarkers=visualBundleMarkers.filter(marker=>!treeContains('superapp/shell/dist/modules/corridas',marker));
 if(missingVisualBundleMarkers.length)fail(`bundle Corridas final não contém identificadores do kit visual: ${missingVisualBundleMarkers.join(' | ')}`);else ok('bundle Corridas final contém identificadores do APOIS_VISUAL_KIT_V1');
 if(!treeContains('superapp/shell/dist/modules/corridas','apois-kit-search-screen'))fail('bundle Corridas final não contém a busca visual nova');else ok('bundle Corridas final contém a busca visual nova');
-if(!treeContains('superapp/shell/dist/modules/corridas','pic.52112.com/180806/JPG-180806_120/vGHP86zk7D_small.jpg'))fail('bundle Corridas final perdeu imagem real de Carro');else ok('bundle Corridas final contém imagem real de Carro');
+function treeCountFiles(dir,pattern){const fullDir=resolve(root,dir);if(!existsSync(fullDir))return 0;let count=0;const stack=[fullDir];while(stack.length){const current=stack.pop();for(const entry of readdirSync(current)){const path=resolve(current,entry);const stat=statSync(path);if(stat.isDirectory()){stack.push(path);continue;}if(pattern.test(entry))count++;}}return count;}
+const realisticVehicleAssets=treeCountFiles('superapp/shell/dist/modules/corridas',/\.webp$/i);
+if(realisticVehicleAssets<5)fail(`bundle Corridas final não contém os cinco veículos realistas WebP (encontrados: ${realisticVehicleAssets})`);else ok('bundle Corridas final contém os cinco veículos realistas das categorias');
+if(treeContains('superapp/shell/dist/modules/corridas','pic.52112.com/180806/JPG-180806_120/vGHP86zk7D_small.jpg'))fail('bundle Corridas final ainda depende da imagem externa antiga de Carro');else ok('bundle Corridas final não depende de imagem externa antiga de Carro');
 if(!treeContains('superapp/shell/dist/modules/corridas','Continuar com Google'))fail('bundle Corridas final perdeu o botão Google');else ok('bundle Corridas final contém login com Google');
 if(!treeContains('superapp/shell/dist/modules/corridas','corridas-google'))fail('bundle Corridas final perdeu callback Google do Superapp');else ok('bundle Corridas final contém callback Google nativo');
 
