@@ -11,7 +11,9 @@ if (!before.includes('clearExpiredCorridasGoogle()') || !before.includes('localS
 }
 if (
   !before.includes("ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url'") ||
-  !before.includes('hasPendingEntregas()&&storeEntregasGoogle()')
+  !before.includes('if(hasPendingEntregas())') ||
+  !before.includes('const stored=storeEntregasGoogle();') ||
+  !before.includes("window.location.replace('./modules/entregas/index.html#/login')")
 ) {
   throw new Error('Shell perdeu o handoff Google do Cliente Entregas.');
 }
