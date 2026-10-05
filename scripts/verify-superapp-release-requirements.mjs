@@ -29,6 +29,21 @@ if (!supabaseUrl) {
   fail(`CORRIDAS_VITE_SUPABASE_URL deve ser ${canonicalUrl}`);
 } else ok('Supabase Corridas canônico configurado');
 
+const entregasRuntimeHardenerPath = resolve('scripts/harden-entregas-supabase-runtime.mjs');
+if (!existsSync(entregasRuntimeHardenerPath)) {
+  fail('hardener do Supabase runtime de Entregas ausente');
+} else {
+  const entregasRuntimeHardener = readFileSync(entregasRuntimeHardenerPath, 'utf8');
+  for (const marker of ['ptgkwyyolrdgnqketkjj', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'sbvhdgyuuperszlsllji']) {
+    if (!entregasRuntimeHardener.includes(marker)) fail(`hardener Entregas sem marcador obrigatório (${marker})`);
+  }
+  if (!entregasRuntimeHardener.includes("source.includes(retiredRef)")) {
+    fail('hardener Entregas não remove explicitamente o Supabase aposentado do snapshot');
+  } else {
+    ok('hardener Entregas substitui o Supabase aposentado pelo projeto canônico antes do build');
+  }
+}
+
 const isolatedBuilderPath = resolve('scripts/build-isolated-module.mjs');
 if (!existsSync(isolatedBuilderPath)) {
   fail('builder isolado do Superapp ausente');
