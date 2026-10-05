@@ -32,20 +32,31 @@ requireMarkers('.work/corridas/src/services/payments/payment-service.ts',['const
 requireMarkers('.work/corridas/src/components/BottomNavigation.tsx',['grid-cols-5','min-h-[64px]','Início','Corridas','Carteira','Notificações','Perfil'],'Corridas mantém rodapé único, legível e com cinco destinos');
 requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNavigation','pathname === "/buscar-destino"','pathname.startsWith("/corrida/")'],'Corridas não sobrepõe rodapé nas jornadas fullscreen');
 requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','APOIS_REFERENCE_HOME_V2','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
-requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','data-apois-reference-home-v2','apois-kit-home','Digite seu destino','<CategorySelector />','Solicitar corrida'],'Home Corridas usa mapa real e o visual APOIS V2 aprovado');
+requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','data-apois-reference-home-v2','apois-kit-home','Local de partida','Destino','max-h-[38dvh]','<CategorySelector />','Solicitar corrida'],'Home Corridas usa mapa predominante, destino só no painel inferior e visual APOIS V2 aprovado');
+forbidMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['Para onde vamos?'],'Home Corridas não duplica campo de destino no topo');
 requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',['apois-kit-search-screen','suggestions.map','whitespace-normal break-words'],'Busca Corridas mantém sugestões visíveis e legíveis');
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'const serviceImage: Record<RideCategoryCode, string>',
-  'carro: carImage',
-  'moto: motoImage',
-  'fretes: freightImage',
-  'guincho: towImage',
-  'envios: deliveryImage',
+  'photos/31943401',
+  'photos/12036802',
+  'photos/31049388',
+  'photos/10061763',
+  'photos/33915709',
   'PRICING_CONFIG.LABELS[cat.key]',
-  'overflow-x-auto',
+  'w-28 shrink-0',
+  'h-[62px]',
+  'object-cover object-center',
   'border-[#E51B23]',
-],'Categorias Corridas usam os cinco códigos oficiais com imagens e cards da nova identidade APOIS');
+],'Categorias Corridas usam cinco fotos reais e cards compactos');
+requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
+  'APOIS_NATIVE_MAP_FALLBACK_V1',
+  'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
+  'Capacitor.isNativePlatform()',
+  'mapService.createMap',
+],'PassengerMap usa Google Maps nativo no Android com fallback JS');
+requireMarkers('.work/corridas/src/services/maps/map-service.ts',['styles: []'],'Mapa nativo do passageiro usa estilo claro');
+
 requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
 requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
 requireMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['postgres_changes','canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)'],'Corridas mantém Realtime e bloqueia cancelamento após chegada/início da viagem');
@@ -55,6 +66,8 @@ const visualBundleMarkers=['apois-kit-home','apois-kit-search-screen','apois-kit
 const missingVisualBundleMarkers=visualBundleMarkers.filter(marker=>!treeContains('superapp/shell/dist/modules/corridas',marker));
 if(missingVisualBundleMarkers.length)fail(`bundle Corridas final não contém identificadores do kit visual: ${missingVisualBundleMarkers.join(' | ')}`);else ok('bundle Corridas final contém identificadores do APOIS_VISUAL_KIT_V1');
 if(!treeContains('superapp/shell/dist/modules/corridas','apois-kit-search-screen'))fail('bundle Corridas final não contém a busca visual nova');else ok('bundle Corridas final contém a busca visual nova');
+if(!treeContains('superapp/shell/dist/modules/corridas','images.pexels.com/photos/31943401'))fail('bundle Corridas final perdeu fotos reais das categorias');else ok('bundle Corridas final contém fotos reais das categorias');
+if(treeContains('superapp/shell/dist/modules/corridas','Para onde vamos?'))fail('bundle Corridas final reintroduziu busca duplicada no topo');else ok('bundle Corridas final mantém destino apenas no painel inferior');
 if(!treeContains('superapp/shell/dist/modules/corridas','Continuar com Google'))fail('bundle Corridas final perdeu o botão Google');else ok('bundle Corridas final contém login com Google');
 if(!treeContains('superapp/shell/dist/modules/corridas','corridas-google'))fail('bundle Corridas final perdeu callback Google do Superapp');else ok('bundle Corridas final contém callback Google nativo');
 
