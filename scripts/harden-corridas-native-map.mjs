@@ -4,6 +4,18 @@ import { resolve } from 'node:path';
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 let source = readFileSync(target, 'utf8');
 
+const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
+let mapServiceSource = readFileSync(mapServicePath, 'utf8');
+if (mapServiceSource.includes('styles: MAP_STYLE_DARK')) {
+  mapServiceSource = mapServiceSource
+    .replace('import { MAP_STYLE_DARK, DEFAULT_ZOOM } from "./map-config";', 'import { DEFAULT_ZOOM } from "./map-config";')
+    .replace('styles: MAP_STYLE_DARK,', 'styles: [],');
+  writeFileSync(mapServicePath, mapServiceSource, 'utf8');
+}
+if (!readFileSync(mapServicePath, 'utf8').includes('styles: []')) {
+  throw new Error('[FAIL] Native map: estilo claro não foi aplicado ao mapa do passageiro');
+}
+
 if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V1')) {
   source = source.replace(
     'import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";',
@@ -52,6 +64,7 @@ for (const marker of [
   'mapService.createMap',
   'mapService.upsertPickupMarker',
   'mapService.upsertDestinationMarker',
+  'Native Google Map ready',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Native map hardener missing marker: ${marker}`);
 }
