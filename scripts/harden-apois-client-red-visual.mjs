@@ -47,12 +47,20 @@ write('src/assets/apoisBrandData.ts', `const apoisBrandData = "data:image/png;ba
 const serviceAssetDir = file('src/assets/services');
 mkdirSync(serviceAssetDir, { recursive: true });
 
-const svg = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><defs><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-opacity=".18"/></filter></defs>${body}</svg>`;
-write('src/assets/services/car.svg', svg(`<g filter="url(#s)" transform="translate(35 52)"><path d="M25 64 43 29c5-10 14-16 26-16h112c13 0 24 7 29 19l14 32 16 8v28H9V74l16-10Z" fill="#f7f7f8" stroke="#222" stroke-width="4"/><path d="M60 32h112c8 0 13 4 17 12l9 20H43l11-21c2-6 4-11 6-11Z" fill="#cbd5df"/><path d="M116 32v32" stroke="#59616b" stroke-width="3"/><circle cx="55" cy="102" r="18" fill="#1e2228"/><circle cx="195" cy="102" r="18" fill="#1e2228"/><circle cx="55" cy="102" r="8" fill="#c7ccd2"/><circle cx="195" cy="102" r="8" fill="#c7ccd2"/><path d="M22 79h25M204 79h28" stroke="#E51B23" stroke-width="7" stroke-linecap="round"/></g>`));
-write('src/assets/services/moto.svg', svg(`<g filter="url(#s)" transform="translate(55 38)"><circle cx="52" cy="95" r="31" fill="#1d2228"/><circle cx="169" cy="95" r="31" fill="#1d2228"/><circle cx="52" cy="95" r="16" fill="#c9ced4"/><circle cx="169" cy="95" r="16" fill="#c9ced4"/><path d="m55 92 35-55h52l26 58M86 49h66M116 39l-18-25H73" fill="none" stroke="#222" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M91 58h50l-18 28H73Z" fill="#E51B23"/><path d="M127 28h36" stroke="#E51B23" stroke-width="8" stroke-linecap="round"/></g>`));
-write('src/assets/services/freight.svg', svg(`<g filter="url(#s)" transform="translate(26 48)"><path d="M16 24h150v72H16z" fill="#f7f7f8" stroke="#222" stroke-width="4"/><path d="M166 47h47l32 31v18h-79z" fill="#eceff2" stroke="#222" stroke-width="4"/><path d="M184 55h24l18 19h-42z" fill="#cbd5df"/><path d="M31 38h57v42H31z" fill="#E51B23"/><path d="M100 38h51v8h-51z" fill="#d2d6db"/><circle cx="55" cy="103" r="17" fill="#1e2228"/><circle cx="196" cy="103" r="17" fill="#1e2228"/><circle cx="55" cy="103" r="7" fill="#c7ccd2"/><circle cx="196" cy="103" r="7" fill="#c7ccd2"/></g>`));
-write('src/assets/services/tow.svg', svg(`<g filter="url(#s)" transform="translate(28 46)"><path d="M15 58h142v43H15z" fill="#f4f5f6" stroke="#222" stroke-width="4"/><path d="M156 68h46l26 23v10h-72z" fill="#eceff2" stroke="#222" stroke-width="4"/><path d="m86 59 64-44 8 12-54 38" fill="none" stroke="#E51B23" stroke-width="10" stroke-linecap="round"/><path d="m151 18 46 27" stroke="#222" stroke-width="5"/><path d="m196 44 5 27" stroke="#222" stroke-width="5"/><circle cx="52" cy="106" r="17" fill="#1e2228"/><circle cx="188" cy="106" r="17" fill="#1e2228"/></g>`));
-write('src/assets/services/delivery.svg', svg(`<g filter="url(#s)" transform="translate(45 35)"><circle cx="51" cy="102" r="28" fill="#1e2228"/><circle cx="166" cy="102" r="28" fill="#1e2228"/><circle cx="51" cy="102" r="13" fill="#c7ccd2"/><circle cx="166" cy="102" r="13" fill="#c7ccd2"/><path d="m53 100 34-52h45l32 55M84 60h64" fill="none" stroke="#222" stroke-width="9" stroke-linecap="round"/><rect x="118" y="10" width="72" height="55" rx="9" fill="#E51B23"/><path d="M134 27h40M134 39h29" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M91 59h43l-16 29H72z" fill="#E51B23"/></g>`));
+// APOIS_CATEGORY_REALISTIC_ASSETS_V4
+// Assets fotorealistas individuais, versionados localmente.
+// Branding APOIS integrado ao desenho do veículo, sem repetir wordmark/selo em cada card.
+const realisticCategoryAssets = {
+  car: resolve(root, 'superapp/branding/categories/car-realistic.webp'),
+  moto: resolve(root, 'superapp/branding/categories/moto-realistic.webp'),
+  freight: resolve(root, 'superapp/branding/categories/freight-realistic.webp'),
+  tow: resolve(root, 'superapp/branding/categories/tow-realistic.webp'),
+  delivery: resolve(root, 'superapp/branding/categories/delivery-realistic.webp'),
+};
+
+for (const [name, source] of Object.entries(realisticCategoryAssets)) {
+  copyFileSync(source, file(`src/assets/services/${name}.webp`));
+}
 
 write('src/components/pricing/CategorySelector.tsx', `import React from "react";
 import { useRideCategories } from "@/hooks/use-ride-categories";
@@ -60,15 +68,15 @@ import { usePricing } from "@/hooks/use-pricing";
 import { PRICING_CONFIG } from "@/services/pricing/pricing-config";
 import { cn } from "@/lib/utils";
 import { RideCategoryCode } from "@/types/pricing";
-import carImage from "@/assets/services/car.svg";
-import motoImage from "@/assets/services/moto.svg";
-import freightImage from "@/assets/services/freight.svg";
-import towImage from "@/assets/services/tow.svg";
-import deliveryImage from "@/assets/services/delivery.svg";
+import carImage from "@/assets/services/car.webp";
+import motoImage from "@/assets/services/moto.webp";
+import freightImage from "@/assets/services/freight.webp";
+import towImage from "@/assets/services/tow.webp";
+import deliveryImage from "@/assets/services/delivery.webp";
 
-// APOIS_CATEGORY_STUDIO_V3
-// Cada categoria usa um asset local próprio, transparente e versionado.
-// Isso evita recorte incorreto de sprite no WebView e impede Carro/Moto de exibirem a mesma imagem.
+// APOIS_CATEGORY_REALISTIC_V4
+// Cada categoria usa um veículo realista próprio, versionado localmente.
+// Identidade APOIS aplicada no próprio veículo, sem selo/wordmark repetido nos cards.
 const serviceImage: Record<RideCategoryCode, string> = {
   carro: carImage,
   moto: motoImage,
@@ -103,17 +111,17 @@ export const CategorySelector: React.FC = () => {
             onClick={() => isAvailable && selectCategory(cat)}
             disabled={!isAvailable}
             className={cn(
-              "w-28 shrink-0 overflow-hidden rounded-[18px] border bg-white p-2 text-left shadow-[0_8px_24px_rgba(17,17,17,.06)] transition active:scale-[.98]",
+              "w-[124px] shrink-0 overflow-hidden rounded-[18px] border bg-white p-2 text-left shadow-[0_8px_24px_rgba(17,17,17,.06)] transition active:scale-[.98]",
               isSelected ? "border-[#E51B23] ring-1 ring-[#E51B23]" : "border-[#E2E4E8]",
               !isAvailable && "opacity-50 grayscale"
             )}
           >
-            <div className="flex h-[74px] items-center justify-center overflow-hidden rounded-[16px] bg-transparent">
+            <div className="flex h-[84px] items-center justify-center overflow-hidden rounded-[16px] bg-white">
               <img
                 src={imageSrc}
                 alt=""
                 aria-hidden="true"
-                className="h-full w-full object-contain p-0.5 drop-shadow-[0_7px_8px_rgba(17,17,17,.14)]"
+                className="h-full w-full object-contain p-0.5 drop-shadow-[0_7px_8px_rgba(17,17,17,.12)]"
                 draggable={false}
               />
             </div>
