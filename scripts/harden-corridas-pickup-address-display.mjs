@@ -61,9 +61,14 @@ home = home.replace(
 const replaceCurrentAddressDeclaration = (source, replacement) => {
   const start = source.indexOf('  const currentAddressText =');
   if (start < 0) throw new Error('[FAIL] Corridas pickup: declaração currentAddressText não encontrada');
-  const returnStart = source.indexOf('\n  return (', start);
-  if (returnStart < 0) throw new Error('[FAIL] Corridas pickup: limite da declaração currentAddressText não encontrado');
-  return source.slice(0, start) + replacement + source.slice(returnStart);
+
+  // Never scan until the component return: a malformed declaration from a prior
+  // hardener can swallow unrelated statements and survive into Vite. Replace
+  // only the currentAddressText statement, stopping at its semicolon.
+  const statementEnd = source.indexOf(';', start);
+  if (statementEnd < 0) throw new Error('[FAIL] Corridas pickup: fim da declaração currentAddressText não encontrado');
+
+  return source.slice(0, start) + replacement + source.slice(statementEnd + 1);
 };
 const currentAddressLine = `  const currentAddressText =
     addressStatus === "identifying" || isGeocoding
