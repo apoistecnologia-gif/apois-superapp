@@ -62,13 +62,23 @@ const replaceCurrentAddressDeclaration = (source, replacement) => {
   const start = source.indexOf('  const currentAddressText =');
   if (start < 0) throw new Error('[FAIL] Corridas pickup: declaração currentAddressText não encontrada');
 
-  // Never scan until the component return: a malformed declaration from a prior
-  // hardener can swallow unrelated statements and survive into Vite. Replace
-  // only the currentAddressText statement, stopping at its semicolon.
-  const statementEnd = source.indexOf(';', start);
-  if (statementEnd < 0) throw new Error('[FAIL] Corridas pickup: fim da declaração currentAddressText não encontrado');
+  // The pinned source may already contain a malformed/unterminated declaration.
+  // Do not look for a semicolon inside broken text. The next top-level hook/callback
+  // declaration is a stable boundary that lets us surgically discard the damaged block.
+  const boundaries = [
+    '\n  const handleReview',
+    '\n  const handle',
+    '\n  function ',
+    '\n  return (',
+  ]
+    .map((marker) => source.indexOf(marker, start + 1))
+    .filter((index) => index > start)
+    .sort((a, b) => a - b);
 
-  return source.slice(0, start) + replacement + source.slice(statementEnd + 1);
+  const boundary = boundaries[0];
+  if (boundary == null) throw new Error('[FAIL] Corridas pickup: limite seguro após currentAddressText não encontrado');
+
+  return source.slice(0, start) + replacement.trimEnd() + '\n' + source.slice(boundary + 1);
 };
 const currentAddressLine = `  const currentAddressText =
     addressStatus === "identifying" || isGeocoding
