@@ -195,6 +195,53 @@ if (!loginSource.includes('rgba(201,20,27,0.18)') && !loginSource.includes('rgba
 }
 writeFileSync(loginPath, loginSource, 'utf8');
 
+
+// APOIS_ENTREGAS_CUSTOMER_LANDING_RED_V1
+// A rota "/" do módulo ainda pode aparecer por histórico/voltar. Normalize-a
+// para a identidade oficial e mantenha-a como fallback visual seguro.
+const landingPath = resolve(root, workspace, 'src/routes/index.tsx');
+if (!existsSync(landingPath)) throw new Error('index.tsx do Cliente Entregas ausente');
+let landingSource = readFileSync(landingPath, 'utf8');
+if (!landingSource.includes('import apoisClientBrand from "@/assets/apoisClientBrandData";')) {
+  landingSource = landingSource.replace(
+    'import { GoogleLoginButton } from "@/components/GoogleLoginButton";',
+    'import { GoogleLoginButton } from "@/components/GoogleLoginButton";\nimport apoisClientBrand from "@/assets/apoisClientBrandData";',
+  );
+}
+landingSource = landingSource
+  .replace('src="./apois-logo.svg"', 'src={apoisClientBrand}')
+  .replace('src="/apois-logo.svg"', 'src={apoisClientBrand}')
+  .replace('className="h-auto w-[255px] max-w-[78vw] object-contain"', 'className="h-28 w-28 object-contain"')
+  .replace('bg-[#050505] text-white', 'bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF8F8_58%,#FFF1F2_100%)] text-[#111111]')
+  .replace('rgba(200,138,8,0.16)', 'rgba(229,27,35,0.12)')
+  .replace('bg-[#F6BE1C]/[0.08]', 'bg-[#E51B23]/[0.08]')
+  .replaceAll('text-[#F6BE1C]', 'text-[#E51B23]')
+  .replaceAll('text-[#C88A08]', 'text-[#C9141B]')
+  .replaceAll('text-white', 'text-[#111111]')
+  .replaceAll('text-zinc-400', 'text-[#666B73]')
+  .replaceAll('text-zinc-300', 'text-[#555B63]')
+  .replaceAll('text-zinc-600', 'text-[#777D85]')
+  .replaceAll('text-zinc-500', 'text-[#666B73]')
+  .replaceAll('border-white/[0.07] bg-white/[0.03]', 'border-[#E2E4E8] bg-white shadow-sm')
+  .replace('border-0 bg-[#F6BE1C] px-6 text-[16px] font-black text-black shadow-[0_12px_35px_rgba(246,190,28,0.18)] transition-all hover:bg-[#f7ca48]',
+           'border-0 bg-[#E51B23] px-6 text-[16px] font-black text-white shadow-[0_12px_32px_rgba(229,27,35,0.22)] transition-all hover:bg-[#C9141B]')
+  .replace('border-white/10 bg-white/[0.03] text-[16px] font-bold text-white hover:border-[#C88A08]/50 hover:bg-white/[0.06]',
+           'border-[#E2E4E8] bg-white text-[16px] font-bold text-[#111111] shadow-sm hover:border-[#E51B23]/40 hover:bg-[#FFF8F8]');
+writeFileSync(landingPath, landingSource, 'utf8');
+
+const finalLandingSource = readFileSync(landingPath, 'utf8');
+for (const required of ['APOIS ENTREGAS', 'src={apoisClientBrand}', '#E51B23', '#FFF8F8']) {
+  if (!finalLandingSource.includes(required)) throw new Error('landing Cliente Entregas incompleta: ' + required);
+}
+for (const forbidden of ['bg-[#050505] text-white', 'text-[#F6BE1C]', 'text-[#C88A08]', 'bg-[#F6BE1C]']) {
+  if (finalLandingSource.includes(forbidden)) throw new Error('landing Cliente Entregas ainda usa identidade antiga: ' + forbidden);
+}
+if (!loginSource.includes('window.location.replace("../../index.html")')) {
+  throw new Error('login Cliente Entregas não retorna ao seletor principal do Superapp');
+}
+console.log('[OK] Cliente Entregas: Voltar do login retorna ao seletor Corridas/Entregas.');
+console.log('[OK] Cliente Entregas: landing de fallback usa branco/vermelho e logo oficial.');
+
 const finalLoginSource = readFileSync(loginPath, 'utf8');
 if (
   finalLoginSource.includes('rgba(57,181,74,0.18)') ||
