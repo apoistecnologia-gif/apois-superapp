@@ -102,6 +102,25 @@ if ((passengerMapSource.split(polylineImport).length - 1) !== 1) {
 requireMarkers('.work/corridas/src/services/maps/map-service.ts',['APOIS_MAP_STYLE_LIGHT_NATIVE','styles: APOIS_MAP_STYLE_LIGHT_NATIVE','strokeColor: "#E51B23"','iconUrl: "assets/markers/apois-location.svg"','upsertDriverMarker(','removeDriverMarker('],'Mapa nativo do passageiro usa estilo claro APOIS, rota vermelha e marcador do passageiro/motorista');
 requireMarkers('.work/corridas/src/services/routes/route-config.ts',['TOP: 72','RIGHT: 28','BOTTOM: 220','LEFT: 28'],'Câmera da rota preserva mais área útil do mapa com painel compacto');
 forbidMarkers('.work/corridas/src/services/maps/map-service.ts',['assets/markers/pickup.png','assets/markers/destination.png'],'Mapa nativo não depende de marker PNG inexistente');
+requireMarkers('.work/corridas/src/services/places/places-service.ts',[
+  'supabase.functions',
+  'invoke("google-maps-address"',
+  'action: "autocomplete"',
+  'action: "place_details"',
+  'places_timeout',
+],'Busca de destino Corridas usa Edge Function autenticada e não pode ficar carregando indefinidamente');
+requireMarkers('.work/corridas/src/hooks/use-destination-search.tsx',[
+  'requestSequence',
+  'placesService.cancelPendingSearch()',
+  'PLACES_CONFIG.DEBOUNCE_MS',
+  'setIsLoading(false)',
+],'Digitação de destino cancela buscas antigas e limpa loading corretamente');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
+  'data-apois-stable-destination-sheet',
+  'h-[78dvh]',
+  'query.trim().length < 3',
+],'Busca de destino mantém painel estável com teclado aberto');
+
 requireMarkers('.work/corridas/src/hooks/use-location.tsx',[
   'APOIS_PRECISE_LOCATION_V1',
   'permissions: ["location", "coarseLocation"]',
