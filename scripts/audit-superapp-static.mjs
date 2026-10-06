@@ -204,7 +204,8 @@ requireText('scripts/build-isolated-module.mjs', [
 requireText('scripts/harden-corridas-pickup-address-display.mjs', [
   '"google-maps-address"',
   'action: "reverse_geocode"',
-  'address || pickupLabel || pickupShortLabel',
+  'pickupLabel ||',
+  'pickupShortLabel ||',
   'Identificando seu endereço...',
   'Toque para tentar identificar o endereço',
   'Home ainda usa fallback genérico "Sua localização atual"',
