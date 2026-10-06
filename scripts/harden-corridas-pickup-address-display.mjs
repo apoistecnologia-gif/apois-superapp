@@ -58,16 +58,14 @@ home = home.replace(
   'const { address, pickupLabel, pickupShortLabel, status: addressStatus, isLoading: isGeocoding, error: pickupAddressError, refreshAddress } = usePickupAddress();',
 );
 
-const oldCurrent = `  const currentAddressText = addressStatus === "identifying" || isGeocoding
-    ? "Buscando localização..." 
-    : address || "Sua localização atual";`;
+const legacyCurrentAddressPattern = /  const currentAddressText =[\\s\\S]*?(?=\\n\\s*(?:const |return \\())/;
+const currentAddressLine = '  const currentAddressText = addressStatus === "identifying" || isGeocoding ? "Identificando seu endereço..." : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");';
 
-const newCurrent = '  const currentAddressText = addressStatus === "identifying" || isGeocoding ? "Identificando seu endereço..." : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");';
-
-if (!home.includes(oldCurrent) && !home.includes('pickupAddressError ? "Toque para tentar identificar o endereço"')) {
-  throw new Error('[FAIL] Corridas pickup: fallback visual legado não encontrado');
+if (home.includes('const currentAddressText =')) {
+  home = home.replace(legacyCurrentAddressPattern, currentAddressLine);
+} else {
+  throw new Error('[FAIL] Corridas pickup: declaração currentAddressText não encontrada');
 }
-if (home.includes(oldCurrent)) home = home.replace(oldCurrent, newCurrent);
 
 home = home.replace(
   'onClick={() => refreshLocation()}',
