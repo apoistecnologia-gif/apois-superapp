@@ -65,7 +65,16 @@ const replaceCurrentAddressDeclaration = (source, replacement) => {
   if (returnStart < 0) throw new Error('[FAIL] Corridas pickup: limite da declaração currentAddressText não encontrado');
   return source.slice(0, start) + replacement + source.slice(returnStart);
 };
-const currentAddressLine = '  const currentAddressText = addressStatus === "identifying" || isGeocoding ? "Identificando seu endereço..." : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");\\n';
+const currentAddressLine = `  const currentAddressText =
+    addressStatus === "identifying" || isGeocoding
+      ? "Identificando seu endereço..."
+      : address ||
+        pickupLabel ||
+        pickupShortLabel ||
+        (pickupAddressError
+          ? "Toque para tentar identificar o endereço"
+          : "Identificando seu endereço...");
+`;
 
 home = replaceCurrentAddressDeclaration(home, currentAddressLine);
 
