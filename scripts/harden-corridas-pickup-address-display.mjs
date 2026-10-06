@@ -58,14 +58,16 @@ home = home.replace(
   'const { address, pickupLabel, pickupShortLabel, status: addressStatus, isLoading: isGeocoding, error: pickupAddressError, refreshAddress } = usePickupAddress();',
 );
 
-const legacyCurrentAddressPattern = new RegExp('  const currentAddressText =[\\\\s\\\\S]*?(?=\\\\n\\\\s*(?:const |return \\\\())');
+const replaceCurrentAddressDeclaration = (source, replacement) => {
+  const start = source.indexOf('  const currentAddressText =');
+  if (start < 0) throw new Error('[FAIL] Corridas pickup: declaração currentAddressText não encontrada');
+  const returnStart = source.indexOf('\n  return (', start);
+  if (returnStart < 0) throw new Error('[FAIL] Corridas pickup: limite da declaração currentAddressText não encontrado');
+  return source.slice(0, start) + replacement + source.slice(returnStart);
+};
 const currentAddressLine = '  const currentAddressText = addressStatus === "identifying" || isGeocoding ? "Identificando seu endereço..." : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");';
 
-if (home.includes('const currentAddressText =')) {
-  home = home.replace(legacyCurrentAddressPattern, currentAddressLine);
-} else {
-  throw new Error('[FAIL] Corridas pickup: declaração currentAddressText não encontrada');
-}
+home = replaceCurrentAddressDeclaration(home, currentAddressLine);
 
 home = home.replace(
   'onClick={() => refreshLocation()}',
