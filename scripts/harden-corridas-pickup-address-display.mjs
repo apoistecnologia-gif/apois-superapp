@@ -72,9 +72,10 @@ const replaceCurrentAddressDeclaration = (source, replacement) => {
 
   for (let i = 1; i < lines.length; i += 1) {
     consumed += 1; // newline before this line
+    const lineStart = start + consumed;
     const line = lines[i];
     if (/^  (?:const|let|function|return)\b/.test(line)) {
-      boundary = start + consumed;
+      boundary = lineStart;
       break;
     }
     consumed += line.length;
