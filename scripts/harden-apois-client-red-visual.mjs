@@ -265,7 +265,7 @@ if(!home.includes('alt="APOIS"')){
 home=home.replace('Confirmar {selectedCategory?.name || "Solicitação"}','Solicitar corrida');
 write(homePath,home);
 
-must('src/components/pricing/CategorySelector.tsx',['serviceImage','estimatedPickupMinutes','border-[#E51B23]']);
+must('src/components/pricing/CategorySelector.tsx',['servicePosition','validated-sprite-v6','estimatedPickupMinutes','border-[#E51B23]']);
 must('src/routes/_public.login.tsx',['PassengerGoogleLoginButton','Esqueci minha senha','Criar conta','bg-[#E51B23]']);
 must('src/routes/_authenticated.inicio.tsx',['PassengerMap','Solicitar corrida','brandLogo','<CategorySelector />']);
 must('src/styles.css',['--color-primary: #E51B23','--color-apois-red: #E51B23']);
