@@ -93,7 +93,8 @@ for (const marker of [
   if (!read(hookPath).includes(marker)) throw new Error(`[FAIL] Corridas pickup: marcador ausente no hook (${marker})`);
 }
 for (const marker of [
-  'address || pickupLabel || pickupShortLabel',
+  'pickupLabel ||',
+  'pickupShortLabel ||',
   'Identificando seu endereço...',
   'Toque para tentar identificar o endereço',
 ]) {
