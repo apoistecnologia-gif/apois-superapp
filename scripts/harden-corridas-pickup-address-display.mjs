@@ -62,12 +62,7 @@ const oldCurrent = `  const currentAddressText = addressStatus === "identifying"
     ? "Buscando localização..." 
     : address || "Sua localização atual";`;
 
-const newCurrent = [
-  '  const currentAddressText =',
-  '    addressStatus === "identifying" || isGeocoding',
-  '      ? "Identificando seu endereço..."',
-  '      : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");',
-].join('\n');
+const newCurrent = '  const currentAddressText = addressStatus === "identifying" || isGeocoding ? "Identificando seu endereço..." : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");';
 
 if (!home.includes(oldCurrent) && !home.includes('pickupAddressError ? "Toque para tentar identificar o endereço"')) {
   throw new Error('[FAIL] Corridas pickup: fallback visual legado não encontrado');
