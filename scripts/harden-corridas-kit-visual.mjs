@@ -296,10 +296,10 @@ function replaceRequired(source, search, replacement, label) {
 {
   const path = 'src/components/pricing/CategorySelector.tsx';
   const current = read(path);
-  if (current.includes('serviceImage') && current.includes('border-[#E51B23]')) {
-    console.log('[OK] Corridas: CategorySelector ilustrado vermelho/branco preservado');
+  if (current.includes('servicePosition') && current.includes('validated-sprite-v6') && current.includes('border-[#E51B23]')) {
+    console.log('[OK] Corridas: CategorySelector com sprite APOIS validado e visual vermelho/branco preservado');
   } else {
-    throw new Error('[FAIL] Corridas visual: CategorySelector vermelho/branco esperado não foi encontrado');
+    throw new Error('[FAIL] Corridas visual: CategorySelector com sprite validado esperado não foi encontrado');
   }
 }
 
