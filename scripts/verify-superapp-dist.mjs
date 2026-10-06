@@ -46,26 +46,20 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
 ],'Busca Corridas mantém sugestões visíveis e texto digitado legível sobre fundo branco');
 requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
-  'APOIS_CATEGORY_REALISTIC_V5_INLINE',
-  'import { carImage, motoImage, freightImage, towImage, deliveryImage } from "@/assets/categoryVehicleData"',
-  'carros: carImage',
-  'motos: motoImage',
-  'fretes: freightImage',
-  'guincho: towImage',
-  'envios: deliveryImage',
-  'fallbackImage',
-  'realistic-with-svg-fallback',
-  './assets/ride-categories/carros.svg',
-  './assets/ride-categories/motos.svg',
+  'APOIS_CATEGORY_VEHICLE_SPRITE_V6',
+  'import { vehicleSprite } from "@/assets/categoryVehicleData"',
+  'carros: "0%"',
+  'motos: "25%"',
+  'fretes: "50%"',
+  'guincho: "75%"',
+  'envios: "100%"',
+  'validated-sprite-v6',
+  'backgroundSize: "500% 100%"',
   'PRICING_CONFIG.LABELS[cat.key]',
   'w-[124px]',
   'h-[84px]',
-  'object-contain',
   'border-[#E51B23]',
-],'Categorias Corridas usam cinco veículos realistas locais distintos da APOIS');
-for (const asset of ['car.webp','moto.webp','freight.webp','tow.webp','delivery.webp']) {
-  requireFile(`.work/corridas/src/assets/services/${asset}`);
-}
+],'Categorias Corridas usam o sprite APOIS validado com cinco veículos corretos');
 forbidMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'images.pexels.com',
   'pic.52112.com',
@@ -146,7 +140,7 @@ if(missingVisualBundleMarkers.length)fail(`bundle Corridas final não contém id
 if(!treeContains('superapp/shell/dist/modules/corridas','apois-kit-search-screen'))fail('bundle Corridas final não contém a busca visual nova');else ok('bundle Corridas final contém a busca visual nova');
 function treeCountFiles(dir,pattern){const fullDir=resolve(root,dir);if(!existsSync(fullDir))return 0;let count=0;const stack=[fullDir];while(stack.length){const current=stack.pop();for(const entry of readdirSync(current)){const path=resolve(current,entry);const stat=statSync(path);if(stat.isDirectory()){stack.push(path);continue;}if(pattern.test(entry))count++;}}return count;}
 const realisticVehicleAssets=treeCountFiles('superapp/shell/dist/modules/corridas',/\.webp$/i);
-if(!treeContains('superapp/shell/dist/modules/corridas','data:image/webp;base64,'))fail('bundle Corridas final não contém veículos realistas inline');else ok('bundle Corridas final contém veículos realistas inline das categorias');
+if(!treeContains('superapp/shell/dist/modules/corridas','data:image/webp;base64,'))fail('bundle Corridas final não contém sprite local das categorias');else ok('bundle Corridas final contém sprite local validado das categorias');
 if(treeContains('superapp/shell/dist/modules/corridas','pic.52112.com/180806/JPG-180806_120/vGHP86zk7D_small.jpg'))fail('bundle Corridas final ainda depende da imagem externa antiga de Carro');else ok('bundle Corridas final não depende de imagem externa antiga de Carro');
 if(!treeContains('superapp/shell/dist/modules/corridas','Continuar com Google'))fail('bundle Corridas final perdeu o botão Google');else ok('bundle Corridas final contém login com Google');
 if(!treeContains('superapp/shell/dist/modules/corridas','corridas-google'))fail('bundle Corridas final perdeu callback Google do Superapp');else ok('bundle Corridas final contém callback Google nativo');
