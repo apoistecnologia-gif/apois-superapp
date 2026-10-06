@@ -110,18 +110,23 @@ function replaceRequired(source, search, replacement, label) {
     .replaceAll('text-xs font-black text-white uppercase tracking-tighter', 'text-xs font-black text-[#111111] uppercase tracking-tighter')
     .replaceAll('text-[10px] text-zinc-500 truncate w-[80px]', 'text-[10px] text-[#666B73] truncate w-[80px]');
 
+  // Apply every mutation that changes text length BEFORE calculating slice offsets.
+  // Otherwise returnIndex/returnEnd become stale and can cut the component in the
+  // middle of currentAddressText, producing an unterminated string in Vite.
+  if (!source.includes('const [avatarFailed, setAvatarFailed]')) {
+    source = source.replace(
+      '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);',
+      `  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);`,
+    );
+  }
+
   const inicioIndex = source.indexOf('function InicioPage() {');
   const returnIndex = source.indexOf('  return (', inicioIndex);
   const returnEnd = source.lastIndexOf('\n  );\n}');
   if (inicioIndex < 0 || returnIndex < 0 || returnEnd < returnIndex) {
     throw new Error('[FAIL] Corridas visual V2: não foi possível localizar o retorno da Home');
   }
-
-  source = source.replace(
-    '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);',
-    `  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);
-  const [avatarFailed, setAvatarFailed] = useState(false);`,
-  );
 
   const referenceHome = `  return (
     <div data-apois-reference-home-v2 className="apois-kit-home relative flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent text-[#111111]">
