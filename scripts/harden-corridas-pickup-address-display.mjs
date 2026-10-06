@@ -67,7 +67,7 @@ const newCurrent = [
   '    addressStatus === "identifying" || isGeocoding',
   '      ? "Identificando seu endereço..."',
   '      : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");',
-].join('\\n');
+].join('\n');
 
 if (!home.includes(oldCurrent) && !home.includes('pickupAddressError ? "Toque para tentar identificar o endereço"')) {
   throw new Error('[FAIL] Corridas pickup: fallback visual legado não encontrado');
