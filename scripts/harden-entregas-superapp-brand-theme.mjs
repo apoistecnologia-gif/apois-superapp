@@ -113,6 +113,20 @@ const loginPath = resolve(root, workspace, 'src/routes/login.tsx');
 if (!existsSync(loginPath)) throw new Error(`login.tsx do Entregas ausente: ${loginPath}`);
 let loginSource = readFileSync(loginPath, 'utf8');
 
+// APOIS_CUSTOMER_LOGIN_BACK_TO_SHELL_V1
+// O arquivo de login é compartilhado com courier/merchant/admin. Somente o
+// Cliente do Superapp deve voltar ao seletor Corridas/Entregas.
+if (!loginSource.includes('const handleApoisLoginBack = () => {')) {
+  loginSource = loginSource.replace(
+    '  const allowsSignup = productAllowsPublicSignup();',
+    '  const allowsSignup = productAllowsPublicSignup();\n  const handleApoisLoginBack = () => {\n    if (productMode === "customer") {\n      window.location.replace("../../index.html");\n      return;\n    }\n    void navigate({ to: "/" });\n  };',
+  );
+}
+loginSource = loginSource.replaceAll(
+  'onClick={() => navigate({ to: "/" })}',
+  'onClick={handleApoisLoginBack}',
+);
+
 // APOIS_CUSTOMER_LOGIN_LIGHT_V3
 // Corrige apenas a apresentação do login do Cliente no workspace descartável.
 // O fluxo handleLogin, reset, Google OAuth, cadastro e isolamento de sessão não é reimplementado.
@@ -236,7 +250,12 @@ for (const required of ['APOIS ENTREGAS', 'src={apoisClientBrand}', '#E51B23', '
 for (const forbidden of ['bg-[#050505] text-white', 'text-[#F6BE1C]', 'text-[#C88A08]', 'bg-[#F6BE1C]']) {
   if (finalLandingSource.includes(forbidden)) throw new Error('landing Cliente Entregas ainda usa identidade antiga: ' + forbidden);
 }
-if (!loginSource.includes('window.location.replace("../../index.html")')) {
+if (
+  !loginSource.includes('const handleApoisLoginBack = () => {') ||
+  !loginSource.includes('if (productMode === "customer")') ||
+  !loginSource.includes('window.location.replace("../../index.html")') ||
+  !loginSource.includes('onClick={handleApoisLoginBack}')
+) {
   throw new Error('login Cliente Entregas não retorna ao seletor principal do Superapp');
 }
 console.log('[OK] Cliente Entregas: Voltar do login retorna ao seletor Corridas/Entregas.');
