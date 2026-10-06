@@ -65,6 +65,7 @@ function injectSuperappBridge(indexPath, moduleName) {
   const corridasGoogleForwardKey = 'apois-superapp:corridas-google-url';
   const entregasAuthForwardKey = 'apois-superapp:entregas-auth-url';
   const oauthPendingKey = 'apois-superapp:pending-oauth-product';
+  const lastModuleKey = 'apois-superapp:last-module';
   const entregasGoogleForwardKey = 'apois-superapp:entregas-google-url';
   const oauthHandoffTtlMs = 120000;
   const appPlugin = window.Capacitor?.Plugins?.App;
@@ -167,6 +168,15 @@ function injectSuperappBridge(indexPath, moduleName) {
     }
   }
 
+  function lastSelectedModule() {
+    try {
+      const value = localStorage.getItem(lastModuleKey);
+      return value === 'corridas' || value === 'entregas' ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
   function consumePendingOAuthProduct() {
     try {
       const stored = localStorage.getItem(oauthPendingKey);
@@ -209,11 +219,23 @@ function injectSuperappBridge(indexPath, moduleName) {
       const { path, params } = parseAuthDeepLink(rawUrl);
 
       if (moduleName === 'corridas') {
-        // O callback genérico também é usado pelo Google de Corridas. Quando
-        // Corridas iniciou o OAuth, o próprio PassengerGoogleLoginButton deve
-        // receber appUrlOpen/getLaunchUrl e trocar o PKCE no cliente Corridas.
-        if (path === 'callback' && peekPendingOAuthProduct() === 'corridas') return false;
-        if (path === 'reset' || path === 'callback' || path === 'email-change') {
+        // O callback genérico também é usado pelo Google de Corridas. Em alguns
+        // aparelhos Android o WebView pode ser retomado sem o envelope OAuth
+        // transitório, embora o módulo selecionado continue persistido. Nessa
+        // situação não encaminhe o callback de Corridas para Entregas: deixe o
+        // PassengerGoogleLoginButton trocar o PKCE no próprio cliente Corridas.
+        if (path === 'callback') {
+          const pendingProduct = peekPendingOAuthProduct();
+          if (pendingProduct === 'corridas' || (!pendingProduct && lastSelectedModule() === 'corridas')) {
+            return false;
+          }
+          if (pendingProduct === 'entregas') {
+            try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
+            window.location.replace('../entregas/index.html');
+            return true;
+          }
+        }
+        if (path === 'reset' || path === 'email-change') {
           try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
           window.location.replace('../entregas/index.html');
           return true;
