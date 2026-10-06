@@ -59,6 +59,15 @@ const realisticCategoryAssets = {
 };
 
 for (const [name, source] of Object.entries(realisticCategoryAssets)) {
+  const bytes = readFileSync(source);
+  const isWebp =
+    bytes.length >= 16 &&
+    bytes.subarray(0, 4).toString('ascii') === 'RIFF' &&
+    bytes.subarray(8, 12).toString('ascii') === 'WEBP';
+  const declaredSize = bytes.length >= 8 ? bytes.readUInt32LE(4) + 8 : 0;
+  if (!isWebp || declaredSize !== bytes.length) {
+    throw new Error(`[FAIL] APOIS red visual: asset de categoria inválido/truncado (${name}.webp)`);
+  }
   copyFileSync(source, file(`src/assets/services/${name}.webp`));
 }
 
@@ -92,11 +101,19 @@ import { carImage, motoImage, freightImage, towImage, deliveryImage } from "@/as
 // Cada categoria usa um veículo realista próprio, versionado localmente.
 // Identidade APOIS aplicada no próprio veículo, sem selo/wordmark repetido nos cards.
 const serviceImage: Record<RideCategoryCode, string> = {
-  carro: carImage,
-  moto: motoImage,
+  carros: carImage,
+  motos: motoImage,
   fretes: freightImage,
   guincho: towImage,
   envios: deliveryImage,
+};
+
+const fallbackImage: Record<RideCategoryCode, string> = {
+  carros: "./assets/ride-categories/carros.svg",
+  motos: "./assets/ride-categories/motos.svg",
+  fretes: "./assets/ride-categories/fretes.svg",
+  guincho: "./assets/ride-categories/guincho.svg",
+  envios: "./assets/ride-categories/envios.svg",
 };
 
 export const CategorySelector: React.FC = () => {
@@ -117,7 +134,8 @@ export const CategorySelector: React.FC = () => {
         const estimate = estimates.find((e) => e.categoryId === cat.id);
         const isAvailable = estimate?.available !== false && cat.isActive;
         const label = PRICING_CONFIG.LABELS[cat.key] || cat.name;
-        const imageSrc = serviceImage[cat.key] ?? serviceImage.carro;
+        const imageSrc = serviceImage[cat.key] ?? serviceImage.carros;
+        const fallbackSrc = fallbackImage[cat.key] ?? fallbackImage.carros;
         return (
           <button
             key={cat.id}
@@ -135,6 +153,16 @@ export const CategorySelector: React.FC = () => {
                 src={imageSrc}
                 alt=""
                 aria-hidden="true"
+                data-apois-category-image="realistic-with-svg-fallback"
+                onError={(event) => {
+                  const image = event.currentTarget;
+                  if (image.dataset.apoisFallback !== "1") {
+                    image.dataset.apoisFallback = "1";
+                    image.src = fallbackSrc;
+                    return;
+                  }
+                  image.style.display = "none";
+                }}
                 className="h-full w-full object-contain p-0.5 drop-shadow-[0_7px_8px_rgba(17,17,17,.12)]"
                 draggable={false}
               />
