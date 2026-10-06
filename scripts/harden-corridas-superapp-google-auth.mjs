@@ -4,9 +4,9 @@ import { dirname, resolve } from 'node:path';
 
 const root = process.cwd();
 const workspace = '.work/corridas';
-// Corridas usa callback exclusivo para não cair no roteador de autenticação de Entregas.
-const callback = 'br.com.apois.app://auth/corridas-google';
-const legacyCallback = 'br.com.apois.app://auth/callback';
+// O Supabase de produção aceita o callback compartilhado. O shell/module bridge diferencia Corridas de Entregas pelo marcador OAuth persistente.
+const callback = 'br.com.apois.app://auth/callback';
+const legacyCallback = 'br.com.apois.app://auth/corridas-google';
 const forwardedKey = 'apois-superapp:corridas-google-url';
 const pendingProductKey = 'apois-superapp:pending-oauth-product';
 
