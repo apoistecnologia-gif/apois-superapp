@@ -47,75 +47,41 @@ write('src/assets/apoisBrandData.ts', `const apoisBrandData = "data:image/png;ba
 const serviceAssetDir = file('src/assets/services');
 mkdirSync(serviceAssetDir, { recursive: true });
 
-// APOIS_CATEGORY_REALISTIC_ASSETS_V4
-// Assets fotorealistas individuais, versionados localmente.
-// Branding APOIS integrado ao desenho do veículo, sem repetir wordmark/selo em cada card.
-const realisticCategoryAssets = {
-  car: resolve(root, 'superapp/branding/categories/car-realistic.webp'),
-  moto: resolve(root, 'superapp/branding/categories/moto-realistic.webp'),
-  freight: resolve(root, 'superapp/branding/categories/freight-realistic.webp'),
-  tow: resolve(root, 'superapp/branding/categories/tow-realistic.webp'),
-  delivery: resolve(root, 'superapp/branding/categories/delivery-realistic.webp'),
-};
-
-for (const [name, source] of Object.entries(realisticCategoryAssets)) {
-  const bytes = readFileSync(source);
-  const isWebp =
-    bytes.length >= 16 &&
-    bytes.subarray(0, 4).toString('ascii') === 'RIFF' &&
-    bytes.subarray(8, 12).toString('ascii') === 'WEBP';
-  const declaredSize = bytes.length >= 8 ? bytes.readUInt32LE(4) + 8 : 0;
-  if (!isWebp || declaredSize !== bytes.length) {
-    throw new Error(`[FAIL] APOIS red visual: asset de categoria inválido/truncado (${name}.webp)`);
-  }
-  copyFileSync(source, file(`src/assets/services/${name}.webp`));
+// APOIS_CATEGORY_VEHICLE_SPRITE_V6
+// O sprite validado contém cinco veículos, nesta ordem: Carro, Moto, Fretes, Guincho, Envios.
+// Os antigos arquivos *-realistic.webp estavam truncados no repositório e não são usados.
+const vehicleSpriteSource = resolve(root, 'superapp/branding/categories/apois-vehicles.webp');
+const vehicleSpriteBytes = readFileSync(vehicleSpriteSource);
+const vehicleSpriteIsWebp =
+  vehicleSpriteBytes.length >= 16 &&
+  vehicleSpriteBytes.subarray(0, 4).toString('ascii') === 'RIFF' &&
+  vehicleSpriteBytes.subarray(8, 12).toString('ascii') === 'WEBP';
+const vehicleSpriteDeclaredSize =
+  vehicleSpriteBytes.length >= 8 ? vehicleSpriteBytes.readUInt32LE(4) + 8 : 0;
+if (!vehicleSpriteIsWebp || vehicleSpriteDeclaredSize !== vehicleSpriteBytes.length) {
+  throw new Error('[FAIL] APOIS red visual: sprite das categorias inválido/truncado');
 }
-
-const categoryData = Object.fromEntries(
-  Object.entries(realisticCategoryAssets).map(([name, source]) => [
-    name,
-    `data:image/webp;base64,${readFileSync(source).toString('base64')}`,
-  ]),
-);
 write(
   'src/assets/categoryVehicleData.ts',
-  [
-    `export const carImage = ${JSON.stringify(categoryData.car)};`,
-    `export const motoImage = ${JSON.stringify(categoryData.moto)};`,
-    `export const freightImage = ${JSON.stringify(categoryData.freight)};`,
-    `export const towImage = ${JSON.stringify(categoryData.tow)};`,
-    `export const deliveryImage = ${JSON.stringify(categoryData.delivery)};`,
-    '',
-  ].join('\n'),
+  'export const vehicleSprite = "data:image/webp;base64,' + vehicleSpriteBytes.toString('base64') + '";\n',
 );
-
 write('src/components/pricing/CategorySelector.tsx', `import React from "react";
 import { useRideCategories } from "@/hooks/use-ride-categories";
 import { usePricing } from "@/hooks/use-pricing";
 import { PRICING_CONFIG } from "@/services/pricing/pricing-config";
 import { cn } from "@/lib/utils";
 import { RideCategoryCode } from "@/types/pricing";
-import { carImage, motoImage, freightImage, towImage, deliveryImage } from "@/assets/categoryVehicleData";
+import { vehicleSprite } from "@/assets/categoryVehicleData";
 
-// APOIS_CATEGORY_REALISTIC_V5_INLINE
-// Cada categoria usa um veículo realista próprio, versionado localmente.
-// Identidade APOIS aplicada no próprio veículo, sem selo/wordmark repetido nos cards.
-const serviceImage: Record<RideCategoryCode, string> = {
-  carros: carImage,
-  motos: motoImage,
-  fretes: freightImage,
-  guincho: towImage,
-  envios: deliveryImage,
+// APOIS_CATEGORY_VEHICLE_SPRITE_V6
+// Ordem física do sprite validado: Carro, Moto, Fretes, Guincho, Envios.
+const servicePosition: Record<RideCategoryCode, string> = {
+  carros: "0%",
+  motos: "25%",
+  fretes: "50%",
+  guincho: "75%",
+  envios: "100%",
 };
-
-const fallbackImage: Record<RideCategoryCode, string> = {
-  carros: "./assets/ride-categories/carros.svg",
-  motos: "./assets/ride-categories/motos.svg",
-  fretes: "./assets/ride-categories/fretes.svg",
-  guincho: "./assets/ride-categories/guincho.svg",
-  envios: "./assets/ride-categories/envios.svg",
-};
-
 export const CategorySelector: React.FC = () => {
   const { categories, selectedCategory, selectCategory, isLoading: categoriesLoading } = useRideCategories();
   const { estimates, status: pricingStatus } = usePricing();
@@ -134,8 +100,7 @@ export const CategorySelector: React.FC = () => {
         const estimate = estimates.find((e) => e.categoryId === cat.id);
         const isAvailable = estimate?.available !== false && cat.isActive;
         const label = PRICING_CONFIG.LABELS[cat.key] || cat.name;
-        const imageSrc = serviceImage[cat.key] ?? serviceImage.carros;
-        const fallbackSrc = fallbackImage[cat.key] ?? fallbackImage.carros;
+        const spritePosition = servicePosition[cat.key] ?? servicePosition.carros;
         return (
           <button
             key={cat.id}
@@ -148,25 +113,17 @@ export const CategorySelector: React.FC = () => {
               !isAvailable && "opacity-50 grayscale"
             )}
           >
-            <div className="flex h-[84px] items-center justify-center overflow-hidden rounded-[16px] bg-white">
-              <img
-                src={imageSrc}
-                alt=""
-                aria-hidden="true"
-                data-apois-category-image="realistic-with-svg-fallback"
-                onError={(event) => {
-                  const image = event.currentTarget;
-                  if (image.dataset.apoisFallback !== "1") {
-                    image.dataset.apoisFallback = "1";
-                    image.src = fallbackSrc;
-                    return;
-                  }
-                  image.style.display = "none";
-                }}
-                className="h-full w-full object-contain p-0.5 drop-shadow-[0_7px_8px_rgba(17,17,17,.12)]"
-                draggable={false}
-              />
-            </div>
+            <div
+              data-apois-category-image="validated-sprite-v6"
+              className="h-[84px] w-full rounded-[16px] bg-white bg-no-repeat drop-shadow-[0_7px_8px_rgba(17,17,17,.12)]"
+              style={{
+                backgroundImage: "url(" + vehicleSprite + ")",
+                backgroundSize: "500% 100%",
+                backgroundPosition: spritePosition + " center",
+              }}
+              role="img"
+              aria-label={label}
+            />
             <div className="px-0.5 pb-0.5 pt-1.5">
               <div className="truncate text-[13px] font-extrabold text-[#111111]">{label}</div>
               <div className={cn("mt-0.5 text-[12px] font-black", isSelected ? "text-[#E51B23]" : "text-[#242424]")}>
