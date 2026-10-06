@@ -310,7 +310,7 @@ for (const [path, marker] of [
   ['src/routes/_authenticated.inicio.tsx', 'apois-kit-home-panel'],
   ['src/routes/_authenticated.buscar-destino.tsx', 'apois-kit-search-results'],
   ['src/components/ui/bottom-sheet/BottomSheet.tsx', 'max-h-[94dvh]'],
-  ['src/components/pricing/CategorySelector.tsx', 'serviceImage'],
+  ['src/components/pricing/CategorySelector.tsx', 'validated-sprite-v6'],
 ]) {
   if (!read(path).includes(marker)) throw new Error(`[FAIL] Corridas visual: marcador ausente em ${path} (${marker})`);
 }
