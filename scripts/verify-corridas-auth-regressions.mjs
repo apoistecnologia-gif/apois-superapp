@@ -144,7 +144,8 @@ const moduleBridge = read('scripts/build-isolated-module.mjs');
 if (moduleBridge) {
   for (const marker of [
     'function peekPendingOAuthProduct()',
-    "path === 'callback' && peekPendingOAuthProduct() === 'corridas'",
+    "function lastSelectedModule()",
+    "lastSelectedModule() === 'corridas'",
     "function storeCorridasGoogleCallback(rawUrl)",
     "window.location.replace('../corridas/index.html#/login')",
     "window.location.replace('../entregas/index.html')",
