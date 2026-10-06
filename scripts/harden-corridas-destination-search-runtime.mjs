@@ -80,9 +80,9 @@ class PlacesService {
     if (normalizedQuery.length < PLACES_CONFIG.MIN_CHARS) return [];
 
     const biasKey = locationBias
-      ? `${locationBias.lat.toFixed(3)},${locationBias.lng.toFixed(3)}`
+      ? locationBias.lat.toFixed(3) + "," + locationBias.lng.toFixed(3)
       : "no-bias";
-    const cacheKey = `${normalizedQuery.toLowerCase()}|${biasKey}`;
+    const cacheKey = normalizedQuery.toLowerCase() + "|" + biasKey;
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < PLACES_CONFIG.CACHE_TTL_MS) {
       return cached.data;
