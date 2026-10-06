@@ -16,8 +16,8 @@ const googleHardener = read('scripts/harden-corridas-superapp-google-auth.mjs');
 for (const marker of ['flowType: "pkce"', 'handledUrlRef.current === rawUrl', 'browserFinished', 'App.getLaunchUrl()', 'browserFinishedListenerRef.current?.remove()']) {
   if (!googleHardener.includes(marker)) fail(`Google OAuth hardener sem ${marker}`);
 }
-if (!googleHardener.includes("const callback = 'br.com.apois.app://auth/corridas-google';")) fail('callback exclusivo Google Corridas ausente');
-if (!googleHardener.includes("const legacyCallback = 'br.com.apois.app://auth/callback';")) fail('fallback legado compartilhado ausente');
+if (!googleHardener.includes("const callback = 'br.com.apois.app://auth/callback';")) fail('callback compartilhado de produção Google Corridas ausente');
+if (!googleHardener.includes("const legacyCallback = 'br.com.apois.app://auth/corridas-google';")) fail('fallback legado exclusivo Corridas ausente');
 
 const oauthHandoffHardener = read('scripts/harden-corridas-oauth-callback-handoff.mjs');
 for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', 'handlingRef.current || handledUrlRef.current === rawUrl', 'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl']) {
