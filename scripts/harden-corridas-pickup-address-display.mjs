@@ -58,7 +58,7 @@ home = home.replace(
   'const { address, pickupLabel, pickupShortLabel, status: addressStatus, isLoading: isGeocoding, error: pickupAddressError, refreshAddress } = usePickupAddress();',
 );
 
-const legacyCurrentAddressPattern = /  const currentAddressText =[\\s\\S]*?(?=\\n\\s*(?:const |return \\())/;
+const legacyCurrentAddressPattern = new RegExp('  const currentAddressText =[\\\\s\\\\S]*?(?=\\\\n\\\\s*(?:const |return \\\\())');
 const currentAddressLine = '  const currentAddressText = addressStatus === "identifying" || isGeocoding ? "Identificando seu endereço..." : address || pickupLabel || pickupShortLabel || (pickupAddressError ? "Toque para tentar identificar o endereço" : "Identificando seu endereço...");';
 
 if (home.includes('const currentAddressText =')) {
