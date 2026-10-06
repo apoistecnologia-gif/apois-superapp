@@ -356,6 +356,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-native-map.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-address-display.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-destination-search-runtime.mjs')]);
 
   const protectedMapRuntimePaths = [
     '.work/corridas/src/components/map/PassengerMap.tsx',
