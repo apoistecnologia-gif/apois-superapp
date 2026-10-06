@@ -148,11 +148,13 @@ requireText('scripts/fix-corridas-superapp-ui.mjs', [
 
 requireText('scripts/build-isolated-module.mjs', [
   'function peekPendingOAuthProduct()',
-  "path === 'callback' && peekPendingOAuthProduct() === 'corridas'",
+  'function lastSelectedModule()',
+  "pendingProduct === 'corridas' || (!pendingProduct && lastSelectedModule() === 'corridas')",
+  "if (pendingProduct === 'entregas')",
   "function storeCorridasGoogleCallback(rawUrl)",
   "window.location.replace('../corridas/index.html#/login')",
   "window.location.replace('../entregas/index.html')",
-], 'callback Google de Corridas permanece no módulo Corridas e callbacks genéricos de Entregas continuam encaminhados');
+], 'callback Google de Corridas permanece em Corridas mesmo após resume Android; callback de Entregas continua encaminhado');
 
 requireText('scripts/harden-corridas-native-map.mjs', [
   'APOIS_NATIVE_MAP_FALLBACK_V3',
@@ -212,28 +214,32 @@ requireText('scripts/harden-corridas-pickup-address-display.mjs', [
 ], 'Local de partida usa reverse geocoding real e não exibe fallback genérico');
 
 requireText('scripts/harden-apois-client-red-visual.mjs', [
-  'APOIS_CATEGORY_REALISTIC_ASSETS_V4',
+  'APOIS_CATEGORY_VEHICLE_SPRITE_V6',
+  'superapp/branding/categories/apois-vehicles.webp',
+  'vehicleSpriteDeclaredSize !== vehicleSpriteBytes.length',
+  'export const vehicleSprite = "data:image/webp;base64,',
+  'src/assets/categoryVehicleData.ts',
+  'import { vehicleSprite } from "@/assets/categoryVehicleData"',
+  'carros: "0%"',
+  'motos: "25%"',
+  'fretes: "50%"',
+  'guincho: "75%"',
+  'envios: "100%"',
+  'validated-sprite-v6',
+  'backgroundSize: "500% 100%"',
+  'backgroundPosition: spritePosition + " center"',
+  'w-[124px]',
+  'h-[84px]',
+], 'categorias Corridas usam sprite APOIS validado com Carro, Moto, Fretes, Guincho e Envios na ordem correta');
+forbidText('scripts/harden-apois-client-red-visual.mjs', [
   'superapp/branding/categories/car-realistic.webp',
   'superapp/branding/categories/moto-realistic.webp',
   'superapp/branding/categories/freight-realistic.webp',
   'superapp/branding/categories/tow-realistic.webp',
   'superapp/branding/categories/delivery-realistic.webp',
-  'import { carImage, motoImage, freightImage, towImage, deliveryImage } from "@/assets/categoryVehicleData"',
-  'data:image/webp;base64,',
-  'src/assets/categoryVehicleData.ts',
-  'carImage',
-  'deliveryImage',
+  'APOIS_CATEGORY_REALISTIC_ASSETS_V4',
   'APOIS_CATEGORY_REALISTIC_V5_INLINE',
-  'carro: carImage',
-  'moto: motoImage',
-  'fretes: freightImage',
-  'guincho: towImage',
-  'envios: deliveryImage',
-  'const imageSrc = serviceImage[cat.key] ?? serviceImage.carro',
-  'object-contain',
-  'w-[124px]',
-  'h-[84px]',
-], 'categorias Corridas usam cinco veículos realistas individuais da APOIS, sem sprite, hotlink ou wordmark repetido');
+], 'categorias Corridas não voltam a usar os cinco WebP truncados antigos');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
