@@ -74,7 +74,8 @@ requireAll('scripts/harden-corridas-kit-visual.mjs', [
   'apois-kit-search-results',
   'max-h-[94dvh]',
   'max(16px, env(safe-area-inset-bottom))',
-  'serviceImage',
+  'servicePosition',
+  'validated-sprite-v6',
   'border-[#E51B23]',
 ], 'Corridas aplica kit visual vermelho/branco à Home, busca, BottomSheet e categorias');
 
