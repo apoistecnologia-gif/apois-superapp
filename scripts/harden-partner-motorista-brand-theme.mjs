@@ -21,16 +21,16 @@ patch('src/lib/theme.tsx', (source) => {
   const listenerStart = next.indexOf('  // Listen to system changes while in "system" mode');
   const syncStart = next.indexOf('  // Sync from Supabase user preferences on auth/state change', listenerStart);
   if (listenerStart >= 0 && syncStart > listenerStart) {
-    next = next.slice(0, listenerStart) + `  // APOIS Parceiro mantém a identidade preto/dourado independentemente do tema do aparelho.\n  useEffect(() => {\n    applyThemeClass(\"dark\");\n  }, [mode]);\n\n` + next.slice(syncStart);
+    next = next.slice(0, listenerStart) + `  // APOIS Parceiro mantém a identidade visual clara vermelho/branco independentemente do tema do aparelho.\n  useEffect(() => {\n    applyThemeClass(\"dark\");\n  }, [mode]);\n\n` + next.slice(syncStart);
   }
   if (next.includes('mq.matches ? "dark" : "light"')) {
     throw new Error('[FAIL] theme.tsx: listener do sistema ainda pode mudar o APOIS Parceiro para tema claro');
   }
-  if (!next.includes('applyThemeClass("dark");')) {
-    throw new Error('[FAIL] theme.tsx: trava de identidade escura não aplicada');
+  if (!next.includes('applyThemeClass("light");')) {
+    throw new Error('[FAIL] theme.tsx: trava de identidade clara não aplicada');
   }
   return next;
-}, 'motorista: tema do sistema não consegue trocar a identidade APOIS para claro');
+}, 'motorista: tema do sistema não consegue descaracterizar a identidade clara APOIS');
 
 patch('src/routes/motorista.configuracoes.tsx', (source) => {
   let next = source;
@@ -48,4 +48,4 @@ patch('src/routes/motorista.configuracoes.tsx', (source) => {
   return next;
 }, 'motorista: configurações não exibem seletor de tema que não deve alterar a identidade da marca');
 
-console.log(`[OK] identidade preto/dourado do Motorista protegida em ${workspace}`);
+console.log(`[OK] identidade vermelho/branco do Motorista protegida em ${workspace}`);
