@@ -154,12 +154,20 @@ const review = patch('src/routes/_authenticated.revisar-solicitacao.tsx', (sourc
   let next = source;
   next = next
     .replace(
+      'className="flex min-h-screen flex-col bg-[#F7F7F8] text-[#111111] pb-safe"',
+      'className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#F7F7F8] text-[#111111]"',
+    )
+    .replace(
+      'className="px-5 py-6 flex items-center gap-4 border-b border-[#E2E4E8] bg-white backdrop-blur-md sticky top-0 z-10"',
+      'className="flex shrink-0 items-center gap-3 border-b border-[#E2E4E8] bg-white px-4 py-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-md"',
+    )
+    .replace(
       'className="flex-1 px-5 py-6 space-y-6 overflow-y-auto"',
       'className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4"',
     )
     .replace(
       'className="px-5 py-6 bg-white/95 backdrop-blur-xl border-t border-[#E2E4E8]"',
-      'className="shrink-0 border-t border-[#E2E4E8] bg-white/95 px-4 py-3 backdrop-blur-xl"',
+      'className="shrink-0 border-t border-[#E2E4E8] bg-white/95 px-4 pt-3 pb-[max(64px,env(safe-area-inset-bottom))] backdrop-blur-xl"',
     )
     .replace(
       '"w-full h-16 rounded-2xl font-black text-lg transition-all active:scale-[0.98]"',
@@ -169,8 +177,10 @@ const review = patch('src/routes/_authenticated.revisar-solicitacao.tsx', (sourc
 }, 'Corridas mobile: revisão reduz rolagem excessiva sem remover informações');
 
 requireMarkers(review, [
+  'h-[100dvh] min-h-0 flex-col overflow-hidden',
   'overscroll-contain px-4 py-4',
+  'pb-[max(64px,env(safe-area-inset-bottom))]',
   'h-14 w-full rounded-2xl',
-], 'revisão compacta');
+], 'revisão compacta e CTA fora da navegação do Android');
 
 console.log('[OK] APOIS_CORRIDAS_MOBILE_PROPORTIONS_V1: pagamento, Home, revisão e procura de motorista ajustados para telas móveis.');
