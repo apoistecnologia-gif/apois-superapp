@@ -92,6 +92,31 @@ patch('src/routes/motorista.app.tsx', (source) => {
     .replace(/^\s*Menu,\s*(?:\r?\n|$)/gm, '')
     .replace(/^\s*MessageCircle,\s*(?:\r?\n|$)/gm, '');
 
+  // Proteja painéis inferiores e ofertas contra a barra Android de três botões.
+  // O rodapé principal ficou maior; reservas antigas de 68/76px passaram a
+  // sobrepor o painel e os CTAs depois da troca de layout.
+  next = next
+    .replaceAll(
+      'const navReserve = "calc(env(safe-area-inset-bottom) + 76px)";',
+      'const navReserve = "calc(max(44px, env(safe-area-inset-bottom)) + 88px)";',
+    )
+    .replaceAll(
+      'style={{ bottom: "calc(env(safe-area-inset-bottom) + 68px)" }}',
+      'style={{ bottom: "calc(max(44px, env(safe-area-inset-bottom)) + 88px)" }}',
+    )
+    .replaceAll(
+      'style={{ paddingBottom: "env(safe-area-inset-bottom)" }}',
+      'style={{ paddingBottom: "max(52px, env(safe-area-inset-bottom))" }}',
+    )
+    .replaceAll(
+      'style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 4px)" }}',
+      'style={{ paddingBottom: "max(52px, calc(env(safe-area-inset-bottom) + 4px))" }}',
+    )
+    .replaceAll(
+      'style={{ padding: "12px 20px calc(env(safe-area-inset-bottom) + 16px)" }}',
+      'style={{ padding: "12px 20px max(52px, calc(env(safe-area-inset-bottom) + 16px))" }}',
+    );
+
   // Amplie controles essenciais; transformação idempotente.
   next = next
     .replace(/\bh-10\s+w-10\b/g, 'h-11 w-11')
@@ -114,6 +139,14 @@ patch('src/routes/motorista.app.tsx', (source) => {
   if (/aria-label=["']Abrir menu["']/.test(source)) failures.push('botão Abrir menu');
   if (!(/\bh-11\s+w-11\b/.test(source) || /\bmin-h-11\b/.test(source) || /\bh-12\s+w-12\b/.test(source))) failures.push('alvos de toque');
   if (!source.includes('<ApoisDriverBottomNav')) failures.push('ApoisDriverBottomNav');
+  for (const marker of [
+    'calc(max(44px, env(safe-area-inset-bottom)) + 88px)',
+    'max(52px, env(safe-area-inset-bottom))',
+    'max(52px, calc(env(safe-area-inset-bottom) + 4px))',
+    'max(52px, calc(env(safe-area-inset-bottom) + 16px))',
+  ]) {
+    if (!source.includes(marker)) failures.push('safe-area ' + marker);
+  }
 
   return failures.length ? failures.join(', ') : true;
 },
