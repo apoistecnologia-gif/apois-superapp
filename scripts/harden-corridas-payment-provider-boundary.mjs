@@ -37,6 +37,27 @@ for (const marker of [
 }
 writeFileSync(servicePath, service, 'utf8');
 
+service = readFileSync(servicePath, 'utf8');
+if (!service.includes('APOIS_DIRECT_PAYMENT_FALLBACK_V1')) {
+  service = service.replace(
+    '    return (data ?? []).flatMap((method) => {',
+    '    // APOIS_DIRECT_PAYMENT_FALLBACK_V1\n    const directMethods = (data ?? []).flatMap((method) => {',
+  );
+  service = service.replace(
+    '    });\n  }\n\n  async getCancellationFees',
+    `    });\n\n    const fallbackMethods: PaymentMethod[] = [\n      { id: "direct-cash", code: "cash", name: "Dinheiro", label: "Dinheiro", description: "Pague diretamente ao motorista em dinheiro ao final da corrida.", icon: null, isActive: true, enabled: true, sortOrder: 10, requiresBalance: false },\n      { id: "direct-credit", code: "credit", name: "Cartão de crédito", label: "Cartão de crédito", description: "Pague diretamente ao motorista no cartão de crédito, usando o meio aceito pelo próprio motorista.", icon: null, isActive: true, enabled: true, sortOrder: 20, requiresBalance: false },\n    ];\n    for (const fallback of fallbackMethods) {\n      if (!directMethods.some((method) => method.code === fallback.code)) directMethods.push(fallback);\n    }\n    return directMethods.sort((a, b) => a.sortOrder - b.sortOrder);\n  }\n\n  async getCancellationFees`,
+  );
+}
+for (const marker of [
+  'APOIS_DIRECT_PAYMENT_FALLBACK_V1',
+  'id: "direct-cash"',
+  'id: "direct-credit"',
+  'return directMethods.sort((a, b) => a.sortOrder - b.sortOrder);',
+]) {
+  if (!service.includes(marker)) throw new Error(`Corridas: fallback visual/operacional de pagamento direto incompleto (${marker}).`);
+}
+writeFileSync(servicePath, service, 'utf8');
+
 const hookPath = resolve(root, workspace, 'src/hooks/use-payment-methods.tsx');
 const hook = readFileSync(hookPath, 'utf8');
 if (!hook.includes('paymentService.getPaymentMethods()')) {
