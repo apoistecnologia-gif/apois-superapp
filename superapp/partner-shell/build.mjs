@@ -5,9 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
-const branding = resolve(root, '../branding/apois-launcher.png');
-// O Parceiro usa a identidade oficial compartilhada do ecossistema.
-const driverLogoSource = null;
+const branding = resolve(root, '../branding/apois-client-red-logo.b64');
 
 function readTextTree(directory) {
   let output = '';
@@ -44,12 +42,17 @@ rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 
 if (!existsSync(branding)) {
-  console.error(`[FAIL] branding APOIS ausente em ${branding}`);
+  console.error(`[FAIL] branding APOIS vermelho ausente em ${branding}`);
   process.exit(1);
 }
-
-let brandDataUrl = `data:image/png;base64,${readFileSync(branding).toString('base64')}`;
-console.log('[OK] seletor parceiro usa a logomarca oficial compartilhada da nova identidade');
+const brandBase64 = readFileSync(branding, 'utf8').trim();
+const brandBytes = Buffer.from(brandBase64, 'base64');
+if (brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
+  console.error('[FAIL] branding APOIS vermelho do Parceiro não é um PNG válido');
+  process.exit(1);
+}
+let brandDataUrl = `data:image/png;base64,${brandBase64}`;
+console.log('[OK] seletor parceiro usa a logomarca oficial vermelha da nova identidade');
 
 const templatePath = resolve(root, 'index.html');
 let shellHtml = readFileSync(templatePath, 'utf8');
@@ -61,7 +64,7 @@ shellHtml = shellHtml.replace('__APOIS_BRAND_DATA_URL__', brandDataUrl);
 writeFileSync(resolve(dist, 'index.html'), shellHtml, 'utf8');
 
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
-cpSync(branding, resolve(dist, 'assets/apois-brand.png'));
+writeFileSync(resolve(dist, 'assets/apois-brand.png'), brandBytes);
 
 const modules = [
   ['motorista', resolve(root, '../../.work/partner-motorista/dist/client')],
