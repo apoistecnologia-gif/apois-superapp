@@ -138,6 +138,32 @@ requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   '@media(max-width:360px)',
 ], 'seletor Parceiro permanece utilizável em telas baixas/estreitas e fora da barra Android');
 
+// Dívidas funcionais expostas pelo layout novo. Não bloqueiam o build porque
+// não foram introduzidas por esta migração visual, mas precisam aparecer na auditoria.
+const serviceDetails = read('sources/apois-corridas-passageiro/src/components/pricing/ServiceDetailsForm.tsx');
+if (serviceDetails.includes('Form implementation for each category would go here')) {
+  warn('Corridas: Detalhes do Serviço de Fretes/Guincho/Envios ainda é placeholder e não possui formulário funcional.');
+}
+
+const walletRoute = read('sources/apois-corridas-passageiro/src/routes/_authenticated.carteira.tsx');
+if (walletRoute.includes('Sua Carteira') && walletRoute.length < 1200) {
+  warn('Corridas: rota Carteira exposta no rodapé ainda é uma tela placeholder.');
+}
+
+const ridesRoute = read('sources/apois-corridas-passageiro/src/routes/_authenticated.corridas.tsx');
+if (ridesRoute.includes('Suas Corridas') && ridesRoute.length < 1200) {
+  warn('Corridas: rota Corridas exposta no rodapé ainda é uma tela placeholder.');
+}
+
+const rideRequest = read('sources/apois-corridas-passageiro/src/hooks/rides/use-ride-request.tsx');
+if (
+  rideRequest.includes('supabase.functions.invoke("request-ride"') &&
+  !rideRequest.includes('Promise.race') &&
+  !rideRequest.includes('request_timeout')
+) {
+  warn('Corridas: criação da corrida não possui timeout explícito no cliente; uma chamada de rede pendente pode manter a revisão em estado de envio por tempo indefinido.');
+}
+
 // Achado de auditoria: o parceiro ainda está explicitamente preso à identidade
 // preta/dourada, enquanto Cliente Corridas/Entregas usam vermelho/branco.
 const driverTheme = read('scripts/harden-partner-motorista-brand-theme.mjs');
