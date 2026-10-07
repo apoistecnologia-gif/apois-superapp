@@ -24,7 +24,7 @@ patch('src/components/ApoisDriverBottomNav.tsx', (source) => {
   );
 
   next = next
-    .replace('paddingBottom: "max(env(safe-area-inset-bottom), 7px)"', 'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"')
+    .replace('paddingBottom: "max(env(safe-area-inset-bottom), 7px)"', 'paddingBottom: "max(env(safe-area-inset-bottom), 44px)"')
     .replace('className="mx-auto grid min-h-[70px] w-full max-w-md grid-cols-5 gap-1"', 'className="mx-auto grid min-h-[82px] w-full max-w-md grid-cols-5 gap-1"')
     .replace(
       'group relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-0.5 text-zinc-400',
@@ -45,7 +45,7 @@ patch('src/components/ApoisDriverBottomNav.tsx', (source) => {
   }
   for (const marker of [
     'to: "/motorista/ganhos", label: "Ganhos"',
-    'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
+    'paddingBottom: "max(env(safe-area-inset-bottom), 44px)"',
     'min-h-[82px]',
     'min-h-[60px]',
     'h-9 w-11',
