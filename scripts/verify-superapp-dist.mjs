@@ -44,7 +44,7 @@ requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
   'caret-[#E51B23]',
   'placeholder:text-[#9AA0A8]',
 ],'Busca Corridas mantém sugestões visíveis e texto digitado legível sobre fundo branco');
-requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','max(16px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas não reserva rodapé fantasma e respeita teclado/safe area');
+requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','z-[120]','z-[110]','max(52px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas fica acima do rodapé e da barra Android, respeitando teclado/safe area');
 requireMarkers('.work/corridas/src/components/payments/PaymentMethodSelector.tsx',[
   'z-[140]',
   'max-h-[78dvh]',
@@ -173,4 +173,12 @@ requireMarkers('.work/entregas/src/lib/customer-push.ts',['register_superapp_cus
 forbidMarkers('.work/entregas/src/lib/customer-push.ts',['PushNotifications.unregister()'],'logout Entregas não invalida token FCM compartilhado');
 requireMarkers('.work/entregas/src/routes/checkout.tsx',['const paymentMethod = "cash";','paymentMethod: "cash"','if (paymentMethod !== "cash")'],'checkout Entregas permanece cash-only e fail-closed');
 requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['fixed bottom-0','min-h-[88px]','aria-label="Buscar"','<Search className="h-8 w-8" />'],'rodapé Entregas é fixo, legível e explícito');
+requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['pb-[max(44px,env(safe-area-inset-bottom))]'],'rodapé Entregas preserva fallback físico para barra Android');
+requireMarkers('.work/entregas/src/components/ui/dialog.tsx',['z-[120]','z-[121]'],'Dialog Entregas fica acima do rodapé fixo');
+requireMarkers('.work/entregas/src/components/ui/alert-dialog.tsx',['z-[120]','z-[121]'],'AlertDialog Entregas fica acima do rodapé fixo');
+requireMarkers('.work/entregas/src/components/ui/sheet.tsx',['z-[120]','z-[121]'],'Sheet Entregas fica acima do rodapé fixo');
+requireMarkers('.work/entregas/src/components/ProductCustomizationSheet.tsx',['h-[90dvh]','pb-[max(52px,env(safe-area-inset-bottom))]'],'personalização de produto respeita viewport e barra Android');
+requireMarkers('.work/entregas/src/routes/sacola.tsx',['pb-[max(52px,env(safe-area-inset-bottom))]'],'sacola Entregas mantém CTA acima da barra Android');
+requireMarkers('.work/entregas/src/routes/pedido/confirmado.tsx',['pb-[max(52px,env(safe-area-inset-bottom))]'],'confirmação de pedido respeita barra Android');
+requireMarkers('.work/entregas/src/routes/pedido/$orderId/avaliar.tsx',['pb-[max(52px,env(safe-area-inset-bottom))]'],'avaliação do pedido respeita barra Android');
 if(failed)process.exit(1);console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');
