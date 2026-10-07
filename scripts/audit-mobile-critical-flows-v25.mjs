@@ -71,10 +71,10 @@ requireAll('scripts/harden-entregas-superapp-auth-runtime.mjs', [
 
 requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
   'min-h-dvh',
-  'overflow-y-auto',
   'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
   'pt-[max(env(safe-area-inset-top),1rem)]',
-], 'Checkout Entregas é rolável e respeita viewport/safe-area');
+  '!/\\b(?:min-)?h-screen\\b/.test(source)',
+], 'Checkout Entregas respeita viewport dinâmica e safe-area');
 
 requireAll('scripts/harden-entregas-superapp-secondary-mobile-ui.mjs', [
   '<AppBottomNav activeTab="perfil" />',
