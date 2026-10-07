@@ -21,11 +21,11 @@ check('scripts/harden-entregas-order-finish-mobile-ui.mjs', [
   "patch('src/routes/pedido/confirmado.tsx'",
   'min-h-dvh',
   'overflow-y-auto',
-  'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+  'pb-[max(52px,env(safe-area-inset-bottom))]',
   "patch('src/routes/pedido/$orderId/avaliar.tsx'",
   'grid h-11 w-11 shrink-0 place-items-center rounded-xl',
   'pt-[max(env(safe-area-inset-top),0.85rem)]',
-  'pb-[max(env(safe-area-inset-bottom),1rem)]',
+  'pb-[max(52px,env(safe-area-inset-bottom))]',
 ], 'Confirmação e avaliação do pedido ficam utilizáveis em telas baixas e com toque mínimo');
 
 check('.apois/modules.json', [
