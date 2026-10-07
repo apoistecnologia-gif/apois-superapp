@@ -265,8 +265,8 @@ patch(
       }
       updatedAttrs = updatedAttrs.replace(/className="([^"]*)"/, (_m, classes) => {
         let value = normalizeClassList(classes);
-        if (!value.includes('data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]')) {
-          value = ensureClasses(value, ['data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]']);
+        if (!value.includes('data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]')) {
+          value = ensureClasses(value, ['data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]']);
         }
         return `className="${value}"`;
       });
@@ -293,7 +293,7 @@ patch(
     const hasBasicProfileGuard = /disabled=\{Boolean\(activeJob\)\}/.test(source) && /!activeJob\s*&&\s*setProfileOpen\(true\)/.test(source);
     if (!hasStrongProfileGuard && !hasBasicProfileGuard) failures.push('bloqueio do perfil durante entrega');
     if (!/data-active-job=\{activeJob\s*\?\s*"true"\s*:\s*"false"\}/.test(source)) failures.push('estado estrutural do main');
-    if (!/data-\[active-job=true\]:pb-\[max\(env\(safe-area-inset-bottom\),1\.25rem\)\]/.test(source)) failures.push('safe-area inferior da entrega ativa');
+    if (!/data-\[active-job=true\]:pb-\[max\(52px,env\(safe-area-inset-bottom\)\)\]/.test(source)) failures.push('safe-area inferior da entrega ativa');
     if (!/\{!activeJob(?:\s*&&\s*!completedJob)?\s*\?\s*\([\s\S]{0,1800}?<CourierBottomNav[\s\S]{0,1400}?active="home"/.test(source)) failures.push('rodapé HOME condicionado à ausência de entrega ativa');
     return failures.length ? failures.join(', ') : true;
   },
