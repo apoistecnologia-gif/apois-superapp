@@ -145,7 +145,7 @@ require_contains 'const transitionJobId = activeJob.id;' src/routes/courier.tsx 
 require_contains 'setCompletedJob({ ...deliveredJob, status: "delivered" });' src/routes/courier.tsx 'Conclusão operacional separada do financeiro'
 require_contains 'Recebimento direto ainda está em homologação.' src/routes/courier.tsx 'Settlement manual permanece explícito'
 require_contains 'Saque manual está desativado.' src/routes/courier.tsx 'Saque legado desativado'
-require_contains 'confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
+require_contains 'courier_confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
 require_contains 'data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]' src/routes/courier.tsx 'Entregador protege entrega ativa da barra Android'
 require_contains 'pb-[max(44px,env(safe-area-inset-bottom))]' src/components/CourierPanels.tsx 'Entregador protege rodapé da barra Android'
 require_contains 'pb-[max(52px,env(safe-area-inset-bottom))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte acima da barra Android'
