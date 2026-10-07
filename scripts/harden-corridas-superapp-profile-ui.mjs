@@ -7,6 +7,14 @@ let source = readFileSync(path, 'utf8');
 // Migração estritamente visual: preserva dados, ações, rotas e autenticação,
 // mas impede que o Perfil volte ao tema preto/amarelo depois do hardener mobile.
 source = source
+  .replace(
+    '  const currentProfile = normalizeProfile(profile, user?.email);',
+    '  const currentProfile = normalizeProfile(profile, user?.email);\\n  const profileAvatarUrl = currentProfile.avatarUrl ?? readNonEmptyString(user?.user_metadata?.avatar_url) ?? readNonEmptyString(user?.user_metadata?.picture);',
+  )
+  .replace(
+    '<AvatarImage src={currentProfile.avatarUrl} />',
+    '<AvatarImage src={profileAvatarUrl} />',
+  )
   .replace('className="flex flex-col min-h-screen bg-black text-white pb-24"', 'className="flex min-h-screen flex-col bg-[#F7F7F8] pb-24 text-[#111111]"')
   .replace('className="flex min-h-0 flex-1 flex-col bg-black text-white"', 'className="flex min-h-0 flex-1 flex-col bg-[#F7F7F8] text-[#111111]"')
   .replace('className="p-6 pt-12 flex flex-col items-center border-b border-gray-900"', 'className="flex flex-col items-center border-b border-[#E2E4E8] bg-white px-6 pb-6 pt-[max(env(safe-area-inset-top),1.25rem)]"')
@@ -29,6 +37,9 @@ source = source
   .replace('className="text-xs font-bold text-gray-500 px-2 pt-6 pb-2 uppercase tracking-wider"', 'className="px-2 pb-2 pt-6 text-[11px] font-black uppercase tracking-[0.16em] text-[#666B73]"')
   .replace('className="text-center text-gray-600 text-xs mt-8"', 'className="mt-8 text-center text-xs text-[#8A9098]"');
 
+if (!source.includes('profileAvatarUrl') || !source.includes('user?.user_metadata?.picture')) {
+  throw new Error('[FAIL] Corridas: Perfil perdeu fallback da foto do usuário autenticado');
+}
 if (!source.includes('min-h-[68px]')) throw new Error('[FAIL] Corridas: Perfil sem alvos de toque adequados');
 if (!source.includes('env(safe-area-inset-top)')) throw new Error('[FAIL] Corridas: Perfil sem safe area superior');
 if (
