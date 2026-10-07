@@ -300,4 +300,18 @@ patch(
   'entregador: tela principal respeita safe-area e não abre painéis/rodapé durante entrega ativa',
 );
 
+patch(
+  'src/components/CourierCompletionSupport.tsx',
+  (source) => source
+    .replace(
+      'className="w-full max-w-lg rounded-[2rem] border border-accent/30 bg-[#090909] p-4 pb-[max(env(safe-area-inset-bottom),1rem)] text-white shadow-[0_-20px_70px_rgba(0,0,0,0.75)]"',
+      'className="max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[2rem] border border-accent/30 bg-[#090909] px-4 pt-4 pb-[max(52px,env(safe-area-inset-bottom))] text-white shadow-[0_-20px_70px_rgba(0,0,0,0.75)]"',
+    ),
+  (source) =>
+    source.includes('max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]') &&
+    source.includes('overflow-y-auto overscroll-contain') &&
+    source.includes('pb-[max(52px,env(safe-area-inset-bottom))]'),
+  'entregador: suporte durante entrega permanece utilizável com teclado e barra Android',
+);
+
 console.log(`[OK] ergonomia, foco operacional, mapas, nomenclatura e safe-area do Entregador Parceiro endurecidas em ${workspace}`);
