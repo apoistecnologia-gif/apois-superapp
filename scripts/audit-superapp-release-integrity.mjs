@@ -69,14 +69,38 @@ if (releaseGateMarkers.some((marker) => !releaseIntegrity.includes(marker)) ||
   console.log('[OK] pipeline executa gates Play Store, providers aposentados e integridade antes dos builds');
 }
 
-requireAll('.apois/modules.json', [
-  'harden-entregas-superapp-account-security.mjs',
-  'harden-entregas-superapp-account-deletion.mjs',
-  'harden-entregas-superapp-address-ux.mjs',
-  'harden-entregas-superapp-customer-ux.mjs',
-  '"entregas": {',
-  '"install": ["bun", "install"]',
-], 'Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work');
+{
+  const manifestPath = resolve(root, '.apois/modules.json');
+  if (!existsSync(manifestPath)) {
+    console.error('[FAIL] Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work: arquivo ausente .apois/modules.json');
+    failed = true;
+  } else {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const entregas = manifest?.modules?.entregas;
+    const buildCommand = Array.isArray(entregas?.build) ? entregas.build.join(' ') : '';
+    const requiredMarkers = [
+      'harden-entregas-superapp-account-security.mjs',
+      'harden-entregas-superapp-account-deletion.mjs',
+      'harden-entregas-superapp-address-ux.mjs',
+      'harden-entregas-superapp-customer-ux.mjs',
+    ];
+    const installOk = Array.isArray(entregas?.install) &&
+      entregas.install.length === 2 &&
+      entregas.install[0] === 'bun' &&
+      entregas.install[1] === 'install';
+    const missing = requiredMarkers.filter((marker) => !buildCommand.includes(marker));
+    if (!installOk || missing.length) {
+      const details = [
+        ...(!installOk ? ['install Entregas deve ser [bun, install]'] : []),
+        ...missing,
+      ];
+      console.error('[FAIL] Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work: ' + details.join(' | '));
+      failed = true;
+    } else {
+      console.log('[OK] Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work');
+    }
+  }
+}
 
 requireAll('codemagic.yaml', [
   'name: APOIS Superapp - Android Release',
