@@ -27,7 +27,7 @@ requireText(release, 'audit-motorista-release-surface.mjs', 'Motorista audita bu
 requireText(release, "forbid_bundle 'Mercado Pago'", 'Bundle bloqueia Mercado Pago');
 requireText(release, "forbid_bundle 'asaas-create-driver'", 'Bundle bloqueia provisionamento Asaas');
 requireText(release, 'harden-partner-entregador-map.mjs', 'Entregador usa umbrella de hardening operacional');
-requireText(release, 'confirm_courier_settlement', 'Entregador exige contrato de settlement manual');
+requireText(release, 'courier_confirm_courier_settlement', 'Entregador exige contrato de settlement manual');
 
 for (const marker of [
   'harden-motorista-field-mercadopago.mjs',
