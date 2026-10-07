@@ -80,6 +80,15 @@ for (const [name, source] of modules) {
 }
 
 const driverBundle = readTextTree(resolve(dist, 'modules/motorista'));
+if (!driverBundle.toLowerCase().includes('#e51b23')) {
+  console.error('[FAIL] bundle Parceiro: Motorista não leva vermelho APOIS ao bundle final');
+  process.exit(1);
+}
+if (driverBundle.toLowerCase().includes('#f6be1c') || driverBundle.toLowerCase().includes('#c88a08')) {
+  console.error('[FAIL] bundle Parceiro: Motorista ainda contém dourado antigo da identidade anterior');
+  process.exit(1);
+}
+console.log('[OK] bundle Parceiro: Motorista usa identidade vermelho/branco sem dourado antigo');
 requireMarker(driverBundle, 'Ganhos', 'Motorista exibe área de Ganhos');
 requireMarker(driverBundle, 'Recebimento direto ao motorista', 'Motorista explica recebimento direto');
 requireMarker(driverBundle, '100% do valor da corrida', 'Motorista preserva valor integral da corrida');
@@ -102,6 +111,15 @@ forbidMarker(driverBundle, 'apois:splash:motorista', 'Motorista não mostra spla
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
 
 const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
+if (!courierBundle.toLowerCase().includes('#e51b23')) {
+  console.error('[FAIL] bundle Parceiro: Entregador não leva vermelho APOIS ao bundle final');
+  process.exit(1);
+}
+if (courierBundle.toLowerCase().includes('#f6be1c') || courierBundle.toLowerCase().includes('#c88a08')) {
+  console.error('[FAIL] bundle Parceiro: Entregador ainda contém dourado antigo da identidade anterior');
+  process.exit(1);
+}
+console.log('[OK] bundle Parceiro: Entregador usa identidade vermelho/branco sem dourado antigo');
 requireMarker(courierBundle, 'Entregas', 'Entregador usa nomenclatura correta de Entregas');
 requireMarker(courierBundle, 'Perfil indisponível durante a entrega', 'Entregador mantém foco na operação durante entrega ativa');
 requireMarker(courierBundle, 'CourierLocation', 'Entregador leva ponte para Foreground Service nativo ao bundle final');
