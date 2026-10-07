@@ -18,6 +18,12 @@ function patch(relativePath, transform, label) {
 
 patch('src/lib/theme.tsx', (source) => {
   let next = source;
+  next = next
+    .replace('function resolveTheme(_mode: ThemeMode): ResolvedTheme {\n  return "dark";\n}', 'function resolveTheme(_mode: ThemeMode): ResolvedTheme {\n  return "light";\n}')
+    .replace('if (typeof window === "undefined") return "dark";', 'if (typeof window === "undefined") return "light";')
+    .replace('  return "dark";\n}', '  return "light";\n}')
+    .replace('mode: "dark",\n      resolved: "dark",', 'mode: "light",\n      resolved: "light",')
+    .replace("r.classList.add('dark');r.classList.remove('light');r.style.colorScheme='dark';", "r.classList.add('light');r.classList.remove('dark');r.style.colorScheme='light';");
   const listenerStart = next.indexOf('  // Listen to system changes while in "system" mode');
   const syncStart = next.indexOf('  // Sync from Supabase user preferences on auth/state change', listenerStart);
   if (listenerStart >= 0 && syncStart > listenerStart) {
@@ -26,8 +32,12 @@ patch('src/lib/theme.tsx', (source) => {
   if (next.includes('mq.matches ? "dark" : "light"')) {
     throw new Error('[FAIL] theme.tsx: listener do sistema ainda pode mudar o APOIS Parceiro para tema claro');
   }
-  if (!next.includes('applyThemeClass("light");')) {
-    throw new Error('[FAIL] theme.tsx: trava de identidade clara não aplicada');
+  for (const marker of [
+    'return "light";',
+    'applyThemeClass("light");',
+    "r.classList.add('light');r.classList.remove('dark');r.style.colorScheme='light';",
+  ]) {
+    if (!next.includes(marker)) throw new Error('[FAIL] theme.tsx: identidade clara APOIS incompleta (' + marker + ')');
   }
   return next;
 }, 'motorista: tema do sistema não consegue descaracterizar a identidade clara APOIS');
