@@ -25,6 +25,30 @@ function requireMarkers(source, markers, label) {
 // Ajuste exclusivamente visual/mobile. Não altera autenticação, pricing,
 // request ride, Maps/GPS/Places, pagamentos ou regras de negócio.
 
+const bottomSheet = patch('src/components/ui/bottom-sheet/BottomSheet.tsx', (source) => {
+  let next = source;
+  next = next
+    .replace(
+      '"fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[60]",',
+      '"fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[120]",',
+    )
+    .replace(
+      'className="fixed inset-0 bg-black/60 z-40"',
+      'className="fixed inset-0 z-[110] bg-black/60"',
+    )
+    .replace(
+      'style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}',
+      'style={{ paddingBottom: "max(52px, env(safe-area-inset-bottom))" }}',
+    );
+  return next;
+}, 'Corridas mobile: BottomSheet fica acima do rodapé e da navegação Android');
+
+requireMarkers(bottomSheet, [
+  'z-[120]',
+  'z-[110]',
+  'max(52px, env(safe-area-inset-bottom))',
+], 'BottomSheet mobile');
+
 const payment = patch('src/components/payments/PaymentMethodSelector.tsx', (source) => {
   let next = source;
 
