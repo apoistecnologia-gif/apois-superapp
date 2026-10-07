@@ -97,4 +97,29 @@ patch('src/components/DriverSideMenu.tsx', (source) => {
   return next;
 }, 'motorista: menu lateral remove carteira duplicada e usa Ganhos');
 
+
+patch('src/routes/motorista.carteira.tsx', (_source) => {
+  return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+export const Route = createFileRoute("/motorista/carteira")({
+  component: LegacyWalletRedirect,
+  head: () => ({ meta: [{ title: "Ganhos — APOIS Motorista" }] }),
+});
+
+function LegacyWalletRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    void navigate({ to: "/motorista/ganhos", replace: true });
+  }, [navigate]);
+
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#050607] px-6 text-center text-sm font-semibold text-zinc-400">
+      Abrindo seus ganhos...
+    </div>
+  );
+}
+`;
+}, 'motorista: rota legada Carteira vira redirecionamento compatível para Ganhos');
+
 console.log(`[OK] navegação financeira e ergonomia mobile do Motorista endurecidas em ${workspace}`);
