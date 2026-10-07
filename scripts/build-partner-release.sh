@@ -57,6 +57,7 @@ node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
+node "$ROOT/scripts/harden-partner-red-visual.mjs"
 
 cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
@@ -128,6 +129,7 @@ forbid_bundle 'Solicitar saque' dist/client 'Motorista sem saque custodial legad
 
 # ---------------- Entregador ----------------
 cd "$ROOT"
+unset APOIS_MOTORISTA_WORKSPACE
 export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
 export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
@@ -137,6 +139,7 @@ node "$ROOT/scripts/harden-partner-entregador-hash-boundary.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
 # Umbrella: aplica jornada, concorrência, GPS/background, sessão, financeiro manual, privacidade e UI.
 node "$ROOT/scripts/harden-partner-entregador-map.mjs"
+node "$ROOT/scripts/harden-partner-red-visual.mjs"
 
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'Push do Entregador registrado'
