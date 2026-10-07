@@ -9,7 +9,7 @@ let source = readFileSync(path, 'utf8');
 source = source
   .replace(
     '  const currentProfile = normalizeProfile(profile, user?.email);',
-    '  const currentProfile = normalizeProfile(profile, user?.email);\\n  const profileAvatarUrl = currentProfile.avatarUrl ?? readNonEmptyString(user?.user_metadata?.avatar_url) ?? readNonEmptyString(user?.user_metadata?.picture);',
+    '  const currentProfile = normalizeProfile(profile, user?.email);\n  const profileAvatarUrl = currentProfile.avatarUrl ?? readNonEmptyString(user?.user_metadata?.avatar_url) ?? readNonEmptyString(user?.user_metadata?.picture);',
   )
   .replace(
     '<AvatarImage src={currentProfile.avatarUrl} />',
