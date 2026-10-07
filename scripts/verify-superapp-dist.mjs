@@ -57,9 +57,11 @@ requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',[
   'overscroll-contain',
 ],'Busca de motorista não duplica banner piscante e preserva mapa proporcional');
 requireMarkers('.work/corridas/src/routes/_authenticated.revisar-solicitacao.tsx',[
+  'h-[100dvh] min-h-0 flex-col overflow-hidden',
   'overscroll-contain px-4 py-4',
+  'pb-[max(64px,env(safe-area-inset-bottom))]',
   'h-14 w-full rounded-2xl',
-],'Revisão de corrida reduz rolagem excessiva em celular');
+],'Revisão de corrida mantém CTA acima da navegação Android e reduz rolagem excessiva');
 requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
   'APOIS_CATEGORY_VEHICLE_SPRITE_V6',
   'import { vehicleSprite } from "@/assets/categoryVehicleData"',
