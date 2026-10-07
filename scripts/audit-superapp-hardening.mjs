@@ -51,21 +51,44 @@ check('package.json', [
   'verify-superapp-notification-assets.mjs',
 ], 'build aplica auditorias de hardening/Play e validadores pós-build');
 
-check('.apois/modules.json', [
-  'harden-corridas-superapp-storage.mjs',
-  'namespace-entregas-superapp-storage.mjs',
-  'harden-entregas-superapp-account-security.mjs',
-  'harden-entregas-superapp-account-deletion.mjs',
-  'harden-entregas-superapp-push-navigation.mjs',
-  'harden-entregas-superapp-notification-feed.mjs',
-  'harden-entregas-superapp-address-confirmation.mjs',
-  'harden-entregas-superapp-address-ux.mjs',
-  'harden-entregas-superapp-image-fallbacks.mjs',
-  'harden-entregas-superapp-legal-routes.mjs',
-  'harden-entregas-superapp-customer-ux.mjs',
-  '"entregas": {',
-  '"install": ["bun", "install"]',
-], 'cadeia de build Entregas executa todos os hardeners e reconcilia o lock somente na cópia .work');
+{
+  const modulesPath = resolve('.apois/modules.json');
+  if (!existsSync(modulesPath)) {
+    console.error('[FAIL] cadeia de build Entregas executa todos os hardeners e reconcilia o lock somente na cópia .work: arquivo ausente .apois/modules.json');
+    failed = true;
+  } else {
+    const manifest = JSON.parse(readFileSync(modulesPath, 'utf8'));
+    const entregas = manifest?.modules?.entregas;
+    const buildCommand = Array.isArray(entregas?.build) ? entregas.build.join(' ') : '';
+    const requiredMarkers = [
+      'namespace-entregas-superapp-storage.mjs',
+      'harden-entregas-superapp-account-security.mjs',
+      'harden-entregas-superapp-account-deletion.mjs',
+      'harden-entregas-superapp-push-navigation.mjs',
+      'harden-entregas-superapp-notification-feed.mjs',
+      'harden-entregas-superapp-address-confirmation.mjs',
+      'harden-entregas-superapp-address-ux.mjs',
+      'harden-entregas-superapp-image-fallbacks.mjs',
+      'harden-entregas-superapp-legal-routes.mjs',
+      'harden-entregas-superapp-customer-ux.mjs',
+    ];
+    const installOk = Array.isArray(entregas?.install) &&
+      entregas.install.length === 2 &&
+      entregas.install[0] === 'bun' &&
+      entregas.install[1] === 'install';
+    const missing = requiredMarkers.filter((marker) => !buildCommand.includes(marker));
+    if (!installOk || missing.length) {
+      const details = [
+        ...(!installOk ? ['install Entregas deve ser [bun, install]'] : []),
+        ...missing,
+      ];
+      console.error('[FAIL] cadeia de build Entregas executa todos os hardeners e reconcilia o lock somente na cópia .work: ' + details.join(' | '));
+      failed = true;
+    } else {
+      console.log('[OK] cadeia de build Entregas executa todos os hardeners e reconcilia o lock somente na cópia .work');
+    }
+  }
+}
 
 check('scripts/harden-entregas-superapp-account-security.mjs', [
   'await removeCustomerPushRegistration(true);',
