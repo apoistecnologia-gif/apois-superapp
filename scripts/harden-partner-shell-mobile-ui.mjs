@@ -14,7 +14,7 @@ source = source.replace(
 );
 source = source.replace(
   '.screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),28px) 18px max(env(safe-area-inset-bottom),24px);display:flex;flex-direction:column;justify-content:center;',
-  '.screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),20px) 18px max(env(safe-area-inset-bottom),20px);display:flex;flex-direction:column;justify-content:center;',
+  '.screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),20px) 18px max(52px,env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:center;',
 );
 
 if (!source.includes('@media(max-height:700px)')) {
