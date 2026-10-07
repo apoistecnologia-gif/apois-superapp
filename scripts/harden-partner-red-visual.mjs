@@ -38,6 +38,17 @@ function replaceVisualTokens(source) {
 
 function hardenMotorista() {
   const src = resolve(root, MOTORISTA, 'src');
+
+  const officialLogoPath = resolve(root, 'superapp/branding/apois-client-red-logo.b64');
+  const driverLogoModulePath = resolve(root, MOTORISTA, 'src/assets/apoisLogoData.ts');
+  if (!existsSync(officialLogoPath)) throw new Error('[FAIL] Parceiro visual: logomarca vermelha oficial não encontrada');
+  const officialLogoBase64 = readFileSync(officialLogoPath, 'utf8').trim();
+  if (!officialLogoBase64) throw new Error('[FAIL] Parceiro visual: logomarca vermelha oficial vazia');
+  writeFileSync(
+    driverLogoModulePath,
+    '// APOIS_PARTNER_RED_LOGO_V1\nexport const APOIS_LOGO_DATA_URL = "data:image/png;base64,' + officialLogoBase64 + '";\n',
+    'utf8',
+  );
   walk(src, (path) => {
     if (!['.ts', '.tsx', '.css'].includes(extname(path))) return;
     const before = readFileSync(path, 'utf8');
