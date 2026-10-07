@@ -88,12 +88,18 @@ requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'min-h-[82px]',
   'min-h-[60px]',
 ], 'Motorista protege navegação inferior em Android com três botões');
+requireAll('scripts/harden-partner-motorista-mobile-ui.mjs', [
+  'calc(max(44px, env(safe-area-inset-bottom)) + 88px)',
+  'max(52px, env(safe-area-inset-bottom))',
+  'max(52px, calc(env(safe-area-inset-bottom) + 4px))',
+  'max(52px, calc(env(safe-area-inset-bottom) + 16px))',
+], 'Motorista protege oferta, corrida ativa, cancelamento e PIN contra a barra Android');
 
 // Parceiro Entregador.
 requireAll('scripts/harden-partner-entregador-touch-safearea.mjs', [
   'pb-[max(44px,env(safe-area-inset-bottom))]',
   'min-h-[82px]',
-  'data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+  'data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]',
 ], 'Entregador protege rodapé e entrega ativa contra sobreposição');
 
 // Shells precisam rolar em telas baixas em vez de prender CTA fora da viewport.
