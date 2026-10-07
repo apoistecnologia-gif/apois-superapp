@@ -67,6 +67,9 @@ require_contains 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.t
 require_contains 'settlement?.driver_earning ?? settlement?.passenger_charge' 'src/routes/motorista.corridas.$id.tsx' 'Histórico usa ganho autorizado'
 require_contains 'Pagamento eletrônico temporariamente indisponível' src/routes/motorista.assinatura.tsx 'Mensalidade informa indisponibilidade sem CTA morto'
 require_contains 'Corrida aceita. Siga até o embarque' src/routes/motorista.app.tsx 'Jornada da corrida não depende de gateway'
+require_contains 'calc(max(44px, env(safe-area-inset-bottom)) + 88px)' src/routes/motorista.app.tsx 'Motorista reserva espaço para rodapé e barra Android'
+require_contains 'max(52px, env(safe-area-inset-bottom))' src/routes/motorista.app.tsx 'Motorista protege painéis ativos contra barra Android'
+require_contains 'max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]' src/routes/motorista.app.tsx 'Motorista mantém modais de cancelamento/avaliação dentro da viewport'
 
 CORRIDAS_URL_VALUE="${CORRIDAS_VITE_SUPABASE_URL:-}"
 CORRIDAS_KEY_VALUE="${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
@@ -146,6 +149,10 @@ require_contains 'setCompletedJob({ ...deliveredJob, status: "delivered" });' sr
 require_contains 'Recebimento direto ainda está em homologação.' src/routes/courier.tsx 'Settlement manual permanece explícito'
 require_contains 'Saque manual está desativado.' src/routes/courier.tsx 'Saque legado desativado'
 require_contains 'confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
+require_contains 'data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]' src/routes/courier.tsx 'Entregador protege entrega ativa da barra Android'
+require_contains 'pb-[max(44px,env(safe-area-inset-bottom))]' src/components/CourierPanels.tsx 'Entregador protege rodapé da barra Android'
+require_contains 'pb-[max(52px,env(safe-area-inset-bottom))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte acima da barra Android'
+require_contains 'max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte utilizável com teclado'
 
 export APOIS_MOBILE_PRODUCT="courier"
 export APOIS_MOBILE_BUILD="1"
