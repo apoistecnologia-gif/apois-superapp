@@ -110,7 +110,15 @@ const newFastRequest = `    const requestFastLocation = () => {
       );
     };`;
 
-if (source.includes(oldFastRequest)) source = source.replace(oldFastRequest, newFastRequest);
+if (source.includes(oldFastRequest)) {
+  source = source.replace(oldFastRequest, newFastRequest);
+} else if (!source.includes('const requestFastLocation = () => {')) {
+  const fastLocationAnchor = '    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;';
+  if (!source.includes(fastLocationAnchor)) {
+    throw new Error('Motorista Parceiro: não foi possível instalar requestFastLocation no toggle ONLINE.');
+  }
+  source = source.replace(fastLocationAnchor, newFastRequest + '\n\n' + fastLocationAnchor);
+}
 
 const permissionAnchor = `    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
     if (permsApi?.query) {`;
@@ -203,6 +211,7 @@ for (const marker of [
   'const isNativeDriverAndroid = () =>',
   'Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] })',
   'Geolocation.getCurrentPosition({',
+  'const requestFastLocation = () => {',
   'if (isNativeDriverAndroid()) {\n      requestFastLocation();',
   'restauração do GPS nativo falhou',
   'Não conseguimos restaurar sua localização. Toque em Ficar online para tentar novamente.',
