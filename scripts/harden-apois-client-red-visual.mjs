@@ -238,6 +238,16 @@ write('src/styles.css', styles);
 
 const homePath='src/routes/_authenticated.inicio.tsx';
 let home=readFileSync(file(homePath),'utf8');
+home=home
+ .replace('  const { profile } = useAuth();','  const { profile, user } = useAuth();')
+ .replace(
+   '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);',
+   '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);\\n  const homeAvatarUrl = readString(profile?.avatar_url) || readString(user?.user_metadata?.avatar_url) || readString(user?.user_metadata?.picture);'
+ )
+ .replace(
+   '{profile?.avatar_url ? (\\n                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />',
+   '{homeAvatarUrl ? (\\n                  <img src={homeAvatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />'
+ );
 if(!home.includes('import brandLogo from "@/assets/apoisBrandData";')){
   home=home.replace('import { BottomSheet } from "@/components/ui/bottom-sheet/BottomSheet";','import { BottomSheet } from "@/components/ui/bottom-sheet/BottomSheet";\nimport brandLogo from "@/assets/apoisBrandData";');
 }
@@ -267,7 +277,7 @@ write(homePath,home);
 
 must('src/components/pricing/CategorySelector.tsx',['servicePosition','validated-sprite-v6','estimatedPickupMinutes','border-[#E51B23]']);
 must('src/routes/_public.login.tsx',['PassengerGoogleLoginButton','Esqueci minha senha','Criar conta','bg-[#E51B23]']);
-must('src/routes/_authenticated.inicio.tsx',['PassengerMap','Solicitar corrida','brandLogo','<CategorySelector />']);
+must('src/routes/_authenticated.inicio.tsx',['PassengerMap','Solicitar corrida','brandLogo','<CategorySelector />','homeAvatarUrl','user?.user_metadata?.picture']);
 must('src/styles.css',['--color-primary: #E51B23','--color-apois-red: #E51B23']);
 
 for (const [path, before] of mapRuntimeBefore) {
