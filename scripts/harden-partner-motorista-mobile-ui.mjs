@@ -117,6 +117,18 @@ patch('src/routes/motorista.app.tsx', (source) => {
       'style={{ padding: "12px 20px max(52px, calc(env(safe-area-inset-bottom) + 16px))" }}',
     );
 
+  // Modais de cancelamento/avaliação podem exceder a viewport em aparelhos
+  // baixos. Torne o card rolável e preserve o CTA acima da navegação Android.
+  next = next
+    .replaceAll(
+      'className="w-full max-w-md rounded-t-[28px] bg-card p-5 shadow-[0_-28px_80px_-24px_rgba(0,0,0,0.65)] ring-1 ring-border animate-sheet-in"',
+      'className="max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[28px] bg-card px-5 pt-5 pb-[max(52px,env(safe-area-inset-bottom))] shadow-[0_-28px_80px_-24px_rgba(0,0,0,0.65)] ring-1 ring-border animate-sheet-in"',
+    )
+    .replaceAll(
+      'className="w-full max-w-md rounded-t-[28px] bg-card p-5 pb-6 shadow-[0_-24px_80px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border animate-sheet-in"',
+      'className="max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[28px] bg-card px-5 pt-5 pb-[max(52px,env(safe-area-inset-bottom))] shadow-[0_-24px_80px_-24px_rgba(0,0,0,0.55)] ring-1 ring-border animate-sheet-in"',
+    );
+
   // Amplie controles essenciais; transformação idempotente.
   next = next
     .replace(/\bh-10\s+w-10\b/g, 'h-11 w-11')
@@ -144,6 +156,8 @@ patch('src/routes/motorista.app.tsx', (source) => {
     'max(52px, env(safe-area-inset-bottom))',
     'max(52px, calc(env(safe-area-inset-bottom) + 4px))',
     'max(52px, calc(env(safe-area-inset-bottom) + 16px))',
+    'max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]',
+    'pb-[max(52px,env(safe-area-inset-bottom))]',
   ]) {
     if (!source.includes(marker)) failures.push('safe-area ' + marker);
   }
