@@ -6,10 +6,10 @@ const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/entregas';
 const srcRoot = resolve(root, workspace, 'src');
 const publicRoot = resolve(root, workspace, 'public');
 const isCustomerWorkspace = workspace === '.work/entregas';
-const brandPrimary = isCustomerWorkspace ? '#E51B23' : '#F6BE1C';
-const brandSecondary = isCustomerWorkspace ? '#C9141B' : '#C88A08';
-const brandPrimaryRgb = isCustomerWorkspace ? '229,27,35' : '246,190,28';
-const brandSecondaryRgb = isCustomerWorkspace ? '201,20,27' : '200,138,8';
+const brandPrimary = '#E51B23';
+const brandSecondary = '#C9141B';
+const brandPrimaryRgb = '229,27,35';
+const brandSecondaryRgb = '201,20,27';
 
 if (!existsSync(srcRoot)) throw new Error(`Brand sweep: workspace ausente ${srcRoot}`);
 
@@ -64,7 +64,7 @@ for (const path of sourceFiles) {
 }
 
 // Logos são identidade, não estado operacional. Neles toda a paleta antiga é
-// convertida para a dupla dourada oficial.
+// convertida para a dupla vermelha oficial.
 for (const path of logoFiles) {
   const before = readFileSync(path, 'utf8');
   let after = before
@@ -76,7 +76,7 @@ for (const path of logoFiles) {
     .replaceAll('#35a9c9', brandPrimary)
     .replaceAll('#1F7894', brandSecondary)
     .replaceAll('#1f7894', brandSecondary)
-    .replaceAll('azul petróleo', isCustomerWorkspace ? 'vermelho APOIS' : 'dourado');
+    .replaceAll('azul petróleo', 'vermelho APOIS');
   if (after !== before) {
     writeFileSync(path, after, 'utf8');
     changedFiles += 1;
@@ -108,4 +108,4 @@ if (leftovers.length) {
   throw new Error(`Brand sweep: identidade antiga ainda presente:\n${leftovers.slice(0, 80).join('\n')}`);
 }
 
-console.log(`[OK] Brand sweep ${workspace}: ${changedFiles} arquivo(s) normalizado(s); marca=${isCustomerWorkspace ? 'APOIS vermelho' : 'Parceiro dourado'}. Estados semânticos continuam livres para green/red/amber.`);
+console.log(`[OK] Brand sweep ${workspace}: ${changedFiles} arquivo(s) normalizado(s); marca=APOIS vermelho. Estados semânticos continuam livres para green/red/amber.`);
