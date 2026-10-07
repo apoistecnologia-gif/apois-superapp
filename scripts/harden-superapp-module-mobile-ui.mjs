@@ -91,7 +91,7 @@ if (moduleName === 'corridas') {
   for (const marker of [
     'fixed bottom-0',
     'min-h-[88px]',
-    'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+    'pb-[max(44px,env(safe-area-inset-bottom))]',
     'min-h-[64px]',
     'min-w-[72px]',
     'h-8 w-8',
