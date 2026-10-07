@@ -31,11 +31,11 @@ if (!customerUx.startsWith("import './harden-entregas-superapp-brand-theme.mjs';
   fail('hardening de marca de Entregas não roda antes da UX interna');
 } else ok('tema de Entregas é aplicado antes das correções UX');
 
-const courierTheme = read('scripts/harden-partner-entregador-theme.mjs');
-for (const marker of ['APOIS_PARTNER_COURIER_GOLD_V1', '--primary: oklch(0.82 0.16 84)', '#f6be1c']) {
-  if (!courierTheme.includes(marker)) fail(`Entregador sem regra preto/dourado preservada: ${marker}`);
+const partnerVisual = read('scripts/harden-partner-red-visual.mjs');
+for (const marker of ['APOIS_PARTNER_RED_VISUAL_V1', 'APOIS_PARTNER_COURIER_RED_VISUAL_V1', '#E51B23', '#C9141B', ':root,.light,.dark {']) {
+  if (!partnerVisual.includes(marker)) fail(`Parceiro sem regra visual vermelho/branco consolidada: ${marker}`);
 }
-if (!failed) ok('Entregador permanece independente no tema do Parceiro');
+if (!failed) ok('Motorista e Entregador compartilham a nova identidade vermelho/branco do Parceiro');
 
 const shellTheme = read('scripts/harden-superapp-shell-mobile-ui.mjs');
 for (const marker of ["'--red:#E51B23'","'--red-dark:#C9141B'","'O seu caminho,'","'do seu jeito.'"]) {
