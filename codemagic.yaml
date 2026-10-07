@@ -84,10 +84,11 @@ workflows:
           test ! -e superapp/shell/dist/modules/motorista || { echo '[FAIL] módulo Motorista apareceu no Cliente'; exit 1; }
           grep -Fq 'data:image/png;base64,' superapp/shell/dist/index.html || { echo '[FAIL] logo inline ausente no shell'; exit 1; }
           grep -Fq 'APOIS_NATIVE_MAP_FALLBACK_V3' .work/corridas/src/components/map/PassengerMap.tsx || { echo '[FAIL] hardener de mapa nativo V3 ausente no workspace final'; exit 1; }
-          grep -R -Fq 'data:image/webp;base64,' superapp/shell/dist/modules/corridas || { echo '[FAIL] veículos realistas inline não chegaram ao bundle Corridas'; exit 1; }
-          grep -Fq 'APOIS_CATEGORY_REALISTIC_V5_INLINE' .work/corridas/src/components/pricing/CategorySelector.tsx || { echo '[FAIL] CategorySelector não usa os veículos realistas inline'; exit 1; }
+          grep -R -Fq 'data:image/webp;base64,' superapp/shell/dist/modules/corridas || { echo '[FAIL] sprite local das categorias não chegou inline ao bundle Corridas'; exit 1; }
+          grep -Fq 'APOIS_CATEGORY_VEHICLE_SPRITE_V6' .work/corridas/src/components/pricing/CategorySelector.tsx || { echo '[FAIL] CategorySelector não usa o sprite APOIS validado das categorias'; exit 1; }
+          grep -Fq 'validated-sprite-v6' .work/corridas/src/components/pricing/CategorySelector.tsx || { echo '[FAIL] CategorySelector sem marcador do sprite APOIS validado'; exit 1; }
           if grep -R -Fq '/assets/categories/apois-vehicles.webp' superapp/shell/dist/modules/corridas; then
-            echo '[FAIL] bundle Corridas ainda referencia o sprite antigo de veículos'
+            echo '[FAIL] bundle Corridas referencia asset externo de categorias em vez do sprite inline'
             exit 1
           fi
           if grep -Fq 'Para onde vamos?' .work/corridas/src/routes/_authenticated.inicio.tsx; then
