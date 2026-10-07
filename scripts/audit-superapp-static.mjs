@@ -184,11 +184,21 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'referência a marker PNG inexistente permaneceu',
 ], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
 
+requireText('scripts/harden-corridas-mobile-proportions.mjs', [
+  'APOIS_CORRIDAS_MOBILE_PROPORTIONS_V1',
+  'z-[140]',
+  'max-h-[78dvh]',
+  'max-h-[46dvh]',
+  'status !== "procurar_motorista" ? <RideStatusHeader',
+  'max-h-[52dvh]',
+  'overscroll-contain',
+], 'Corridas compacta pagamento/Home/revisão e remove banner duplicado da busca de motorista');
+
 requireText('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1', 'APOIS_REFERENCE_HOME_V2', 'data-apois-reference-home-v2',
   'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Solicitar corrida',
   'apois-kit-search-results',
-  'text-[#111111]', 'caret-[#E51B23]', 'placeholder:text-[#9AA0A8]', 'max-h-[94dvh]', 'max-h-[38dvh]', 'h-10 w-10 rounded-full object-contain', 'Local de partida', 'Destino',
+  'text-[#111111]', 'caret-[#E51B23]', 'placeholder:text-[#9AA0A8]', 'max-h-[94dvh]', 'max-h-[46dvh]', 'h-10 w-10 rounded-full object-contain', 'Local de partida', 'Destino',
   'bg-transparent text-[#111111]', 'absolute inset-0 z-0 bg-transparent',
 ], 'kit visual oficial mantém mapa predominante, painel compacto e destino apenas no bottom sheet');
 
