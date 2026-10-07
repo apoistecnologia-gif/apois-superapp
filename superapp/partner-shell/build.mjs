@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
 const branding = resolve(root, '../branding/apois-launcher.png');
-const driverLogoSource = resolve(root, '../../.work/partner-motorista/src/assets/apoisLogoData.ts');
+// O Parceiro usa a identidade oficial compartilhada do ecossistema.
+const driverLogoSource = null;
 
 function readTextTree(directory) {
   let output = '';
@@ -48,16 +49,7 @@ if (!existsSync(branding)) {
 }
 
 let brandDataUrl = `data:image/png;base64,${readFileSync(branding).toString('base64')}`;
-if (existsSync(driverLogoSource)) {
-  const logoModule = readFileSync(driverLogoSource, 'utf8');
-  const match = logoModule.match(/APOIS_LOGO_DATA_URL\s*=\s*["']([^"']+)["']/);
-  if (match?.[1]?.startsWith('data:image/')) {
-    brandDataUrl = match[1];
-    console.log('[OK] seletor parceiro reutiliza a mesma logomarca oficial exibida no login do Motorista');
-  } else {
-    console.warn('[WARN] data URL da logomarca do Motorista não encontrada; usando launcher oficial como fallback');
-  }
-}
+console.log('[OK] seletor parceiro usa a logomarca oficial compartilhada da nova identidade');
 
 const templatePath = resolve(root, 'index.html');
 let shellHtml = readFileSync(templatePath, 'utf8');
