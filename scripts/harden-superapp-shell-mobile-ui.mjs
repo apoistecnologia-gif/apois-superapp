@@ -7,7 +7,7 @@ let source = readFileSync(path, 'utf8');
 
 source = source
   .replace('body{min-height:100dvh;overflow-x:hidden}', 'body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}')
-  .replace('padding:max(env(safe-area-inset-top),20px) 18px max(env(safe-area-inset-bottom),24px);overflow:hidden;', 'padding:max(env(safe-area-inset-top),20px) 18px max(env(safe-area-inset-bottom),24px);overflow-x:hidden;overflow-y:auto;');
+  .replace('padding:max(env(safe-area-inset-top),20px) 18px max(env(safe-area-inset-bottom),24px);overflow:hidden;', 'padding:max(env(safe-area-inset-top),20px) 18px max(52px,env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;');
 
 for (const marker of [
   '--red:#E51B23',
