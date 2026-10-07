@@ -73,6 +73,8 @@ workflows:
           set -euo pipefail
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
+          echo "[INFO] APOIS_SOURCE_COMMIT=$(git rev-parse HEAD)"
+          echo "[INFO] APOIS_CATEGORY_GATE=SPRITE_V6"
           npm run build:corridas
           npm run build:entregas
           npm run build:shell
