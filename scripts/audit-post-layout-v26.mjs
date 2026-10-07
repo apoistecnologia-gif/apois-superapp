@@ -155,14 +155,16 @@ if (ridesRoute.includes('Suas Corridas') && ridesRoute.length < 1200) {
   warn('Corridas: rota Corridas exposta no rodapé ainda é uma tela placeholder.');
 }
 
-const rideRequest = read('sources/apois-corridas-passageiro/src/hooks/rides/use-ride-request.tsx');
-if (
-  rideRequest.includes('supabase.functions.invoke("request-ride"') &&
-  !rideRequest.includes('Promise.race') &&
-  !rideRequest.includes('request_timeout')
-) {
-  warn('Corridas: criação da corrida não possui timeout explícito no cliente; uma chamada de rede pendente pode manter a revisão em estado de envio por tempo indefinido.');
-}
+requireAll('scripts/harden-corridas-request-timeout.mjs', [
+  'APOIS_REQUEST_RIDE_TIMEOUT_V1',
+  'REQUEST_RIDE_TIMEOUT_MS = 20_000',
+  'Promise.race([',
+  'invokeRequestRideWithTimeout(payload)',
+  'request_timeout',
+], 'Corridas impede envio/cancelamento de corrida de ficar pendente indefinidamente');
+requireAll('scripts/build-isolated-module.mjs', [
+  'harden-corridas-request-timeout.mjs',
+], 'pipeline Corridas aplica timeout antes do build visual');
 
 // Achado de auditoria: o parceiro ainda está explicitamente preso à identidade
 // preta/dourada, enquanto Cliente Corridas/Entregas usam vermelho/branco.
