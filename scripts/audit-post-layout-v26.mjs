@@ -123,15 +123,17 @@ requireAll('scripts/harden-partner-entregador-map.mjs', [
 // Selectors
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
+  'max(52px,env(safe-area-inset-bottom))',
   '@media(max-height:760px)',
   '--red:#E51B23',
-], 'seletor Cliente permanece rolável e na identidade vermelha');
+], 'seletor Cliente permanece rolável, fora da barra Android e na identidade vermelha');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
+  'max(52px,env(safe-area-inset-bottom))',
   '@media(max-height:700px)',
   '@media(max-width:360px)',
-], 'seletor Parceiro permanece utilizável em telas baixas/estreitas');
+], 'seletor Parceiro permanece utilizável em telas baixas/estreitas e fora da barra Android');
 
 // Achado de auditoria: o parceiro ainda está explicitamente preso à identidade
 // preta/dourada, enquanto Cliente Corridas/Entregas usam vermelho/branco.
