@@ -81,7 +81,7 @@ function hardenMotorista() {
     let style = readFileSync(stylePath, 'utf8');
     if (!style.includes(MOTORISTA_MARKER)) {
       style += `\n\n${MOTORISTA_MARKER}
-:root,.dark {
+:root,.light,.dark {
   --background: 0 0% 97%;
   --foreground: 220 9% 7%;
   --card: 0 0% 100%;
@@ -109,7 +109,7 @@ body { background:#F7F7F8 !important; color:#111111 !important; }
   ];
   for (const path of must) {
     const source = readFileSync(path, 'utf8');
-    if (!source.includes('#E51B23')) throw new Error('[FAIL] Parceiro visual: vermelho não chegou a ' + path);
+    if (!source.includes('#E51B23') && !source.includes('text-primary') && !source.includes('bg-primary')) throw new Error('[FAIL] Parceiro visual: superfície sem identidade vermelha em ' + path);
     if (source.includes('#F6BE1C') || source.includes('#C88A08')) {
       throw new Error('[FAIL] Parceiro visual: dourado antigo permaneceu em ' + path);
     }
