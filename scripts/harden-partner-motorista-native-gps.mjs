@@ -120,18 +120,42 @@ if (source.includes(oldFastRequest)) {
   source = source.replace(fastLocationAnchor, newFastRequest + '\n\n' + fastLocationAnchor);
 }
 
-const permissionAnchor = `    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
-    if (permsApi?.query) {`;
-const permissionReplacement = `    if (isNativeDriverAndroid()) {
+const misplacedNativeGuard = `    if (isNativeDriverAndroid()) {
       requestFastLocation();
       return;
     }
 
-    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
-    if (permsApi?.query) {`;
-if (!source.includes('if (isNativeDriverAndroid()) {\n      requestFastLocation();\n      return;')) {
-  if (!source.includes(permissionAnchor)) throw new Error('Motorista Parceiro: âncora de permissão web do toggle não encontrada.');
-  source = source.replace(permissionAnchor, permissionReplacement);
+    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;`;
+
+// Se uma execução anterior inseriu o guard no useEffect de montagem, remova-o.
+// requestFastLocation existe apenas dentro de toggleOnline e não pode ser usado ali.
+if (source.includes(misplacedNativeGuard)) {
+  source = source.replace(
+    misplacedNativeGuard,
+    '    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;',
+  );
+}
+
+// Instale o guard nativo especificamente dentro de toggleOnline, depois que
+// requestFastLocation já foi declarado no mesmo escopo.
+const toggleStart = source.indexOf('  const toggleOnline = useCallback(() => {');
+if (toggleStart < 0) throw new Error('Motorista Parceiro: toggleOnline não encontrado.');
+const fastStart = source.indexOf('    const requestFastLocation = () => {', toggleStart);
+if (fastStart < 0) throw new Error('Motorista Parceiro: requestFastLocation não foi criado dentro de toggleOnline.');
+const permsStart = source.indexOf(
+  '    const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;',
+  fastStart,
+);
+if (permsStart < 0) throw new Error('Motorista Parceiro: bloco de permissões do toggle não encontrado.');
+
+const toggleNativeGuard = `    if (isNativeDriverAndroid()) {
+      requestFastLocation();
+      return;
+    }
+
+`;
+if (!source.slice(fastStart, permsStart).includes('if (isNativeDriverAndroid()) {\n      requestFastLocation();')) {
+  source = source.slice(0, permsStart) + toggleNativeGuard + source.slice(permsStart);
 }
 
 const activationEnd = `  const activateOnlineWithCoords = useCallback(
@@ -212,11 +236,18 @@ for (const marker of [
   'Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] })',
   'Geolocation.getCurrentPosition({',
   'const requestFastLocation = () => {',
+  'const toggleOnline = useCallback(() => {',
   'if (isNativeDriverAndroid()) {\n      requestFastLocation();',
   'restauração do GPS nativo falhou',
   'Não conseguimos restaurar sua localização. Toque em Ficar online para tentar novamente.',
 ]) {
   if (!source.includes(marker)) throw new Error(`Motorista Parceiro: hardening GPS nativo incompleto (${marker}).`);
+}
+
+const toggleIndex = source.indexOf('  const toggleOnline = useCallback(() => {');
+const nativeGuardIndex = source.indexOf('if (isNativeDriverAndroid()) {\n      requestFastLocation();');
+if (nativeGuardIndex >= 0 && nativeGuardIndex < toggleIndex) {
+  throw new Error('[FAIL] Motorista Parceiro: requestFastLocation fora do escopo de toggleOnline.');
 }
 
 writeFileSync(path, source, 'utf8');
