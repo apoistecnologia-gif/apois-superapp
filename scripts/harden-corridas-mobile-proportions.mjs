@@ -51,7 +51,7 @@ const payment = patch('src/components/payments/PaymentMethodSelector.tsx', (sour
     )
     .replace(
       'className="w-full max-w-lg bg-white rounded-t-[32px] p-6 shadow-2xl animate-in slide-in-from-bottom duration-300 border-t border-[#E2E4E8]"',
-      'className="flex max-h-[78dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] border-t border-[#E2E4E8] bg-white px-4 pt-4 pb-[max(14px,env(safe-area-inset-bottom))] shadow-2xl animate-in slide-in-from-bottom duration-300"',
+      'className="flex max-h-[78dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] border-t border-[#E2E4E8] bg-white px-4 pt-4 pb-[max(52px,env(safe-area-inset-bottom))] shadow-2xl animate-in slide-in-from-bottom duration-300"',
     )
     .replace(
       'className="flex items-center justify-between mb-6"',
@@ -121,7 +121,7 @@ const activeRide = patch('src/routes/_authenticated.corrida.$rideId.tsx', (sourc
   next = next
     .replace(
       'className="max-h-[60vh] space-y-4 overflow-y-auto rounded-t-[32px] border-t border-[#E2E4E8] bg-white px-6 pb-8 pt-6 shadow-[0_-12px_34px_rgba(17,17,17,0.12)] scrollbar-hide"',
-      'className="max-h-[52dvh] space-y-3 overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-[#E2E4E8] bg-white px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_34px_rgba(17,17,17,0.12)] scrollbar-hide"',
+      'className="max-h-[52dvh] space-y-3 overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-[#E2E4E8] bg-white px-4 pb-[max(52px,env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_34px_rgba(17,17,17,0.12)] scrollbar-hide"',
     )
     .replace(
       'className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-[#E2E4E8] bg-white p-8 text-center"',
