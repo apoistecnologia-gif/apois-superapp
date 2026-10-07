@@ -15,6 +15,10 @@ function read(path) {
   }
   return readFileSync(full, 'utf8');
 }
+function readOptional(path) {
+  const full = resolve(path);
+  return existsSync(full) ? readFileSync(full, 'utf8') : '';
+}
 function requireAll(path, markers, label) {
   const source = read(path);
   if (!source) return;
@@ -140,17 +144,17 @@ requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
 
 // Dívidas funcionais expostas pelo layout novo. Não bloqueiam o build porque
 // não foram introduzidas por esta migração visual, mas precisam aparecer na auditoria.
-const serviceDetails = read('sources/apois-corridas-passageiro/src/components/pricing/ServiceDetailsForm.tsx');
+const serviceDetails = readOptional('sources/apois-corridas-passageiro/src/components/pricing/ServiceDetailsForm.tsx');
 if (serviceDetails.includes('Form implementation for each category would go here')) {
   warn('Corridas: Detalhes do Serviço de Fretes/Guincho/Envios ainda é placeholder e não possui formulário funcional.');
 }
 
-const walletRoute = read('sources/apois-corridas-passageiro/src/routes/_authenticated.carteira.tsx');
+const walletRoute = readOptional('sources/apois-corridas-passageiro/src/routes/_authenticated.carteira.tsx');
 if (walletRoute.includes('Sua Carteira') && walletRoute.length < 1200) {
   warn('Corridas: rota Carteira exposta no rodapé ainda é uma tela placeholder.');
 }
 
-const ridesRoute = read('sources/apois-corridas-passageiro/src/routes/_authenticated.corridas.tsx');
+const ridesRoute = readOptional('sources/apois-corridas-passageiro/src/routes/_authenticated.corridas.tsx');
 if (ridesRoute.includes('Suas Corridas') && ridesRoute.length < 1200) {
   warn('Corridas: rota Corridas exposta no rodapé ainda é uma tela placeholder.');
 }
