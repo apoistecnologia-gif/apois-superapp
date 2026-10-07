@@ -91,6 +91,25 @@ patch('.work/corridas/src/hooks/use-push-notifications.tsx', (source) => {
 
 patch('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx', (source) => {
   let next = source;
+
+  // Evita que oscilações muito curtas do canal Realtime façam o aviso
+  // "Reconectando a corrida" piscar durante a busca por motorista.
+  if (!next.includes('APOIS_REALTIME_RECONNECT_GRACE_V1')) {
+    next = next
+      .replace(
+        '  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);',
+        '  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);\n  // APOIS_REALTIME_RECONNECT_GRACE_V1\n  const [showReconnectNotice, setShowReconnectNotice] = useState(false);',
+      )
+      .replace(
+        '  useEffect(() => {\n    if (rideId) void loadRide(rideId);\n  }, [rideId, loadRide]);',
+        '  useEffect(() => {\n    if (rideId) void loadRide(rideId);\n  }, [rideId, loadRide]);\n\n  useEffect(() => {\n    if (screenState !== "active" || isRealtimeConnected) {\n      setShowReconnectNotice(false);\n      return;\n    }\n\n    const reconnectTimer = window.setTimeout(() => {\n      setShowReconnectNotice(true);\n    }, 4000);\n\n    return () => window.clearTimeout(reconnectTimer);\n  }, [screenState, isRealtimeConnected]);',
+      )
+      .replace(
+        '{screenState === "active" && !isRealtimeConnected && (',
+        '{showReconnectNotice && (',
+      );
+  }
+
   next = next.replace(
     '                {status === "motorista_a_caminho" && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
     '                {["motorista_a_caminho", "motorista_chegou"].includes(status) && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
@@ -122,8 +141,15 @@ console.log('[OK] Corridas runtime reconciliado com o snapshot atual');
 
 requireMarkers(
   '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
-  ['PassengerMap', '["motorista_a_caminho", "motorista_chegou"].includes(status)'],
-  'Corridas usa mapa ativo e PIN do snapshot real',
+  [
+    'PassengerMap',
+    '["motorista_a_caminho", "motorista_chegou"].includes(status)',
+    'APOIS_REALTIME_RECONNECT_GRACE_V1',
+    'setShowReconnectNotice(true)',
+    '}, 4000);',
+    '{showReconnectNotice && (',
+  ],
+  'Corridas usa mapa ativo, PIN do snapshot real e aviso de reconexão sem piscar',
 );
 
 console.log('[OK] Corridas: hardening de runtime alinhado ao pin 7b047f75 sem componentes obsoletos');
