@@ -86,12 +86,12 @@ forbidAll('scripts/install-partner-driver-location.mjs', [
 
 requireAll('superapp/partner-shell/capacitor.config.ts', [
   "appId: 'br.com.apois.parceiro'",
-  "style: 'LIGHT'",
-  "backgroundColor: '#F7F7F8'",
-], 'Host Android Parceiro usa package próprio e barra de status legível');
-forbidAll('superapp/partner-shell/capacitor.config.ts', [
   "style: 'DARK'",
-], 'Parceiro não usa ícones escuros sobre barra de status preta');
+  "backgroundColor: '#F7F7F8'",
+], 'Host Android Parceiro usa package próprio e barra de status clara legível');
+forbidAll('superapp/partner-shell/capacitor.config.ts', [
+  "style: 'LIGHT'",
+], 'Parceiro não usa ícones claros sobre barra de status clara');
 
 requireAll('scripts/harden-partner-android-security.mjs', [
   "['compileSdkVersion', 36]",
