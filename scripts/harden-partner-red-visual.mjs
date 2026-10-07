@@ -84,17 +84,33 @@ function hardenMotorista() {
 :root,.light,.dark {
   --background: 0 0% 97%;
   --foreground: 220 9% 7%;
+  --surface: 0 0% 100%;
+  --surface-2: 350 100% 98%;
   --card: 0 0% 100%;
   --card-foreground: 220 9% 7%;
   --popover: 0 0% 100%;
   --popover-foreground: 220 9% 7%;
   --primary: 358 79% 50%;
   --primary-foreground: 0 0% 100%;
+  --primary-glow: 358 100% 67%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 9% 12%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 7% 43%;
   --accent: 358 82% 43%;
   --accent-foreground: 0 0% 100%;
   --border: 220 10% 90%;
   --input: 220 10% 90%;
   --ring: 358 79% 50%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 220 9% 7%;
+  --sidebar-primary: 358 79% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 350 100% 98%;
+  --sidebar-accent-foreground: 220 9% 12%;
+  --sidebar-border: 220 10% 90%;
+  --sidebar-ring: 358 79% 50%;
+  color-scheme: light;
 }
 body { background:#F7F7F8 !important; color:#111111 !important; }
 `;
