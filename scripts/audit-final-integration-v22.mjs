@@ -153,11 +153,11 @@ requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   '@media(max-height:700px)',
   '@media(max-width:360px)',
 ], 'seletor Parceiro está protegido para telas baixas/estreitas');
-requireAll('scripts/harden-partner-entregador-theme.mjs', [
-  'APOIS_PARTNER_COURIER_GOLD_V1',
-  '--primary: oklch(0.82 0.16 84)',
-  '#f6be1c',
-], 'Entregador preserva a mesma identidade preto/dourado do ecossistema APOIS');
+requireAll('scripts/harden-partner-red-visual.mjs', [
+  'APOIS_PARTNER_COURIER_RED_VISUAL_V1',
+  'APOIS_PARTNER_RED_VISUAL_V1',
+  '#E51B23',
+], 'APOIS Parceiro aplica identidade vermelho/branco em Motorista e Entregador');
 
 const workflowsDir = resolve('.github/workflows');
 if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
