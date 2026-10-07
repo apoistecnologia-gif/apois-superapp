@@ -114,9 +114,9 @@ requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   '@media(max-height:700px)',
 ], 'Shell Parceiro continua utilizável em telas baixas');
 
-forbidAll('scripts/harden-corridas-mobile-proportions.mjs', [
-  'z-[70] flex items-end justify-center',
-  'pb-[max(16px,env(safe-area-inset-bottom))] pt-4 shadow',
+requireAll('scripts/harden-corridas-mobile-proportions.mjs', [
+  'z-[140] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain',
+  'pb-[max(52px,env(safe-area-inset-bottom))] shadow-2xl',
 ], 'Corridas não reintroduz overlay de pagamento abaixo do rodapé ou sem fallback Android');
 
 if (!failed) console.log('[OK] Mobile critical flows v25: Cliente Corridas, Cliente Entregas, Motorista, Entregador e shells protegidos contra os regressos móveis observados.');
