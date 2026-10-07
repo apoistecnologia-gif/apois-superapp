@@ -58,6 +58,9 @@ requireAll('.apois/modules.json', [
   'node scripts/harden-entregas-superapp-cart-mobile-ui.mjs',
   'node scripts/harden-entregas-order-finish-mobile-ui.mjs',
 ], 'pipeline Entregas aplica layering e ergonomia antes do build');
+requireAll('scripts/build-merchant-panel.mjs', [
+  "'harden-entregas-overlay-layering.mjs'",
+], 'painéis Estabelecimento/Admin também recebem layering seguro de dialogs/sheets');
 
 requireAll('scripts/harden-entregas-overlay-layering.mjs', [
   'APOIS_ENTREGAS_OVERLAY_LAYERING_V1',
