@@ -84,7 +84,7 @@ requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   "await import('./harden-corridas-superapp-profile-ui.mjs')",
   'pt-[max(env(safe-area-inset-top),0.75rem)]',
   'min-h-[88px]',
-  'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+  'pb-[max(44px,env(safe-area-inset-bottom))]',
   "await import('./harden-entregas-superapp-cart-mobile-ui.mjs')",
   "await import('./harden-entregas-superapp-viewport.mjs')",
 ], 'Hardener móvel cobre Corridas atual e Entregas');
