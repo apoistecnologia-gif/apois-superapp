@@ -30,6 +30,13 @@ if(googleAuth){
   else ok('Google OAuth Corridas usa callback nativo do Superapp');
 }
 requireMarkers('.work/corridas/src/hooks/rides/use-ride-request.tsx',['functions.invoke("request-ride"'],'Corridas cria solicitação pelo roteador financeiro do Superapp');
+requireMarkers('.work/corridas/src/hooks/rides/use-ride-request.tsx',[
+  'APOIS_REQUEST_RIDE_TIMEOUT_V1',
+  'REQUEST_RIDE_TIMEOUT_MS = 20_000',
+  'Promise.race([',
+  'invokeRequestRideWithTimeout(payload)',
+  'request_timeout',
+],'Corridas não deixa solicitação de corrida carregando indefinidamente');
 requireMarkers('.work/corridas/src/services/payments/payment-service.ts',['const isDirectToDriver = code === "cash" || code === "credit";','Pague diretamente ao motorista em dinheiro ao final da corrida.','Pague diretamente ao motorista no cartão de crédito'],'Corridas preserva somente Dinheiro/Cartão direto ao motorista');
 requireMarkers('.work/corridas/src/components/BottomNavigation.tsx',['grid-cols-5','min-h-[64px]','pb-[max(44px,env(safe-area-inset-bottom))]','Início','Corridas','Carteira','Notificações','Perfil'],'Corridas mantém rodapé acima da barra de navegação Android, legível e com cinco destinos');
 requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNavigation','pathname === "/buscar-destino"','pathname.startsWith("/corrida/")'],'Corridas não sobrepõe rodapé nas jornadas fullscreen');
