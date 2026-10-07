@@ -13,13 +13,15 @@ function read(path) {
 const sweep = read('scripts/harden-entregas-brand-sweep.mjs');
 for (const marker of [
   "const isCustomerWorkspace = workspace === '.work/entregas';",
-  "const brandPrimary = isCustomerWorkspace ? '#E51B23' : '#F6BE1C';",
-  "const brandSecondary = isCustomerWorkspace ? '#C9141B' : '#C88A08';",
+  "const brandPrimary = '#E51B23';",
+  "const brandSecondary = '#C9141B';",
+  "const brandPrimaryRgb = '229,27,35';",
+  "const brandSecondaryRgb = '201,20,27';",
   'Estados semânticos continuam livres para green/red/amber',
 ]) {
   if (!sweep.includes(marker)) fail(`sweep incompleto: ${marker}`);
 }
-if (!failed) ok('varredura usa vermelho no Cliente e preserva dourado no Parceiro');
+if (!failed) ok('varredura usa a identidade vermelho/branco tanto no Cliente quanto no Parceiro');
 
 const customerUx = read('scripts/harden-entregas-superapp-customer-ux.mjs');
 if (!customerUx.includes("import './harden-entregas-brand-sweep.mjs';")) fail('Cliente Entregas não executa brand sweep no pipeline');
@@ -33,7 +35,11 @@ for (const marker of [
 ]) {
   if (!courierMap.includes(marker)) fail(`Entregador sem proteção final: ${marker}`);
 }
-if (!failed) ok('Entregador preserva identidade própria do Parceiro');
+const partnerRed = read('scripts/harden-partner-red-visual.mjs');
+for (const marker of ['APOIS_PARTNER_COURIER_RED_VISUAL_V1', '#E51B23', '#C9141B']) {
+  if (!partnerRed.includes(marker)) fail(`Entregador sem migração visual final: ${marker}`);
+}
+if (!failed) ok('Entregador aplica a nova identidade vermelho/branco do Parceiro após o hardening operacional');
 
 const brandTheme = read('scripts/harden-entregas-superapp-brand-theme.mjs');
 for (const marker of ['APOIS_CUSTOMER_RED_V2', '#E51B23', '#C9141B']) {
