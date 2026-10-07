@@ -349,6 +349,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-backend-identity-boundary.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-cancellation-policy.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-ride-lifecycle.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-request-timeout.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-eligibility-no-gateway.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
