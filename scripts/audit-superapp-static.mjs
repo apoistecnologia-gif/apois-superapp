@@ -195,6 +195,8 @@ requireText('scripts/harden-corridas-mobile-proportions.mjs', [
   'max-h-[46dvh]',
   'status !== "procurar_motorista" ? <RideStatusHeader',
   'max-h-[52dvh]',
+  'pb-[max(64px,env(safe-area-inset-bottom))]',
+  'h-[100dvh] min-h-0 flex-col overflow-hidden',
   'overscroll-contain',
 ], 'Corridas compacta pagamento/Home/revisão e remove banner duplicado da busca de motorista');
 
