@@ -36,6 +36,7 @@ if (moduleName === 'corridas') {
   await import('./harden-corridas-final-red-surfaces.mjs');
   await import('./harden-corridas-final-shell-surfaces.mjs');
   await import('./harden-corridas-public-shell-surfaces.mjs');
+  await import('./harden-corridas-mobile-proportions.mjs');
 } else {
   patch('.work/entregas/src/routes/inicio.tsx', (source) => {
     let next = source;
