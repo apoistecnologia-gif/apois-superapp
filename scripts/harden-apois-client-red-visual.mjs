@@ -242,7 +242,7 @@ home=home
  .replace('  const { profile } = useAuth();','  const { profile, user } = useAuth();')
  .replace(
    '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);',
-   '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);\\n  const homeAvatarUrl = readString(profile?.avatar_url) || readString(user?.user_metadata?.avatar_url) || readString(user?.user_metadata?.picture);'
+   '  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);\n  const homeAvatarUrl = readString(profile?.avatar_url) || readString(user?.user_metadata?.avatar_url) || readString(user?.user_metadata?.picture);'
  )
  .replace(
    '{profile?.avatar_url ? (\\n                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />',
