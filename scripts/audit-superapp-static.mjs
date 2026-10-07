@@ -184,6 +184,10 @@ requireText('scripts/harden-corridas-native-map.mjs', [
   'referência a marker PNG inexistente permaneceu',
 ], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
 
+requireText('scripts/harden-superapp-module-mobile-ui.mjs', [
+  "await import('./harden-corridas-mobile-proportions.mjs');",
+], 'hardener móvel aplica proporções finais depois das superfícies visuais');
+
 requireText('scripts/harden-corridas-mobile-proportions.mjs', [
   'APOIS_CORRIDAS_MOBILE_PROPORTIONS_V1',
   'z-[140]',
