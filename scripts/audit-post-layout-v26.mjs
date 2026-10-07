@@ -57,11 +57,27 @@ requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
 ], 'Corridas aplica correções de proporção depois do acabamento visual');
 
 // Cliente / Entregas
-requireAll('.apois/modules.json', [
-  'node scripts/harden-entregas-overlay-layering.mjs',
-  'node scripts/harden-entregas-superapp-cart-mobile-ui.mjs',
-  'node scripts/harden-entregas-order-finish-mobile-ui.mjs',
-], 'pipeline Entregas aplica layering e ergonomia antes do build');
+const modulesManifest = read('.apois/modules.json');
+if (modulesManifest) {
+  const entregasPipelineMarkers = [
+    'harden-entregas-overlay-layering.mjs',
+    'harden-entregas-superapp-cart-mobile-ui.mjs',
+    'harden-entregas-order-finish-mobile-ui.mjs',
+    'bun run build:customer',
+  ];
+  const missing = entregasPipelineMarkers.filter((marker) => !modulesManifest.includes(marker));
+  if (missing.length) {
+    fail('pipeline Entregas aplica layering e ergonomia antes do build: ' + missing.join(' | '));
+  } else {
+    const positions = entregasPipelineMarkers.map((marker) => modulesManifest.indexOf(marker));
+    const ordered = positions.every((position, index) => index === 0 || position > positions[index - 1]);
+    if (!ordered) {
+      fail('pipeline Entregas aplica layering e ergonomia antes do build: ordem incorreta');
+    } else {
+      ok('pipeline Entregas aplica layering e ergonomia antes do build');
+    }
+  }
+}
 requireAll('scripts/build-merchant-panel.mjs', [
   "'harden-entregas-overlay-layering.mjs'",
 ], 'painéis Estabelecimento/Admin também recebem layering seguro de dialogs/sheets');
