@@ -76,7 +76,7 @@ patch(
 
     next = next.replace(/<nav\b([\s\S]{0,900}?)className="([^"]*)"([\s\S]{0,200}?)>/g, (tag, before, classes, after) => {
       if (!classes.includes('fixed') || !classes.includes('bottom-0') || (!classes.includes('grid') && !classes.includes('border-t'))) return tag;
-      let value = replaceClassToken(classes, 'pb-[max(0.65rem,env(safe-area-inset-bottom))]', 'pb-[max(0.85rem,env(safe-area-inset-bottom))]');
+      let value = replaceClassToken(classes, 'pb-[max(0.65rem,env(safe-area-inset-bottom))]', 'pb-[max(44px,env(safe-area-inset-bottom))]');
       value = replaceClassToken(value, 'pt-2', 'pt-2.5');
       return `<nav${before}className="${value}"${after}>`;
     });
@@ -126,7 +126,7 @@ patch(
     if (!/h-6\s+w-6|w-6\s+h-6/.test(source)) failures.push('ícone do rodapé');
     const panelHeader = source.match(/<header\b[\s\S]{0,900}?grid-cols-\[2\.75rem_1fr_2\.75rem\][\s\S]{0,900}?>/)?.[0] ?? '';
     if (!panelHeader || !panelHeader.includes('pt-[max(env(safe-area-inset-top),0.65rem)]')) failures.push('safe-area do painel');
-    if (!/pb-\[max\(0\.85rem,env\(safe-area-inset-bottom\)\)\]/.test(source)) failures.push('safe-area do rodapé');
+    if (!/pb-\[max\(44px,env\(safe-area-inset-bottom\)\)\]/.test(source)) failures.push('safe-area do rodapé');
     return failures.length ? failures.join(', ') : true;
   },
   'entregador: rodapé usa nomenclatura Entregas, alvos confortáveis e safe-area correta',
