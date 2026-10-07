@@ -25,7 +25,7 @@ for (const marker of [
   }
 }
 for (const marker of [
-  'applyThemeClass("dark");',
+  'applyThemeClass("light");',
   'mq.matches ? "dark" : "light"',
   'title="Tema"',
 ]) {
