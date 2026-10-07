@@ -10,8 +10,12 @@ import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSyn
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const legacySource = resolve('superapp/branding/apois-launcher.png');
-const foregroundSource = resolve('superapp/branding/apois-launcher-foreground.png');
+const redBrandBase64Source = resolve('superapp/branding/apois-client-red-logo.b64');
+const redBrandRasterSource = '/tmp/apois-partner-red-logo.png';
+if (!existsSync(redBrandBase64Source)) throw new Error('Arte vermelha oficial APOIS não encontrada para o launcher Parceiro.');
+writeFileSync(redBrandRasterSource, Buffer.from(readFileSync(redBrandBase64Source, 'utf8').trim(), 'base64'));
+const legacySource = redBrandRasterSource;
+const foregroundSource = redBrandRasterSource;
 const resRoot = resolve('superapp/partner-shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/partner-shell/android/app/src/main/AndroidManifest.xml');
 const mainActivityPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/MainActivity.java');
@@ -80,7 +84,7 @@ rmSync(join(drawableDir, 'ic_launcher_monochrome.xml'), { force: true });
 
 const backgroundDrawable = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#050505" />
+    <solid android:color="#F7F7F8" />
 </shape>
 `;
 writeFileSync(join(drawableDir, 'apois_launcher_background.xml'), backgroundDrawable, 'utf8');
