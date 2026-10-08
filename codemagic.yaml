@@ -241,6 +241,12 @@ workflows:
           fi
           grep -R -Fq 'register_courier_push_device_v2' superapp/partner-shell/dist/modules/entregador
           grep -R -Fq 'br.com.apois.parceiro' superapp/partner-shell/dist/modules/entregador
+          grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/entregador
+          if grep -R -Fqi '#F6BE1C' superapp/partner-shell/dist/modules/motorista superapp/partner-shell/dist/modules/entregador; then
+            echo '[FAIL] identidade dourada antiga permaneceu no bundle Parceiro'
+            exit 1
+          fi
       - name: Create APOIS Parceiro Android project
         script: |
           set -euo pipefail
@@ -264,7 +270,7 @@ workflows:
           grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
           test -s superapp/partner-shell/android/app/google-services.json
           test -s superapp/partner-shell/android/app/src/main/res/drawable/apois_partner_splash.xml
-          grep -R -Fq 'windowSplashScreenBackground">#050505<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
+          grep -R -Fq 'windowSplashScreenBackground">#F7F7F8<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
           grep -R -Fq 'windowSplashScreenAnimatedIcon">@mipmap/ic_launcher<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
           if grep -Fq 'android:scheme="br.com.apois.app"' "$MANIFEST" && grep -Fq 'android:pathPrefix="/mercadopago"' "$MANIFEST"; then
             echo '[FAIL] APOIS Parceiro ainda registra callback Mercado Pago do app cliente'
