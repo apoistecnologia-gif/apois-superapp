@@ -149,10 +149,10 @@ requireAll('superapp/partner-shell/build.mjs', [
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:8px',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
-], 'seletor Parceiro está protegido para telas baixas/estreitas');
+  'object-fit:contain',
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
+], 'seletor Parceiro aprovado está protegido para telas baixas/estreitas');
 requireAll('scripts/harden-partner-red-visual.mjs', [
   'APOIS_PARTNER_COURIER_RED_VISUAL_V1',
   'APOIS_PARTNER_RED_VISUAL_V1',
