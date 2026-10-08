@@ -6,26 +6,154 @@
   <meta name="theme-color" content="#F7F7F8" />
   <title>APOIS Parceiro</title>
   <style>
-    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;background:#F7F7F8;--red:#E51B23;--red-dark:#C9141B}
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#F7F7F8;color:#111}body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}
-    .screen{min-height:100dvh;max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top),20px) 18px max(52px,env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,#FFFFFF 0%,#FFF8F8 62%,#FFF1F2 100%)}
-    .brand{text-align:center}.logo{width:126px;height:126px;margin:0 auto 16px;border-radius:50%;overflow:hidden;border:1px solid #E2E4E8;background:#fff;box-shadow:0 16px 34px -22px rgba(229,27,35,.34)}.logo img{display:block;width:100%;height:100%;object-fit:contain;padding:8px}.brand h1{margin:0;font-size:34px;line-height:1;font-weight:950;color:#111}.brand p{margin:10px auto 0;color:#666B73;font-size:14px;max-width:330px;line-height:1.45}
-    .choices{display:grid;gap:14px;margin-top:34px}.card{width:100%;border:1px solid #E2E4E8;border-radius:26px;background:#fff;padding:20px;text-align:left;color:#111;box-shadow:0 14px 34px -28px rgba(17,17,17,.24)}.card strong{display:block;font-size:22px}.card span{display:block;margin-top:6px;font-size:13px;color:#666B73;line-height:1.4}.card button{margin-top:18px;width:100%;height:52px;border:0;border-radius:16px;font:inherit;font-weight:900;background:linear-gradient(135deg,#FF5A60,#E51B23 56%,#C9141B);color:#fff;box-shadow:0 12px 28px -18px rgba(229,27,35,.48)}.card button:focus-visible{outline:3px solid rgba(229,27,35,.28);outline-offset:3px}.foot{text-align:center;margin-top:28px;color:#777D85;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
-    @media(max-height:700px){.screen{justify-content:flex-start}.logo{width:92px;height:92px;margin-bottom:10px}.brand h1{font-size:29px}.brand p{margin-top:7px;font-size:13px}.choices{margin-top:20px;gap:10px}.card{border-radius:22px;padding:15px}.card strong{font-size:19px}.card span{margin-top:4px;font-size:12px}.card button{margin-top:12px;height:48px}.foot{margin-top:18px}}
-    @media(max-width:360px){.screen{padding-left:14px;padding-right:14px}.brand h1{font-size:28px}.card{padding:14px}.card strong{font-size:18px}}
+    :root{
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:#111;background:#F7F7F8;
+      --red:#E51B23;--red-2:#FF2430;--red-dark:#C9141B;--ink:#111;--muted:#5F6670;--line:#E7E9ED;--paper:#fff;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:#F7F7F8;color:#111}
+    body{min-height:100dvh;overflow-x:hidden;overflow-y:auto}
+    button{font:inherit}
+    .screen{
+      position:relative;isolation:isolate;min-height:100dvh;max-width:520px;margin:0 auto;
+      padding:max(env(safe-area-inset-top),18px) 16px max(54px,env(safe-area-inset-bottom));
+      overflow:hidden;background:
+        radial-gradient(circle at -6% 8%,rgba(229,27,35,.16) 0 15%,transparent 16%),
+        radial-gradient(circle at 108% 12%,rgba(255,36,48,.18) 0 12%,transparent 13%),
+        radial-gradient(circle at -8% 43%,rgba(229,27,35,.12) 0 14%,transparent 15%),
+        linear-gradient(180deg,#fff 0%,#fbfcfd 72%,#f4f5f7 100%);
+    }
+    .screen:before{
+      content:"";position:absolute;z-index:-2;left:0;right:0;top:116px;height:260px;opacity:.20;
+      background:
+        linear-gradient(90deg,transparent 0 5%,#cbd1d8 5% 10%,transparent 10% 13%,#bfc6ce 13% 19%,transparent 19% 23%,#d6dbe1 23% 28%,transparent 28% 35%,#c5ccd4 35% 43%,transparent 43% 49%,#d6dbe0 49% 57%,transparent 57% 62%,#c8cfd6 62% 72%,transparent 72% 77%,#d9dde2 77% 84%,transparent 84% 88%,#c4cbd2 88% 96%,transparent 96%);
+      clip-path:polygon(0 38%,7% 36%,7% 100%,12% 100%,12% 18%,19% 18%,19% 100%,24% 100%,24% 8%,31% 8%,31% 100%,36% 100%,36% 24%,44% 24%,44% 100%,50% 100%,50% 12%,58% 12%,58% 100%,64% 100%,64% 26%,74% 26%,74% 100%,80% 100%,80% 6%,88% 6%,88% 100%,93% 100%,93% 30%,100% 30%,100% 100%,0 100%);
+      filter:blur(.2px);
+    }
+    .screen:after{
+      content:"";position:absolute;z-index:-1;left:-12%;right:-12%;bottom:-84px;height:230px;
+      border:18px solid rgba(229,27,35,.72);border-left-color:transparent;border-top-color:transparent;border-radius:50%;
+      transform:rotate(-10deg);opacity:.75;
+    }
+    .brand{text-align:center;padding-top:4px}
+    .logo{width:142px;height:142px;margin:0 auto 4px;display:grid;place-items:center}
+    .logo img{display:block;width:100%;height:100%;object-fit:contain}
+    .tagline{margin-top:-8px;font-size:12px;font-weight:800;letter-spacing:.42em;text-transform:uppercase;color:#111}
+    .tagline span{color:var(--red)}
+    .hero{text-align:center;margin-top:22px}
+    .hero h1{margin:0;font-size:clamp(34px,8.3vw,46px);line-height:.98;font-weight:950;letter-spacing:-.045em;color:#050505}
+    .hero h1 em{font-style:normal;color:var(--red)}
+    .hero .dash{width:28px;height:4px;border-radius:999px;background:var(--red);margin:13px auto 11px}
+    .hero p{margin:0 auto;max-width:430px;color:#4d535b;font-size:15px;line-height:1.38}
+    .choices{display:grid;gap:18px;margin-top:28px}
+    .partner-card{
+      position:relative;overflow:hidden;min-height:286px;border:1px solid rgba(18,22,27,.06);border-radius:30px;
+      background:linear-gradient(135deg,#fff 0%,#fff 60%,#f7f8fa 100%);
+      box-shadow:0 22px 44px -28px rgba(17,24,39,.34);padding:24px 22px 20px;
+    }
+    .partner-card:before{
+      content:"";position:absolute;right:-42px;top:-64px;width:200px;height:200px;border-radius:50%;
+      background:linear-gradient(145deg,var(--red-2),var(--red));opacity:.92;
+    }
+    .partner-card:after{
+      content:"";position:absolute;right:14px;bottom:16px;width:170px;height:105px;border-radius:55% 45% 18% 18%/68% 62% 38% 30%;
+      background:linear-gradient(155deg,#0a0d10 0%,#20272f 38%,#050607 78%);
+      box-shadow:inset -18px -8px 0 rgba(255,255,255,.05),0 18px 28px -22px rgba(0,0,0,.58);
+      transform:skewX(-8deg);
+    }
+    .partner-card.entregador:after{
+      width:138px;height:150px;right:28px;bottom:8px;border-radius:46% 46% 24% 24%/28% 28% 74% 74%;
+      background:
+        radial-gradient(circle at 50% 15%,#111 0 18%,transparent 19%),
+        linear-gradient(180deg,#171b20 0 42%,#0b0d10 43% 100%);
+      transform:none;
+      box-shadow:0 18px 28px -22px rgba(0,0,0,.58);
+    }
+    .partner-card.entregador .vehicle-mark{right:67px;bottom:70px;width:58px;height:46px;border-radius:10px;background:#111;border:2px solid var(--red)}
+    .partner-card.motorista .vehicle-mark{right:52px;bottom:60px;width:104px;height:14px;border-radius:999px;background:linear-gradient(90deg,var(--red),#fff 26%,#99b9d2 52%,#fff 68%,var(--red));filter:blur(.4px)}
+    .vehicle-mark{position:absolute;z-index:2}
+    .badge{
+      position:relative;z-index:3;display:inline-grid;place-items:center;width:46px;height:46px;border-radius:50%;
+      background:#fff1f2;color:var(--red);box-shadow:inset 0 0 0 1px rgba(229,27,35,.06)
+    }
+    .badge svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+    .card-title{position:relative;z-index:3;display:flex;align-items:center;gap:12px;max-width:70%}
+    .card-title strong{font-size:27px;line-height:1;font-weight:950;letter-spacing:-.03em}
+    .card-title strong em{font-style:normal;color:var(--red)}
+    .partner-card p{position:relative;z-index:3;margin:16px 0 20px;max-width:58%;color:#565d66;font-size:16px;line-height:1.34}
+    .action-row{position:relative;z-index:4;display:flex;align-items:center;gap:12px;width:100%;margin-top:4px}
+    .primary-action{
+      flex:1;min-height:58px;border:0;border-radius:18px;background:linear-gradient(135deg,#ff2733,#f71320 58%,#df0d18);
+      color:#fff;font-weight:900;font-size:17px;box-shadow:0 16px 30px -20px rgba(229,27,35,.72);
+    }
+    .round-action{
+      width:52px;height:52px;border:0;border-radius:50%;background:#fff;color:var(--red);font-size:31px;font-weight:500;
+      box-shadow:0 9px 24px -18px rgba(17,24,39,.8);display:grid;place-items:center
+    }
+    .primary-action:active,.round-action:active{transform:translateY(1px)}
+    .primary-action:focus-visible,.round-action:focus-visible{outline:3px solid rgba(229,27,35,.22);outline-offset:3px}
+    .foot{text-align:center;margin-top:26px;color:#4e545d;font-size:11px;letter-spacing:.34em;text-transform:uppercase}
+    .foot:after{content:"";display:block;width:26px;height:4px;margin:10px auto 0;border-radius:999px;background:var(--red)}
+    @media(max-height:760px){
+      .screen{padding-top:max(env(safe-area-inset-top),12px)}
+      .logo{width:106px;height:106px}.tagline{font-size:10px}.hero{margin-top:12px}.hero h1{font-size:30px}.hero p{font-size:13px}
+      .choices{margin-top:18px;gap:12px}.partner-card{min-height:220px;padding:18px;border-radius:24px}
+      .card-title strong{font-size:22px}.partner-card p{font-size:13px;margin:12px 0 14px}.primary-action{min-height:50px;font-size:15px}.round-action{width:46px;height:46px}
+      .partner-card:after{width:132px;height:84px}.partner-card.entregador:after{width:104px;height:112px}.foot{margin-top:16px}
+    }
+    @media(max-width:380px){
+      .screen{padding-left:12px;padding-right:12px}.hero h1{font-size:31px}.hero p{font-size:13px}
+      .partner-card{padding:18px}.card-title{max-width:76%}.card-title strong{font-size:22px}.partner-card p{max-width:62%;font-size:13px}
+      .primary-action{font-size:14px}.round-action{width:46px;height:46px}
+    }
   </style>
 </head>
 <body>
   <main class="screen">
-    <section class="brand">
-      <div class="logo"><img src="__APOIS_BRAND_DATA_URL__" alt="APOIS Brasil" /></div>
-      <h1>APOIS Parceiro</h1>
-      <p>Escolha como você trabalha na APOIS. Motoristas e entregadores usam este aplicativo.</p>
+    <section class="brand" aria-label="APOIS Parceiro">
+      <div class="logo"><img src="__APOIS_BRAND_DATA_URL__" alt="APOIS" /></div>
+      <div class="tagline">APOIS, <span>VAMOS?</span></div>
     </section>
-    <section class="choices">
-      <article class="card motorista"><strong>Sou Motorista</strong><span>Fique online, receba corridas e acompanhe seus ganhos.</span><button data-module="motorista" type="button">Entrar como motorista →</button></article>
-      <article class="card entregador"><strong>Sou Entregador</strong><span>Fique disponível, receba entregas e acompanhe suas rotas e pedidos.</span><button data-module="entregador" type="button">Entrar como entregador →</button></article>
+
+    <section class="hero">
+      <h1>APOIS <em>Parceiro</em></h1>
+      <div class="dash" aria-hidden="true"></div>
+      <p>Escolha como você deseja trabalhar na APOIS.<br />Motoristas e entregadores usam este aplicativo.</p>
     </section>
+
+    <section class="choices" aria-label="Escolha seu perfil de parceiro">
+      <article class="partner-card motorista">
+        <div class="card-title">
+          <span class="badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 17h14l-1.2-6.1a2 2 0 0 0-2-1.6H8.2a2 2 0 0 0-2 1.6L5 17Z"/><path d="M7 9.3 8.4 6h7.2L17 9.3"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+          </span>
+          <strong>Sou <em>Motorista</em></strong>
+        </div>
+        <p>Fique online, receba corridas e acompanhe seus ganhos e recebimentos.</p>
+        <span class="vehicle-mark" aria-hidden="true"></span>
+        <div class="action-row">
+          <button class="primary-action" data-module="motorista" type="button">Entrar como motorista →</button>
+          <button class="round-action" data-module="motorista" type="button" aria-label="Entrar como motorista">›</button>
+        </div>
+      </article>
+
+      <article class="partner-card entregador">
+        <div class="card-title">
+          <span class="badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="m7 17 4-7h3l3 7M9 13h7M12 10l-2-3H7"/></svg>
+          </span>
+          <strong>Sou <em>Entregador</em></strong>
+        </div>
+        <p>Fique disponível, receba entregas e acompanhe suas rotas e pedidos.</p>
+        <span class="vehicle-mark" aria-hidden="true"></span>
+        <div class="action-row">
+          <button class="primary-action" data-module="entregador" type="button">Entrar como entregador →</button>
+          <button class="round-action" data-module="entregador" type="button" aria-label="Entrar como entregador">›</button>
+        </div>
+      </article>
+    </section>
+
     <div class="foot">APOIS • PARCEIROS</div>
   </main>
   <script>
