@@ -176,7 +176,7 @@ workflows:
 
   android-partner-superapp:
     name: APOIS Parceiro - Motorista + Entregador
-    instance_type: mac_mini_m4
+    instance_type: linux_x2
     max_build_duration: 60
     environment:
       java: 21
