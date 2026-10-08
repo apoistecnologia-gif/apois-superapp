@@ -31,15 +31,15 @@ const courierMap = read('scripts/harden-partner-entregador-map.mjs');
 for (const marker of [
   "import './harden-partner-entregador-theme.mjs';",
   "import './harden-entregas-brand-sweep.mjs';",
-  'const APOIS_GOLD = "#F6BE1C";',
+  'const APOIS_RED = "#E51B23";',
 ]) {
-  if (!courierMap.includes(marker)) fail(`Entregador sem proteção final: ${marker}`);
+  if (!courierMap.includes(marker)) fail(`Entregador sem proteção visual final: ${marker}`);
 }
 const partnerRed = read('scripts/harden-partner-red-visual.mjs');
 for (const marker of ['APOIS_PARTNER_COURIER_RED_VISUAL_V1', '#E51B23', '#C9141B']) {
   if (!partnerRed.includes(marker)) fail(`Entregador sem migração visual final: ${marker}`);
 }
-if (!failed) ok('Entregador aplica a nova identidade vermelho/branco do Parceiro após o hardening operacional');
+if (!failed) ok('Entregador aplica identidade vermelho/branco e rota vermelha APOIS após o hardening operacional');
 
 const brandTheme = read('scripts/harden-entregas-superapp-brand-theme.mjs');
 for (const marker of ['APOIS_CUSTOMER_RED_V2', '#E51B23', '#C9141B']) {
