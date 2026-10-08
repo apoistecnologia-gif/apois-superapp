@@ -37,8 +37,8 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
 ], 'Seletor Parceiro mantém rolagem e breakpoints móveis');
 
 requireAll('scripts/fix-corridas-superapp-ui.mjs', [
