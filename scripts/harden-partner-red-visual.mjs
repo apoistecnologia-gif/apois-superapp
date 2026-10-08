@@ -124,6 +124,20 @@ function hardenMotorista() {
   color-scheme: light;
 }
 body { background:#F7F7F8 !important; color:#111111 !important; }
+.bg-background, [class~="bg-background"] { background-color:#F7F7F8 !important; }
+.bg-card, [class~="bg-card"], [class~="bg-white"] {
+  background-color:#FFFFFF !important;
+}
+[class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[2"] {
+  --apois-partner-card-shadow: 0 18px 42px -30px rgba(17,24,39,.34);
+}
+[class~="bg-primary"], button[class*="bg-primary"],
+[class*="bg-[#E51B23]"], [class*="bg-[#C9141B]"] {
+  color:#FFFFFF !important;
+}
+[class~="text-primary"], [class*="text-[#E51B23]"] { color:#E51B23 !important; }
+[class*="border-[#E2E4E8]"], [class~="border-border"] { border-color:#E7E9ED !important; }
+nav, header { background-color:rgba(255,255,255,.96); }
 `;
       writeFileSync(stylePath, style, 'utf8');
     }
@@ -188,6 +202,13 @@ function hardenEntregador() {
 }
 .apois-system-theme button[class*="bg-primary"],
 .apois-system-theme [class~="bg-primary"] { color:#FFFFFF !important; }
+.apois-system-theme [class~="bg-background"] { background-color:#F7F7F8 !important; }
+.apois-system-theme [class~="bg-card"],
+.apois-system-theme [class~="bg-white"] { background-color:#FFFFFF !important; }
+.apois-system-theme [class~="text-primary"] { color:#E51B23 !important; }
+.apois-system-theme [class~="border-border"] { border-color:#E7E9ED !important; }
+.apois-system-theme nav,
+.apois-system-theme header { background-color:rgba(255,255,255,.96) !important; }
 `;
   }
   writeFileSync(themePath, source, 'utf8');
