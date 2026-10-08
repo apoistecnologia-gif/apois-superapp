@@ -107,9 +107,12 @@ requireAll('codemagic.yaml', [
 ], 'CodeMagic rejeita build sem identidade vermelha final');
 
 forbidAll('scripts/harden-partner-entregador-theme.mjs', [
-  'APOIS_PARTNER_COURIER_GOLD_V1',
   'tema preto/dourado',
 ], 'tema Entregador não preserva identidade antiga');
+
+// O hardener cita APOIS_PARTNER_COURIER_GOLD_V1 apenas dentro da própria
+// lista de rejeição. Isso não representa tema legado aplicado ao runtime.
+// A identidade efetiva é validada pelos marcadores RED_V2 acima.
 forbidAll('superapp/partner-shell/index.html', [
   '--gold:#f6be1c',
   'background:#050505',
