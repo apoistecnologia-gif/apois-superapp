@@ -186,20 +186,31 @@ requireAll('scripts/build-isolated-module.mjs', [
   'harden-corridas-request-timeout.mjs',
 ], 'pipeline Corridas aplica timeout antes do build visual');
 
-// Achado de auditoria: o parceiro ainda está explicitamente preso à identidade
-// preta/dourada, enquanto Cliente Corridas/Entregas usam vermelho/branco.
+// Parceiro / identidade visual final
 const driverTheme = read('scripts/harden-partner-motorista-brand-theme.mjs');
 const courierTheme = read('scripts/harden-partner-entregador-theme.mjs');
+const partnerVisual = read('scripts/harden-partner-red-visual.mjs');
 const partnerShell = read('superapp/partner-shell/index.html');
-if (
-  driverTheme.includes('identidade preto/dourado') &&
-  courierTheme.includes('APOIS_PARTNER_COURIER_GOLD_V1') &&
-  partnerShell.includes('--gold:#f6be1c')
-) {
-  warn('Motorista, Entregador e seletor Parceiro continuam explicitamente preto/dourado. Se a nova identidade vermelho/branco deve valer para todo o ecossistema, esta migração ainda não foi aplicada ao APOIS Parceiro.');
-} else {
-  ok('Parceiro não está integralmente preso ao tema legado preto/dourado');
+
+for (const [label, source, markers] of [
+  ['Motorista', driverTheme, ['applyThemeClass("light");', 'identidade visual clara vermelho/branco']],
+  ['Entregador', courierTheme, ['APOIS_PARTNER_COURIER_RED_V2', '#E51B23', '#C9141B']],
+  ['Hardener visual final', partnerVisual, ['APOIS_PARTNER_RED_VISUAL_V1', 'APOIS_PARTNER_COURIER_RED_VISUAL_V1']],
+  ['Seletor Parceiro', partnerShell, ['--red:#E51B23', '--red-dark:#C9141B', 'background:#F7F7F8']],
+]) {
+  const missing = markers.filter((marker) => !source.includes(marker));
+  if (missing.length) fail(label + ' sem identidade vermelho/branco completa: ' + missing.join(' | '));
 }
+for (const [label, source] of [
+  ['Motorista', driverTheme],
+  ['Entregador', courierTheme],
+  ['Seletor Parceiro', partnerShell],
+]) {
+  for (const forbidden of ['preto/dourado', 'APOIS_PARTNER_COURIER_GOLD_V1', '--gold:#f6be1c']) {
+    if (source.includes(forbidden)) fail(label + ' ainda referencia identidade antiga: ' + forbidden);
+  }
+}
+if (!failed) ok('APOIS Parceiro inteiro está alinhado à identidade vermelho/branco');
 
 if (!failed) {
   console.log('[OK] Post-layout v26: auditoria estrutural cobre Cliente Corridas, Cliente Entregas, Motorista, Entregador e os dois seletores.');
