@@ -65,8 +65,12 @@ for (const stale of [
 
 function render(size, output) {
   const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(size), String(size), officialLauncher, '--out', output], { encoding: 'utf8' });
-  if (result.error || result.status !== 0 || !existsSync(output)) {
-    throw new Error(`APOIS Parceiro: falha ao materializar launcher oficial ${size}px: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`);
+  if (!result.error && result.status === 0 && existsSync(output)) return;
+  // Linux não possui sips. Para Android é seguro manter o PNG oficial como
+  // raster em cada density; o launcher continua usando a mesma arte aprovada.
+  copyFileSync(officialLauncher, output);
+  if (!existsSync(output)) {
+    throw new Error(`APOIS Parceiro: falha ao materializar launcher oficial ${size}px.`);
   }
 }
 
