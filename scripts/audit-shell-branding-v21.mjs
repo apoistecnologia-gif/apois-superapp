@@ -45,10 +45,12 @@ check('scripts/harden-superapp-shell-iconography.mjs', [
 check('superapp/partner-shell/index.html', [
   '--red:#E51B23',
   '--red-dark:#C9141B',
+  'APOIS <em>Parceiro</em>',
+  'Sou <em>Motorista</em>',
+  'Sou <em>Entregador</em>',
   'background:#F7F7F8',
-  'background:linear-gradient(135deg,#FF5A60,#E51B23 56%,#C9141B)',
-  'object-fit:contain;padding:8px',
-  '@media(max-height:700px)',
-], 'Seletor Parceiro usa a nova identidade vermelho/branco e permanece responsivo');
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
+], 'Seletor Parceiro segue a tela aprovada vermelho/branco e permanece responsivo');
 
 process.exit(failed ? 1 : 0);
