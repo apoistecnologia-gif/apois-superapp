@@ -33,11 +33,13 @@ function forbidAll(path, markers, label) {
 requireAll('superapp/partner-shell/index.html', [
   '--red:#E51B23',
   '--red-dark:#C9141B',
+  'APOIS <em>Parceiro</em>',
+  'Escolha como você deseja trabalhar na APOIS.',
+  'Sou <em>Motorista</em>',
+  'Sou <em>Entregador</em>',
+  'background:linear-gradient(135deg,#ff2733,#f71320 58%,#df0d18)',
   'background:#F7F7F8',
-  'background:linear-gradient(180deg,#FFFFFF 0%,#FFF8F8 62%,#FFF1F2 100%)',
-  'background:linear-gradient(135deg,#FF5A60,#E51B23 56%,#C9141B)',
-  'color:#fff',
-], 'seletor Parceiro usa superfícies claras e CTA vermelho');
+], 'seletor Parceiro replica a referência aprovada com superfícies claras e CTA vermelho');
 
 requireAll('superapp/partner-shell/build.mjs', [
   'apois-client-red-logo.b64',
