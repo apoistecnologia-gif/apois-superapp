@@ -153,9 +153,9 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  'max(52px,env(safe-area-inset-bottom))',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
+  'max(54px,env(safe-area-inset-bottom))',
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
 ], 'seletor Parceiro permanece utilizável em telas baixas/estreitas e fora da barra Android');
 
 // Dívidas funcionais expostas pelo layout novo. Não bloqueiam o build porque
