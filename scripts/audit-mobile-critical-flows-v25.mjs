@@ -111,7 +111,8 @@ requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'min-height:100dvh',
   'overflow-x:hidden;overflow-y:auto',
-  '@media(max-height:700px)',
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
 ], 'Shell Parceiro continua utilizável em telas baixas');
 
 requireAll('scripts/harden-corridas-mobile-proportions.mjs', [
