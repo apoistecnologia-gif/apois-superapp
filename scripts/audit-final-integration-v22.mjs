@@ -160,11 +160,25 @@ requireAll('scripts/harden-partner-red-visual.mjs', [
 ], 'APOIS Parceiro aplica identidade vermelho/branco em Motorista e Entregador');
 
 const workflowsDir = resolve('.github/workflows');
-if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
-  fail('GitHub Actions reapareceu; release oficial deve continuar no Codemagic');
+if (existsSync(workflowsDir)) {
+  const workflows = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name));
+  const allowedTestWorkflows = new Set(['apois-partner-android.yml', 'apois-actions-probe.yml']);
+  const unexpected = workflows.filter((name) => !allowedTestWorkflows.has(name));
+  if (unexpected.length) {
+    fail(`GitHub Actions de release/CI não autorizados reapareceram: ${unexpected.join(', ')}`);
+  } else {
+    const partnerWorkflow = workflows.includes('apois-partner-android.yml')
+      ? read('.github/workflows/apois-partner-android.yml')
+      : '';
+    if (partnerWorkflow && !partnerWorkflow.includes('APOIS-Parceiro-TESTE.apk')) {
+      fail('workflow GitHub do Parceiro deve permanecer explicitamente de teste');
+    } else {
+      ok('GitHub Actions contém apenas probe e APK de teste; release oficial continua no Codemagic');
+    }
+  }
 } else ok('não há GitHub Actions concorrendo com o caminho oficial de release');
 
 if (!failed) {
-  console.log('[OK] Final integration v22: auditoria estática integrada concluída; código está liberado para a etapa externa de compilação/homologação no Codemagic.');
+  console.log('[OK] Final integration v22: auditoria estática integrada concluída; código está liberado para a etapa externa de compilação/homologação no Codemagic ou APK de teste no GitHub Actions.');
 }
 process.exit(failed ? 1 : 0);
