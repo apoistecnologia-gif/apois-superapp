@@ -100,7 +100,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
 
   source = source
     .replace(
-      '<div className="relative min-h-dvh w-full overflow-x-hidden bg-black text-white">',
+      /<div className="relative min-h-dvh w-full overflow-x-hidden[^"]*">/,
       '<div data-apois-partner-auth-v17 className="relative min-h-dvh w-full overflow-x-hidden bg-[#F7F7F8] text-[#111827]">'
     )
     .replace('className="h-full w-full scale-105 object-cover object-center opacity-55 saturate-[0.8]"',
