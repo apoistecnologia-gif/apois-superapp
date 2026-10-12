@@ -59,6 +59,7 @@ node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 node "$ROOT/scripts/harden-partner-red-visual.mjs"
 node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
+node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
 
 cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
