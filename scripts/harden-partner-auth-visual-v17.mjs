@@ -99,6 +99,9 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
   }
 
   source = source
+    .replaceAll('src={logoAsset.url}', 'src={APOIS_PARTNER_LOGO_DATA_URL}')
+    .replaceAll('alt="APOIS ENTREGA"', 'alt="APOIS"')
+    .replace('import logoAsset from "@/assets/logo.png.asset.json";\n', '')
     .replace(
       /<div className="relative min-h-dvh w-full overflow-x-hidden[^"]*">/,
       '<div data-apois-partner-auth-v17 className="relative min-h-dvh w-full overflow-x-hidden bg-[#F7F7F8] text-[#111827]">'
@@ -136,7 +139,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
              'className="flex h-[54px] w-full items-center justify-center gap-3 rounded-[18px] border border-[#D9DDE3] bg-white text-[15px] font-bold text-[#111827] shadow-sm transition-all active:scale-[0.985] disabled:opacity-60"');
 
   must(source, ['data-apois-partner-auth-v17','APOIS_PARTNER_LOGO_DATA_URL','bg-[#F7F7F8]','bg-[#E51B23]'], 'login Entregador visual v17');
-  if (source.includes('alt="APOIS ENTREGA"') && source.includes('productMode === "courier"')) {
+  if (source.includes('src={logoAsset.url}') || source.includes('alt="APOIS ENTREGA"')) {
     throw new Error('[FAIL] login Entregador ainda usa logo antiga/quebrável');
   }
   write(loginPath, source);
