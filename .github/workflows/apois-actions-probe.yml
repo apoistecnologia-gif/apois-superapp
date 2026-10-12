@@ -1,0 +1,20 @@
+name: APOIS Actions Probe
+
+on:
+  push:
+    branches:
+      - feat/apois-cliente-red-visual-20261003
+    paths:
+      - '.github/workflows/apois-actions-probe.yml'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm GitHub Actions runner
+        run: |
+          echo "GitHub Actions runner iniciou normalmente."
+          echo "Runner: $RUNNER_OS / $RUNNER_ARCH"
+          echo "Repo: $GITHUB_REPOSITORY"
+          echo "Commit: $GITHUB_SHA"
