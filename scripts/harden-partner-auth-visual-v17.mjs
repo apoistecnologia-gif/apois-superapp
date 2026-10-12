@@ -18,7 +18,7 @@ const logoB64 = readFileSync(logoB64Path, 'utf8').trim();
 if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
 
 // ---------------- Motorista: login totalmente claro e compacto ----------------
-{
+if (process.env.APOIS_MOTORISTA_WORKSPACE) {
   const logoModule = driverWorkspace + '/src/assets/apoisPartnerLogoData.ts';
   write(logoModule, '// APOIS_PARTNER_AUTH_LOGO_V17\nexport const APOIS_PARTNER_LOGO_DATA_URL = "data:image/png;base64,' + logoB64 + '";\n');
 
@@ -85,7 +85,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
 }
 
 // ---------------- Entregador: login claro, logo oficial e sem hero legado escuro ----------------
-{
+if (process.env.APOIS_ENTREGAS_WORKSPACE) {
   const logoModule = courierWorkspace + '/src/assets/apoisPartnerLogoData.ts';
   write(logoModule, '// APOIS_PARTNER_AUTH_LOGO_V17\nexport const APOIS_PARTNER_LOGO_DATA_URL = "data:image/png;base64,' + logoB64 + '";\n');
 
@@ -197,7 +197,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
   write(rootPath, rootSource);
 }
 
-console.log('[OK] Partner auth visual v17: Motorista e Entregador usam uma única linguagem clara, logo oficial, CTA vermelho e autenticação preservada.');
+console.log('[OK] Partner auth visual v17 aplicado somente ao workspace explicitamente ativo.');
 
 if (process.env.APOIS_ENTREGAS_WORKSPACE) {
   await import('./harden-partner-entregador-supabase.mjs');
