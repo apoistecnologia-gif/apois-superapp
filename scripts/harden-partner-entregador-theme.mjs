@@ -9,7 +9,7 @@ let source = readFileSync(path, 'utf8');
 const legacyGoldMarker = '/* APOIS_ENTREGAS_SYSTEM_GOLD_V1 */';
 if (source.includes(legacyGoldMarker)) {
   source = source.slice(0, source.indexOf(legacyGoldMarker)).trimEnd() + '\n';
-  console.log('[OK] Entregador Parceiro: override preto/dourado legado removido da cópia descartável.');
+  console.log('[OK] Entregador Parceiro: override visual legado removido da cópia descartável.');
 }
 
 const marker = '/* APOIS_PARTNER_COURIER_RED_V2 */';
