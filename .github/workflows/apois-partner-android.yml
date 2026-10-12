@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only
+# test workflow: GitHub Actions debug APK only — courier red theme fix
 
 on:
   workflow_dispatch:
