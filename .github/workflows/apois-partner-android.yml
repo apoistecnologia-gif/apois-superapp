@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — visual-file gold gate
+# test workflow: GitHub Actions debug APK only — partner visual/function audit v17
 
 on:
   workflow_dispatch:
@@ -110,6 +110,8 @@ jobs:
           npm run build:partner
           grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/entregador
+          grep -R -Fq 'data-apois-partner-auth-v17' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'data-apois-partner-auth-v17' superapp/partner-shell/dist/modules/entregador
           if find superapp/partner-shell/dist/modules/motorista superapp/partner-shell/dist/modules/entregador -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | xargs -0 grep -Fqi '#F6BE1C'; then
             echo "::error::Identidade dourada antiga permaneceu em arquivo executável/visual do bundle Parceiro"
             exit 1
