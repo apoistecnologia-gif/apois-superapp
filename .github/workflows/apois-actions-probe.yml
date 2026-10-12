@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Confirm GitHub Actions runner
         run: |
-          echo "GitHub Actions runner iniciou normalmente."
+          echo "GitHub Actions runner iniciou normalmente na nova conta APOIS."
           echo "Runner: $RUNNER_OS / $RUNNER_ARCH"
           echo "Repo: $GITHUB_REPOSITORY"
           echo "Commit: $GITHUB_SHA"
