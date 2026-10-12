@@ -28,7 +28,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
   source = source
     .replace('import { MovviLogo } from "@/components/MovviLogo";', 'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";')
     .replace(
-      '<main className="relative min-h-[100dvh] min-w-0 overflow-hidden bg-[#030405] text-white">',
+      /<main className="relative min-h-\[100dvh\][^"]*">/,
       '<main data-apois-partner-auth-v17 className="relative min-h-[100dvh] min-w-0 overflow-x-hidden overflow-y-auto bg-[#F7F7F8] text-[#111827]">'
     )
     .replace(
