@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — partner visual/function audit v17 retry
+# test workflow: GitHub Actions debug APK only — partner visual/function audit v17 retry 2
 
 on:
   workflow_dispatch:
