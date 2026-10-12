@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — courier map red fix
+# test workflow: GitHub Actions debug APK only — final bundle legacy token sanitize
 
 on:
   workflow_dispatch:
