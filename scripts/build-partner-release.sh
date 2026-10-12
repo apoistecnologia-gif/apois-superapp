@@ -58,6 +58,7 @@ node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 node "$ROOT/scripts/harden-partner-red-visual.mjs"
+node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
 
 cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
@@ -140,6 +141,7 @@ node "$ROOT/scripts/harden-partner-entregador-push.mjs"
 # Umbrella: aplica jornada, concorrência, GPS/background, sessão, financeiro manual, privacidade e UI.
 node "$ROOT/scripts/harden-partner-entregador-map.mjs"
 node "$ROOT/scripts/harden-partner-red-visual.mjs"
+node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
 
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'Push do Entregador registrado'
