@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for key in             APOIS_REPO_TOKEN             CORRIDAS_VITE_SUPABASE_URL             CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY             CORRIDAS_WEB_MAPS_API_KEY             VITE_SUPABASE_URL             VITE_SUPABASE_PUBLISHABLE_KEY             FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64
+          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64
           do
             if [ -z "${!key:-}" ]; then
               echo "::error::GitHub secret ausente: $key"
@@ -72,8 +72,14 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Validate Android SDK on runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_SDK_ROOT:-}"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --list >/dev/null
+          echo "[OK] Android SDK disponível no runner"
 
       - name: Install pinned Bun
         shell: bash
