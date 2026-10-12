@@ -74,6 +74,14 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
     throw new Error('[FAIL] login Motorista ainda contém identidade visual antiga');
   }
   write(loginPath, source);
+
+  const googlePath = driverWorkspace + '/src/components/DriverGoogleLoginButton.tsx';
+  if (existsSync(resolve(root, googlePath))) {
+    let google = read(googlePath)
+      .replace('className="flex min-h-[56px] w-full items-center justify-center gap-3 rounded-[17px] border border-white/12 bg-white px-4 py-3 text-[14px] font-black text-black disabled:opacity-60"',
+               'className="flex min-h-[56px] w-full items-center justify-center gap-3 rounded-[18px] border border-[#D9DDE3] bg-white px-4 py-3 text-[14px] font-black text-[#111827] shadow-sm disabled:opacity-60"');
+    write(googlePath, google);
+  }
 }
 
 // ---------------- Entregador: login claro, logo oficial e sem hero legado escuro ----------------
@@ -132,6 +140,48 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
     throw new Error('[FAIL] login Entregador ainda usa logo antiga/quebrável');
   }
   write(loginPath, source);
+
+  const googlePath = courierWorkspace + '/src/components/GoogleLoginButton.tsx';
+  if (existsSync(resolve(root, googlePath))) {
+    let google = read(googlePath)
+      .replace('className="flex h-[54px] w-full items-center justify-center gap-3 rounded-[18px] border border-white/10 bg-white text-[15px] font-bold text-black transition-all active:scale-[0.985] disabled:opacity-60"',
+               'className="flex h-[54px] w-full items-center justify-center gap-3 rounded-[18px] border border-[#D9DDE3] bg-white text-[15px] font-bold text-[#111827] shadow-sm transition-all active:scale-[0.985] disabled:opacity-60"');
+    write(googlePath, google);
+  }
+
+  const splashPath = courierWorkspace + '/src/components/ApoisLaunchSplash.tsx';
+  if (existsSync(resolve(root, splashPath))) {
+    let splash = read(splashPath)
+      .replace('className="apois-launch fixed inset-0 z-[9999] grid place-items-center overflow-hidden bg-black text-white"',
+               'className="apois-launch fixed inset-0 z-[9999] grid place-items-center overflow-hidden bg-[#F7F7F8] text-[#111827]"')
+      .replace('className="apois-launch-glow absolute h-72 w-72 rounded-full bg-accent/25 blur-3xl"',
+               'className="apois-launch-glow absolute h-72 w-72 rounded-full bg-[#E51B23]/10 blur-3xl"')
+      .replace('className="apois-launch-orbit absolute h-72 w-72 rounded-full border border-accent/20"',
+               'className="apois-launch-orbit absolute h-72 w-72 rounded-full border border-[#E51B23]/10"')
+      .replace('className="apois-launch-orbit apois-launch-orbit-2 absolute h-52 w-52 rounded-full border border-primary/25"',
+               'className="apois-launch-orbit apois-launch-orbit-2 absolute h-52 w-52 rounded-full border border-[#E51B23]/15"')
+      .replace('className="apois-launch-mark relative grid h-28 w-28 place-items-center overflow-hidden rounded-[2rem] border border-accent/40 bg-[#111111] shadow-[0_0_70px_rgba(200,138,8,0.28)]"',
+               'className="apois-launch-mark relative grid h-28 w-28 place-items-center overflow-hidden rounded-[2rem] border border-[#E2E5EA] bg-white p-2 shadow-[0_22px_70px_-38px_rgba(17,24,39,.55)]"')
+      .replace('src="/apois-app-icon.png"', 'src={APOIS_PARTNER_LOGO_DATA_URL}')
+      .replace('className="h-full w-full object-cover"', 'className="h-full w-full object-contain"')
+      .replace('className="apois-launch-pulse absolute right-2 top-2 h-3.5 w-3.5 rounded-full bg-primary shadow-[0_0_22px_rgba(246,190,28,0.92)]"',
+               'className="apois-launch-pulse absolute right-2 top-2 h-3.5 w-3.5 rounded-full bg-[#E51B23] shadow-[0_0_22px_rgba(229,27,35,0.35)]"')
+      .replace('className="apois-launch-brand bg-gradient-to-r from-primary to-accent bg-clip-text text-[2.05rem] font-black tracking-[0.26em] text-transparent"',
+               'className="apois-launch-brand text-[2.05rem] font-black tracking-[0.26em] text-[#E51B23]"')
+      .replace('className="apois-launch-label mt-2 text-[0.68rem] font-black tracking-[0.48em] text-zinc-300"',
+               'className="apois-launch-label mt-2 text-[0.68rem] font-black tracking-[0.48em] text-[#3F4650]"')
+      .replace('className="mt-10 h-[2px] w-36 overflow-hidden rounded-full bg-zinc-900"',
+               'className="mt-10 h-[2px] w-36 overflow-hidden rounded-full bg-[#E5E7EB]"')
+      .replace('className="apois-launch-line h-full w-1/2 rounded-full bg-gradient-to-r from-primary to-accent"',
+               'className="apois-launch-line h-full w-1/2 rounded-full bg-[#E51B23]"')
+      .replace('className="apois-launch-copy mt-4 text-[0.68rem] font-semibold tracking-[0.14em] text-zinc-500"',
+               'className="apois-launch-copy mt-4 text-[0.68rem] font-semibold tracking-[0.14em] text-[#6B7280]"');
+    if (!splash.includes('APOIS_PARTNER_LOGO_DATA_URL')) {
+      splash = splash.replace('import { useEffect, useMemo, useState } from "react";',
+        'import { useEffect, useMemo, useState } from "react";\nimport { APOIS_PARTNER_LOGO_DATA_URL } from "../assets/apoisPartnerLogoData";');
+    }
+    write(splashPath, splash);
+  }
 
   const rootPath = courierWorkspace + '/src/routes/__root.tsx';
   let rootSource = read(rootPath)
