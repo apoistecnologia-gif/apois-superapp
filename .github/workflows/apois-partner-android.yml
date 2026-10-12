@@ -1,4 +1,5 @@
 name: APOIS Parceiro Android APK
+# test workflow: GitHub Actions debug APK only
 
 on:
   workflow_dispatch:
