@@ -167,9 +167,13 @@ export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
+export VITE_SUPABASE_URL="https://ptgkwyyolrdgnqketkjj.supabase.co"
+export VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY"
 bun install --frozen-lockfile
 bun run typecheck
 bun run build
+require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output/public 'Bundle Entregador usa Supabase Entregas canônico atual'
+forbid_bundle 'sbvhdgyuuperszlsllji.supabase.co' .output/public 'Bundle Entregador remove URL Supabase inválida antiga'
 
 HOST=127.0.0.1 PORT=4173 TSS_SHELL=true node .output/server/index.mjs >/tmp/apois-parceiro-entregador.log 2>&1 &
 SERVER_PID=$!
