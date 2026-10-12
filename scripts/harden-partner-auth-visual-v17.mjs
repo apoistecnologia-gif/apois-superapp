@@ -179,7 +179,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
                'className="apois-launch-line h-full w-1/2 rounded-full bg-[#E51B23]"')
       .replace('className="apois-launch-copy mt-4 text-[0.68rem] font-semibold tracking-[0.14em] text-zinc-500"',
                'className="apois-launch-copy mt-4 text-[0.68rem] font-semibold tracking-[0.14em] text-[#6B7280]"');
-    if (!splash.includes('APOIS_PARTNER_LOGO_DATA_URL')) {
+    if (!splash.includes('from "../assets/apoisPartnerLogoData"')) {
       splash = splash.replace('import { useEffect, useMemo, useState } from "react";',
         'import { useEffect, useMemo, useState } from "react";\nimport { APOIS_PARTNER_LOGO_DATA_URL } from "../assets/apoisPartnerLogoData";');
     }
