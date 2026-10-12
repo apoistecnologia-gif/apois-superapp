@@ -22,6 +22,28 @@ function readTextTree(directory) {
   return output;
 }
 
+function sanitizeLegacyBrandInDist(directory) {
+  for (const entry of readdirSync(directory)) {
+    const path = resolve(directory, entry);
+    const stat = statSync(path);
+    if (stat.isDirectory()) {
+      sanitizeLegacyBrandInDist(path);
+      continue;
+    }
+    if (!/\.(?:html|js|css|json|txt)$/i.test(entry)) continue;
+    let source;
+    try { source = readFileSync(path, 'utf8'); } catch { continue; }
+    const next = source
+      .replaceAll('#F6BE1C', '#E51B23')
+      .replaceAll('#f6be1c', '#E51B23')
+      .replaceAll('#C88A08', '#C9141B')
+      .replaceAll('#c88a08', '#C9141B')
+      .replaceAll('rgba(246,190,28', 'rgba(229,27,35')
+      .replaceAll('rgba(200,138,8', 'rgba(201,20,27');
+    if (next !== source) writeFileSync(path, next, 'utf8');
+  }
+}
+
 function requireMarker(source, marker, label) {
   if (!source.includes(marker)) {
     console.error(`[FAIL] bundle Parceiro: ${label} — ausente: ${marker}`);
@@ -79,7 +101,8 @@ for (const [name, source] of modules) {
   const target = resolve(dist, 'modules', name);
   mkdirSync(target, { recursive: true });
   cpSync(source, target, { recursive: true });
-  console.log(`[OK] ${name} copiado para o APOIS Parceiro`);
+  sanitizeLegacyBrandInDist(target);
+  console.log(`[OK] ${name} copiado para o APOIS Parceiro e saneado contra tokens visuais legados`);
 }
 
 const driverBundle = readTextTree(resolve(dist, 'modules/motorista'));
