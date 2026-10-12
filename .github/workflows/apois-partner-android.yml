@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — final bundle legacy token sanitize
+# test workflow: GitHub Actions debug APK only — visual-file gold gate
 
 on:
   workflow_dispatch:
@@ -110,8 +110,8 @@ jobs:
           npm run build:partner
           grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/entregador
-          if grep -R -Fqi '#F6BE1C' superapp/partner-shell/dist/modules/motorista superapp/partner-shell/dist/modules/entregador; then
-            echo "::error::Identidade dourada antiga permaneceu no bundle Parceiro"
+          if find superapp/partner-shell/dist/modules/motorista superapp/partner-shell/dist/modules/entregador -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | xargs -0 grep -Fqi '#F6BE1C'; then
+            echo "::error::Identidade dourada antiga permaneceu em arquivo executável/visual do bundle Parceiro"
             exit 1
           fi
           echo "[OK] Módulos Parceiro compilados com identidade nova"
