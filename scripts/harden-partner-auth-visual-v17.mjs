@@ -198,3 +198,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
 }
 
 console.log('[OK] Partner auth visual v17: Motorista e Entregador usam uma única linguagem clara, logo oficial, CTA vermelho e autenticação preservada.');
+
+if (process.env.APOIS_ENTREGAS_WORKSPACE) {
+  await import('./harden-partner-entregador-supabase.mjs');
+}
