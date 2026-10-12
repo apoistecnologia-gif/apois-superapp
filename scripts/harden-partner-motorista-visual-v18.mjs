@@ -109,6 +109,7 @@ function must(src,markers,label){
     .replace('background: "linear-gradient(180deg, rgba(8,10,12,.90), rgba(4,5,6,.985))",','background: "rgba(255,255,255,.98)",')
     .replace('borderTop: "1px solid rgba(229,27,35,.12)",','borderTop: "1px solid #E5E7EB",')
     .replaceAll('text-zinc-400','text-[#6B7280]')
+    .replaceAll('text-[#555B63]','text-[#6B7280]')
     .replaceAll('focus-visible:ring-offset-[#050607]','focus-visible:ring-offset-white')
     .replaceAll('driver-nav-active bg-[#E51B23]/[.08] text-[#E51B23] ring-1 ring-inset ring-[#E51B23]/15','driver-nav-active bg-[#FFF1F2] text-[#E51B23] ring-1 ring-inset ring-[#E51B23]/15');
   must(src,['background: "rgba(255,255,255,.98)"','text-[#6B7280]'],'navegação Motorista clara v18');
