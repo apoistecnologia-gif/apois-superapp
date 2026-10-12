@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — partner visual/function audit v17 fix screenshots auth supabase
+# test workflow: GitHub Actions debug APK only — partner visual/function audit v17 fix screenshots auth supabase retry
 
 on:
   workflow_dispatch:
