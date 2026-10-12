@@ -41,7 +41,7 @@ if (!logoB64) throw new Error('[FAIL] logo oficial APOIS vazia');
     )
     .replace(
       '<header className="flex justify-center pt-1"><MovviLogo size={112} showTagline productLabel="" /></header>',
-      '<header className="flex justify-center pt-1"><div className="flex h-[92px] w-[92px] items-center justify-center rounded-[28px] bg-white p-2 shadow-[0_18px_45px_-28px_rgba(17,24,39,.45)] ring-1 ring-[#E5E7EB]"><img src={APOIS_PARTNER_LOGO_DATA_URL} alt="APOIS" className="h-full w-full object-contain" /></div></header>'
+      '<header className="flex justify-center bg-transparent pt-1"><div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-white p-1.5 shadow-[0_14px_34px_-24px_rgba(17,24,39,.42)] ring-1 ring-[#E5E7EB]"><img src={APOIS_PARTNER_LOGO_DATA_URL} alt="APOIS" className="h-full w-full rounded-full object-contain" /></div></header>'
     )
     .replace(
       'className="break-words text-[clamp(27px,9vw,31px)] font-black leading-[1.08] tracking-[-0.04em]"',
