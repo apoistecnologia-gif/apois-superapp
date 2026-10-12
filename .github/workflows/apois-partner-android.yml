@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — partner visual/function audit v17 visual v18 driver rewrite retry
+# test workflow: GitHub Actions debug APK only — partner visual/function audit v17 visual v18 driver rewrite retry2
 
 on:
   workflow_dispatch:
