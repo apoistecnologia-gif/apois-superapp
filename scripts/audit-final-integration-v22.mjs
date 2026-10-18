@@ -162,7 +162,7 @@ requireAll('scripts/harden-partner-red-visual.mjs', [
 const workflowsDir = resolve('.github/workflows');
 if (existsSync(workflowsDir)) {
   const workflows = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name));
-  const allowedTestWorkflows = new Set(['apois-partner-android.yml', 'apois-actions-probe.yml']);
+  const allowedTestWorkflows = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml']);
   const unexpected = workflows.filter((name) => !allowedTestWorkflows.has(name));
   if (unexpected.length) {
     fail(`GitHub Actions de release/CI não autorizados reapareceram: ${unexpected.join(', ')}`);
@@ -173,7 +173,14 @@ if (existsSync(workflowsDir)) {
     if (partnerWorkflow && !partnerWorkflow.includes('APOIS-Parceiro-TESTE.apk')) {
       fail('workflow GitHub do Parceiro deve permanecer explicitamente de teste');
     } else {
-      ok('GitHub Actions contém apenas probe e APK de teste; release oficial continua no Codemagic');
+      const clientWorkflow = workflows.includes('apois-client-android.yml')
+        ? read('.github/workflows/apois-client-android.yml')
+        : '';
+      if (clientWorkflow && !clientWorkflow.includes('APOIS-Cliente-TESTE.apk')) {
+        fail('workflow GitHub do Cliente deve permanecer explicitamente de teste');
+      } else {
+        ok('GitHub Actions contém apenas probe e APKs de teste Cliente/Parceiro; release oficial continua no Codemagic');
+      }
     }
   }
 } else ok('não há GitHub Actions concorrendo com o caminho oficial de release');
