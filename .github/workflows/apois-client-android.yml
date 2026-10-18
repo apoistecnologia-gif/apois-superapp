@@ -1,0 +1,164 @@
+name: APOIS Cliente Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-client-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BUN_VERSION: "1.3.14"
+      APP_PACKAGE: "br.com.apois.app"
+      APP_LABEL: "APOIS Cliente"
+      APP_VERSION_CODE: "2"
+      APP_VERSION_NAME: "1.0.1"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      CORRIDAS_ANDROID_MAPS_API_KEY: ${{ secrets.CORRIDAS_ANDROID_MAPS_API_KEY }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64 }}
+      APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"
+      CORRIDAS_PUBLIC_APP_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co/functions/v1/public-ride-tracker"
+
+    steps:
+      - name: Checkout APOIS Superapp
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Validate required GitHub secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY CORRIDAS_ANDROID_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY
+          do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::GitHub secret ausente: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          test "${CORRIDAS_WEB_MAPS_API_KEY: -6}" = "yRViDk" || { echo "::error::CORRIDAS_WEB_MAPS_API_KEY não corresponde à chave WebView homologada"; exit 1; }
+          test "${CORRIDAS_ANDROID_MAPS_API_KEY: -6}" = "av01xU" || { echo "::error::CORRIDAS_ANDROID_MAPS_API_KEY não corresponde à chave Android homologada"; exit 1; }
+          echo "[OK] Secrets mínimos presentes e chaves Maps conferidas pelos sufixos esperados"
+
+      - name: Checkout protected APOIS sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -d sources/apois-corridas-passageiro
+          test -d sources/apois-entregas
+          echo "[OK] Fontes protegidas carregadas"
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Validate Android SDK on runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_SDK_ROOT:-}"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager -perm -111 | sort -V | tail -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --list >/dev/null
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "[OK] Android SDK disponível"
+
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.bun/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
+          java -version
+
+      - name: Verify source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run verify:pins
+
+      - name: Build Corridas + Entregas + shell Cliente
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run build:corridas
+          npm run build:entregas
+          npm run build:shell
+          npm run harden:auth-deeplinks
+          npm run inject:push-routing
+          test -s superapp/shell/dist/modules/corridas/index.html
+          test -s superapp/shell/dist/modules/entregas/index.html
+          grep -Fq 'APOIS_NATIVE_MAP_FALLBACK_V3' .work/corridas/src/components/map/PassengerMap.tsx
+          grep -Fq 'VITE_GOOGLE_MAPS_NATIVE_API_KEY' .work/corridas/src/components/map/PassengerMap.tsx
+          echo "[OK] Cliente compilado com mapa nativo Corridas habilitado"
+
+      - name: Create Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          cd superapp/shell
+          bun install
+          rm -rf android
+          bunx cap add android
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+          bunx cap sync android
+          cd ../..
+          node scripts/configure-superapp-android.mjs
+          MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
+          grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
+          if grep -Fq 'android:name="com.google.android.geo.API_KEY" android:value=""' "$MANIFEST"; then
+            echo "::error::Google Maps Android key ficou vazia no Manifest"
+            exit 1
+          fi
+          if grep -Fq 'MISSING_KEY' "$MANIFEST"; then
+            echo "::error::Manifest contém placeholder MISSING_KEY"
+            exit 1
+          fi
+          echo "[OK] Android Cliente criado com chave Maps nativa materializada"
+
+      - name: Build installable debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd superapp/shell/android
+          chmod +x gradlew
+          ./gradlew clean assembleDebug --no-daemon --stacktrace
+          cd ../../..
+          mkdir -p build
+          APK="$(find superapp/shell/android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
+          test -s "$APK"
+          cp "$APK" build/APOIS-Cliente-TESTE.apk
+          test -s build/APOIS-Cliente-TESTE.apk
+          echo "[OK] APK Cliente de teste gerado"
+
+      - name: Upload APOIS Cliente APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Cliente-TESTE
+          path: build/APOIS-Cliente-TESTE.apk
+          if-no-files-found: error
+          retention-days: 7
