@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { APOIS_MAP_BACKGROUND, mapStyleDeclaration } from './apois-map-palette.mjs';
 
 const root = process.cwd();
 const workspace = process.env.APOIS_MOTORISTA_WORKSPACE || '.work/motorista-test';
@@ -15,6 +16,27 @@ function patch(relativePath, transform, label) {
   writeFileSync(path, after, 'utf8');
   console.log(`[OK] ${label}`);
 }
+
+// APOIS Maps V3: mesma paleta do mapa nativo do passageiro, com agua
+// azul-marinho, quadras neutras, ruas em camadas e vias arteriais distintas.
+patch('src/lib/googleMaps.ts', (source) => {
+  const start = source.indexOf('export const APOIS_LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [');
+  if (start < 0) throw new Error('[FAIL] Motorista: declaracao do mapa claro nao encontrada');
+  const endStart = source.indexOf(String.fromCharCode(10) + '];', start);
+  if (endStart < 0) throw new Error('[FAIL] Motorista: fim da paleta nao encontrado');
+  const end = endStart + 3;
+  const styled = mapStyleDeclaration('APOIS_LIGHT_MAP_STYLE', 'google.maps.MapTypeStyle[]')
+    .replace('const APOIS_LIGHT_MAP_STYLE', 'export const APOIS_LIGHT_MAP_STYLE');
+  let next = source.slice(0, start) + styled + source.slice(end);
+  next = next.replace(
+    'return theme === "light" ? "#f8f9fa" : "#111d31";',
+    'return theme === "light" ? "' + APOIS_MAP_BACKGROUND + '" : "#111d31";',
+  );
+  for (const required of ['APOIS_LIGHT_MAP_STYLE', '"#0B2944"', 'return theme === "light" ? "' + APOIS_MAP_BACKGROUND]) {
+    if (!next.includes(required)) throw new Error('[FAIL] Motorista: mapa oficial incompleto (' + required + ')');
+  }
+  return next;
+}, 'motorista: paleta do mapa unificada com Passageiro APOIS');
 
 patch('src/components/mapMarkers.tsx', (source) => {
   let next = source;
