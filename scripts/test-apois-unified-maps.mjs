@@ -35,6 +35,10 @@ for(const marker of [
   'themeOverride="light"',
   "rotation: displayHeading",
 ]) assert.ok(driver.includes(marker),'Motorista V3 sem '+marker);
+assert.ok(passenger.includes('APOIS_WEBVIEW_REFERRER_COMPAT_V1'), 'Maps WebView referrer compatibility absent');
+assert.ok(passenger.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1'), 'Map safe diagnostics absent');
+assert.ok(passenger.includes('safe map diagnostics state'), 'Map diagnostics state not injected');
+assert.ok(passenger.includes('gm_authFailure'), 'Maps API authorization errors not classified');
 assert.ok(buildPassenger.includes("'scripts/harden-corridas-native-map.mjs'"));
 assert.ok(buildDriver.includes('scripts/harden-motorista-map-branding.mjs'));
 assert.ok(partnerVisual.includes('APOIS_LOGIN_INPUT_CONTRAST_V19'));
