@@ -103,6 +103,8 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           npm run verify:pins
+          node scripts/test-apois-unified-maps.mjs
+          node --check scripts/harden-corridas-native-map.mjs
 
       - name: Build Corridas + Entregas + shell Cliente
         shell: bash
