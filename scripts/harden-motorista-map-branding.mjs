@@ -19,18 +19,11 @@ function patch(relativePath, transform, label) {
 patch('src/components/mapMarkers.tsx', (source) => {
   let next = source;
 
-  if (!next.includes('APOIS_DRIVER_LOCATION_A_PATH')) {
-    const marker = 'const PIN_PATH = "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z";';
-    if (!next.includes(marker)) throw new Error('mapMarkers.tsx: PIN_PATH não encontrado');
-    next = next.replace(
-      marker,
-      `${marker}\n// Identidade da localização ativa: pin preto APOIS com A dourado no centro.\nconst APOIS_DRIVER_LOCATION_A_PATH = "M7.6 14.4 L11.05 5.7 C11.4 4.8 12.6 4.8 12.95 5.7 L16.4 14.4 M9.15 10.9 H14.85";`,
-    );
-  }
+  // Substitui somente a apresentacao do localizador; GPS e heading permanecem intactos.
 
   const oldReturn = `  if (!validPosition(position) || !validPosition(display)) return null;\n  return <>\n    <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol("CIRCLE"), scale: 15, fillColor: safeDriverColor, fillOpacity: 0.1, strokeColor: safeDriverColor, strokeOpacity: 0.28, strokeWeight: 1.2 }} />\n    <CarShape position={display} heading={displayHeading} scale={safeDriverScale} bodyColor={safeDriverColor} outlineColor="#090A0B" zBase={10000} />\n  </>;`;
 
-  const brandedReturn = `  if (!validPosition(position) || !validPosition(display)) return null;\n  const brandedScale = Math.max(1.45, Math.min(2.15, safeDriverScale));\n  return <>\n    <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol("CIRCLE"), scale: 10 * brandedScale, fillColor: safeDriverColor, fillOpacity: 0.08, strokeColor: safeDriverColor, strokeOpacity: 0.26, strokeWeight: 1.2 }} />\n    <Marker\n      position={display}\n      clickable={false}\n      title="APOIS • localização do motorista"\n      zIndex={10000}\n      icon={{ path: PIN_PATH, fillColor: "#080B11", fillOpacity: 1, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.2, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n    <Marker\n      position={display}\n      clickable={false}\n      zIndex={10001}\n      icon={{ path: APOIS_DRIVER_LOCATION_A_PATH, fillOpacity: 0, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.35, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n  </>;`;
+  const brandedReturn = "  if (!validPosition(position) || !validPosition(display)) return null;\n  // APOIS_DRIVER_LOCATION_V2: localizacao centralizada, halo leve e seta orientada pelo GPS.\n  const visualScale = Math.max(0.9, Math.min(1.15, safeDriverScale / 1.7));\n  return <>\n    <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol(\"CIRCLE\"), scale: 18 * visualScale, fillColor: safeDriverColor, fillOpacity: 0.09, strokeColor: safeDriverColor, strokeOpacity: 0.22, strokeWeight: 1 }} />\n    <Marker position={display} clickable={false} zIndex={9998} icon={{ path: safeSymbol(\"CIRCLE\"), scale: 11 * visualScale, fillColor: \"#FFFFFF\", fillOpacity: 1, strokeColor: \"#FFFFFF\", strokeOpacity: 1, strokeWeight: 2.5 }} />\n    <Marker position={display} clickable={false} title=\"APOIS • localização do motorista\" zIndex={10000}\n      icon={{ path: \"M0 -8 L5.5 6 L0 3 L-5.5 6 Z\", fillColor: safeDriverColor, fillOpacity: 1, strokeColor: \"#FFFFFF\", strokeOpacity: 1, strokeWeight: 1.25, scale: visualScale, rotation: displayHeading, anchor: safePoint(0, 0) }}\n    />\n  </>";
 
   if (!next.includes(brandedReturn)) {
     if (!next.includes(oldReturn)) throw new Error('mapMarkers.tsx: retorno do InterpolatedDriverMarker não encontrado');
@@ -38,6 +31,18 @@ patch('src/components/mapMarkers.tsx', (source) => {
   }
 
   return next;
-}, 'motorista: marcador de localização APOIS com A dourado');
+}, 'motorista: marcador de localizacao APOIS refinado e orientado pelo GPS');
+
+patch('src/routes/motorista.app.tsx', (source) => {
+  const darkOverride = 'themeOverride="dark"';
+  const lightOverride = 'themeOverride="light"';
+  if (source.includes(darkOverride)) {
+    const next = source.replace(darkOverride, lightOverride);
+    if (next.includes(darkOverride)) throw new Error('[FAIL] Motorista: mapa escuro ainda forcado na home');
+    return next;
+  }
+  if (!source.includes(lightOverride)) throw new Error('[FAIL] Motorista: tema claro de mapa ausente na home');
+  return source;
+}, 'motorista: mapa inicial harmonizado com o tema claro APOIS');
 
 console.log(`[OK] branding de mapa do Motorista concluído em ${workspace}`);
