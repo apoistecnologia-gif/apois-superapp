@@ -419,11 +419,17 @@ source = source.replace(
   '              {status === "configuration-error"',
   '              {status === "configuration-error"',
 );
-const feedbackAnchor = '            <button\\n              type="button"\\n              onClick={retry}';
+const retryClick = source.indexOf('onClick={retry}');
 if (!source.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1')) throw new Error('[FAIL] PassengerMap: diagnostic state not found');
 if (!source.includes('Diagnóstico do mapa:')) {
-  if (!source.includes(feedbackAnchor)) throw new Error('[FAIL] PassengerMap: retry button anchor not found');
-  source = source.replace(feedbackAnchor, '            <p className="text-[11px] text-zinc-300">Diagnóstico do mapa: {mapDiagnostic}</p>\\n' + feedbackAnchor);
+  if (retryClick < 0) throw new Error('[FAIL] PassengerMap: retry button missing');
+  const buttonAt = source.lastIndexOf('<button', retryClick);
+  if (buttonAt < 0) throw new Error('[FAIL] PassengerMap: button tag missing');
+  const insertAt = source.lastIndexOf(String.fromCharCode(10), buttonAt) + 1;
+  source = source.slice(0, insertAt)
+    + '            <p className="text-[11px] text-zinc-300">Diagnóstico do mapa: {mapDiagnostic}</p>'
+    + String.fromCharCode(10)
+    + source.slice(insertAt);
 }
 
 for (const token of ['APOIS_PASSENGER_MAP_STYLE_V3', 'styles: APOIS_PASSENGER_MAP_STYLE_V3,']) {
