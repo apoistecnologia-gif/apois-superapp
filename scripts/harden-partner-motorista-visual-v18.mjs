@@ -134,4 +134,36 @@ function must(src,markers,label){
   write(rel,src);
 }
 
+// APOIS_LOGIN_INPUT_CONTRAST_V19 - o autofill do Android/WebView pode aplicar
+// -webkit-text-fill-color claro mesmo com Tailwind text-[#111827] no input.
+{
+  const rel='src/styles.css';
+  let src=read(rel);
+  if(!src.includes('APOIS_LOGIN_INPUT_CONTRAST_V19')) {
+    src += `
+/* APOIS_LOGIN_INPUT_CONTRAST_V19 */
+[data-apois-partner-auth-v18] input[name="email"],
+[data-apois-partner-auth-v18] input[name="password"] {
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  caret-color:#E51B23 !important;
+  background-color:transparent !important;
+  opacity:1 !important;
+}
+[data-apois-partner-auth-v18] input::placeholder {
+  color:#808995 !important;
+  -webkit-text-fill-color:#808995 !important;
+  opacity:1 !important;
+}
+[data-apois-partner-auth-v18] input:-webkit-autofill,
+[data-apois-partner-auth-v18] input:-webkit-autofill:focus {
+  -webkit-text-fill-color:#111827 !important;
+  box-shadow:0 0 0 1000px #FFFFFF inset !important;
+  -webkit-box-shadow:0 0 0 1000px #FFFFFF inset !important;
+}
+`;
+    write(rel,src);
+  }
+}
+
 console.log('[OK] Motorista Parceiro visual v18 aplicado: login, painel inicial e navegação inferior sem casca escura legada.');
