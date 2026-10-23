@@ -399,13 +399,13 @@ if (!source.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1')) {
   source = replaceRequired(
     source,
     '  const [reloadKey, setReloadKey] = useState(0);',
-    '  const [mapDiagnostic, setMapDiagnostic] = useState<string>("loading"); // APOIS_MAP_ERROR_DIAGNOSTIC_V1\\n  const [reloadKey, setReloadKey] = useState(0);',
+    '  const [mapDiagnostic, setMapDiagnostic] = useState<string>("loading"); // APOIS_MAP_ERROR_DIAGNOSTIC_V1' + String.fromCharCode(10) + '  const [reloadKey, setReloadKey] = useState(0);',
     'safe map diagnostics state',
   );
 }
 source = source.replace(
   '    setStatus("loading");\\n\\n    authFailureCleanupRef.current?.();',
-  '    setStatus("loading");\\n    setMapDiagnostic("loading");\\n\\n    authFailureCleanupRef.current?.();',
+  '    setStatus("loading");' + String.fromCharCode(10) + '    setMapDiagnostic("loading");' + String.fromCharCode(10, 10) + '    authFailureCleanupRef.current?.();',
 );
 source = source.replace(
   'googleWindow.gm_authFailure = () => setStatus("configuration-error");',
@@ -413,7 +413,7 @@ source = source.replace(
 );
 source = source.replace(
   '      setStatus(isConfigError ? "configuration-error" : "api-error");',
-  '      setMapDiagnostic(["maps_script_failed", "maps_timeout", "maps_api_unavailable", "api_key_empty", "configuration_missing"].find((label) => code.includes(label)) ?? "maps_init_failed");\\n      setStatus(isConfigError ? "configuration-error" : "api-error");',
+  '      setMapDiagnostic(["maps_script_failed", "maps_timeout", "maps_api_unavailable", "api_key_empty", "configuration_missing"].find((label) => code.includes(label)) ?? "maps_init_failed");' + String.fromCharCode(10) + '      setStatus(isConfigError ? "configuration-error" : "api-error");',
 );
 source = source.replace(
   '              {status === "configuration-error"',
