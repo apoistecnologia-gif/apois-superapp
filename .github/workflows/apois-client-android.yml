@@ -104,6 +104,8 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           npm run verify:pins
           node scripts/test-apois-unified-maps.mjs
+          node scripts/test-apois-maps-loader-callback.mjs
+          node --check scripts/apois-maps-loader-callback.mjs
           node --check scripts/harden-corridas-native-map.mjs
 
       - name: Build Corridas + Entregas + shell Cliente
@@ -118,6 +120,9 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           npm run build:corridas
           grep -Fq 'APOIS_WEBVIEW_REFERRER_COMPAT_V1' .work/corridas/src/services/google/google-maps-loader.ts
+          grep -Fq 'APOIS_MAPS_CALLBACK_READY_V1' .work/corridas/src/services/google/google-maps-loader.ts
+          grep -Fq 'callback: APOIS_MAPS_READY_CALLBACK' .work/corridas/src/services/google/google-maps-loader.ts
+          ! grep -Fq 'finish(new Error("maps_api_unavailable"))' .work/corridas/src/services/google/google-maps-loader.ts
           ! grep -Fq 'auth_referrer_policy: "origin"' .work/corridas/src/services/google/google-maps-loader.ts
           grep -Fq 'APOIS_MAP_ERROR_DIAGNOSTIC_V1' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'Diagnóstico do mapa:' .work/corridas/src/components/map/PassengerMap.tsx
