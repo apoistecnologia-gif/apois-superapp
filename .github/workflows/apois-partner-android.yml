@@ -102,6 +102,14 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           npm run verify:pins
 
+      - name: Validate updated APOIS Parceiro map before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-partner-map-visual.mjs
+          node scripts/audit-partner-motorista-brand-v4.mjs
+          echo "[OK] Mapa claro, marcador centralizado e contraste verificados"
+
       - name: Build Motorista + Entregador modules
         shell: bash
         run: |
