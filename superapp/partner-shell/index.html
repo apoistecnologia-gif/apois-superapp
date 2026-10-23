@@ -107,6 +107,44 @@
       .partner-card{padding:18px}.card-title{max-width:76%}.card-title strong{font-size:22px}.partner-card p{max-width:62%;font-size:13px}
       .primary-action{font-size:14px}.round-action{width:46px;height:46px}
     }
+
+    /* APOIS Partner mobile-fit V19: as duas opcoes cabem sem botoes cortados.
+       A rolagem continua disponivel em telas baixas/teclado aberto. */
+    @media (max-width: 520px) {
+      html,body { min-height:100%; overflow-x:hidden; overflow-y:auto; }
+      body { -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
+      .screen {
+        min-height:100svh;
+        padding:max(9px,env(safe-area-inset-top)) 14px calc(max(24px,env(safe-area-inset-bottom)) + 30px);
+      }
+      .brand { padding-top:0; }
+      .logo { width:92px;height:92px;margin-bottom:3px; }
+      .tagline { margin-top:0;font-size:10px;letter-spacing:.28em; }
+      .hero { margin-top:12px; }
+      .hero h1 { font-size:clamp(28px,7.4vw,35px);line-height:1.08; }
+      .hero .dash { margin:9px auto 8px; }
+      .hero p { max-width:330px;font-size:13px;line-height:1.35; }
+      .choices { margin-top:16px;gap:12px; }
+      .partner-card { min-height:0;padding:17px 16px 15px;border-radius:24px; }
+      .partner-card:before { right:-70px;top:-78px;width:175px;height:175px; }
+      .partner-card:after { opacity:.55; transform:scale(.78) skewX(-8deg);transform-origin:right bottom; }
+      .partner-card.entregador:after { opacity:.55;transform:scale(.78);transform-origin:right bottom; }
+      .card-title { max-width:80%;gap:9px; }
+      .card-title strong { font-size:23px;line-height:1.08; }
+      .badge { width:40px;height:40px; }
+      .partner-card p { max-width:77%;font-size:13px;line-height:1.27;margin:10px 0 12px; }
+      .action-row { gap:8px; }
+      .primary-action { min-height:48px;font-size:14px;letter-spacing:-.02em; }
+      .round-action { width:46px;height:46px;flex-shrink:0;font-size:27px; }
+      .foot { margin-top:16px;letter-spacing:.19em; }
+    }
+    @media (max-width: 370px) {
+      .screen { padding-left:11px;padding-right:11px; }
+      .partner-card { padding:15px 12px 13px; }
+      .partner-card p { max-width:78%;font-size:12px; }
+      .primary-action { font-size:12px;padding:0 6px; }
+      .round-action { width:42px;height:42px; }
+    }
   </style>
 </head>
 <body>
