@@ -394,6 +394,22 @@ source = source
     'mapRef.current.fitBounds(bounds, { top: 120, right: 28, bottom: 240, left: 28 });',
   );
 
+// Erro do mapa precisa ser exibido ACIMA do BottomSheet, que ocupa a metade
+// inferior da home. Isso muda apenas a apresentacao do erro, nunca o GPS.
+const errorContainerBefore = 'className="absolute inset-0 z-20 flex items-center justify-center bg-zinc-950/90 p-6 text-center"';
+const errorContainerAfter = 'className="pointer-events-none absolute inset-x-3 top-[17%] z-[150] flex items-start justify-center text-center"';
+source = replaceRequired(source, errorContainerBefore, errorContainerAfter, 'painel de erro do mapa visivel acima dos enderecos');
+source = replaceRequired(
+  source,
+  'className="max-w-xs space-y-4 rounded-3xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"',
+  'className="pointer-events-auto w-full max-w-[360px] space-y-3 rounded-[20px] border border-[#F3C9CB] bg-white/95 px-4 py-4 text-[#111827] shadow-[0_14px_40px_rgba(0,0,0,.24)]"',
+  'cartao de erro do mapa legivel e clicavel',
+);
+source = source
+  .replace('className="text-sm font-black uppercase tracking-tight text-apois-yellow"', 'className="text-sm font-black uppercase tracking-tight text-[#E51B23]"')
+  .replace('className="text-xs leading-relaxed text-zinc-300"', 'className="text-xs leading-relaxed text-[#374151]"')
+  .replace('className="mx-auto flex items-center gap-2 rounded-xl bg-apois-yellow px-4 py-3 text-xs font-black text-black"', 'className="mx-auto flex items-center gap-2 rounded-xl bg-[#E51B23] px-4 py-3 text-xs font-black text-white"');
+
 // Error code surfaced to the tester, never a credential or raw script URL.
 if (!source.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1')) {
   source = replaceRequired(
@@ -427,7 +443,7 @@ if (!source.includes('Diagnóstico do mapa:')) {
   if (buttonAt < 0) throw new Error('[FAIL] PassengerMap: button tag missing');
   const insertAt = source.lastIndexOf(String.fromCharCode(10), buttonAt) + 1;
   source = source.slice(0, insertAt)
-    + '            <p className="text-[11px] text-zinc-300">Diagnóstico do mapa: {mapDiagnostic}</p>'
+    + '            <p className="rounded-lg bg-[#F5F5F6] px-3 py-2 text-[12px] font-semibold text-[#111827]">Diagnóstico do mapa: {mapDiagnostic}</p>'
     + String.fromCharCode(10)
     + source.slice(insertAt);
 }
