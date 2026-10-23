@@ -10,6 +10,25 @@ const originalPath = 'sources/apois-corridas-passageiro/src/services/google/goog
 const original = readFileSync(originalPath, 'utf8');
 const patched = patchMapsJavaScriptLoader(original);
 assert.equal(patchMapsJavaScriptLoader(patched), patched, 'patch precisa ser idempotente');
+// O build do Cliente primeiro transforma os dois ternarios originais em if/else.
+const adaptedOriginal = original
+  .replace(
+    `            googleWindow.google?.maps?.importLibrary
+              ? finish()
+              : finish(new Error("maps_api_unavailable"));`,
+    `            if (googleWindow.google?.maps?.importLibrary) finish();
+            else finish(new Error("maps_api_unavailable"));`,
+  )
+  .replace(
+    `        googleWindow.google?.maps?.importLibrary
+          ? finish()
+          : finish(new Error("maps_api_unavailable"));`,
+    `        if (googleWindow.google?.maps?.importLibrary) finish();
+        else finish(new Error("maps_api_unavailable"));`,
+  );
+assert.notEqual(adaptedOriginal, original, 'o build protegido mudou seus pontos de alteracao');
+assert.equal(patchMapsJavaScriptLoader(adaptedOriginal), patched, 'adaptacao anterior deve produzir mesmo loader pronto');
+
 assert.ok(!patched.includes('auth_referrer_policy: "origin"'));
 const CALLBACK = '__apoisGoogleMapsJavascriptReady';
 
