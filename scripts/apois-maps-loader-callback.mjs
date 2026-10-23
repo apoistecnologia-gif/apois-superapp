@@ -55,6 +55,23 @@ export function patchMapsJavaScriptLoader(source) {
     'parametro de callback na URL',
   );
 
+  // A etapa adapt-corridas-current.mjs converte o ternario original em
+  // if/else explícito ANTES deste hardener. Aceitamos os dois formatos.
+  source = source.replace(
+    `            if (googleWindow.google?.maps?.importLibrary) finish();
+            else finish(new Error("maps_api_unavailable"));`,
+    `            googleWindow.google?.maps?.importLibrary
+              ? finish()
+              : finish(new Error("maps_api_unavailable"));`,
+  );
+  source = source.replace(
+    `        if (googleWindow.google?.maps?.importLibrary) finish();
+        else finish(new Error("maps_api_unavailable"));`,
+    `        googleWindow.google?.maps?.importLibrary
+          ? finish()
+          : finish(new Error("maps_api_unavailable"));`,
+  );
+
   // Com loading=async o onload pode ocorrer antes da inicialização interna.
   // Não emitir erro prematuro: callback ou timeout/evento real decidem.
   replaceOnce(
