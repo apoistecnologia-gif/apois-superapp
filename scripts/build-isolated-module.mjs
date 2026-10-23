@@ -356,6 +356,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-oauth-callback-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-native-map.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-map-focus.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-address-display.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-destination-search-runtime.mjs')]);
 
@@ -371,6 +372,7 @@ if (name === 'corridas') {
 
   run(process.execPath, [resolve(root, 'scripts/harden-apois-client-red-visual.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-kit-visual.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-flow-ux.mjs')]);
 
   for (const [path, before] of protectedMapRuntimeBeforeVisual) {
     const after = readFileSync(resolve(root, path), 'utf8');
