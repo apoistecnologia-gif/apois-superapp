@@ -10,11 +10,12 @@ const root = process.cwd();
 const sourceRoot = resolve(root, 'sources/apois-corridas-motorista-admin');
 const mapRelative = 'src/components/mapMarkers.tsx';
 const homeRelative = 'src/routes/motorista.app.tsx';
+const paletteRelative = 'src/lib/googleMaps.ts';
 const work = mkdtempSync(join(tmpdir(), 'apois-partner-map-'));
 const original = new Map();
 
 try {
-  for (const rel of [mapRelative, homeRelative]) {
+  for (const rel of [mapRelative, homeRelative, paletteRelative]) {
     const from = resolve(sourceRoot, rel);
     assert.ok(existsSync(from), 'Fonte nao encontrada: ' + rel);
     const dest = resolve(work, rel);
@@ -33,6 +34,11 @@ try {
   };
 
   execute();
+  const styledMap = readFileSync(resolve(work, paletteRelative), 'utf8');
+  assert.ok(styledMap.includes('APOIS_LIGHT_MAP_STYLE'), 'Mapa Motorista sem paleta');
+  assert.ok(styledMap.includes('#0B2944'), 'Agua azul-marinho nao foi aplicada');
+  assert.ok(styledMap.includes('#EDEAE4'), 'Fundo do mapa nao esta unificado');
+
   const mapBefore = original.get(mapRelative);
   const homeBefore = original.get(homeRelative);
   const mapAfter = readFileSync(resolve(work, mapRelative), 'utf8');
@@ -68,6 +74,7 @@ try {
   execute();
   assert.equal(readFileSync(resolve(work, mapRelative), 'utf8'), mapAfter, 'Marcador nao idempotente');
   assert.equal(readFileSync(resolve(work, homeRelative), 'utf8'), homeAfter, 'Mapa claro nao idempotente');
+  assert.equal(readFileSync(resolve(work, paletteRelative), 'utf8'), styledMap, 'Paleta do mapa nao idempotente');
 
   console.log('[OK] APOIS Parceiro: mapa claro + marcador GPS centralizado; outras partes intactas e patch idempotente.');
 } finally {
