@@ -374,6 +374,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-kit-visual.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-flow-ux.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-stops-confirm-display.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-stops-confirm-display.mjs')]);
 
   for (const [path, before] of protectedMapRuntimeBeforeVisual) {
     const after = readFileSync(resolve(root, path), 'utf8');
