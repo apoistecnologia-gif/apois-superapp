@@ -67,9 +67,18 @@ change('    if (pointCount > 1) {\n      mapRef.current.fitBounds(bounds, { top:
   +'      pickupCameraRef.current=null;\n'
   +'      mapRef.current.fitBounds(bounds, { top: 120, right: 28, bottom: 240, left: 28 });',
   'foco JS antes dos bounds');
-change('  }, [destination, orderedStops, origin, route?.decodedPoints, status]);',
-  '  }, [destination, orderedStops, origin, route?.decodedPoints, status, focusPickup]);',
-  'dependencia foco JS');
+const cameraEffectMarker = 'cameraInitializedRef.current = true;';
+const cameraEffectAt = src.indexOf(cameraEffectMarker);
+if(cameraEffectAt < 0)throw Error('[FAIL] estado da camera JS ausente');
+const depsBegin=src.indexOf('  }, [',cameraEffectAt);
+const depsEnd=src.indexOf(']);',depsBegin);
+if(depsBegin<0||depsEnd<0)throw Error('[FAIL] lista de dependencias da camera JS ausente');
+const originalDeps=src.slice(depsBegin,depsEnd+3);
+if(!originalDeps.includes('origin')||!originalDeps.includes('status'))throw Error('[FAIL] dependencias da camera inesperadas');
+if(!originalDeps.includes('focusPickup')){
+  src=src.slice(0,depsBegin)+originalDeps.replace(']);',', focusPickup]);')+src.slice(depsEnd+3);
+}
+
 for(const marker of ['APOIS_PICKUP_FOCUS_V1','focusPickup = false','pickupCameraCoordinate','pickupMoved(origin)']){
   if(!src.includes(marker))throw Error('[FAIL] Mapa foco incompleto '+marker);
 }
