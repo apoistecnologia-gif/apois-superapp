@@ -97,6 +97,24 @@ function must(src,markers,label){
     .replace('online\n              ? "text-foreground hover:bg-white/[0.04]"','online\n              ? "border border-[#D9DDE3] bg-white text-[#111827] hover:bg-[#F9FAFB]"')
     .replace('? { background: "#0e1114", border: "1px solid rgba(255,255,255,0.08)" }','? { background: "#FFFFFF", border: "1px solid #D9DDE3" }')
     .replace('style={{ background: "#0e1114", border: "1px solid rgba(255,255,255,0.06)" }}','style={{ background: "#F7F7F8", border: "1px solid #E5E7EB" }}');
+  // A antiga paleta escura deixava texto quase branco sobre o painel
+  // branco da nova identidade. Restrito aos componentes Idle/StatMini.
+  const idleStart=src.indexOf('function IdleBottomPanel(');
+  const nextSection=src.indexOf('/* ============================================================\\n   OFERTA ENTRANTE',idleStart);
+  if(idleStart<0||nextSection<0) throw new Error('[FAIL] painel inicial Motorista: nao localizado para ajuste de contraste');
+  const idleBefore=src.slice(idleStart,nextSection);
+  const replacements=[
+    ['className="truncate text-[15px] font-bold leading-tight text-foreground"', 'className="truncate text-[15px] font-bold leading-tight text-[#111827]"'],
+    ['className="text-[12px] font-medium text-muted-foreground"', 'className="text-[12px] font-medium text-[#626B78]"'],
+    ['className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground"', 'className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#6B7280]"'],
+    ['className="tabular-nums text-[20px] font-bold leading-none text-foreground"', 'className="tabular-nums text-[20px] font-bold leading-none text-[#111827]"'],
+  ];
+  let idleAfter=idleBefore;
+  for (const [from,to] of replacements) {
+    if (idleAfter.includes(from)) idleAfter=idleAfter.replace(from,to);
+    if (!idleAfter.includes(to)) throw new Error('[FAIL] painel Motorista: texto legivel ausente ('+to+')');
+  }
+  src=src.slice(0,idleStart)+idleAfter+src.slice(nextSection);
   must(src,['background: "#FFFFFF"','background: "#F7F7F8"','Corridas hoje','Ganhos hoje'],'painel inicial Motorista v18');
   write(rel,src);
 }
