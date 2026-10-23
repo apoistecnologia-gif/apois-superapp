@@ -36,6 +36,7 @@ function fixture() {
         onerror: undefined,
         addEventListener(event, callback) { events[event] = callback; },
         emit(event) { events[event]?.(); },
+        remove() { scripts.delete(this.id); },
       };
     },
     head: { appendChild(script) { scripts.set(script.id, script); } },
