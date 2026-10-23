@@ -38,6 +38,9 @@ for(const marker of [
 assert.ok(passenger.includes('APOIS_WEBVIEW_REFERRER_COMPAT_V1'), 'Maps WebView referrer compatibility absent');
 assert.ok(passenger.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1'), 'Map safe diagnostics absent');
 assert.ok(passenger.includes('safe map diagnostics state'), 'Map diagnostics state not injected');
+assert.ok(passenger.includes('top-[17%]'), 'Map error banner must appear above ride sheet');
+assert.ok(passenger.includes('z-[150]'), 'Map error banner must be above bottom sheet');
+assert.ok(passenger.includes('pointer-events-auto w-full max-w-[360px]'), 'Map retry card must remain usable');
 assert.ok(passenger.includes('gm_authFailure'), 'Maps API authorization errors not classified');
 assert.ok(buildPassenger.includes("'scripts/harden-corridas-native-map.mjs'"));
 assert.ok(buildDriver.includes('scripts/harden-motorista-map-branding.mjs'));
