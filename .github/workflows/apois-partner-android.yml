@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — rebuild with refreshed Maps Web key
+# test workflow: GitHub Actions debug APK only — rebuild with refreshed Maps Web key + client-workflow gate fix
 
 on:
   workflow_dispatch:
