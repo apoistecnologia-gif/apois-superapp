@@ -107,6 +107,7 @@ jobs:
           node --check scripts/test-apois-maps-loader-callback.mjs
           node scripts/test-apois-maps-loader-callback.mjs
           node --check scripts/apois-maps-loader-callback.mjs
+          grep -Fq 'patchMapsJavaScriptLoader(loaderBefore)' scripts/harden-corridas-native-map.mjs
           node --check scripts/harden-corridas-native-map.mjs
 
       - name: Build Corridas + Entregas + shell Cliente
