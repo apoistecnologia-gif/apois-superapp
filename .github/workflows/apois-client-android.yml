@@ -121,7 +121,7 @@ jobs:
           ! grep -Fq 'auth_referrer_policy: "origin"' .work/corridas/src/services/google/google-maps-loader.ts
           grep -Fq 'APOIS_MAP_ERROR_DIAGNOSTIC_V1' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'Diagnóstico do mapa:' .work/corridas/src/components/map/PassengerMap.tsx
-          echo '[OK] Google Maps WebView referrer e diagnostico verificados'
+          echo '[OK] Google Maps WebView referrer, relatorio de falha e JSX validados'
           npm run build:entregas
           npm run build:shell
           npm run harden:auth-deeplinks
