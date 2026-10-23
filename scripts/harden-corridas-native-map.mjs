@@ -6,6 +6,7 @@ const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
 const routeConfigPath = resolve('.work/corridas/src/services/routes/route-config.ts');
 const locationPath = resolve('.work/corridas/src/hooks/use-location.tsx');
+const loaderPath = resolve('.work/corridas/src/services/google/google-maps-loader.ts');
 const markerDir = resolve('.work/corridas/public/assets/markers');
 const pickupMarkerPath = resolve(markerDir, 'apois-location.svg');
 
@@ -99,6 +100,21 @@ routeConfigSource = routeConfigSource
   .replace('LEFT: 50,', 'LEFT: 28,');
 writeFileSync(routeConfigPath, routeConfigSource, 'utf8');
 
+// WebView: preserve full Referer for website-restricted Maps JavaScript keys.
+// origin-only opt-in requires a corresponding pathless domain restriction.
+// Keep the Google Cloud key restrictions intact; do NOT relax billing or access.
+let loaderSource = readFileSync(loaderPath, 'utf8');
+if (!loaderSource.includes('APOIS_WEBVIEW_REFERRER_COMPAT_V1')) {
+  const oldReferrer = '          auth_referrer_policy: "origin",';
+  if (!loaderSource.includes(oldReferrer)) throw new Error('[FAIL] Google Maps loader: origin-only parameter not found');
+  loaderSource = loaderSource.replace(
+    oldReferrer,
+    '          // APOIS_WEBVIEW_REFERRER_COMPAT_V1: normal HTTP referrer, sem origin-only',
+  );
+}
+if (loaderSource.includes('auth_referrer_policy: "origin"')) throw new Error('[FAIL] Referrer origin-only ainda ativo');
+writeFileSync(loaderPath, loaderSource, 'utf8');
+
 // Native map service: bright map, APOIS red route, driver marker support and no missing PNG assets.
 let mapServiceSource = readFileSync(mapServicePath, 'utf8');
 const nativeStyle = mapStyleDeclaration('APOIS_MAP_STYLE_LIGHT_NATIVE');
@@ -178,6 +194,8 @@ const webDeclaration = mapStyleDeclaration('APOIS_PASSENGER_MAP_STYLE_V3');
 if (!source.includes('const APOIS_PASSENGER_MAP_STYLE_V3 =')) {
   source = replaceRequired(source, 'type MapStatus =', webDeclaration + String.fromCharCode(10, 10) + 'type MapStatus =', 'estilo visual unificado do mapa web ausente');
 }
+// Diagnostic classification: never display the API key, script URL or cookies.
+const diagMarker = 'APOIS_MAP_ERROR_DIAGNOSTIC_V1';
 const expectedWebOptions = '        styles: APOIS_PASSENGER_MAP_STYLE_V3,';
 if (!source.includes(expectedWebOptions)) {
   source = replaceRequired(
@@ -223,7 +241,7 @@ if (!source.includes('  encodedPolyline,\n  driverLocation,')) {
 if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V3')) {
   source = replaceRequired(
     source,
-    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);',
+    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [mapDiagnostic, setMapDiagnostic] = useState<string>("loading"); // APOIS_MAP_ERROR_DIAGNOSTIC_V1\n  const [reloadKey, setReloadKey] = useState(0);',
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V3',
     'estado nativo não pôde ser inserido',
   );
@@ -375,6 +393,30 @@ source = source
     'mapRef.current.fitBounds(bounds, { top: 170, right: 40, bottom: 330, left: 40 });',
     'mapRef.current.fitBounds(bounds, { top: 120, right: 28, bottom: 240, left: 28 });',
   );
+
+// Error code surfaced to the tester, never a credential or raw script URL.
+source = source.replace(
+  '    setStatus("loading");\\n\\n    authFailureCleanupRef.current?.();',
+  '    setStatus("loading");\\n    setMapDiagnostic("loading");\\n\\n    authFailureCleanupRef.current?.();',
+);
+source = source.replace(
+  'googleWindow.gm_authFailure = () => setStatus("configuration-error");',
+  'googleWindow.gm_authFailure = () => { setMapDiagnostic("maps_auth_failure"); setStatus("configuration-error"); };',
+);
+source = source.replace(
+  '      setStatus(isConfigError ? "configuration-error" : "api-error");',
+  '      setMapDiagnostic(["maps_script_failed", "maps_timeout", "maps_api_unavailable", "api_key_empty", "configuration_missing"].find((label) => code.includes(label)) ?? "maps_init_failed");\\n      setStatus(isConfigError ? "configuration-error" : "api-error");',
+);
+source = source.replace(
+  '              {status === "configuration-error"',
+  '              {status === "configuration-error"',
+);
+const feedbackAnchor = '            <button\\n              type="button"\\n              onClick={retry}';
+if (!source.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1')) throw new Error('[FAIL] PassengerMap: diagnostic state not found');
+if (!source.includes('Diagnóstico do mapa:')) {
+  if (!source.includes(feedbackAnchor)) throw new Error('[FAIL] PassengerMap: retry button anchor not found');
+  source = source.replace(feedbackAnchor, '            <p className="text-[11px] text-zinc-300">Diagnóstico do mapa: {mapDiagnostic}</p>\\n' + feedbackAnchor);
+}
 
 for (const token of ['APOIS_PASSENGER_MAP_STYLE_V3', 'styles: APOIS_PASSENGER_MAP_STYLE_V3,']) {
   if (!source.includes(token)) throw new Error('[FAIL] PassengerMap: mapa estilizado nao aplicado (' + token + ')');
