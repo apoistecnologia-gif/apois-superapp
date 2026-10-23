@@ -110,6 +110,7 @@ jobs:
           grep -Fq 'patchMapsJavaScriptLoader(loaderBefore)' scripts/harden-corridas-native-map.mjs
           node --check scripts/harden-corridas-native-map.mjs
           node --check scripts/harden-corridas-pickup-map-focus.mjs
+          grep -Fq 'pickupCameraCoordinate' scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-trip-flow-ux.mjs
           node --check scripts/verify-corridas-trip-flow-ux.mjs
 
