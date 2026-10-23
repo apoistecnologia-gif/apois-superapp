@@ -377,6 +377,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-stops-confirm-display.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-android-footer-safe-area.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-android-footer-safe-area.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/restore-corridas-wallet-screen.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-wallet-screen.mjs')]);
 
   for (const [path, before] of protectedMapRuntimeBeforeVisual) {
     const after = readFileSync(resolve(root, path), 'utf8');
