@@ -20,7 +20,7 @@ try {
     const dest = resolve(work, rel);
     mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(from, dest);
-    original.set(rel, readFileSync(from, 'utf8').replace(/\\r\\n/g, '\\n'));
+    original.set(rel, readFileSync(from, 'utf8').replaceAll(String.fromCharCode(13) + String.fromCharCode(10), String.fromCharCode(10)));
   }
 
   const execute = () => {
@@ -41,9 +41,9 @@ try {
   assert.ok(mapBefore.includes('export function InterpolatedDriverMarker'), 'Marcador original ausente');
   const markerStart = mapBefore.indexOf('export function InterpolatedDriverMarker');
   const start = mapBefore.indexOf('  if (!validPosition(position) || !validPosition(display)) return null;', markerStart);
-  const end = mapBefore.indexOf('\\n}', start);
+  const end = mapBefore.indexOf(String.fromCharCode(10) + '}', start);
   assert.ok(start > markerStart && end > start, 'Bloco de retorno do marcador original nao localizado');
-  const afterEnd = mapAfter.indexOf('\\n}', start);
+  const afterEnd = mapAfter.indexOf(String.fromCharCode(10) + '}', start);
   assert.ok(afterEnd > start, 'Bloco de retorno do novo marcador nao localizado');
 
   // Todo o restante do componente (incluindo a interpolacao GPS, coordenadas,
