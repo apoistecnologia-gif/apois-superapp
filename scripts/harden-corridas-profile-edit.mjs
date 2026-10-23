@@ -36,8 +36,7 @@ if(!source.includes('APOIS_CLIENT_PROFILE_EDIT_V1')) {
   );
   source = replaceOnce(
     source, '              label="Dados Pessoais"\n              value={currentProfile.name}\n            />',
-    source.includes('              label="Dados Pessoais"\n              value={currentProfile.name}\n            />') ?
-    '              label="Dados Pessoais"\n              value={currentProfile.name}\n              onClick={() => setEditingField("name")}\n            />' : '',
+    '              label="Dados Pessoais"\n              value={currentProfile.name}\n              onClick={() => setEditingField("name")}\n            />',
     'acao editar nome',
   );
   source = replaceOnce(
@@ -200,7 +199,7 @@ export function PassengerProfileEditor({
                 <span className="mb-2 flex items-center gap-2 text-sm font-bold"><UserRound size={17} /> Nome completo</span>
                 <input required autoComplete="name" type="text" minLength={2} maxLength={100}
                   value={name} onChange={(event) => setName(event.target.value)} disabled={busy || Boolean(success)}
-                  className="h-13 w-full rounded-2xl border border-[#DCE0E5] bg-white px-4 py-3 text-[16px] text-[#111827] outline-none focus:border-[#E51B23]" />
+                  className="h-14 w-full rounded-2xl border border-[#DCE0E5] bg-white px-4 py-3 text-[16px] text-[#111827] outline-none focus:border-[#E51B23]" />
               </label>
               <label className="block">
                 <span className="mb-2 flex items-center gap-2 text-sm font-bold"><MapPin size={17} /> Cidade</span>
