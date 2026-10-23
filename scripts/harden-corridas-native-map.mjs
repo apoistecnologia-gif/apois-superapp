@@ -176,14 +176,14 @@ let source = readFileSync(target, 'utf8');
 // esquema de ruas, agua azul-marinho e construcoes do SDK nativo Android.
 const webDeclaration = mapStyleDeclaration('APOIS_PASSENGER_MAP_STYLE_V3');
 if (!source.includes('const APOIS_PASSENGER_MAP_STYLE_V3 =')) {
-  source = replaceRequired(source, 'type MapStatus =', webDeclaration + '\\n\\ntype MapStatus =', 'estilo visual unificado do mapa web ausente');
+  source = replaceRequired(source, 'type MapStatus =', webDeclaration + String.fromCharCode(10, 10) + 'type MapStatus =', 'estilo visual unificado do mapa web ausente');
 }
 const expectedWebOptions = '        styles: APOIS_PASSENGER_MAP_STYLE_V3,';
 if (!source.includes(expectedWebOptions)) {
   source = replaceRequired(
     source,
     '        backgroundColor: "#e5e7eb",',
-    '        backgroundColor: "' + APOIS_MAP_BACKGROUND + '",\\n' + expectedWebOptions,
+    '        backgroundColor: "' + APOIS_MAP_BACKGROUND + '",' + String.fromCharCode(10) + expectedWebOptions,
     'aplicacao do mapa APOIS no fallback web ausente',
   );
 }
