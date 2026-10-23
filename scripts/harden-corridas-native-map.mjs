@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { APOIS_MAP_BACKGROUND, APOIS_MAP_ROUTE, mapStyleDeclaration } from './apois-map-palette.mjs';
 
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
@@ -100,18 +101,7 @@ writeFileSync(routeConfigPath, routeConfigSource, 'utf8');
 
 // Native map service: bright map, APOIS red route, driver marker support and no missing PNG assets.
 let mapServiceSource = readFileSync(mapServicePath, 'utf8');
-const nativeStyle = `const APOIS_MAP_STYLE_LIGHT_NATIVE = [
-  { elementType: "geometry", stylers: [{ color: "#F4F5F7" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#4B5563" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#FFFFFF" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFFFF" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#E3E6EA" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#ECEFF2" }] },
-  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#EEF1F2" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#E8F3EC" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#DDEBF5" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] }
-];`;
+const nativeStyle = mapStyleDeclaration('APOIS_MAP_STYLE_LIGHT_NATIVE');
 if (!mapServiceSource.includes('APOIS_MAP_STYLE_LIGHT_NATIVE')) {
   mapServiceSource = mapServiceSource.replace('class MapService {', nativeStyle + '\n\nclass MapService {');
 }
@@ -181,6 +171,24 @@ writeFileSync(mapServicePath, mapServiceSource, 'utf8');
 // PassengerMap: the Corridas adapter already restores persisted polylines.
 // This hardener layers native Android rendering on top without duplicating imports/state.
 let source = readFileSync(target, 'utf8');
+
+// APOIS Maps V3: a versao JavaScript/fallback compartilha exatamente o mesmo
+// esquema de ruas, agua azul-marinho e construcoes do SDK nativo Android.
+const webDeclaration = mapStyleDeclaration('APOIS_PASSENGER_MAP_STYLE_V3');
+if (!source.includes('const APOIS_PASSENGER_MAP_STYLE_V3 =')) {
+  source = replaceRequired(source, 'type MapStatus =', webDeclaration + '\\n\\ntype MapStatus =', 'estilo visual unificado do mapa web ausente');
+}
+const expectedWebOptions = '        styles: APOIS_PASSENGER_MAP_STYLE_V3,';
+if (!source.includes(expectedWebOptions)) {
+  source = replaceRequired(
+    source,
+    '        backgroundColor: "#e5e7eb",',
+    '        backgroundColor: "' + APOIS_MAP_BACKGROUND + '",\\n' + expectedWebOptions,
+    'aplicacao do mapa APOIS no fallback web ausente',
+  );
+}
+source = source.replace('strokeColor: "#FFB800",', 'strokeColor: "' + APOIS_MAP_ROUTE + '",');
+
 
 source = ensureSingleLine(
   source,
@@ -368,6 +376,9 @@ source = source
     'mapRef.current.fitBounds(bounds, { top: 120, right: 28, bottom: 240, left: 28 });',
   );
 
+for (const token of ['APOIS_PASSENGER_MAP_STYLE_V3', 'styles: APOIS_PASSENGER_MAP_STYLE_V3,']) {
+  if (!source.includes(token)) throw new Error('[FAIL] PassengerMap: mapa estilizado nao aplicado (' + token + ')');
+}
 writeFileSync(target, source, 'utf8');
 
 // Final invariants.
