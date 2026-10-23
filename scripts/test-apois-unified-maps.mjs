@@ -35,7 +35,10 @@ for(const marker of [
   'themeOverride="light"',
   "rotation: displayHeading",
 ]) assert.ok(driver.includes(marker),'Motorista V3 sem '+marker);
-assert.ok(passenger.includes('APOIS_WEBVIEW_REFERRER_COMPAT_V1'), 'Maps WebView referrer compatibility absent');
+const loaderReadyPatch = read('scripts/apois-maps-loader-callback.mjs');
+assert.ok(passenger.includes("patchMapsJavaScriptLoader(loaderBefore)"), 'Callback loader nao conectado ao build do Cliente');
+assert.ok(loaderReadyPatch.includes('APOIS_WEBVIEW_REFERRER_COMPAT_V1'), 'Maps WebView referrer compatibility absent');
+assert.ok(loaderReadyPatch.includes('APOIS_MAPS_CALLBACK_READY_V1'), 'Callback de prontidao do Google Maps ausente');
 assert.ok(passenger.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1'), 'Map safe diagnostics absent');
 assert.ok(passenger.includes('safe map diagnostics state'), 'Map diagnostics state not injected');
 assert.ok(passenger.includes('top-[17%]'), 'Map error banner must appear above ride sheet');
