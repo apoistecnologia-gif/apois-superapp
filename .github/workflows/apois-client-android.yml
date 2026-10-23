@@ -121,6 +121,8 @@ jobs:
           ! grep -Fq 'auth_referrer_policy: "origin"' .work/corridas/src/services/google/google-maps-loader.ts
           grep -Fq 'APOIS_MAP_ERROR_DIAGNOSTIC_V1' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'Diagnóstico do mapa:' .work/corridas/src/components/map/PassengerMap.tsx
+          grep -Fq 'top-[17%] z-[150]' .work/corridas/src/components/map/PassengerMap.tsx
+          grep -Fq 'pointer-events-auto w-full max-w-[360px]' .work/corridas/src/components/map/PassengerMap.tsx
           echo '[OK] Google Maps WebView referrer, relatorio de falha, quebras de linha e JSX validados'
           npm run build:entregas
           npm run build:shell
