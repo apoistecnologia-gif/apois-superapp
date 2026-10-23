@@ -43,11 +43,12 @@ function fixture() {
   };
 
   const source = patched
+    .replaceAll('import.meta.env', '__apoisTestEnv')
     .replace(/^import \{ PLACES_CONFIG \} from .*;\s*$/m, '')
     .replace('export const googleMapsLoader = GoogleMapsLoader.getInstance();',
       'globalThis.__apoisTestLoader = GoogleMapsLoader.getInstance();');
   const runnable = stripTypeScriptTypes(source, { mode: 'strip' });
-  const context = { window: win, document: doc, URLSearchParams, PLACES_CONFIG: { TIMEOUT_MS: 3500 } };
+  const context = { window: win, document: doc, URLSearchParams, PLACES_CONFIG: { TIMEOUT_MS: 3500 }, __apoisTestEnv: { VITE_GOOGLE_MAPS_API_KEY: 'FAKE_TEST_ONLY' } };
   vm.runInNewContext(runnable, context, { timeout: 2500 });
   const loader = context.__apoisTestLoader;
   assert.ok(loader, 'loader do app nao inicializado');
