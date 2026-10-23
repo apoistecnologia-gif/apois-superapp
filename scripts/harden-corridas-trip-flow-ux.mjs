@@ -29,6 +29,23 @@ patch('src/hooks/use-pickup-address.tsx',(s)=>{
     '    } finally {\n      geocodeBusyRef.current = false;\n      setIsLoading(false);','liberacao do guard');
   return s;
 });
+patch('src/hooks/use-route.tsx',(s)=>{
+  // Uma resposta de rota antiga nao pode repor destino/linha vermelha após limpar viagem.
+  s=change(s,'useEffect, useCallback }','useEffect, useCallback, useRef }','rota useRef');
+  s=change(s,'  const [route, setRoute] = useState<RouteResult | null>(null);',
+    '  const [route, setRoute] = useState<RouteResult | null>(null);\n  const routeGenerationRef=useRef(0); // APOIS_ROUTE_CLEAR_SAFE_V1',
+    'geracao de calculo');
+  s=change(s,'  const calculateRoute = useCallback(async () => {\n    if (!location || !destination) {',
+    '  const calculateRoute = useCallback(async () => {\n    const generation=++routeGenerationRef.current;\n    if (!location || !destination) {',
+    'generation no calculo');
+  s=change(s,'      setRoute(newRoute);\n      setStatus("success");',
+    '      if (generation !== routeGenerationRef.current) return;\n      setRoute(newRoute);\n      setStatus("success");','resposta antiga de calculo');
+  s=change(s,'    } catch (err: any) {\n      if (err.name === "AbortError") return;',
+    '    } catch (err: any) {\n      if (generation !== routeGenerationRef.current) return;\n      if (err.name === "AbortError") return;','erro obsoleto de rota');
+  s=change(s,'        clearRoute: () => setRoute(null),',
+    '        clearRoute: () => {\n          ++routeGenerationRef.current;\n          setRoute(null);\n          setStatus("idle");\n          setError(null);\n        },','limpeza sincrona da rota');
+  return s;
+});
 patch('src/routes/_authenticated.inicio.tsx',(s)=>{
   const a=s.indexOf('<PassengerMap'),b=s.indexOf('/>',a);
   if(a<0||b<0)throw Error('[FAIL] mapa da home nao localizado');
