@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { APOIS_MAP_BACKGROUND, APOIS_MAP_ROUTE, mapStyleDeclaration } from './apois-map-palette.mjs';
+import { patchMapsJavaScriptLoader } from './apois-maps-loader-callback.mjs';
 
 const target = resolve('.work/corridas/src/components/map/PassengerMap.tsx');
 const mapServicePath = resolve('.work/corridas/src/services/maps/map-service.ts');
@@ -100,20 +101,14 @@ routeConfigSource = routeConfigSource
   .replace('LEFT: 50,', 'LEFT: 28,');
 writeFileSync(routeConfigPath, routeConfigSource, 'utf8');
 
-// WebView: preserve full Referer for website-restricted Maps JavaScript keys.
-// origin-only opt-in requires a corresponding pathless domain restriction.
-// Keep the Google Cloud key restrictions intact; do NOT relax billing or access.
-let loaderSource = readFileSync(loaderPath, 'utf8');
-if (!loaderSource.includes('APOIS_WEBVIEW_REFERRER_COMPAT_V1')) {
-  const oldReferrer = '          auth_referrer_policy: "origin",';
-  if (!loaderSource.includes(oldReferrer)) throw new Error('[FAIL] Google Maps loader: origin-only parameter not found');
-  loaderSource = loaderSource.replace(
-    oldReferrer,
-    '          // APOIS_WEBVIEW_REFERRER_COMPAT_V1: normal HTTP referrer, sem origin-only',
-  );
+// WebView: espere a callback de prontidao do Google Maps (loading=async).
+// O onload do script nao garante que importLibrary esteja disponivel.
+const loaderBefore = readFileSync(loaderPath, 'utf8');
+const loaderAfter = patchMapsJavaScriptLoader(loaderBefore);
+if (!loaderAfter.includes('APOIS_MAPS_CALLBACK_READY_V1')) {
+  throw new Error('[FAIL] Google Maps: callback oficial nao instalada no loader');
 }
-if (loaderSource.includes('auth_referrer_policy: "origin"')) throw new Error('[FAIL] Referrer origin-only ainda ativo');
-writeFileSync(loaderPath, loaderSource, 'utf8');
+writeFileSync(loaderPath, loaderAfter, 'utf8');
 
 // Native map service: bright map, APOIS red route, driver marker support and no missing PNG assets.
 let mapServiceSource = readFileSync(mapServicePath, 'utf8');
