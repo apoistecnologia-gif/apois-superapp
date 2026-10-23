@@ -109,6 +109,9 @@ jobs:
           node --check scripts/apois-maps-loader-callback.mjs
           grep -Fq 'patchMapsJavaScriptLoader(loaderBefore)' scripts/harden-corridas-native-map.mjs
           node --check scripts/harden-corridas-native-map.mjs
+          node --check scripts/harden-corridas-pickup-map-focus.mjs
+          node --check scripts/harden-corridas-trip-flow-ux.mjs
+          node --check scripts/verify-corridas-trip-flow-ux.mjs
 
       - name: Build Corridas + Entregas + shell Cliente
         shell: bash
@@ -121,6 +124,11 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           npm run build:corridas
+          node scripts/verify-corridas-trip-flow-ux.mjs
+          node scripts/harden-corridas-pickup-map-focus.mjs
+          node scripts/harden-corridas-trip-flow-ux.mjs
+          node scripts/verify-corridas-trip-flow-ux.mjs
+          echo '[OK] Passageiro: UX idempotente, mapa pin visivel, cancelamento confirmado e dados limpos'
           grep -Fq 'APOIS_WEBVIEW_REFERRER_COMPAT_V1' .work/corridas/src/services/google/google-maps-loader.ts
           grep -Fq 'APOIS_MAPS_CALLBACK_READY_V1' .work/corridas/src/services/google/google-maps-loader.ts
           grep -Fq 'callback: APOIS_MAPS_READY_CALLBACK' .work/corridas/src/services/google/google-maps-loader.ts
