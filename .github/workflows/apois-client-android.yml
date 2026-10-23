@@ -104,6 +104,7 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           npm run verify:pins
           node scripts/test-apois-unified-maps.mjs
+          node --check scripts/test-apois-maps-loader-callback.mjs
           node scripts/test-apois-maps-loader-callback.mjs
           node --check scripts/apois-maps-loader-callback.mjs
           node --check scripts/harden-corridas-native-map.mjs
