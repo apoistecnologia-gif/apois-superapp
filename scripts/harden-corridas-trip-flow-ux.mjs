@@ -18,12 +18,12 @@ patch('src/hooks/use-pickup-address.tsx',(s)=>{
   s=change(s,'  const refreshAddress = useCallback(async () => {',
     '  // APOIS_PICKUP_STABLE_V1: uma atualizacao do GPS nao invalida o endereco conhecido.\n  const lastGeocodeRef = useRef<{ latitude: number; longitude: number } | null>(null);\n  const geocodeBusyRef = useRef(false);\n  const addressKnownRef = useRef(false);\n  const refreshAddress = useCallback(async () => {','memoizacao pickup');
   s=change(s,
-    '    if (!location || !location.latitude || !location.longitude) return;\n\n    setIsLoading(true);\n    setStatus("identifying");',
+    '    if (!location || !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) return;\n\n    setIsLoading(true);\n    setStatus("identifying");',
     '    if (!location || !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) return;\n    if (geocodeBusyRef.current) return;\n    const previous = lastGeocodeRef.current;\n    if (previous) {\n      const north = (location.latitude - previous.latitude) * 111320;\n      const east = (location.longitude - previous.longitude) * 111320 * Math.cos(location.latitude * Math.PI / 180);\n      if (Math.hypot(north, east) < 85) return;\n    }\n    geocodeBusyRef.current = true;\n    if (!addressKnownRef.current) { setIsLoading(true); setStatus("identifying"); }',
     'controle de jitter de gps');
-  s=change(s,'      setAddress(formattedAddress);',
-    '      lastGeocodeRef.current = { latitude: location.latitude, longitude: location.longitude };\n      addressKnownRef.current = true;\n      setAddress(formattedAddress);','endereco estabilizado');
-  s=change(s,'      setAddress(null); // Clear address on real error\n      setStatus("error");',
+  s=change(s,'      setAddress(exactAddress);',
+    '      lastGeocodeRef.current = { latitude: location.latitude, longitude: location.longitude };\n      addressKnownRef.current = true;\n      setAddress(exactAddress);','endereco estabilizado');
+  s=change(s,'      setAddress(null);\n      setStatus("error");',
     '      if (!addressKnownRef.current) setAddress(null);\n      setStatus(addressKnownRef.current ? "success" : "error");','erro transitório preserva endereço');
   s=change(s,'    } finally {\n      setIsLoading(false);',
     '    } finally {\n      geocodeBusyRef.current = false;\n      setIsLoading(false);','liberacao do guard');
