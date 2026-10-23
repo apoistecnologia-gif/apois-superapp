@@ -100,7 +100,7 @@ function must(src,markers,label){
   // A antiga paleta escura deixava texto quase branco sobre o painel
   // branco da nova identidade. Restrito aos componentes Idle/StatMini.
   const idleStart=src.indexOf('function IdleBottomPanel(');
-  const nextSection=src.indexOf('/* ============================================================\\n   OFERTA ENTRANTE',idleStart);
+  const nextSection=src.indexOf('function IncomingOffer(',idleStart);
   if(idleStart<0||nextSection<0) throw new Error('[FAIL] painel inicial Motorista: nao localizado para ajuste de contraste');
   const idleBefore=src.slice(idleStart,nextSection);
   const replacements=[
