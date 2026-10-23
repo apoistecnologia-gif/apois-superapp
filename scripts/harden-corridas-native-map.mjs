@@ -241,7 +241,7 @@ if (!source.includes('  encodedPolyline,\n  driverLocation,')) {
 if (!source.includes('APOIS_NATIVE_MAP_FALLBACK_V3')) {
   source = replaceRequired(
     source,
-    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [mapDiagnostic, setMapDiagnostic] = useState<string>("loading"); // APOIS_MAP_ERROR_DIAGNOSTIC_V1\n  const [reloadKey, setReloadKey] = useState(0);',
+    '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);',
     '  const [status, setStatus] = useState<MapStatus>("loading");\n  const [reloadKey, setReloadKey] = useState(0);\n  const nativeModeRef = useRef(false);\n  const nativeMapIdRef = useRef("apois-passenger-native-map");\n  const nativeApiKey = String(import.meta.env["VITE_GOOGLE_MAPS_NATIVE_API_KEY"] ?? "").trim();\n  // APOIS_NATIVE_MAP_FALLBACK_V3',
     'estado nativo não pôde ser inserido',
   );
@@ -395,6 +395,14 @@ source = source
   );
 
 // Error code surfaced to the tester, never a credential or raw script URL.
+if (!source.includes('APOIS_MAP_ERROR_DIAGNOSTIC_V1')) {
+  source = replaceRequired(
+    source,
+    '  const [reloadKey, setReloadKey] = useState(0);',
+    '  const [mapDiagnostic, setMapDiagnostic] = useState<string>("loading"); // APOIS_MAP_ERROR_DIAGNOSTIC_V1\\n  const [reloadKey, setReloadKey] = useState(0);',
+    'safe map diagnostics state',
+  );
+}
 source = source.replace(
   '    setStatus("loading");\\n\\n    authFailureCleanupRef.current?.();',
   '    setStatus("loading");\\n    setMapDiagnostic("loading");\\n\\n    authFailureCleanupRef.current?.();',
