@@ -31,7 +31,7 @@ patch('.work/corridas/src/hooks/rides/use-active-ride.tsx', (source) => {
   if (!next.includes('const RIDE_STATUS_ORDER: Record<RideStatus, number>')) {
     next = next.replace(
       'const POLLING_INTERVAL_MS = 12_000;',
-      `const POLLING_INTERVAL_MS = 12_000;\n\nconst RIDE_STATUS_ORDER: Record<RideStatus, number> = {\n  agendada: 0,\n  procurar_motorista: 1,\n  motorista_a_caminho: 2,\n  motorista_chegou: 3,\n  em_viagem: 4,\n  finalizada: 5,\n  cancelada_passageiro: 5,\n  cancelada_motorista: 5,\n};\n\nconst isTerminalRideStatus = (status: RideStatus) =>\n  status === \"finalizada\" || status.startsWith(\"cancelada\");`,
+      `const POLLING_INTERVAL_MS = 12_000;\n\nconst RIDE_STATUS_ORDER: Record<RideStatus, number> = {\n  agendada: 0,\n  procurar_motorista: 1,\n  motorista_a_caminho: 2,\n  motorista_chegou: 3,\n  em_viagem: 4,\n  finalizada: 5,\n  cancelada_passageiro: 5,\n  cancelada_motorista: 5,\n  expired: 5,\n};\n\nconst isTerminalRideStatus = (status: RideStatus) =>\n  status === \"finalizada\" || status === \"expired\" || status.startsWith(\"cancelada\");`,
     );
   }
 
