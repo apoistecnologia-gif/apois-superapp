@@ -17,6 +17,7 @@ requireAll(".work/corridas/src/hooks/rides/use-active-ride.tsx", [
   "APOIS_REDISPATCH_POLL_V1",
   'action: "redispatch"',
   'updatedRide.status === "expired"',
+  'status === "expired" || status.startsWith("cancelada")',
   "window.clearInterval(timer)"
 ]);
 requireAll(".work/corridas/src/types/rides/active-ride.ts", ['"expired"']);
