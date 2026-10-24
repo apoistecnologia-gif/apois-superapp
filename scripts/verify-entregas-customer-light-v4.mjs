@@ -49,5 +49,5 @@ assert.ok(modules.includes('data:image/png;base64,'),'Emblema oficial ainda nao 
 for(const to of ['"/inicio"','"/pedidos"','"/favoritos"','"/perfil"','"/buscar"'])
   assert.ok(nav.includes(to),'Destino do menu foi removido: '+to);
 assert.ok(nav.includes('bg-white/95')&&nav.includes('border-[#E6E8EC]'),'Rodape nao segue o tema claro');
-assert.ok(nav.includes('min-h-[82px]')&&nav.includes('min-h-[56px]'),'Area de toque do menu foi alterada');
+assert.ok(nav.includes('min-h-[88px]')&&nav.includes('min-h-[64px]')&&nav.includes('pb-[max(44px,env(safe-area-inset-bottom))]'),'Menu nao preserva area de toque grande e safe area Android');
 console.log('[OK] Entregas: tema claro escopado somente ao Cliente; identidade e navegacao preservadas sem modificar operacoes.');
