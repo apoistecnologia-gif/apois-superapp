@@ -256,6 +256,33 @@ function replaceRequired(source, search, replacement, label) {
     .replaceAll('text-xs text-gray-500 truncate', 'text-xs text-[#666B73] whitespace-normal break-words leading-snug')
     .replaceAll('border-b border-white/5', 'border border-[#E2E4E8] bg-white');
 
+  // APOIS_SEARCH_PICKUP_CONTRAST_V1: informativo, mas totalmente legível.
+  // No tema anterior o bloco tinha opacity-70 e texto text-gray-300. Após
+  // migração para fundo branco isso tornava o endereço praticamente invisível.
+  source = replaceRequired(
+    source,
+    'className="flex items-center gap-4 px-4 py-3 bg-white rounded-xl border border-gray-700/30 opacity-70"',
+    'data-apois-readable-pickup="true" className="flex items-center gap-4 px-4 py-3 rounded-[18px] border border-[#D8DDE3] bg-[#F7F8FA] opacity-100"',
+    'Corridas Busca: endereço de partida não pode herdar opacidade de elemento desabilitado',
+  );
+  source = replaceRequired(
+    source,
+    'className="text-sm font-medium text-gray-300 truncate"',
+    'className="text-sm font-semibold text-[#171B23] truncate"',
+    'Corridas Busca: endereço de origem precisa de texto escuro',
+  );
+  source = replaceRequired(
+    source,
+    'className="text-[10px] uppercase tracking-widest text-gray-500 font-bold"',
+    'className="text-[11px] uppercase tracking-wider text-[#586272] font-bold"',
+    'Corridas Busca: rótulo do endereço deve ter contraste',
+  );
+
+  if (!source.includes('data-apois-readable-pickup="true"') || source.includes('border border-gray-700/30 opacity-70')) {
+    throw new Error('[FAIL] Corridas Busca: origem ainda opaca');
+  }
+
+
   for (const marker of ['apois-kit-search-screen', 'apois-kit-search-results', 'suggestions.map', 'whitespace-normal break-words', 'text-[#111111]', 'caret-[#E51B23]', 'placeholder:text-[#9AA0A8]']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Busca incompleta (${marker})`);
   }
