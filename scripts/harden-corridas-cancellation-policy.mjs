@@ -195,3 +195,54 @@ console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatív
   if (stickyIndex < 0 || dialogIndex < stickyIndex) fail('estrutura do rodapé de cancelamento inválida');
   console.log('[OK] Corridas: cancelamento fora da rolagem, com confirmação preservada');
 }
+
+
+// APOIS_DISPATCH_EXPIRED_STATUS_V1: expiração da busca não é cancelamento do passageiro.
+{
+  const base = '.work/corridas/';
+  function apply(relative, transform) {
+    const file = resolve(base + relative);
+    const before = readFileSync(file, 'utf8');
+    const after = transform(before);
+    if (after !== before) writeFileSync(file, after, 'utf8');
+  }
+  apply('src/types/rides/active-ride.ts', s => {
+    if (!s.includes('  | "expired";')) {
+      const old = '  | "cancelada_motorista";';
+      if (!s.includes(old)) fail('RideStatus não localizado');
+      s = s.replace(old, old.slice(0,-1) + '\n  | "expired";');
+    }
+    return s;
+  });
+  apply('src/services/rides/active-ride-service.ts', s => {
+    if (!s.includes('  expired: 5,')) {
+      s = s.replace('  cancelada_motorista: 5,','  cancelada_motorista: 5,\n  expired: 5,');
+      s = s.replace('  "cancelada_motorista",\n];','  "cancelada_motorista",\n  "expired",\n];');
+    }
+    if (!s.includes('  expired: 5,')) fail('expiração não normalizada');
+    return s;
+  });
+  apply('src/hooks/rides/use-active-ride.tsx', s => {
+    s = s.replaceAll('updatedRide.status.startsWith("cancelada")','(updatedRide.status === "expired" || updatedRide.status.startsWith("cancelada"))');
+    s = s.replaceAll('!data.status.startsWith("cancelada")','data.status !== "expired" && !data.status.startsWith("cancelada")');
+    return s;
+  });
+  apply('src/components/rides/active/RideStatusHeader.tsx', s => {
+    if (!s.includes('case "expired":')) {
+      const marker = '      case "cancelada_passageiro":';
+      if (!s.includes(marker)) fail('header de estado não encontrado');
+      s = s.replace(marker, '      case "expired":\n        return {\n          title: "Busca encerrada",\n          subtitle: "Nenhum motorista aceitou a corrida dentro do prazo.",\n          icon: <XCircle className="text-red-500" size={20} />,\n          color: "bg-red-500/10 border-red-500/20",\n        };\n' + marker);
+    }
+    return s;
+  });
+  apply('supabase/functions/process-ride-dispatch/index.ts', s => {
+    if (!s.includes('APOIS_DISPATCH_EXPIRED_STATUS_V1')) {
+      if (!s.includes('status: "cancelada_passageiro",')) fail('estado expirado não encontrado no worker');
+      s = s.replace('status: "cancelada_passageiro",','status: "expired", // APOIS_DISPATCH_EXPIRED_STATUS_V1');
+      s = s.replace('            current_offer_driver_id: null,\n          })','            current_offer_driver_id: null,\n            request_expires_at: null,\n          })');
+      s = s.replace('.is("driver_id", null);\n        if (!error) expired += 1;', '.is("driver_id", null)\n          .is("accepted_driver_id", null)\n          .lte("search_expires_at", now.toISOString())\n          .select("id");\n        if (!error) expired += 1;');
+    }
+    return s;
+  });
+  console.log('[OK] Corridas: status expired reconhecido e worker não culpa passageiro');
+}
