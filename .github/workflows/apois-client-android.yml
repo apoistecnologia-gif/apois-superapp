@@ -151,6 +151,15 @@ jobs:
           grep -Fq 'pointer-events-auto w-full max-w-[360px]' .work/corridas/src/components/map/PassengerMap.tsx
           echo '[OK] Google Maps WebView referrer, relatorio de falha, quebras de linha e JSX validados'
           npm run build:entregas
+          test -s .work/entregas/src/system-theme.css
+          grep -Fq 'APOIS_ENTREGAS_CUSTOMER_LIGHT_V4' .work/entregas/src/system-theme.css
+          grep -Fq 'APOIS_ENTREGAS_CUSTOMER_VISUAL_V5' .work/entregas/src/system-theme.css
+          grep -Fq 'APOIS_ENTREGAS_CUSTOMER_VISUAL_V6' .work/entregas/src/system-theme.css
+          grep -Fq 'APOIS_ENTREGAS_CUSTOMER_CONTRAST_V7' .work/entregas/src/system-theme.css
+          grep -Fq 'apois-entregas-customer-light-v4' .work/entregas/src/routes/__root.tsx
+          grep -Fq 'data-apois-entregas-home-v5' .work/entregas/src/routes/inicio.tsx
+          grep -Fq 'data-apois-entregas-customer-nav-v5' .work/entregas/src/components/AppBottomNav.tsx
+          echo '[OK] Cliente Entregas: identidade clara atual, cartoes, home e rodape validados'
           npm run build:shell
           npm run harden:auth-deeplinks
           npm run inject:push-routing
