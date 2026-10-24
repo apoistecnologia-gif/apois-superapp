@@ -111,9 +111,9 @@ if(!s.includes('APOIS_CATEGORY_RECOVERY_V1')){
   const to='const { categories, selectedCategory, selectCategory, isLoading: categoriesLoading, error: categoriesError, refreshCategories } = useRideCategories(); // APOIS_CATEGORY_RECOVERY_V1';
   if(s.split(from).length!==2)throw Error('[FAIL] categorias: hook do seletor mudou');
   s=s.replace(from,to);
-  const oldEmpty='if (categories.length === 0) {
+  const oldEmpty=`if (categories.length === 0) {
     return <div className="rounded-2xl bg-[#F7F7F8] px-4 py-5 text-center text-sm text-[#666B73]">Não há categorias disponíveis para esta rota no momento.</div>;
-  }';
+  }`;
   const newEmpty=String.raw`if (categories.length === 0) {
     return <div role="alert" data-apois-categories-retry="true" className="rounded-2xl border border-[#F3D1D4] bg-white px-4 py-5 text-center text-sm text-[#515965]">
       <p>{categoriesError || "Nenhuma categoria foi retornada. Atualize para consultar novamente."}</p>
@@ -134,14 +134,14 @@ if(!s.includes('APOIS_CATEGORY_RECOVERY_V1')){
         </div>
       ) : null}
       `+wrapper);
-  const last='    </div>
+  const last=`    </div>
   );
-};';
+};`;
   if(s.split(last).length!==2)throw Error('[FAIL] categorias: retorno final do seletor alterado');
-  s=s.replace(last,'    </div>
+  s=s.replace(last,`    </div>
     </>
   );
-};');
+};`);
 }
 for(const [src,token] of [[p,'APOIS_CATEGORY_RECOVERY_V1'],[p,'refreshCategories:fetchCategories'],[s,'data-apois-categories-retry="true"'],[s,'validated-sprite-v6']]){
   if(!src.includes(token))throw Error('[FAIL] categorias: '+token);
