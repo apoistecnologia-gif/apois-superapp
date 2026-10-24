@@ -159,44 +159,6 @@ writeFileSync(backendPath, backend, 'utf8');
 console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatíveis, UI sem fórmula divergente e taxa recuperável/idempotente.');
 
 
-// APOIS_CANCEL_BUTTON_STICKY_V1: mantém a ação visível fora da rolagem.
-{
-  const file = resolve('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx');
-  let source = readFileSync(file, 'utf8');
-  if (!source.includes('APOIS_CANCEL_BUTTON_STICKY_V1')) {
-    const from = '        {actionAvailability?.canCancel && (';
-    const begin = source.indexOf(from);
-    const endMarker = '      </motion.div>\n\n      <CancellationDialog';
-    const end = source.indexOf(endMarker, begin);
-    if (begin < 0 || end < 0) fail('local do botão de cancelar não encontrado');
-    const footer = `      </motion.div>
-
-      {/* APOIS_CANCEL_BUTTON_STICKY_V1 */}
-      {screenState === "active" && actionAvailability?.canCancel && (
-        <div className="relative z-30 shrink-0 border-t border-zinc-200 bg-white px-5 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsCancelDialogOpen(true)}
-            className="min-h-12 w-full rounded-2xl border-red-200 bg-red-50 text-sm font-extrabold text-red-700"
-          >
-            CANCELAR CORRIDA
-          </Button>
-        </div>
-      )}
-
-      <CancellationDialog`;
-    source = source.slice(0,begin)+footer+source.slice(end+endMarker.length);
-    writeFileSync(file,source,'utf8');
-  }
-  if (!source.includes('APOIS_CANCEL_BUTTON_STICKY_V1') || !source.includes('screenState === "active" && actionAvailability?.canCancel') || !source.includes('onClick={() => setIsCancelDialogOpen(true)}')) fail('botão fixo não passou nas verificações');
-  const dialogIndex = source.indexOf('      <CancellationDialog');
-  const stickyIndex = source.indexOf('APOIS_CANCEL_BUTTON_STICKY_V1');
-  if (stickyIndex < 0 || dialogIndex < stickyIndex) fail('estrutura do rodapé de cancelamento inválida');
-  console.log('[OK] Corridas: cancelamento fora da rolagem, com confirmação preservada');
-}
-
-
 // APOIS_DISPATCH_EXPIRED_STATUS_V1: expiração da busca não é cancelamento do passageiro.
 {
   const base = '.work/corridas/';
