@@ -21,6 +21,13 @@ Registro solicitado pelo responsável do projeto em 23/10/2026. Não apagar da l
 - **Gates:** verificar no celular as cinco categorias no início, antes e depois de digitar destino; selecionar cada categoria; valores somente da API de preços; persistência após abrir outras abas e retornar; conexão temporariamente indisponível seguida de recuperação; garantir que `request-ride` recebe código de categoria do banco e que o motorista recebe a oferta.
 - **Status:** CÓDIGO EM CORREÇÃO / HOMOLOGAÇÃO NO CELULAR PENDENTE.
 
+
+## P1 — Contraste do endereço de partida na busca de destino
+
+- **Evidência:** captura enviada pelo usuário em 23/10/2026 mostra campo PONTO DE PARTIDA com endereço em cinza muito claro sobre fundo branco no Cliente Corridas, na tela de busca de destino.
+- **Meta:** tornar texto do endereço de partida legível em tema claro, sem alterar endereço, GPS, busca ou digitação do destino.
+- **Status:** PENDENTE de implementação específica e validação física. Não confundir com a migração visual do Cliente Entregas.
+
 ## Integridade do projeto
 
 Branch `feat/apois-cliente-red-visual-20261003`, PR #8. Não fazer merge sem autorização. Não executar workflow ou gerar APK até pedido do responsável. Não alterar regras financeiras, Supabase Entregas, credenciais ou autenticação na correção visual.
