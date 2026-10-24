@@ -26,10 +26,14 @@ function swap(source, from, to, label) {
       'data-apois-entregas-home-light-v4="true" className="relative flex h-screen w-full flex-col overflow-hidden bg-[#F7F7F8] text-[#171D27]"',
       'data-apois-entregas-home-light-v4="true" data-apois-entregas-home-v5="true" className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#F7F7F8] text-[#171D27]"',
       'home adaptada ao viewport real Android');
-    s=swap(s,
-      'className="scrollbar-none flex-1 space-y-4 overflow-y-auto px-4 pb-20 pt-5"',
-      'className="scrollbar-none flex-1 space-y-4 overflow-y-auto bg-[#F7F7F8] px-4 pb-[max(130px,env(safe-area-inset-bottom))] pt-5"',
-      'conteudo claro com margem segura do rodape');
+    // Outros hardeners ajustam a altura do container antes desta etapa.
+    // Preservar essa evolução e aplicar apenas a cor/fundo e reserva segura.
+    const mainPattern=/className="scrollbar-none flex-1[^"]*overflow-y-auto[^"]*"/;
+    const mainMatch=s.match(mainPattern);
+    if(!mainMatch)throw Error('[FAIL] Entregas visual v5: area principal de rolagem nao localizada');
+    const mainClass=mainMatch[0];
+    const updatedMain='className="scrollbar-none flex-1 space-y-4 overflow-y-auto bg-[#F7F7F8] px-4 pb-[max(130px,env(safe-area-inset-bottom))] pt-5"';
+    if(mainClass!==updatedMain)s=s.replace(mainClass,updatedMain);
     s=swap(s,
       'shadow-[0_6px_24px_-12px_rgba(200,138,8,0.45)]',
       'shadow-[0_5px_18px_-7px_rgba(229,27,35,0.14)]',
