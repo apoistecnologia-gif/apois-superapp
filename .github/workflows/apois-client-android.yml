@@ -117,6 +117,8 @@ jobs:
           node --check scripts/verify-corridas-trip-flow-ux.mjs
           node --check scripts/harden-corridas-driver-accept-pin-visibility.mjs
           node --check scripts/verify-corridas-driver-accept-pin-visibility.mjs
+          node --check scripts/harden-corridas-profile-edit.mjs
+          node --check scripts/verify-corridas-profile-edit.mjs
           grep -Fq 'r.status in (' supabase/corridas-forward-migrations/20261023211500_passenger_pin_available_after_accept.sql
           grep -Fq 'get_passenger_ride_security_code' scripts/harden-corridas-driver-accept-pin-visibility.mjs
 
