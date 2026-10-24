@@ -116,6 +116,7 @@ jobs:
           grep -Fq 'APOIS_PICKUP_STABLE_V1' scripts/harden-corridas-trip-flow-ux.mjs
           node --check scripts/verify-corridas-trip-flow-ux.mjs
           node --check scripts/harden-corridas-save-favorites-in-search.mjs
+          node --check scripts/harden-entregas-customer-current-visual-v5.mjs
           node --check scripts/harden-corridas-driver-accept-pin-visibility.mjs
           node --check scripts/verify-corridas-driver-accept-pin-visibility.mjs
           node --check scripts/harden-corridas-profile-edit.mjs
