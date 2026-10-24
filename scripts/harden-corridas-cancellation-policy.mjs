@@ -189,4 +189,9 @@ console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatív
     source = source.slice(0,begin)+footer+source.slice(end+endMarker.length);
     writeFileSync(file,source,'utf8');
   }
+  if (!source.includes('APOIS_CANCEL_BUTTON_STICKY_V1') || !source.includes('screenState === "active" && actionAvailability?.canCancel') || !source.includes('onClick={() => setIsCancelDialogOpen(true)}')) fail('botão fixo não passou nas verificações');
+  const dialogIndex = source.indexOf('      <CancellationDialog');
+  const stickyIndex = source.indexOf('APOIS_CANCEL_BUTTON_STICKY_V1');
+  if (stickyIndex < 0 || dialogIndex < stickyIndex) fail('estrutura do rodapé de cancelamento inválida');
+  console.log('[OK] Corridas: cancelamento fora da rolagem, com confirmação preservada');
 }
