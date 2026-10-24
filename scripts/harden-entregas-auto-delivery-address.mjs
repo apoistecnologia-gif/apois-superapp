@@ -3,7 +3,27 @@ import {resolve} from 'node:path';
 // APOIS_ENTREGAS_AUTO_ADDRESS_V1: respect saved address, first-use GPS, no loop.
 const p=resolve('.work/entregas/src/routes/inicio.tsx');
 let s=readFileSync(p,'utf8');
-const form=readFileSync(resolve('.work/entregas/src/routes/enderecos/novo.tsx'),'utf8');
+const formPath=resolve('.work/entregas/src/routes/enderecos/novo.tsx');
+let form=readFileSync(formPath,'utf8');
+// O snapshot do formulario pode ter sido normalizado por outro hardener.
+// Restabelece somente a sinalizacao GPS, preservando campos/validacoes.
+if(!form.includes('apois_auto_locate_new_address')){
+  const state='  const [autoLocate, setAutoLocate] = useState(false);';
+  if(!form.includes(state)||!form.includes('setAutoLocate(true)')||!form.includes('useEffect(')){
+    throw Error('[FAIL] Entregas: formulario nao suporta restauracao segura do gatilho GPS');
+  }
+  const effect=[
+    '  // APOIS_ENTREGAS_AUTO_ADDRESS_V1: abre confirmacao GPS somente na primeira visita.',
+    '  useEffect(() => {',
+    '    if (sessionStorage.getItem("apois_auto_locate_new_address") === "1") {',
+    '      sessionStorage.removeItem("apois_auto_locate_new_address");',
+    '      setAutoLocate(true);',
+    '    }',
+    '  }, []);',
+  ].join('\\n');
+  form=form.replace(state,state+'\\n'+effect);
+  writeFileSync(formPath,form,'utf8');
+}
 if(!s.includes('APOIS_ENTREGAS_AUTO_ADDRESS_V1')){
   const needle='      setDefaultAddress(addrData);';
   if(s.split(needle).length!==2)throw Error('[FAIL] Home Entregas: setDefaultAddress changed');
