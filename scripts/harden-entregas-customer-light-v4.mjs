@@ -89,6 +89,23 @@ function exact(source,a,b,reason){
 }
 {
   const p='src/routes/inicio.tsx';let s=read(p);
+  // A logomarca antiga tem letras brancas desenhadas para fundo preto;
+  // a versão clara exibe o emblema oficial + título em preto/vermelho.
+  s=exact(s,'import logoAsset from "@/assets/logo.png.asset.json";',
+    'import apoisClientBrand from "@/assets/apoisClientBrandData";',
+    'marca oficial Cliente Entregas');
+  const oldLogo=['        <img','          src={logoAsset.url}','          alt="APOIS ENTREGA"',
+    '          className="h-10 w-auto object-contain object-left"','        />'].join('\n');
+  const newLogo=[
+    '        <div className="flex min-w-0 items-center gap-2.5">',
+    '          <img src={apoisClientBrand} alt="APOIS" className="h-11 w-11 shrink-0 rounded-full object-contain" />',
+    '          <div className="min-w-0 leading-none">',
+    '            <span className="block text-[24px] font-black tracking-tight text-[#111827]">APOIS</span>',
+    '            <span className="mt-1 block text-[10px] font-black uppercase tracking-[0.22em] text-[#D71920]">ENTREGAS</span>',
+    '          </div>',
+    '        </div>',
+  ].join('\n');
+  s=exact(s,oldLogo,newLogo,'marca legível sobre fundo branco');
   const mutations=[
     ['className="relative flex h-screen w-full flex-col overflow-hidden bg-black text-white"',
      'data-apois-entregas-home-light-v4="true" className="relative flex h-screen w-full flex-col overflow-hidden bg-[#F7F7F8] text-[#171D27]"','home'],
