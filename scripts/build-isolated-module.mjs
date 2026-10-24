@@ -384,6 +384,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-profile-edit.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-history-screen.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-history-screen.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-accept-pin-visibility.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-driver-accept-pin-visibility.mjs')]);
 
   for (const [path, before] of protectedMapRuntimeBeforeVisual) {
     const after = readFileSync(resolve(root, path), 'utf8');
