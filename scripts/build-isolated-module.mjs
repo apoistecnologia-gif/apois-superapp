@@ -375,6 +375,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-category-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-save-favorites-in-search.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-compact-home-favorites.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-destination-pickup-contrast.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-flow-ux.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-stops-confirm-display.mjs')]);
