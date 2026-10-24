@@ -159,8 +159,11 @@ async function dispatch(admin: any, ride: any) {
   if (error) throw error;
   const origin = { lat: Number(ride.origin_lat), lng: Number(ride.origin_lng) };
   const now = Date.now();
+  const previouslyOffered = new Set((ride.offered_driver_ids ?? []).map(String));
+  const rejected = new Set((ride.rejected_driver_ids ?? []).map(String));
   const candidates = (drivers ?? [])
     .filter((d: any) => d.is_online === true && d.approval_status === "aprovado")
+    .filter((d: any) => !previouslyOffered.has(String(d.user_id)) && !rejected.has(String(d.user_id)))
     .filter((d: any) => String(d.category ?? "").trim().toLowerCase() === String(ride.category).trim().toLowerCase())
     .filter((d: any) => finite(Number(d.current_lat)) && finite(Number(d.current_lng)))
     .filter((d: any) => !d.last_location_at || now - new Date(d.last_location_at).getTime() <= 120000)
@@ -173,10 +176,10 @@ async function dispatch(admin: any, ride: any) {
   if (ids.length) {
     await admin.from("rides").update({
       candidate_driver_ids: ids,
-      offered_driver_ids: ids,
-      dispatch_attempts: 1,
+      offered_driver_ids: [...previouslyOffered, ...ids],
+      dispatch_attempts: Number(ride.dispatch_attempts ?? 0) + 1,
       request_expires_at: new Date(Date.now()+60000).toISOString(),
-    }).eq("id", ride.id);
+    }).eq("id", ride.id).eq("status", "procurar_motorista").is("driver_id", null).is("accepted_driver_id", null);
   }
   return ids;
 }
