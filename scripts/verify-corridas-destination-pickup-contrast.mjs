@@ -1,0 +1,20 @@
+// Regressao: endereço de partida opaco na busca de destino.
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+const workspace=resolve(process.env.APOIS_CORRIDAS_WORKSPACE||'.work/corridas');
+const source=readFileSync(resolve(workspace,'src/routes/_authenticated.buscar-destino.tsx'),'utf8');
+const start=source.indexOf('data-apois-readable-pickup="true"');
+const end=source.indexOf('{pickupLabel || "Buscando sua localização..."}',start);
+assert.ok(start>=0&&end>start,'O campo de origem legível deve estar presente');
+const snippet=source.slice(start,end+65);
+assert.ok(snippet.includes('opacity-100'),'Container do endereço não pode herdar transparência');
+assert.ok(!snippet.includes('opacity-70'),'A antiga opacidade 70% não deve voltar');
+assert.ok(snippet.includes('text-[#171B23]'),'Endereço escuro e legível no fundo claro');
+assert.ok(snippet.includes('text-[#586272]'),'Rótulo com contraste suficiente');
+assert.ok(snippet.includes('bg-[#F7F8FA]'),'Fundo da origem precisa distinguir-se do painel');
+assert.ok(snippet.includes('Ponto de partida'),'Sem mudança no significado do campo');
+assert.ok(source.includes('handleFinalSelection(details)'),'Seleção de destino deve continuar');
+assert.ok(source.includes('data-apois-favorite-save-mode="true"'),'Salvar Casa/Trabalho na busca permanece');
+assert.ok(source.includes('data-apois-stable-destination-sheet'),'Busca com teclado mantém altura estável');
+console.log('[OK] APOIS Cliente: partida totalmente legível em fundo claro, busca e favoritos preservados.');
