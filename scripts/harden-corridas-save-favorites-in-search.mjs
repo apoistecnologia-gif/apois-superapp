@@ -101,8 +101,10 @@ if(!search.includes('APOIS_FAVORITES_IN_DESTINATION_SEARCH_V1')){
     '          ) : null}',
     ''
   ].join('\n');
-  search=replaceOne(search,'          <div className="flex-1 mt-2">',
-    hint+'          <div className="flex-1 mt-2">','aviso de modo salvar');
+  // Insira dentro do bloco de conteúdo antes dos resultados: o container
+  // foi modernizado por outros hardeners e nao tem classe fixa.
+  const resultsAnchor='            <AnimatePresence mode="wait">';
+  search=replaceOne(search,resultsAnchor,hint+resultsAnchor,'aviso de modo salvar');
   if(!search.includes('addFavorite(details,name,target)')||!search.includes('data-apois-favorite-save-mode="true"')){
     throw Error('[FAIL] Favoritos: tela sem salvamento e indicacao visivel');
   }
