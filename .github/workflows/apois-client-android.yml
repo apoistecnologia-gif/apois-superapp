@@ -155,6 +155,7 @@ jobs:
           node --check scripts/harden-entregas-auto-address-cep-v1.mjs
           node --check scripts/verify-entregas-auto-address-cep-v1.mjs
           node --check scripts/harden-entregas-personal-data-light-v1.mjs
+          node --check scripts/harden-entregas-superapp-account-deletion.mjs
           npm run build:entregas
           grep -Fq 'APOIS_ENTREGAS_PERSONAL_DATA_LIGHT_V1' .work/entregas/src/routes/perfil/dados-pessoais.tsx
           grep -Fq '[&_.profile-input]:bg-white' .work/entregas/src/routes/perfil/dados-pessoais.tsx
