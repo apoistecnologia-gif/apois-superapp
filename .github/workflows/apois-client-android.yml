@@ -138,6 +138,7 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           npm run build:corridas
           node scripts/verify-corridas-trip-flow-ux.mjs
+          node scripts/verify-corridas-dispatch-ux-v1.mjs
           node scripts/harden-corridas-pickup-map-focus.mjs
           node scripts/harden-corridas-trip-flow-ux.mjs
           node scripts/verify-corridas-trip-flow-ux.mjs
