@@ -1,0 +1,26 @@
+# APOIS Corridas — pendências críticas e critérios de aceite
+
+Registro solicitado pelo responsável do projeto em 23/10/2026. Não apagar da lista até haver correção no ambiente real e teste físico de passageiro + motorista.
+
+## P0 — PIN de segurança disponível imediatamente após aceite
+
+- **Supabase produção:** `APOIS CORRIDAS - PRODUÇÃO`, ref `tbbzkrfupmqdywnzgnms`. **Nunca** executar isto em `APOIS ENTREGAS - PRODUÇÃO`.
+- **Comportamento exigido:** solicitação do passageiro → oferta a motoristas aptos → motorista aceita → o código de segurança de 4 dígitos aparece **imediatamente no APOIS Cliente** → passageiro informa ao motorista **no embarque** → motorista insere código válido para iniciar viagem.
+- **Segurança:** PIN protegido em `public.ride_security_secrets`, consultável apenas pelo passageiro autenticado dono da corrida; **não** enviar PIN ao motorista, não inseri-lo em `public.rides`, não gravá-lo em logs ou armazenamento local. Impedir início da viagem se PIN inválido.
+- **Estado encontrado:** o gatilho já gera o segredo no aceite; a RPC de leitura `apois_rpc_private.get_passenger_ride_security_code` só permite o estado `motorista_chegou`. Portanto a alteração do APK, isoladamente, **não** resolve a regra.
+- **Migração SQL preparada (NÃO aplicada):** `supabase/corridas-forward-migrations/20261023211500_passenger_pin_available_after_accept.sql`. Inclui também o estado `motorista_a_caminho`; manter a checagem `r.passenger_id = public.mobility_user_id()` e `auth.uid()`.
+- **Próximos gates obrigatórios:** autorização específica antes de mudar a produção; validar grants da função pública exposta ao passageiro; aplicar migração apenas no projeto correto; testar aceite e código com duas contas autenticadas reais; confirmar que passageiro de outra corrida não acessa o PIN; confirmar validação correta no app Motorista; planejar rollback da função.
+- **Status:** PENDENTE — não afirmar que o PIN já aparece após aceite no ambiente real.
+
+## P0 — Regressão das categorias de corrida no APK Cliente
+
+- **Sintoma documentado:** app mostrou "Não há categorias disponíveis para esta rota no momento" na tela inicial mesmo sem destino, removendo visualmente Carro/Moto/Fretes e Mudanças/Guincho/Envios.
+- **Diagnóstico de produção 23/10/2026:** `public.ride_categories` contém 5 categorias, **todas ativas**: `carros`, `motos`, `fretes`, `guincho`, `envios`. RLS permite SELECT às contas autenticadas nas categorias ativas. Não foram apagadas no Supabase.
+- **Causa de UX confirmada no código:** provider inicializa lista vazia e não diferencia erro de rede da ausência legítima de categorias; visual retorna falsamente "não há categorias" sem botão de recuperar. A causa exata da consulta fracassada no aparelho requer log e teste autenticado.
+- **Correção de código:** `scripts/harden-corridas-category-recovery.mjs`; recuperação após login/rede/retorno ao foreground, botão de atualizar, preservar catálogo previamente carregado, não inventar categoria ou preço.
+- **Gates:** verificar no celular as cinco categorias no início, antes e depois de digitar destino; selecionar cada categoria; valores somente da API de preços; persistência após abrir outras abas e retornar; conexão temporariamente indisponível seguida de recuperação; garantir que `request-ride` recebe código de categoria do banco e que o motorista recebe a oferta.
+- **Status:** CÓDIGO EM CORREÇÃO / HOMOLOGAÇÃO NO CELULAR PENDENTE.
+
+## Integridade do projeto
+
+Branch `feat/apois-cliente-red-visual-20261003`, PR #8. Não fazer merge sem autorização. Não executar workflow ou gerar APK até pedido do responsável. Não alterar regras financeiras, Supabase Entregas, credenciais ou autenticação na correção visual.
