@@ -174,12 +174,21 @@ async function dispatch(admin: any, ride: any) {
 
   const ids = candidates.map((d: any) => d.id);
   if (ids.length) {
-    await admin.from("rides").update({
+    const { data: savedOffer, error: offerError } = await admin.from("rides").update({
       candidate_driver_ids: ids,
       offered_driver_ids: [...previouslyOffered, ...ids],
       dispatch_attempts: Number(ride.dispatch_attempts ?? 0) + 1,
       request_expires_at: new Date(Date.now()+60000).toISOString(),
-    }).eq("id", ride.id).eq("status", "procurar_motorista").is("driver_id", null).is("accepted_driver_id", null);
+    })
+    .eq("id", ride.id)
+    .eq("status", "procurar_motorista")
+    .is("driver_id", null)
+    .is("accepted_driver_id", null)
+    .or("request_expires_at.is.null,request_expires_at.lte." + new Date().toISOString())
+    .select("id")
+    .maybeSingle();
+    if (offerError) throw offerError;
+    if (!savedOffer) return [];
   }
   return ids;
 }
