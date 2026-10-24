@@ -4,10 +4,20 @@ import {resolve} from 'node:path';
 const root=resolve(process.env.APOIS_CORRIDAS_WORKSPACE||'.work/corridas');
 function patch(file,fn){const full=resolve(root,file);const before=readFileSync(full,'utf8');const after=fn(before);if(after!==before)writeFileSync(full,after,'utf8');console.log('[OK] PIN '+file);}
 function replace(src,oldStr,newStr,label){if(src.includes(newStr))return src;if(src.split(oldStr).length!==2)throw Error('[FAIL] PIN: '+label);return src.replace(oldStr,newStr);}
-patch('src/hooks/rides/use-active-ride.tsx',src=>replace(src,
-  '  const { user } = useAuth();\n  const userId = user?.id ?? null;',
-  '  // APOIS_ACTIVE_RIDE_DOMAIN_USER_V1: rides.passenger_id é public.users.id\n  const { profile } = useAuth();\n  const userId = profile?.id ?? null;',
-  'identidade domain user'));
+patch('src/hooks/rides/use-active-ride.tsx',src=>{
+  if(src.includes('APOIS_ACTIVE_RIDE_DOMAIN_USER_V1'))return src;
+  const section=/  const \{\s*user\s*\} = useAuth\(\);\s*const userId = user\?\.id \?\? null;/;
+  if(section.test(src)){
+    return src.replace(section,'  // APOIS_ACTIVE_RIDE_DOMAIN_USER_V1: public.rides.passenger_id = public.users.id\n  const { profile } = useAuth();\n  const userId = profile?.id ?? null;');
+  }
+  // Alguns snapshots ja selecionam profile.id; apenas documentar a garantia.
+  if(src.includes('const userId = profile?.id ?? null;')){
+    return src.replace('const userId = profile?.id ?? null;',
+      '// APOIS_ACTIVE_RIDE_DOMAIN_USER_V1: domain user\n  const userId = profile?.id ?? null;');
+  }
+  const existing=src.match(/.{0,48}const userId.{0,100}/)?.[0]||'userId_not_found';
+  throw Error('[FAIL] PIN: identidade do passageiro inesperada ('+existing+')');
+});
 patch('src/routes/_authenticated.corrida.$rideId.tsx',src=>{
   if(src.includes('APOIS_PIN_AFTER_ACCEPT_V1'))return src;
   src=replace(src,
