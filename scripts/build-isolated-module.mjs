@@ -379,8 +379,9 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-android-footer-safe-area.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-wallet-screen.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-wallet-screen.mjs')]);
-  // Profile visuals/actions were already applied by harden-apois-client-red-visual.
-  // Do not run the old non-idempotent profile UI hardener twice.
+  // O tema do Perfil ja esta no pipeline; aplicar somente os handlers seguros.
+  // Rodar o antigo script completo duas vezes duplica profileAvatarUrl.
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-actions.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-edit.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-profile-edit.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-history-screen.mjs')]);
