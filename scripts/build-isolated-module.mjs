@@ -412,6 +412,7 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-google-oauth-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-auto-address-cep-v1.mjs')]);
 }
 
 const config = manifest.modules[name];
