@@ -20,8 +20,8 @@ if(!form.includes('apois_auto_locate_new_address')){
     '      setAutoLocate(true);',
     '    }',
     '  }, []);',
-  ].join('\\n');
-  form=form.replace(state,state+'\\n'+effect);
+  ].join('\n');
+  form=form.replace(state,state+'\n'+effect);
   writeFileSync(formPath,form,'utf8');
 }
 if(!s.includes('APOIS_ENTREGAS_AUTO_ADDRESS_V1')){
