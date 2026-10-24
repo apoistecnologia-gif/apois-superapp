@@ -35,8 +35,8 @@ if(!source.includes(marker)){
   change('className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-bold text-black disabled:opacity-50"',
     'className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-4 font-extrabold text-white shadow-md disabled:opacity-50"',
     'contraste salvar');
-  change('className="relative">\n         <Icon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />',
-    'className="relative">\n         <Icon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#697386]" />',
+  change('className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500"',
+    'className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#697386]"',
     'icone do campo');
   change('className="[&_.profile-input]:w-full [&_.profile-input]:rounded-2xl [&_.profile-input]:border [&_.profile-input]:border-zinc-800 [&_.profile-input]:bg-zinc-900 [&_.profile-input]:py-4 [&_.profile-input]:pl-12 [&_.profile-input]:pr-4 [&_.profile-input]:text-white [&_.profile-input]:outline-none [&_.profile-input]:focus:border-primary"',
     'className="[&_.profile-input]:w-full [&_.profile-input]:min-h-14 [&_.profile-input]:rounded-2xl [&_.profile-input]:border [&_.profile-input]:border-[#D6DBE2] [&_.profile-input]:bg-white [&_.profile-input]:py-4 [&_.profile-input]:pl-12 [&_.profile-input]:pr-4 [&_.profile-input]:text-[#111827] [&_.profile-input]:placeholder:text-[#788391] [&_.profile-input]:outline-none [&_.profile-input]:focus:border-primary [&_.profile-input]:focus:ring-2 [&_.profile-input]:focus:ring-[#E51B23]/10"',
