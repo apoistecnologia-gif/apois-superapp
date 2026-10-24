@@ -15,7 +15,7 @@ if (!source.includes('<AppBottomNav activeTab="perfil" />')) {
   source = `${source.slice(0, index)}\n      <AppBottomNav activeTab="perfil" />${source.slice(index)}`;
 }
 
-if (!source.includes('pb-[calc(env(safe-area-inset-bottom)+7rem)]')) {
+if (!source.includes('pb-[calc(env(safe-area-inset-bottom)+7rem)]') && !source.includes('pb-[calc(env(safe-area-inset-bottom)+9rem)]')) {
   throw new Error('Dados pessoais: área inferior segura esperada não encontrada.');
 }
 
