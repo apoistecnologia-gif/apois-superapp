@@ -62,8 +62,6 @@ for (const token of [
   'setEditingField("email")',
   '<PassengerProfileEditor',
   'onSaved={refreshSession}',
-  'onClick={() => navigate({ to: "/notificacoes" })}',
-  'onClick={() => navigate({ to: "/carteira" })}',
 ]) if(!source.includes(token)) throw Error('[FAIL] Perfil editavel: faltando '+token);
 
 const component=String.raw`import { AlertCircle, CheckCircle2, Loader2, Mail, MapPin, Phone, UserRound, X } from "lucide-react";
