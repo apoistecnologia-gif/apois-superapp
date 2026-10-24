@@ -239,6 +239,7 @@ console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatív
     if (!s.includes('APOIS_DISPATCH_EXPIRED_STATUS_V1')) {
       if (!s.includes('status: "cancelada_passageiro",')) fail('estado expirado não encontrado no worker');
       s = s.replace('status: "cancelada_passageiro",','status: "expired", // APOIS_DISPATCH_EXPIRED_STATUS_V1');
+      s = s.replace('            cancelled_by: null,\n            cancellation_reason: "Nenhum motorista disponível no momento."', '            cancelled_by: "system",\n            cancellation_reason: "Nenhum motorista disponível no momento."');
       s = s.replace('            current_offer_driver_id: null,\n          })','            current_offer_driver_id: null,\n            request_expires_at: null,\n          })');
       s = s.replace('.is("driver_id", null);\n        if (!error) expired += 1;', '.is("driver_id", null)\n          .is("accepted_driver_id", null)\n          .lte("search_expires_at", now.toISOString())\n          .select("id");\n        if (!error) expired += 1;');
     }
