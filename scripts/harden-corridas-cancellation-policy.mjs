@@ -247,3 +247,46 @@ console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatív
   });
   console.log('[OK] Corridas: status expired reconhecido e worker não culpa passageiro');
 }
+
+
+// APOIS_REDISPATCH_POLL_V1: consultar servidor enquanto a corrida procura motorista.
+{
+ const file = resolve('.work/corridas/src/hooks/rides/use-active-ride.tsx');
+ let source = readFileSync(file, 'utf8');
+ if (!source.includes('APOIS_REDISPATCH_POLL_V1')) {
+  const importLine = 'import { activeRideService } from "@/services/rides/active-ride-service";';
+  if (!source.includes(importLine)) fail('hook de corridas alterado');
+  source = source.replace(importLine, importLine + '\nimport { supabase } from "@/integrations/supabase/client";');
+  const anchor = '  const actionAvailability = ride';
+  if (source.split(anchor).length !== 2) fail('ancora de redespacho nao encontrada');
+  const effect = [
+   '  // APOIS_REDISPATCH_POLL_V1',
+   '  const searchingRideId = ride?.status === "procurar_motorista" ? ride.id : null;',
+   '  useEffect(() => {',
+   '    if (!userId || !searchingRideId) return;',
+   '    let disposed = false;',
+   '    let inFlight = false;',
+   '    const redispatch = async () => {',
+   '      if (disposed || inFlight || document.visibilityState !== "visible" || !navigator.onLine) return;',
+   '      inFlight = true;',
+   '      try {',
+   '        const { error } = await supabase.functions.invoke("request-ride", {',
+   '          body: { action: "redispatch", ride_id: searchingRideId },',
+   '        });',
+   '        if (error) console.warn("[APOIS] redespacho temporariamente indisponivel");',
+   '      } catch {',
+   '        console.warn("[APOIS] falha temporaria de redespacho");',
+   '      } finally { inFlight = false; }',
+   '    };',
+   '    void redispatch();',
+   '    const timer = window.setInterval(() => { void redispatch(); }, 20_000);',
+   '    return () => { disposed = true; window.clearInterval(timer); };',
+   '  }, [searchingRideId, userId]);',
+   '',
+  ].join('\n');
+  source = source.replace(anchor, effect + anchor);
+  writeFileSync(file, source, 'utf8');
+ }
+ for (const marker of ['APOIS_REDISPATCH_POLL_V1', 'action: "redispatch"', 'window.clearInterval(timer)']) if (!source.includes(marker)) fail('redespacho incompleto: ' + marker);
+ console.log('[OK] Corridas: redespacho consulta servidor enquanto tela esta aberta');
+}
