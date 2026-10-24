@@ -379,7 +379,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-android-footer-safe-area.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-wallet-screen.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-wallet-screen.mjs')]);
-  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-profile-ui.mjs')]);
+  // Profile visuals/actions were already applied by harden-apois-client-red-visual.
+  // Do not run the old non-idempotent profile UI hardener twice.
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-edit.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-profile-edit.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-history-screen.mjs')]);
