@@ -290,3 +290,12 @@ console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatív
  for (const marker of ['APOIS_REDISPATCH_POLL_V1', 'action: "redispatch"', 'window.clearInterval(timer)']) if (!source.includes(marker)) fail('redespacho incompleto: ' + marker);
  console.log('[OK] Corridas: redespacho consulta servidor enquanto tela esta aberta');
 }
+
+// APOIS_SEARCH_TIMEOUT_COPY_V1: nao prometer 2 minutos quando backend usa 180 segundos.
+{
+ const file = resolve('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx');
+ const original = readFileSync(file,'utf8');
+ const revised = original.replace('Isso geralmente leva menos de 2 minutos.','A busca termina automaticamente se nenhum motorista aceitar dentro do prazo.');
+ if (original === revised && !revised.includes('A busca termina automaticamente se nenhum motorista aceitar dentro do prazo.')) fail('texto do prazo nao encontrado');
+ if(original !== revised) writeFileSync(file,revised,'utf8');
+}
