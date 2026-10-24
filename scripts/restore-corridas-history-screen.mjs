@@ -91,12 +91,12 @@ function CorridasPage() {
       const start=reset?0:loadedCountRef.current;
       let query=supabase.from("rides")
         .select("id,status,created_at,completed_at,category,origin_name,destination_name,estimated_price,final_price,payment_method,driver_name,cancellation_fee,cancellation_reason,distance_km,duration_min")
-        .eq("passenger_id",passengerId)
-        .order("created_at",{ascending:false})
-        .range(start,start+PAGE_SIZE-1);
+        .eq("passenger_id",passengerId);
       if(selected==="completed")query=query.eq("status","finalizada");
       if(selected==="cancelled")query=query.in("status",["cancelada_passageiro","cancelada_motorista"]);
-      const {data,error}=await query;
+      // Os filtros devem ser aplicados antes de order/range (PostgREST).
+      const {data,error}=await query.order("created_at",{ascending:false})
+        .range(start,start+PAGE_SIZE-1);
       if(seq!==requestRef.current)return;
       if(error)throw error;
       const items=(data??[]) as RideHistoryRow[];
