@@ -373,6 +373,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-apois-client-red-visual.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-kit-visual.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-category-recovery.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-save-favorites-in-search.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-compact-home-favorites.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-flow-ux.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-stops-confirm-display.mjs')]);
