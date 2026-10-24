@@ -106,11 +106,14 @@ function exact(source,a,b,reason){
     '        </div>',
   ].join('\n');
   s=exact(s,oldLogo,newLogo,'marca legível sobre fundo branco');
+  const rootHeight = s.includes('className="relative flex h-dvh w-full flex-col overflow-hidden bg-black text-white"') ? 'h-dvh' : 'h-screen';
   const mutations=[
-    ['className="relative flex h-screen w-full flex-col overflow-hidden bg-black text-white"',
+    ['className="relative flex '+rootHeight+' w-full flex-col overflow-hidden bg-black text-white"',
      'data-apois-entregas-home-light-v4="true" className="relative flex h-screen w-full flex-col overflow-hidden bg-[#F7F7F8] text-[#171D27]"','home'],
-    ['border-b border-accent/15 px-4 pb-3 pt-[max(env(safe-area-inset-top),1.25rem)]',
-     'border-b border-[#E7E9ED] bg-white/95 px-4 pb-3 pt-[max(env(safe-area-inset-top),1.25rem)]','header'],
+    [s.includes('border-b border-accent/15 px-4 pb-2.5 pt-[max(env(safe-area-inset-top),0.75rem)]') ?
+      'border-b border-accent/15 px-4 pb-2.5 pt-[max(env(safe-area-inset-top),0.75rem)]' :
+      'border-b border-accent/15 px-4 pb-3 pt-[max(env(safe-area-inset-top),1.25rem)]',
+     'border-b border-[#E7E9ED] bg-white/95 px-4 pb-2.5 pt-[max(env(safe-area-inset-top),0.75rem)]','header'],
     ['className="relative mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full border border-zinc-800 bg-zinc-950 text-white"',
      'className="relative mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#E4E6EA] bg-white text-[#171D27] shadow-sm"','sacola'],
     ['border border-accent/30 bg-gradient-to-r from-zinc-950 to-black px-3 py-3.5',
@@ -121,8 +124,10 @@ function exact(source,a,b,reason){
      'className="h-13 cursor-pointer rounded-2xl border-[#E2E4E8] bg-white pl-12 text-[15px] text-[#171D27] shadow-sm placeholder:text-[#737B87] focus-visible:border-[#E51B23]/50 focus-visible:ring-[#E51B23]/25"','busca'],
     ['bg-zinc-900 ring-1 ring-white/10 transition-transform group-active:scale-95',
      'border border-[#E7E9ED] bg-white shadow-[0_5px_16px_rgba(20,27,40,0.05)] transition-transform group-active:scale-95','categorias'],
-    ['className="w-full truncate text-center text-[11px] font-medium text-zinc-300"',
-     'className="w-full truncate text-center text-[11px] font-semibold text-[#353C47]"','nomes das categorias'],
+    [s.includes('className="w-full truncate text-center text-xs font-semibold text-zinc-300"') ?
+      'className="w-full truncate text-center text-xs font-semibold text-zinc-300"' :
+      'className="w-full truncate text-center text-[11px] font-medium text-zinc-300"',
+     'className="w-full truncate text-center text-xs font-semibold text-[#353C47]"','nomes das categorias'],
   ];
   for(const [a,b,label]of mutations)s=exact(s,a,b,label);
   write(p,s);
