@@ -152,6 +152,8 @@ jobs:
           grep -Fq 'top-[17%] z-[150]' .work/corridas/src/components/map/PassengerMap.tsx
           grep -Fq 'pointer-events-auto w-full max-w-[360px]' .work/corridas/src/components/map/PassengerMap.tsx
           echo '[OK] Google Maps WebView referrer, relatorio de falha, quebras de linha e JSX validados'
+          node --check scripts/harden-entregas-auto-address-cep-v1.mjs
+          node --check scripts/verify-entregas-auto-address-cep-v1.mjs
           npm run build:entregas
           test -s .work/entregas/src/system-theme.css
           grep -Fq 'APOIS_ENTREGAS_CUSTOMER_LIGHT_V4' .work/entregas/src/system-theme.css
