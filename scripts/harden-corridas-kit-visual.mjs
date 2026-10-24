@@ -183,7 +183,7 @@ function replaceRequired(source, search, replacement, label) {
           </button>
         </div>
 
-        <div className="mt-2.5"><CategorySelector /></div>
+        <div className="mt-1.5"><CategorySelector /></div>
 
         {(hasDestination || route) ? (
           <div className="mt-3 space-y-3">
@@ -204,14 +204,14 @@ function replaceRequired(source, search, replacement, label) {
           onClick={handleReview}
           disabled={!checkout.readiness || !!routeError}
           className={cn(
-            "mt-3 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[18px] text-[16px] font-black shadow-[0_12px_30px_rgba(229,27,35,.24)] transition active:scale-[.99]",
+            "mt-2 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[18px] text-[16px] font-black shadow-[0_12px_30px_rgba(229,27,35,.24)] transition active:scale-[.99]",
             checkout.readiness && !routeError ? "bg-[#E51B23] text-white" : "bg-[#E6E8EB] text-[#9AA0A8]"
           )}
         >
           Solicitar corrida <ChevronRight size={23} strokeWidth={3} />
         </button>
 
-        <div className="mt-3"><HomeWorkShortcuts /></div>
+        {/* APOIS_COMPACT_HOME_V1: enderecos favoritos ficam na busca, liberando area para o mapa. */}
       </section>
 
       <ServiceDetailsForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
@@ -223,7 +223,7 @@ function replaceRequired(source, search, replacement, label) {
   if (!source.includes('data-apois-reference-home-v2')) throw new Error('[FAIL] Corridas visual V2 não entrou na Home');
   console.log('[OK] Corridas: Home operacional alinhada ao mock aprovado sem alterar lógica de corrida');
 
-  for (const marker of ['PassengerMap', 'data-apois-reference-home-v2', 'apois-kit-home', 'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Local de partida', 'Destino', '<CategorySelector />', 'Solicitar corrida']) {
+  for (const marker of ['PassengerMap', 'data-apois-reference-home-v2', 'apois-kit-home', 'apois-kit-home-panel', 'APOIS_COMPACT_HOME_V1', 'Local de partida', 'Destino', '<CategorySelector />', 'Solicitar corrida']) {
     if (!source.includes(marker)) throw new Error(`[FAIL] Corridas visual Home incompleta (${marker})`);
   }
   if (source.includes('🌙') || source.includes('👋')) throw new Error('[FAIL] Corridas visual: emojis decorativos permaneceram na Home');
