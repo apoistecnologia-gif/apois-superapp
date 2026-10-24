@@ -9,6 +9,31 @@ function replaceRequired(path, search, replacement, label) {
     return;
   }
   if (!before.includes(search)) {
+    // Os estilos podem ter sido migrados de dark para light antes desta etapa.
+    // Para a UI, substituir apenas os textos e handlers, preservando classes.
+    // Manter falha obrigatória se as ações de exclusão não forem encontradas.
+    if (label === 'Entregas: UI explica exclusão e possível retenção legítima') {
+      const h2=/<h2 className="[^"]*">Desativar minha conta<\/h2>/g;
+      const message='Seu acesso será bloqueado e a sessão será encerrada.';
+      if ([...before.matchAll(h2)].length !== 1 || before.split(message).length !== 2)
+        throw new Error(label + ': título ou aviso original ausente');
+      const after=before.replace(h2,(match)=>match.replace('Desativar minha conta','Excluir minha conta'))
+        .replace(message,'Envie uma solicitação para excluir sua conta e os dados associados. Alguns registros podem ser mantidos quando houver obrigação legal ou de segurança, conforme a Política de Privacidade.');
+      writeFileSync(full,after,'utf8');
+      console.log('[OK] '+label+' (compatível com tema claro)');
+      return;
+    }
+    if (label === 'Entregas: botão inicia solicitação de exclusão') {
+      const previous='onClick={() => void deactivateAccount()}';
+      const labelOld='{deactivating ? "Desativando..." : "Desativar conta"}';
+      if (before.split(previous).length !== 2 || before.split(labelOld).length !== 2)
+        throw new Error(label + ': handler ou legenda original ausente');
+      const after=before.replace(previous,'onClick={() => void requestAccountDeletion()}')
+        .replace(labelOld,'{deactivating ? "Enviando solicitação..." : "Solicitar exclusão da conta"}');
+      writeFileSync(full,after,'utf8');
+      console.log('[OK] '+label+' (compatível com tema claro)');
+      return;
+    }
     throw new Error(`${label}: padrão esperado não encontrado em ${path}`);
   }
   writeFileSync(full, before.replace(search, replacement), 'utf8');
