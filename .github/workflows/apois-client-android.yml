@@ -118,7 +118,7 @@ jobs:
           node --check scripts/harden-corridas-driver-accept-pin-visibility.mjs
           node --check scripts/verify-corridas-driver-accept-pin-visibility.mjs
           node --check scripts/harden-corridas-profile-edit.mjs
-          grep -Fq 'Do not run the old non-idempotent profile UI hardener twice' scripts/build-isolated-module.mjs
+          grep -Fq "'scripts/harden-corridas-profile-actions.mjs'" scripts/build-isolated-module.mjs
           grep -Fq 'APOIS_ACTIVE_RIDE_DOMAIN_USER_V1' scripts/harden-corridas-driver-accept-pin-visibility.mjs
           node --check scripts/verify-corridas-profile-edit.mjs
           grep -Fq 'r.status in (' supabase/corridas-forward-migrations/20261023211500_passenger_pin_available_after_accept.sql
