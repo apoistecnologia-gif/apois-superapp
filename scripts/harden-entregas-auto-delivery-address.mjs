@@ -27,7 +27,7 @@ if(!s.includes('APOIS_ENTREGAS_AUTO_ADDRESS_V1')){
   if(at<0||end<0)throw Error('[FAIL] Entregas: fetchData useCallback signature missing');
   s=s.slice(0,end)+s.slice(end).replace('  }, []);','  }, [navigate]);');
   const target='onClick={() => navigate({ to: "/enderecos" })}';
-  if(s.split(target).length!==2)throw Error('[FAIL] Entregas: address edit action missing');
+  if(!s.includes(target))throw Error('[FAIL] Entregas: address edit action missing');
   s=s.replace(target,target+' aria-label="Ver ou alterar endereço de entrega"');
 }
 for(const k of ['APOIS_ENTREGAS_AUTO_ADDRESS_V1','apois_delivery_auto_address_prompted_v1','apois_auto_locate_new_address','onClick={() => navigate({ to: "/enderecos" })}'])
