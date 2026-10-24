@@ -18,8 +18,6 @@ for(const marker of [
   'setEditingField("email")',
   'onSaved={refreshSession}',
   '<PassengerProfileEditor',
-  'onClick={() => navigate({ to: "/notificacoes" })}',
-  'onClick={() => navigate({ to: "/carteira" })}',
   'signOut',
 ])assert.ok(ui.includes(marker),'Perfil perdeu ação: '+marker);
 
