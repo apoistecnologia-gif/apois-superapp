@@ -12,6 +12,15 @@ Registro solicitado pelo responsável do projeto em 23/10/2026. Não apagar da l
 - **Verificações SQL em 24/10/2026:** alteração aplicada somente ao projeto Corridas; definição lida antes e depois; os estados `motorista_a_caminho` e `motorista_chegou` são aceitos; verificações `auth.uid()` e `r.passenger_id = v_passenger_id` mantidas; ACLs da função privada preservadas. Função pública continua acessível a `anon`, mas a função privada nega ausência de autenticação. Registro original da função obtido para possível rollback; a versão anterior exigia apenas `r.status='motorista_chegou'`.\n- **Gates restantes:** testar aceite e leitura com duas contas autenticadas reais; confirmar que passageiro de outra corrida não acessa o PIN; confirmar validação correta no app Motorista; considerar endurecer o grant `anon` da função pública em alteração específica e testada.
 - **Status:** MIGRAÇÃO DE PRODUÇÃO APLICADA / HOMOLOGAÇÃO E2E NO CELULAR PENDENTE — ainda não declarar exibição real no aplicativo comprovada.
 
+
+## P0 — Busca de motorista sem encerramento após prazo
+
+- **Evidência de 24/10/2026:** corrida de 03:39:45 UTC permanecia em `procurar_motorista` após `search_expires_at=03:42:45 UTC`; foi registrado 1 candidato, 1 motorista ofertado e nenhum aceite. Não publicar identificadores do passageiro.
+- **Causa operacional encontrada:** `process-ride-dispatch` está no snapshot Corridas e implementa expiração/redistribuição, porém NÃO consta entre as Edge Functions ACTIVE do Supabase Corridas produção `tbbzkrfupmqdywnzgnms`. As extensões `pg_cron` e `pg_net` não estão instaladas, portanto não existe agendamento por essas extensões. Ainda verificar outros agendadores externos antes de concluir ausência total de worker.
+- **Problema adicional da função versionada:** o código legado atribui `cancelada_passageiro` quando a busca expira sem aceite, embora `cancelled_by=null`; não lançar multa nem tratar expiração como desistência do passageiro. Comparar com a state machine e as regras de faturamento reais antes de implantá-la.
+- **Correção visual versionada:** `scripts/harden-corridas-cancellation-policy.mjs`, marcador `APOIS_CANCEL_BUTTON_STICKY_V1`, deixa o botão de cancelar fora do painel rolável em `procurar_motorista` e `motorista_a_caminho`, preservando diálogo e API `cancel-ride`.
+- **Status:** BOTÃO CORRIGIDO NO CÓDIGO, sem novo APK. BACKEND DE EXPIRAÇÃO/REDESPACHO NÃO CORRIGIDO EM PRODUÇÃO. Antes de deploy, verificar worker canônico, execução autenticada, elegibilidade, concorrência, estado terminal correto, ausência de cobrança indevida e notificação ao passageiro. Testes E2E pendentes.
+
 ## P0 — Regressão das categorias de corrida no APK Cliente
 
 - **Sintoma documentado:** app mostrou "Não há categorias disponíveis para esta rota no momento" na tela inicial mesmo sem destino, removendo visualmente Carro/Moto/Fretes e Mudanças/Guincho/Envios.
