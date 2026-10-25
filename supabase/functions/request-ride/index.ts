@@ -36,7 +36,7 @@ async function authUser(req: Request) {
   return error ? null : data.user;
 }
 
-async function routeMetrics(origin: any, destination: any) {
+async function routeMetrics(origin: any, destination: any, stops: Array<{lat:number;lng:number}> = []) {
   const key =
     Deno.env.get("GOOGLE_ROUTES_API_KEY")?.trim() ||
     Deno.env.get("GOOGLE_MAPS_PLATFORM_API_KEY")?.trim() ||
@@ -54,6 +54,7 @@ async function routeMetrics(origin: any, destination: any) {
         body: JSON.stringify({
           origin: { location: { latLng: { latitude: origin.lat, longitude: origin.lng } } },
           destination: { location: { latLng: { latitude: destination.lat, longitude: destination.lng } } },
+          intermediates: stops.map(s => ({ location: { latLng: { latitude: s.lat, longitude: s.lng } } })),
           travelMode: "DRIVE",
           routingPreference: "TRAFFIC_AWARE",
           polylineEncoding: "ENCODED_POLYLINE",
@@ -77,7 +78,8 @@ async function routeMetrics(origin: any, destination: any) {
     } catch {}
   }
 
-  const url = new URL(`https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}`);
+  const osrmPoints = [origin, ...stops, destination].map(s => `${s.lng},${s.lat}`).join(';');
+  const url = new URL(`https://router.project-osrm.org/route/v1/driving/${osrmPoints}`);
   url.searchParams.set("overview", "full");
   url.searchParams.set("geometries", "polyline");
   const response = await fetch(url, { headers: { Accept: "application/json" } });
@@ -367,7 +369,11 @@ Deno.serve(async (req: Request) => {
     if (categoryError) throw categoryError;
     if (!categoryRow) return json({ error: "category_unavailable" }, 422);
 
-    const metrics = await routeMetrics(body.origin, body.destination);
+    const intermediates = body?.intermediates ?? body?.stops ?? []; // APOIS_STOPS_BACKEND_V2
+    if (!Array.isArray(intermediates) || intermediates.length > 3 || !intermediates.every(validPoint)) {
+      return json({ ok: false, error: 'invalid_intermediates', message: 'Paradas inválidas. Confira os endereços.' }, 422);
+    }
+    const metrics = await routeMetrics(body.origin, body.destination, intermediates);
     const details = body?.service_details && typeof body.service_details === "object" && !Array.isArray(body.service_details) ? body.service_details : {};
     const estimatedPrice = await loadFare(admin, categoryRow.id, category, metrics.distanceKm, metrics.durationMin, details);
 
@@ -393,6 +399,7 @@ Deno.serve(async (req: Request) => {
       payment_provider: null,
       provider_payment_id: null,
       service_details: details,
+      intermediates,
       request_key: requestKey,
       pickup_label: body?.pickup_label ?? null,
       pickup_short_label: body?.pickup_short_label ?? null,
