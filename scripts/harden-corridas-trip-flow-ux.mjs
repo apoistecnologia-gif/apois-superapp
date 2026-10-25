@@ -80,7 +80,7 @@ patch('src/routes/_authenticated.corrida.$rideId.tsx',(s)=>{
     const footerPoint='      </motion.div>\n\n      <CancellationDialog';
     if(!s.includes(footerPoint))throw Error('[FAIL] ponto para novo rodape fixo ausente');
     s=s.replace(footerPoint,
-      '      </motion.div>\n\n      {/* APOIS_CANCEL_VISIBLE_V1: botao separado da rolagem, acima da barra inferior */}\n      <div className="relative z-30 shrink-0 border-t border-[#E2E4E8] bg-white px-4 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]">\n'+action+'\n      </div>\n\n      <CancellationDialog');
+      '      </motion.div>\n\n      {/* APOIS_CANCEL_VISIBLE_V1: botao separado da rolagem, acima da barra inferior */}\n      <div className="fixed inset-x-0 bottom-[max(24px,env(safe-area-inset-bottom))] z-[200] border-t border-[#E2E4E8] bg-white px-4 py-3 shadow-[0_-10px_24px_rgba(0,0,0,0.12)]">\n'+action+'\n      </div>\n\n      <CancellationDialog');
     s=change(s,'relative flex h-[100dvh] flex-col overflow-hidden',
       'relative flex h-full min-h-0 flex-col overflow-hidden','altura da tela de corrida');
   }
