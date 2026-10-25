@@ -11,6 +11,7 @@ requireAll(".work/corridas/src/routes/_authenticated.corrida.$rideId.tsx", [
   "APOIS_CANCEL_VISIBLE_V1",
   "CANCELAR CORRIDA",
   "safe-area-inset-bottom",
+  "bottom-[max(64px,env(safe-area-inset-bottom))]",
   "A busca termina automaticamente se nenhum motorista aceitar dentro do prazo."
 ]);
 requireAll(".work/corridas/src/hooks/rides/use-active-ride.tsx", [
@@ -25,12 +26,26 @@ requireAll(".work/corridas/src/services/rides/active-ride-service.ts", [
   "expired: 5",
   'canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)'
 ]);
+requireAll(".work/corridas/src/hooks/rides/use-ride-request.tsx", [
+  "APOIS_STOPS_REQUEST_V2",
+  "intermediates: route.intermediates",
+  "stopsSignature: currentStopsSignature"
+]);
+requireAll(".work/corridas/src/types/rides/ride-request.ts", [
+  "intermediates?: Array<{ lat: number; lng: number }>"
+]);
+requireAll("supabase/functions/passenger-routes-compute/index.ts", [
+  "APOIS_ROUTE_INTERMEDIATES_V2",
+  "input.intermediates ?? input.stops"
+]);
 requireAll("supabase/functions/request-ride/index.ts", [
   "notifyRideCandidates(ride, ids)",
   'skipped: "offer_active"',
   'skipped: "search_expired"',
   "if (!savedOffer) return [];",
-  "previouslyOffered.has(String(d.user_id))"
+  "previouslyOffered.has(String(d.user_id))",
+  "APOIS_STOPS_BACKEND_V2",
+  "routeMetrics(body.origin, body.destination, intermediates)"
 ]);
 requireAll("supabase/functions/send-ride-push/index.ts", [
   "callerDomainId === ride.passenger_id",
