@@ -1,4 +1,5 @@
 name: APOIS Cliente Android APK
+# homologação 1.0.3: segunda tentativa após compatibilizar snapshot de paradas
 
 on:
   workflow_dispatch:
