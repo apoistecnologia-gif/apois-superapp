@@ -29,7 +29,7 @@ requireAll(".work/corridas/src/services/rides/active-ride-service.ts", [
 requireAll(".work/corridas/src/hooks/rides/use-ride-request.tsx", [
   "APOIS_STOPS_REQUEST_V2",
   "intermediates: route.intermediates",
-  "stopsSignature: currentStopsSignature"
+  "stopsSignatureRef.current = currentStopsSignature"
 ]);
 requireAll(".work/corridas/src/types/rides/ride-request.ts", [
   "intermediates?: Array<{ lat: number; lng: number }>"
