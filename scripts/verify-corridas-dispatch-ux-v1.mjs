@@ -28,11 +28,11 @@ requireAll(".work/corridas/src/services/rides/active-ride-service.ts", [
 ]);
 requireAll(".work/corridas/src/hooks/rides/use-ride-request.tsx", [
   "APOIS_STOPS_REQUEST_V2",
-  "intermediates: route.intermediates",
+  "intermediates: [...confirmedStops]",
   "stopsSignatureRef.current = currentStopsSignature"
 ]);
 requireAll(".work/corridas/src/types/rides/ride-request.ts", [
-  "intermediates?: Array<{ lat: number; lng: number }>"
+  "intermediates?: Array<{ lat: number; lng: number; label?: string; address?: string }>"
 ]);
 requireAll("supabase/functions/passenger-routes-compute/index.ts", [
   "APOIS_ROUTE_INTERMEDIATES_V2",
