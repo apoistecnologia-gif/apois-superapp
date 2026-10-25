@@ -94,21 +94,21 @@ console.log('[OK] APOIS_STOPS_CONFIRM_V1: Concluido valida e grava; Home apresen
 patch('src/hooks/rides/use-ride-request.tsx', (source) => {
   if (source.includes('APOIS_STOPS_REQUEST_V2')) return source;
   source = replaceRequired(source,
-    '  destination: RouteCoordinates | null;\n}',
-    '  destination: RouteCoordinates | null;\n  stopsSignature?: string;\n}',
-    'snapshot de paradas');
+    '  const activeSubmissionRef =',
+    '  const stopsSignatureRef = useRef<string>("");\n  const activeSubmissionRef =',
+    'referência de paradas para idempotência');
   source = replaceRequired(source,
     '    const currentDestination = route?.destination ?? null;',
     '    const currentDestination = route?.destination ?? null;\n    const currentStopsSignature = JSON.stringify(route?.intermediates ?? []); // APOIS_STOPS_REQUEST_V2',
     'assinatura das paradas');
   source = replaceRequired(source,
     '!sameCoordinates(currentDestination, requestDataRef.current.destination);',
-    '!sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      currentStopsSignature !== requestDataRef.current.stopsSignature;',
+    '!sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      currentStopsSignature !== stopsSignatureRef.current;',
     'invalidate request key quando paradas mudam');
   source = replaceRequired(source,
-    '        destination: currentDestination,',
-    '        destination: currentDestination,\n        stopsSignature: currentStopsSignature,',
-    'salvar snapshot paradas');
+    '      requestDataRef.current = {',
+    '      stopsSignatureRef.current = currentStopsSignature;\n      requestDataRef.current = {',
+    'salvar assinatura de paradas');
   source = replaceRequired(source,
     '        destination: route.destination,\n        origin_name:',
     '        destination: route.destination,\n        intermediates: route.intermediates,\n        origin_name:',
