@@ -65,6 +65,7 @@ node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
 cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
 require_contains 'window.location.hash = "#/motorista/app"' src/lib/nativeBridge.ts 'Push do Motorista usa rota hash interna'
+require_contains 'APOIS_DRIVER_OFFER_POLL_V1' src/routes/motorista.app.tsx 'Motorista reconsulta ofertas sem depender do Firebase'
 require_contains 'Geolocation.watchPosition(' src/routes/motorista.app.tsx 'Motorista acompanha GPS nativo'
 require_contains 'stopDriverWatch();' src/routes/motorista.app.tsx 'Motorista encerra watcher GPS'
 require_contains 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.ts 'Finalização usa lifecycle canônico'
