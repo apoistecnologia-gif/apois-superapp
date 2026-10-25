@@ -1,5 +1,5 @@
 name: APOIS Cliente Android APK
-# homologação 1.0.3: validação final de paradas, pagamento e build Cliente
+# homologação 1.0.3: persistência de nomes das paradas e build Android final
 
 on:
   workflow_dispatch:
