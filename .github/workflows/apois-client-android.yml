@@ -1,5 +1,5 @@
 name: APOIS Cliente Android APK
-# homologação 1.0.3: segunda tentativa após compatibilizar snapshot de paradas
+# homologação 1.0.3: validação final de paradas, pagamento e build Cliente
 
 on:
   workflow_dispatch:
