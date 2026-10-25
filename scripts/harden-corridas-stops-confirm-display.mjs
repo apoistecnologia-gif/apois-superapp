@@ -102,8 +102,8 @@ patch('src/hooks/rides/use-ride-request.tsx', (source) => {
     '    const currentDestination = route?.destination ?? null;\n    const currentStopsSignature = JSON.stringify(route?.intermediates ?? []); // APOIS_STOPS_REQUEST_V2',
     'assinatura das paradas');
   source = replaceRequired(source,
-    '!sameCoordinates(currentDestination, requestDataRef.current.destination);',
-    '!sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      currentStopsSignature !== stopsSignatureRef.current;',
+    '!sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      selectedMethod !== requestDataRef.current.paymentMethod;',
+    '!sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      selectedMethod !== requestDataRef.current.paymentMethod ||\n      currentStopsSignature !== stopsSignatureRef.current;',
     'invalidate request key quando paradas mudam');
   source = replaceRequired(source,
     '      requestDataRef.current = {',
