@@ -89,3 +89,29 @@ patch('src/routes/_authenticated.inicio.tsx', (source) => {
   return source;
 });
 console.log('[OK] APOIS_STOPS_CONFIRM_V1: Concluido valida e grava; Home apresenta 1 a 3 paradas antes do destino.');
+
+// APOIS_STOPS_REQUEST_V2 — repassa paradas confirmadas ao cálculo oficial de tarifa.
+patch('src/hooks/rides/use-ride-request.tsx', (source) => {
+  if (source.includes('APOIS_STOPS_REQUEST_V2')) return source;
+  source = replaceRequired(source,
+    '  destination: RouteCoordinates | null;\n}',
+    '  destination: RouteCoordinates | null;\n  stopsSignature?: string;\n}',
+    'snapshot de paradas');
+  source = replaceRequired(source,
+    '    const currentDestination = route?.destination ?? null;',
+    '    const currentDestination = route?.destination ?? null;\n    const currentStopsSignature = JSON.stringify(route?.intermediates ?? []); // APOIS_STOPS_REQUEST_V2',
+    'assinatura das paradas');
+  source = replaceRequired(source,
+    '!sameCoordinates(currentDestination, requestDataRef.current.destination);',
+    '!sameCoordinates(currentDestination, requestDataRef.current.destination) ||\n      currentStopsSignature !== requestDataRef.current.stopsSignature;',
+    'invalidate request key quando paradas mudam');
+  source = replaceRequired(source,
+    '        destination: currentDestination,',
+    '        destination: currentDestination,\n        stopsSignature: currentStopsSignature,',
+    'salvar snapshot paradas');
+  source = replaceRequired(source,
+    '        destination: route.destination,\n        origin_name:',
+    '        destination: route.destination,\n        intermediates: route.intermediates,\n        origin_name:',
+    'enviar paradas ao backend');
+  return source;
+});
