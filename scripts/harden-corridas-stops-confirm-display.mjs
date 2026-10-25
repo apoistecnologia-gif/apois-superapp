@@ -115,3 +115,11 @@ patch('src/hooks/rides/use-ride-request.tsx', (source) => {
     'enviar paradas ao backend');
   return source;
 });
+
+patch('src/types/rides/ride-request.ts', source => {
+  if (source.includes('intermediates?: Array<{ lat: number; lng: number }>')) return source;
+  return replaceRequired(source,
+    '  duration_min?: number | null;',
+    '  duration_min?: number | null;\n  intermediates?: Array<{ lat: number; lng: number }>;',
+    'tipagem das paradas enviadas');
+});
