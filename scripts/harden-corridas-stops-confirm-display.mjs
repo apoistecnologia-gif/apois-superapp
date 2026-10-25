@@ -94,6 +94,14 @@ console.log('[OK] APOIS_STOPS_CONFIRM_V1: Concluido valida e grava; Home apresen
 patch('src/hooks/rides/use-ride-request.tsx', (source) => {
   if (source.includes('APOIS_STOPS_REQUEST_V2')) return source;
   source = replaceRequired(source,
+    'import { useRoute } from "@/hooks/use-route";',
+    'import { useRoute } from "@/hooks/use-route";\nimport { useRideStops } from "@/hooks/rides/use-ride-stops";',
+    'import das paradas confirmadas');
+  source = replaceRequired(source,
+    '  const { route } = useRoute();',
+    '  const { route } = useRoute();\n  const { stops: confirmedStops } = useRideStops();',
+    'contexto das paradas confirmadas');
+  source = replaceRequired(source,
     '  const activeSubmissionRef =',
     '  const stopsSignatureRef = useRef<string>("");\n  const activeSubmissionRef =',
     'referência de paradas para idempotência');
@@ -111,15 +119,15 @@ patch('src/hooks/rides/use-ride-request.tsx', (source) => {
     'salvar assinatura de paradas');
   source = replaceRequired(source,
     '        destination: route.destination,\n        origin_name:',
-    '        destination: route.destination,\n        intermediates: route.intermediates,\n        origin_name:',
+    '        destination: route.destination,\n        intermediates: [...confirmedStops].sort((a, b) => a.order - b.order).map((stop) => ({ lat: stop.latitude, lng: stop.longitude, label: stop.label, address: stop.formattedAddress })),\n        origin_name:',
     'enviar paradas ao backend');
   return source;
 });
 
 patch('src/types/rides/ride-request.ts', source => {
-  if (source.includes('intermediates?: Array<{ lat: number; lng: number }>')) return source;
+  if (source.includes('intermediates?: Array<{ lat: number; lng: number; label?: string; address?: string }>')) return source;
   return replaceRequired(source,
     '  duration_min?: number | null;',
-    '  duration_min?: number | null;\n  intermediates?: Array<{ lat: number; lng: number }>;',
+    '  duration_min?: number | null;\n  intermediates?: Array<{ lat: number; lng: number; label?: string; address?: string }>;',
     'tipagem das paradas enviadas');
 });
