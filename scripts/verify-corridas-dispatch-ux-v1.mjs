@@ -44,6 +44,7 @@ requireAll("supabase/functions/request-ride/index.ts", [
   'skipped: "search_expired"',
   "if (!savedOffer) return [];",
   "previouslyOffered.has(String(d.user_id))",
+  "APOIS_NO_SELF_DISPATCH_V1",
   "APOIS_STOPS_BACKEND_V2",
   "routeMetrics(body.origin, body.destination, intermediates)"
 ]);
