@@ -165,6 +165,7 @@ async function dispatch(admin: any, ride: any) {
   const rejected = new Set((ride.rejected_driver_ids ?? []).map(String));
   const candidates = (drivers ?? [])
     .filter((d: any) => d.is_online === true && d.approval_status === "aprovado")
+    .filter((d: any) => String(d.user_id) !== String(ride.passenger_id)) // APOIS_NO_SELF_DISPATCH_V1
     .filter((d: any) => !previouslyOffered.has(String(d.user_id)) && !rejected.has(String(d.user_id)))
     .filter((d: any) => String(d.category ?? "").trim().toLowerCase() === String(ride.category).trim().toLowerCase())
     .filter((d: any) => finite(Number(d.current_lat)) && finite(Number(d.current_lng)))
