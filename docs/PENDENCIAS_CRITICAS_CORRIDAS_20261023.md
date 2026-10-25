@@ -13,6 +13,15 @@ Registro solicitado pelo responsável do projeto em 23/10/2026. Não apagar da l
 - **Status:** MIGRAÇÃO DE PRODUÇÃO APLICADA / HOMOLOGAÇÃO E2E NO CELULAR PENDENTE — ainda não declarar exibição real no aplicativo comprovada.
 
 
+## Regressões verificadas em celular — 25/10/2026
+
+- **Cancelar escondido:** APOIS Cliente 1.0.2 posicionava a ação atrás da barra Android. Código do rodapé corrigido com posicionamento fixo e afastamento inferior mínimo de 64px; requer homologação visual do novo APK.
+- **Preço com parada:** Cliente enviava `intermediates`, mas Edge Function de rotas recebia apenas `stops`. Passenger-routes-compute v13 aceita ambos. Request-ride v15 considera os pontos para cálculo de rota e tarifa e persiste `rides.intermediates`; Cliente novo inclui nome e endereço das paradas. Não alterar tarifas nem inserir taxa inventada.
+- **Motorista não chamou:** uma corrida real tinha um candidato aprovado, online e próximo do embarque. Log de push HTTP 500 revelou `firebase_secret_missing`: falta cadastrar `FIREBASE_SERVICE_ACCOUNT_B64` no Supabase Corridas. Nunca enviar segredos ao chat nem ao repositório.
+- **Fallback no Parceiro:** nova consulta de ofertas via RLS a cada 12 segundos enquanto app visível, sem substituir as RPCs de aceite. Versão de teste Parceiro 1.0.3 foi gerada com êxito no GitHub Actions 40222058541.
+- **FCM com aplicativo fechado:** bloqueado até secret Firebase ser configurado e testado.
+- **Escopo:** PR #8 permanece sem merge. Supabase Entregas, pagamentos e publicação na Play Store não foram alterados.
+
 ## P0 — Busca de motoristas, expiração e notificação (24/10/2026)
 
 - **Incidente confirmado:** corrida de 03:39:45 UTC permaneceu procurando motorista após o prazo; havia 1 candidato, 1 oferta e nenhum aceite.
