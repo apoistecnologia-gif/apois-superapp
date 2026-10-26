@@ -32,6 +32,6 @@ edit('src/routes/login.tsx',s=>{
 });
 const css=resolve(base,'src/system-theme.css');
 let c=readFileSync(css,'utf8');
-if(!c.includes('APOIS_COURIER_LOGIN_CONTRAST_V2'))c+=\`\n/* APOIS_COURIER_LOGIN_CONTRAST_V2 */\n[data-apois-courier-login-v2] { color:#111827 !important; background:#F7F7F8 !important; }\n[data-apois-courier-login-v2] h1,[data-apois-courier-login-v2] h2,[data-apois-courier-login-v2] label { color:#111827 !important; }\n[data-apois-courier-login-v2] p { color:#596372 !important; }\n[data-apois-courier-login-v2] input { color:#111827 !important; -webkit-text-fill-color:#111827 !important; background:#FFFFFF !important; }\n[data-apois-courier-login-v2] input::placeholder { color:#7A8491 !important; -webkit-text-fill-color:#7A8491 !important; }\n\`;
+if(!c.includes('APOIS_COURIER_LOGIN_CONTRAST_V2'))c+=`\n/* APOIS_COURIER_LOGIN_CONTRAST_V2 */\n[data-apois-courier-login-v2] { color:#111827 !important; background:#F7F7F8 !important; }\n[data-apois-courier-login-v2] h1,[data-apois-courier-login-v2] h2,[data-apois-courier-login-v2] label { color:#111827 !important; }\n[data-apois-courier-login-v2] p { color:#596372 !important; }\n[data-apois-courier-login-v2] input { color:#111827 !important; -webkit-text-fill-color:#111827 !important; background:#FFFFFF !important; }\n[data-apois-courier-login-v2] input::placeholder { color:#7A8491 !important; -webkit-text-fill-color:#7A8491 !important; }\n`;
 writeFileSync(css,c,'utf8');
 console.log('[OK] Entregador: formulário claro, logo incorporada e login legível.');
