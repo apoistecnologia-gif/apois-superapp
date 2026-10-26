@@ -46,6 +46,10 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   const end=source.indexOf('export function CourierReviewState(',begin);
   if(begin<0||end<0)throw Error('[FAIL] delimitação cadastro do Entregador');
   let form=source.slice(begin,end);
+  if(!source.includes('import { useEffect, useState } from "react";'))source=source.replace('import { useState } from "react";','import { useEffect, useState } from "react";');
+  const hookAnchor='  const [vehicleType, setVehicleType] = useState("moto");';
+  if(!form.includes(hookAnchor))throw Error('[FAIL] cadastro sem state');
+  form=form.replace(hookAnchor,hookAnchor+'\\n  useEffect(() => { try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* storage indisponível */ } }, []);');
   form=form.replace('src={logoAsset.url}','src={APOIS_PARTNER_LOGO_DATA_URL}').replace('alt="APOIS ENTREGA"','alt="APOIS"');
   form=form.replaceAll('bg-black','bg-[#F7F7F8]').replaceAll('bg-zinc-950/85','bg-white').replaceAll('bg-zinc-950','bg-white');
   form=form.replaceAll('text-white','text-[#111827]').replaceAll('text-zinc-400','text-[#596372]').replaceAll('text-zinc-300','text-[#374151]').replaceAll('text-zinc-600','text-[#596372]');
@@ -63,9 +67,5 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
 edit('src/routes/courier.tsx',source=>{
   const anchor='onBack={() => void logout()}';
   if(!source.includes(anchor))throw Error('[FAIL] seta do cadastro Entregador');
-  // Conta Google autenticada sem cadastro profissional: não manter trava operacional antiga.
-  const branch='  if (!courier) {';
-  if(!source.includes(branch))throw Error('[FAIL] estado sem cadastro profissional ausente');
-  source=source.replace(branch,branch+'\\n    try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* armazenamento indisponível */ }');
   return source.replace(anchor,'onBack={() => window.location.replace("../../index.html")}');
 });
