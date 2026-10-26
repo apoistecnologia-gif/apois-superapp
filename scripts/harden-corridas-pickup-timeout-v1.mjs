@@ -4,9 +4,7 @@ const hookFile=resolve('.work/corridas/src/hooks/use-pickup-address.tsx');
 let s=readFileSync(hookFile,'utf8');
 const marker='APOIS_PICKUP_TIMEOUT_DEDUP_V1';
 if(s.includes(marker)){console.log('[OK] pickup anti-travamento já instalado');process.exit(0);}
-const oldImport='useState, useEffect, useCallback';
-if(!s.includes(oldImport))throw Error('[FAIL] import hooks alterado');
-s=s.replace(oldImport,'useState, useEffect, useCallback, useRef');
+if(!s.includes('useRef'))throw Error('[FAIL] useRef requerido pelo hardening UX');
 const anchor='  const [error, setError] = useState<string | null>(null);';
 if(!s.includes(anchor))throw Error('[FAIL] estado de geocoding não encontrado');
 s=s.replace(anchor,anchor+`
