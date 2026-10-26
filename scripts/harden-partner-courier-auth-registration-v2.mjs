@@ -86,7 +86,7 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   if(!form.includes('src={APOIS_PARTNER_LOGO_DATA_URL}'))throw Error('[FAIL] logo de cadastro não corrigida');
   source=source.slice(0,begin)+form+source.slice(end);
   if (!source.includes('import { useEffect } from "react";')) {
-    source='import { useEffect } from "react";\\n'+source;
+    source='import { useEffect } from "react";\n'+source;
   }
   if(!source.includes('import { App as CourierAppLifecycle } from "@capacitor/app";')){
     source='import { App as CourierAppLifecycle } from "@capacitor/app";\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\n'+source;
