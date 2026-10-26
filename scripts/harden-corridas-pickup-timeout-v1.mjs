@@ -53,7 +53,7 @@ const newInvoke=`      let timeout: ReturnType<typeof setTimeout> | undefined;
 s=s.replace(oldInvoke,newInvoke);
 const finalAnchor='      setIsLoading(false);';
 if(!s.includes(finalAnchor))throw Error('[FAIL] finally ausente');
-s=s.replace(finalAnchor,'      runningCell.current = false;\\n'+finalAnchor);
+s=s.replace(finalAnchor,'      runningCell.current = false;\n'+finalAnchor);
 const oldEffect=`  useEffect(() => {
     if (location) {
       refreshAddress();
