@@ -86,12 +86,12 @@ forbidAll('scripts/install-partner-driver-location.mjs', [
 
 requireAll('superapp/partner-shell/capacitor.config.ts', [
   "appId: 'br.com.apois.parceiro'",
-  "style: 'LIGHT'",
-  "backgroundColor: '#050505'",
-], 'Host Android Parceiro usa package próprio e barra de status legível');
-forbidAll('superapp/partner-shell/capacitor.config.ts', [
   "style: 'DARK'",
-], 'Parceiro não usa ícones escuros sobre barra de status preta');
+  "backgroundColor: '#F7F7F8'",
+], 'Host Android Parceiro usa package próprio e barra de status clara legível');
+forbidAll('superapp/partner-shell/capacitor.config.ts', [
+  "style: 'LIGHT'",
+], 'Parceiro não usa ícones claros sobre barra de status clara');
 
 requireAll('scripts/harden-partner-android-security.mjs', [
   "['compileSdkVersion', 36]",
@@ -144,9 +144,9 @@ requireAll('scripts/harden-partner-entregador-journey.mjs', [
 
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-journey.mjs';",
-  'const APOIS_GOLD = "#F6BE1C";', 'VITE_GOOGLE_MAPS_API_KEY',
-  'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY', '"DEMO_MAP_ID"', 'strokeColor: APOIS_GOLD',
-], 'mapa Entregador tem jornada nativa, chave resiliente, fallback de Map ID e rota dourada');
+  'const APOIS_RED = "#E51B23";', 'VITE_GOOGLE_MAPS_API_KEY',
+  'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY', '"DEMO_MAP_ID"', 'strokeColor: APOIS_RED',
+], 'mapa Entregador tem jornada nativa, chave resiliente, fallback de Map ID e rota vermelha APOIS');
 
 requireAll('scripts/configure-partner-firebase.mjs', [
   'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64', 'PARTNER_FIREBASE_PROJECT_ID',
@@ -157,10 +157,12 @@ requireAll('scripts/install-partner-launcher.mjs', [
   "import './harden-partner-android-security.mjs';",
   "import './configure-partner-firebase.mjs';",
   "import './install-partner-driver-location.mjs';",
+  'apois-client-red-logo.b64',
+  '#F7F7F8',
   'registerPlugin(DriverLocationPlugin.class)',
   'android.permission.FOREGROUND_SERVICE_LOCATION',
   'Firebase do APOIS Parceiro não foi materializado.',
-], 'launcher valida segurança, Firebase e serviço de localização do Motorista');
+], 'launcher valida segurança, nova marca vermelha, Firebase e serviço de localização do Motorista');
 
 requireAll('superapp/partner-shell/index.html', [
   'PARTNER_PENDING_PUSH_KEY', 'consumePendingPartnerPush', 'pushNotificationActionPerformed',

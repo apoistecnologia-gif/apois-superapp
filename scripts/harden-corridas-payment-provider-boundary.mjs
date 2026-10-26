@@ -37,6 +37,67 @@ for (const marker of [
 }
 writeFileSync(servicePath, service, 'utf8');
 
+service = readFileSync(servicePath, 'utf8');
+if (!service.includes('APOIS_DIRECT_PAYMENT_FALLBACK_V2')) {
+  service = service.replace(
+    'class PaymentService {',
+    `// APOIS_DIRECT_PAYMENT_FALLBACK_V2
+const DIRECT_PAYMENT_FALLBACKS: PaymentMethod[] = [
+  { id: "direct-cash", code: "cash", name: "Dinheiro", label: "Dinheiro", description: "Pague diretamente ao motorista em dinheiro ao final da corrida.", icon: null, isActive: true, enabled: true, sortOrder: 10, requiresBalance: false },
+  { id: "direct-credit", code: "credit", name: "Cartão de crédito", label: "Cartão de crédito", description: "Pague diretamente ao motorista no cartão de crédito, usando o meio aceito pelo próprio motorista.", icon: null, isActive: true, enabled: true, sortOrder: 20, requiresBalance: false },
+];
+
+class PaymentService {`,
+  );
+
+  service = service.replace(
+    `    if (error) {
+      console.error("[PaymentService] Failed to fetch payment methods", error);
+      throw new Error("payment_methods_unavailable");
+    }`,
+    `    if (error) {
+      console.warn("[PaymentService] payment_methods indisponível; usando formas diretas locais", {
+        code: error.code,
+        message: error.message,
+      });
+      return DIRECT_PAYMENT_FALLBACKS.map((method) => ({ ...method }));
+    }`,
+  );
+
+  service = service.replace(
+    '    return (data ?? []).flatMap((method) => {',
+    '    const directMethods = (data ?? []).flatMap((method) => {',
+  );
+
+  service = service.replace(
+    '    });\n  }\n\n  async getCancellationFees',
+    `    });
+
+    for (const fallback of DIRECT_PAYMENT_FALLBACKS) {
+      if (!directMethods.some((method) => method.code === fallback.code)) {
+        directMethods.push({ ...fallback });
+      }
+    }
+
+    return directMethods.sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  async getCancellationFees`,
+  );
+}
+
+for (const marker of [
+  'APOIS_DIRECT_PAYMENT_FALLBACK_V2',
+  'const DIRECT_PAYMENT_FALLBACKS: PaymentMethod[]',
+  'return DIRECT_PAYMENT_FALLBACKS.map((method) => ({ ...method }))',
+  'id: "direct-cash"',
+  'id: "direct-credit"',
+  'return directMethods.sort((a, b) => a.sortOrder - b.sortOrder);',
+]) {
+  if (!service.includes(marker)) throw new Error(`Corridas: fallback resiliente de pagamento direto incompleto (${marker}).`);
+}
+writeFileSync(servicePath, service, 'utf8');
+
 const hookPath = resolve(root, workspace, 'src/hooks/use-payment-methods.tsx');
 const hook = readFileSync(hookPath, 'utf8');
 if (!hook.includes('paymentService.getPaymentMethods()')) {

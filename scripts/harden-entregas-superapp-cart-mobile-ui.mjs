@@ -10,7 +10,7 @@ source = source
   .replace('className="p-1 text-zinc-600 transition-colors hover:text-red-500"', 'className="grid h-11 w-11 place-items-center rounded-xl text-zinc-600 transition-colors active:bg-red-500/10 active:text-red-400"')
   .replaceAll('className="grid h-6 w-6 place-items-center rounded-md bg-zinc-800', 'className="grid h-10 w-10 place-items-center rounded-xl bg-zinc-800')
   .replace('className="flex-1">\n              <h2 className="text-lg font-bold text-white">{merchant.name}</h2>', 'className="min-w-0 flex-1">\n              <h2 className="truncate text-lg font-bold text-white">{merchant.name}</h2>')
-  .replace('pb-[max(env(safe-area-inset-bottom),2.75rem)]', 'pb-[max(env(safe-area-inset-bottom),1rem)]');
+  .replace('pb-[max(env(safe-area-inset-bottom),2.75rem)]', 'pb-[max(52px,env(safe-area-inset-bottom))]');
 
 for (const marker of [
   'min-h-dvh',
@@ -18,7 +18,7 @@ for (const marker of [
   'grid h-11 w-11 place-items-center rounded-xl text-zinc-600',
   'grid h-10 w-10 place-items-center rounded-xl bg-zinc-800',
   'min-w-0 flex-1',
-  'pb-[max(env(safe-area-inset-bottom),1rem)]',
+  'pb-[max(52px,env(safe-area-inset-bottom))]',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Sacola: hardening mobile incompleto (${marker})`);
 }

@@ -25,7 +25,9 @@ for (const marker of [
   }
 }
 for (const marker of [
-  'applyThemeClass("dark");',
+  'applyThemeClass("light");',
+  'return "light";',
+  "r.classList.add('light');r.classList.remove('dark');r.style.colorScheme='light';",
   'mq.matches ? "dark" : "light"',
   'title="Tema"',
 ]) {
@@ -45,5 +47,24 @@ for (const marker of [
     failed = true;
   }
 }
-if (!failed) console.log('[OK] Motorista marca v4: identidade preto/dourado fica travada em escuro e links externos usam Browser nativo no Android.');
+// Gate de regressao para o mapa claro e a localizacao premium da home Motorista.
+const mapVisual = source('scripts/harden-motorista-map-branding.mjs');
+const partnerBuild = source('scripts/build-partner-modules.sh');
+for (const marker of ['APOIS_DRIVER_LOCATION_V2', 'rotation: displayHeading', 'themeOverride="light"', 'src/components/mapMarkers.tsx', 'src/routes/motorista.app.tsx']) {
+  if (!mapVisual.includes(marker)) {
+    console.error('[FAIL] Motorista mapa visual: patch ausente (' + marker + ')');
+    failed = true;
+  }
+}
+for (const marker of ["require_contains 'APOIS_DRIVER_LOCATION_V2'", "require_contains 'themeOverride=\"light\"'"]) {
+  if (!partnerBuild.includes(marker)) {
+    console.error('[FAIL] Motorista mapa visual: gate de compilacao ausente (' + marker + ')');
+    failed = true;
+  }
+}
+if (mapVisual.includes('APOIS_DRIVER_LOCATION_A_PATH') || partnerBuild.includes('APOIS_DRIVER_LOCATION_A_PATH')) {
+  console.error('[FAIL] Motorista mapa visual: pin com monograma antigo ainda ativo');
+  failed = true;
+}
+if (!failed) console.log('[OK] Motorista marca v4: identidade vermelho/branco fica travada em claro e links externos usam Browser nativo no Android.');
 process.exit(failed ? 1 : 0);

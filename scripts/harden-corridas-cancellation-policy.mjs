@@ -157,3 +157,107 @@ for (const forbidden of [
 writeFileSync(backendPath, backend, 'utf8');
 
 console.log('[OK] Passageiro: cancelamento usa DOMAIN USER ID, estados compatíveis, UI sem fórmula divergente e taxa recuperável/idempotente.');
+
+
+// APOIS_DISPATCH_EXPIRED_STATUS_V1: expiração da busca não é cancelamento do passageiro.
+{
+  const base = '.work/corridas/';
+  function apply(relative, transform) {
+    const file = resolve(base + relative);
+    const before = readFileSync(file, 'utf8');
+    const after = transform(before);
+    if (after !== before) writeFileSync(file, after, 'utf8');
+  }
+  apply('src/types/rides/active-ride.ts', s => {
+    if (!s.includes('  | "expired";')) {
+      const old = '  | "cancelada_motorista";';
+      if (!s.includes(old)) fail('RideStatus não localizado');
+      s = s.replace(old, old.slice(0,-1) + '\n  | "expired";');
+    }
+    return s;
+  });
+  apply('src/services/rides/active-ride-service.ts', s => {
+    if (!s.includes('  expired: 5,')) {
+      s = s.replace('  cancelada_motorista: 5,','  cancelada_motorista: 5,\n  expired: 5,');
+      s = s.replace('  "cancelada_motorista",\n];','  "cancelada_motorista",\n  "expired",\n];');
+    }
+    if (!s.includes('  expired: 5,')) fail('expiração não normalizada');
+    return s;
+  });
+  apply('src/hooks/rides/use-active-ride.tsx', s => {
+    s = s.replaceAll('updatedRide.status.startsWith("cancelada")','(updatedRide.status === "expired" || updatedRide.status.startsWith("cancelada"))');
+    s = s.replaceAll('!data.status.startsWith("cancelada")','data.status !== "expired" && !data.status.startsWith("cancelada")');
+    return s;
+  });
+  apply('src/components/rides/active/RideStatusHeader.tsx', s => {
+    if (!s.includes('case "expired":')) {
+      const marker = '      case "cancelada_passageiro":';
+      if (!s.includes(marker)) fail('header de estado não encontrado');
+      s = s.replace(marker, '      case "expired":\n        return {\n          title: "Busca encerrada",\n          subtitle: "Nenhum motorista aceitou a corrida dentro do prazo.",\n          icon: <XCircle className="text-red-500" size={20} />,\n          color: "bg-red-500/10 border-red-500/20",\n        };\n' + marker);
+    }
+    return s;
+  });
+  apply('supabase/functions/process-ride-dispatch/index.ts', s => {
+    if (!s.includes('APOIS_DISPATCH_EXPIRED_STATUS_V1')) {
+      if (!s.includes('status: "cancelada_passageiro",')) fail('estado expirado não encontrado no worker');
+      s = s.replace('status: "cancelada_passageiro",','status: "expired", // APOIS_DISPATCH_EXPIRED_STATUS_V1');
+      s = s.replace('            cancelled_by: null,\n            cancellation_reason: "Nenhum motorista disponível no momento."', '            cancelled_by: "system",\n            cancellation_reason: "Nenhum motorista disponível no momento."');
+      s = s.replace('            current_offer_driver_id: null,\n          })','            current_offer_driver_id: null,\n            request_expires_at: null,\n          })');
+      s = s.replace('.is("driver_id", null);\n        if (!error) expired += 1;', '.is("driver_id", null)\n          .is("accepted_driver_id", null)\n          .lte("search_expires_at", now.toISOString())\n          .select("id");\n        if (!error) expired += 1;');
+    }
+    return s;
+  });
+  console.log('[OK] Corridas: status expired reconhecido e worker não culpa passageiro');
+}
+
+
+// APOIS_REDISPATCH_POLL_V1: consultar servidor enquanto a corrida procura motorista.
+{
+ const file = resolve('.work/corridas/src/hooks/rides/use-active-ride.tsx');
+ let source = readFileSync(file, 'utf8');
+ if (!source.includes('APOIS_REDISPATCH_POLL_V1')) {
+  const importLine = 'import { activeRideService } from "@/services/rides/active-ride-service";';
+  if (!source.includes(importLine)) fail('hook de corridas alterado');
+  source = source.replace(importLine, importLine + '\nimport { supabase } from "@/integrations/supabase/client";');
+  const anchor = '  const actionAvailability = ride';
+  if (source.split(anchor).length !== 2) fail('ancora de redespacho nao encontrada');
+  const effect = [
+   '  // APOIS_REDISPATCH_POLL_V1',
+   '  const searchingRideId = ride?.status === "procurar_motorista" ? ride.id : null;',
+   '  useEffect(() => {',
+   '    if (!userId || !searchingRideId) return;',
+   '    let disposed = false;',
+   '    let inFlight = false;',
+   '    const redispatch = async () => {',
+   '      if (disposed || inFlight || document.visibilityState !== "visible" || !navigator.onLine) return;',
+   '      inFlight = true;',
+   '      try {',
+   '        const { error } = await supabase.functions.invoke("request-ride", {',
+   '          body: { action: "redispatch", ride_id: searchingRideId },',
+   '        });',
+   '        if (error) console.warn("[APOIS] redespacho temporariamente indisponivel");',
+   '      } catch {',
+   '        console.warn("[APOIS] falha temporaria de redespacho");',
+   '      } finally { inFlight = false; }',
+   '    };',
+   '    void redispatch();',
+   '    const timer = window.setInterval(() => { void redispatch(); }, 20_000);',
+   '    return () => { disposed = true; window.clearInterval(timer); };',
+   '  }, [searchingRideId, userId]);',
+   '',
+  ].join('\n');
+  source = source.replace(anchor, effect + anchor);
+  writeFileSync(file, source, 'utf8');
+ }
+ for (const marker of ['APOIS_REDISPATCH_POLL_V1', 'action: "redispatch"', 'window.clearInterval(timer)']) if (!source.includes(marker)) fail('redespacho incompleto: ' + marker);
+ console.log('[OK] Corridas: redespacho consulta servidor enquanto tela esta aberta');
+}
+
+// APOIS_SEARCH_TIMEOUT_COPY_V1: nao prometer 2 minutos quando backend usa 180 segundos.
+{
+ const file = resolve('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx');
+ const original = readFileSync(file,'utf8');
+ const revised = original.replace('Isso geralmente leva menos de 2 minutos.','A busca termina automaticamente se nenhum motorista aceitar dentro do prazo.');
+ if (original === revised && !revised.includes('A busca termina automaticamente se nenhum motorista aceitar dentro do prazo.')) fail('texto do prazo nao encontrado');
+ if(original !== revised) writeFileSync(file,revised,'utf8');
+}

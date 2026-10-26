@@ -31,7 +31,7 @@ patch('.work/corridas/src/hooks/rides/use-active-ride.tsx', (source) => {
   if (!next.includes('const RIDE_STATUS_ORDER: Record<RideStatus, number>')) {
     next = next.replace(
       'const POLLING_INTERVAL_MS = 12_000;',
-      `const POLLING_INTERVAL_MS = 12_000;\n\nconst RIDE_STATUS_ORDER: Record<RideStatus, number> = {\n  agendada: 0,\n  procurar_motorista: 1,\n  motorista_a_caminho: 2,\n  motorista_chegou: 3,\n  em_viagem: 4,\n  finalizada: 5,\n  cancelada_passageiro: 5,\n  cancelada_motorista: 5,\n};\n\nconst isTerminalRideStatus = (status: RideStatus) =>\n  status === \"finalizada\" || status.startsWith(\"cancelada\");`,
+      `const POLLING_INTERVAL_MS = 12_000;\n\nconst RIDE_STATUS_ORDER: Record<RideStatus, number> = {\n  agendada: 0,\n  procurar_motorista: 1,\n  motorista_a_caminho: 2,\n  motorista_chegou: 3,\n  em_viagem: 4,\n  finalizada: 5,\n  cancelada_passageiro: 5,\n  cancelada_motorista: 5,\n  expired: 5,\n};\n\nconst isTerminalRideStatus = (status: RideStatus) =>\n  status === \"finalizada\" || status === \"expired\" || status.startsWith(\"cancelada\");`,
     );
   }
 
@@ -91,6 +91,25 @@ patch('.work/corridas/src/hooks/use-push-notifications.tsx', (source) => {
 
 patch('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx', (source) => {
   let next = source;
+
+  // Evita que oscilações muito curtas do canal Realtime façam o aviso
+  // "Reconectando a corrida" piscar durante a busca por motorista.
+  if (!next.includes('APOIS_REALTIME_RECONNECT_GRACE_V1')) {
+    next = next
+      .replace(
+        '  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);',
+        '  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);\n  // APOIS_REALTIME_RECONNECT_GRACE_V1\n  const [showReconnectNotice, setShowReconnectNotice] = useState(false);',
+      )
+      .replace(
+        '  useEffect(() => {\n    if (rideId) void loadRide(rideId);\n  }, [rideId, loadRide]);',
+        '  useEffect(() => {\n    if (rideId) void loadRide(rideId);\n  }, [rideId, loadRide]);\n\n  useEffect(() => {\n    if (screenState !== "active" || isRealtimeConnected) {\n      setShowReconnectNotice(false);\n      return;\n    }\n\n    const reconnectTimer = window.setTimeout(() => {\n      setShowReconnectNotice(true);\n    }, 4000);\n\n    return () => window.clearTimeout(reconnectTimer);\n  }, [screenState, isRealtimeConnected]);',
+      )
+      .replace(
+        '{screenState === "active" && !isRealtimeConnected && (',
+        '{showReconnectNotice && (',
+      );
+  }
+
   next = next.replace(
     '                {status === "motorista_a_caminho" && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
     '                {["motorista_a_caminho", "motorista_chegou"].includes(status) && (\n                  <SecurityCodeCard code={ride.security_code} />\n                )}',
@@ -122,8 +141,27 @@ console.log('[OK] Corridas runtime reconciliado com o snapshot atual');
 
 requireMarkers(
   '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
-  ['PassengerMap', '["motorista_a_caminho", "motorista_chegou"].includes(status)'],
-  'Corridas usa mapa ativo e PIN do snapshot real',
+  [
+    'PassengerMap',
+    '["motorista_a_caminho", "motorista_chegou"].includes(status)',
+    'APOIS_REALTIME_RECONNECT_GRACE_V1',
+    'setShowReconnectNotice(true)',
+    '}, 4000);',
+    '{showReconnectNotice && (',
+  ],
+  'Corridas usa mapa ativo, PIN do snapshot real e aviso de reconexão sem piscar',
 );
 
 console.log('[OK] Corridas: hardening de runtime alinhado ao pin 7b047f75 sem componentes obsoletos');
+
+
+// APOIS_CLIENT_STATUS_FAST_POLL_V1: fallback Realtime a cada 4s, apenas durante corrida ativa.
+{
+  const file=resolve('.work/corridas/src/hooks/rides/use-active-ride.tsx');
+  let source=readFileSync(file,'utf8');
+  const old='const POLLING_INTERVAL_MS = 12_000;';
+  if(source.includes(old)) source=source.replace(old,'const POLLING_INTERVAL_MS = 4_000; // APOIS_CLIENT_STATUS_FAST_POLL_V1');
+  if(!source.includes('APOIS_CLIENT_STATUS_FAST_POLL_V1'))throw new Error('[FAIL] intervalo do passageiro não identificado');
+  writeFileSync(file,source,'utf8');
+  console.log('[OK] Cliente: sincronização de status a cada 4s quando o Realtime atrasar.');
+}

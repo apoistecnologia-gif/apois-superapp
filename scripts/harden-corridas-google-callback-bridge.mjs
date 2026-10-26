@@ -32,20 +32,32 @@ const inlineGuard = `
         }
 `;
 
+const ownershipAwareForwarding =
+  html.includes("pendingProduct === 'corridas' || (!pendingProduct && lastSelectedModule() === 'corridas')") &&
+  html.includes("if (pendingProduct === 'entregas')") &&
+  html.includes("window.location.replace('../entregas/index.html')");
+
 if (!html.includes(inlineMarker)) {
-  const forwardingBlock = /if\s*\(\s*path\s*===\s*['"]reset['"]\s*\|\|\s*path\s*===\s*['"]callback['"]\s*\|\|\s*path\s*===\s*['"]email-change['"]\s*\)\s*\{/;
-  const forwardingMatch = forwardingBlock.exec(html);
-
-  if (forwardingMatch?.index >= 0) {
-    html = html.slice(0, forwardingMatch.index) + inlineGuard + html.slice(forwardingMatch.index);
+  // O bridge atual já diferencia ownership do callback antes de qualquer
+  // encaminhamento para Entregas. Nesse formato não precisamos injetar o guard
+  // legado no meio do bloco, porque isso duplicaria o tratamento do callback.
+  if (ownershipAwareForwarding) {
+    console.log('[OK] corridas: bridge atual já protege ownership do callback antes do encaminhamento para Entregas');
   } else {
-    const appearsToForwardToEntregas =
-      html.includes('entregasAuthForwardKey') &&
-      html.includes('../entregas/index.html') &&
-      html.includes("path === 'callback'");
+    const forwardingBlock = /if\s*\(\s*path\s*===\s*['"]reset['"]\s*\|\|\s*path\s*===\s*['"]callback['"]\s*\|\|\s*path\s*===\s*['"]email-change['"]\s*\)\s*\{/;
+    const forwardingMatch = forwardingBlock.exec(html);
 
-    if (appearsToForwardToEntregas) {
-      throw new Error('[FAIL] corridas: encaminhamento auth para Entregas existe, mas formato não foi reconhecido com segurança');
+    if (forwardingMatch?.index >= 0) {
+      html = html.slice(0, forwardingMatch.index) + inlineGuard + html.slice(forwardingMatch.index);
+    } else {
+      const appearsToForwardToEntregas =
+        html.includes('entregasAuthForwardKey') &&
+        html.includes('../entregas/index.html') &&
+        html.includes("path === 'callback'");
+
+      if (appearsToForwardToEntregas) {
+        throw new Error('[FAIL] corridas: encaminhamento auth para Entregas existe, mas formato não foi reconhecido com segurança');
+      }
     }
   }
 }
@@ -128,7 +140,11 @@ const stillForwardsSharedCallbackToEntregas =
   html.includes('../entregas/index.html') &&
   html.includes("path === 'callback'");
 
-if (stillForwardsSharedCallbackToEntregas && !html.includes(inlineMarker)) {
+if (
+  stillForwardsSharedCallbackToEntregas &&
+  !html.includes(inlineMarker) &&
+  !ownershipAwareForwarding
+) {
   throw new Error('[FAIL] corridas: callback compartilhado ainda pode ser encaminhado para Entregas antes de ser consumido');
 }
 

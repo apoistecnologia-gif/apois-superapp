@@ -38,14 +38,14 @@ const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/partner-entrega
 const path = resolve(root, workspace, 'src/components/CourierRouteMap.tsx');
 let source = readFileSync(path, 'utf8');
 
-source = source.replace('const BRAND_GREEN = "#39B54A";\nconst BRAND_PURPLE = "#6A1B9A";', 'const APOIS_GOLD = "#F6BE1C";');
-source = source.replaceAll('BRAND_PURPLE', 'APOIS_GOLD');
+source = source.replace('const BRAND_GREEN = "#39B54A";\nconst BRAND_PURPLE = "#6A1B9A";', 'const APOIS_RED = "#E51B23";');
+source = source.replace('const BRAND_GOLD = "#F6BE1C";', 'const APOIS_RED = "#E51B23";');
+source = source.replaceAll('BRAND_PURPLE', 'APOIS_RED');
+source = source.replaceAll('BRAND_GOLD', 'APOIS_RED');
 source = source.replace('const BRAND_GREEN = "#39B54A";\n', '');
-source = source.replace('const APOIS_GOLD = "#C88A08";', 'const APOIS_GOLD = "#F6BE1C";');
-// A fonte já pode ter migrado nativamente as constantes verde/roxa direto para
-// dourado sob o nome BRAND_GOLD; padroniza para o nome APOIS_GOLD esperado
-// pelas demais verificações do pipeline (build-partner-modules.sh, audit-partner-superapp.mjs).
-source = source.replaceAll('BRAND_GOLD', 'APOIS_GOLD');
+if (!source.includes('const APOIS_RED = "#E51B23";')) {
+  source = source.replace(/(type RouteMetrics = \{[\s\S]*?\};\n)/, '$1\nconst APOIS_RED = "#E51B23";\n');
+}
 
 const oldBrowserKey = 'const browserKey = (import.meta as any).env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined;';
 const newBrowserKey = 'const browserKey = ((import.meta as any).env.VITE_GOOGLE_MAPS_BROWSER_KEY || (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || (import.meta as any).env.VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY) as string | undefined;';
@@ -58,7 +58,7 @@ source = source.replaceAll(oldMapId, newMapId);
 source = source.replaceAll('browserKey && mapId && currentPosition', 'browserKey && currentPosition');
 source = source.replaceAll('{browserKey && mapId\n            ? "Aguardando o GPS retornar sua posição atual."\n            : "Mapa indisponível: configuração do Google Maps não foi carregada."}', '{browserKey\n            ? "Aguardando o GPS retornar sua posição atual."\n            : "Mapa indisponível: chave do Google Maps não foi carregada."}');
 source = source.replaceAll('browserKey && mapId ? (', 'browserKey ? (');
-source = source.replaceAll('shadow-[0_8px_22px_rgba(106,27,154,0.24)]', 'shadow-[0_8px_22px_rgba(246,190,28,0.20)]');
+source = source.replaceAll('shadow-[0_8px_22px_rgba(106,27,154,0.24)]', 'shadow-[0_8px_22px_rgba(229,27,35,0.20)]');
 
 source = source.replace(
   '              center={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              zoom={14}',
@@ -66,17 +66,17 @@ source = source.replace(
 );
 
 for (const marker of [
-  'const APOIS_GOLD = "#F6BE1C";',
+  'const APOIS_RED = "#E51B23";',
   'VITE_GOOGLE_MAPS_API_KEY',
   'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY',
   '"DEMO_MAP_ID"',
-  'strokeColor: APOIS_GOLD',
+  'strokeColor: APOIS_RED',
   'defaultCenter={{ lat: currentPosition.lat, lng: currentPosition.lng }}',
   'defaultZoom={14}',
 ]) {
   if (!source.includes(marker)) throw new Error(`Entregador Parceiro: hardening do mapa incompleto (${marker}).`);
 }
-if (source.includes('const BRAND_PURPLE') || source.includes('const BRAND_GREEN')) throw new Error('Entregador Parceiro: constantes de marca verde/roxa antigas permaneceram no mapa.');
+if (source.includes('const BRAND_PURPLE') || source.includes('const BRAND_GREEN') || source.includes('const BRAND_GOLD')) throw new Error('Entregador Parceiro: constantes de marca antigas permaneceram no mapa.');
 if (source.includes('center={{ lat: currentPosition.lat, lng: currentPosition.lng }}\n              zoom={14}')) {
   throw new Error('Entregador Parceiro: mapa de espera ainda força a câmera em cada atualização do GPS.');
 }

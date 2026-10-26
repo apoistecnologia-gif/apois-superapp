@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 let failed = false;
 const fail = (message) => { console.error(`[FAIL] Entregas brand sweep v24: ${message}`); failed = true; };
 const ok = (message) => console.log(`[OK] Entregas brand sweep v24: ${message}`);
-
 function read(path) {
   const full = resolve(path);
   if (!existsSync(full)) { fail(`arquivo ausente ${path}`); return ''; }
@@ -13,19 +12,16 @@ function read(path) {
 
 const sweep = read('scripts/harden-entregas-brand-sweep.mjs');
 for (const marker of [
-  "legacyGreenHex = ['#39B54A', '#39b54a']",
-  "legacyPurpleHex = ['#6A1B9A', '#6a1b9a']",
-  "legacyTealHex = ['#35A9C9', '#35a9c9', '#1F7894', '#1f7894']",
-  ".replaceAll('rgba(57,181,74,', 'rgba(246,190,28,')",
-  ".replaceAll('rgba(106,27,154,', 'rgba(200,138,8,')",
-  ".replaceAll('rgba(53,169,201,', 'rgba(246,190,28,')",
-  "/apois.*logo.*\\.svg$/i",
-  ".replaceAll('#39B54A', '#F6BE1C')",
+  "const isCustomerWorkspace = workspace === '.work/entregas';",
+  "const brandPrimary = '#E51B23';",
+  "const brandSecondary = '#C9141B';",
+  "const brandPrimaryRgb = '229,27,35';",
+  "const brandSecondaryRgb = '201,20,27';",
   'Estados semânticos continuam livres para green/red/amber',
 ]) {
   if (!sweep.includes(marker)) fail(`sweep incompleto: ${marker}`);
 }
-if (!failed) ok('varredura remove cores explícitas da marca antiga, converte logos e preserva classes semânticas de estado');
+if (!failed) ok('varredura usa a identidade vermelho/branco tanto no Cliente quanto no Parceiro');
 
 const customerUx = read('scripts/harden-entregas-superapp-customer-ux.mjs');
 if (!customerUx.includes("import './harden-entregas-brand-sweep.mjs';")) fail('Cliente Entregas não executa brand sweep no pipeline');
@@ -35,17 +31,20 @@ const courierMap = read('scripts/harden-partner-entregador-map.mjs');
 for (const marker of [
   "import './harden-partner-entregador-theme.mjs';",
   "import './harden-entregas-brand-sweep.mjs';",
-  'const APOIS_GOLD = "#F6BE1C";',
-  "source.includes('const BRAND_PURPLE') || source.includes('const BRAND_GREEN')",
+  'const APOIS_RED = "#E51B23";',
 ]) {
-  if (!courierMap.includes(marker)) fail(`Entregador sem proteção final: ${marker}`);
+  if (!courierMap.includes(marker)) fail(`Entregador sem proteção visual final: ${marker}`);
 }
-if (!failed) ok('Entregador aplica tema, varredura e rota dourada sem constantes antigas');
+const partnerRed = read('scripts/harden-partner-red-visual.mjs');
+for (const marker of ['APOIS_PARTNER_COURIER_RED_VISUAL_V1', '#E51B23', '#C9141B']) {
+  if (!partnerRed.includes(marker)) fail(`Entregador sem migração visual final: ${marker}`);
+}
+if (!failed) ok('Entregador aplica identidade vermelho/branco e rota vermelha APOIS após o hardening operacional');
 
 const brandTheme = read('scripts/harden-entregas-superapp-brand-theme.mjs');
-for (const marker of ['APOIS_CUSTOMER_GOLD_V1', '#F6BE1C', '#C88A08', '#050505']) {
+for (const marker of ['APOIS_CUSTOMER_RED_V2', '#E51B23', '#C9141B']) {
   if (!brandTheme.includes(marker)) fail(`tema Cliente sem marcador ${marker}`);
 }
-if (!failed) ok('tema Cliente preserva base preto/dourado oficial');
+if (!failed) ok('tema Cliente Entregas está na nova identidade vermelha');
 
 process.exit(failed ? 1 : 0);

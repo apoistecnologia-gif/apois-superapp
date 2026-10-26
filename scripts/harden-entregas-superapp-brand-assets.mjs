@@ -1,19 +1,34 @@
-import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-const source = resolve('superapp/branding/apois-launcher.png');
+const source = resolve('superapp/branding/apois-client-red-logo.b64');
 if (!existsSync(source) || statSync(source).size < 1024) {
   throw new Error('[FAIL] Entregas: arte oficial APOIS ausente ou inválida');
 }
+const brandBytes = Buffer.from(readFileSync(source, 'utf8').trim(), 'base64');
+if (
+  brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
+  brandBytes.length < 4096 ||
+  brandBytes.readUInt32BE(16) !== 128 ||
+  brandBytes.readUInt32BE(20) !== 128
+) {
+  throw new Error('[FAIL] Entregas: base64 da marca APOIS não gerou o PNG oficial 128x128');
+}
+
+const brandDataUri = `data:image/png;base64,${brandBytes.toString('base64')}`;
+const dataModuleTarget = resolve('.work/entregas/src/assets/apoisClientBrandData.ts');
+mkdirSync(dirname(dataModuleTarget), { recursive: true });
+writeFileSync(dataModuleTarget, `const apoisClientBrand = ${JSON.stringify(brandDataUri)};\nexport default apoisClientBrand;\n`, 'utf8');
 
 for (const target of [
   '.work/entregas/public/apois-app-icon.png',
   '.work/entregas/public/favicon.png',
+  '.work/entregas/src/assets/apois-client-red-logo.png',
 ]) {
   const full = resolve(target);
   mkdirSync(dirname(full), { recursive: true });
-  copyFileSync(source, full);
-  if (!existsSync(full) || statSync(full).size !== statSync(source).size) {
+  writeFileSync(full, brandBytes);
+  if (!existsSync(full) || statSync(full).size !== brandBytes.length) {
     throw new Error(`[FAIL] Entregas: não foi possível instalar asset oficial em ${target}`);
   }
   console.log(`[OK] Entregas: asset oficial instalado em ${target}`);

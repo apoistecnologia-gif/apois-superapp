@@ -76,7 +76,7 @@ patch(
 
     next = next.replace(/<nav\b([\s\S]{0,900}?)className="([^"]*)"([\s\S]{0,200}?)>/g, (tag, before, classes, after) => {
       if (!classes.includes('fixed') || !classes.includes('bottom-0') || (!classes.includes('grid') && !classes.includes('border-t'))) return tag;
-      let value = replaceClassToken(classes, 'pb-[max(0.65rem,env(safe-area-inset-bottom))]', 'pb-[max(0.85rem,env(safe-area-inset-bottom))]');
+      let value = replaceClassToken(classes, 'pb-[max(0.65rem,env(safe-area-inset-bottom))]', 'pb-[max(44px,env(safe-area-inset-bottom))]');
       value = replaceClassToken(value, 'pt-2', 'pt-2.5');
       return `<nav${before}className="${value}"${after}>`;
     });
@@ -126,7 +126,7 @@ patch(
     if (!/h-6\s+w-6|w-6\s+h-6/.test(source)) failures.push('ícone do rodapé');
     const panelHeader = source.match(/<header\b[\s\S]{0,900}?grid-cols-\[2\.75rem_1fr_2\.75rem\][\s\S]{0,900}?>/)?.[0] ?? '';
     if (!panelHeader || !panelHeader.includes('pt-[max(env(safe-area-inset-top),0.65rem)]')) failures.push('safe-area do painel');
-    if (!/pb-\[max\(0\.85rem,env\(safe-area-inset-bottom\)\)\]/.test(source)) failures.push('safe-area do rodapé');
+    if (!/pb-\[max\(44px,env\(safe-area-inset-bottom\)\)\]/.test(source)) failures.push('safe-area do rodapé');
     return failures.length ? failures.join(', ') : true;
   },
   'entregador: rodapé usa nomenclatura Entregas, alvos confortáveis e safe-area correta',
@@ -265,8 +265,8 @@ patch(
       }
       updatedAttrs = updatedAttrs.replace(/className="([^"]*)"/, (_m, classes) => {
         let value = normalizeClassList(classes);
-        if (!value.includes('data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]')) {
-          value = ensureClasses(value, ['data-[active-job=true]:pb-[max(env(safe-area-inset-bottom),1.25rem)]']);
+        if (!value.includes('data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]')) {
+          value = ensureClasses(value, ['data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]']);
         }
         return `className="${value}"`;
       });
@@ -293,11 +293,25 @@ patch(
     const hasBasicProfileGuard = /disabled=\{Boolean\(activeJob\)\}/.test(source) && /!activeJob\s*&&\s*setProfileOpen\(true\)/.test(source);
     if (!hasStrongProfileGuard && !hasBasicProfileGuard) failures.push('bloqueio do perfil durante entrega');
     if (!/data-active-job=\{activeJob\s*\?\s*"true"\s*:\s*"false"\}/.test(source)) failures.push('estado estrutural do main');
-    if (!/data-\[active-job=true\]:pb-\[max\(env\(safe-area-inset-bottom\),1\.25rem\)\]/.test(source)) failures.push('safe-area inferior da entrega ativa');
+    if (!/data-\[active-job=true\]:pb-\[max\(52px,env\(safe-area-inset-bottom\)\)\]/.test(source)) failures.push('safe-area inferior da entrega ativa');
     if (!/\{!activeJob(?:\s*&&\s*!completedJob)?\s*\?\s*\([\s\S]{0,1800}?<CourierBottomNav[\s\S]{0,1400}?active="home"/.test(source)) failures.push('rodapé HOME condicionado à ausência de entrega ativa');
     return failures.length ? failures.join(', ') : true;
   },
   'entregador: tela principal respeita safe-area e não abre painéis/rodapé durante entrega ativa',
+);
+
+patch(
+  'src/components/CourierCompletionSupport.tsx',
+  (source) => source
+    .replace(
+      'className="w-full max-w-lg rounded-[2rem] border border-accent/30 bg-[#090909] p-4 pb-[max(env(safe-area-inset-bottom),1rem)] text-white shadow-[0_-20px_70px_rgba(0,0,0,0.75)]"',
+      'className="max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[2rem] border border-accent/30 bg-[#090909] px-4 pt-4 pb-[max(52px,env(safe-area-inset-bottom))] text-white shadow-[0_-20px_70px_rgba(0,0,0,0.75)]"',
+    ),
+  (source) =>
+    source.includes('max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]') &&
+    source.includes('overflow-y-auto overscroll-contain') &&
+    source.includes('pb-[max(52px,env(safe-area-inset-bottom))]'),
+  'entregador: suporte durante entrega permanece utilizável com teclado e barra Android',
 );
 
 console.log(`[OK] ergonomia, foco operacional, mapas, nomenclatura e safe-area do Entregador Parceiro endurecidas em ${workspace}`);

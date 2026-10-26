@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
-const officialBranding = resolve(root, '../branding/apois-launcher.png');
+const officialBranding = resolve(root, '../branding/apois-client-red-logo.b64');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
@@ -16,9 +16,34 @@ if (!existsSync(officialBranding)) {
   console.error(`[FAIL] arte oficial APOIS não existe em ${officialBranding}`);
   process.exit(1);
 }
+const officialBrandingBytes = Buffer.from(readFileSync(officialBranding, 'utf8').trim(), 'base64');
+const pngSignature = officialBrandingBytes.subarray(0, 8).toString('hex');
+const pngWidth = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(16) : 0;
+const pngHeight = officialBrandingBytes.length >= 24 ? officialBrandingBytes.readUInt32BE(20) : 0;
+if (pngSignature !== '89504e470d0a1a0a' || officialBrandingBytes.length < 4096 || pngWidth !== 128 || pngHeight !== 128) {
+  console.error('[FAIL] arte oficial APOIS em base64 não decodifica para um PNG válido');
+  process.exit(1);
+}
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
-cpSync(officialBranding, resolve(dist, 'assets/apois-brand.png'));
-console.log('[OK] arte oficial APOIS copiada para o shell cliente');
+writeFileSync(resolve(dist, 'assets/apois-brand.png'), officialBrandingBytes);
+
+// O shell é a primeira tela exibida pelo WebView. Além do arquivo físico,
+// embuta a mesma arte no HTML para que a marca não dependa de resolução de
+// caminho/asset no Capacitor e nunca resulte em um cabeçalho vazio.
+const shellIndexPath = resolve(dist, 'index.html');
+let shellHtml = readFileSync(shellIndexPath, 'utf8');
+const brandDataUri = `data:image/png;base64,${officialBrandingBytes.toString('base64')}`;
+if (!shellHtml.includes('./assets/apois-brand.png')) {
+  console.error('[FAIL] shell cliente perdeu o marcador da logomarca APOIS');
+  process.exit(1);
+}
+shellHtml = shellHtml.replace('./assets/apois-brand.png', brandDataUri);
+writeFileSync(shellIndexPath, shellHtml, 'utf8');
+if (!readFileSync(shellIndexPath, 'utf8').includes('data:image/png;base64,')) {
+  console.error('[FAIL] logomarca APOIS não foi embutida no shell final');
+  process.exit(1);
+}
+console.log(`[OK] arte oficial APOIS decodificada e embutida no shell cliente (${pngWidth}x${pngHeight})`);
 
 // Arquitetura oficial: este APK é exclusivamente do cliente.
 // Motorista e Entregador pertencem ao Superapp Parceiro e não entram aqui.
@@ -62,17 +87,17 @@ const moduleBridgeScript = `
     button.innerHTML = '<span aria-hidden="true">⇄</span>';
     button.style.position = 'fixed';
     button.style.right = '14px';
-    button.style.top = 'calc(max(env(safe-area-inset-top), 12px) + 56px)';
+    button.style.top = 'calc(max(env(safe-area-inset-top), 12px) + 154px)';
     button.style.zIndex = '2147483646';
     button.style.width = '44px';
     button.style.height = '44px';
     button.style.borderRadius = '14px';
-    button.style.border = '1px solid rgba(255,255,255,.14)';
-    button.style.background = 'rgba(5,5,5,.88)';
-    button.style.color = '#f2b414';
+    button.style.border = '1px solid rgba(229,27,35,.20)';
+    button.style.background = 'rgba(255,255,255,.96)';
+    button.style.color = '#E51B23';
     button.style.fontSize = '24px';
     button.style.fontWeight = '900';
-    button.style.boxShadow = '0 8px 26px rgba(0,0,0,.38)';
+    button.style.boxShadow = '0 8px 24px rgba(17,17,17,.14)';
     button.style.backdropFilter = 'blur(10px)';
     button.style.webkitBackdropFilter = 'blur(10px)';
     button.style.display = 'grid';
@@ -139,57 +164,7 @@ for (const moduleName of ['corridas', 'entregas']) {
   console.log(`[OK] alternador de módulos injetado em ${moduleName}`);
 }
 
-// O shell entra nos módulos usando location.replace(), portanto o WebView não mantém
-// uma entrada anterior no histórico. No Android isso fazia o botão nativo "Voltar"
-// ficar sem efeito dentro do módulo Entregas. Injetamos um handler apenas no bundle
-// embarcado do Superapp, sem alterar o comportamento do APK independente de Entregas.
-const entregasIndex = resolve(dist, 'modules/entregas/index.html');
-if (existsSync(entregasIndex)) {
-  const backNavigationScript = `
-<script id="apois-superapp-entregas-back-navigation">
-(function () {
-  var appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
-  if (!appPlugin || typeof appPlugin.addListener !== 'function') return;
-
-  function routePath() {
-    var hash = String(window.location.hash || '').replace(/^#/, '');
-    var path = hash.split('?')[0] || '/';
-    return path.charAt(0) === '/' ? path : '/' + path;
-  }
-
-  Promise.resolve(appPlugin.addListener('backButton', function () {
-    var path = routePath();
-
-    // Login/cadastro públicos voltam para a tela inicial do APOIS Entregas.
-    if (path === '/login' || path === '/register' || path === '/cadastro' || path === '/recuperar-senha') {
-      window.location.hash = '#/';
-      return;
-    }
-
-    // Na tela inicial do Entregas, voltar retorna ao seletor Corridas/Entregas.
-    if (path === '/') {
-      window.location.replace('../../index.html');
-      return;
-    }
-
-    // Demais telas respeitam o histórico do módulo; sem histórico, retornam ao início.
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.hash = '#/';
-    }
-  })).catch(function () {});
-})();
-</script>`;
-
-  const html = readFileSync(entregasIndex, 'utf8');
-  if (!html.includes('apois-superapp-entregas-back-navigation')) {
-    const patched = html.includes('</body>')
-      ? html.replace('</body>', `${backNavigationScript}\n</body>`)
-      : `${html}\n${backNavigationScript}\n`;
-    writeFileSync(entregasIndex, patched, 'utf8');
-    console.log('[OK] navegação do botão Voltar Android injetada no módulo Entregas');
-  }
-}
-
+// A navegação física do Android já é tratada pelo bridge injetado em
+// build-isolated-module.mjs. Não registrar um segundo listener aqui: dois
+// backButton handlers causam navegação dupla/race no módulo Entregas.
 console.log(`[OK] shell cliente gerado em ${dist}: Corridas + Entregas`);

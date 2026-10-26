@@ -1,0 +1,39 @@
+import {readFileSync,writeFileSync} from "node:fs";
+import {resolve} from "node:path";
+const target=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motorista","src/routes/motorista.app.tsx");
+let s=readFileSync(target,"utf8");
+const oldVoice='      } else if (active.status === "finalizada") {\n        void speak("Corrida finalizada.", { interrupt: true });\n      }';
+if(!s.includes(oldVoice))throw Error("[FAIL] voz final");
+s=s.replace(oldVoice,'      } else if (active.status === "finalizada") {\n        // Só anunciar após sucesso da ação explícita de finalizar.\n      }');
+const finishMarks=[
+  'setLegKm(null);\n            resetSpokenCache();',
+  'setLegKm(null);\n              resetSpokenCache();'
+];
+for(const mark of finishMarks){
+  if(!s.includes(mark))throw Error("[FAIL] pós-finalização canônica ausente");
+  s=s.replace(mark,mark+'\n            void speak("Corrida finalizada.", { dedupKey: completedRide.id + ":completed-confirmed", interrupt: true });');
+}
+const a=s.indexOf("function IncomingOffer("),b=s.indexOf("function InfoCard(",a);
+if(a<0||b<0)throw Error("[FAIL] oferta");
+let offer=s.slice(a,b);
+offer=offer.replace('className="relative flex w-full max-w-md flex-col rounded-t-[28px] border border-border bg-card','className="relative flex w-full max-w-md flex-col rounded-t-[28px] border border-[#E5E7EB] bg-white text-[#111827]');
+offer=offer.replaceAll('text-foreground','text-[#111827]').replaceAll('text-muted-foreground','text-[#4B5563]').replaceAll('bg-background/40','bg-[#F8F9FB]').replaceAll('border border-border','border border-[#E2E4E8]').replace('text-[#F6BE1C]','text-[#B91C1C]').replace('border-t border-white/5 bg-[#08090A]','border-t border-[#E5E7EB] bg-white');
+offer=offer.replace('style={{ paddingBottom: "16px" }}','style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}');
+s=s.slice(0,a)+offer+s.slice(b);
+const c=s.indexOf("function InfoCard("),d=s.indexOf("function Metric(",c);
+if(c<0||d<0)throw Error("[FAIL] cards");
+let info=s.slice(c,d).replaceAll('bg-background/40','bg-[#F8F9FB]').replaceAll('text-foreground','text-[#111827]').replaceAll('text-muted-foreground','text-[#4B5563]').replaceAll('border border-border','border border-[#E2E4E8]');
+s=s.slice(0,c)+info+s.slice(d);
+const e=s.indexOf("function PickupNavOverlay("),f=s.indexOf("function CircleAction(",e);
+if(e<0||f<0)throw Error("[FAIL] rota embarque");
+let pickup=s.slice(e,f).replace('text-white/60','text-white/90').replace('bg-white/[0.05]','bg-white/[0.13]');
+const darkStart=pickup.indexOf('className="fixed inset-x-0 bottom-0');
+if(darkStart<0)throw Error("[FAIL] rodapé escuro nao encontrado");
+const beforeDark=pickup.slice(0,darkStart);
+let dark=pickup.slice(darkStart);
+dark=dark.replaceAll('text-[#111111]','text-white').replaceAll('text-white/60','text-white/90').replaceAll('bg-white/[0.05]','bg-white/[0.13]');
+pickup=beforeDark+dark;
+s=s.slice(0,e)+pickup+s.slice(f);
+if(!s.includes('completed-confirmed')||!s.includes('bg-white text-[#111827]'))throw Error("[FAIL] verificacao");
+writeFileSync(target,s,"utf8");
+console.log("[OK] Corridas Parceiro: voz final confirmada e oferta legível.");

@@ -18,7 +18,7 @@ workflows:
         EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"
         APOIS_STRICT_NATIVE_CONFIG: "1"
         APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"
-        CORRIDAS_PUBLIC_APP_URL: "https://vqtucstyduxrqjgyigfk.supabase.co/functions/v1/public-ride-tracker"
+        CORRIDAS_PUBLIC_APP_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co/functions/v1/public-ride-tracker"
     scripts:
       - name: Install pinned Bun
         script: |
@@ -40,8 +40,9 @@ workflows:
           set -euo pipefail
           : "${CORRIDAS_VITE_SUPABASE_URL:?Add CORRIDAS_VITE_SUPABASE_URL to Codemagic}"
           : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?Add CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY to Codemagic}"
-          : "${VITE_SUPABASE_URL:?Existing APOIS Entregas VITE_SUPABASE_URL is required}"
-          : "${VITE_SUPABASE_PUBLISHABLE_KEY:?Existing APOIS Entregas publishable key is required}"
+          # O Cliente Entregas é fixado no projeto de produção pelo builder e
+          # não herda mais VITE_SUPABASE_* genéricos/legados do ambiente.
+          echo '[OK] Entregas usa Supabase canônico fixado e validado pelo pipeline'
           : "${CORRIDAS_WEB_MAPS_API_KEY:?Add CORRIDAS_WEB_MAPS_API_KEY to Codemagic}"
           : "${CORRIDAS_ANDROID_MAPS_API_KEY:?Add CORRIDAS_ANDROID_MAPS_API_KEY to Codemagic}"
           : "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:?Add unified Firebase google-services.json for br.com.apois.app to Codemagic}"
@@ -64,25 +65,53 @@ workflows:
           npm run audit:hardening
           npm run audit:play-store
           npm run audit:release-integrity
-          echo '[OK] auditorias obrigatórias concluídas sem falhas'
+          npm run verify:rides-push-firebase
+          npm run verify:release-requirements
+          echo '[OK] auditorias e gates de release concluídos sem falhas'
       - name: Build Corridas + Entregas + shell cliente
         script: |
           set -euo pipefail
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
+          echo "[INFO] APOIS_SOURCE_COMMIT=$(git rev-parse HEAD)"
+          echo "[INFO] APOIS_CATEGORY_GATE=SPRITE_V6"
           npm run build:corridas
           npm run build:entregas
           npm run build:shell
           npm run harden:auth-deeplinks
           npm run inject:push-routing
           npm run verify:dist
-          test -s superapp/shell/dist/modules/corridas/index.html
-          test -s superapp/shell/dist/modules/entregas/index.html
-          test ! -e superapp/shell/dist/modules/motorista
-          grep -R -Fq 'public-ride-tracker' superapp/shell/dist/modules/corridas
-          grep -R -Fq 'create-merchant-mercadopago-pix' superapp/shell/dist/modules/entregas
-          grep -R -Fq 'process-superapp-refund' superapp/shell/dist/modules/entregas
-          echo '[OK] Superapp Cliente contém somente Corridas + Entregas e integrações financeiras endurecidas'
+          test -s superapp/shell/dist/modules/corridas/index.html || { echo '[FAIL] index Corridas ausente'; exit 1; }
+          test -s superapp/shell/dist/modules/entregas/index.html || { echo '[FAIL] index Entregas ausente'; exit 1; }
+          test ! -e superapp/shell/dist/modules/motorista || { echo '[FAIL] módulo Motorista apareceu no Cliente'; exit 1; }
+          grep -Fq 'data:image/png;base64,' superapp/shell/dist/index.html || { echo '[FAIL] logo inline ausente no shell'; exit 1; }
+          grep -Fq 'APOIS_NATIVE_MAP_FALLBACK_V3' .work/corridas/src/components/map/PassengerMap.tsx || { echo '[FAIL] hardener de mapa nativo V3 ausente no workspace final'; exit 1; }
+          grep -R -Fq 'data:image/webp;base64,' superapp/shell/dist/modules/corridas || { echo '[FAIL] sprite local das categorias não chegou inline ao bundle Corridas'; exit 1; }
+          grep -Fq 'APOIS_CATEGORY_VEHICLE_SPRITE_V6' .work/corridas/src/components/pricing/CategorySelector.tsx || { echo '[FAIL] CategorySelector não usa o sprite APOIS validado das categorias'; exit 1; }
+          grep -Fq 'validated-sprite-v6' .work/corridas/src/components/pricing/CategorySelector.tsx || { echo '[FAIL] CategorySelector sem marcador do sprite APOIS validado'; exit 1; }
+          if grep -R -Fq '/assets/categories/apois-vehicles.webp' superapp/shell/dist/modules/corridas; then
+            echo '[FAIL] bundle Corridas referencia asset externo de categorias em vez do sprite inline'
+            exit 1
+          fi
+          if grep -Fq 'Para onde vamos?' .work/corridas/src/routes/_authenticated.inicio.tsx; then
+            echo '[FAIL] home Corridas reintroduziu busca duplicada no topo'
+            exit 1
+          fi
+          grep -R -Fq 'ptgkwyyolrdgnqketkjj.supabase.co' superapp/shell/dist/modules/entregas || { echo '[FAIL] bundle Entregas sem Supabase canônico'; exit 1; }
+          if grep -R -Fq 'sbvhdgyuuperszlsllji.supabase.co' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] bundle Entregas ainda contém o Supabase aposentado'
+            exit 1
+          fi
+          grep -R -Fq 'public-ride-tracker' superapp/shell/dist/modules/corridas || { echo '[FAIL] public-ride-tracker ausente do bundle Corridas'; exit 1; }
+          if grep -R -Fq 'create-merchant-mercadopago-pix' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] bundle Entregas reintroduziu create-merchant-mercadopago-pix aposentado'
+            exit 1
+          fi
+          if grep -R -Fq 'process-superapp-refund' superapp/shell/dist/modules/entregas; then
+            echo '[FAIL] bundle Entregas reintroduziu process-superapp-refund aposentado'
+            exit 1
+          fi
+          echo '[OK] Superapp Cliente contém somente Corridas + Entregas e não reintroduz gateways legados no bundle'
       - name: Create and harden Capacitor Android project
         script: |
           set -euo pipefail
@@ -96,6 +125,12 @@ workflows:
           bunx cap sync android
           cd ../..
           node scripts/configure-superapp-android.mjs
+          MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
+          grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
+          if grep -Fq 'android:name="com.google.android.geo.API_KEY" android:value=""' "$MANIFEST"; then
+            echo '[FAIL] Google Maps Android key ficou vazia no AndroidManifest'
+            exit 1
+          fi
           node scripts/install-superapp-launcher.mjs
           grep -Fq "versionCode ${APP_VERSION_CODE}" superapp/shell/android/app/build.gradle
           grep -Fq "versionName \"${APP_VERSION_NAME}\"" superapp/shell/android/app/build.gradle
@@ -206,6 +241,12 @@ workflows:
           fi
           grep -R -Fq 'register_courier_push_device_v2' superapp/partner-shell/dist/modules/entregador
           grep -R -Fq 'br.com.apois.parceiro' superapp/partner-shell/dist/modules/entregador
+          grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/entregador
+          if grep -R -Fqi '#F6BE1C' superapp/partner-shell/dist/modules/motorista superapp/partner-shell/dist/modules/entregador; then
+            echo '[FAIL] identidade dourada antiga permaneceu no bundle Parceiro'
+            exit 1
+          fi
       - name: Create APOIS Parceiro Android project
         script: |
           set -euo pipefail
@@ -229,7 +270,7 @@ workflows:
           grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
           test -s superapp/partner-shell/android/app/google-services.json
           test -s superapp/partner-shell/android/app/src/main/res/drawable/apois_partner_splash.xml
-          grep -R -Fq 'windowSplashScreenBackground">#050505<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
+          grep -R -Fq 'windowSplashScreenBackground">#F7F7F8<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
           grep -R -Fq 'windowSplashScreenAnimatedIcon">@mipmap/ic_launcher<' superapp/partner-shell/android/app/src/main/res/values*/styles.xml
           if grep -Fq 'android:scheme="br.com.apois.app"' "$MANIFEST" && grep -Fq 'android:pathPrefix="/mercadopago"' "$MANIFEST"; then
             echo '[FAIL] APOIS Parceiro ainda registra callback Mercado Pago do app cliente'
@@ -253,7 +294,11 @@ workflows:
           "$BUILD_TOOLS/apksigner" verify --verbose "$SIGNED"
           ACTUAL_SHA1="$("$BUILD_TOOLS/apksigner" verify --print-certs "$SIGNED" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -n 1 | tr '[:lower:]' '[:upper:]')"
           test -n "$ACTUAL_SHA1"
-          if [ "$ACTUAL_SHA1" != "$EXPECTED_SIGNING_SHA1" ]; then
+          NORMALIZED_ACTUAL_SHA1="$(printf '%s' "$ACTUAL_SHA1" | tr -cd '[:xdigit:]' | tr '[:lower:]' '[:upper:]')"
+          NORMALIZED_EXPECTED_SHA1="$(printf '%s' "$EXPECTED_SIGNING_SHA1" | tr -cd '[:xdigit:]' | tr '[:lower:]' '[:upper:]')"
+          test -n "$NORMALIZED_ACTUAL_SHA1"
+          test -n "$NORMALIZED_EXPECTED_SHA1"
+          if [ "$NORMALIZED_ACTUAL_SHA1" != "$NORMALIZED_EXPECTED_SHA1" ]; then
             echo "[FAIL] certificado do APK Parceiro diverge do esperado: $ACTUAL_SHA1"
             exit 1
           fi

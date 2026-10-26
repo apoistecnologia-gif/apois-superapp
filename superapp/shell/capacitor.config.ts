@@ -5,13 +5,14 @@ const config: CapacitorConfig = {
   appName: 'APOIS Cliente',
   webDir: 'dist',
   android: {
+    backgroundColor: '#00000000',
     allowMixedContent: false,
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 1200,
       launchAutoHide: true,
-      backgroundColor: '#050505',
+      backgroundColor: '#FFFFFF',
       androidScaleType: 'CENTER_INSIDE',
       showSpinner: false,
     },
@@ -21,8 +22,8 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     StatusBar: {
-      style: 'LIGHT',
-      backgroundColor: '#050505',
+      style: 'DARK',
+      backgroundColor: '#FFFFFF',
       overlaysWebView: false,
     },
   },

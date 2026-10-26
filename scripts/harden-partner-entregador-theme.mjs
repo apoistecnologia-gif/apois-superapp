@@ -6,66 +6,87 @@ const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/partner-entrega
 const path = resolve(root, workspace, 'src/system-theme.css');
 let source = readFileSync(path, 'utf8');
 
-const marker = '/* APOIS_PARTNER_COURIER_GOLD_V1 */';
+const legacyGoldMarker = '/* APOIS_ENTREGAS_SYSTEM_GOLD_V1 */';
+if (source.includes(legacyGoldMarker)) {
+  source = source.slice(0, source.indexOf(legacyGoldMarker)).trimEnd() + '\n';
+  console.log('[OK] Entregador Parceiro: override visual legado removido da cópia descartável.');
+}
+
+const marker = '/* APOIS_PARTNER_COURIER_RED_V2 */';
 if (!source.includes(marker)) {
   source += `
 
 ${marker}
-/* O APOIS Parceiro segue a identidade oficial preto + dourado. Estados de
- * sucesso/erro continuam usando verde/vermelho sem transformar a marca em azul. */
+/* APOIS Parceiro — identidade clara vermelho/branco.
+ * Verde, âmbar e vermelho semântico continuam reservados a estados operacionais. */
 .apois-system-theme {
-  --background: oklch(0.105 0.006 85);
-  --foreground: oklch(0.985 0.002 85);
-  --card: oklch(0.15 0.006 85);
-  --card-foreground: oklch(0.985 0.002 85);
-  --popover: oklch(0.15 0.006 85);
-  --popover-foreground: oklch(0.985 0.002 85);
-  --primary: oklch(0.82 0.16 84);
-  --primary-foreground: oklch(0.11 0.006 85);
-  --secondary: oklch(0.19 0.008 85);
-  --secondary-foreground: oklch(0.95 0.004 85);
-  --muted: oklch(0.19 0.008 85);
-  --muted-foreground: oklch(0.68 0.012 85);
-  --accent: oklch(0.72 0.145 78);
-  --accent-foreground: oklch(0.11 0.006 85);
-  --border: oklch(0.27 0.012 85);
-  --input: oklch(0.23 0.01 85);
-  --ring: oklch(0.82 0.16 84);
-  --sidebar: oklch(0.135 0.006 85);
-  --sidebar-foreground: oklch(0.985 0.002 85);
-  --sidebar-primary: oklch(0.82 0.16 84);
-  --sidebar-primary-foreground: oklch(0.11 0.006 85);
-  --sidebar-accent: oklch(0.19 0.008 85);
-  --sidebar-accent-foreground: oklch(0.95 0.004 85);
-  --sidebar-border: oklch(0.27 0.012 85);
-  --sidebar-ring: oklch(0.82 0.16 84);
+  --background: oklch(0.97 0.003 20);
+  --foreground: oklch(0.16 0.008 20);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.008 20);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.008 20);
+  --primary: oklch(0.59 0.24 27);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.94 0.008 20);
+  --secondary-foreground: oklch(0.18 0.008 20);
+  --muted: oklch(0.94 0.008 20);
+  --muted-foreground: oklch(0.48 0.012 20);
+  --accent: oklch(0.52 0.22 27);
+  --accent-foreground: oklch(1 0 0);
+  --border: oklch(0.90 0.008 20);
+  --input: oklch(0.92 0.008 20);
+  --ring: oklch(0.59 0.24 27);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.16 0.008 20);
+  --sidebar-primary: oklch(0.59 0.24 27);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.97 0.01 20);
+  --sidebar-accent-foreground: oklch(0.18 0.008 20);
+  --sidebar-border: oklch(0.90 0.008 20);
+  --sidebar-ring: oklch(0.59 0.24 27);
 }
 .apois-system-theme body,
 .apois-system-theme body > div,
-.apois-system-theme [class~="bg-black"] { background-color: #050505; }
+.apois-system-theme [class~="bg-black"] {
+  background-color:#F7F7F8 !important;
+  color:#111111;
+}
+.apois-system-theme [class~="bg-zinc-950"],
+.apois-system-theme [class~="bg-zinc-900"] { background-color:#FFFFFF !important; }
+.apois-system-theme [class~="text-white"] { color:#111111 !important; }
+.apois-system-theme [class~="text-zinc-300"] { color:#33383F !important; }
+.apois-system-theme [class~="text-zinc-400"] { color:#555B63 !important; }
+.apois-system-theme [class~="text-zinc-500"] { color:#666B73 !important; }
+.apois-system-theme [class~="text-zinc-600"] { color:#777D85 !important; }
+.apois-system-theme [class*="border-zinc-8"] { border-color:#E2E4E8 !important; }
 .apois-system-theme [class*="from-primary"][class*="to-accent"],
 .apois-system-theme [class*="from-primary"][class*="via-primary"][class*="to-accent"] {
-  background-image: linear-gradient(135deg, #f6be1c, #c88a08) !important;
-  color: #070707 !important;
+  background-image:linear-gradient(135deg,#FF5A60,#E51B23 56%,#C9141B) !important;
+  color:#FFFFFF !important;
 }
 .apois-system-theme [class~="text-[#39B54A]"],
 .apois-system-theme [class~="text-[#6A1B9A]"],
 .apois-system-theme [class~="text-[#FFD700]"],
 .apois-system-theme [class~="text-[#F6B900]"],
-.apois-system-theme [class~="text-[#FACC15]"] { color: #f6be1c !important; }
+.apois-system-theme [class~="text-[#FACC15]"] { color:#E51B23 !important; }
 .apois-system-theme [class~="bg-[#39B54A]"],
 .apois-system-theme [class~="bg-[#6A1B9A]"],
 .apois-system-theme [class~="bg-[#FFD700]"],
 .apois-system-theme [class~="bg-[#F6B900]"],
-.apois-system-theme [class~="bg-[#FACC15]"] { background-color: #f6be1c !important; color:#070707 !important; }
+.apois-system-theme [class~="bg-[#FACC15]"] { background-color:#E51B23 !important; color:#FFFFFF !important; }
 .apois-system-theme input:focus,
 .apois-system-theme textarea:focus,
-.apois-system-theme select:focus { border-color: #f6be1c; }
+.apois-system-theme select:focus { border-color:#E51B23; }
 `;
 }
 
-if (!source.includes(marker) || !source.includes('--primary: oklch(0.82 0.16 84)') || !source.includes('#f6be1c')) {
-  throw new Error('Entregador Parceiro: tema preto/dourado não foi aplicado.');
+for (const required of [marker, '--primary: oklch(0.59 0.24 27)', '#E51B23', '#C9141B', '#F7F7F8']) {
+  if (!source.includes(required)) throw new Error(`Entregador Parceiro: tema vermelho/branco incompleto (${required}).`);
 }
+for (const forbidden of ['APOIS_PARTNER_COURIER_GOLD_V1', '#f6be1c', '#c88a08']) {
+  if (source.includes(forbidden)) throw new Error(`Entregador Parceiro: identidade antiga permaneceu no tema (${forbidden}).`);
+}
+
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Entregador Parceiro: identidade petrol-blue antiga sobreposta pelo padrão oficial preto + dourado.');
+console.log('[OK] Entregador Parceiro: identidade visual vermelho/branco aplicada sem alterar estados operacionais.');

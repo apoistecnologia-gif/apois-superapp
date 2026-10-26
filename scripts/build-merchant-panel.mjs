@@ -69,6 +69,7 @@ for (const script of [
   'harden-entregas-superapp-notification-feed.mjs',
   'harden-entregas-superapp-address-confirmation.mjs',
   'harden-entregas-superapp-image-fallbacks.mjs',
+  'harden-entregas-overlay-layering.mjs',
   'harden-entregas-superapp-legal-routes.mjs',
   'harden-entregas-superapp-customer-ux.mjs',
   'harden-entregas-superapp-checkout-mobile-ui.mjs',

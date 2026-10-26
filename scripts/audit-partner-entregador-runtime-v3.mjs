@@ -184,16 +184,16 @@ requireAll('scripts/install-partner-splash.mjs', [
   'windowSplashScreenBackground',
   'windowSplashScreenAnimatedIcon',
   '@mipmap/ic_launcher',
-  '#050505',
+  "const LIGHT_BG = '#F7F7F8';",
   'Splash padrão do template Android permaneceu ativo no Parceiro.',
-], 'Splash nativo do Parceiro usa fundo preto e identidade APOIS em vez do template Android');
+], 'Splash nativo do Parceiro usa fundo claro e a nova identidade APOIS em vez do template Android');
 
 requireAll('codemagic.yaml', [
   'node scripts/install-partner-splash.mjs',
   'drawable/apois_partner_splash.xml',
-  'windowSplashScreenBackground">#050505<',
+  'windowSplashScreenBackground">#F7F7F8<',
   'windowSplashScreenAnimatedIcon">@mipmap/ic_launcher<',
-], 'Codemagic instala e valida splash APOIS antes de compilar o APK Parceiro');
+], 'Codemagic instala e valida splash claro APOIS antes de compilar o APK Parceiro');
 
 requireAll('scripts/harden-partner-entregador-finance.mjs', [
   'Recebimento direto em homologação',
@@ -218,11 +218,11 @@ forbidAll('scripts/configure-partner-android.mjs', [
 
 requireAll('superapp/partner-shell/capacitor.config.ts', [
   "appId: 'br.com.apois.parceiro'",
-  "style: 'LIGHT'",
-  "backgroundColor: '#050505'",
-], 'Host Parceiro usa package correto e ícones claros na barra de status escura');
-forbidAll('superapp/partner-shell/capacitor.config.ts', [
   "style: 'DARK'",
-], 'Barra de status do Parceiro não usa ícones escuros sobre fundo preto');
+  "backgroundColor: '#F7F7F8'",
+], 'Host Parceiro usa package correto e ícones escuros na barra de status clara');
+forbidAll('superapp/partner-shell/capacitor.config.ts', [
+  "style: 'LIGHT'",
+], 'Barra de status do Parceiro não usa ícones claros sobre fundo claro');
 
 process.exit(failed ? 1 : 0);

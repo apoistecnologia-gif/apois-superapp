@@ -36,12 +36,20 @@ if (!xml.includes('android:scheme="br.com.apois.app"')) {
 }
 
 const mapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
-if (mapsKey && !xml.includes('com.google.android.geo.API_KEY')) {
-  xml = xml.replace(
-    '</application>',
-    `        <meta-data android:name="com.google.android.geo.API_KEY" android:value="${mapsKey.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}" />\n    </application>`,
-  );
-} else if (!xml.includes('com.google.android.geo.API_KEY')) {
+const mapsMetaPattern = /<meta-data\s+android:name=["']com\.google\.android\.geo\.API_KEY["']\s+android:value=["'][^"']*["']\s*\/>/;
+if (mapsKey) {
+  const escapedMapsKey = mapsKey.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
+  const mapsMeta = `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${escapedMapsKey}" />`;
+  if (mapsMetaPattern.test(xml)) {
+    xml = xml.replace(mapsMetaPattern, mapsMeta);
+  } else {
+    xml = xml.replace('</application>', `        ${mapsMeta}\n    </application>`);
+  }
+  if (!xml.includes(escapedMapsKey)) {
+    throw new Error('Google Maps Android key não foi materializada no AndroidManifest.');
+  }
+  console.log('[OK] Google Maps Android key materializada no AndroidManifest.');
+} else if (!mapsMetaPattern.test(xml)) {
   // Google Maps SDK aborts the process when its metadata is absent. Keep the
   // debug/local shell launchable without inventing a credential; the runtime
   // will surface the Maps configuration state instead of crashing startup.
@@ -128,16 +136,16 @@ const launcherForegroundXml = `<?xml version="1.0" encoding="utf-8"?>
     android:viewportWidth="432"
     android:viewportHeight="432">
     <path
-        android:fillColor="#D4A62A"
+        android:fillColor="#E51B23"
         android:pathData="M78,374 L176,68 L226,68 L128,374 Z" />
     <path
-        android:fillColor="#F1C84B"
+        android:fillColor="#FF3941"
         android:pathData="M204,68 L254,68 L354,374 L304,374 Z" />
     <path
-        android:fillColor="#D9AB2B"
+        android:fillColor="#C9141B"
         android:pathData="M116,298 C168,248 248,226 328,238 L311,269 C243,258 174,277 129,317 Z" />
     <path
-        android:fillColor="#C69218"
+        android:fillColor="#A90F16"
         android:pathData="M168,314 C216,278 271,265 317,271 L304,294 C262,291 221,302 183,333 Z" />
 </vector>
 `;
@@ -176,7 +184,7 @@ const adaptiveIconXml = `<?xml version="1.0" encoding="utf-8"?>
 // Android/Capacitor durante a abertura do Superapp.
 const splashXml = `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/black" />
+    <item android:drawable="@android:color/white" />
     <item android:gravity="center">
         <inset
             android:drawable="@drawable/ic_launcher_foreground"
@@ -201,7 +209,7 @@ writeFileSync(join(mipmapAdaptiveDir, 'ic_launcher_round.xml'), adaptiveIconXml,
 // place. Creating a second copy in values/colors.xml makes aapt merge fail with
 // a duplicate color resource during assembleRelease.
 const launcherBackgroundPath = join(valuesDir, 'ic_launcher_background.xml');
-const launcherBackgroundColor = '<color name="ic_launcher_background">#050505</color>';
+const launcherBackgroundColor = '<color name="ic_launcher_background">#FFFFFF</color>';
 if (existsSync(launcherBackgroundPath)) {
   let backgroundValues = readFileSync(launcherBackgroundPath, 'utf8');
   if (/<color name="ic_launcher_background">[^<]*<\/color>/.test(backgroundValues)) {
@@ -243,4 +251,43 @@ if (existsSync(legacyColorsPath)) {
   else writeFileSync(legacyColorsPath, legacyColors, 'utf8');
 }
 
-console.log(`[OK] APOIS Brasil branding: ${removedStockBranding} bitmaps padrão removidos; ícone legacy/adaptativo/redondo/monocromático e splash oficial instalados.`);
+// APOIS_CLIENT_LAUNCHER_INSTALL_V1: o Android e recriado do zero em cada build.
+// Configurar XMLs nao e suficiente: sem os bitmaps oficiais, o launcher exibe
+// o simbolo generico, como ocorreu nos APKs de homologacao do APOIS Cliente.
+// O Codemagic ja chama o instalador; executar aqui tambem cobre GitHub Actions.
+// A rotina e idempotente e utiliza a mesma marca oficial do APOIS Parceiro.
+await import('./install-superapp-launcher.mjs');
+
+const officialLogo = join(resolve('superapp/branding'), 'apois-client-red-logo.b64');
+if (!existsSync(officialLogo)) throw new Error('Launcher Cliente: arquivo da marca APOIS ausente.');
+const logoBytes = Buffer.from(readFileSync(officialLogo, 'utf8').trim(), 'base64');
+if (logoBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
+  throw new Error('Launcher Cliente: arte oficial nao e PNG.');
+}
+const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
+for (const density of densities) {
+  const dir = join(resRoot, 'mipmap-' + density);
+  for (const name of ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png']) {
+    const file = join(dir, name);
+    if (!existsSync(file)) throw new Error('Launcher Cliente: falta bitmap oficial em ' + file);
+    const image = readFileSync(file);
+    if (image.length < 1024 || image.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
+      throw new Error('Launcher Cliente: bitmap invalido em ' + file);
+    }
+  }
+}
+const adaptiveLauncher = readFileSync(join(mipmapAdaptiveDir, 'ic_launcher.xml'), 'utf8');
+const adaptiveRound = readFileSync(join(mipmapAdaptiveDir, 'ic_launcher_round.xml'), 'utf8');
+for (const content of [adaptiveLauncher, adaptiveRound]) {
+  if (!content.includes('<adaptive-icon') || !content.includes('@mipmap/ic_launcher_foreground')) {
+    throw new Error('Launcher Cliente: icone adaptativo nao aponta para a marca oficial.');
+  }
+}
+if (existsSync(join(mipmapAnyDir, 'ic_launcher.xml')) || existsSync(join(mipmapAnyDir, 'ic_launcher_round.xml'))) {
+  throw new Error('Launcher Cliente: XML legado anydpi pode sobrepor a marca oficial.');
+}
+const finalManifest = readFileSync(manifestPath, 'utf8');
+if (!finalManifest.includes('android:icon="@mipmap/ic_launcher"') || !finalManifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) {
+  throw new Error('Launcher Cliente: manifest nao utiliza os icones oficiais.');
+}
+console.log(`[OK] APOIS_CLIENT_LAUNCHER_INSTALL_V1: ${densities.length} densidades, icon normal/redondo/adaptativo e splash com marca APOIS oficial; ${removedStockBranding} bitmaps de template descartados.`);

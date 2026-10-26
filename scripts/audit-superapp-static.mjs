@@ -57,6 +57,8 @@ requireText('.apois/modules.json', [
   'harden-corridas-superapp-storage.mjs',
   'harden-superapp-module-mobile-ui.mjs corridas',
   'APOIS_VISUAL_KIT_V1',
+  'APOIS_REFERENCE_HOME_V2',
+  'data-apois-reference-home-v2',
   'bun run build:capacitor',
   'harden-entregas-payment-provider-boundary.mjs',
   'bun run build:customer',
@@ -78,11 +80,18 @@ requireText('scripts/build-isolated-module.mjs', [
   'scripts/harden-corridas-superapp-runtime.mjs',
   'scripts/fix-corridas-superapp-ui.mjs',
   'scripts/harden-corridas-payment-methods.mjs',
+  'scripts/harden-corridas-native-map.mjs',
   "'apois-superapp-corridas-auth-v1'",
   "'apois-superapp-entregas-auth-v1'",
   "appPlugin.addListener('backButton'",
   "appPlugin.addListener('appStateChange'",
-], 'build isolado prepara, adapta e integra sessão/back button sem editar submódulo');
+  'harden-entregas-supabase-runtime.mjs',
+  'harden-entregas-google-oauth-handoff.mjs',
+  "apois:entregas-google-callback",
+  "apois-superapp:entregas-google-url",
+  "ENTREGAS_CANONICAL_REF = 'ptgkwyyolrdgnqketkjj'",
+  'env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL',
+], 'build isolado prepara, adapta e integra sessão/back button/OAuth e fixa Supabase Entregas sem editar submódulo');
 
 requireText('scripts/harden-corridas-auth-profile-resolution.mjs', [
   '.eq("auth_user_id", userId)',
@@ -102,7 +111,26 @@ requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
   'App.getLaunchUrl()',
   'br.com.apois.app://auth/callback',
   'br.com.apois.app://auth/corridas-google',
-], 'Google OAuth Corridas usa PKCE, callback determinístico, dedupe e cleanup/cancelamento');
+  'JSON.stringify({ product: \\"corridas\\", createdAt: Date.now() })',
+  'browserFinished pode chegar',
+  'providerError',
+], 'Google OAuth Corridas usa PKCE, envelope persistente sem race de browserFinished, callback determinístico, dedupe e cleanup/cancelamento');
+
+requireText('scripts/harden-entregas-supabase-runtime.mjs', [
+  'ptgkwyyolrdgnqketkjj',
+  'import.meta.env["VITE_SUPABASE_URL"]',
+  'import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]',
+  "retiredRef = 'sbvhdgyuuperszlsllji'",
+], 'Entregas remove o Supabase aposentado hardcoded antes do build e exige o projeto de produção');
+
+requireText('scripts/harden-entregas-google-oauth-handoff.mjs', [
+  'flowType: "pkce"',
+  'APOIS_GOOGLE_PENDING_KEY',
+  'APOIS_GOOGLE_FORWARD_KEY',
+  'consumeForwardedGoogleCallback',
+  'product: "entregas"',
+  'apois:entregas-google-callback',
+], 'Google OAuth Entregas usa PKCE, mantém callback no módulo dono e possui handoff persistente');
 
 requireText('scripts/harden-corridas-superapp-runtime.mjs', [
   'VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED', 'RIDE_STATUS_ORDER', 'lastAcceptedStatusRef',
@@ -118,10 +146,116 @@ requireText('scripts/fix-corridas-superapp-ui.mjs', [
   'src/routes/_authenticated.tsx', 'hideBottomNavigation',
 ], 'UI Corridas adapta navegação e perfil reais');
 
+requireText('scripts/build-isolated-module.mjs', [
+  'function peekPendingOAuthProduct()',
+  'function lastSelectedModule()',
+  "pendingProduct === 'corridas' || (!pendingProduct && lastSelectedModule() === 'corridas')",
+  "if (pendingProduct === 'entregas')",
+  "function storeCorridasGoogleCallback(rawUrl)",
+  "window.location.replace('../corridas/index.html#/login')",
+  "window.location.replace('../entregas/index.html')",
+], 'callback Google de Corridas permanece em Corridas mesmo após resume Android; callback de Entregas continua encaminhado');
+
+requireText('scripts/harden-corridas-native-map.mjs', [
+  'APOIS_NATIVE_MAP_FALLBACK_V3',
+  '[isStatic, nativeApiKey, reloadKey]',
+  'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
+  'Capacitor.isNativePlatform()',
+  'mapService.createMap',
+  'mapService.upsertDriverMarker',
+  'PolylineDecoder',
+  'PolylineDecoder deve ser importado exatamente uma vez',
+  'displayedRoutePoints',
+  'encodedPolyline não pôde ser ligado ao PassengerMap',
+  'if (encodedPolyline)',
+  'bottom: 240',
+  'const previousHtml = document.documentElement.style.backgroundColor',
+  'const changed: Array<{ element: HTMLElement',
+  'document.body.style.backgroundColor = "transparent"',
+  'strokeColor: "#E51B23"',
+  'APOIS_MAP_STYLE_LIGHT_NATIVE',
+  'styles: APOIS_MAP_STYLE_LIGHT_NATIVE',
+  'APOIS_MAP_STYLE_LIGHT_JS',
+  'label: { text: "A"',
+  'iconUrl: "assets/markers/apois-location.svg"',
+  'APOIS_PRECISE_LOCATION_V1',
+  'permissions: ["location", "coarseLocation"]',
+  'maximumAge: 0',
+  'referência a marker PNG inexistente permaneceu',
+], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
+
+requireText('scripts/harden-superapp-module-mobile-ui.mjs', [
+  "await import('./harden-corridas-mobile-proportions.mjs');",
+], 'hardener móvel aplica proporções finais depois das superfícies visuais');
+
+requireText('scripts/harden-corridas-mobile-proportions.mjs', [
+  'APOIS_CORRIDAS_MOBILE_PROPORTIONS_V1',
+  'z-[140]',
+  'max-h-[78dvh]',
+  'max-h-[46dvh]',
+  'status !== "procurar_motorista" ? <RideStatusHeader',
+  'max-h-[52dvh]',
+  'pb-[max(64px,env(safe-area-inset-bottom))]',
+  'h-[100dvh] min-h-0 flex-col overflow-hidden',
+  'overscroll-contain',
+], 'Corridas compacta pagamento/Home/revisão e remove banner duplicado da busca de motorista');
+
 requireText('scripts/harden-corridas-kit-visual.mjs', [
-  'APOIS_VISUAL_KIT_V1', 'apois-kit-home-panel', '<HomeWorkShortcuts />',
-  'apois-kit-search-results', 'max-h-[94dvh]', 'grid-cols-[58px_minmax(0,1fr)_auto]',
-], 'kit visual oficial continua aplicado sem redesign geral');
+  'APOIS_VISUAL_KIT_V1', 'APOIS_REFERENCE_HOME_V2', 'data-apois-reference-home-v2',
+  'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Solicitar corrida',
+  'apois-kit-search-results',
+  'text-[#111111]', 'caret-[#E51B23]', 'placeholder:text-[#9AA0A8]', 'max-h-[94dvh]', 'max-h-[38dvh]', 'h-10 w-10 rounded-full object-contain', 'Local de partida', 'Destino',
+  'bg-transparent text-[#111111]', 'absolute inset-0 z-0 bg-transparent',
+], 'kit visual oficial mantém mapa predominante, painel compacto e destino apenas no bottom sheet');
+
+requireText('scripts/build-isolated-module.mjs', [
+  "harden-apois-client-red-visual.mjs",
+  "harden-corridas-kit-visual.mjs",
+  'protectedMapRuntimeBeforeVisual',
+  'protectedCorridasMapRuntimeAfterVisual',
+  'migração visual preservou byte a byte Maps/GPS/Places',
+  'build final preservou byte a byte Maps/GPS/Places',
+], 'visual Corridas roda uma vez no pipeline isolado e protege Maps/GPS/Places');
+
+
+
+requireText('scripts/harden-corridas-pickup-address-display.mjs', [
+  '"google-maps-address"',
+  'action: "reverse_geocode"',
+  'pickupLabel ||',
+  'pickupShortLabel ||',
+  'Identificando seu endereço...',
+  'Toque para tentar identificar o endereço',
+  'Home ainda usa fallback genérico "Sua localização atual"',
+], 'Local de partida usa reverse geocoding real e não exibe fallback genérico');
+
+requireText('scripts/harden-apois-client-red-visual.mjs', [
+  'APOIS_CATEGORY_VEHICLE_SPRITE_V6',
+  'superapp/branding/categories/apois-vehicles.webp',
+  'vehicleSpriteDeclaredSize !== vehicleSpriteBytes.length',
+  'export const vehicleSprite = "data:image/webp;base64,',
+  'src/assets/categoryVehicleData.ts',
+  'import { vehicleSprite } from "@/assets/categoryVehicleData"',
+  'carros: "0%"',
+  'motos: "25%"',
+  'fretes: "50%"',
+  'guincho: "75%"',
+  'envios: "100%"',
+  'validated-sprite-v6',
+  'backgroundSize: "500% 100%"',
+  'backgroundPosition: spritePosition + " center"',
+  'w-[124px]',
+  'h-[84px]',
+], 'categorias Corridas usam sprite APOIS validado com Carro, Moto, Fretes, Guincho e Envios na ordem correta');
+forbidText('scripts/harden-apois-client-red-visual.mjs', [
+  'superapp/branding/categories/car-realistic.webp',
+  'superapp/branding/categories/moto-realistic.webp',
+  'superapp/branding/categories/freight-realistic.webp',
+  'superapp/branding/categories/tow-realistic.webp',
+  'superapp/branding/categories/delivery-realistic.webp',
+  'APOIS_CATEGORY_REALISTIC_ASSETS_V4',
+  'APOIS_CATEGORY_REALISTIC_V5_INLINE',
+], 'categorias Corridas não voltam a usar os cinco WebP truncados antigos');
 
 requireText('scripts/harden-corridas-payment-methods.mjs', [
   "import './harden-corridas-payment-provider-boundary.mjs';",
@@ -185,20 +319,37 @@ requireText('supabase/corridas-forward-migrations/20260905131500_harden_driver_w
 ], 'migration forward-only protege idempotência da taxa e ownership da carteira');
 
 requireText('scripts/verify-superapp-release-requirements.mjs', [
-  "APOIS_STRICT_NATIVE_CONFIG === '1'", 'vqtucstyduxrqjgyigfk',
+  "APOIS_STRICT_NATIVE_CONFIG === '1'", 'tbbzkrfupmqdywnzgnms', 'ptgkwyyolrdgnqketkjj',
   'CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY',
   '20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql',
-], 'release estrito exige Supabase canônico, chaves Maps e migrations forward obrigatórias');
+], 'release estrito exige Supabase canônico de Corridas e Entregas, chaves Maps e migrations forward obrigatórias');
 requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
-  'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
-], 'gate Supabase rejeita projeto histórico no runtime/bundle');
+  'tbbzkrfupmqdywnzgnms', 'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
+], 'gate Supabase valida projeto atual, preserva snapshot conhecido e rejeita projeto histórico no runtime/bundle');
+
+requireText('scripts/install-superapp-launcher.mjs', [
+  'apois-client-red-logo.b64',
+  '89504e470d0a1a0a',
+  '@mipmap/ic_launcher_foreground',
+  '@android:color/white',
+], 'launcher Cliente usa a mesma marca vermelha do shell e não o asset legado');
 
 requireText('superapp/shell/build.mjs', [
-  "resolve(root, '../branding/apois-launcher.png')", "resolve(dist, 'assets/apois-brand.png')",
-], 'shell empacota marca oficial');
+  "resolve(root, '../branding/apois-client-red-logo.b64')", "resolve(dist, 'assets/apois-brand.png')",
+  'brandDataUri', 'data:image/png;base64,',
+], 'shell empacota e embute marca oficial');
+
+forbidText('superapp/shell/build.mjs', [
+  'apois-superapp-entregas-back-navigation',
+], 'shell não registra segundo handler Android Voltar em Entregas');
 requireText('superapp/shell/capacitor.config.ts', [
-  "appId: 'br.com.apois.app'", "backgroundColor: '#050505'", 'overlaysWebView: false',
+  "appId: 'br.com.apois.app'", "backgroundColor: '#00000000'", 'overlaysWebView: false',
 ], 'Capacitor usa package unificado e fundo correto');
+requireText('scripts/configure-superapp-android.mjs', [
+  'mapsMetaPattern',
+  'Google Maps Android key materializada no AndroidManifest.',
+  "com.google.android.geo.API_KEY",
+], 'Android sempre materializa a Maps key do release no manifest, mesmo se o metadata já existir');
 requireText('codemagic.yaml', [
   'android-superapp-experimental:', 'APP_PACKAGE: "br.com.apois.app"',
   'APOIS_STRICT_NATIVE_CONFIG: "1"', 'npm run verify:pins', 'APOIS-Superapp.apk',
@@ -209,3 +360,22 @@ requireText('.env.example', [
 ], 'ambiente documenta URL pública, Maps e Firebase unificado');
 
 process.exit(failed ? 1 : 0);
+
+
+requireText('scripts/fix-corridas-superapp-ui.mjs', [
+  'APOIS_RESUME_AUTH_SNAPSHOT_V1',
+  'APOIS_RESUME_AUTH_GUARD_V1',
+  'persistedBootSession?.user ?? null',
+  'useState<Session | null>(() => persistedBootSession)',
+  'session?.user',
+], 'Corridas reidrata sessão local ao retomar sem exibir verificação em tela cheia');
+
+
+requireText('superapp/shell/index.html', [
+  'let shellAppUrlListenerHandle=null;',
+  'removeShellAppUrlListener();',
+  "window.addEventListener('pagehide',removeShellAppUrlListener",
+  "window.addEventListener('beforeunload',removeShellAppUrlListener",
+  "lastModule==='corridas'",
+  "callback OAuth genérico sem proprietário; não redirecionando para outro produto",
+], 'shell remove stale OAuth listener e preserva ownership Corridas no callback genérico');

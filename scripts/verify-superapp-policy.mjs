@@ -78,9 +78,18 @@ if (searchRoute) {
 }
 const landingRoute = requireFile('.work/entregas/src/routes/index.tsx');
 if (landingRoute) {
-  if (landingRoute.includes('src="/apois-logo.svg"')) fail('landing de Entregas ainda usa logo absoluto e quebra dentro de modules/entregas');
-  else if (!landingRoute.includes('src="./apois-logo.svg"')) fail('landing de Entregas não aponta para o logo público relativo');
-  else ok('landing de Entregas resolve o logo dentro do módulo aninhado');
+  if (landingRoute.includes('src="/apois-logo.svg"')) {
+    fail('landing de Entregas ainda usa logo absoluto e quebra dentro de modules/entregas');
+  } else if (
+    landingRoute.includes('import apoisClientBrand from "@/assets/apoisClientBrandData";') &&
+    landingRoute.includes('src={apoisClientBrand}')
+  ) {
+    ok('landing de Entregas usa a marca APOIS empacotada no bundle do módulo');
+  } else if (landingRoute.includes('src="./apois-logo.svg"')) {
+    ok('landing de Entregas resolve o logo público relativo dentro do módulo aninhado');
+  } else {
+    fail('landing de Entregas não possui fonte de logo segura para o módulo aninhado');
+  }
 }
 const launchSplash = requireFile('.work/entregas/src/components/ApoisLaunchSplash.tsx');
 if (launchSplash) {

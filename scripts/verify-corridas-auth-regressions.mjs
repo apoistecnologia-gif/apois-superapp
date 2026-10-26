@@ -16,11 +16,11 @@ const googleHardener = read('scripts/harden-corridas-superapp-google-auth.mjs');
 for (const marker of ['flowType: "pkce"', 'handledUrlRef.current === rawUrl', 'browserFinished', 'App.getLaunchUrl()', 'browserFinishedListenerRef.current?.remove()']) {
   if (!googleHardener.includes(marker)) fail(`Google OAuth hardener sem ${marker}`);
 }
-if (!googleHardener.includes('br.com.apois.app://auth/callback')) fail('callback canônico Google ausente');
-if (!googleHardener.includes('br.com.apois.app://auth/corridas-google')) fail('callback legado compatível ausente');
+if (!googleHardener.includes("const callback = 'br.com.apois.app://auth/callback';")) fail('callback compartilhado de produção Google Corridas ausente');
+if (!googleHardener.includes("const legacyCallback = 'br.com.apois.app://auth/corridas-google';")) fail('fallback legado exclusivo Corridas ausente');
 
 const oauthHandoffHardener = read('scripts/harden-corridas-oauth-callback-handoff.mjs');
-for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some']) {
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', 'handlingRef.current || handledUrlRef.current === rawUrl', 'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl']) {
   if (!oauthHandoffHardener.includes(marker)) fail(`hardener final Google Passageiro sem ${marker}`);
 }
 const buildPipeline = read('scripts/build-isolated-module.mjs');
@@ -139,6 +139,21 @@ if (push) {
     fail('workspace send-ride-push voltou a comparar AUTH ID com IDs de domínio');
   }
 }
+
+const moduleBridge = read('scripts/build-isolated-module.mjs');
+if (moduleBridge) {
+  for (const marker of [
+    'function peekPendingOAuthProduct()',
+    "function lastSelectedModule()",
+    "lastSelectedModule() === 'corridas'",
+    "function storeCorridasGoogleCallback(rawUrl)",
+    "window.location.replace('../corridas/index.html#/login')",
+    "window.location.replace('../entregas/index.html')",
+  ]) {
+    if (!moduleBridge.includes(marker)) fail(`bridge OAuth Corridas regrediu: ${marker}`);
+  }
+}
+if (!failed) ok('Corridas OAuth: bridge do módulo não desvia callback Google de Corridas para Entregas.');
 
 if (failed) process.exit(1);
 ok('Regressões críticas de Auth/Google/identidade backend Corridas verificadas.');

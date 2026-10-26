@@ -19,23 +19,38 @@ function check(path, required, label) {
 
 check('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "import './harden-superapp-shell-iconography.mjs';",
-  ".replace('--teal:#15d5ca;', '--teal:#f2b414;')",
-  "source.includes('#15d5ca') || source.includes('#1ee1d4') || source.includes('#09b8b0')",
-  'object-fit:contain;padding:6px',
-  '.vehicle svg,.delivery svg',
-], 'Seletor Cliente transforma a paleta antiga em preto/dourado e protege logo sem corte');
+  "'--red:#E51B23'",
+  "'--red-dark:#C9141B'",
+  "'<h2>Corridas</h2>'",
+  "'<h2>Entregas</h2>'",
+  "'min-height:126px'",
+  "'aspect-ratio:1/1'",
+], 'Seletor Cliente valida a nova identidade vermelho/branco, logo contida e mantém Corridas/Entregas');
+
+check('superapp/shell/build.mjs', [
+  "../branding/apois-client-red-logo.b64",
+  "rgba(255,255,255,.96)",
+  "#E51B23",
+], 'Shell Cliente empacota a logo vermelha exclusiva e usa switcher claro');
 
 check('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
-  'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
   '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
-  'Carro • Moto • Envios',
-  '<strong>Apois, <span>vamos?</span></strong>',
-], 'Seletor substitui emojis por SVG determinístico e valida categorias/slogan finais');
+  "'<div class=\"visual\">'",
+  "'class=\"vehicle-photo\"'",
+  "'alt=\"Carro APOIS\"'",
+  "'alt=\"Moto de entregas APOIS\"'",
+], 'Seletor usa veículos reais adesivados APOIS em vez de desenhos/emojis');
 
-check('scripts/harden-partner-shell-mobile-ui.mjs', [
-  'object-fit:contain;padding:8px',
-  '@media(max-height:700px)',
-], 'Seletor Parceiro mantém a mesma marca sem recorte em telas pequenas');
+check('superapp/partner-shell/index.html', [
+  '--red:#E51B23',
+  '--red-dark:#C9141B',
+  'APOIS <em>Parceiro</em>',
+  'Sou <em>Motorista</em>',
+  'Sou <em>Entregador</em>',
+  'background:#F7F7F8',
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
+], 'Seletor Parceiro segue a tela aprovada vermelho/branco e permanece responsivo');
 
 process.exit(failed ? 1 : 0);

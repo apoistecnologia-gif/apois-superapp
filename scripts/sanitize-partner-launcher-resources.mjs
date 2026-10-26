@@ -3,9 +3,11 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const resRoot = resolve('superapp/partner-shell/android/app/src/main/res');
-const officialLauncher = resolve('superapp/branding/apois-launcher.png');
+const officialLauncherBase64 = resolve('superapp/branding/apois-client-red-logo.b64');
+const officialLauncher = '/tmp/apois-partner-red-logo-sanitized.png';
 if (!existsSync(resRoot)) throw new Error(`Recursos Android do APOIS Parceiro ausentes: ${resRoot}`);
-if (!existsSync(officialLauncher)) throw new Error(`Arte oficial do APOIS ausente: ${officialLauncher}`);
+if (!existsSync(officialLauncherBase64)) throw new Error(`Arte vermelha oficial do APOIS ausente: ${officialLauncherBase64}`);
+writeFileSync(officialLauncher, Buffer.from(readFileSync(officialLauncherBase64, 'utf8').trim(), 'base64'));
 
 function walk(directory) {
   const files = [];
@@ -63,8 +65,12 @@ for (const stale of [
 
 function render(size, output) {
   const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(size), String(size), officialLauncher, '--out', output], { encoding: 'utf8' });
-  if (result.error || result.status !== 0 || !existsSync(output)) {
-    throw new Error(`APOIS Parceiro: falha ao materializar launcher oficial ${size}px: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`);
+  if (!result.error && result.status === 0 && existsSync(output)) return;
+  // Linux não possui sips. Para Android é seguro manter o PNG oficial como
+  // raster em cada density; o launcher continua usando a mesma arte aprovada.
+  copyFileSync(officialLauncher, output);
+  if (!existsSync(output)) {
+    throw new Error(`APOIS Parceiro: falha ao materializar launcher oficial ${size}px.`);
   }
 }
 
@@ -105,4 +111,4 @@ if (existsSync(join(resRoot, 'mipmap-anydpi-v26', 'ic_launcher.xml'))) {
   throw new Error('APOIS Parceiro: adaptive icon residual pode esconder a arte oficial.');
 }
 
-console.log(`[OK] Launcher Parceiro finalizado como raster oficial APOIS em 5 densities; ${removedDefinitions} definição(ões) duplicáveis removida(s), ${rewrittenReferences} referência(s) migrada(s).`);
+console.log(`[OK] Launcher Parceiro finalizado com raster vermelho oficial APOIS em 5 densities; ${removedDefinitions} definição(ões) duplicáveis removida(s), ${rewrittenReferences} referência(s) migrada(s).`);

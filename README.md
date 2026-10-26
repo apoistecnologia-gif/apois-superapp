@@ -33,9 +33,9 @@ A regra principal é: **nunca adaptar os submodules em `sources/` diretamente**.
 
 ## Fontes protegidas
 
-- Entregas: `franciel046631/apois-entregas`
-- Corridas / Passageiro: `franciel046631/say-hello-buddy-23-84b5dcbf`
-- Corridas / Motorista/Admin: `franciel046631/movvi-go-connect`
+- Entregas: `apoistecnologia-gif/apois-entregas`
+- Corridas / Passageiro: `apoistecnologia-gif/say-hello-buddy-23-84b5dcbf`
+- Corridas / Motorista/Admin: `apoistecnologia-gif/movvi-go-connect`
 
 Os commits efetivamente usados ficam fixados em `.apois/source-lock.json`. `npm run verify:pins` impede que um build consuma fonte diferente da homologada.
 

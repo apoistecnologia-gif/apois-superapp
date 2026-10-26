@@ -54,19 +54,32 @@ node "$ROOT/scripts/harden-partner-motorista-payment-policy.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push-runtime.mjs"
 node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
+node "$ROOT/scripts/harden-partner-motorista-offer-fallback.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
+node "$ROOT/scripts/harden-partner-red-visual.mjs"
+node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
+node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
+node "$ROOT/scripts/harden-partner-google-callback-recovery.mjs"
+node "$ROOT/scripts/harden-partner-ride-homologation-v2.mjs"
+# APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
+if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
+if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
 
 cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
 require_contains 'window.location.hash = "#/motorista/app"' src/lib/nativeBridge.ts 'Push do Motorista usa rota hash interna'
+require_contains 'APOIS_DRIVER_OFFER_POLL_V1' src/routes/motorista.app.tsx 'Motorista reconsulta ofertas sem depender do Firebase'
 require_contains 'Geolocation.watchPosition(' src/routes/motorista.app.tsx 'Motorista acompanha GPS nativo'
 require_contains 'stopDriverWatch();' src/routes/motorista.app.tsx 'Motorista encerra watcher GPS'
 require_contains 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.ts 'Finalização usa lifecycle canônico'
 require_contains 'settlement?.driver_earning ?? settlement?.passenger_charge' 'src/routes/motorista.corridas.$id.tsx' 'Histórico usa ganho autorizado'
 require_contains 'Pagamento eletrônico temporariamente indisponível' src/routes/motorista.assinatura.tsx 'Mensalidade informa indisponibilidade sem CTA morto'
 require_contains 'Corrida aceita. Siga até o embarque' src/routes/motorista.app.tsx 'Jornada da corrida não depende de gateway'
+require_contains 'calc(max(44px, env(safe-area-inset-bottom)) + 88px)' src/routes/motorista.app.tsx 'Motorista reserva espaço para rodapé e barra Android'
+require_contains 'max(52px, env(safe-area-inset-bottom))' src/routes/motorista.app.tsx 'Motorista protege painéis ativos contra barra Android'
+require_contains 'max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]' src/routes/motorista.app.tsx 'Motorista mantém modais de cancelamento/avaliação dentro da viewport'
 
 CORRIDAS_URL_VALUE="${CORRIDAS_VITE_SUPABASE_URL:-}"
 CORRIDAS_KEY_VALUE="${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
@@ -76,8 +89,8 @@ if [ -z "$CORRIDAS_URL_VALUE" ] || [ -z "$CORRIDAS_KEY_VALUE" ] || [ -z "$CORRID
   exit 1
 fi
 case "$CORRIDAS_URL_VALUE" in
-  *vqtucstyduxrqjgyigfk.supabase.co) ;;
-  *) echo '[FAIL] Motorista: Supabase não é o projeto Corridas canônico.'; exit 1 ;;
+  *tbbzkrfupmqdywnzgnms.supabase.co) ;;
+  *) echo '[FAIL] Motorista: Supabase não é o projeto Corridas canônico atual (tbbzkrfupmqdywnzgnms).'; exit 1 ;;
 esac
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_URL_VALUE"
@@ -86,16 +99,13 @@ esac
   printf 'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY=%s\n' "$CORRIDAS_MAPS_KEY_VALUE"
 } > .env.mobile.local
 
-CORRIDAS_KEY_FROM_SOURCE="$(sed -n 's/^\s*VITE_SUPABASE_PUBLISHABLE_KEY\s*=\s*//p' "$ROOT/sources/apois-corridas-motorista-admin/.env.mobile" | head -n1 | tr -d '\r')"
-if [ -z "$CORRIDAS_KEY_FROM_SOURCE" ]; then
-  echo '[FAIL] Motorista: publishable key canônica ausente da fonte pinada.'
-  exit 1
-fi
-if [ "$(printf '%s' "$CORRIDAS_KEY_VALUE" | sha256sum | cut -d' ' -f1)" != "$(printf '%s' "$CORRIDAS_KEY_FROM_SOURCE" | sha256sum | cut -d' ' -f1)" ]; then
-  echo '[FAIL] Motorista: publishable key externa diverge da fonte Corridas.'
-  exit 1
-fi
-unset CORRIDAS_KEY_FROM_SOURCE
+# O snapshot protegido do Motorista ainda documenta o projeto histórico vqtuc...
+# e não deve definir o runtime atual. O release Parceiro usa a mesma URL/key
+# canônica de Corridas já validada no ambiente do Superapp Cliente.
+case "$CORRIDAS_KEY_VALUE" in
+  sb_publishable_*|eyJ*) ;;
+  *) echo '[FAIL] Motorista: publishable key de Corridas não tem formato reconhecido.'; exit 1 ;;
+esac
 unset VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY SUPABASE_URL SUPABASE_PUBLISHABLE_KEY
 export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
@@ -109,7 +119,7 @@ cd "$ROOT"
 node "$ROOT/scripts/audit-motorista-release-surface.mjs"
 cd "$MOTORISTA"
 
-require_contains 'vqtucstyduxrqjgyigfk.supabase.co' dist/client 'Bundle Motorista usa Supabase Corridas'
+require_contains 'tbbzkrfupmqdywnzgnms.supabase.co' dist/client 'Bundle Motorista usa Supabase Corridas canônico atual'
 forbid_bundle 'sbvhdgyuuperszlsllji.supabase.co' dist/client 'Bundle Motorista isolado de Entregas'
 require_contains 'Continuar com Google' dist/client 'Google login do Motorista presente'
 require_contains 'Esqueci minha senha' dist/client 'Recovery do Motorista presente'
@@ -128,6 +138,7 @@ forbid_bundle 'Solicitar saque' dist/client 'Motorista sem saque custodial legad
 
 # ---------------- Entregador ----------------
 cd "$ROOT"
+unset APOIS_MOTORISTA_WORKSPACE
 export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
 export APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"
 export APOIS_ENTREGAS_AUTH_HOME="/courier"
@@ -137,6 +148,12 @@ node "$ROOT/scripts/harden-partner-entregador-hash-boundary.mjs"
 node "$ROOT/scripts/harden-partner-entregador-push.mjs"
 # Umbrella: aplica jornada, concorrência, GPS/background, sessão, financeiro manual, privacidade e UI.
 node "$ROOT/scripts/harden-partner-entregador-map.mjs"
+node "$ROOT/scripts/harden-partner-red-visual.mjs"
+node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
+node "$ROOT/scripts/harden-partner-courier-auth-registration-v2.mjs"
+node "$ROOT/scripts/harden-partner-courier-auth-back-v2.mjs"
+node "$ROOT/scripts/harden-partner-courier-compact-home-v1.mjs"
+node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'Push do Entregador registrado'
@@ -145,7 +162,11 @@ require_contains 'const transitionJobId = activeJob.id;' src/routes/courier.tsx 
 require_contains 'setCompletedJob({ ...deliveredJob, status: "delivered" });' src/routes/courier.tsx 'Conclusão operacional separada do financeiro'
 require_contains 'Recebimento direto ainda está em homologação.' src/routes/courier.tsx 'Settlement manual permanece explícito'
 require_contains 'Saque manual está desativado.' src/routes/courier.tsx 'Saque legado desativado'
-require_contains 'confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
+require_contains 'courier_confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
+require_contains 'data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]' src/routes/courier.tsx 'Entregador protege entrega ativa da barra Android'
+require_contains 'pb-[max(44px,env(safe-area-inset-bottom))]' src/components/CourierPanels.tsx 'Entregador protege rodapé da barra Android'
+require_contains 'pb-[max(52px,env(safe-area-inset-bottom))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte acima da barra Android'
+require_contains 'max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte utilizável com teclado'
 
 export APOIS_MOBILE_PRODUCT="courier"
 export APOIS_MOBILE_BUILD="1"
@@ -158,9 +179,13 @@ export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
+export VITE_SUPABASE_URL="https://ptgkwyyolrdgnqketkjj.supabase.co"
+export VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY"
 bun install --frozen-lockfile
 bun run typecheck
 bun run build
+require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output/public 'Bundle Entregador usa Supabase Entregas canônico atual'
+forbid_bundle 'sbvhdgyuuperszlsllji.supabase.co' .output/public 'Bundle Entregador remove URL Supabase inválida antiga'
 
 HOST=127.0.0.1 PORT=4173 TSS_SHELL=true node .output/server/index.mjs >/tmp/apois-parceiro-entregador.log 2>&1 &
 SERVER_PID=$!

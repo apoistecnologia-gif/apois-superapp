@@ -28,14 +28,17 @@ function forbidAll(path, markers, label) {
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:6px',
-  '@media(max-height:720px)',
-], 'Seletor Cliente adapta conteúdo e marca a aparelhos baixos');
+  "'--red:#E51B23'",
+  "'--red-dark:#C9141B'",
+  "'@media(max-height:760px)'",
+  "'min-height:126px'",
+  "'aspect-ratio:1/1'",
+], 'Seletor Cliente adapta conteúdo, limita a logo e protege o título em aparelhos baixos');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
 ], 'Seletor Parceiro mantém rolagem e breakpoints móveis');
 
 requireAll('scripts/fix-corridas-superapp-ui.mjs', [
@@ -57,25 +60,31 @@ requireAll('scripts/harden-corridas-superapp-profile-ui.mjs', [
   'src/routes/_authenticated.perfil.tsx',
   'min-h-[68px]',
   'env(safe-area-inset-top)',
-  "await import('./harden-corridas-kit-visual.mjs')",
-], 'Perfil Passageiro usa rota real, alvos tocáveis e safe area');
+  "await import('./harden-corridas-profile-actions.mjs')",
+  "await import('./harden-corridas-password-recovery.mjs')",
+], 'Perfil Passageiro usa rota real, alvos tocáveis e safe area sem reaplicar a Home visual');
 
 requireAll('scripts/harden-corridas-kit-visual.mjs', [
   'APOIS_VISUAL_KIT_V1',
+  'APOIS_REFERENCE_HOME_V2',
+  'data-apois-reference-home-v2',
   'apois-kit-home-panel',
   '<HomeWorkShortcuts />',
+  'Solicitar corrida',
   'apois-kit-search-results',
   'max-h-[94dvh]',
   'max(16px, env(safe-area-inset-bottom))',
-  'grid-cols-[58px_minmax(0,1fr)_auto]',
-], 'Corridas aplica kit visual à Home, busca, BottomSheet e categorias');
+  'servicePosition',
+  'validated-sprite-v6',
+  'border-[#E51B23]',
+], 'Corridas aplica kit visual vermelho/branco à Home, busca, BottomSheet e categorias');
 
 requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
   'src/components/BottomNavigation.tsx',
   "await import('./harden-corridas-superapp-profile-ui.mjs')",
   'pt-[max(env(safe-area-inset-top),0.75rem)]',
   'min-h-[88px]',
-  'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+  'pb-[max(44px,env(safe-area-inset-bottom))]',
   "await import('./harden-entregas-superapp-cart-mobile-ui.mjs')",
   "await import('./harden-entregas-superapp-viewport.mjs')",
 ], 'Hardener móvel cobre Corridas atual e Entregas');

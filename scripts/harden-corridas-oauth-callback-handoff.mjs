@@ -58,7 +58,7 @@ if (!source.includes('function consumeForwardedCallback()')) {
 }
 const legacyConsumerCode = '    if (!params.get("code") || params.has("access_token") || params.has("refresh_token")) return null;';
 const intermediateConsumerCode = '    const codes = params.getAll("code");\n    if (codes.length !== 1 || !codes[0]?.trim() || params.has("access_token") || params.has("refresh_token")) return null;';
-const exactConsumerCode = '    if (!singlePkceCode(params) || params.has("access_token") || params.has("refresh_token")) return null;';
+const exactConsumerCode = '    const providerError = params.get("error_description") || params.get("error");\n    if ((!singlePkceCode(params) && !providerError) || params.has("access_token") || params.has("refresh_token")) return null;';
 if (source.includes(legacyConsumerCode)) source = source.replace(legacyConsumerCode, intermediateConsumerCode);
 if (source.includes(intermediateConsumerCode)) source = source.replace(intermediateConsumerCode, exactConsumerCode);
 if (!source.includes(exactConsumerCode)) throw new Error('[FAIL] OAuth Corridas: validação consume-once do code mudou');
@@ -79,13 +79,37 @@ replaceRequired(
   'consumo legado do callback mudou',
 );
 replaceRequired('  }, []);\n\n  const login = async () => {', '  }, [handle]);\n\n  const login = async () => {', 'dependência do listener mudou');
-replaceRequired(
-  '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, "corridas"); } catch {}',
-  '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch { /* appUrlOpen direto permanece disponível */ }',
-  'marcador OAuth pendente mudou',
-);
+const pendingLegacy = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, "corridas"); } catch {}';
+const pendingEnvelope = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch {}';
+const pendingEnvelopeHardened = '        try { window.localStorage.setItem(PENDING_PRODUCT_KEY, JSON.stringify({ product: "corridas", createdAt: Date.now() })); } catch { /* appUrlOpen direto permanece disponível */ }';
+if (source.includes(pendingLegacy)) source = source.replace(pendingLegacy, pendingEnvelopeHardened);
+if (source.includes(pendingEnvelope)) source = source.replace(pendingEnvelope, pendingEnvelopeHardened);
+if (!source.includes(pendingEnvelopeHardened)) {
+  throw new Error('[FAIL] OAuth Corridas: marcador OAuth pendente mudou');
+}
 
-for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);']) {
+const browserFinishedUnsafe = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+          if (!alive || handlingRef.current) return;
+          clearPendingProduct();
+          setLoading(false);
+        });`;
+const browserFinishedIntermediate = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+          if (!alive || handlingRef.current) return;
+          // Não apague o envelope aqui: no Android browserFinished pode chegar
+          // antes de appUrlOpen/getLaunchUrl. O TTL expira sozinho e um novo OAuth sobrescreve o produto pendente.
+          setLoading(false);
+        });`;
+const browserFinishedSafe = `        browserFinishedListenerRef.current = await browser.addListener("browserFinished", () => {
+          if (!alive || handlingRef.current) return;
+          // browserFinished pode chegar antes de appUrlOpen/getLaunchUrl no Android.
+          // Preserve o envelope até o callback real; o TTL expira sozinho e um novo login sobrescreve o estado.
+          setLoading(false);
+        });`;
+if (source.includes(browserFinishedUnsafe)) source = source.replace(browserFinishedUnsafe, browserFinishedSafe);
+if (source.includes(browserFinishedIntermediate)) source = source.replace(browserFinishedIntermediate, browserFinishedSafe);
+if (!source.includes(browserFinishedSafe)) throw new Error('[FAIL] OAuth Corridas: browserFinished seguro não foi materializado');
+
+for (const marker of ['CALLBACK_TTL_MS', 'consumeForwardedCallback', 'google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', '[CALLBACK, LEGACY_CALLBACK].some', '}, [handle]);', 'handlingRef.current || handledUrlRef.current === rawUrl', 'browserFinished pode chegar antes de appUrlOpen/getLaunchUrl', 'providerError']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] OAuth Corridas incompleto: ${marker}`);
 }
 writeFileSync(path, source, 'utf8');

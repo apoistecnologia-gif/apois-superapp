@@ -97,7 +97,7 @@ requireAll('scripts/harden-partner-motorista-navigation.mjs', [
   'min-h-[60px]',
   'h-6 w-6',
   'text-xs font-extrabold',
-  'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
+  'paddingBottom: "max(env(safe-area-inset-bottom), 44px)"',
 ], 'navegação do Motorista aponta para Ganhos, elimina carteira duplicada e usa alvos confortáveis no celular');
 
 requireAll('scripts/harden-partner-motorista-legal-navigation.mjs', [

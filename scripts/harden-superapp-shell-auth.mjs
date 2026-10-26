@@ -4,16 +4,24 @@ import { resolve } from 'node:path';
 const path = resolve('superapp/shell/index.html');
 let html = readFileSync(path, 'utf8');
 
-if (html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const storeCorridasGoogle=()=>{')) {
+const alreadyHardened = html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const storeCorridasGoogle=()=>{');
+
+if (alreadyHardened) {
   for (const marker of [
     "params.getAll('code')",
-    'codes.length!==1',
-    "params.has('access_token')",
-    "params.has('refresh_token')",
+    "const providerError=params.get('error_description')||params.get('error')",
+    'const hasSingleCode=codes.length===1&&Boolean(codes[0]?.trim())',
+    "(!hasSingleCode&&!providerError)||params.has('access_token')||params.has('refresh_token')",
     'JSON.stringify({url:rawUrl,createdAt:Date.now()})',
     'clearExpiredCorridasGoogle()',
     'window.setTimeout(()=>{try{if(localStorage.getItem(CORRIDAS_GOOGLE_KEY)===envelope)',
-    'hasPendingCorridas()&&storeCorridasGoogle()',
+    'const pendingCorridas=hasPendingCorridas();',
+    'const stored=storeCorridasGoogle();',
+    'const pendingEntregas=hasPendingEntregas();',
+    'const stored=storeEntregasGoogle();',
+    "ENTREGAS_GOOGLE_KEY='apois-superapp:entregas-google-url'",
+    "window.location.replace('./modules/corridas/index.html#/login')",
+    "window.location.replace('./modules/entregas/index.html#/login')",
     "if(path==='corridas-reset')",
     'sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl)',
     "window.location.replace(`./modules/entregas/index.html#/auth/callback${suffix()}`)",
@@ -21,8 +29,7 @@ if (html.includes('const OAUTH_HANDOFF_TTL_MS=120000;') && html.includes('const 
     if (!html.includes(marker)) throw new Error(`[FAIL] shell cliente: handoff OAuth endurecido incompleto (${marker})`);
   }
   console.log('[OK] shell cliente encaminha somente authorization code PKCE com TTL e consumo único');
-  process.exit(0);
-}
+} else {
 
 const oldResetBlock = `        if(path==='corridas-reset'){
           try{sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl);}catch{}
@@ -84,8 +91,25 @@ if (!html.includes("pendingProduct==='corridas'")) {
 }
 
 writeFileSync(path, html, 'utf8');
+}
 
-if (!html.includes("path==='corridas-google'")) throw new Error('[FAIL] shell cliente: callback Google Corridas ausente');
-if (!html.includes("pendingProduct==='corridas'")) throw new Error('[FAIL] shell cliente: callback compartilhado não diferencia Corridas');
-if (!html.includes("localStorage.getItem('apois-superapp:pending-oauth-product')")) throw new Error('[FAIL] shell cliente: marcador OAuth Corridas não é persistente');
-console.log('[OK] shell cliente encaminha OAuth Google de Corridas pelo callback permitido com marcador persistente');
+if (alreadyHardened) {
+  for (const marker of [
+    'const pendingCorridas=hasPendingCorridas();',
+    'const stored=storeCorridasGoogle();',
+    'const pendingEntregas=hasPendingEntregas();',
+    'const stored=storeEntregasGoogle();',
+    'const CORRIDAS_GOOGLE_KEY=',
+    'const ENTREGAS_GOOGLE_KEY=',
+  ]) {
+    if (!html.includes(marker)) {
+      throw new Error(`[FAIL] shell cliente: callback OAuth atual perdeu marcador (${marker})`);
+    }
+  }
+  console.log('[OK] shell cliente usa handoff OAuth atual para diferenciar Corridas e Entregas no callback compartilhado');
+} else {
+  if (!html.includes("path==='corridas-google'")) throw new Error('[FAIL] shell cliente: callback Google Corridas ausente');
+  if (!html.includes("pendingProduct==='corridas'")) throw new Error('[FAIL] shell cliente: callback compartilhado não diferencia Corridas');
+  if (!html.includes("localStorage.getItem('apois-superapp:pending-oauth-product')")) throw new Error('[FAIL] shell cliente: marcador OAuth Corridas não é persistente');
+  console.log('[OK] shell cliente encaminha OAuth Google de Corridas pelo callback permitido com marcador persistente');
+}

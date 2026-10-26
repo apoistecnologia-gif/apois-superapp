@@ -3,16 +3,26 @@ import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSyn
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const legacySource = resolve('superapp/branding/apois-launcher.png');
-const foregroundSource = resolve('superapp/branding/apois-launcher-foreground.png');
+const brandSourceB64 = resolve('superapp/branding/apois-client-red-logo.b64');
+const decodedBrandSource = '/tmp/apois-client-red-logo.png';
 const resRoot = resolve('superapp/shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/shell/android/app/src/main/AndroidManifest.xml');
 const stringsPath = resolve('superapp/shell/android/app/src/main/res/values/strings.xml');
 const APP_LABEL = 'APOIS Cliente';
 
-for (const source of [legacySource, foregroundSource]) {
-  if (!existsSync(source)) throw new Error(`Arte oficial APOIS não encontrada: ${source}`);
+if (!existsSync(brandSourceB64)) throw new Error(`Arte oficial APOIS Cliente não encontrada: ${brandSourceB64}`);
+const brandBytes = Buffer.from(readFileSync(brandSourceB64, 'utf8').trim(), 'base64');
+if (
+  brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
+  brandBytes.length < 4096 ||
+  brandBytes.readUInt32BE(16) !== 128 ||
+  brandBytes.readUInt32BE(20) !== 128
+) {
+  throw new Error('Arte APOIS Cliente não decodificou para o PNG oficial 128x128.');
 }
+writeFileSync(decodedBrandSource, brandBytes);
+const legacySource = decodedBrandSource;
+const foregroundSource = decodedBrandSource;
 if (!existsSync(resRoot)) throw new Error(`Recursos Android não encontrados: ${resRoot}`);
 
 function resizePng(source, size, output) {
@@ -64,10 +74,11 @@ mkdirSync(adaptiveDir, { recursive: true });
 rmSync(join(drawableDir, 'apois_launcher_a.xml'), { force: true });
 rmSync(join(drawableDir, 'apois_launcher_a_monochrome.xml'), { force: true });
 rmSync(join(drawableDir, 'ic_launcher_monochrome.xml'), { force: true });
+rmSync(join(drawableDir, 'ic_launcher_foreground.xml'), { force: true });
 
 const backgroundDrawable = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#050505" />
+    <solid android:color="#FFFFFF" />
 </shape>
 `;
 writeFileSync(join(drawableDir, 'apois_launcher_background.xml'), backgroundDrawable, 'utf8');
@@ -78,11 +89,26 @@ rmSync(join(legacyAnyDpi, 'ic_launcher_round.xml'), { force: true });
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/apois_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>
 `;
 writeFileSync(join(adaptiveDir, 'ic_launcher.xml'), adaptiveXml, 'utf8');
 writeFileSync(join(adaptiveDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
+
+const splashDrawable = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+    <item android:gravity="center">
+        <inset
+            android:drawable="@mipmap/ic_launcher_foreground"
+            android:insetLeft="64dp"
+            android:insetTop="64dp"
+            android:insetRight="64dp"
+            android:insetBottom="64dp" />
+    </item>
+</layer-list>
+`;
+writeFileSync(join(drawableDir, 'splash.xml'), splashDrawable, 'utf8');
 
 if (!existsSync(stringsPath)) throw new Error(`strings.xml não encontrado: ${stringsPath}`);
 let stringsXml = readFileSync(stringsPath, 'utf8');
@@ -101,4 +127,5 @@ if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) throw n
 if (!manifest.includes('android:allowBackup="false"')) throw new Error('AndroidManifest permite backup de dados do WebView/sessões.');
 if (!manifest.includes('android:usesCleartextTraffic="false"')) throw new Error('AndroidManifest não bloqueia tráfego HTTP cleartext.');
 
-console.log('[OK] Launcher APOIS Cliente usa a arte oficial da marca; A vetorial genérico removido.');
+rmSync(decodedBrandSource, { force: true });
+console.log('[OK] Launcher e splash APOIS Cliente usam exclusivamente a nova marca vermelho/branco/preto.');
