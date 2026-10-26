@@ -1,5 +1,5 @@
 name: APOIS Cliente Android APK
-# homologação 1.0.3: persistência de nomes das paradas e build Android final
+# homologação 1.0.3: persistência de nomes das paradas e build Android final — retry hardening 26/10
 
 on:
   workflow_dispatch:
