@@ -288,7 +288,7 @@
           window.location.assign('./modules/motorista/index.html#/motorista/login');
           return true;
         }
-        if(isDriver && path==='google'){
+        if((isDriver && path==='google') || (isPartner && incoming.host==='auth' && path==='motorista-google')){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
             window.location.replace(operationalHome(locked));
