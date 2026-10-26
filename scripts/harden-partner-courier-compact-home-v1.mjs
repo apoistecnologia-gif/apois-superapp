@@ -15,6 +15,30 @@ const after=`        ) : (
         )}`;
 if(!s.includes(before))throw Error("[FAIL] bloco offline não localizado");
 s=s.replace(before,after);
+const stateAnchor='  const [settlementBusy, setSettlementBusy] = useState<string | null>(null);';
+if(!s.includes(stateAnchor))throw Error('[FAIL] posição dos hooks do Entregador mudou');
+s=s.replace(stateAnchor,stateAnchor+`
+  // Vista inicial do mapa OFFLINE: uma leitura pontual de GPS, sem rastreamento
+  // contínuo nem transmissão ao servidor enquanto o entregador está offline.
+  useEffect(() => {
+    if (!courier?.id || availability?.is_online || !navigator.geolocation) return;
+    let active = true;
+    navigator.geolocation.getCurrentPosition(
+      ({coords}) => {
+        if (!active) return;
+        setCurrentPosition({
+          lat: coords.latitude, lng: coords.longitude,
+          accuracy: coords.accuracy, heading: coords.heading,
+          speed: coords.speed, recordedAt: Date.now()
+        });
+      },
+      () => { /* sem permissão: componente exibe aviso sem ativar GPS contínuo */ },
+      {enableHighAccuracy:false,timeout:8000,maximumAge:60000}
+    );
+    return () => {active=false;};
+  }, [courier?.id, availability?.is_online]);
+`);
+
 // StatusCard continua sendo o único botão online/offline, inclusive antes de haver oferta.
 s=s.replace('className="mx-auto w-full max-w-lg space-y-4 overflow-x-hidden p-4 pb-[calc(7.7rem+env(safe-area-inset-bottom))]"',
 'className="mx-auto w-full max-w-lg space-y-2.5 overflow-x-hidden px-3 py-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))]"');
