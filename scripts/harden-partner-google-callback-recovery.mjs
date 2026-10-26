@@ -11,10 +11,11 @@ s=s.replace('callback.protocol === "apoismotorista:" && callback.hostname === "a
 if(!s.includes('callback.pathname === "/motorista-google"'))throw Error('[FAIL] validação de callback');
 const key='  const listenerRef = useRef<PluginListenerHandle | null>(null);';
 if(!s.includes(key))throw Error('[FAIL] listener');
-s=s.replace(key,key+'\n  const flowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);\n  const resetGoogleLoading = () => { if (flowTimeoutRef.current) clearTimeout(flowTimeoutRef.current); flowTimeoutRef.current = null; setLoading(false); };');
+s=s.replace(key,key+'\n  const browserFinishedRef = useRef<{ remove: () => Promise<void> } | null>(null);\n  const flowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);\n  const resetGoogleLoading = () => { if (flowTimeoutRef.current) clearTimeout(flowTimeoutRef.current); flowTimeoutRef.current = null; setLoading(false); };');
+s=s.replace('      listenerRef.current = await App.addListener("appUrlOpen", ({ url }) => { if (alive) void handleCallback(url); });','      listenerRef.current = await App.addListener("appUrlOpen", ({ url }) => { if (alive) void handleCallback(url); });\n      browserFinishedRef.current = await Browser.addListener("browserFinished", () => { if (alive) resetGoogleLoading(); });');
 const effect='    return () => { alive = false; void listenerRef.current?.remove(); listenerRef.current = null; };';
 if(!s.includes(effect))throw Error('[FAIL] cleanup');
-s=s.replace(effect,'    return () => { alive = false; if (flowTimeoutRef.current) clearTimeout(flowTimeoutRef.current); void listenerRef.current?.remove(); listenerRef.current = null; };');
+s=s.replace(effect,'    return () => { alive = false; if (flowTimeoutRef.current) clearTimeout(flowTimeoutRef.current); void browserFinishedRef.current?.remove(); void listenerRef.current?.remove(); listenerRef.current = null; };');
 s=s.replace('    setLoading(true);\n    try {\n      const isNative = Capacitor.isNativePlatform();','    setLoading(true);\n    flowTimeoutRef.current = setTimeout(() => { toast.error("O Google não concluiu o acesso. Tente novamente."); setLoading(false); }, 45000);\n    try {\n      const isNative = Capacitor.isNativePlatform();');
 s=s.replace('      toast.error("Não foi possível entrar com Google.");\n      setLoading(false);','      toast.error("Não foi possível entrar com Google.");\n      resetGoogleLoading();');
 s=s.replace('      toast.error("Não foi possível concluir o login com Google.");\n      setLoading(false);','      toast.error("Não foi possível concluir o login com Google.");\n      resetGoogleLoading();');
