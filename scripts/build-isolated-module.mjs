@@ -358,6 +358,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-native-map.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-map-focus.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-address-display.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-timeout-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-destination-search-runtime.mjs')]);
 
   const protectedMapRuntimePaths = [
