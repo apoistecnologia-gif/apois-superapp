@@ -62,6 +62,9 @@ node "$ROOT/scripts/harden-partner-red-visual.mjs"
 node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
 node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
 node "$ROOT/scripts/harden-partner-ride-homologation-v2.mjs"
+# APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
+if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
+if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
 
 cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
