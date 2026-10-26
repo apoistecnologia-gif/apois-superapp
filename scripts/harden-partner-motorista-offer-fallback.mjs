@@ -14,7 +14,7 @@ if (!source.includes('APOIS_DRIVER_OFFER_POLL_V1')) {
     '      if (!navigator.onLine) return;',
     '      if (incomingRef.current || activeRef.current || queuedRideRef.current) return;',
     '      void resyncDriverRides().catch(() => undefined);',
-    '    }, 12_000);',
+    '    }, 4_000);',
     '',
   ].join('\n');
   source=source.replace(anchor,addition+anchor);
@@ -24,4 +24,4 @@ if (!source.includes('APOIS_DRIVER_OFFER_POLL_V1')) {
 for(const marker of ['APOIS_DRIVER_OFFER_POLL_V1','resyncDriverRides().catch','window.clearInterval(offerPoll)']) {
   if(!source.includes(marker)) throw new Error('[FAIL] fallback motorista incompleto: '+marker);
 }
-console.log('[OK] Motorista: ofertas reconsultadas a cada 12 segundos enquanto a tela está aberta');
+console.log('[OK] Motorista: ofertas reconsultadas a cada 4 segundos enquanto a tela está aberta');
