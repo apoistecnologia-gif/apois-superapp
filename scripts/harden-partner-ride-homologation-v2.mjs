@@ -5,10 +5,14 @@ let s=readFileSync(target,"utf8");
 const oldVoice='      } else if (active.status === "finalizada") {\n        void speak("Corrida finalizada.", { interrupt: true });\n      }';
 if(!s.includes(oldVoice))throw Error("[FAIL] voz final");
 s=s.replace(oldVoice,'      } else if (active.status === "finalizada") {\n        // Só anunciar após sucesso da ação explícita de finalizar.\n      }');
-const oldFinish='              final_price: active.estimated_price ? Number(active.estimated_price) : undefined,\n            } });';
-const nextFinish=oldFinish+'\n            void speak("Corrida finalizada.", { dedupKey: active.id + ":completed-confirmed", interrupt: true });';
-if(s.split(oldFinish).length!==3)throw Error("[FAIL] duas confirmações de finalização esperadas");
-s=s.replaceAll(oldFinish,nextFinish);
+const finishMarks=[
+  'setLegKm(null);\n            resetSpokenCache();',
+  'setLegKm(null);\n              resetSpokenCache();'
+];
+for(const mark of finishMarks){
+  if(!s.includes(mark))throw Error("[FAIL] pós-finalização canônica ausente");
+  s=s.replace(mark,mark+'\n            void speak("Corrida finalizada.", { dedupKey: completedRide.id + ":completed-confirmed", interrupt: true });');
+}
 const a=s.indexOf("function IncomingOffer("),b=s.indexOf("function InfoCard(",a);
 if(a<0||b<0)throw Error("[FAIL] oferta");
 let offer=s.slice(a,b);
