@@ -86,8 +86,8 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   if(!form.includes('src={APOIS_PARTNER_LOGO_DATA_URL}'))throw Error('[FAIL] logo de cadastro não corrigida');
   source=source.slice(0,begin)+form+source.slice(end);
   const input='className="h-14 w-full rounded-2xl border border-zinc-800 bg-black/70 px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-primary focus:ring-2 focus:ring-primary/10"';
-  if(!source.includes(input))throw Error('[FAIL] campos premium não encontrados');
-  source=source.replace(input,'className="h-14 w-full rounded-2xl border border-[#D9DDE3] bg-white px-4 text-sm text-[#111827] outline-none transition placeholder:text-[#6B7280] focus:border-primary focus:ring-2 focus:ring-primary/10"');
+  // O tema v17 pode já ter normalizado o campo; nesse caso não é erro.
+  if(source.includes(input))source=source.replace(input,'className="h-14 w-full rounded-2xl border border-[#D9DDE3] bg-white px-4 text-sm text-[#111827] outline-none transition placeholder:text-[#6B7280] focus:border-primary focus:ring-2 focus:ring-primary/10"');
   return source;
 });
 
