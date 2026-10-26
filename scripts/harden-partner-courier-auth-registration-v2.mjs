@@ -47,7 +47,7 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   if(begin<0||end<0)throw Error('[FAIL] delimitação cadastro do Entregador');
   let form=source.slice(begin,end);
   if(!source.includes('import { useEffect, useState } from "react";'))source=source.replace('import { useState } from "react";','import { useEffect, useState } from "react";');
-  if(!source.includes('import { App as CourierAppLifecycle } from "@capacitor/app";'))source='import { App as CourierAppLifecycle } from "@capacitor/app";\\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\\n'+source;
+  if(!source.includes('import { App as CourierAppLifecycle } from "@capacitor/app";'))source='import { App as CourierAppLifecycle } from "@capacitor/app";\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\n'+source;
   const hookAnchor='  const [vehicleType, setVehicleType] = useState("moto");';
   if(!form.includes(hookAnchor))throw Error('[FAIL] cadastro sem state');
   form=form.replace(hookAnchor,hookAnchor+'\n  useEffect(() => { try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* storage indisponível */ } }, []);');
@@ -57,7 +57,7 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   // Não se aplica aos entregadores cadastrados: este componente só existe sem courier.
   const stateAnchor='  const motorized = vehicleType === "moto" || vehicleType === "carro";';
   if(!form.includes(stateAnchor))throw Error('[FAIL] ancora de ciclo de vida do cadastro Entregador');
-  form=form.replace(stateAnchor,stateAnchor+`\\n  // APOIS_COURIER_INCOMPLETE_RESUME_V1
+  form=form.replace(stateAnchor,stateAnchor+`\n  // APOIS_COURIER_INCOMPLETE_RESUME_V1
   useEffect(() => {
     if (!CourierCapacitor.isNativePlatform()) return;
     let pausedAt = 0;
