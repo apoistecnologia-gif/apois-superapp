@@ -46,8 +46,8 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   const end=source.indexOf('export function CourierReviewState(',begin);
   if(begin<0||end<0)throw Error('[FAIL] delimitação cadastro do Entregador');
   let form=source.slice(begin,end);
-  if(!source.includes('import { useEffect, useState } from "react";'))source=source.replace('import { useState } from "react";','import { useEffect, useState } from "react";');
-  if(!source.includes('import { App as CourierAppLifecycle } from "@capacitor/app";'))source='import { App as CourierAppLifecycle } from "@capacitor/app";\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\n'+source;
+  // Importações adicionadas somente DEPOIS de recompor a seção: alterar o
+  // prefixo antes de slice(begin,end) deslocava os índices e corrompia TSX.
   const hookAnchor='  const [vehicleType, setVehicleType] = useState("moto");';
   if(!form.includes(hookAnchor))throw Error('[FAIL] cadastro sem state');
   form=form.replace(hookAnchor,hookAnchor+'\n  useEffect(() => { try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* storage indisponível */ } }, []);');
@@ -85,6 +85,14 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   form=form.replace('shadow-[0_20px_55px_rgba(0,0,0,0.42)]','shadow-[0_18px_42px_-24px_rgba(17,24,39,0.18)]');
   if(!form.includes('src={APOIS_PARTNER_LOGO_DATA_URL}'))throw Error('[FAIL] logo de cadastro não corrigida');
   source=source.slice(0,begin)+form+source.slice(end);
+  if(!source.includes('import { useEffect, useState } from "react";')){
+    if(!source.includes('import { useState } from "react";'))throw Error('[FAIL] import React inesperado');
+    source=source.replace('import { useState } from "react";','import { useEffect, useState } from "react";');
+  }
+  if(!source.includes('import { App as CourierAppLifecycle } from "@capacitor/app";')){
+    source='import { App as CourierAppLifecycle } from "@capacitor/app";\\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\\n'+source;
+  }
+
   const input='className="h-14 w-full rounded-2xl border border-zinc-800 bg-black/70 px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-primary focus:ring-2 focus:ring-primary/10"';
   // O tema v17 pode já ter normalizado o campo; nesse caso não é erro.
   if(source.includes(input))source=source.replace(input,'className="h-14 w-full rounded-2xl border border-[#D9DDE3] bg-white px-4 text-sm text-[#111827] outline-none transition placeholder:text-[#6B7280] focus:border-primary focus:ring-2 focus:ring-primary/10"');
