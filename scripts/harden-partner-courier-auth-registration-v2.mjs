@@ -1,7 +1,7 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 const base=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||'.work/partner-entregador');
-function edit(path,fn){const full=resolve(base,path);const before=readFileSync(full,'utf8');const after=fn(before);if(after===before)throw Error('[FAIL] sem alteração '+path);writeFileSync(full,after,'utf8');}
+function edit(path,fn){const full=resolve(base,path);const before=readFileSync(full,'utf8');const after=fn(before);if(after===before){console.log('[OK] já aplicado '+path);return;}writeFileSync(full,after,'utf8');}
 const logoImport='import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";';
 // Não alterar handlers OAuth nem formulários. Apenas temas locais da tela e imagem.
 edit('src/routes/register.tsx',s=>{
@@ -66,6 +66,6 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
 
 edit('src/routes/courier.tsx',source=>{
   const anchor='onBack={() => void logout()}';
-  if(!source.includes(anchor))throw Error('[FAIL] seta do cadastro Entregador');
-  return source.replace(anchor,'onBack={() => window.location.replace("../../index.html")}');
+  if(!source.includes(anchor) && !source.includes('onBack={() => window.location.replace("../../index.html")}')) throw Error('[FAIL] seta do cadastro Entregador');
+  return source.includes(anchor) ? source.replace(anchor,'onBack={() => window.location.replace("../../index.html")}') : source;
 });
