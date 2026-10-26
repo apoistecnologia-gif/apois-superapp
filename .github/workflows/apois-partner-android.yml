@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — homologação Parceiro atualizada em 25/10/2026
+# test workflow: GitHub Actions debug APK only — homologação Parceiro atualizada em 25/10/2026 — retry hardening 26/10
 
 on:
   workflow_dispatch:
