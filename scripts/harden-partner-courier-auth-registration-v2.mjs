@@ -47,9 +47,36 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   if(begin<0||end<0)throw Error('[FAIL] delimitação cadastro do Entregador');
   let form=source.slice(begin,end);
   if(!source.includes('import { useEffect, useState } from "react";'))source=source.replace('import { useState } from "react";','import { useEffect, useState } from "react";');
+  if(!source.includes('import { App as CourierAppLifecycle } from "@capacitor/app";'))source='import { App as CourierAppLifecycle } from "@capacitor/app";\\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\\n'+source;
   const hookAnchor='  const [vehicleType, setVehicleType] = useState("moto");';
   if(!form.includes(hookAnchor))throw Error('[FAIL] cadastro sem state');
   form=form.replace(hookAnchor,hookAnchor+'\n  useEffect(() => { try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* storage indisponível */ } }, []);');
+
+  // Caso o Google tenha autenticado alguém sem cadastro, reabrir o app
+  // depois de ficar em segundo plano deve exibir o seletor de parceiros.
+  // Não se aplica aos entregadores cadastrados: este componente só existe sem courier.
+  const stateAnchor='  const motorized = vehicleType === "moto" || vehicleType === "carro";';
+  if(!form.includes(stateAnchor))throw Error('[FAIL] ancora de ciclo de vida do cadastro Entregador');
+  form=form.replace(stateAnchor,stateAnchor+`\\n  // APOIS_COURIER_INCOMPLETE_RESUME_V1
+  useEffect(() => {
+    if (!CourierCapacitor.isNativePlatform()) return;
+    let pausedAt = 0;
+    let disposed = false;
+    let pauseHandler: { remove: () => Promise<void> } | null = null;
+    let resumeHandler: { remove: () => Promise<void> } | null = null;
+    void CourierAppLifecycle.addListener("pause", () => { pausedAt = Date.now(); }).then((handle) => {
+      if (disposed) void handle.remove(); else pauseHandler = handle;
+    });
+    void CourierAppLifecycle.addListener("resume", () => {
+      if (disposed || !pausedAt || Date.now() - pausedAt < 3000) return;
+      pausedAt = 0;
+      try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch {}
+      window.location.replace("../../index.html");
+    }).then((handle) => {
+      if (disposed) void handle.remove(); else resumeHandler = handle;
+    });
+    return () => { disposed = true; void pauseHandler?.remove(); void resumeHandler?.remove(); };
+  }, []);`);
   form=form.replace('src={logoAsset.url}','src={APOIS_PARTNER_LOGO_DATA_URL}').replace('alt="APOIS ENTREGA"','alt="APOIS"');
   form=form.replaceAll('bg-black','bg-[#F7F7F8]').replaceAll('bg-zinc-950/85','bg-white').replaceAll('bg-zinc-950','bg-white');
   form=form.replaceAll('text-white','text-[#111827]').replaceAll('text-zinc-400','text-[#596372]').replaceAll('text-zinc-300','text-[#374151]').replaceAll('text-zinc-600','text-[#596372]');
