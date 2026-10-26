@@ -412,6 +412,7 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-apois-entregas-email-auth-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-google-oauth-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-auto-address-cep-v1.mjs')]);
