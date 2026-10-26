@@ -90,7 +90,7 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
     source=source.replace('import { useState } from "react";','import { useEffect, useState } from "react";');
   }
   if(!source.includes('import { App as CourierAppLifecycle } from "@capacitor/app";')){
-    source='import { App as CourierAppLifecycle } from "@capacitor/app";\\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\\n'+source;
+    source='import { App as CourierAppLifecycle } from "@capacitor/app";\nimport { Capacitor as CourierCapacitor } from "@capacitor/core";\n'+source;
   }
 
   const input='className="h-14 w-full rounded-2xl border border-zinc-800 bg-black/70 px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-primary focus:ring-2 focus:ring-primary/10"';
