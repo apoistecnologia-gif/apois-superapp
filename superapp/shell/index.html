@@ -192,7 +192,11 @@
           window.location.replace('./modules/corridas/index.html#/login');
           return true;
         }
-        if(path==='corridas-confirm'){\n          window.location.replace('./modules/corridas/index.html#/login');\n          return true;\n        }\n        if(path==='corridas-reset'){
+        if(path==='corridas-confirm'){
+          window.location.replace('./modules/corridas/index.html#/login');
+          return true;
+        }
+        if(path==='corridas-reset'){
           try{sessionStorage.setItem(CORRIDAS_RECOVERY_KEY,rawUrl);}catch{}
           window.location.replace('./modules/corridas/index.html');
           return true;
