@@ -10,7 +10,19 @@ function patch(path,transform){
 }
 function change(s,from,to,label){
   if(s.includes(to))return s;
-  if(!s.includes(from))throw Error('[FAIL] '+label);
+  if(!s.includes(from)){
+    if(label==='controle de jitter de gps'){
+      const marker='    setIsLoading(true);\n    setStatus("identifying");';
+      if(s.includes(marker)){
+        const guard=s.match(/    if \(!location[^\n]*\) return;\s*/);
+        if(guard){
+          const fallback=guard[0]+marker;
+          if(s.includes(fallback))return s.replace(fallback,to);
+        }
+      }
+    }
+    throw Error('[FAIL] '+label);
+  }
   return s.replace(from,to);
 }
 patch('src/hooks/use-pickup-address.tsx',(s)=>{
