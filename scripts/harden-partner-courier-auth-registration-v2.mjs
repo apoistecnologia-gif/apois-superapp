@@ -1,0 +1,37 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+const base=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||'.work/partner-entregador');
+function edit(path,fn){const full=resolve(base,path);const before=readFileSync(full,'utf8');const after=fn(before);if(after===before)throw Error('[FAIL] sem alteração '+path);writeFileSync(full,after,'utf8');}
+const logoImport='import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";';
+// Não alterar handlers OAuth nem formulários. Apenas temas locais da tela e imagem.
+edit('src/routes/register.tsx',s=>{
+  if(!s.includes('src={logoAsset.url}'))throw Error('[FAIL] logo registro');
+  s=s.replace('src={logoAsset.url}','src={APOIS_PARTNER_LOGO_DATA_URL}').replace('alt="APOIS ENTREGA"','alt="APOIS"');
+  if(!s.includes(logoImport))s=logoImport+'\n'+s;
+  s=s.replace('bg-black text-white','bg-[#F7F7F8] text-[#111827]').replace('items-center bg-black px-4','items-center bg-[#F7F7F8] px-4');
+  s=s.replace('bg-zinc-900/50 border-zinc-800 h-11 rounded-xl text-white text-sm placeholder:text-zinc-600','bg-white border-[#D9DDE3] h-11 rounded-xl text-[#111827] text-sm placeholder:text-[#7A8491]');
+  s=s.replaceAll('text-zinc-500','text-[#596372]').replaceAll('text-zinc-400','text-[#4B5563]');
+  s=s.replaceAll('text-white','text-[#111827]').replaceAll('text-black','text-[#111827]');
+  s=s.replace('bg-primary text-base font-bold text-[#111827]','bg-[#E51B23] text-base font-bold text-white');
+  s=s.replace('onClick={() => navigate({ to: "/" })}','onClick={() => window.location.replace("../../index.html")}');
+  if(!s.includes('src={APOIS_PARTNER_LOGO_DATA_URL}'))throw Error('[FAIL] imagem registro');
+  return s;
+});
+edit('src/routes/login.tsx',s=>{
+  const anchor='className="mt-2 rounded-[28px] border border-[#E2E5EA] bg-white';
+  // Visual original após o patch v17 ainda conserva classes escuras; a correção é restrita à tela.
+  const start=s.indexOf('export default'); // não depender de export específico
+  s=s.replaceAll('className="mt-2 rounded-[28px] border border-[#E2E5EA] bg-white','className="mt-2 rounded-[28px] border border-[#E2E5EA] bg-white');
+  s=s.replaceAll('bg-[#090909]/94','bg-white').replaceAll('bg-[#111111]','bg-white');
+  s=s.replaceAll('text-[#111827]">Entrar na sua','text-[#111827]">Entrar na sua');
+  // Overrides apenas do container de login e elementos de texto herdados
+  const marker='data-apois-partner-auth-v17';
+  if(!s.includes(marker))throw Error('[FAIL] visual v17 esperado');
+  s=s.replace(marker,marker+' data-apois-courier-login-v2');
+  return s;
+});
+const css=resolve(base,'src/system-theme.css');
+let c=readFileSync(css,'utf8');
+if(!c.includes('APOIS_COURIER_LOGIN_CONTRAST_V2'))c+=\`\n/* APOIS_COURIER_LOGIN_CONTRAST_V2 */\n[data-apois-courier-login-v2] { color:#111827 !important; background:#F7F7F8 !important; }\n[data-apois-courier-login-v2] h1,[data-apois-courier-login-v2] h2,[data-apois-courier-login-v2] label { color:#111827 !important; }\n[data-apois-courier-login-v2] p { color:#596372 !important; }\n[data-apois-courier-login-v2] input { color:#111827 !important; -webkit-text-fill-color:#111827 !important; background:#FFFFFF !important; }\n[data-apois-courier-login-v2] input::placeholder { color:#7A8491 !important; -webkit-text-fill-color:#7A8491 !important; }\n\`;
+writeFileSync(css,c,'utf8');
+console.log('[OK] Entregador: formulário claro, logo incorporada e login legível.');
