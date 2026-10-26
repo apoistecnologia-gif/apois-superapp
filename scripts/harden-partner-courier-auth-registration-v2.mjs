@@ -35,3 +35,25 @@ let c=readFileSync(css,'utf8');
 if(!c.includes('APOIS_COURIER_LOGIN_CONTRAST_V2'))c+=`\n/* APOIS_COURIER_LOGIN_CONTRAST_V2 */\n[data-apois-courier-login-v2] { color:#111827 !important; background:#F7F7F8 !important; }\n[data-apois-courier-login-v2] h1,[data-apois-courier-login-v2] h2,[data-apois-courier-login-v2] label { color:#111827 !important; }\n[data-apois-courier-login-v2] p { color:#596372 !important; }\n[data-apois-courier-login-v2] input { color:#111827 !important; -webkit-text-fill-color:#111827 !important; background:#FFFFFF !important; }\n[data-apois-courier-login-v2] input::placeholder { color:#7A8491 !important; -webkit-text-fill-color:#7A8491 !important; }\n`;
 writeFileSync(css,c,'utf8');
 console.log('[OK] Entregador: formulário claro, logo incorporada e login legível.');
+
+// Etapa efetiva pós-Google: formulário de CPF, data de nascimento e veículo.
+edit('src/components/CourierPremiumViews.tsx',source=>{
+  if(!source.includes('export function CourierApplication('))throw Error('[FAIL] cadastro pós-Google não identificado');
+  if(!source.includes(logoImport))source=logoImport+'\n'+source;
+  const begin=source.indexOf('export function CourierApplication(');
+  const end=source.indexOf('export function CourierReviewState(',begin);
+  if(begin<0||end<0)throw Error('[FAIL] delimitação cadastro do Entregador');
+  let form=source.slice(begin,end);
+  form=form.replace('src={logoAsset.url}','src={APOIS_PARTNER_LOGO_DATA_URL}').replace('alt="APOIS ENTREGA"','alt="APOIS"');
+  form=form.replaceAll('bg-black','bg-[#F7F7F8]').replaceAll('bg-zinc-950/85','bg-white').replaceAll('bg-zinc-950','bg-white');
+  form=form.replaceAll('text-white','text-[#111827]').replaceAll('text-zinc-400','text-[#596372]').replaceAll('text-zinc-300','text-[#374151]').replaceAll('text-zinc-600','text-[#596372]');
+  form=form.replace('linear-gradient(145deg,#111,#070707)','linear-gradient(145deg,#FFFFFF,#FFF1F2)');
+  form=form.replace('border-zinc-800','border-[#E5E7EB]');
+  form=form.replace('shadow-[0_20px_55px_rgba(0,0,0,0.42)]','shadow-[0_18px_42px_-24px_rgba(17,24,39,0.18)]');
+  if(!form.includes('src={APOIS_PARTNER_LOGO_DATA_URL}'))throw Error('[FAIL] logo de cadastro não corrigida');
+  source=source.slice(0,begin)+form+source.slice(end);
+  const input='className="h-14 w-full rounded-2xl border border-zinc-800 bg-black/70 px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-primary focus:ring-2 focus:ring-primary/10"';
+  if(!source.includes(input))throw Error('[FAIL] campos premium não encontrados');
+  source=source.replace(input,'className="h-14 w-full rounded-2xl border border-[#D9DDE3] bg-white px-4 text-sm text-[#111827] outline-none transition placeholder:text-[#6B7280] focus:border-primary focus:ring-2 focus:ring-primary/10"');
+  return source;
+});
