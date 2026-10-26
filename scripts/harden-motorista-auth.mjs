@@ -76,6 +76,7 @@ writeFileSync(componentPath, `import { useEffect, useRef, useState } from "react
     )
     .replace('      } catch {}', '      } catch { /* appUrlOpen/getLaunchUrl continuam ativos */ }')
     .replace('  }, []);\n\n  const login = async () => {', '  }, [finish, handleCallback]);\n\n  const login = async () => {');
+  if (!generated.includes('const CALLBACK = "apoismotorista://auth/google";')) throw new Error('[FAIL] motorista OAuth deve usar scheme registrado no Android');
   for (const marker of ['google_callback_tokens_rejected', 'function singlePkceCode', 'codes.length === 1', 'function isDriverCallback', 'callback.pathname === "/google"', '}, [finish, handleCallback]);']) {
     if (!generated.includes(marker)) throw new Error(`[FAIL] motorista: OAuth Google endurecido incompleto (${marker})`);
   }
