@@ -49,7 +49,7 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   if(!source.includes('import { useEffect, useState } from "react";'))source=source.replace('import { useState } from "react";','import { useEffect, useState } from "react";');
   const hookAnchor='  const [vehicleType, setVehicleType] = useState("moto");';
   if(!form.includes(hookAnchor))throw Error('[FAIL] cadastro sem state');
-  form=form.replace(hookAnchor,hookAnchor+'\\n  useEffect(() => { try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* storage indisponível */ } }, []);');
+  form=form.replace(hookAnchor,hookAnchor+'\n  useEffect(() => { try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* storage indisponível */ } }, []);');
   form=form.replace('src={logoAsset.url}','src={APOIS_PARTNER_LOGO_DATA_URL}').replace('alt="APOIS ENTREGA"','alt="APOIS"');
   form=form.replaceAll('bg-black','bg-[#F7F7F8]').replaceAll('bg-zinc-950/85','bg-white').replaceAll('bg-zinc-950','bg-white');
   form=form.replaceAll('text-white','text-[#111827]').replaceAll('text-zinc-400','text-[#596372]').replaceAll('text-zinc-300','text-[#374151]').replaceAll('text-zinc-600','text-[#596372]');
