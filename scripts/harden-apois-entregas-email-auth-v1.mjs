@@ -5,9 +5,14 @@ const nativeScheme=process.env.APOIS_AUTH_ENTREGAS_SCHEME || (workspace.includes
 function edit(path,transform){const full=resolve(workspace,path);const before=readFileSync(full,'utf8');const after=transform(before);if(after===before)throw Error('[FAIL] autenticação: nada alterado em '+path);writeFileSync(full,after,'utf8');}
 edit('src/routes/login.tsx',s=>{
   if(!s.includes('import { Capacitor } from "@capacitor/core";'))s='import { Capacitor } from "@capacitor/core";\n'+s;
-  const re=/redirectTo: (?:`${window.location.origin}\/redefinir-senha`|"br.com.apois.app:\/\/auth\/reset"|"br.com.apois.parceiro:\/\/auth\/reset"),/;
-  if(!re.test(s))throw Error('[FAIL] recuperação Entregas: redirectTo não localizado');
-  return s.replace(re,'redirectTo: Capacitor.isNativePlatform() ? "'+nativeScheme+'://auth/reset" : new URL("/redefinir-senha", window.location.origin).toString(),');
+  const candidates=[
+    'redirectTo: `${window.location.origin}/redefinir-senha`,',
+    'redirectTo: "br.com.apois.app://auth/reset",',
+    'redirectTo: "br.com.apois.parceiro://auth/reset",'
+  ];
+  const matches=candidates.filter(x=>s.includes(x));
+  if(matches.length!==1)throw Error('[FAIL] recuperação Entregas: redirectTo incompatível ou ambíguo');
+  return s.replace(matches[0],'redirectTo: Capacitor.isNativePlatform() ? "'+nativeScheme+'://auth/reset" : new URL("/redefinir-senha", window.location.origin).toString(),');
 });
 edit('src/routes/register.tsx',s=>{
   if(!s.includes('import { Capacitor } from "@capacitor/core";'))s='import { Capacitor } from "@capacitor/core";\n'+s;
