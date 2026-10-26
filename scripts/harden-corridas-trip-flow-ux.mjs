@@ -48,8 +48,11 @@ patch('src/hooks/use-pickup-address.tsx',(s)=>{
     '      lastGeocodeRef.current = { latitude: location.latitude, longitude: location.longitude };\n      addressKnownRef.current = true;\n      setAddress(exactAddress);','endereco estabilizado');
   s=change(s,'      setAddress(null);\n      setStatus("error");',
     '      if (!addressKnownRef.current) setAddress(null);\n      setStatus(addressKnownRef.current ? "success" : "error");','erro transitório preserva endereço');
-  s=change(s,'    } finally {\n      setIsLoading(false);',
-    '    } finally {\n      geocodeBusyRef.current = false;\n      setIsLoading(false);','liberacao do guard');
+  if(!s.includes('geocodeBusyRef.current = false;')) {
+    const finallyMatch=/    } finally \{\s*/;
+    if(!finallyMatch.test(s))throw Error('[FAIL] liberacao do guard');
+    s=s.replace(finallyMatch,'    } finally {\\n      geocodeBusyRef.current = false;\\n');
+  }
   return s;
 });
 patch('src/hooks/use-route.tsx',(s)=>{
