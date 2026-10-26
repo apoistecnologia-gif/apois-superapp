@@ -11,7 +11,7 @@ if (!source.includes('APOIS_DRIVER_OFFER_POLL_V1')) {
   const addition = [
     '    // APOIS_DRIVER_OFFER_POLL_V1: reconsulta ofertas quando Realtime/push falham.',
     '    const offerPoll = window.setInterval(() => {',
-    '      if (document.visibilityState !== "visible" || !navigator.onLine) return;',
+    '      if (!navigator.onLine) return;',
     '      if (incomingRef.current || activeRef.current || queuedRideRef.current) return;',
     '      void resyncDriverRides().catch(() => undefined);',
     '    }, 12_000);',
