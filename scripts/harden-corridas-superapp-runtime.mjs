@@ -153,3 +153,15 @@ requireMarkers(
 );
 
 console.log('[OK] Corridas: hardening de runtime alinhado ao pin 7b047f75 sem componentes obsoletos');
+
+
+// APOIS_CLIENT_STATUS_FAST_POLL_V1: fallback Realtime a cada 4s, apenas durante corrida ativa.
+{
+  const file=resolve('.work/corridas/src/hooks/rides/use-active-ride.tsx');
+  let source=readFileSync(file,'utf8');
+  const old='const POLLING_INTERVAL_MS = 12_000;';
+  if(source.includes(old)) source=source.replace(old,'const POLLING_INTERVAL_MS = 4_000; // APOIS_CLIENT_STATUS_FAST_POLL_V1');
+  if(!source.includes('APOIS_CLIENT_STATUS_FAST_POLL_V1'))throw new Error('[FAIL] intervalo do passageiro não identificado');
+  writeFileSync(file,source,'utf8');
+  console.log('[OK] Cliente: sincronização de status a cada 4s quando o Realtime atrasar.');
+}
