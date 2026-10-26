@@ -59,3 +59,9 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
   source=source.replace(input,'className="h-14 w-full rounded-2xl border border-[#D9DDE3] bg-white px-4 text-sm text-[#111827] outline-none transition placeholder:text-[#6B7280] focus:border-primary focus:ring-2 focus:ring-primary/10"');
   return source;
 });
+
+edit('src/routes/courier.tsx',source=>{
+  const anchor='onBack={() => void logout()}';
+  if(!source.includes(anchor))throw Error('[FAIL] seta do cadastro Entregador');
+  return source.replace(anchor,'onBack={() => window.location.replace("../../index.html")}');
+});
