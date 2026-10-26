@@ -63,5 +63,9 @@ edit('src/components/CourierPremiumViews.tsx',source=>{
 edit('src/routes/courier.tsx',source=>{
   const anchor='onBack={() => void logout()}';
   if(!source.includes(anchor))throw Error('[FAIL] seta do cadastro Entregador');
+  // Conta Google autenticada sem cadastro profissional: não manter trava operacional antiga.
+  const branch='  if (!courier) {';
+  if(!source.includes(branch))throw Error('[FAIL] estado sem cadastro profissional ausente');
+  source=source.replace(branch,branch+'\\n    try { if (localStorage.getItem("apois-parceiro:operational-role") === "entregador") localStorage.removeItem("apois-parceiro:operational-role"); } catch { /* armazenamento indisponível */ }');
   return source.replace(anchor,'onBack={() => window.location.replace("../../index.html")}');
 });
