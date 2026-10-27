@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK — validar serializacao da logo e GPS 27/10
+# test workflow: GitHub Actions debug APK — corrigir paineis internos do entregador 27/10
 
 on:
   workflow_dispatch:
