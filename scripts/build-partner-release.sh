@@ -163,8 +163,6 @@ node "$ROOT/scripts/harden-partner-courier-waiting-compact-v2.mjs"
 node "$ROOT/scripts/harden-partner-courier-home-viewport-v3.mjs"
 node "$ROOT/scripts/harden-partner-courier-map-client-style-v4.mjs"
 node "$ROOT/scripts/harden-partner-courier-online-speed-v4.mjs"
-# Temporary sanitized syntax diagnostic for courier activation block (no secrets).
-nl -ba "$ENTREGADOR/src/routes/courier.tsx" | sed -n "715,860p"
 node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 
 cd "$ENTREGADOR"
