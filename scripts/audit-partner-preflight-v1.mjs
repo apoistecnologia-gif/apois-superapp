@@ -21,6 +21,7 @@ check(!shell.includes("window.location.assign('./modules/"),"Shell always resolv
 all(build,[
   "harden-partner-motorista-profile-contrast-v2.mjs",
   "harden-partner-motorista-login-focus-v19.mjs",
+  "harden-partner-motorista-google-pkce-v20.mjs",
   "harden-partner-courier-driver-inspired-home-v1.mjs",
   "harden-partner-courier-home-viewport-v3.mjs",
   "harden-partner-courier-map-client-style-v4.mjs",
@@ -92,6 +93,14 @@ if(process.argv.includes("--dist")){
   const driverPatched=read(".work/partner-motorista/src/routes/motorista.perfil.tsx");
   const driverLoginFocus=read(".work/partner-motorista/src/routes/motorista.login.tsx");
   const driverCssFocus=read(".work/partner-motorista/src/styles.css");
+  const driverSupabaseAuth=read(".work/partner-motorista/src/integrations/supabase/client.ts");
+  const driverGoogleButton=read(".work/partner-motorista/src/components/DriverGoogleLoginButton.tsx");
+  all(driverSupabaseAuth,['flowType: "pkce"', 'APOIS_PARTNER_MOTORISTA_GOOGLE_PKCE_V20',"persistSession: true","autoRefreshToken: true","createSupabaseFetch"],"Motorista Google PKCE enabled in the same persistent Supabase client");
+  all(driverGoogleButton,['const CALLBACK = "br.com.apois.parceiro://auth/motorista-google";',"googleCallbackProcessingRef.current = true;","googleCallbackProcessingRef.current = false;","google_callback_tokens_rejected","exchangeCodeForSession(code)","isDriverCallback(rawUrl)","Browser.open({ url: data.url })","const FORWARDED_KEY"],"Motorista native Google PKCE callback is validated and deduplicated");
+  check(!driverGoogleButton.includes('setSession({ access_token:'),"Motorista Google does not accept implicit bearer tokens in deep links");
+  check((driverGoogleButton.match(/googleCallbackProcessingRef.current = true;/g)||[]).length===1,"Motorista Google callback has one idempotence guard");
+  all(shell,['const DRIVER_GOOGLE_KEY=',"path==='motorista-google'","sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl)"],"Partner shell forwards Motorista Google callback without modifying callback code");
+
   all(driverCssFocus,["APOIS_MOTORISTA_INPUT_FOCUS_V19",'input[name="email"]:focus-visible','input[name="password"]:focus-visible',"outline: none !important;","border: 0 !important;"],"Motorista email/password fields suppress squared WebView focus outline");
   check((driverLoginFocus.match(/focus-within:border-\[#AEB7C4\]/g)||[]).length===2,"Motorista email and password retain subtle rounded focus indicator");
   check(!driverLoginFocus.includes("focus-within:border-[#E51B23] focus-within:ring-2"),"Motorista login no longer draws an aggressive red focus outline");
