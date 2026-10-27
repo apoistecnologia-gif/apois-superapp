@@ -15,6 +15,7 @@ const after=`        ) : (
         )}`;
 if(!s.includes(before))throw Error("[FAIL] bloco offline não localizado");
 s=s.replace(before,after);
+s=s.replace('            activeOfferMerchantIds={[]}\\n          />', '            activeOfferMerchantIds={[]}\\n          />\\n          {offlineGpsError ? <p role="status" className="rounded-xl bg-amber-50 px-3 py-2 text-center text-xs text-amber-900">{offlineGpsError}</p> : null}');
 if(!s.includes('activeOfferMerchantIds={[]}')) throw Error('[FAIL] mapa offline não inserido');
 const stateAnchor='  const [settlementBusy, setSettlementBusy] = useState<string | null>(null);';
 if(!s.includes(stateAnchor))throw Error('[FAIL] posição dos hooks do Entregador mudou');
