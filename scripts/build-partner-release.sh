@@ -154,6 +154,7 @@ node "$ROOT/scripts/harden-partner-courier-auth-registration-v2.mjs"
 node "$ROOT/scripts/harden-partner-courier-auth-back-v2.mjs"
 node "$ROOT/scripts/harden-partner-courier-compact-home-v1.mjs"
 node "$ROOT/scripts/harden-partner-courier-push-diagnostics-v1.mjs"
+node "$ROOT/scripts/harden-partner-courier-inner-panels-v1.mjs"
 node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 
 cd "$ENTREGADOR"
