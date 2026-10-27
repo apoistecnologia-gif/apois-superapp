@@ -36,6 +36,16 @@ all(build,[
   "bun run build",
 ], "Isolated partner module build and all patches integrated");
 
+
+const courierCoverageAdmin=read("sources/apois-entregas/src/components/AdminCoveragePanel.tsx");
+const courierAdminGates=read("sources/apois-entregas/src/components/AdminCourierOperationalGates.tsx");
+const courierCoverageLogic=read("sources/apois-entregas/src/lib/courier-dispatch-readiness.ts");
+const courierCommercialLogic=read("sources/apois-entregas/src/lib/courier-operation-readiness.ts");
+all(courierCoverageAdmin, ["citiesNeedingDispatchRadius", "data-apois-courier-dispatch-readiness", "AdminCourierOperationalGates"], "Admin flags unconfigured courier radius with a configuration action");
+all(courierCoverageLogic, ["courier_dispatch_radius_km", "citiesWithoutCourierDispatch", "radius > 0 && radius <= 100"], "Courier dispatch requires explicit independent radius, not customer radius");
+all(courierAdminGates, ["paymentProviderBlockingOrders", "merchantSubscriptionDateWarnings", "data-apois-courier-operations-readiness"], "Admin warns about actual Safe2Pay and subscription blockers");
+all(courierCommercialLogic, ["current_period_end", "last_payment_status", "safe2pay_marketplace"], "Merchant subscription/payment readiness remains fail-closed");
+all(build, ["bun test src/lib/courier-dispatch-readiness.test.ts src/lib/courier-operation-readiness.test.ts"], "Courier readiness tests run in the real Partner module build");
 const courierRoute=read("sources/apois-entregas/src/routes/courier.tsx");
 const courierMap=read("sources/apois-entregas/src/components/CourierRouteMap.tsx");
 const courierOffers=read("sources/apois-entregas/src/components/CourierOfferOverlay.tsx");
