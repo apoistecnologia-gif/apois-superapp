@@ -15,9 +15,9 @@ patch("src/routes/courier.tsx",s=>{
  s=s.replace(oldStatus,"");
  const insert='      </main>\n\n      <CourierSupportSheet';
  if(!s.includes(insert))throw Error("[FAIL] final da home courier nao localizado");
- s=s.replace(insert,'        <div data-apois-courier-inline-status className="mx-auto w-full max-w-lg py-3">\\n          <CourierStatusCard online={online} busy={busy === "online"} activeJob={activeJob} onToggle={toggleOnline} />\\n        </div>\\n      </main>\\n\\n      <CourierSupportSheet');
+ s=s.replace(insert,'        <div data-apois-courier-inline-status className="mx-auto w-full max-w-lg py-3">\n          <CourierStatusCard online={online} busy={busy === "online"} activeJob={activeJob} onToggle={toggleOnline} />\n        </div>\n      </main>\n\n      <CourierSupportSheet');
  // Remove redundant online waiting card: live map plus the single availability control already explain the state.
- const waiting='              <CourierWaitingSheet\\n                metrics={metrics}\\n                wallet={wallet}\\n                onRefresh={() => courier?.id && void loadCourierOperations(courier.id)}\\n              />';
+ const waiting='              <CourierWaitingSheet\n                metrics={metrics}\n                wallet={wallet}\n                onRefresh={() => courier?.id && void loadCourierOperations(courier.id)}\n              />';
  if(!s.includes(waiting))throw Error("[FAIL] waiting sheet not found");
  s=s.replace(waiting,'              <p className="px-3 py-2 text-center text-xs font-medium text-slate-600">Aguardando novas solicitações de entrega</p>');
 
