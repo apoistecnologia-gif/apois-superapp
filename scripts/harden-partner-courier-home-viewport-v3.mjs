@@ -67,21 +67,14 @@ edit("src/components/CourierPanels.tsx", (src) => {
 
 // Reserve the height of the new compact nav without hiding the availability
 // card behind it. Keep the original routes, onToggle callback and map component.
-edit("src/routes/courier.tsx", (src) => {
-  let updated = replaceOnce(
+edit("src/routes/courier.tsx", (src) =>
+  replaceOnce(
     src,
-    'pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
-    'pb-[calc(5rem+env(safe-area-inset-bottom))]',
-    "home bottom spacing",
-  );
-  updated = replaceOnce(
-    updated,
     'data-apois-courier-inline-status className="mx-auto w-full max-w-lg py-3"',
     'data-apois-courier-inline-status className="mx-auto w-full max-w-lg py-2"',
     "availability spacing",
-  );
-  return updated;
-});
+  ),
+);
 
 // Explicitly reset background-image (not only background-color), otherwise
 // the legacy gradient keeps the navigation black on Android.
@@ -99,6 +92,9 @@ css += "\n" + marker + "\n" +
   "}\n" +
   ".apois-system-theme nav[data-apois-courier-bottom-nav] button[aria-current=\"page\"] {" +
   "color:#E51B23!important;" +
+  "}\n" +
+  ".apois-system-theme [data-apois-courier-map-home] {" +
+  "padding-bottom:calc(5rem + env(safe-area-inset-bottom))!important;" +
   "}\n" +
   ".apois-system-theme [data-apois-courier-inline-status] > section {" +
   "padding:10px 12px!important;" +
