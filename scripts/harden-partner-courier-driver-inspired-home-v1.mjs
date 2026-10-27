@@ -3,9 +3,13 @@ import {resolve} from "node:path";
 const root=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||".work/partner-entregador");
 function patch(file,transform){const p=resolve(root,file);const before=readFileSync(p,"utf8");const after=transform(before);if(after===before)throw Error("[FAIL] UX Parceiro sem alteracao: "+file);writeFileSync(p,after,"utf8");}
 patch("src/routes/courier.tsx",s=>{
- const old='<main className="mx-auto w-full max-w-lg space-y-2.5 overflow-x-hidden px-3 py-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">';
- if(!s.includes(old))throw Error("[FAIL] home compacta do entregador nao localizada");
- s=s.replace(old,'<main data-apois-courier-map-home className="mx-auto w-full max-w-lg space-y-2 overflow-x-hidden px-2 py-2 pb-[calc(7rem+env(safe-area-inset-bottom))]">');
+ const statusPos=s.indexOf("<CourierStatusCard");
+ if(statusPos<0)throw Error("[FAIL] status card nao encontrado");
+ const mainStart=s.lastIndexOf("<main className=",statusPos);
+ if(mainStart<0)throw Error("[FAIL] main da home nao encontrado");
+ const mainEnd=s.indexOf(">",mainStart);
+ if(mainEnd<0)throw Error("[FAIL] fim da tag main nao encontrado");
+ s=s.slice(0,mainStart)+'<main data-apois-courier-map-home className="mx-auto w-full max-w-lg space-y-2 overflow-x-hidden px-2 py-2 pb-[calc(7rem+env(safe-area-inset-bottom))]">'+s.slice(mainEnd+1);
  const oldStatus='        <CourierStatusCard\n          online={online}\n          busy={busy === "online"}\n          activeJob={activeJob}\n          onToggle={toggleOnline}\n        />';
  if(!s.includes(oldStatus))throw Error("[FAIL] status courier nao localizado");
  s=s.replace(oldStatus,"");
