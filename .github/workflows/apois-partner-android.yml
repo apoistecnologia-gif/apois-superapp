@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK — APOIS red white map and neutral courier home
+# test workflow: GitHub Actions debug APK — courier home structurally non-overlapping inline availability
 
 on:
   workflow_dispatch:
