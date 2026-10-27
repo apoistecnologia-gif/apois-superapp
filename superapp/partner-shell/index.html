@@ -284,7 +284,7 @@
             return true;
           }
           try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
-          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login');
+          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login'));
           return true;
         }
         if(isDriver && path==='redefinir-senha'){
@@ -294,7 +294,7 @@
             return true;
           }
           try{sessionStorage.setItem(DRIVER_RECOVERY_KEY,rawUrl);}catch{}
-          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login');
+          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login'));
           return true;
         }
         if((isDriver && path==='google') || (isPartner && incoming.host==='auth' && path==='motorista-google')){
@@ -304,7 +304,7 @@
             return true;
           }
           try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
-          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login');
+          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login'));
           return true;
         }
         if(isPartner && incoming.host==='auth' && (path==='callback'||path==='reset')){
@@ -315,7 +315,7 @@
           }
           try{sessionStorage.setItem(COURIER_AUTH_KEY,rawUrl);}catch{}
           const target=path==='reset'?'#/redefinir-senha'+suffix:'#/auth/callback'+suffix;
-          window.location.assign(partnerModuleUrl('./modules/entregador/index.html'+target);
+          window.location.assign(partnerModuleUrl('./modules/entregador/index.html'+target));
           return true;
         }
       }catch(error){console.error('[APOIS Parceiro] deep link inválido',error);}
