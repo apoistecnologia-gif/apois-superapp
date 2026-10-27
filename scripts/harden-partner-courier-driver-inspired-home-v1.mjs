@@ -46,6 +46,14 @@ css+="\n"+marker+"\n"+[
   ".apois-system-theme [data-apois-courier-floating-status] p span[class*=\"text-primary\"] { color:#E51B23!important; }",
   ".apois-system-theme [data-apois-courier-floating-status] button { min-width:66px; }",
   ".apois-system-theme [data-apois-courier-map-home] { padding-bottom:260px!important; }",
+  ".apois-system-theme [data-apois-courier-map-home] > section:first-child { border:0!important; border-radius:20px!important; overflow:hidden; background:#FFFFFF!important; box-shadow:0 6px 22px rgba(17,24,39,.08)!important; }",
+  ".apois-system-theme [data-apois-courier-map-home] > section:first-child > div:first-child { background:#FFFFFF!important; color:#111827!important; border-bottom:1px solid #E5E7EB!important; }",
+  ".apois-system-theme [data-apois-courier-map-home] > section:first-child > div:first-child p:first-child { color:#C9141B!important; }",
+  ".apois-system-theme [data-apois-courier-map-home] button[aria-label=\"Recentralizar mapa\"] { background:#FFFFFF!important; color:#E51B23!important; border:1px solid #E5E7EB!important; box-shadow:0 6px 16px rgba(17,24,39,.12)!important; }",
+  ".apois-system-theme [data-apois-courier-map-home] button[aria-label=\"Recentralizar mapa\"] svg { color:#E51B23!important; }",
+  ".apois-system-theme [data-apois-courier-floating-status] { max-width:520px!important; }",
+  ".apois-system-theme [data-apois-courier-floating-status] > section [class*=\"bg-[linear-gradient\"] { background:#FFFFFF!important; }",
+
 
   "@media(max-height:700px){.apois-system-theme [data-apois-courier-floating-status] { bottom:calc(160px + env(safe-area-inset-bottom)); }}",
 ].join("\n")+"\n";
