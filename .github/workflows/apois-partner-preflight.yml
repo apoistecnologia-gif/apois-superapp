@@ -58,6 +58,7 @@ jobs:
           node --check scripts/harden-partner-courier-push-diagnostics-v1.mjs
           node --check scripts/audit-partner-preflight-v1.mjs
           node scripts/audit-partner-preflight-v1.mjs
+          node scripts/test-partner-shell-navigation-v2.mjs
       - name: Build web modules and run typechecks - NO ANDROID APK
         shell: bash
         run: |
@@ -65,6 +66,7 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           npm run build:partner
           node scripts/audit-partner-preflight-v1.mjs --dist
+          node scripts/test-partner-shell-navigation-v2.mjs --dist
           test -s superapp/partner-shell/dist/modules/motorista/index.html
           test -s superapp/partner-shell/dist/modules/entregador/index.html
           test -s superapp/partner-shell/dist/index.html
