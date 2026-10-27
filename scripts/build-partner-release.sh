@@ -194,6 +194,7 @@ export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 export VITE_SUPABASE_URL="https://ptgkwyyolrdgnqketkjj.supabase.co"
 export VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY"
 bun install --frozen-lockfile
+bun test src/lib/courier-dispatch-readiness.test.ts src/lib/courier-operation-readiness.test.ts
 bun run typecheck
 bun run build
 require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output/public 'Bundle Entregador usa Supabase Entregas canônico atual'
