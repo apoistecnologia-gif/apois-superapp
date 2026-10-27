@@ -195,13 +195,22 @@
     <div class="foot">APOIS • PARCEIROS</div>
   </main>
   <script>
-    const urls={motorista:'/modules/motorista/index.html',entregador:'/modules/entregador/index.html#/courier'};
-    const operationalUrls={motorista:'/modules/motorista/index.html#/motorista/app',entregador:'/modules/entregador/index.html#/courier'};
+    const urls={motorista:'./modules/motorista/index.html',entregador:'./modules/entregador/index.html#/courier'};
+    const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html#/courier'};
     const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
     const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
     const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
     const PARTNER_PENDING_PUSH_KEY='apois-parceiro:pending-push';
     const PARTNER_OPERATIONAL_ROLE_KEY='apois-parceiro:operational-role';
+
+    // Resolve módulos exclusivamente a partir da raiz HTTPS do Capacitor,
+    // mesmo se um deep link/retorno abrir o seletor a partir de subdiretório.
+    function partnerModuleUrl(target){
+      const value=String(target||'');
+      if(!/^\.?\/?modules\/(motorista|entregador)\/index\.html(?:[#?]|$)/.test(value))return value;
+      const rootPath=value.replace(/^\.?\//,'');
+      return new URL('/'+rootPath,window.location.origin).href;
+    }
 
     function operationalRole(){
       try{
@@ -213,11 +222,11 @@
     function routeRole(requestedRole,target){
       const locked=operationalRole();
       if(locked&&locked!==requestedRole){
-        window.location.replace(operationalHome(locked));
+        window.location.replace(partnerModuleUrl(operationalHome(locked)));
         return false;
       }
       try{localStorage.setItem('apois-parceiro:last-module',requestedRole);}catch{}
-      window.location.assign(locked===requestedRole?operationalHome(requestedRole):target);
+      window.location.assign(partnerModuleUrl(locked===requestedRole?operationalHome(requestedRole):target));
       return true;
     }
 
@@ -262,51 +271,51 @@
         if(isPartner&&incoming.host==='auth'&&path==='mercadopago'){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
-            window.location.replace(operationalHome(locked));
+            window.location.replace(partnerModuleUrl(operationalHome(locked)));
             return true;
           }
-          window.location.assign('/modules/motorista/index.html#/motorista/assinatura'+suffix);
+          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/assinatura'+suffix));
           return true;
         }
         if(isPartner&&incoming.host==='auth'&&path==='google'){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
-            window.location.replace(operationalHome(locked));
+            window.location.replace(partnerModuleUrl(operationalHome(locked)));
             return true;
           }
           try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
-          window.location.assign('/modules/motorista/index.html#/motorista/login');
+          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login');
           return true;
         }
         if(isDriver && path==='redefinir-senha'){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
-            window.location.replace(operationalHome(locked));
+            window.location.replace(partnerModuleUrl(operationalHome(locked)));
             return true;
           }
           try{sessionStorage.setItem(DRIVER_RECOVERY_KEY,rawUrl);}catch{}
-          window.location.assign('/modules/motorista/index.html#/motorista/login');
+          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login');
           return true;
         }
         if((isDriver && path==='google') || (isPartner && incoming.host==='auth' && path==='motorista-google')){
           const locked=operationalRole();
           if(locked&&locked!=='motorista'){
-            window.location.replace(operationalHome(locked));
+            window.location.replace(partnerModuleUrl(operationalHome(locked)));
             return true;
           }
           try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,rawUrl);}catch{}
-          window.location.assign('/modules/motorista/index.html#/motorista/login');
+          window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login');
           return true;
         }
         if(isPartner && incoming.host==='auth' && (path==='callback'||path==='reset')){
           const locked=operationalRole();
           if(locked&&locked!=='entregador'){
-            window.location.replace(operationalHome(locked));
+            window.location.replace(partnerModuleUrl(operationalHome(locked)));
             return true;
           }
           try{sessionStorage.setItem(COURIER_AUTH_KEY,rawUrl);}catch{}
           const target=path==='reset'?'#/redefinir-senha'+suffix:'#/auth/callback'+suffix;
-          window.location.assign('/modules/entregador/index.html'+target);
+          window.location.assign(partnerModuleUrl('./modules/entregador/index.html'+target);
           return true;
         }
       }catch(error){console.error('[APOIS Parceiro] deep link inválido',error);}
@@ -370,7 +379,7 @@
 
       const lockedOnLaunch=operationalRole();
       if(lockedOnLaunch){
-        window.location.replace(operationalHome(lockedOnLaunch));
+        window.location.replace(partnerModuleUrl(operationalHome(lockedOnLaunch)));
         return;
       }
     }
