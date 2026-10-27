@@ -56,6 +56,7 @@ jobs:
           node --check scripts/harden-partner-courier-map-native-fallback-v3.mjs
           node --check scripts/harden-partner-courier-inner-panels-v1.mjs
           node --check scripts/harden-partner-courier-push-diagnostics-v1.mjs
+          node --check scripts/harden-partner-courier-waiting-compact-v2.mjs
           node --check scripts/audit-partner-preflight-v1.mjs
           node scripts/audit-partner-preflight-v1.mjs
           node scripts/test-partner-shell-navigation-v2.mjs
