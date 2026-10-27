@@ -17,14 +17,12 @@ patch("src/components/CourierOfferOverlay.tsx",s=>{
   s=required(s,'import logoAsset from "@/assets/logo.png.asset.json";',
       'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";',"logo import");
   s=required(s,'src={logoAsset.url}','src={APOIS_PARTNER_LOGO_DATA_URL}',"logo render");
-  s=required(s,
-    'className="w-full max-w-[390px] overflow-hidden rounded-[2rem] border border-accent/45 bg-[#080808] text-white shadow-[0_0_90px_rgba(200,138,8,0.24)]"',
-    'className="w-full max-w-[420px] overflow-hidden rounded-[1.6rem] border border-[#E5E7EB] bg-white text-[#111827] shadow-[0_16px_60px_rgba(17,24,39,0.24)]"',
-    "offer modal surface");
-  s=required(s,
-    'border-b border-accent/25 bg-[linear-gradient(135deg,rgba(200,138,8,0.26),rgba(246,190,28,0.08)_42%,rgba(0,0,0,0.95)_70%)]',
-    'border-b border-[#E5E7EB] bg-[#FFF1F2]',
-    "offer red header");
+  const modalSurface=/className="w-full max-w-\[390px\][^"\n]+"/;
+  if(!modalSurface.test(s))throw Error("[FAIL] Entregador offer modal surface changed");
+  s=s.replace(modalSurface,'className="w-full max-w-[420px] overflow-hidden rounded-[1.6rem] border border-[#E5E7EB] bg-white text-[#111827] shadow-[0_16px_60px_rgba(17,24,39,0.24)]"');
+  const modalHeader=/className="border-b border-accent\/25 bg-\[linear-gradient\([^"\n]+\)\] px-5 pb-4 pt-5"/;
+  if(!modalHeader.test(s))throw Error("[FAIL] Entregador offer modal header changed");
+  s=s.replace(modalHeader,'className="border-b border-[#E5E7EB] bg-[#FFF1F2] px-5 pb-4 pt-5"');
   s=s.replaceAll('bg-black/70','bg-white').replaceAll('bg-black','bg-[#F9FAFB]');
   s=s.replaceAll('bg-zinc-950','bg-white').replaceAll('bg-zinc-900','bg-[#F3F4F6]');
   s=s.replace('bg-[#F9FAFB]/85 p-3 backdrop-blur-md','bg-black/65 p-3 backdrop-blur-md');
