@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - feat/apois-cliente-red-visual-20261003
+      - fix/apois-actions-client-pickup-finally-20261026
     paths:
       - '.github/workflows/apois-client-android.yml'
 
