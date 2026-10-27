@@ -158,6 +158,7 @@ node "$ROOT/scripts/harden-partner-courier-map-native-fallback-v3.mjs"
 node "$ROOT/scripts/harden-partner-courier-driver-inspired-home-v1.mjs"
 node "$ROOT/scripts/harden-partner-courier-push-diagnostics-v1.mjs"
 node "$ROOT/scripts/harden-partner-courier-inner-panels-v1.mjs"
+node "$ROOT/scripts/harden-partner-courier-offer-ux-v2.mjs"
 node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 
 cd "$ENTREGADOR"
