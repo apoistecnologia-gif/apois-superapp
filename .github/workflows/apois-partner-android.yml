@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - feat/apois-cliente-red-visual-20261003
+      - fix/apois-partner-courier-gps-logo-push-20261027
     paths:
       - '.github/workflows/apois-partner-android.yml'
 
