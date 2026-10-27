@@ -20,6 +20,7 @@ check(!shell.includes("modules/motorista/modules/motorista"),"No double module n
 check(!shell.includes("window.location.assign('./modules/"),"Shell always resolves module URL to origin before assign");
 all(build,[
   "harden-partner-motorista-profile-contrast-v2.mjs",
+  "harden-partner-motorista-login-focus-v19.mjs",
   "harden-partner-courier-driver-inspired-home-v1.mjs",
   "harden-partner-courier-home-viewport-v3.mjs",
   "harden-partner-courier-map-client-style-v4.mjs",
@@ -89,6 +90,13 @@ if(process.argv.includes("--dist")){
   const courierPatched=read(".work/partner-entregador/src/routes/courier.tsx");
   const mapPatched=read(".work/partner-entregador/src/components/CourierRouteMap.tsx");
   const driverPatched=read(".work/partner-motorista/src/routes/motorista.perfil.tsx");
+  const driverLoginFocus=read(".work/partner-motorista/src/routes/motorista.login.tsx");
+  const driverCssFocus=read(".work/partner-motorista/src/styles.css");
+  all(driverCssFocus,["APOIS_MOTORISTA_INPUT_FOCUS_V19",'input[name="email"]:focus-visible','input[name="password"]:focus-visible',"outline: none !important;","border: 0 !important;"],"Motorista email/password fields suppress squared WebView focus outline");
+  check((driverLoginFocus.match(/focus-within:border-\[#AEB7C4\]/g)||[]).length===2,"Motorista email and password retain subtle rounded focus indicator");
+  check(!driverLoginFocus.includes("focus-within:border-[#E51B23] focus-within:ring-2"),"Motorista login no longer draws an aggressive red focus outline");
+  all(driverLoginFocus,["DriverGoogleLoginButton","showPassword","onSubmit={onSubmit}","/motorista/cadastro","/motorista/recuperar-senha"],"Motorista login credentials, Google, password visibility, recovery and registration retained");
+
   const offersPatched=read(".work/partner-entregador/src/components/CourierOfferOverlay.tsx");
   const waitingPatched=read(".work/partner-entregador/src/components/CourierPremiumViews.tsx");
   const courierPanels=read(".work/partner-entregador/src/components/CourierPanels.tsx");
