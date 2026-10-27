@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK — reutilizar import unico da logo 27/10
+# test workflow: GitHub Actions debug APK — painel mapa fallback GPS nativo 27/10
 
 on:
   workflow_dispatch:
