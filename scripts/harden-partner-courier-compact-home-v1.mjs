@@ -15,30 +15,59 @@ const after=`        ) : (
         )}`;
 if(!s.includes(before))throw Error("[FAIL] bloco offline não localizado");
 s=s.replace(before,after);
+if(!s.includes('activeOfferMerchantIds={[]}')) throw Error('[FAIL] mapa offline não inserido');
 const stateAnchor='  const [settlementBusy, setSettlementBusy] = useState<string | null>(null);';
 if(!s.includes(stateAnchor))throw Error('[FAIL] posição dos hooks do Entregador mudou');
-s=s.replace(stateAnchor,stateAnchor+`
+s=s.replace(stateAnchor,stateAnchor+`\n  const [offlineGpsError, setOfflineGpsError] = useState<string | null>(null);
   // Vista inicial do mapa OFFLINE: uma leitura pontual de GPS, sem rastreamento
   // contínuo nem transmissão ao servidor enquanto o entregador está offline.
   useEffect(() => {
-    if (!courier?.id || availability?.is_online || !navigator.geolocation) return;
+    if (!courier?.id || availability?.is_online) return;
     let active = true;
-    navigator.geolocation.getCurrentPosition(
-      ({coords}) => {
+    const onCoordinates = ({coords}: {coords: {latitude: number; longitude: number; accuracy: number; heading: number | null; speed: number | null}}) => {
         if (!active) return;
-        setCurrentPosition({
+        setOfflineGpsError(null);\n        setCurrentPosition({
           lat: coords.latitude, lng: coords.longitude,
           accuracy: coords.accuracy, heading: coords.heading,
           speed: coords.speed, recordedAt: Date.now()
         });
-      },
-      () => { /* sem permissão: componente exibe aviso sem ativar GPS contínuo */ },
-      {enableHighAccuracy:false,timeout:8000,maximumAge:60000}
-    );
+      };
+    // A WebView Android pode não fornecer navigator.geolocation com permissão
+    // mesmo quando o app possui GPS nativo autorizado.
+    const locate = async () => {
+      try {
+        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
+          let permission = await Geolocation.checkPermissions();
+          if (permission.location !== "granted") {
+            permission = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });
+          }
+          if (permission.location !== "granted") {
+            if (active) setOfflineGpsError("Autorize a localização nas configurações do Android.");
+            return;
+          }
+          const position = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true, timeout: 20000, maximumAge: 60000
+          });
+          onCoordinates(position);
+        } else if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            onCoordinates,
+            () => { if(active) setOfflineGpsError("Verifique a permissão e o GPS para visualizar o mapa."); },
+            {enableHighAccuracy:true,timeout:20000,maximumAge:60000}
+          );
+        } else if (active) setOfflineGpsError("GPS indisponível neste dispositivo.");
+      } catch {
+        if (active) setOfflineGpsError("Não foi possível obter a localização. Verifique o GPS e tente novamente.");
+      }
+    };
+    void locate();
     return () => {active=false;};
   }, [courier?.id, availability?.is_online]);
 `);
 
+s=s.replace('import logoAsset from "@/assets/logo.png.asset.json";',
+'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";\\nimport { Capacitor } from "@capacitor/core";\\nimport { Geolocation } from "@capacitor/geolocation";');
+s=s.replaceAll("src={logoAsset.url}", "src={APOIS_PARTNER_LOGO_DATA_URL}");
 // StatusCard continua sendo o único botão online/offline, inclusive antes de haver oferta.
 s=s.replace('className="mx-auto w-full max-w-lg space-y-4 overflow-x-hidden p-4 pb-[calc(7.7rem+env(safe-area-inset-bottom))]"',
 'className="mx-auto w-full max-w-lg space-y-2.5 overflow-x-hidden px-3 py-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))]"');
