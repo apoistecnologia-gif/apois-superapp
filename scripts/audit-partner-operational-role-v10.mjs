@@ -105,8 +105,9 @@ requireAll('superapp/partner-shell/index.html', [
   'function operationalRole()',
   'function operationalHome(role)',
   'function routeRole(requestedRole,target)',
+  'function partnerModuleUrl(target)',
   'if(locked&&locked!==requestedRole)',
-  'window.location.replace(operationalHome(locked))',
+  'window.location.replace(partnerModuleUrl(operationalHome(locked)))',
   "if(isDelivery)return routeRole('entregador'",
   "if(isRide)return routeRole('motorista'",
 ], 'Shell possui roteamento base protegido por função operacional');
