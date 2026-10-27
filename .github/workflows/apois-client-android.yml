@@ -1,5 +1,5 @@
 name: APOIS Cliente Android APK
-# homologação 1.0.3: persistência de nomes das paradas e build Android final — retry hardening 26/10
+# homologação: validacao do finally geocoding e build Android Cliente em branch isolada
 
 on:
   workflow_dispatch:
@@ -114,6 +114,7 @@ jobs:
           node --check scripts/harden-corridas-pickup-map-focus.mjs
           grep -Fq 'pickupCameraCoordinate' scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-trip-flow-ux.mjs
+          node --check scripts/harden-corridas-pickup-timeout-v1.mjs
           grep -Fq 'relative flex h-full min-h-0' scripts/harden-corridas-trip-flow-ux.mjs
           grep -Fq 'APOIS_PICKUP_STABLE_V1' scripts/harden-corridas-trip-flow-ux.mjs
           node --check scripts/verify-corridas-trip-flow-ux.mjs
