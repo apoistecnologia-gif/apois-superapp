@@ -98,7 +98,7 @@ if(process.argv.includes("--dist")){
   check(!courierPanels.slice(courierPanels.indexOf("export function CourierBottomNav("),courierPanels.indexOf("function PanelHeader(")).includes("linear-gradient(180deg,rgba(5,5,5,0.94),#000)"),"Courier nav has no legacy black overlay");
   all(courierTheme,["APOIS_COURIER_VIEWPORT_V3","background-image:none!important","data-apois-courier-bottom-nav"],"Courier stylesheet explicitly removes black nav background image");
   check(!waitingPatched.slice(waitingPatched.indexOf("export function CourierStatusCard("),waitingPatched.indexOf("export function CourierWaitingSheet(")).includes("truncate text-lg"),"Courier status ONLINE/OFFLINE can wrap instead of being cut");
-  all(courierPatched,["pb-[calc(5rem+env(safe-area-inset-bottom))]"],"Courier content reserves compact nav height");
+  all(courierTheme,["padding-bottom:calc(5rem + env(safe-area-inset-bottom))!important"],"Courier content reserves compact nav height");
 
   check(!courierPatched.includes("data-apois-courier-floating-status"),"No fixed courier availability");
   all(mapPatched,["ColorScheme.LIGHT","mapPosition","Geolocation.getCurrentPosition"],"Built courier native GPS and light map");
