@@ -22,6 +22,8 @@ all(build,[
   "harden-partner-motorista-profile-contrast-v2.mjs",
   "harden-partner-courier-driver-inspired-home-v1.mjs",
   "harden-partner-courier-home-viewport-v3.mjs",
+  "harden-partner-courier-map-client-style-v4.mjs",
+  "harden-partner-courier-online-speed-v4.mjs",
   "harden-partner-courier-map-native-fallback-v3.mjs",
   "harden-partner-courier-inner-panels-v1.mjs",
   "harden-partner-courier-push-diagnostics-v1.mjs",
@@ -92,6 +94,16 @@ if(process.argv.includes("--dist")){
   const courierPanels=read(".work/partner-entregador/src/components/CourierPanels.tsx");
   const courierTheme=read(".work/partner-entregador/src/system-theme.css");
   all(courierPatched,["data-apois-courier-map-home","data-apois-courier-inline-status","CourierStatusCard","CourierRouteMap"],"Built courier home integrated");
+  const courierLiveMap = mapPatched.slice(mapPatched.indexOf("export function CourierLiveMap("),mapPatched.indexOf("export function CourierRouteMap("));
+  const courierOnlineToggle = courierPatched.slice(courierPatched.indexOf("  const toggleOnline = async () => {"),courierPatched.indexOf("\n  const acceptOffer = async",courierPatched.indexOf("  const toggleOnline = async () => {")));
+  const courierStatusCard = waitingPatched.slice(waitingPatched.indexOf("export function CourierStatusCard("),waitingPatched.indexOf("export function CourierWaitingSheet("));
+  all(mapPatched,["APOIS_COURIER_CLIENT_MAP_V4","const APOIS_COURIER_MAP_STYLE: google.maps.MapTypeStyle[]","CourierStyledLiveMarkers","styles={APOIS_COURIER_MAP_STYLE}","\"#0B2944\"","\"#EDEAE4\""],"Courier home reuses actual APOIS Cliente map colors");
+  check(!courierLiveMap.includes("mapId={mapId}"),"Courier home does not combine local styles with incompatible cloud mapId");
+  check(!courierLiveMap.includes("<AdvancedMarker"),"Courier home replaces advanced markers incompatible with styled classic map");
+  all(courierOnlineToggle,["APOIS_COURIER_FAST_ONLINE_V4","Date.now() - currentPosition.recordedAt <= 20_000","accuracy <= 100","rpc(\"bootstrap_courier_location\"","rpc(\"set_courier_online\"","backgroundStarted = await startCourierNativeLocation();","ensureCourierPushRegistration(true)","setAvailability((previous: any) => ({ ...(previous ?? {}), is_online: true }))","setAvailability((previous: any) => ({ ...(previous ?? {}), is_online: false }))","void loadCourierOperations(courier.id).catch"],"Online activation is server-confirmed, non-blocking after validation and uses recent GPS safely");
+  check(!courierOnlineToggle.includes("await loadCourierOperations(courier.id);"),"Online button does not await unrelated metrics, history, wallet and merchant queries");
+  all(courierStatusCard,["relative h-11 w-[3.7rem]","absolute top-1.5 grid h-8 w-8","aria-busy={busy || undefined}","aria-pressed={online}"],"Courier online switch compact and accessible without loss of controls");
+
   check((courierPatched.match(/<CourierStatusCard\b/g)||[]).length===1,"One online availability control in courier home");
   all(mapPatched,["h-[clamp(235px,36dvh,375px)]"],"Idle courier map uses responsive height fitting Android viewport");
   all(courierPanels,["data-apois-courier-bottom-nav","bg-white","min-h-[62px]","min-h-[54px]","pb-[max(8px,env(safe-area-inset-bottom))]"],"Courier nav compact and light with safe area");
