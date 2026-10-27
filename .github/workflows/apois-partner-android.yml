@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK — entregador home inspirada no motorista 27/10
+# test workflow: GitHub Actions debug APK — entregador home com ancora estrutural 27/10
 
 on:
   workflow_dispatch:
