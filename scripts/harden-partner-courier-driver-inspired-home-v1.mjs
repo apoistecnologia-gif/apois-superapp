@@ -5,7 +5,7 @@ function patch(file,transform){const p=resolve(root,file);const before=readFileS
 patch("src/routes/courier.tsx",s=>{
  const statusPos=s.indexOf("<CourierStatusCard");
  if(statusPos<0)throw Error("[FAIL] status card nao encontrado");
- const mainStart=s.lastIndexOf("<main className=",statusPos);
+ const mainStart=s.lastIndexOf("<main",statusPos);
  if(mainStart<0)throw Error("[FAIL] main da home nao encontrado");
  const mainEnd=s.indexOf(">",mainStart);
  if(mainEnd<0)throw Error("[FAIL] fim da tag main nao encontrado");
