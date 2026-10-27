@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK — entregador home independente de atributos preexistentes 27/10
+# test workflow: GitHub Actions debug APK — preserve Android safe area while styling courier home
 
 on:
   workflow_dispatch:
