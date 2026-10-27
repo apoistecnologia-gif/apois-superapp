@@ -21,6 +21,7 @@ check(!shell.includes("window.location.assign('./modules/"),"Shell always resolv
 all(build,[
   "harden-partner-motorista-profile-contrast-v2.mjs",
   "harden-partner-courier-driver-inspired-home-v1.mjs",
+  "harden-partner-courier-home-viewport-v3.mjs",
   "harden-partner-courier-map-native-fallback-v3.mjs",
   "harden-partner-courier-inner-panels-v1.mjs",
   "harden-partner-courier-push-diagnostics-v1.mjs",
@@ -88,8 +89,17 @@ if(process.argv.includes("--dist")){
   const driverPatched=read(".work/partner-motorista/src/routes/motorista.perfil.tsx");
   const offersPatched=read(".work/partner-entregador/src/components/CourierOfferOverlay.tsx");
   const waitingPatched=read(".work/partner-entregador/src/components/CourierPremiumViews.tsx");
+  const courierPanels=read(".work/partner-entregador/src/components/CourierPanels.tsx");
+  const courierTheme=read(".work/partner-entregador/src/system-theme.css");
   all(courierPatched,["data-apois-courier-map-home","data-apois-courier-inline-status","CourierStatusCard","CourierRouteMap"],"Built courier home integrated");
   check((courierPatched.match(/<CourierStatusCard\b/g)||[]).length===1,"One online availability control in courier home");
+  all(mapPatched,["h-[clamp(235px,36dvh,375px)]"],"Idle courier map uses responsive height fitting Android viewport");
+  all(courierPanels,["data-apois-courier-bottom-nav","bg-white","min-h-[62px]","min-h-[54px]","pb-[max(8px,env(safe-area-inset-bottom))]"],"Courier nav compact and light with safe area");
+  check(!courierPanels.slice(courierPanels.indexOf("export function CourierBottomNav("),courierPanels.indexOf("function PanelHeader(")).includes("linear-gradient(180deg,rgba(5,5,5,0.94),#000)"),"Courier nav has no legacy black overlay");
+  all(courierTheme,["APOIS_COURIER_VIEWPORT_V3","background-image:none!important","data-apois-courier-bottom-nav"],"Courier stylesheet explicitly removes black nav background image");
+  check(!waitingPatched.slice(waitingPatched.indexOf("export function CourierStatusCard("),waitingPatched.indexOf("export function CourierWaitingSheet(")).includes("truncate text-lg"),"Courier status ONLINE/OFFLINE can wrap instead of being cut");
+  all(courierPatched,["pb-[calc(5rem+env(safe-area-inset-bottom))]"],"Courier content reserves compact nav height");
+
   check(!courierPatched.includes("data-apois-courier-floating-status"),"No fixed courier availability");
   all(mapPatched,["ColorScheme.LIGHT","mapPosition","Geolocation.getCurrentPosition"],"Built courier native GPS and light map");
   all(driverPatched,["data-apois-driver-profile-v2","text-[#111827]","ProfilePhotoUploader"],"Built driver profile contrast with uploads intact");
