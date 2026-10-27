@@ -131,6 +131,14 @@ jobs:
           fi
           echo "[OK] Módulos Parceiro compilados com identidade nova"
 
+      - name: Validate full partner preflight on APK bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-partner-preflight-v1.mjs --dist
+          node scripts/test-partner-shell-navigation-v2.mjs --dist
+          echo "[OK] Auditoria integrada e navegacao entre modulos validadas"
+
       - name: Create Android project
         shell: bash
         run: |
