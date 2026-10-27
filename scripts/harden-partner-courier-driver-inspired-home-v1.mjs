@@ -9,7 +9,7 @@ patch("src/routes/courier.tsx",s=>{
  if(mainStart<0)throw Error("[FAIL] main da home nao encontrado");
  const mainEnd=s.indexOf(">",mainStart);
  if(mainEnd<0)throw Error("[FAIL] fim da tag main nao encontrado");
- s=s.slice(0,mainStart)+'<main data-apois-courier-map-home className="mx-auto w-full max-w-lg space-y-2 overflow-x-hidden px-2 py-2 pb-[calc(7rem+env(safe-area-inset-bottom))]">'+s.slice(mainEnd+1);
+ s=s.slice(0,mainStart)+s.slice(mainStart,mainEnd+1).replace("<main","<main data-apois-courier-map-home")+s.slice(mainEnd+1);
  const oldStatus='        <CourierStatusCard\n          online={online}\n          busy={busy === "online"}\n          activeJob={activeJob}\n          onToggle={toggleOnline}\n        />';
  if(!s.includes(oldStatus))throw Error("[FAIL] status courier nao localizado");
  s=s.replace(oldStatus,"");
