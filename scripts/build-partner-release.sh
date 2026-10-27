@@ -61,6 +61,7 @@ node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 node "$ROOT/scripts/harden-partner-red-visual.mjs"
 node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
 node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
+node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/harden-partner-google-callback-recovery.mjs"
 node "$ROOT/scripts/harden-partner-ride-homologation-v2.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
