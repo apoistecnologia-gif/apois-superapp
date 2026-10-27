@@ -86,11 +86,14 @@ if(process.argv.includes("--dist")){
   const courierPatched=read(".work/partner-entregador/src/routes/courier.tsx");
   const mapPatched=read(".work/partner-entregador/src/components/CourierRouteMap.tsx");
   const driverPatched=read(".work/partner-motorista/src/routes/motorista.perfil.tsx");
+  const offersPatched=read(".work/partner-entregador/src/components/CourierOfferOverlay.tsx");
   all(courierPatched,["data-apois-courier-map-home","data-apois-courier-inline-status","CourierStatusCard","CourierRouteMap"],"Built courier home integrated");
   check((courierPatched.match(/<CourierStatusCard\b/g)||[]).length===1,"One online availability control in courier home");
   check(!courierPatched.includes("data-apois-courier-floating-status"),"No fixed courier availability");
   all(mapPatched,["ColorScheme.LIGHT","mapPosition","Geolocation.getCurrentPosition"],"Built courier native GPS and light map");
   all(driverPatched,["data-apois-driver-profile-v2","text-[#111827]","ProfilePhotoUploader"],"Built driver profile contrast with uploads intact");
+  all(offersPatched,["APOIS_PARTNER_LOGO_DATA_URL","apois:courier-offer-accepted","AudioContext","stopAlert","pulseAlert"],"Built courier offer modal, ringtone and immediate route refresh");
+  all(courierPatched,["window.addEventListener(\"apois:courier-offer-accepted\", refresh)","window.removeEventListener(\"apois:courier-offer-accepted\", refresh)"],"Courier updates active route on accepted offer");
   check(existsSync("superapp/partner-shell/dist/index.html"),"Partner chooser included");
   check(existsSync("superapp/partner-shell/dist/modules/motorista/index.html"),"Driver module copied");
   check(existsSync("superapp/partner-shell/dist/modules/entregador/index.html"),"Courier module copied");
