@@ -26,7 +26,8 @@ s=s.replace(stateAnchor,stateAnchor+`\n  const [offlineGpsError, setOfflineGpsEr
     let active = true;
     const onCoordinates = ({coords}: {coords: {latitude: number; longitude: number; accuracy: number; heading: number | null; speed: number | null}}) => {
         if (!active) return;
-        setOfflineGpsError(null);\n        setCurrentPosition({
+        setOfflineGpsError(null);
+        setCurrentPosition({
           lat: coords.latitude, lng: coords.longitude,
           accuracy: coords.accuracy, heading: coords.heading,
           speed: coords.speed, recordedAt: Date.now()
@@ -66,7 +67,7 @@ s=s.replace(stateAnchor,stateAnchor+`\n  const [offlineGpsError, setOfflineGpsEr
 `);
 
 s=s.replace('import logoAsset from "@/assets/logo.png.asset.json";',
-'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";\\nimport { Capacitor } from "@capacitor/core";\\nimport { Geolocation } from "@capacitor/geolocation";');
+'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";\nimport { Capacitor } from "@capacitor/core";\nimport { Geolocation } from "@capacitor/geolocation";');
 s=s.replaceAll("src={logoAsset.url}", "src={APOIS_PARTNER_LOGO_DATA_URL}");
 // StatusCard continua sendo o único botão online/offline, inclusive antes de haver oferta.
 s=s.replace('className="mx-auto w-full max-w-lg space-y-4 overflow-x-hidden p-4 pb-[calc(7.7rem+env(safe-area-inset-bottom))]"',
