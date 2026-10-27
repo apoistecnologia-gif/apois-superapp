@@ -35,12 +35,19 @@ if(css.includes(marker))throw Error("[FAIL] home V1 ja aplicada");
 css+="\n"+marker+"\n"+[
   ".apois-system-theme [data-apois-courier-map-home] { position:relative; max-width:none; padding-top:0; }",
   ".apois-system-theme [data-apois-courier-map-home] > section:first-child { border-radius:22px; margin:0; box-shadow:0 12px 32px rgba(17,24,39,.10); }",
-  ".apois-system-theme [data-apois-courier-floating-status] { position:fixed; z-index:39; left:50%; transform:translateX(-50%); bottom:calc(96px + env(safe-area-inset-bottom)); pointer-events:none; }",
+  ".apois-system-theme [data-apois-courier-floating-status] { position:fixed; z-index:60; left:50%; transform:translateX(-50%); bottom:calc(188px + env(safe-area-inset-bottom)); pointer-events:none; }",
   ".apois-system-theme [data-apois-courier-floating-status] > * { pointer-events:auto; box-shadow:0 12px 38px rgba(17,24,39,.16); border-radius:24px; }",
   ".apois-system-theme [data-apois-courier-map-home] [class*=\"rounded-[1.9rem]\"] { border-radius:22px; }",
   ".apois-system-theme [data-apois-courier-map-home] [class*=\"bg-black/70\"] { background:rgba(255,255,255,.98)!important; }",
   ".apois-system-theme [data-apois-courier-map-home] [class*=\"text-zinc-500\"] { color:#576273!important; }",
-  "@media(max-height:700px){.apois-system-theme [data-apois-courier-floating-status] { bottom:calc(84px + env(safe-area-inset-bottom)); }}",
+  ".apois-system-theme [data-apois-courier-floating-status] > section { background:#FFFFFF!important; color:#111827!important; border:1px solid #E4E7EC!important; box-shadow:0 8px 32px rgba(17,24,39,.20)!important; padding:12px 14px!important; border-radius:24px!important; }",
+  ".apois-system-theme [data-apois-courier-floating-status] p { color:#344054!important; }",
+  ".apois-system-theme [data-apois-courier-floating-status] p[class*=\"text-lg\"] { font-size:16px!important; color:#111827!important; line-height:1.25!important; }",
+  ".apois-system-theme [data-apois-courier-floating-status] p span[class*=\"text-primary\"] { color:#E51B23!important; }",
+  ".apois-system-theme [data-apois-courier-floating-status] button { min-width:66px; }",
+  ".apois-system-theme [data-apois-courier-map-home] { padding-bottom:260px!important; }",
+
+  "@media(max-height:700px){.apois-system-theme [data-apois-courier-floating-status] { bottom:calc(160px + env(safe-area-inset-bottom)); }}",
 ].join("\n")+"\n";
 writeFileSync(cssPath,css,"utf8");
 console.log("[OK] Entregador: mapa claro alto, painel disponibilidade flutuante e rota de duas etapas preservada.");
