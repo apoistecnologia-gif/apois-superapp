@@ -5,7 +5,7 @@ function update(file,callback){const p=resolve(root,file);const original=readFil
 function logo(s,file){
   const old='import logoAsset from "@/assets/logo.png.asset.json";';
   if(!s.includes(old))throw Error("[FAIL] logo anterior nao localizada "+file);
-  s=s.replace(old,'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";');
+  s=s.replace(old,s.includes('import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";') ? "" : 'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";');
   if(!s.includes("src={logoAsset.url}"))throw Error("[FAIL] imagem nao localizada "+file);
   return s.replaceAll("src={logoAsset.url}","src={APOIS_PARTNER_LOGO_DATA_URL}").replaceAll('alt="APOIS ENTREGA"','alt="APOIS"');
 }
