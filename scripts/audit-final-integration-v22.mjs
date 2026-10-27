@@ -162,7 +162,7 @@ requireAll('scripts/harden-partner-red-visual.mjs', [
 const workflowsDir = resolve('.github/workflows');
 if (existsSync(workflowsDir)) {
   const workflows = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name));
-  const allowedTestWorkflows = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml']);
+  const allowedTestWorkflows = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml', 'apois-partner-preflight.yml']);
   const unexpected = workflows.filter((name) => !allowedTestWorkflows.has(name));
   if (unexpected.length) {
     fail(`GitHub Actions de release/CI não autorizados reapareceram: ${unexpected.join(', ')}`);

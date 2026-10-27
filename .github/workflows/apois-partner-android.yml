@@ -1,11 +1,12 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK only — homologação Parceiro atualizada em 25/10/2026 — retry hardening 26/10
+# test workflow: GitHub Actions debug APK — courier home structurally non-overlapping inline availability
 
 on:
   workflow_dispatch:
   push:
     branches:
       - feat/apois-cliente-red-visual-20261003
+      - fix/apois-partner-courier-gps-logo-push-20261027
     paths:
       - '.github/workflows/apois-partner-android.yml'
 
@@ -20,8 +21,8 @@ jobs:
       BUN_VERSION: "1.3.14"
       PARTNER_APP_PACKAGE: "br.com.apois.parceiro"
       PARTNER_APP_LABEL: "APOIS Parceiro"
-      PARTNER_VERSION_CODE: "19"
-      PARTNER_VERSION_NAME: "1.0.18"
+      PARTNER_VERSION_CODE: "21"
+      PARTNER_VERSION_NAME: "1.0.20"
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -129,6 +130,14 @@ jobs:
             exit 1
           fi
           echo "[OK] Módulos Parceiro compilados com identidade nova"
+
+      - name: Validate full partner preflight on APK bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-partner-preflight-v1.mjs --dist
+          node scripts/test-partner-shell-navigation-v2.mjs --dist
+          echo "[OK] Auditoria integrada e navegacao entre modulos validadas"
 
       - name: Create Android project
         shell: bash

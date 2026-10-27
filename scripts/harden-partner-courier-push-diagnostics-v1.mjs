@@ -1,0 +1,10 @@
+import {readFileSync,writeFileSync} from "node:fs";
+import {resolve} from "node:path";
+const path=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||".work/partner-entregador","src/lib/courier-push.ts");
+let s=readFileSync(path,"utf8");
+const old='message: error instanceof Error ? error.message : "Failed to persist push token.",';
+if(!s.includes(old))throw Error("[FAIL] tratamento genérico do registro push ausente");
+const updated='message: error instanceof Error ? error.message : (error && typeof error === "object" && "message" in error && typeof error.message === "string" ? error.message : "Falha ao gravar o token de notificações. Confira sessão, conta e conexão."),';
+s=s.replace(old,updated);
+writeFileSync(path,s,"utf8");
+console.log("[OK] Push Entregador: erro real de RPC exibido, bloqueio de disponibilidade mantido.");

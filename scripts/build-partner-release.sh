@@ -61,7 +61,10 @@ node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 node "$ROOT/scripts/harden-partner-red-visual.mjs"
 node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
 node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
+node "$ROOT/scripts/harden-partner-motorista-login-focus-v19.mjs"
+node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/harden-partner-google-callback-recovery.mjs"
+node "$ROOT/scripts/harden-partner-motorista-google-pkce-v20.mjs"
 node "$ROOT/scripts/harden-partner-ride-homologation-v2.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
@@ -153,6 +156,15 @@ node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
 node "$ROOT/scripts/harden-partner-courier-auth-registration-v2.mjs"
 node "$ROOT/scripts/harden-partner-courier-auth-back-v2.mjs"
 node "$ROOT/scripts/harden-partner-courier-compact-home-v1.mjs"
+node "$ROOT/scripts/harden-partner-courier-map-native-fallback-v3.mjs"
+node "$ROOT/scripts/harden-partner-courier-driver-inspired-home-v1.mjs"
+node "$ROOT/scripts/harden-partner-courier-push-diagnostics-v1.mjs"
+node "$ROOT/scripts/harden-partner-courier-inner-panels-v1.mjs"
+node "$ROOT/scripts/harden-partner-courier-offer-ux-v2.mjs"
+node "$ROOT/scripts/harden-partner-courier-waiting-compact-v2.mjs"
+node "$ROOT/scripts/harden-partner-courier-home-viewport-v3.mjs"
+node "$ROOT/scripts/harden-partner-courier-map-client-style-v4.mjs"
+node "$ROOT/scripts/harden-partner-courier-online-speed-v4.mjs"
 node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 
 cd "$ENTREGADOR"
@@ -164,7 +176,7 @@ require_contains 'Recebimento direto ainda está em homologação.' src/routes/c
 require_contains 'Saque manual está desativado.' src/routes/courier.tsx 'Saque legado desativado'
 require_contains 'courier_confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
 require_contains 'data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]' src/routes/courier.tsx 'Entregador protege entrega ativa da barra Android'
-require_contains 'pb-[max(44px,env(safe-area-inset-bottom))]' src/components/CourierPanels.tsx 'Entregador protege rodapé da barra Android'
+require_contains 'pb-[max(8px,env(safe-area-inset-bottom))]' src/components/CourierPanels.tsx 'Entregador protege rodapé sem espaço excessivo'
 require_contains 'pb-[max(52px,env(safe-area-inset-bottom))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte acima da barra Android'
 require_contains 'max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte utilizável com teclado'
 
@@ -182,6 +194,7 @@ export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 export VITE_SUPABASE_URL="https://ptgkwyyolrdgnqketkjj.supabase.co"
 export VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY"
 bun install --frozen-lockfile
+bun test src/lib/courier-dispatch-readiness.test.ts src/lib/courier-operation-readiness.test.ts
 bun run typecheck
 bun run build
 require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output/public 'Bundle Entregador usa Supabase Entregas canônico atual'
