@@ -1,5 +1,5 @@
 name: APOIS Parceiro Android APK
-# test workflow: GitHub Actions debug APK — preserve Android safe area while styling courier home
+# test workflow: GitHub Actions debug APK — fix visible courier availability panel above tabs
 
 on:
   workflow_dispatch:
