@@ -160,6 +160,7 @@ node "$ROOT/scripts/harden-partner-courier-push-diagnostics-v1.mjs"
 node "$ROOT/scripts/harden-partner-courier-inner-panels-v1.mjs"
 node "$ROOT/scripts/harden-partner-courier-offer-ux-v2.mjs"
 node "$ROOT/scripts/harden-partner-courier-waiting-compact-v2.mjs"
+node "$ROOT/scripts/harden-partner-courier-home-viewport-v3.mjs"
 node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 
 cd "$ENTREGADOR"
@@ -171,7 +172,7 @@ require_contains 'Recebimento direto ainda está em homologação.' src/routes/c
 require_contains 'Saque manual está desativado.' src/routes/courier.tsx 'Saque legado desativado'
 require_contains 'courier_confirm_courier_settlement' src/routes/courier.tsx 'Confirmação manual de recebimento existente'
 require_contains 'data-[active-job=true]:pb-[max(52px,env(safe-area-inset-bottom))]' src/routes/courier.tsx 'Entregador protege entrega ativa da barra Android'
-require_contains 'pb-[max(44px,env(safe-area-inset-bottom))]' src/components/CourierPanels.tsx 'Entregador protege rodapé da barra Android'
+require_contains 'pb-[max(8px,env(safe-area-inset-bottom))]' src/components/CourierPanels.tsx 'Entregador protege rodapé sem espaço excessivo'
 require_contains 'pb-[max(52px,env(safe-area-inset-bottom))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte acima da barra Android'
 require_contains 'max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))]' src/components/CourierCompletionSupport.tsx 'Entregador mantém suporte utilizável com teclado'
 
