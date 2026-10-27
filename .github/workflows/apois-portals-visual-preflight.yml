@@ -1,0 +1,44 @@
+name: APOIS Portais - Identidade 2026 Preflight
+on:
+  push:
+    branches:
+      - fix/apois-portals-brand-red-20261027
+    paths:
+      - '.github/workflows/apois-portals-visual-preflight.yml'
+      - '.apois/source-lock.json'
+      - 'scripts/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-branded-portals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - name: Fetch protected approved submodule commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${APOIS_REPO_TOKEN:-}"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      - name: Verify source lock and original modularity
+        run: |
+          set -euo pipefail
+          npm run verify:pins
+          node scripts/audit-unified-brand-theme-v23.mjs
+      - name: Verify Admin/Merchant source is exactly the approved brand code
+        run: |
+          set -euo pipefail
+          cd sources/apois-entregas
+          node scripts/verify-apois-backoffice-brand.mjs
+        working-directory: .
+      - name: No release
+        run: echo "[OK] No APK, deploy or production database changes."
