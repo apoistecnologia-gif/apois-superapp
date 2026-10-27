@@ -29,4 +29,8 @@ update("src/components/CourierPremiumViews.tsx",s=>{
   s=s.replaceAll('text-zinc-600','text-[#596372]').replaceAll('text-zinc-500','text-[#596372]');
   return s;
 });
+update("src/components/CourierLocationTracker.tsx",s=>s
+  .replace("border-emerald-500/20 bg-emerald-500/5 text-emerald-300","border-zinc-200 bg-white text-[#374151]")
+  .replace("Localização ativa para receber entregas próximas","GPS ativo para receber entregas")
+);
 console.log("[OK] Entregador: logomarca oficial nas telas internas, contrastes e titulo de historico corrigidos.");
