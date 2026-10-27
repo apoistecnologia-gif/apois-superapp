@@ -49,9 +49,11 @@ const newInvoke=`      let timeout: ReturnType<typeof setTimeout> | undefined;
       ]).finally(() => { if (timeout) clearTimeout(timeout); });
       const { data: reverse, error: reverseError } = result;`;
 s=s.replace(oldInvoke,newInvoke);
-const finalAnchor='      setIsLoading(false);';
-if(!s.includes(finalAnchor))throw Error('[FAIL] finally ausente');
-s=s.replace(finalAnchor,'      runningCell.current = false;\n'+finalAnchor);
+// A jornada ja modifica o conteudo do finally; preservar o cleanup
+// existente e inserir a liberacao de runningCell sem depender do loader literal.
+const finallyAnchor=/    } finally \\{(?:\\r?\\n)/;
+if(!finallyAnchor.test(s))throw Error('[FAIL] bloco finally ausente');
+s=s.replace(finallyAnchor,match=>match+'      runningCell.current = false;\\n');
 const oldEffect=`  useEffect(() => {
     if (location) {
       refreshAddress();
