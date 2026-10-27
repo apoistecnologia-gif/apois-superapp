@@ -27,6 +27,7 @@ patch("src/components/CourierOfferOverlay.tsx",s=>{
     "offer red header");
   s=s.replaceAll('bg-black/70','bg-white').replaceAll('bg-black','bg-[#F9FAFB]');
   s=s.replaceAll('bg-zinc-950','bg-white').replaceAll('bg-zinc-900','bg-[#F3F4F6]');
+  s=s.replace('bg-[#F9FAFB]/85 p-3 backdrop-blur-md','bg-black/65 p-3 backdrop-blur-md');
   s=s.replaceAll('text-zinc-100','text-[#111827]').replaceAll('text-zinc-300','text-[#374151]');
   s=s.replaceAll('text-zinc-400','text-[#4B5563]').replaceAll('text-zinc-500','text-[#626B78]').replaceAll('text-zinc-600','text-[#626B78]');
   s=s.replaceAll('rgba(246,190,28','rgba(229,27,35').replaceAll('rgba(200,138,8','rgba(229,27,35');
