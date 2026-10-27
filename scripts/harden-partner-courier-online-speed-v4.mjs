@@ -10,12 +10,12 @@ const start = route.indexOf("  const toggleOnline = async () => {");
 const end = route.indexOf("\n  const acceptOffer = async", start);
 if (start < 0 || end <= start) throw Error("[FAIL] Courier online: toggle boundaries changed");
 let toggle = route.slice(start, end);
-const gpsStart = toggle.indexOf('        if (!navigator.geolocation) {');
+const gpsStart = toggle.indexOf('        let coords: {');
 const gpsEnd = toggle.indexOf('        const { error: locationError }', gpsStart);
-if (gpsStart < 0 || gpsEnd <= gpsStart) throw Error("[FAIL] Courier online: GPS acquisition boundaries changed");
-const fastGps = `        // APOIS_COURIER_FAST_ONLINE_V4. The idle Android home already obtained
-        // a native GPS fix. Use it only while fresh and accurate; otherwise
-        // take a new fix, preserving the server's GPS eligibility validation.
+if (gpsStart < 0 || gpsEnd <= gpsStart) throw Error("[FAIL] Courier online: native/web GPS acquisition boundaries changed");
+const fastGps = `        // APOIS_COURIER_FAST_ONLINE_V4: native home already has a recent
+        // GPS fix; otherwise use the existing platform-specific acquisition.
+        // The server bootstrap and FGS still validate eligibility/permission.
         const gpsFix = currentPosition &&
           Date.now() - currentPosition.recordedAt <= 20_000 &&
           currentPosition.accuracy !== null &&
@@ -25,31 +25,51 @@ const fastGps = `        // APOIS_COURIER_FAST_ONLINE_V4. The idle Android home 
           ? currentPosition : null;
 
         const initialPosition: CourierPosition = gpsFix ?? await (async () => {
-          if (!navigator.geolocation) {
-            throw new Error("Este dispositivo não disponibiliza localização. Ative o GPS para ficar online.");
+          let coords: {
+            latitude: number; longitude: number; accuracy: number;
+            heading?: number | null; speed?: number | null;
+          };
+          if (isNativeCourierAndroid()) {
+            let permission = await Geolocation.checkPermissions();
+            if (permission.location !== "granted") {
+              permission = await Geolocation.requestPermissions({
+                permissions: ["location", "coarseLocation"],
+              });
+            }
+            if (permission.location !== "granted") {
+              throw new Error("Permita a localização para ficar online e receber entregas próximas.");
+            }
+            const nativePosition = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: true, timeout: 10_000, maximumAge: 5_000,
+            });
+            coords = nativePosition.coords;
+          } else {
+            if (!navigator.geolocation) {
+              throw new Error("Este dispositivo não disponibiliza localização. Ative o GPS para ficar online.");
+            }
+            const webPosition = await new Promise<GeolocationPosition>((resolve, reject) =>
+              navigator.geolocation.getCurrentPosition(
+                resolve,
+                (geoError) => {
+                  const message = geoError.code === geoError.PERMISSION_DENIED
+                    ? "Permita o acesso à localização para ficar online."
+                    : geoError.code === geoError.POSITION_UNAVAILABLE
+                      ? "Não foi possível obter sua localização agora. Verifique o GPS e tente novamente."
+                      : "A localização demorou demais para responder. Verifique o GPS e tente novamente.";
+                  reject(new Error(message));
+                },
+                { enableHighAccuracy: true, timeout: 10_000, maximumAge: 5_000 },
+              ),
+            );
+            coords = webPosition.coords;
           }
-          const position = await new Promise<GeolocationPosition>((resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(
-              resolve,
-              (geoError) => {
-                const message = geoError.code === geoError.PERMISSION_DENIED
-                  ? "Permita o acesso à localização para ficar online."
-                  : geoError.code === geoError.POSITION_UNAVAILABLE
-                    ? "Não foi possível obter sua localização agora. Verifique o GPS e tente novamente."
-                    : "A localização demorou demais para responder. Verifique o GPS e tente novamente.";
-                reject(new Error(message));
-              },
-              { enableHighAccuracy: true, timeout: 10_000, maximumAge: 5_000 },
-            ),
-          );
           return {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
-            heading: position.coords.heading !== null && Number.isFinite(position.coords.heading)
-              ? position.coords.heading : null,
-            speed: position.coords.speed !== null && Number.isFinite(position.coords.speed)
-              ? position.coords.speed : null,
+            lat: coords.latitude, lng: coords.longitude,
+            accuracy: Number.isFinite(coords.accuracy) ? coords.accuracy : null,
+            heading: coords.heading !== null && Number.isFinite(coords.heading)
+              ? (coords.heading ?? null) : null,
+            speed: coords.speed !== null && Number.isFinite(coords.speed)
+              ? (coords.speed ?? null) : null,
             recordedAt: Date.now(),
           };
         })();
