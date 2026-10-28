@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - fix/apois-portals-brand-red-20261027
+      - fix/apois-portals-recovery-20261028
     paths:
       - '.github/workflows/apois-portals-visual-preflight.yml'
       - '.apois/source-lock.json'
