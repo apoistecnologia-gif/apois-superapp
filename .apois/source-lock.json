@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-10-27",
+  "updated_at": "2026-10-28",
   "policy": "pinned read-only source snapshots; integration changes belong only in apois-superapp",
   "sources": {
     "entregas": {
       "repository": "apoistecnologia-gif/apois-entregas",
-      "branch": "fix/apois-entregas-portals-red-20261027",
-      "commit": "112c9fd248f9256dc1e33eeddb752ddb3911a1aa"
+      "branch": "fix/apois-portals-recovery-20261028",
+      "commit": "4b891f0150fe4d7f9964568e0934cf8bdbd79682"
     },
     "corridas_passageiro": {
       "repository": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
