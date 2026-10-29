@@ -90,6 +90,22 @@ update("src/routes/motorista.perfil.tsx", [
    '{error ? (\n            <DSCard', "error section stability"],
 ]);
 
+
+// If the profile RPC returns no driver, do not fabricate a large photo,
+// ratings or billing status. Keep the account menu and a concise status link.
+update("src/routes/motorista.perfil.tsx", [
+  [
+    '          <DSCard className="relative min-w-0 overflow-hidden border border-[#E5E7EB] bg-white p-4 text-[#111827] shadow-sm animate-fade-in motion-reduce:animate-none sm:p-6">',
+    '          {driver ? (\n            <>\n          <DSCard className="relative min-w-0 overflow-hidden border border-[#E5E7EB] bg-white p-4 text-[#111827] shadow-sm animate-fade-in motion-reduce:animate-none sm:p-6">',
+    "hide placeholder when profile unavailable",
+  ],
+  [
+    '          </Link>\n\n          <section className="flex min-w-0 flex-col gap-2 animate-fade-in motion-reduce:animate-none">\n            <Label className="px-2 !text-[#606B7A]">Conta</Label>',
+    '          </Link>\n            </>\n          ) : (\n            <DSCard className="rounded-2xl border border-[#E5E7EB] bg-white p-5 text-[#111827] shadow-sm">\n              <HeadingS className="!text-[#111827]">Cadastro do motorista</HeadingS>\n              <BodySmall className="mt-2 !text-[#667085]">Acompanhe a análise do seu cadastro e documentos.</BodySmall>\n              <Link to="/motorista/status" className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-[#E51B23] px-4 py-2 text-sm font-bold text-white">Ver status do cadastro</Link>\n            </DSCard>\n          )}\n\n          <section className="flex min-w-0 flex-col gap-2 animate-fade-in motion-reduce:animate-none">\n            <Label className="px-2 !text-[#606B7A]">Conta</Label>',
+    "pending profile compact state",
+  ],
+]);
+
 update("src/components/MovviHeader.tsx", [
   ['import { supabase } from "@/integrations/supabase/client";',
    'import { supabase } from "@/integrations/supabase/client";\nimport { signOutDriverOnThisDevice } from "@/lib/driverLocalSignOut";', "header logout import"],
