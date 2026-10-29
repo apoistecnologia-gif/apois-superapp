@@ -176,8 +176,9 @@ Deno.serve(async (request: Request) => {
   // APOIS_TEST_CASH_SAME_DB_V1: ONLY an authorized test customer and merchant,
   // never a permanent public cash checkout. Production Pix remains default.
   if (paymentMethod === "cash") {
-    if (Deno.env.get("APOIS_TEST_CASH_ENABLED") !== "true" ||
-        new URL(supabaseUrl).hostname !== "ptgkwyyolrdgnqketkjj.supabase.co") {
+    // Restrição efetiva no banco: somente dupla cliente/loja TESTE com allowlist ativa.
+    // Sem entradas autorizadas, o caminho cash permanece integralmente bloqueado.
+    if (new URL(supabaseUrl).hostname !== "ptgkwyyolrdgnqketkjj.supabase.co") {
       return new Response(JSON.stringify({
         error: "Dinheiro disponível somente em homologação autorizada.",
         code: "TEST_CASH_DISABLED",
