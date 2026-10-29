@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - feat/apois-cliente-red-visual-20261003
+      - fix/apois-android-github-homolog-20261029
     paths:
       - '.github/workflows/apois-client-android.yml'
 
@@ -113,6 +114,7 @@ jobs:
           node --check scripts/harden-corridas-pickup-map-focus.mjs
           grep -Fq 'pickupCameraCoordinate' scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-trip-flow-ux.mjs
+          node --check scripts/harden-corridas-pickup-timeout-v1.mjs
           grep -Fq 'relative flex h-full min-h-0' scripts/harden-corridas-trip-flow-ux.mjs
           grep -Fq 'APOIS_PICKUP_STABLE_V1' scripts/harden-corridas-trip-flow-ux.mjs
           node --check scripts/verify-corridas-trip-flow-ux.mjs
