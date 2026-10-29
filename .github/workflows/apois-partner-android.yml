@@ -113,6 +113,7 @@ jobs:
           node scripts/test-apois-unified-maps.mjs
           node --check scripts/harden-motorista-map-branding.mjs
           node --check scripts/harden-partner-motorista-visual-v18.mjs
+          node --check scripts/harden-partner-auth-visual-v17.mjs
           node --check scripts/test-partner-map-visual.mjs
           node scripts/test-partner-map-visual.mjs
           node scripts/audit-partner-motorista-brand-v4.mjs
