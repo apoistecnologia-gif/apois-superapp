@@ -145,6 +145,26 @@ if(process.argv.includes("--dist")){
   all(read(".work/partner-motorista/src/routes/motorista.app.tsx"),["data-apois-pin-v4","createPortal(","document.body","Confirmar PIN e iniciar corrida","disabled={pinBusy || pinCode.length !== 4}","await onStart(pinCode)","data-apois-ride-phase-v4","data-apois-pickup-bottom-v4"],"Motorista PIN V4 always visible and original start action preserved");
   all(read(".work/partner-motorista/src/styles.css"),["APOIS_DRIVER_PIN_RIDE_V4","data-apois-pickup-top-v4","data-apois-pin-v4"],"Motorista ride and PIN theme independent of global dark CSS");
 
+  all(read(".work/partner-motorista/src/components/MovviMap.tsx"),[
+    "isDriverRole ? [] : getMapStyleForTheme(theme)",
+    'isDriverRole ? "#F8F9FA" : getMapBackgroundForTheme(theme)',
+    "clickableIcons: isDriverRole",
+  ],"Motorista uses Google standard map and readable road/city labels");
+  all(read(".work/partner-motorista/src/lib/voiceNav.ts"),[
+    "Arrival is only allowed by the GPS movement guard",
+    "if (/destino|destination|arriv|",
+  ],"Google Directions ARRIVE steps cannot trigger premature destination speech");
+  all(driverPatched,[
+    "const NAVIGATION_ZOOM = 16;",
+    "tilt: 0,",
+    "routeStepsPhase !== active.id +",
+    "res.distanceMeters < directMeters * 0.55",
+    "evidence.travelledKm >= 0.12",
+    "evidence.nearFixes >= 2",
+    "now - evidence.firstAt >= 20000",
+    "setLegKm(null); setEtaSeconds(null);",
+  ],"Motorista rejects 0km false routes, clears stale steps and confirms motion before arrival");
+
   all(read(".work/partner-motorista/src/lib/driverLocalSignOut.ts"),['scope: "local"','window.location.replace','sb-'],"Motorista logout local with offline fallback");
   all(offersPatched,["APOIS_PARTNER_LOGO_DATA_URL","apois:courier-offer-accepted","AudioContext","stopAlert","pulseAlert"],"Built courier offer modal, ringtone and immediate route refresh");
   all(courierPatched,["window.addEventListener(\"apois:courier-offer-accepted\", refresh)","window.removeEventListener(\"apois:courier-offer-accepted\", refresh)"],"Courier updates active route on accepted offer");
