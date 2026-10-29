@@ -214,14 +214,8 @@ workflows:
           : "${CORRIDAS_VITE_SUPABASE_URL:?CORRIDAS_VITE_SUPABASE_URL is required}"
           : "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:?CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY is required}"
           : "${CORRIDAS_WEB_MAPS_API_KEY:?CORRIDAS_WEB_MAPS_API_KEY is required}"
-          # O build do Entregador fixa o Supabase oficial dentro de
-          # scripts/build-partner-release.sh; variáveis genéricas legadas não
-          # são entrada operacional do bundle de homologação.
-          grep -Fq 'export VITE_SUPABASE_URL="https://ptgkwyyolrdgnqketkjj.supabase.co"' scripts/build-partner-release.sh || {
-            echo '[FAIL] Entregador não aponta para o Supabase canônico'
-            exit 1
-          }
-          echo '[OK] Entregador vinculado ao Supabase Entregas canônico'
+          : "${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required for Entregas}"
+          : "${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY is required for Entregas}"
           : "${FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64:?Add Firebase google-services.json with br.com.apois.parceiro to Codemagic}"
           : "${PARTNER_VERSION_CODE:?PARTNER_VERSION_CODE is required for the partner release}"
           : "${PARTNER_VERSION_NAME:?PARTNER_VERSION_NAME is required for the partner release}"
