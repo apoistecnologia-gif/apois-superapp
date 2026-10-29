@@ -60,8 +60,6 @@ export async function signOutDriverOnThisDevice(): Promise<void> {
 update("src/routes/motorista.perfil.tsx", [
   ['import { supabase } from "@/integrations/supabase/client";',
    'import { supabase } from "@/integrations/supabase/client";\nimport { signOutDriverOnThisDevice } from "@/lib/driverLocalSignOut";', "logout import"],
-  ['      const { error: signOutError } = await supabase.auth.signOut();\n      if (signOutError) throw signOutError;\n      toast.success("Sessão encerrada.");\n      await navigate({ to: "/", replace: true });',
-   '      await signOutDriverOnThisDevice();', "logout local"],
   ['<div data-apois-driver-profile-v2 className="flex min-h-dvh flex-col bg-[#F7F7F8] text-[#111827]">',
    '<div data-apois-driver-profile-v3 className="flex min-h-dvh flex-col bg-[#F7F7F8] text-[#111827]">', "profile scope"],
   ['<DSCard className="min-w-0 border-destructive/25 bg-destructive/5 p-4" role="alert" aria-live="assertive">',
@@ -90,6 +88,18 @@ update("src/routes/motorista.perfil.tsx", [
    '{error ? (\n            <DSCard', "error section stability"],
 ]);
 
+
+// Replace only the profile's own logout handler, independent of exact toast
+// wording in the pinned version, while preserving every other profile flow.
+{
+  const file = resolve(root, "src/routes/motorista.perfil.tsx");
+  let source = readFileSync(file, "utf8");
+  const signature = /  async function handleLogout\(\) \{[\s\S]*?\n  \}\n\n  async function handlePhotoUploaded/;
+  if (!signature.test(source)) throw new Error("[FAIL] Profile V3 logout handler boundary not found");
+  source = source.replace(signature,
+    '  async function handleLogout() {\n    if (loggingOut) return;\n    setLoggingOut(true);\n    try {\n      await signOutDriverOnThisDevice();\n    } catch (cause) {\n      console.error("[APOIS DRIVER PROFILE] signOut failed", cause);\n      toast.error("Não foi possível sair da conta. Tente novamente.");\n    } finally {\n      setLoggingOut(false);\n    }\n  }\n\n  async function handlePhotoUploaded');
+  writeFileSync(file, source, "utf8");
+}
 
 // If the profile RPC returns no driver, do not fabricate a large photo,
 // ratings or billing status. Keep the account menu and a concise status link.
