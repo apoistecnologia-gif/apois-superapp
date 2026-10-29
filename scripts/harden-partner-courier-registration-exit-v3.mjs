@@ -48,6 +48,16 @@ app=app.replace(form,'<form onSubmit={onSubmit} data-apois-courier-register-form
 const last=app.lastIndexOf("</form>");must(last>0,"application form ending");
 app=app.slice(0,last)+"          <button type=\"button\" disabled={busy} aria-label=\"Sair do cadastro e voltar ao login\"\n            onClick={onBack}\n            className=\"mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm font-bold text-[#B91C1C] disabled:opacity-50\">\n            Sair do cadastro e voltar ao login\n          </button>\n        "+app.slice(last);
 source=source.slice(0,start)+app+source.slice(end);
+// The old automatic resume redirect was removed: its dedicated imports must
+// also be removed or TypeScript noUnusedLocals will reject the next build.
+for (const unused of [
+  'import { App as CourierAppLifecycle } from "@capacitor/app";\\n',
+  'import { Capacitor as CourierCapacitor } from "@capacitor/core";\\n',
+]) {
+  const literal = unused.replace(/\\n/g,"\n");
+  if (!source.includes(literal)) throw Error("[FAIL] unused resume import missing: "+unused);
+  source=source.replace(literal,"");
+}
 writeFileSync(viewFile,source,"utf8");
 let theme=readFileSync(cssFile,"utf8");
 must(!theme.includes("APOIS_COURIER_REGISTRATION_CONTRAST_V3"),"duplicate CSS");
