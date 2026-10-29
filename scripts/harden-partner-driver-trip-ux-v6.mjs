@@ -51,18 +51,11 @@ overlay=once(overlay,
  'className="mx-auto flex w-full max-w-md flex-col gap-2.5 px-4 pt-3 pb-3"',
  'className="mx-auto flex w-full max-w-md flex-col gap-2 px-4 pt-2.5 pb-2.5"',
  "shrink bottom footprint");
-overlay=once(overlay,
- 'className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl bg-white/[0.05] px-2.5 py-2 text-left ring-1 ring-white/10 transition active:scale-[0.99] hover:bg-white/[0.08]"',
- 'className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] px-2.5 py-2 text-left transition active:scale-[0.99] hover:bg-[#F2F4F7]"',
- "passenger row contrast");
-overlay=once(overlay,
- 'className="truncate text-[13px] font-bold leading-tight text-white"',
- 'className="truncate text-[14px] font-bold leading-tight text-[#111827]"',
- "passenger name contrast");
-overlay=once(overlay,
- 'className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-white/60"',
- 'className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-[#667085]"',
- "destination name contrast");
+overlay=overlay.replace(/(aria-label="Ver perfil do passageiro"\\s+className=")[^"]*"/,
+ (_all,prefix)=>prefix+'flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] px-2.5 py-2 text-left"');
+if(!overlay.includes('bg-[#F9FAFB] px-2.5'))throw Error("[FAIL] trip passenger card missing");
+// Name is explicitly dark via scoped CSS below; preserve older class variants.
+// Destination subtitle contrast is enforced with scoped CSS.
 overlay=overlay.replace(/className="flex h-12 w-full items-center justify-center gap-2 rounded-\[14px\][^"]*"/,
  'className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#E51B23] text-[15px] font-bold uppercase tracking-[0.06em] text-white shadow-sm transition active:scale-[0.98] hover:bg-[#C9141B] disabled:cursor-not-allowed disabled:opacity-60"');
 if(!overlay.includes('bg-[#E51B23] text-[15px] font-bold'))throw Error("[FAIL] finish CTA not found");
