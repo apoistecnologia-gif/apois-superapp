@@ -44,10 +44,9 @@ overlay=once(overlay,
  '          </div>\n          <div className="flex items-center justify-between gap-2">\n            <TopStat',
  '            <div className="ml-auto flex items-center gap-1">\n              <button type="button" onClick={onShowRoute} aria-label="Ver rota inteira" className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-2 py-1.5 text-xs font-bold text-[#344054]">Ver rota</button>\n              <button type="button" onClick={onRecenter} aria-label="Acompanhar motorista" className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-2 py-1.5 text-xs font-bold text-[#344054]">Seguir</button>\n            </div>\n          </div>\n          <div className="flex items-center justify-between gap-2">\n            <TopStat',
  "route buttons");
-overlay=once(overlay,
- 'className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0B0F17]/95 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-200"',
- 'data-apois-trip-bottom-v6 className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E5E7EB] bg-white text-[#111827] shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200"',
- "light compact bottom");
+overlay=overlay.replace(/className="fixed inset-x-0 bottom-0 z-40 [^"]*"/,
+ 'data-apois-trip-bottom-v6 className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E5E7EB] bg-white text-[#111827] shadow-lg"');
+if(!overlay.includes('data-apois-trip-bottom-v6'))throw Error("[FAIL] trip footer missing");
 overlay=once(overlay,
  'className="mx-auto flex w-full max-w-md flex-col gap-2.5 px-4 pt-3 pb-3"',
  'className="mx-auto flex w-full max-w-md flex-col gap-2 px-4 pt-2.5 pb-2.5"',
@@ -86,10 +85,9 @@ writeFileSync(cssFile,css+"\n"+[
 writeFileSync(file,source,"utf8");
 const voiceFile=resolve(root,"src/components/DriverVoiceToggle.tsx");
 let voice=readFileSync(voiceFile,"utf8");
-voice=once(voice,
- 'className="fixed z-[46] flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#0D0F11]/92 text-[#F6BE1C] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md disabled:cursor-not-allowed disabled:opacity-60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6BE1C] focus-visible:ring-offset-2 focus-visible:ring-offset-black"',
- 'className="fixed z-[46] flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-[#C9141B] shadow-lg disabled:cursor-not-allowed disabled:opacity-60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51B23]"',
- "voice toggle high contrast");
+voice=voice.replace(/className="fixed z-\\[46\\] flex [^"]*"/,
+ 'className="fixed z-[46] flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-[#C9141B] shadow-lg disabled:cursor-not-allowed disabled:opacity-60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51B23]"');
+if(!voice.includes('text-[#C9141B] shadow-lg'))throw Error("[FAIL] voice control missing");
 voice=once(voice,
  'top: "calc(env(safe-area-inset-top) + 78px)",',
  'top: "calc(env(safe-area-inset-top) + 158px)",',
