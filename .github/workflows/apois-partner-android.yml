@@ -103,6 +103,8 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           npm run verify:pins
+          node --check scripts/audit-final-integration-v22.mjs
+          grep -Fq 'apois-portals-visual-preflight.yml' scripts/audit-final-integration-v22.mjs
 
       - name: Validate updated APOIS Parceiro map before building
         shell: bash
