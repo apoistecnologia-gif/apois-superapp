@@ -116,6 +116,7 @@ jobs:
           node --check scripts/harden-partner-motorista-google-roadmap-v5.mjs
           node --check scripts/harden-partner-motorista-arrival-voice-v5.mjs
           node --check scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'data-apois-trip-top-v6' scripts/harden-partner-driver-trip-ux-v6.mjs
           grep -Fq 'driverAppPatched=read' scripts/audit-partner-preflight-v1.mjs
           grep -Fq 'PIN V4 always visible' scripts/audit-partner-preflight-v1.mjs
           grep -Fq 'Profile V3 logout handler boundary' scripts/harden-partner-driver-profile-logout-v3.mjs
