@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - feat/apois-cliente-red-visual-20261003
+      - fix/apois-portals-recovery-20261028
     paths:
       - '.github/workflows/apois-client-android.yml'
 
@@ -111,6 +112,8 @@ jobs:
           grep -Fq 'patchMapsJavaScriptLoader(loaderBefore)' scripts/harden-corridas-native-map.mjs
           node --check scripts/harden-corridas-native-map.mjs
           node --check scripts/harden-corridas-pickup-map-focus.mjs
+          node --check scripts/harden-corridas-pickup-timeout-v1.mjs
+          grep -Fq 'const finallyAnchor=/' scripts/harden-corridas-pickup-timeout-v1.mjs
           grep -Fq 'pickupCameraCoordinate' scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-trip-flow-ux.mjs
           grep -Fq 'relative flex h-full min-h-0' scripts/harden-corridas-trip-flow-ux.mjs
