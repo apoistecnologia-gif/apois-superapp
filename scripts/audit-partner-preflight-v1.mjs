@@ -167,6 +167,7 @@ if(process.argv.includes("--dist")){
   ],"Motorista rejects 0km false routes, clears stale steps and confirms motion before arrival");
 
   all(driverAppPatched,["data-apois-trip-top-v6","data-apois-trip-bottom-v6","onShowRoute","onRecenter","m.fitBounds"],"Motorista V6 keeps route overview and compact light panels");
+  all(driverAppPatched,["APOIS_ASSIGNED_PASSENGER_V6","apois_driver_assigned_passenger"],"Passenger name lookup is confined to assigned ride and protected RPC");
   all(read(".work/partner-motorista/src/components/DriverVoiceToggle.tsx"),["Voz ligada","Voz desligada","setVoiceEnabled(next)"],"Driver can explicitly toggle persistent turn-by-turn voice");
   all(read(".work/partner-motorista/src/styles.css"),["APOIS_DRIVER_TRIP_V6"],"Driver V6 readable passenger and trip palette");
   all(read(".work/partner-motorista/src/lib/driverLocalSignOut.ts"),['scope: "local"','window.location.replace','sb-'],"Motorista logout local with offline fallback");
