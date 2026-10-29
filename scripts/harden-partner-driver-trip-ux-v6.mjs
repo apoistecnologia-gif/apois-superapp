@@ -37,10 +37,9 @@ overlay=once(overlay,
  '  onComplete: () => Promise<void> | void;',
  '  onComplete: () => Promise<void> | void;\n  onShowRoute: () => void;\n  onRecenter: () => void;',
  "overview types");
-overlay=once(overlay,
- 'className="pointer-events-auto rounded-[22px] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_12px_36px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 animate-in fade-in slide-in-from-top-3 duration-300"',
- 'data-apois-trip-top-v6 className="pointer-events-auto rounded-[22px] border border-[#E5E7EB] bg-white px-4 py-3 text-[#111827] shadow-lg animate-in fade-in slide-in-from-top-3 duration-300"',
- "light map statistics card");
+overlay=overlay.replace(/className="pointer-events-auto rounded-\\[22px\\][^"]*"/,
+ 'data-apois-trip-top-v6 className="pointer-events-auto rounded-[22px] border border-[#E5E7EB] bg-white px-4 py-3 text-[#111827] shadow-lg"');
+if(!overlay.includes("data-apois-trip-top-v6"))throw Error("[FAIL] statistics header not found");
 overlay=once(overlay,
  '          </div>\n          <div className="flex items-center justify-between gap-2">\n            <TopStat',
  '            <div className="ml-auto flex items-center gap-1">\n              <button type="button" onClick={onShowRoute} aria-label="Ver rota inteira" className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-2 py-1.5 text-xs font-bold text-[#344054]">Ver rota</button>\n              <button type="button" onClick={onRecenter} aria-label="Acompanhar motorista" className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-2 py-1.5 text-xs font-bold text-[#344054]">Seguir</button>\n            </div>\n          </div>\n          <div className="flex items-center justify-between gap-2">\n            <TopStat',
@@ -65,10 +64,9 @@ overlay=once(overlay,
  'className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-white/60"',
  'className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-[#667085]"',
  "destination name contrast");
-overlay=once(overlay,
- 'className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#F6BE1C] text-[15px] font-bold uppercase tracking-[0.06em] text-black shadow-[0_10px_22px_-14px_rgba(246,190,28,0.45)] transition active:scale-[0.98] hover:brightness-[1.05] disabled:cursor-not-allowed disabled:opacity-60"',
- 'className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#E51B23] text-[15px] font-bold uppercase tracking-[0.06em] text-white shadow-sm transition active:scale-[0.98] hover:bg-[#C9141B] disabled:cursor-not-allowed disabled:opacity-60"',
- "red finish button with readable white text");
+overlay=overlay.replace(/className="flex h-12 w-full items-center justify-center gap-2 rounded-\\[14px\\][^"]*"/,
+ 'className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#E51B23] text-[15px] font-bold uppercase tracking-[0.06em] text-white shadow-sm transition active:scale-[0.98] hover:bg-[#C9141B] disabled:cursor-not-allowed disabled:opacity-60"');
+if(!overlay.includes('bg-[#E51B23] text-[15px] font-bold'))throw Error("[FAIL] finish CTA not found");
 source=source.slice(0,overlayAt)+overlay;
 source=once(source,
  '          onOpenProfile={() => active.passenger_id && setProfilePassengerId(active.passenger_id)}\n          onComplete={async () => {',
