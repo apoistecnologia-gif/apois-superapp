@@ -162,7 +162,7 @@ requireAll('scripts/harden-partner-red-visual.mjs', [
 const workflowsDir = resolve('.github/workflows');
 if (existsSync(workflowsDir)) {
   const workflows = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name));
-  const allowedTestWorkflows = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml', 'apois-partner-preflight.yml']);
+  const allowedTestWorkflows = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml', 'apois-partner-preflight.yml', 'apois-portals-visual-preflight.yml']);
   const unexpected = workflows.filter((name) => !allowedTestWorkflows.has(name));
   if (unexpected.length) {
     fail(`GitHub Actions de release/CI não autorizados reapareceram: ${unexpected.join(', ')}`);
@@ -179,7 +179,7 @@ if (existsSync(workflowsDir)) {
       if (clientWorkflow && !clientWorkflow.includes('APOIS-Cliente-TESTE.apk')) {
         fail('workflow GitHub do Cliente deve permanecer explicitamente de teste');
       } else {
-        ok('GitHub Actions contém apenas probe e APKs de teste Cliente/Parceiro; release oficial continua no Codemagic');
+        ok('GitHub Actions contém apenas verificações estáticas aprovadas e APKs de teste Cliente/Parceiro, sem publicação.');
       }
     }
   }
