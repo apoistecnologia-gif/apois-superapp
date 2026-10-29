@@ -85,9 +85,8 @@ voice=once(voice,
  'top: "calc(env(safe-area-inset-top) + 78px)",',
  'top: "calc(env(safe-area-inset-top) + 158px)",',
  "voice toggle away from top overlay");
-voice=once(voice,
- '      {enabled ? <Volume2 className="h-5 w-5" aria-hidden="true" /> : <VolumeX className="h-5 w-5 text-zinc-400" aria-hidden="true" />}',
- '      {enabled ? <Volume2 className="h-5 w-5" aria-hidden="true" /> : <VolumeX className="h-5 w-5 text-[#667085]" aria-hidden="true" />}\n      <span className="text-xs font-bold">{enabled ? "Voz ligada" : "Voz desligada"}</span>',
- "voice toggle explicit label");
+voice=voice.replace(/(\\{enabled \\? <Volume2[^\\n]+\\}\\n)/,
+ '$1      <span className="text-xs font-bold">{enabled ? "Voz ligada" : "Voz desligada"}</span>\\n');
+if(!voice.includes('Voz ligada'))throw Error("[FAIL] voice state label missing");
 writeFileSync(voiceFile,voice,"utf8");
 console.log("[OK] Motorista V6: bright trip panels, compact footer, route overview/follow, persistent voice toggle.");
