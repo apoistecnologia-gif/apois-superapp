@@ -17,10 +17,10 @@ source=once(source,
  'return normalizeHeading(position.heading) ?? routeHeadingFrom(position, route, destination);',
  'return routeHeadingFrom(position, route, destination) ?? normalizeHeading(position.heading);',
  "route direction before unreliable stationary GPS heading");
-source=once(source,
- 'heading: heading ?? undefined,\n        tilt: 0,',
- 'heading: 0,\n        tilt: 0,',
- "north-up navigation");
+// Camera APIs differ across protected driver versions. Preserve the mode
+// logic and force north-up by overriding the final heading value only.
+source=source.replace(/(heading:\s*)[^,\\n]+(,\\n\\s*tilt:\s*0,)/,
+  "$10$2");
 source=once(source,
  '      navMap.setHeading?.(heading);\n      navMap.setTilt?.(0);',
  '      navMap.setHeading?.(0);\n      navMap.setTilt?.(0);',
