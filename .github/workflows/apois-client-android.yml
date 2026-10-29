@@ -117,6 +117,7 @@ jobs:
           node --check scripts/harden-client-live-ride-camera-v2.mjs
           node --check scripts/verify-client-live-ride-camera-v2.mjs
           grep -Fq 'harden-client-live-ride-camera-v2.mjs' scripts/build-isolated-module.mjs
+          grep -Fq 'APOIS_PASSENGER_LIVE_FOCUS_V2' scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-pickup-timeout-v1.mjs
           grep -Fq 'relative flex h-full min-h-0' scripts/harden-corridas-trip-flow-ux.mjs
