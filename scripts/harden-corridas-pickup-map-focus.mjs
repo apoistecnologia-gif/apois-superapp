@@ -32,9 +32,7 @@ change(helper,
   'ajuste de enquadramento sem jitter');
 // O branch nativo deve ser aplicado ANTES do fitRouteBounds para evitar zoom amplo
 // quando o passageiro aguarda a busca de motorista.
-change('      if (points.length > 1) {\n        await mapService.upsertRoutePolyline(mapId, points);',
-  '      if (points.length > 1) {\n        await mapService.upsertRoutePolyline(mapId, points);',
-  'rota nativa mantida'); // no-op, o branch de camera entra separadamente
+if (!src.includes('mapService.upsertRoutePolyline(mapId, points)')) throw Error('[FAIL] Rota nativa sem polyline de referência');
 change('        await mapService.fitRouteBounds(mapId, points);',
   '        if (focusPickup && origin) {\n'
   +'          if (pickupMoved(origin)) {\n'
