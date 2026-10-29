@@ -101,6 +101,7 @@ if(process.argv.includes("--dist")){
   const courierPatched=read(".work/partner-entregador/src/routes/courier.tsx");
   const mapPatched=read(".work/partner-entregador/src/components/CourierRouteMap.tsx");
   const driverPatched=read(".work/partner-motorista/src/routes/motorista.perfil.tsx");
+  const driverAppPatched=read(".work/partner-motorista/src/routes/motorista.app.tsx");
   const driverLoginFocus=read(".work/partner-motorista/src/routes/motorista.login.tsx");
   const driverCssFocus=read(".work/partner-motorista/src/styles.css");
   const driverSupabaseAuth=read(".work/partner-motorista/src/integrations/supabase/client.ts");
@@ -154,7 +155,7 @@ if(process.argv.includes("--dist")){
     "Arrival is only allowed by the GPS movement guard",
     "if (/destino|destination|arriv|",
   ],"Google Directions ARRIVE steps cannot trigger premature destination speech");
-  all(driverPatched,[
+  all(driverAppPatched,[
     "const NAVIGATION_ZOOM = 16;",
     "tilt: 0,",
     "routeStepsPhase !== active.id +",
