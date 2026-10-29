@@ -21,6 +21,17 @@ function replaceRequired(path, search, replacement, label) {
     console.log(`[OK] ${label} (já aplicado)`);
     return;
   }
+  // Updated Entregas recovery source already uses a safe, authored error
+  // rather than rendering the raw provider message. Do not regress it.
+  if (
+    path === '.work/entregas/src/routes/redefinir-senha.tsx' &&
+    search.includes('toast.error(error.message') &&
+    !before.includes('toast.error(error.message') &&
+    before.includes('toast.error("Não foi possível atualizar a senha.')
+  ) {
+    console.log(`[OK] ${label} (mensagem segura já presente no snapshot)`);
+    return;
+  }
   if (!before.includes(search)) {
     console.error(`[FAIL] ${label}: padrão esperado não encontrado em ${path}`);
     process.exit(1);
