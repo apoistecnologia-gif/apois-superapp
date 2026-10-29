@@ -113,6 +113,7 @@ jobs:
           node --check scripts/harden-partner-motorista-visual-v18.mjs
           node --check scripts/harden-partner-driver-profile-logout-v3.mjs
           grep -Fq 'Profile V3 logout handler boundary' scripts/harden-partner-driver-profile-logout-v3.mjs
+          grep -Fq 'replaceLogoutFunction' scripts/harden-partner-driver-profile-logout-v3.mjs
           grep -Fq 'signOutDriverOnThisDevice' scripts/harden-partner-driver-profile-logout-v3.mjs
           node --check scripts/test-partner-map-visual.mjs
           node scripts/test-partner-map-visual.mjs
