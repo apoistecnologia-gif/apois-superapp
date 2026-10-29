@@ -72,6 +72,7 @@ node "$ROOT/scripts/harden-partner-motorista-google-roadmap-v5.mjs"
 node "$ROOT/scripts/harden-partner-motorista-arrival-voice-v5.mjs"
 node "$ROOT/scripts/harden-partner-driver-trip-ux-v6.mjs"
 node "$ROOT/scripts/harden-partner-driver-passenger-name-v6.mjs"
+node "$ROOT/scripts/harden-partner-driver-registration-exit-v3.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
@@ -80,6 +81,8 @@ cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
 require_contains 'window.location.hash = "#/motorista/app"' src/lib/nativeBridge.ts 'Push do Motorista usa rota hash interna'
 require_contains 'APOIS_DRIVER_OFFER_POLL_V1' src/routes/motorista.app.tsx 'Motorista reconsulta ofertas sem depender do Firebase'
+require_contains 'APOIS_DRIVER_REGISTRATION_EXIT_V3' src/routes/motorista.cadastro.tsx 'Motorista permite sair do cadastro e retornar ao login'
+require_contains 'Sair para o login' src/routes/motorista.cadastro.tsx 'Sucesso do cadastro não prende a sessão'
 require_contains 'Geolocation.watchPosition(' src/routes/motorista.app.tsx 'Motorista acompanha GPS nativo'
 require_contains 'stopDriverWatch();' src/routes/motorista.app.tsx 'Motorista encerra watcher GPS'
 require_contains 'driver-finish-redispatch' src/lib/driverRideLifecycle.mobile.ts 'Finalização usa lifecycle canônico'
@@ -172,9 +175,13 @@ node "$ROOT/scripts/harden-partner-courier-home-viewport-v3.mjs"
 node "$ROOT/scripts/harden-partner-courier-map-client-style-v4.mjs"
 node "$ROOT/scripts/harden-partner-courier-online-speed-v4.mjs"
 node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
+node "$ROOT/scripts/harden-partner-courier-registration-exit-v3.mjs"
 
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'Push do Entregador registrado'
+require_contains 'APOIS_COURIER_REGISTRATION_EXIT_V3' src/routes/courier.tsx 'Entregador sai do cadastro com logout local'
+require_contains 'data-apois-courier-register-hero-v3' src/components/CourierPremiumViews.tsx 'Hero do cadastro com contraste alto'
+require_contains 'APOIS_COURIER_REGISTRATION_CONTRAST_V3' src/system-theme.css 'Inputs de cadastro legíveis'
 require_contains 'const COURIER_ACTION_TIMEOUT_MS = 20_000;' src/routes/courier.tsx 'Ações do Entregador têm timeout'
 require_contains 'const transitionJobId = activeJob.id;' src/routes/courier.tsx 'Transição captura delivery correta'
 require_contains 'setCompletedJob({ ...deliveredJob, status: "delivered" });' src/routes/courier.tsx 'Conclusão operacional separada do financeiro'
