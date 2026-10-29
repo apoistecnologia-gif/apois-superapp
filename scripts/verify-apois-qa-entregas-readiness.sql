@@ -28,7 +28,7 @@ SELECT
    ) AS eligible_qa_couriers,
   (SELECT count(*) FROM private.apois_test_cash_orders t WHERE t.merchant_id=m.id) AS completed_or_pending_test_order_count,
   (SELECT count(*) FROM public.wallet_transactions wt WHERE wt.idempotency_key LIKE 'order-merchant:%'
-     AND wt.related_entity_id IN (
+     AND wt.reference_id IN (
         SELECT t.order_id::text FROM private.apois_test_cash_orders t WHERE t.merchant_id=m.id)
    ) AS unexpected_wallet_transactions
 FROM public.merchants m
