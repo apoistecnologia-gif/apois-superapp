@@ -159,6 +159,7 @@ jobs:
           grep -Fq 'pointer-events-auto w-full max-w-[360px]' .work/corridas/src/components/map/PassengerMap.tsx
           echo '[OK] Google Maps WebView referrer, relatorio de falha, quebras de linha e JSX validados'
           node --check scripts/harden-entregas-auto-address-cep-v1.mjs
+          node --check scripts/harden-entregas-superapp-auth-runtime.mjs
           node --check scripts/verify-entregas-auto-address-cep-v1.mjs
           node --check scripts/harden-entregas-personal-data-light-v1.mjs
           node --check scripts/harden-entregas-superapp-account-deletion.mjs
