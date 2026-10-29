@@ -24,7 +24,7 @@ function isIsolatedHomologation(supabaseUrl: string): boolean {
     const hostname = address.hostname.toLowerCase();
     const ref = hostname.split(".")[0];
     return address.protocol === "https:" &&
-      /^[a-z0-9-]+\\.supabase\\.co$/.test(hostname) &&
+      /^[a-z0-9-]+\.supabase\.co$/.test(hostname) &&
       !FORBIDDEN_PRODUCTION_REFS.has(ref) &&
       Deno.env.get("APOIS_ENABLE_CASH_HOMOLOGATION") === "enabled-in-staging";
   } catch { return false; }
