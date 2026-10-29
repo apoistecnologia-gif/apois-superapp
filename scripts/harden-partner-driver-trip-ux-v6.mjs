@@ -56,8 +56,8 @@ overlay=overlay.replace(/(aria-label="Ver perfil do passageiro"\s+className=")[^
 if(!overlay.includes('bg-[#F9FAFB] px-2.5'))throw Error("[FAIL] trip passenger card missing");
 // Name is explicitly dark via scoped CSS below; preserve older class variants.
 // Destination subtitle contrast is enforced with scoped CSS.
-overlay=overlay.replace(/className="flex h-12 w-full items-center justify-center gap-2 rounded-\[14px\][^"]*"/,
- 'className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#E51B23] text-[15px] font-bold uppercase tracking-[0.06em] text-white shadow-sm transition active:scale-[0.98] hover:bg-[#C9141B] disabled:cursor-not-allowed disabled:opacity-60"');
+overlay=overlay.replace(/(onClick=\\{handleComplete\\}\\s+className=")[^"]*"/,
+ (_all,prefix)=>prefix+'flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#E51B23] text-[15px] font-bold uppercase tracking-[0.06em] text-white shadow-sm transition active:scale-[0.98] hover:bg-[#C9141B] disabled:cursor-not-allowed disabled:opacity-60"');
 if(!overlay.includes('bg-[#E51B23] text-[15px] font-bold'))throw Error("[FAIL] finish CTA not found");
 source=source.slice(0,overlayAt)+overlay;
 source=once(source,
