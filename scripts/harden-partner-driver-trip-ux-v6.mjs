@@ -51,7 +51,7 @@ overlay=once(overlay,
  'className="mx-auto flex w-full max-w-md flex-col gap-2.5 px-4 pt-3 pb-3"',
  'className="mx-auto flex w-full max-w-md flex-col gap-2 px-4 pt-2.5 pb-2.5"',
  "shrink bottom footprint");
-overlay=overlay.replace(/(aria-label="Ver perfil do passageiro"\\s+className=")[^"]*"/,
+overlay=overlay.replace(/(aria-label="Ver perfil do passageiro"\s+className=")[^"]*"/,
  (_all,prefix)=>prefix+'flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] px-2.5 py-2 text-left"');
 if(!overlay.includes('bg-[#F9FAFB] px-2.5'))throw Error("[FAIL] trip passenger card missing");
 // Name is explicitly dark via scoped CSS below; preserve older class variants.
