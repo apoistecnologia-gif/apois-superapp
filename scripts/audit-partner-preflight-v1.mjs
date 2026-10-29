@@ -142,6 +142,9 @@ if(process.argv.includes("--dist")){
   check(!courierPatched.includes("data-apois-courier-floating-status"),"No fixed courier availability");
   all(mapPatched,["ColorScheme.LIGHT","mapPosition","Geolocation.getCurrentPosition"],"Built courier native GPS and light map");
   all(driverPatched,["data-apois-driver-profile-v3","text-[#111827]","ProfilePhotoUploader","signOutDriverOnThisDevice","Ver status do cadastro"],"Built driver profile V3, uploads and logout intact");
+  all(read(".work/partner-motorista/src/routes/motorista.app.tsx"),["data-apois-pin-v4","createPortal(","document.body","Confirmar PIN e iniciar corrida","disabled={pinBusy || pinCode.length !== 4}","await onStart(pinCode)","data-apois-ride-phase-v4","data-apois-pickup-bottom-v4"],"Motorista PIN V4 always visible and original start action preserved");
+  all(read(".work/partner-motorista/src/styles.css"),["APOIS_DRIVER_PIN_RIDE_V4","data-apois-pickup-top-v4","data-apois-pin-v4"],"Motorista ride and PIN theme independent of global dark CSS");
+
   all(read(".work/partner-motorista/src/lib/driverLocalSignOut.ts"),['scope: "local"','window.location.replace','sb-'],"Motorista logout local with offline fallback");
   all(offersPatched,["APOIS_PARTNER_LOGO_DATA_URL","apois:courier-offer-accepted","AudioContext","stopAlert","pulseAlert"],"Built courier offer modal, ringtone and immediate route refresh");
   all(courierPatched,["window.addEventListener(\"apois:courier-offer-accepted\", refresh)","window.removeEventListener(\"apois:courier-offer-accepted\", refresh)"],"Courier updates active route on accepted offer");
