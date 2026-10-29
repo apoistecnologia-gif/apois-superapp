@@ -85,7 +85,7 @@ writeFileSync(cssFile,css+"\n"+[
 writeFileSync(file,source,"utf8");
 const voiceFile=resolve(root,"src/components/DriverVoiceToggle.tsx");
 let voice=readFileSync(voiceFile,"utf8");
-voice=voice.replace(/className="fixed z-\\[46\\] flex [^"]*"/,
+voice=voice.replace(/className="fixed z-\[46\] flex [^"]*"/,
  'className="fixed z-[46] flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3 text-[#C9141B] shadow-lg disabled:cursor-not-allowed disabled:opacity-60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51B23]"');
 if(!voice.includes('text-[#C9141B] shadow-lg'))throw Error("[FAIL] voice control missing");
 voice=once(voice,
