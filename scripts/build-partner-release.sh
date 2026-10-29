@@ -66,6 +66,7 @@ node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/harden-partner-google-callback-recovery.mjs"
 node "$ROOT/scripts/harden-partner-motorista-google-pkce-v20.mjs"
 node "$ROOT/scripts/harden-partner-ride-homologation-v2.mjs"
+node "$ROOT/scripts/harden-partner-driver-profile-logout-v3.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
