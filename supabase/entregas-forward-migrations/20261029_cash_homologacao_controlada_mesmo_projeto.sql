@@ -40,6 +40,8 @@ AS $$
   );
 $$;
 REVOKE ALL ON FUNCTION private.apois_test_cash_authorized(uuid,uuid) FROM PUBLIC,anon,authenticated;
+GRANT USAGE ON SCHEMA private TO service_role;
+GRANT EXECUTE ON FUNCTION private.apois_test_cash_authorized(uuid,uuid) TO service_role;
 
 -- RPC acessível apenas ao SERVICE ROLE da Edge Function após auth.getUser().
 CREATE OR REPLACE FUNCTION public.apois_check_test_cash_access(_merchant_id uuid,_customer_id uuid)
