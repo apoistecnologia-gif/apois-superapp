@@ -193,7 +193,18 @@ if (process.env.APOIS_ENTREGAS_WORKSPACE) {
     .replace('<div className="min-h-dvh w-full bg-black">{children}</div>','<div className="min-h-dvh w-full bg-[#F7F7F8]">{children}</div>')
     .replace('toast: "border border-zinc-800 bg-zinc-950 text-zinc-100 shadow-2xl",','toast: "border border-[#E2E5EA] bg-white text-[#111827] shadow-xl",')
     .replace('description: "text-zinc-300",','description: "text-[#5F6670]",');
-  must(rootSource, ['className="light apois-system-theme"','bg-[#F7F7F8]'], 'root Entregador claro v17');
+  // Newer source shares the root with Admin/Merchant. Adapt only the courier
+  // branch of the conditional classes; do not change backoffice presentation.
+  const conditionalCourierDark = 'className={isBackofficeProduct ? "apois-system-theme apois-portal-v2026" : "dark apois-system-theme"}';
+  const conditionalCourierLight = 'className={isBackofficeProduct ? "apois-system-theme apois-portal-v2026" : "light apois-system-theme"}';
+  const conditionalBodyDark = 'className={isBackofficeProduct ? "bg-background text-foreground antialiased" : "bg-black antialiased"}';
+  const conditionalBodyLight = 'className={isBackofficeProduct ? "bg-background text-foreground antialiased" : "bg-[#F7F7F8] antialiased"}';
+  rootSource = rootSource.replace(conditionalCourierDark, conditionalCourierLight)
+    .replace(conditionalBodyDark, conditionalBodyLight);
+  const lightHtml = rootSource.includes('className="light apois-system-theme"') || rootSource.includes(conditionalCourierLight);
+  const lightBody = rootSource.includes('bg-[#F7F7F8]');
+  if (!lightHtml || !lightBody) throw Error('[FAIL] root Entregador claro v17: modo courier não está no tema claro');
+
   write(rootPath, rootSource);
 }
 
