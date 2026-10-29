@@ -113,6 +113,8 @@ jobs:
           node --check scripts/harden-partner-motorista-visual-v18.mjs
           node --check scripts/harden-partner-driver-profile-logout-v3.mjs
           node --check scripts/harden-partner-motorista-pin-ride-v4.mjs
+          node --check scripts/harden-partner-motorista-google-roadmap-v5.mjs
+          node --check scripts/harden-partner-motorista-arrival-voice-v5.mjs
           grep -Fq 'PIN V4 always visible' scripts/audit-partner-preflight-v1.mjs
           grep -Fq 'Profile V3 logout handler boundary' scripts/harden-partner-driver-profile-logout-v3.mjs
           grep -Fq 'replaceLogoutFunction' scripts/harden-partner-driver-profile-logout-v3.mjs
