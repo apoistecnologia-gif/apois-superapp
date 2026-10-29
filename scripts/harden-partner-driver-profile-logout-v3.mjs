@@ -119,16 +119,34 @@ update("src/routes/motorista.perfil.tsx", [
 update("src/components/MovviHeader.tsx", [
   ['import { supabase } from "@/integrations/supabase/client";',
    'import { supabase } from "@/integrations/supabase/client";\nimport { signOutDriverOnThisDevice } from "@/lib/driverLocalSignOut";', "header logout import"],
-  ['      const { error } = await supabase.auth.signOut();\n      if (error) throw error;\n      await navigate({ to: logoutRedirect as "/", replace: true });',
-   '      await signOutDriverOnThisDevice();', "header logout local"],
 ]);
 
 update("src/routes/motorista.app.tsx", [
   ['import { supabase } from "@/integrations/supabase/client";',
    'import { supabase } from "@/integrations/supabase/client";\nimport { signOutDriverOnThisDevice } from "@/lib/driverLocalSignOut";', "app logout import"],
-  ['  async function handleLogout() {\n    await supabase.auth.signOut();\n    navigate({ to: "/" });\n  }',
-   '  async function handleLogout() {\n    await signOutDriverOnThisDevice();\n  }', "app logout local"],
 ]);
+
+function replaceLogoutFunction(path, boundary, replacement, label) {
+  const file = resolve(root, path);
+  let source = readFileSync(file, "utf8");
+  if (!boundary.test(source)) throw new Error("[FAIL] Motorista V3 " + label + " handler boundary");
+  source = source.replace(boundary, replacement);
+  writeFileSync(file, source, "utf8");
+  console.log("[OK] Motorista V3: " + label);
+}
+
+replaceLogoutFunction(
+  "src/components/MovviHeader.tsx",
+  /  async function handleLogout\(\) \{[\s\S]*?\n  \}\n\n  function handleBack/,
+  '  async function handleLogout() {\n    if (loggingOut) return;\n    setLogoutError(null);\n    setLoggingOut(true);\n    try {\n      await signOutDriverOnThisDevice();\n    } catch (error) {\n      console.error("[APOIS HEADER] falha ao sair", error);\n      if (mountedRef.current) setLogoutError("Não foi possível sair agora. Tente novamente.");\n    } finally {\n      if (mountedRef.current) setLoggingOut(false);\n    }\n  }\n\n  function handleBack',
+  "header logout",
+);
+replaceLogoutFunction(
+  "src/routes/motorista.app.tsx",
+  /  async function handleLogout\(\) \{[\s\S]*?\n  \}\n  const \[position,/,
+  '  async function handleLogout() {\n    await signOutDriverOnThisDevice();\n  }\n  const [position,',
+  "home logout",
+);
 
 update("src/components/ApoisDriverBottomNav.tsx", [
   ['label: "Notificações", icon: Bell', 'label: "Avisos", icon: Bell', "compact nav label"],
