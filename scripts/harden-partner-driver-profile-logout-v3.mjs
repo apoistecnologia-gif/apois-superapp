@@ -150,8 +150,6 @@ replaceLogoutFunction(
 
 update("src/components/ApoisDriverBottomNav.tsx", [
   ['label: "Notificações", icon: Bell', 'label: "Avisos", icon: Bell', "compact nav label"],
-  ['className="max-w-full break-words text-center text-[11px] font-extrabold leading-3 tracking-tight"',
-   'className="max-w-full truncate whitespace-nowrap text-center text-[10px] font-bold leading-4 tracking-tight"', "unbroken nav labels"],
 ]);
 
 const cssPath = resolve(root, "src/styles.css");
@@ -166,6 +164,11 @@ writeFileSync(cssPath, css + String.raw`
 [data-apois-driver-profile-v3] [role="alert"] { color:#991B1B; }
 [data-apois-driver-profile-v3] input,
 [data-apois-driver-profile-v3] textarea { color:#111827; }
+/* Compact labels independent of older nav classname variants. */
+nav[aria-label="Navegação principal do motorista"] a > span:last-child {
+  display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap !important; font-size:10px !important; line-height:1.2 !important;
+}
 `, "utf8");
 
 const profile = readFileSync(resolve(root, "src/routes/motorista.perfil.tsx"), "utf8");
@@ -175,6 +178,6 @@ for (const marker of [
   "data-apois-driver-profile-v3", "await signOutDriverOnThisDevice()",
   'bg-[#FFF1F2]', 'flex w-full justify-center',
 ]) if (!profile.includes(marker)) throw new Error("[FAIL] Profile V3 missing " + marker);
-if (!nav.includes('label: "Avisos"') || !nav.includes("whitespace-nowrap")) throw new Error("[FAIL] Profile V3 nav");
+if (!nav.includes('label: "Avisos"')) throw new Error("[FAIL] Profile V3 nav label");
 if (!logout.includes('scope: "local"') || !logout.includes('sb-') || !logout.includes('window.location.replace')) throw new Error("[FAIL] Profile V3 logout");
 console.log("[OK] APOIS Motorista V3: logout local protegido, perfil legível, foto compacta, menu e navegação sem quebra.");
