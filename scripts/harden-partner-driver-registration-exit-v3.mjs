@@ -40,7 +40,7 @@ form=form.replace(/(bg-\[#E51B23\][^"]*)text-black/g,"$1text-white");
 src=src.slice(0,p)+form+src.slice(q);
 src=src.replaceAll("#F6BE1C","#E51B23").replaceAll("rgba(246,190,28","rgba(229,27,35");
 // Red CTA needs white text; do not inherit the old black-on-gold style.
-src=src.replace(/(bg-\\[\\#E51B23\\][^"]*)text-black/g,"$1text-white");
+src=src.replace(/(bg-\[#E51B23\][^"]*)text-black/g,"$1text-white");
 if(!src.includes("void exitRegistration()")||!src.includes("Sair para o login"))throw Error("[FAIL] exit links missing");
 writeFileSync(file,src,"utf8");
 let styles=readFileSync(cssFile,"utf8");
