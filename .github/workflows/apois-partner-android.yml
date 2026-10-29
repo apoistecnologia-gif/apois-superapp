@@ -120,6 +120,7 @@ jobs:
           grep -Fq 'rounded-\[22px\]' scripts/harden-partner-driver-trip-ux-v6.mjs
           grep -Fq 'data-apois-trip-bottom-v6' scripts/harden-partner-driver-trip-ux-v6.mjs
           grep -Fq 'Ver perfil do passageiro' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'onClick=' scripts/harden-partner-driver-trip-ux-v6.mjs
           grep -Fq 'driverAppPatched=read' scripts/audit-partner-preflight-v1.mjs
           grep -Fq 'PIN V4 always visible' scripts/audit-partner-preflight-v1.mjs
           grep -Fq 'Profile V3 logout handler boundary' scripts/harden-partner-driver-profile-logout-v3.mjs
