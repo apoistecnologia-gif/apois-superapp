@@ -1,0 +1,24 @@
+import { readFileSync } from "node:fs";
+const sql = readFileSync("supabase/entregas-forward-migrations/20261029_cash_homologacao_controlada_mesmo_projeto.sql","utf8");
+const edge = readFileSync("supabase/entregas-cash-test/create-order/index.ts","utf8");
+let cases=0;
+function check(test,ok) { if(!ok) throw Error("[FAIL] "+test); console.log("[OK] "+test); cases++; }
+check("PIX segue permitido normalmente no banco", sql.includes("IF NEW.payment_method='pix' THEN RETURN NEW; END IF;"));
+check("Cash exige pagamento pending",sql.includes("NEW.payment_status='pending'")&&sql.includes("NEW.payment_status NOT IN ('pending','cancelled')"));
+check("Cash depende de merchant TESTE e usuário autorizados",sql.includes("m.name ILIKE 'APOIS TESTE%'")&&sql.includes("a.customer_user_id=_customer_id")&&sql.includes("a.enabled=true AND a.expires_at>now()"));
+check("Nenhuma conta é automaticamente autorizada", sql.includes("enabled boolean NOT NULL DEFAULT false") && !/INSERT INTO private\.apois_test_cash_access\s*\(/i.test(sql));
+check("Somente service_role executa RPC de permissão",sql.includes("REVOKE ALL ON FUNCTION public.apois_check_test_cash_access")&&sql.includes("GRANT EXECUTE ON FUNCTION public.apois_check_test_cash_access(uuid,uuid) TO service_role"));
+check("Não amplia RLS anônima",sql.includes('FOR SELECT TO authenticated') && !sql.includes("FOR SELECT TO anon"));
+check("Pedidos de teste têm ganhos/comissões/repasse zerados",["NEW.merchant_net := 0;","NEW.courier_earnings := 0;","NEW.platform_fee := 0;","NEW.estimated_earnings := 0;"].every(t=>sql.includes(t)));
+check("Pedido não pode se converter a paid",sql.includes("RAISE EXCEPTION 'test order cannot become a real payment'"));
+check("Marcador de homologação vincula somente pedidos cash de autorizado",sql.includes("INSERT INTO private.apois_test_cash_orders")&&sql.includes("private.apois_test_cash_authorized(NEW.merchant_id,NEW.customer_user_id)"));
+check("Mensalidade especial só serve a merchant TESTE allowlisted",sql.includes("m.name ILIKE 'APOIS TESTE%'")&&sql.includes("public.merchant_subscription_in_good_standing"));
+check("API só usa Supabase existente de Entregas",edge.includes('"ptgkwyyolrdgnqketkjj.supabase.co"'));
+check("API depende de flag secreta desabilitada por padrão",edge.includes('Deno.env.get("APOIS_TEST_CASH_ENABLED") !== "true"'));
+check("API exige cliente autenticado",edge.includes("authClient.auth.getUser(token)")&&edge.includes("userData.user.id"));
+check("API valida whitelist pelo servidor",edge.includes('adminClient.rpc("apois_check_test_cash_access"')&&edge.includes("allowed !== true"));
+check("API rejeita cupom para pedido de teste",edge.includes('"TEST_COUPONS_DISABLED"'));
+check("API confere método e pendência do snapshot",edge.includes('snapshot.payment_method !== paymentMethod')&&edge.includes('snapshot.payment_status !== "pending"'));
+check("Não envia cobrança Safe2Pay para pedidos cash",!edge.includes('functions.invoke("safe2pay')&&!edge.includes('fetch("https://payment.safe2pay'));
+check("Nenhum projeto Supabase novo é criado ou cobrado",!sql.includes("create project")&&!edge.includes("create_branch")&&!sql.includes("ALTER SUBSCRIPTION"));
+console.log("PASS "+cases+" verificações. SOMENTE TESTES ESTÁTICOS, sem alterar Supabase ou realizar pagamento.");
