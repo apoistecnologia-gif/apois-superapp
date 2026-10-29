@@ -142,6 +142,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/audit-partner-preflight-v1.mjs --dist
+          grep -Fq 'data-apois-driver-profile-v3' scripts/audit-partner-preflight-v1.mjs
           node scripts/test-partner-shell-navigation-v2.mjs --dist
           echo "[OK] Auditoria integrada e navegacao entre modulos validadas"
 
