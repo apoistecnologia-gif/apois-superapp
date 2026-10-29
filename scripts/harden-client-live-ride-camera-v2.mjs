@@ -3,6 +3,10 @@ import {resolve} from "node:path";
 const root=resolve(process.env.APOIS_CORRIDAS_WORKSPACE||".work/corridas");
 const file=resolve(root,"src/components/map/PassengerMap.tsx");
 let source=readFileSync(file,"utf8");
+if (source.includes("APOIS_PASSENGER_LIVE_FOCUS_V2")) {
+ console.log("[OK] Passenger live camera V2 already applied");
+ process.exit(0);
+}
 function once(a,b,name){
  const n=source.split(a).length-1;
  if(n!==1)throw Error("[FAIL] Passenger live camera "+name+" expected 1 got "+n);
