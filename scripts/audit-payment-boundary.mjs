@@ -11,6 +11,8 @@ for (const marker of ['code === "cash" || code === "credit"', 'if (!isActive || 
   if (!corridasHardener.includes(marker)) fail(`boundary Corridas sem ${marker}`);
 }
 
+const isCashTestBuild = process.env.APOIS_ENTREGAS_CASH_TEST_MODE === "1";
+if(isCashTestBuild){
 const entregasHardener = read('scripts/harden-entregas-payment-provider-boundary.mjs');
 for (const marker of [
   'paymentMethod: "cash"',
@@ -41,6 +43,18 @@ for (const marker of [
   'merchant access required',
 ]) {
   if (!directMigration.includes(marker)) fail(`migration forward-only Entregas sem ${marker}`);
+}
+
+
+} else {
+const prodBuild = read(".apois/modules.json");
+const prodGuard = read("scripts/harden-entregas-pix-production-guard.mjs");
+for(const marker of ["APOIS_ENTREGAS_CASH_TEST_MODE","harden-entregas-pix-production-guard.mjs","harden-entregas-cash-test-badges.mjs"]){
+  if(!prodBuild.includes(marker)) fail("build Entregas não distingue teste e produção: "+marker);
+}
+if(!prodGuard.includes("APOIS_ENTREGAS_PIX_PRODUCTION_GUARD_V1"))
+  fail("checkout PIX de produção não está protegido contra cobrança legado");
+
 }
 
 const motorFinance = read('scripts/harden-motorista-finance-boundary.mjs');
@@ -74,6 +88,7 @@ if (rideService) {
   else ok('workspace Corridas expõe somente pagamento direto');
 }
 
+if(isCashTestBuild){
 const checkout = read('.work/entregas/src/routes/checkout.tsx');
 if (checkout) {
   for (const forbidden of [
@@ -103,6 +118,16 @@ const merchantWatcher = read('.work/entregas/src/components/MerchantOrderSoundWa
 if (merchantWatcher) {
   if (!merchantWatcher.includes('isAlertableOrderPayment(order.payment_method, order.payment_status)')) fail('alerta merchant não reconhece cash/pending');
   if (merchantWatcher.includes('Novo pedido pago')) fail('alerta merchant ainda promete pagamento confirmado');
+}
+
+
+} else {
+const checkout = read(".work/entregas/src/routes/checkout.tsx");
+if (checkout && (!checkout.includes("APOIS_ENTREGAS_PIX_PRODUCTION_GUARD_V1") ||
+                 checkout.includes('paymentMethod: "cash"'))) {
+  fail("checkout Entregas produção não manteve PIX-only fail-closed");
+}
+
 }
 
 if (failed) process.exit(1);
