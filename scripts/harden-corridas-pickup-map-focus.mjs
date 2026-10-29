@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 const file=resolve(process.env.APOIS_CORRIDAS_WORKSPACE||'.work/corridas','src/components/map/PassengerMap.tsx');
 let src=readFileSync(file,'utf8');
+if(src.includes('APOIS_PASSENGER_LIVE_FOCUS_V2')){console.log('[OK] foco embarque já aplicado em execução anterior');process.exit(0);}
 function change(from,to,label){
   if(src.includes(to))return;
   if(!src.includes(from))throw Error('[FAIL] Mapa pickup foco: '+label);
