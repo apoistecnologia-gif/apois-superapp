@@ -141,7 +141,8 @@ if(process.argv.includes("--dist")){
 
   check(!courierPatched.includes("data-apois-courier-floating-status"),"No fixed courier availability");
   all(mapPatched,["ColorScheme.LIGHT","mapPosition","Geolocation.getCurrentPosition"],"Built courier native GPS and light map");
-  all(driverPatched,["data-apois-driver-profile-v2","text-[#111827]","ProfilePhotoUploader"],"Built driver profile contrast with uploads intact");
+  all(driverPatched,["data-apois-driver-profile-v3","text-[#111827]","ProfilePhotoUploader","signOutDriverOnThisDevice","Ver status do cadastro"],"Built driver profile V3, uploads and logout intact");
+  all(read(".work/partner-motorista/src/lib/driverLocalSignOut.ts"),['scope: "local"','window.location.replace','sb-'],"Motorista logout local with offline fallback");
   all(offersPatched,["APOIS_PARTNER_LOGO_DATA_URL","apois:courier-offer-accepted","AudioContext","stopAlert","pulseAlert"],"Built courier offer modal, ringtone and immediate route refresh");
   all(courierPatched,["window.addEventListener(\"apois:courier-offer-accepted\", refresh)","window.removeEventListener(\"apois:courier-offer-accepted\", refresh)"],"Courier updates active route on accepted offer");
   all(waitingPatched,["Aguardando chamadas","Atualizar ofertas","Ganhos hoje","Entregas hoje","Tempo online","earnings_today","completed_deliveries","online_seconds_today"],"Compact courier waiting sheet retains metrics and refresh");
