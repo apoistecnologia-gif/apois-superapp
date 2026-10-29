@@ -6,6 +6,24 @@ const fail = (m) => { failed = true; console.error(`[FAIL] ${m}`); };
 const ok = (m) => console.log(`[OK] ${m}`);
 const read = (p) => readFileSync(resolve(p), 'utf8');
 
+if (process.env.APOIS_ENTREGAS_CASH_TEST_MODE !== "1") {
+  const build=read(".apois/modules.json");
+  const prod=read("scripts/harden-entregas-pix-production-guard.mjs");
+  const edgeTest=read("supabase/entregas-cash-test/create-order/index.ts");
+  for(const marker of [
+    "APOIS_ENTREGAS_CASH_TEST_MODE",
+    "harden-entregas-pix-production-guard.mjs",
+    "harden-entregas-cash-test-badges.mjs",
+  ]) if(!build.includes(marker))fail("separação de build ausente "+marker);
+  if(!prod.includes("APOIS_ENTREGAS_PIX_PRODUCTION_GUARD_V1") || !prod.includes("PIX temporariamente indisponível"))
+    fail("produção PIX deve falhar fechada enquanto Safe2Pay não está habilitado");
+  if(!edgeTest.includes("apois_check_test_cash_access") || !edgeTest.includes("authClient.auth.getUser(token)"))
+    fail("cash de teste não está restrito a cliente/estabelecimento autorizado");
+  if(failed) process.exit(1);
+  ok("Entregas produção: somente PIX, indisponível até homologação Safe2Pay; dinheiro exclusivo do build de teste");
+  process.exit(0);
+}
+
 const edge = read('supabase/functions/create-order/index.ts');
 const hardener = read('scripts/harden-entregas-payment-provider-boundary.mjs');
 const migration = read('supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql');
