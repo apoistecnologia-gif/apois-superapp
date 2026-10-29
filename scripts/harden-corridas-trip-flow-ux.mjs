@@ -51,7 +51,7 @@ patch('src/hooks/use-pickup-address.tsx',(s)=>{
   if(!s.includes('geocodeBusyRef.current = false;')) {
     const finallyMatch=/    } finally \{\s*/;
     if(!finallyMatch.test(s))throw Error('[FAIL] liberacao do guard');
-    s=s.replace(finallyMatch,'    } finally {\\n      geocodeBusyRef.current = false;\\n');
+    s=s.replace(finallyMatch,'    } finally {\n      geocodeBusyRef.current = false;\n');
   }
   return s;
 });
