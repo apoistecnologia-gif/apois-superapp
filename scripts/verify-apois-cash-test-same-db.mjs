@@ -14,7 +14,7 @@ check("Pedido não pode se converter a paid",sql.includes("RAISE EXCEPTION 'test
 check("Marcador de homologação vincula somente pedidos cash de autorizado",sql.includes("INSERT INTO private.apois_test_cash_orders")&&sql.includes("private.apois_test_cash_authorized(NEW.merchant_id,NEW.customer_user_id)"));
 check("Mensalidade especial só serve a merchant TESTE allowlisted",sql.includes("m.name ILIKE 'APOIS TESTE%'")&&sql.includes("public.merchant_subscription_in_good_standing"));
 check("API só usa Supabase existente de Entregas",edge.includes('"ptgkwyyolrdgnqketkjj.supabase.co"'));
-check("API depende de flag secreta desabilitada por padrão",edge.includes('Deno.env.get("APOIS_TEST_CASH_ENABLED") !== "true"'));
+check("API permite cash apenas para dupla explicitamente autorizada no banco",edge.includes('new URL(supabaseUrl).hostname !== "ptgkwyyolrdgnqketkjj.supabase.co"') && edge.includes("allowed !== true") && sql.includes("enabled boolean NOT NULL DEFAULT false"));
 check("API exige cliente autenticado",edge.includes("authClient.auth.getUser(token)")&&edge.includes("userData.user.id"));
 check("API valida whitelist pelo servidor",edge.includes('adminClient.rpc("apois_check_test_cash_access"')&&edge.includes("allowed !== true"));
 check("API rejeita cupom para pedido de teste",edge.includes('"TEST_COUPONS_DISABLED"'));
