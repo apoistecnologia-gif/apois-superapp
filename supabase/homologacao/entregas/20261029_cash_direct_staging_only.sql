@@ -80,6 +80,18 @@ as $fn$
   end;
 $fn$;
 
+-- Helper invoker-safe: RLS das tabelas de pedidos usa apenas esta função,
+-- sem dar SELECT direto nas tabelas privadas aos usuários autenticados.
+create or replace function public.apois_is_homologation_cash_merchant(_merchant_id uuid)
+returns boolean language sql stable security definer set search_path to '' as $fn$
+  select exists(
+    select 1 from private.apois_cash_homologation_merchants h
+    where h.merchant_id=_merchant_id and h.enabled
+  );
+$fn$;
+revoke all on function public.apois_is_homologation_cash_merchant(uuid) from public, anon;
+grant execute on function public.apois_is_homologation_cash_merchant(uuid) to authenticated;
+
 -- Políticas aditivas: somente dados cash/pending de lojas TEST-* autorizadas.
 -- NÃO alterar políticas existentes de pedidos Pix/pagos.
 create policy "Merchant staging cash order read"
@@ -88,10 +100,7 @@ using (
   payment_method='cash'
   and payment_status in ('pending','cancelled')
   and public.current_user_is_merchant_member(merchant_id)
-  and exists (
-    select 1 from private.apois_cash_homologation_merchants h
-    where h.merchant_id=orders.merchant_id and h.enabled
-  )
+  and public.apois_is_homologation_cash_merchant(merchant_id)
 );
 
 create policy "Merchant staging cash items read"
@@ -99,9 +108,10 @@ on public.order_items for select to authenticated
 using (
   exists (
     select 1 from public.orders o
-    join private.apois_cash_homologation_merchants h on h.merchant_id=o.merchant_id and h.enabled
+    
     where o.id=order_items.order_id
       and o.payment_method='cash'
+      and public.apois_is_homologation_cash_merchant(o.merchant_id)
       and o.payment_status in ('pending','cancelled')
       and public.current_user_is_merchant_member(o.merchant_id)
   )
@@ -112,9 +122,10 @@ on public.order_status_history for select to authenticated
 using (
   exists (
     select 1 from public.orders o
-    join private.apois_cash_homologation_merchants h on h.merchant_id=o.merchant_id and h.enabled
+    
     where o.id=order_status_history.order_id
       and o.payment_method='cash'
+      and public.apois_is_homologation_cash_merchant(o.merchant_id)
       and o.payment_status in ('pending','cancelled')
       and public.current_user_is_merchant_member(o.merchant_id)
   )
