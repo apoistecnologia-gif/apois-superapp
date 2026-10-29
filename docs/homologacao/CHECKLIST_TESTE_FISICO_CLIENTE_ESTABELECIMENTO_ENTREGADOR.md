@@ -4,7 +4,7 @@ Data de preparação: 29/10/2026. Ambiente de banco: Entregas de produção (com
 
 ## Participantes QA preparados
 - Cliente: conta de homologação `qa-cliente@apois-test.dev` já existente; ainda sem endereço com GPS salvo.
-- Estabelecimento: `APOIS TESTE Entregas`, slug `apois-teste-entregas-homologacao-20261029`, vinculado à conta QA do comerciante. Criado inativo, fechado e sem entregas, em cidade QA anteriormente configurada (Itainópolis/PI), aguardando endereço e coordenadas reais de retirada.
+- Estabelecimento: `APOIS TESTE Entregas`, slug `apois-teste-entregas-homologacao-20261029`, vinculado à conta QA do comerciante. Criado inativo, fechado e sem entregas, em cidade QA anteriormente configurada (Itainópolis/PI), com o ponto de retirada georreferenciado fornecido pelo responsável; cadastro continua fechado e inativo.
 - Produto: `Produto fictício APOIS TESTE`, R$1,00. **Não deve ser preparado, cobrado nem enviado.**
 - Entregador: `homolog-qa-2026@apois-test.dev` possui perfil de entregador aprovado, mas está offline, sem GPS recente e sem token push ativo. A conta `qa-entregador@apois-test.dev` ainda não concluiu cadastro de entregador.
 - A dupla loja/cliente está registrada em `private.apois_test_cash_access`, com `enabled=false`. Não habilitar antes do GPS e do aceite dos participantes.
@@ -18,12 +18,12 @@ Data de preparação: 29/10/2026. Ambiente de banco: Entregas de produção (com
 - Supabase existente: `ptgkwyyolrdgnqketkjj`. Nenhum projeto adicional.
 - Migration de segurança aplicada, e Edge `create-order` v13 ativa com JWT obrigatório e allowlist privada.
 - Teste está bloqueado para clientes normais e mesmo para QA até ativação explícita: zero pares autorizados, zero pedidos cash e zero transações financeiras artificiais.
-- `scripts/verify-apois-qa-entregas-readiness.sql`: verificação read-only executada com sucesso; loja inativa, GPS ausente, cliente sem endereço e nenhum courier QA elegível.
+- `scripts/verify-apois-qa-entregas-readiness.sql`: verificação read-only executada com sucesso; loja inativa, GPS configurado, cliente sem endereço e nenhum courier QA elegível; visibilidade anônima foi testada e retornou zero.
 - As regras de cálculo zeram merchant_net/courier_earnings/platform_fee em pedidos QA cash; settlement normal permanece preservado para pedidos de produção.
 
 ## Condições ANTES de ligar o teste
-1. Definir ponto real de retirada (loja teste), com consentimento dos participantes. Nunca inventar coordenadas nem usar endereço de estabelecimento alheio.
-2. Confirmar em qual cidade os dois celulares de teste estarão fisicamente. A cidade, o raio de despacho e a posição GPS do entregador devem coincidir com o ponto de coleta.
+1. Ponto de retirada informado e configurado no Supabase conforme Google Maps. Revisar segurança e privacidade antes de ativar a loja.
+2. Região selecionada: Gameleira, Itainópolis/PI. Confirmar que os dois celulares estarão fisicamente nesse ponto/área. A cidade, o raio de despacho e a posição GPS do entregador devem coincidir com o ponto de coleta.
 3. No app de QA, cliente deve salvar endereço próprio com GPS. Entregador aprovado deve entrar com conta de teste e ativar localização para ficar online, dentro do raio da cidade. Push é desejável, mas o polling/Reatime pode cobrir recebimento com app aberto.
 4. Aprovar/ativar a loja de teste só depois de confirmar coordenadas reais e permitir entrega, horários de atendimento e disponibilidade. Não abrir loja comercial existente.
 5. Um administrador deve habilitar por prazo curto o registro existente em `private.apois_test_cash_access`, e conferir `apois_check_test_cash_access` = true apenas para a dupla QA.
