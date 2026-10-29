@@ -357,6 +357,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-native-map.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-map-focus.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-client-live-ride-camera-v2.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-client-live-ride-camera-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-address-display.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-destination-search-runtime.mjs')]);
 
@@ -396,8 +398,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-history-screen.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-history-screen.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-accept-pin-visibility.mjs')]);
-  run(process.execPath, [resolve(root, 'scripts/harden-client-live-ride-camera-v2.mjs')]);
-  run(process.execPath, [resolve(root, 'scripts/verify-client-live-ride-camera-v2.mjs')]);
+
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-driver-accept-pin-visibility.mjs')]);
 
   for (const [path, before] of protectedMapRuntimeBeforeVisual) {
