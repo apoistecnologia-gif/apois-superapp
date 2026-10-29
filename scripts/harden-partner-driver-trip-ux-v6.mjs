@@ -19,8 +19,8 @@ source=once(source,
  "route direction before unreliable stationary GPS heading");
 // Camera APIs differ across protected driver versions. Preserve the mode
 // logic and force north-up by overriding the final heading value only.
-source=source.replace(/(heading:\s*)[^,\\n]+(,\\n\\s*tilt:\s*0,)/,
-  "$10$2");
+source=source.replace(/(heading:\s*)[^,\n]+(,\n\s*tilt:\s*0,)/,
+  (_all, prefix, suffix) => prefix+"0"+suffix);
 source=once(source,
  '      navMap.setHeading?.(heading);\n      navMap.setTilt?.(0);',
  '      navMap.setHeading?.(0);\n      navMap.setTilt?.(0);',
