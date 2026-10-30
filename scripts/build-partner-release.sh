@@ -178,6 +178,15 @@ node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 node "$ROOT/scripts/harden-partner-courier-registration-exit-v3.mjs"
 # Scoped visual fixes for courier screenshots; do not change GPS, delivery transitions or payments.
 node "$ROOT/scripts/fix-partner-courier-offer-contrast-v1.mjs"
+# QA: no extra confirmation steps; preserve courier PIN and server transitions.
+node "$ROOT/scripts/fix-partner-courier-simple-journey-v1.mjs"
+node "$ROOT/scripts/fix-partner-courier-map-journey-v1.mjs"
+node "$ROOT/scripts/fix-partner-courier-completion-light-v1.mjs"
+require_contains 'APOIS_COURIER_SIMPLE_FLOW_V1' "$ENTREGADOR/src/components/CourierPremiumViews.tsx" 'Entregador com coleta e PIN como únicas ações da entrega'
+require_contains 'APOIS_COURIER_AUTOMATIC_STAGES_V1' "$ENTREGADOR/src/routes/courier.tsx" 'Transições autenticadas preservadas sem botões redundantes'
+require_contains 'APOIS_COURIER_MAPS_URL_NO_API_KEY_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação Google Maps externa disponível sem chave API da APOIS'
+require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
+
 
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'Push do Entregador registrado'
