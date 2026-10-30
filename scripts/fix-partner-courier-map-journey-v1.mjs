@@ -11,8 +11,9 @@ function change(before,after,label){
  s=s.replace(before,after);
 }
 change('import { supabase } from "@/integrations/supabase/client";',
- 'import { supabase } from "@/integrations/supabase/client";\nimport { Capacitor } from "@capacitor/core";\nimport { Browser } from "@capacitor/browser";',
+ 'import { supabase } from "@/integrations/supabase/client";\nimport { Browser } from "@capacitor/browser";',
  'native external navigation');
+if(!s.includes('import { Capacitor } from "@capacitor/core";')) throw Error("[FAIL] Courier native map Capacitor import missing from earlier hardener");
 // Earlier branding hardener renames BRAND_GOLD to APOIS_RED; accept either source.
 if(s.includes('const BRAND_GOLD = "#F6BE1C";')) {
  change('const BRAND_GOLD = "#F6BE1C";','const APOIS_RED = "#E51B23";','brand constant');
