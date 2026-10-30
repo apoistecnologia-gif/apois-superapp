@@ -45,3 +45,15 @@ Fontes: inspeção do código nos snapshots fixados pelo `.apois/source-lock.jso
 | Prontidão operacional `AdminCourierOperationalGates` | Cartão preto, aviso âmbar claro sobre preto | Cartão branco, texto escuro e avisos âmbar com texto `#7A4B00`, refresh com foco | Script `fix-entregas-admin-readiness-light-v1.mjs`; aplicação isolada repetível e WEB 41141538529 verde | Corrigido e validado em build, visual real pendente |
 | Cobertura `AdminCoveragePanel` | Labels de 10px e `text-zinc-600` sobre fundo escuro | Labels de 12px e `#CBD5E1` | Script `fix-entregas-admin-coverage-contrast-v1.mjs`; razão de contraste calculada aproximada 2,57:1 → 13,40:1 sobre `#09090B` | Corrigido e validado em build, visual real pendente |
 | Build isolado Admin Entregas | Admin dependia de typecheck geral, build merchant não compilava suas rotas separadamente | `bun run build:admin` executado após build merchant no CI, sem deploy | GitHub run 41141759094, 3 jobs SUCCESS; mensagem explícita no log | Validação técnica WEB concluída, não E2E |
+
+## Admin Pedidos e Operações em tempo real — correções pontuais de legibilidade (30/10/2026)
+
+| Superfície | Achado do código de origem | Tratamento apenas visual | Teste |
+| --- | --- | --- | --- |
+| `AdminOrdersPanel` | Identificador do pedido em 9 px com `text-zinc-700`, metadados e rótulos financeiros de 10 px com `text-zinc-600`, linha do tempo pouco legível | `fix-entregas-admin-orders-contrast-v1.mjs`: rótulos de 12 px, IDs 12 px, datas 11 px, tom `#CBD5E1` sobre cartões escuros | Execução **41142222435**: 3/3 WEB SUCCESS |
+| `AdminRealtimeOperationsPanel` | Cabeçalho de tabela e indicadores de posição de entregadores em 10 px, data em cinza excessivamente escuro | `fix-entregas-admin-realtime-legibility-v1.mjs`: cabeçalho e indicadores 12 px, data 12 px, alto contraste em fundo escuro | Execução **41142358832**: 3/3 WEB SUCCESS; log confirma execução de ambos os scripts e `build:admin` separado |
+
+- Ambos os scripts foram exercitados em simulação sem alteração das fontes fixadas, cada um com primeira transformação e segunda execução idempotente (zero escritas extras).
+- Os invariantes estáticos incluem filtros, consultas e totais financeiros do painel Pedidos, além das fontes `delivery_jobs`, `courier_availability`, `courier_locations`, `GoogleMap` e atualização manual de operações em tempo real. Não são testes E2E com pedidos reais.
+- Razões de contraste *teóricas* calculadas a partir dos pares de cores do código (não medição de pixels renderizados): `#CBD5E1` sobre `#09090B` **13,40:1**; `#475467` sobre branco **7,69:1**; `#7A4B00` sobre `#FFFAEB` **7,10:1**; branco sobre `#E90024` **4,68:1**. Todos superam WCAG AA 4,5:1 para texto normal, se a combinação final renderizada for realmente essa.
+- **Escopo:** branch de homologação, somente scripts de transformação e `build-merchant-panel.mjs`. Sem APK, deploy, merge, alteração de banco ou API paga. Ainda pendentes capturas renderizadas com autenticação real e testes físicos Android/GPS/Maps.
