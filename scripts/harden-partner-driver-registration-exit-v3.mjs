@@ -3,7 +3,18 @@ import {resolve} from "node:path";
 const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motorista");
 const file=resolve(root,"src/routes/motorista.cadastro.tsx"),cssFile=resolve(root,"src/styles.css");
 let src=readFileSync(file,"utf8");
-function once(s,a,b,label){const n=s.split(a).length-1;if(n!==1)throw Error("[FAIL] Motorista V3 "+label+" matches="+n);return s.replace(a,b);}
+function once(s,a,b,label){
+  const n=s.split(a).length-1;
+  if(n===1)return s.replace(a,b);
+  // Earlier APOIS visual migration may already have lightened the two root
+  // containers; preserve it while adding the signup-exit data marker.
+  if((label==="success light theme"||label==="form theme")&&n===0){
+    const root=/<div className="min-h-\\[100dvh\\] min-w-0 [^"]+">/g;
+    const matches=[...s.matchAll(root)];
+    if(matches.length===1)return s.replace(root,b);
+  }
+  throw Error("[FAIL] Motorista V3 "+label+" matches="+n);
+}
 if(src.includes("APOIS_DRIVER_REGISTRATION_EXIT_V3"))throw Error("[FAIL] duplicate driver signup patch");
 src=once(src,'import { translateAuthError } from "@/lib/authErrors";',
 'import { translateAuthError } from "@/lib/authErrors";\nimport { signOutDriverOnThisDevice } from "@/lib/driverLocalSignOut";',"existing local logout");
