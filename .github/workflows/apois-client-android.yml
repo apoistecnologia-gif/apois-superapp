@@ -33,6 +33,8 @@ jobs:
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
       CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
       CORRIDAS_ANDROID_MAPS_API_KEY: ${{ secrets.CORRIDAS_ANDROID_MAPS_API_KEY }}
+      ENTREGAS_WEB_MAPS_API_KEY: ${{ secrets.ENTREGAS_WEB_MAPS_API_KEY }}
+      ENTREGAS_GOOGLE_MAPS_MAP_ID: ${{ vars.ENTREGAS_GOOGLE_MAPS_MAP_ID }}
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64 }}
@@ -172,7 +174,11 @@ jobs:
           node --check scripts/harden-entregas-superapp-account-deletion.mjs
           node --check scripts/harden-entregas-superapp-profile-navigation.mjs
           node --check scripts/harden-entregas-auto-delivery-address.mjs
+          node --check scripts/fix-entregas-customer-delivery-tracking-v1.mjs
           npm run build:entregas
+          grep -Fq 'APOIS_CUSTOMER_ORDER_REFRESH_V1' '.work/entregas/src/routes/pedido/$orderId/index.tsx'
+          grep -Fq 'Entrega concluída!' '.work/entregas/src/routes/pedido/$orderId/index.tsx'
+          grep -Fq 'APOIS_CUSTOMER_COURIER_POLL_V1' .work/entregas/src/components/CustomerDeliveryMap.tsx
           grep -Fq 'TESTE APOIS' .work/entregas/src/routes/checkout.tsx
           grep -Fq 'APOIS_ENTREGAS_PERSONAL_DATA_LIGHT_V1' .work/entregas/src/routes/perfil/dados-pessoais.tsx
           grep -Fq '[&_.profile-input]:bg-white' .work/entregas/src/routes/perfil/dados-pessoais.tsx
