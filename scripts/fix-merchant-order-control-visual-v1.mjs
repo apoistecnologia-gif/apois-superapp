@@ -14,9 +14,9 @@ const label='Solicitar entregador · Pedido #';
 const labelAt=s.indexOf(label);
 if(labelAt<0 || s.indexOf(label,labelAt+1)>=0)
   throw Error("[FAIL] Merchant courier CTA label not uniquely found");
-const buttonAt=s.lastIndexOf('<button',labelAt);
+const buttonAt=Math.max(s.lastIndexOf('<button',labelAt),s.lastIndexOf('<Button',labelAt));
 if(buttonAt<0 || labelAt-buttonAt>1500 || !s.slice(buttonAt,labelAt).includes('requestCourier('))
-  throw Error("[FAIL] Merchant courier request CTA not uniquely found");
+  throw Error("[FAIL] Merchant courier request CTA not uniquely found: buttonAt="+buttonAt+" labelAt="+labelAt+" handler="+s.slice(Math.max(0,buttonAt),labelAt).includes("requestCourier("));
 const classAt=s.indexOf('className="',buttonAt);
 if(classAt<0 || classAt>labelAt)throw Error("[FAIL] Merchant CTA class not found");
 const oldClassEnd=s.indexOf('"',classAt+11);
