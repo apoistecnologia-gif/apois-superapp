@@ -426,6 +426,7 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-personal-data-light-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-location-identified-state.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-checkout-coverage-diagnostic.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-customer-delivery-tracking-v1.mjs')]);
 }
 
 const config = manifest.modules[name];
@@ -488,6 +489,20 @@ if (name === 'entregas') {
   }
   env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL;
   env.VITE_SUPABASE_PUBLISHABLE_KEY = entregasPublishableKey;
+  // Entregas tracking uses a browser/WebView key (not a native Android key).
+  // Keep keys separate from Corridas. Billing/API restrictions remain enforced by Google.
+  const entregasMapsKey = process.env.ENTREGAS_WEB_MAPS_API_KEY?.trim();
+  const entregasMapId = process.env.ENTREGAS_GOOGLE_MAPS_MAP_ID?.trim();
+  if (entregasMapsKey && entregasMapId) {
+    env.VITE_GOOGLE_MAPS_BROWSER_KEY = entregasMapsKey;
+    env.VITE_GOOGLE_MAPS_MAP_ID = entregasMapId;
+    console.log('[OK] entregas: browser tracking map configuration supplied');
+  } else {
+    delete env.VITE_GOOGLE_MAPS_BROWSER_KEY;
+    delete env.VITE_GOOGLE_MAPS_MAP_ID;
+    console.warn('[WARN] entregas: tracking map disabled until a valid browser key and map ID are configured');
+  }
+
   console.log(`[OK] entregas: Supabase canônico aplicado ao bundle (${ENTREGAS_CANONICAL_REF})`);
 
   env.VITE_APOIS_SUPERAPP_PUSH_ENABLED = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim()
