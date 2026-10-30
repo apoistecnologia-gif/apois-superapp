@@ -109,6 +109,7 @@ jobs:
           node scripts/verify-apois-cash-test-same-db.mjs
           node --check scripts/configure-apois-client-qa-capacitor.mjs
           node --check scripts/harden-entregas-cash-test-badges.mjs
+          node --check scripts/harden-entregas-qa-quote-refresh.mjs
           node scripts/test-apois-unified-maps.mjs
           node --check scripts/test-apois-maps-loader-callback.mjs
           node scripts/test-apois-maps-loader-callback.mjs
@@ -173,6 +174,8 @@ jobs:
           node --check scripts/harden-entregas-auto-delivery-address.mjs
           npm run build:entregas
           grep -Fq "APOIS_CASH_TEST_ONLY_V1" .work/entregas/src/routes/checkout.tsx
+          grep -Fq "APOIS_QA_DELIVERY_QUOTE_REFRESH_V1" .work/entregas/src/routes/checkout.tsx
+          grep -Fq 'Revalidar área de entrega' .work/entregas/src/routes/checkout.tsx
           grep -Fq "DINHEIRO — TESTE, NÃO PAGAR" .work/entregas/src/routes/checkout.tsx
           grep -Fq "const paymentMethod = \"cash\";" .work/entregas/src/routes/checkout.tsx
           npm run audit:payment-boundary
