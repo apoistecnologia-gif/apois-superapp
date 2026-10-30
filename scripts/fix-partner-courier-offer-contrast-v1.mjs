@@ -18,16 +18,6 @@ function replace(source,old,newLabel,label) {
 edit("src/components/CourierOfferOverlay.tsx",(input)=>{
  let src=input;
  src=replace(src,
-   'className={"courier-qa-offer-timer"}',
-   'className={"courier-qa-offer-timer"}',
-   'noop');
- // The original countdown text was accent-foreground (white) while the
- // light offer modal hardener changes its backdrop to near-white.
- src=replace(src,
-  'className={\x60rounded-full border px-3 py-2 text-sm font-black \x24{',
-  'className={\x60rounded-full border px-3 py-2 text-sm font-black \x24{',
-  'template guard');
- src=replace(src,
   ': "border-accent/35 bg-[#F9FAFB] text-accent-foreground"',
   ': "border-accent/35 bg-[#F9FAFB] text-[#991B1B]"',
   'visible countdown');
