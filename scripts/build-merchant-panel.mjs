@@ -81,6 +81,7 @@ for (const script of [
   'harden-entregas-payment-provider-boundary.mjs',
   'harden-entregas-direct-payment-operations.mjs',
   'fix-merchant-order-control-visual-v1.mjs',
+  'fix-entregas-workspace-shell-light-v1.mjs',
 ]) {
   const args = script === 'harden-superapp-module-mobile-ui.mjs'
     ? [resolve(root, `scripts/${script}`), 'entregas']
