@@ -1,6 +1,7 @@
 name: APOIS Cliente Android APK
 # homologação 1.0.3: persistência de nomes das paradas e build Android final — retry hardening 26/10
 # diagnóstico de cobertura da loja fictícia — 30/10/2026
+# valida execução do patch no builder Android — 30/10/2026
 
 on:
   workflow_dispatch:
