@@ -16,7 +16,7 @@ for(const [before,after] of [
 }
 for(const marker of [
  "setQuery(event.target.value)",
- "setFilter(id)",
+ "setFilter(id as typeof filter)",
  "filter === id",
  "onClick={() => void load(true)}",
  "review.merchant_rating",
