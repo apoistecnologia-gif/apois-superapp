@@ -60,10 +60,10 @@ if(!existsSync(cssPath))throw Error("[FAIL] system-theme CSS missing for history
 const originalCss=readFileSync(cssPath,"utf8");
 const marker="/* APOIS_COURIER_HISTORY_PROFILE_ACCESSIBILITY_V1 */";
 if(!originalCss.includes(marker)){
- const appended=originalCss+"\\n"+marker+"\\n"+
-  '.apois-system-theme [data-apois-courier-history-light-v1] article {background:#fff!important;color:#141B29!important;}\\n'+
-  '.apois-system-theme [data-apois-courier-history-light-v1] article > div:nth-child(2) {background:#F7F8FA!important;}\\n'+
-  '.apois-system-theme [data-apois-courier-history-light-v1] article p {color:#263143!important;}\\n';
+ const appended=originalCss+"\n"+marker+"\n"+
+  '.apois-system-theme [data-apois-courier-history-light-v1] article {background:#fff!important;color:#141B29!important;}\n'+
+  '.apois-system-theme [data-apois-courier-history-light-v1] article > div:nth-child(2) {background:#F7F8FA!important;}\n'+
+  '.apois-system-theme [data-apois-courier-history-light-v1] article p {color:#263143!important;}\n';
  writeFileSync(cssPath,appended,"utf8");
 }
 if(s!==initial)writeFileSync(path,s,"utf8");
