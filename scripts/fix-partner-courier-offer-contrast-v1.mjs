@@ -18,7 +18,7 @@ function replace(source,old,newLabel,label) {
 edit("src/components/CourierOfferOverlay.tsx",(input)=>{
  let src=input;
  src=replace(src,
-  ': "border-accent/35 bg-[#F9FAFB] text-accent-foreground"',
+  ': "border-accent/35 bg-white text-accent-foreground"',
   ': "border-accent/35 bg-[#F9FAFB] text-[#991B1B]"',
   'visible countdown');
  src=replace(src,
