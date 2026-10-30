@@ -89,7 +89,10 @@ if(!route.includes(compactMap) && !route.includes(earlierCompactMap)) {
   'className={\x60relative w-full bg-[#F3F4F6] \x24{expanded ? "h-[65dvh] min-h-[430px]" : "h-[58dvh] min-h-[390px]"}\x60}'
  ];
  const found=oldClasses.find(oldClass=>route.includes(oldClass));
- if(!found)throw Error("[FAIL] Courier route map responsive class not recognized");
+ if(!found){
+   const safeClasses=route.split("\n").filter((line)=>line.includes("className")&&line.includes("bg-")&&line.includes("relative")).slice(0,8).map((line)=>line.trim().slice(0,220));
+   throw Error("[FAIL] Courier route map responsive class not recognized; classes="+JSON.stringify(safeClasses));
+ }
  route=route.replace(found,compactMap);
 }
 routeReplace('              colorScheme={ColorScheme.DARK}',
