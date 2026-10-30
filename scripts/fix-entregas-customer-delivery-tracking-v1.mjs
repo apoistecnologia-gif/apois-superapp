@@ -67,10 +67,10 @@ edit('src/routes/pedido/$orderId/index.tsx', (input) => {
     '    lastSeenOrderStatus.current = status;',
     '  }, [order?.status]);',
     ''
-  ].join('\\n');
+  ].join('\n');
   if (!source.includes('APOIS_CUSTOMER_DELIVERED_FEEDBACK_V1')) {
     source = once(source, '  const cancelOrder = async () => {',
-      notifyDelivered + '\\n  const cancelOrder = async () => {',
+      notifyDelivered + '\n  const cancelOrder = async () => {',
       'show delivered confirmation toast');
   }
   const oldMap = [
