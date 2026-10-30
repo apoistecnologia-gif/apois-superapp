@@ -25,6 +25,13 @@ change('    if (!targetChanged && moved < 50 && elapsed < 30_000) return;',
 change('        const routesLibrary = (await google.maps.importLibrary("routes")) as any;',
  '        // Live Routes is opt-in while Google Maps billing is under dispute.\n        if ((import.meta as any).env.VITE_APOIS_ENTREGAS_LIVE_ROUTING !== "true") throw new Error("paid routing disabled in homologation");\n        const routesLibrary = (await google.maps.importLibrary("routes")) as any;',
  'fail closed on billable routing');
+change(
+ 'className="absolute bottom-3 left-3 right-3 z-20 rounded-xl border border-amber-500/20 bg-black/90 px-3 py-2 text-center text-[10px] font-bold text-amber-300 backdrop-blur-xl"',
+ 'className="absolute bottom-3 left-3 right-3 z-20 rounded-xl border border-[#F1B9C1] bg-white/95 px-3 py-2 text-center text-[11px] font-bold text-[#A31A2C] shadow-sm"',
+ 'light route fallback notice');
+change('Trajeto aproximado exibido. Use “Rotas” para orientação curva a curva.',
+ 'Trajeto aproximado. Toque NAVEGAR para seguir as ruas.',
+ 'clear external route fallback');
 const start=s.indexOf("export function CourierRouteMap(");
 if(start<0)throw Error("[FAIL] CourierRouteMap missing");
 let prefix=s.slice(0,start), route=s.slice(start);
