@@ -172,6 +172,7 @@ jobs:
           node --check scripts/harden-entregas-superapp-profile-navigation.mjs
           node --check scripts/harden-entregas-auto-delivery-address.mjs
           npm run build:entregas
+          grep -Fq 'TESTE APOIS' .work/entregas/src/routes/checkout.tsx
           grep -Fq 'APOIS_ENTREGAS_PERSONAL_DATA_LIGHT_V1' .work/entregas/src/routes/perfil/dados-pessoais.tsx
           grep -Fq '[&_.profile-input]:bg-white' .work/entregas/src/routes/perfil/dados-pessoais.tsx
           test -s .work/entregas/src/system-theme.css
