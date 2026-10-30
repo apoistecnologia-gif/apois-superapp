@@ -17,18 +17,26 @@ function replace(src,old,now,label) {
 }
 patch("src/components/CourierCompletionSupport.tsx",(input)=>{
  let src=input;
- src=replace(src,
- 'className="relative -mt-8 overflow-hidden rounded-t-[2rem] rounded-b-[1.8rem] border border-accent/35 bg-[radial-gradient(circle_at_top,rgba(200,138,8,0.2),transparent_42%),linear-gradient(180deg,#10100d,#070707)] px-5 pb-5 pt-3 text-center shadow-[0_-18px_45px_rgba(0,0,0,0.65)]"',
- 'data-apois-completion-light-v1 className="relative -mt-2 overflow-hidden rounded-[1.5rem] border border-[#F2CDD2] bg-white px-4 pb-4 pt-3 text-center text-[#111827] shadow-[0_10px_30px_rgba(17,24,39,0.08)]"',
- 'light completion sheet');
- src=replace(src,
-  'className="mx-auto mt-5 flex max-w-xs items-center justify-between rounded-2xl border border-accent/20 bg-black/65 p-4 text-left"',
-  'className="mx-auto mt-4 flex max-w-xs items-center justify-between rounded-xl border border-[#F2CDD2] bg-[#FFF5F6] p-3 text-left"',
-  'light earnings card');
- src=replace(src,
-  'className="mt-5 h-14 w-full rounded-2xl bg-gradient-to-r from-primary to-accent font-black uppercase tracking-[0.05em] text-white shadow-[0_10px_30px_rgba(200,138,8,0.18)]"',
-  'className="mt-4 h-12 w-full rounded-xl bg-[#E90024] font-black uppercase text-white shadow-md"',
-  'small red completion button');
+ const begin=src.indexOf("export function CourierCompletionSheet(");
+ const end=src.indexOf("export function CourierSupportSheet(",begin);
+ if(begin<0 || end<0)throw Error("[FAIL] Courier completion boundaries not recognized");
+ let panel=src.slice(begin,end);
+ if(!panel.includes('data-apois-completion-light-v1')){
+  const root=/<section\\s+role="status"\\s+aria-live="polite"\\s+className="[^"]+"/;
+  if(!root.test(panel))throw Error("[FAIL] Courier completion root not recognized");
+  panel=panel.replace(root, '<section role="status" aria-live="polite" data-apois-completion-light-v1 className="relative -mt-2 overflow-hidden rounded-[1.5rem] border border-[#F2CDD2] bg-white px-4 pb-4 pt-3 text-center text-[#111827] shadow-[0_10px_30px_rgba(17,24,39,0.08)]"');
+ }
+ const earnings=/<div className="[^"]*max-w-xs[^"]*justify-between[^"]*">/;
+ if(!earnings.test(panel))throw Error("[FAIL] Courier completed earnings card missing");
+ panel=panel.replace(earnings,'<div className="mx-auto mt-4 flex max-w-xs items-center justify-between rounded-xl border border-[#F2CDD2] bg-[#FFF5F6] p-3 text-left">');
+ const onDone='onClick={onDone}';
+ const at=panel.indexOf(onDone);
+ if(at<0 || panel.indexOf(onDone,at+1)>=0)throw Error("[FAIL] Courier completion action not unique");
+ const after=panel.slice(at);
+ const css=/className="[^"]+"/;
+ if(!css.test(after))throw Error("[FAIL] Courier completion action CSS missing");
+ panel=panel.slice(0,at)+after.replace(css,'className="mt-4 h-12 w-full rounded-xl bg-[#E90024] font-black uppercase text-white shadow-md"');
+ src=src.slice(0,begin)+panel+src.slice(end);
  return src;
 },'data-apois-completion-light-v1');
 
