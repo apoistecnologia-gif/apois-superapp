@@ -9,9 +9,16 @@ function once(s,a,b,label){
   // Earlier APOIS visual migration may already have lightened the two root
   // containers; preserve it while adding the signup-exit data marker.
   if((label==="success light theme"||label==="form theme")&&n===0){
-    const root=/<div className="min-h-\\[100dvh\\] min-w-0 [^"]+">/g;
-    const matches=[...s.matchAll(root)];
-    if(matches.length===1)return s.replace(root,b);
+    // Guarded structural fallback: the prior brand migration may replace
+    // the entire root-class string, not merely its colors.
+    const lastRender=s.lastIndexOf("\\n  return (");
+    if(lastRender<0)throw Error("[FAIL] Motorista V3 render root not found: "+label);
+    const tagStart=s.indexOf("<div ",lastRender);
+    const tagEnd=s.indexOf(">",tagStart);
+    if(tagStart<0||tagEnd<0||tagEnd-tagStart>500)throw Error("[FAIL] Motorista V3 invalid root: "+label);
+    const rootTag=s.slice(tagStart,tagEnd+1);
+    if(!rootTag.includes("className="))throw Error("[FAIL] Motorista V3 root must have class: "+label);
+    return s.slice(0,tagStart)+b+s.slice(tagEnd+1);
   }
   throw Error("[FAIL] Motorista V3 "+label+" matches="+n);
 }
