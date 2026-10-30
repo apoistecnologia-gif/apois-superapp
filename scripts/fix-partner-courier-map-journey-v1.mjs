@@ -86,6 +86,7 @@ const earlierCompactMap = 'className="relative h-[clamp(235px,36dvh,375px)] w-fu
 if(!route.includes(compactMap) && !route.includes(earlierCompactMap)) {
  const oldClasses = [
   'className={\x60relative w-full bg-zinc-900 \x24{expanded ? "h-[36rem] min-h-[72vh] max-h-[44rem]" : "h-[29rem] min-h-[62vh] max-h-[36rem]"}\x60}',
+  'className={\x60relative w-full bg-zinc-900 \x24{expanded ? "h-[clamp(24rem,62dvh,36rem)]" : "h-[clamp(21rem,54dvh,31rem)]"}\x60}',
   'className={\x60relative w-full bg-[#F3F4F6] \x24{expanded ? "h-[65dvh] min-h-[430px]" : "h-[58dvh] min-h-[390px]"}\x60}'
  ];
  const found=oldClasses.find(oldClass=>route.includes(oldClass));
