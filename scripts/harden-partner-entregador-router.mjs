@@ -1,6 +1,17 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+// The Cliente adapter already sets this; the Parceiro pipeline previously
+// omitted it, causing Vite lazy-preload URLs to resolve against app root.
+const vitePath = resolve(process.cwd(), process.env.APOIS_ENTREGAS_WORKSPACE || '.work/partner-entregador', 'vite.config.ts');
+const viteBefore = readFileSync(vitePath, 'utf8');
+if (!viteBefore.includes('vite: { base: "./" },')) {
+  const anchor = 'export default defineConfig({\\n';
+  if (!viteBefore.includes(anchor)) throw Error('[FAIL] Courier Vite config drift');
+  writeFileSync(vitePath, viteBefore.replace(anchor, anchor + '  vite: { base: "./" },\\n'), 'utf8');
+}
+console.log('[OK] Entregador Parceiro: assets e preloads relativos ao módulo');
+
 const path = resolve(process.cwd(), process.env.APOIS_ENTREGAS_WORKSPACE || '.work/partner-entregador', 'src/router.tsx');
 const source = readFileSync(path, 'utf8');
 const importBefore = 'import { createRouter } from "@tanstack/react-router";';
