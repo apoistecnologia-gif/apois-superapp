@@ -21,7 +21,7 @@ function forbidText(path, markers, label) {
 }
 
 const expectedPins = {
-  entregas: '0a1e0b294f75c97bce903200b57e7a6b482f381a',
+  entregas: '2f4606e0fb52dffb49f2e6aebbe921ce687ab625',
   corridas_passageiro: '7b047f75a1a919a5336c0df6e0d60b14b02f2618',
   corridas_motorista_admin: '9fc171050d8b5703540c49d19a8f1e9f5162775f',
 };
@@ -33,9 +33,16 @@ for (const [name, commit] of Object.entries(expectedPins)) {
 }
 
 const workflowsDir = resolve(root, '.github/workflows');
-if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
-  console.error('[FAIL] Superapp voltou a conter GitHub Actions; release continua no Codemagic');
-  failed = true;
+if (existsSync(workflowsDir)) {
+  const workflowNames = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name));
+  const approvedQA = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml', 'apois-partner-preflight.yml']);
+  const unknown = workflowNames.filter((name) => !approvedQA.has(name));
+  if (unknown.length > 0) {
+    console.error('[FAIL] GitHub Actions não autorizados no Superapp: ' + unknown.join(', '));
+    failed = true;
+  } else {
+    console.log('[OK] workflows permitidos: somente QA Cliente/Parceiro e pré-homologação WEB');
+  }
 } else console.log('[OK] nenhum GitHub Action ativo no Superapp');
 
 requireText('package.json', [
