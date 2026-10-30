@@ -95,3 +95,10 @@ Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/c
 - Matriz de cobertura visual estática e pendências: `docs/MATRIZ-VISUAL-HOMOLOGACAO-2026-10-30.md`. É uma revisão de código e capturas anteriores, não capturas atuais.
 - Próxima etapa correta: obter screenshots reais de login/home/mapas/pedidos/perfil/histórico dos quatro módulos e painéis desktop/celular, validar contraste, conteúdo e controles em ambiente de teste, verificar E2E com GPS/Maps (cobrança em disputa), RLS individual do avatar, notificações e status de pedido pós-PIN. **Não liberar produção/gerar APK sem autorização.**
 - As informações de "preflight falhou" nas seções anteriores são histórico; **a execução mais recente confirmada está VERDE**.
+
+## RETOMADA VISUAL CONTÍNUA — 30/10/2026, após preflight 41140864156
+- Último preflight comprovado: **3/3 jobs SUCCESS**, `41140864156`, código no commit `44d2405b65db973a847192121ef3ce82999c5ac0`.
+- A migração **segura e incremental** do WorkspaceShell do Estabelecimento/Admin Entregas foi aplicada na branch de homologação: sidebar/header claros e vermelho APOIS, estado ativo legível, cartões de métricas e vazio com texto escuro, botões de menu com rótulos. Conteúdo operacional permanece escuro para preservar o texto branco herdado nos cartões ainda não migrados. Não afirmar que todo o painel já ficou branco.
+- Arquivos de código alterados nesta etapa: `scripts/fix-entregas-workspace-shell-light-v1.mjs` (novo) e `scripts/build-merchant-panel.mjs` (um passo adicionado). Nenhuma alteração em `sources/` ou Supabase.
+- Report visual incremental: `docs/MATRIZ-VISUAL-HOMOLOGACAO-2026-10-30.md`.
+- Próxima prioridade: validar de fato em navegador de testes as telas e estados do Admin Entregas/Estabelecimento (menus, tabelas, cartões, overlays, modal), antes de migrar conteúdo interno, para evitar texto invisível. Admin Corridas e quatro módulos carecem de evidência visual renderizada atual. Google Maps e avatar RLS têm dependências externas não liberadas; não habilitar APIs pagas nem publicar versões.
