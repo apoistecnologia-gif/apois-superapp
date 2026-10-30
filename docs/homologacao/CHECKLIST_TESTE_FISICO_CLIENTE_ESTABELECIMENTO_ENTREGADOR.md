@@ -19,6 +19,17 @@ Em transação temporária (sem gravar ativação), as condições **funcionaram
 
 **Porta de segurança:** ainda falta testar o aplicativo físico de cliente QA. Não ativar loja nem habilitar a dupla de pagamento enquanto o build de homologação separado e o login QA não estiverem disponíveis e verificados. Nada foi cobrado e não houve despacho real.
 
+## 29/10/2026 — build e liberação do teste físico
+
+- GitHub Actions **40979430511**, workflow `APOIS Cliente QA Dinheiro Sem PIX`: concluído com **success** e artifact `APOIS-Cliente-ENTREGAS-QA-DINHEIRO`. Android appId isolado: `br.com.apois.cliente.qa`, nome `APOIS Cliente TESTE`; fontes QA cash e avisos NÃO PAGAR dentro do APK confirmados.
+- Painel Estabelecimento de homologação publicado no Vercel, projeto `apois-estabelecimento-visual-preview`, branch `fix/apois-merchant-cash-qa-20261029` do repositório `apoistecnologia-gif/apois-entregas`. Build READY; central de pedidos e alerta reconhecem cash/pending; exceção à mensalidade é apenas de UI para o merchant QA.
+- Operador usa uma conta já existente com acesso de **manager exclusivamente à loja QA**, sem modificar lojas comerciais; destino público de teste marcado como endereço padrão dessa conta e identificado como NÃO ENTREGAR. Não armazenar credenciais ou dados pessoais no GitHub.
+- Loja `APOIS TESTE Entregas` ativada **apenas após** testes RLS/quote autorizada e não autorizada. Conta de operador autorizada no allowlist privado por **90 minutos**, expiração **29/10/2026 às 23:02 America/Fortaleza**.
+- Verificação final: `merchant_accepting_orders=true`, `enabled=true` apenas para cliente de teste, `test_orders=0`, **um courier online elegível** no raio de 20km. Usuário não autorizado vê zero loja/produtos. Restrição PIX/paid da loja QA via trigger; os outros estabelecimentos não são afetados.
+- Próxima ação precisa ocorrer no **aparelho**, não no banco: instalar APK de homologação, entrar com conta de operador, selecionar Entregas, abrir a única loja QA visível, adicionar produto fictício, conferir destino Centro/Itainópolis e finalizar pedido em DINHEIRO — TESTE. Não pagar, não entregar produto real nem acionar Correios.
+- No painel de preview, autenticar a mesma conta de operador, aceitar pedido e solicitar entregador após status pronto. Usar Entregador já existente online na região; aceitar oferta, marcar coleta e concluir de maneira exclusivamente simulada.
+- Após teste, DESATIVAR allowlist e fechar a loja QA. Não movimentar dinheiro nem saldos ou Pix verdadeiro.
+
 ## Participantes QA preparados
 - Cliente: conta de homologação `qa-cliente@apois-test.dev` já existente; ainda sem endereço com GPS salvo.
 - Estabelecimento: `APOIS TESTE Entregas`, slug `apois-teste-entregas-homologacao-20261029`, vinculado à conta QA do comerciante. Criado inativo, fechado e sem entregas, em cidade QA anteriormente configurada (Itainópolis/PI), com o ponto de retirada georreferenciado fornecido pelo responsável; cadastro continua fechado e inativo.
