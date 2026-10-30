@@ -29,8 +29,8 @@ function once(s,a,b,label){
       throw Error("[FAIL] Motorista V3 signup header not uniquely recognized");
     const oldHeader=tags[0][0];
     let classes=tags[0][1];
-    classes=classes.replace(/\\bborder-b\\s+border-[^\\s"]+/, "border-b border-[#E5E7EB]");
-    classes=classes.replace(/\\bbg-[^\\s"]+/, "bg-white/95");
+    classes=classes.replace(/\bborder-b\s+border-[^\s"]+/, "border-b border-[#E5E7EB]");
+    classes=classes.replace(/\bbg-[^\s"]+/, "bg-white/95");
     if(!classes.includes("border-b border-[#E5E7EB]") || !classes.includes("bg-white/95"))
       throw Error("[FAIL] Motorista V3 signup header contrast unresolved");
     return s.replace(oldHeader, '<header className="'+classes+'">');
