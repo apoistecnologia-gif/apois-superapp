@@ -1,32 +1,32 @@
--- QA storefront privacy patch on existing Supabase. Does not activate merchant.
--- Strictly scoped to one existing APOIS TESTE store and its allowlisted customer.
--- Must be installed BEFORE enabling that merchant. No data modifications.
+-- APOIS QA: protective-only changes for ONE merchant in the existing Entregas database.
+-- Add RESTRICTIVE SELECT policies to stop other authenticated users from
+-- observing its household pickup location when merchant is activated.
+-- No merchant is activated and no test customer is authorized by this SQL.
 BEGIN;
 
--- Fail closed when identifiers drift. No mass RLS changes on unexpected schema.
 DO $$
 BEGIN
- IF NOT EXISTS (
-  SELECT 1 FROM public.merchants
-  WHERE id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
-    AND slug='apois-teste-entregas-homologacao-20261029'
-    AND name='APOIS TESTE Entregas'
- ) THEN RAISE EXCEPTION 'QA merchant not found or identity differs'; END IF;
- IF NOT EXISTS (
-  SELECT 1 FROM pg_policies WHERE schemaname='public'
-  AND tablename='merchants' AND policyname='Authenticated browse billable active merchants'
- ) THEN RAISE EXCEPTION 'merchant browse RLS policy drift'; END IF;
- IF NOT EXISTS (
-  SELECT 1 FROM pg_policies WHERE schemaname='public'
-  AND tablename='products' AND policyname='Allow authenticated to select available products'
- ) THEN RAISE EXCEPTION 'product RLS policy drift'; END IF;
+  IF NOT EXISTS (
+     SELECT 1 FROM public.merchants
+     WHERE id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+       AND name='APOIS TESTE Entregas'
+       AND slug='apois-teste-entregas-homologacao-20261029'
+       AND is_active=false AND approval_status='pending'
+  ) THEN RAISE EXCEPTION 'QA merchant safety preflight failed'; END IF;
+  IF EXISTS (
+     SELECT 1 FROM private.apois_test_cash_access a
+     WHERE a.merchant_id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+       AND a.enabled AND a.expires_at>now()
+  ) THEN RAISE EXCEPTION 'QA already enabled: abort applying privacy patch'; END IF;
+  IF EXISTS (
+     SELECT 1 FROM public.orders o
+     WHERE o.merchant_id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+  ) THEN RAISE EXCEPTION 'QA merchant already has orders'; END IF;
 END;
 $$;
 
--- Exactly one test merchant, authenticated QA principal, live allowlist.
-CREATE OR REPLACE FUNCTION public.apois_qa_can_browse_store(_merchant_id uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path TO ''
+CREATE OR REPLACE FUNCTION private.apois_qa_can_view_merchant(_merchant_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
 AS $fn$
   SELECT
     _merchant_id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
@@ -35,78 +35,73 @@ AS $fn$
       SELECT 1 FROM private.apois_test_cash_access a
       WHERE a.merchant_id=_merchant_id
         AND a.customer_user_id=(SELECT auth.uid())
-        AND a.enabled
-        AND a.expires_at>now()
+        AND a.enabled AND a.expires_at>now()
     );
 $fn$;
-REVOKE ALL ON FUNCTION public.apois_qa_can_browse_store(uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.apois_qa_can_browse_store(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION private.apois_qa_can_view_merchant(uuid) FROM PUBLIC,anon,authenticated;
 
--- Default RLS policies are permissive (OR). Therefore replacing the existing
--- broad SELECT policies is necessary; merely adding a restrictive-looking QA
--- SELECT policy would NOT hide an active store from other authenticated users.
-DROP POLICY "Authenticated browse billable active merchants" ON public.merchants;
-CREATE POLICY "Authenticated browse billable active merchants"
-ON public.merchants FOR SELECT TO authenticated
-USING (
-  is_active=true
-  AND approval_status='approved'
-  AND id <> '62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
-  AND public.merchant_subscription_in_good_standing(id)
-);
+-- One restrictive AND filter is safer than replacing existing broad production
+-- policies: ALL production merchant/product policies remain intact.
+CREATE OR REPLACE FUNCTION public.apois_qa_read_allowed(_merchant_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $fn$
+ SELECT
+   _merchant_id <> '62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+   OR public.current_user_is_admin()
+   OR public.current_user_is_merchant_member(_merchant_id)
+   OR private.apois_qa_can_view_merchant(_merchant_id);
+$fn$;
+REVOKE ALL ON FUNCTION public.apois_qa_read_allowed(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_qa_read_allowed(uuid) TO authenticated;
 
-DROP POLICY IF EXISTS "APOIS QA specific merchant catalog" ON public.merchants;
-CREATE POLICY "APOIS QA specific merchant catalog"
-ON public.merchants FOR SELECT TO authenticated
-USING (
-  id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
-  AND is_active=true
-  AND approval_status='approved'
-  AND public.apois_qa_can_browse_store(id)
-);
+DROP POLICY IF EXISTS "APOIS QA merchant privacy restriction" ON public.merchants;
+CREATE POLICY "APOIS QA merchant privacy restriction"
+ON public.merchants AS RESTRICTIVE FOR SELECT TO authenticated
+USING (public.apois_qa_read_allowed(id));
 
-DROP POLICY "Allow authenticated to select available products" ON public.products;
-CREATE POLICY "Allow authenticated to select available products"
-ON public.products FOR SELECT TO authenticated
-USING (
-  is_available=true
-  AND EXISTS (
-    SELECT 1 FROM public.merchants m
-    WHERE m.id=products.merchant_id
-      AND m.is_active=true
-      AND (
-        m.id <> '62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
-        OR public.apois_qa_can_browse_store(m.id)
-      )
-  )
-);
+DROP POLICY IF EXISTS "APOIS QA products privacy restriction" ON public.products;
+CREATE POLICY "APOIS QA products privacy restriction"
+ON public.products AS RESTRICTIVE FOR SELECT TO authenticated
+USING (public.apois_qa_read_allowed(merchant_id));
 
-DROP POLICY IF EXISTS "APOIS QA specific merchant product read" ON public.products;
-CREATE POLICY "APOIS QA specific merchant product read"
-ON public.products FOR SELECT TO authenticated
-USING (
-  merchant_id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
-  AND is_available
-  AND public.apois_qa_can_browse_store(merchant_id)
-);
+DROP POLICY IF EXISTS "APOIS QA categories privacy restriction" ON public.menu_categories;
+CREATE POLICY "APOIS QA categories privacy restriction"
+ON public.menu_categories AS RESTRICTIVE FOR SELECT TO authenticated
+USING (public.apois_qa_read_allowed(merchant_id));
 
--- RLS menu category browsing for this merchant is private, too.
-DROP POLICY IF EXISTS "Allow authenticated to select active menu categories" ON public.menu_categories;
-CREATE POLICY "Allow authenticated to select active menu categories"
-ON public.menu_categories FOR SELECT TO authenticated
-USING (
-  is_active=true
-  AND EXISTS (
-    SELECT 1 FROM public.merchants m
-    WHERE m.id=menu_categories.merchant_id AND m.is_active=true
-      AND (
-        m.id <> '62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
-        OR public.apois_qa_can_browse_store(m.id)
-      )
-  )
-);
+-- On activation, the standard authenticated browse policy already exists.
+-- It still needs merchant_subscription_in_good_standing(...) (granted to
+-- this merchant only while the QA private cash allowlist is enabled).
 
--- Important: merchant stays inactive and cash permissions stay disabled.
--- Activation is a separate, explicit gate after RLS tests under authenticated QA
--- and unrelated user JWT sessions.
+-- The ordinary Pix checkout must NEVER issue a payable order to this store
+-- even if a customer guesses the UUID and calls an API directly.
+CREATE OR REPLACE FUNCTION private.apois_qa_no_real_payment()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $fn$
+DECLARE
+ v_id uuid := '62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid;
+BEGIN
+  IF NEW.merchant_id <> v_id THEN RETURN NEW; END IF;
+  IF NEW.payment_method <> 'cash'
+     OR NEW.payment_status NOT IN ('pending','cancelled') THEN
+     RAISE EXCEPTION 'QA merchant rejects real payment methods or paid status';
+  END IF;
+  IF TG_OP='INSERT' THEN
+    IF NOT private.apois_test_cash_authorized(NEW.merchant_id,NEW.customer_user_id) THEN
+      RAISE EXCEPTION 'QA merchant needs explicit customer cash authorization';
+    END IF;
+  ELSIF NOT EXISTS(
+    SELECT 1 FROM private.apois_test_cash_orders t WHERE t.order_id=OLD.id
+  ) THEN
+    RAISE EXCEPTION 'QA order marker missing';
+  END IF;
+  RETURN NEW;
+END;
+$fn$;
+
+DROP TRIGGER IF EXISTS apois_qa_never_real_payment ON public.orders;
+CREATE TRIGGER apois_qa_never_real_payment
+BEFORE INSERT OR UPDATE ON public.orders FOR EACH ROW
+EXECUTE FUNCTION private.apois_qa_no_real_payment();
+
 COMMIT;
