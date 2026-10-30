@@ -46,6 +46,21 @@ all(courierCoverageLogic, ["courier_dispatch_radius_km", "citiesWithoutCourierDi
 all(courierAdminGates, ["paymentProviderBlockingOrders", "merchantSubscriptionDateWarnings", "data-apois-courier-operations-readiness"], "Admin warns about actual Safe2Pay and subscription blockers");
 all(courierCommercialLogic, ["current_period_end", "last_payment_status", "safe2pay_marketplace"], "Merchant subscription/payment readiness remains fail-closed");
 all(build, ["bun test src/lib/courier-dispatch-readiness.test.ts src/lib/courier-operation-readiness.test.ts"], "Courier readiness tests run in the real Partner module build");
+// Catch the exact JSX regression that previously reached TypeScript TS1005:
+const journeyGenerator=read("scripts/fix-partner-courier-simple-journey-v1.mjs");
+const journeyLiteral=journeyGenerator.match(/^const component=(.*);$/m);
+let journeyComponentClosed=false;
+if(journeyLiteral){
+  try {
+    const jsx=JSON.parse(journeyLiteral[1]);
+    journeyComponentClosed=jsx.includes("export function ActiveDelivery(") &&
+      jsx.trimEnd().endsWith(");\n}") &&
+      jsx.includes("Código de entrega (PIN)") &&
+      jsx.includes("PEDIDO RETIRADO");
+  } catch {}
+}
+check(journeyComponentClosed,"Simplified courier ActiveDelivery closes its JSX and function before CourierFinance");
+
 const courierRoute=read("sources/apois-entregas/src/routes/courier.tsx");
 const courierMap=read("sources/apois-entregas/src/components/CourierRouteMap.tsx");
 const courierOffers=read("sources/apois-entregas/src/components/CourierOfferOverlay.tsx");
