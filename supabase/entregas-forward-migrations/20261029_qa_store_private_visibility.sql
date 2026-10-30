@@ -8,19 +8,19 @@ DO $$
 BEGIN
   IF NOT EXISTS (
      SELECT 1 FROM public.merchants
-     WHERE id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+     WHERE id=(SELECT id FROM public.merchants WHERE slug='apois-teste-entregas-homologacao-20261029')
        AND name='APOIS TESTE Entregas'
        AND slug='apois-teste-entregas-homologacao-20261029'
        AND is_active=false AND approval_status='pending'
   ) THEN RAISE EXCEPTION 'QA merchant safety preflight failed'; END IF;
   IF EXISTS (
      SELECT 1 FROM private.apois_test_cash_access a
-     WHERE a.merchant_id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+     WHERE a.merchant_id=(SELECT id FROM public.merchants WHERE slug='apois-teste-entregas-homologacao-20261029')
        AND a.enabled AND a.expires_at>now()
   ) THEN RAISE EXCEPTION 'QA already enabled: abort applying privacy patch'; END IF;
   IF EXISTS (
      SELECT 1 FROM public.orders o
-     WHERE o.merchant_id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+     WHERE o.merchant_id=(SELECT id FROM public.merchants WHERE slug='apois-teste-entregas-homologacao-20261029')
   ) THEN RAISE EXCEPTION 'QA merchant already has orders'; END IF;
 END;
 $$;
@@ -29,7 +29,7 @@ CREATE OR REPLACE FUNCTION private.apois_qa_can_view_merchant(_merchant_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
 AS $fn$
   SELECT
-    _merchant_id='62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+    _merchant_id=(SELECT id FROM public.merchants WHERE slug='apois-teste-entregas-homologacao-20261029')
     AND (SELECT auth.uid()) IS NOT NULL
     AND EXISTS (
       SELECT 1 FROM private.apois_test_cash_access a
@@ -46,7 +46,7 @@ CREATE OR REPLACE FUNCTION public.apois_qa_read_allowed(_merchant_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
 AS $fn$
  SELECT
-   _merchant_id <> '62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid
+   _merchant_id <> (SELECT id FROM public.merchants WHERE slug='apois-teste-entregas-homologacao-20261029')
    OR public.current_user_is_admin()
    OR public.current_user_is_merchant_member(_merchant_id)
    OR private.apois_qa_can_view_merchant(_merchant_id);
@@ -79,7 +79,7 @@ CREATE OR REPLACE FUNCTION private.apois_qa_no_real_payment()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $fn$
 DECLARE
- v_id uuid := '62f314cd-e792-45bc-8363-bf2b60f2ee58'::uuid;
+ v_id uuid := (SELECT id FROM public.merchants WHERE slug='apois-teste-entregas-homologacao-20261029');
 BEGIN
   IF NEW.merchant_id <> v_id THEN RETURN NEW; END IF;
   IF NEW.payment_method <> 'cash'
