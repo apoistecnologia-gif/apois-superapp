@@ -135,5 +135,12 @@ jobs:
           else
             npm run build:merchant
             test -s .vercel/output/config.json
-            echo "[OK] Painel Estabelecimento/Admin Entregas: build local, nenhum deploy"
+            echo "[OK] Painel Estabelecimento: build WEB local, nenhum deploy"
+            # Build the protected Admin Entregas routes separately in the same
+            # ephemeral QA workspace. No Vercel CLI, APK or deployment action.
+            (
+              cd .work/entregas
+              APOIS_MOBILE_BUILD=0 bun run build:admin
+            )
+            echo "[OK] Painel Admin Entregas: rotas WEB compiladas isoladamente, nenhum deploy"
           fi
