@@ -11,7 +11,7 @@ function once(s,a,b,label){
   if((label==="success light theme"||label==="form theme")&&n===0){
     // Guarded structural fallback: the prior brand migration may replace
     // the entire root-class string, not merely its colors.
-    const lastRender=s.lastIndexOf("\\n  return (");
+    const lastRender=s.lastIndexOf("\n  return (");
     if(lastRender<0)throw Error("[FAIL] Motorista V3 render root not found: "+label);
     const tagStart=s.indexOf("<div ",lastRender);
     const tagEnd=s.indexOf(">",tagStart);
