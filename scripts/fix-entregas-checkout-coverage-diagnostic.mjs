@@ -16,12 +16,16 @@ patch('src/routes/checkout.tsx', (source) => {
   if (next.includes(before)) next = next.replace(before, after);
   // Diagnóstico restrito à loja fictícia, sem dados pessoais ou segredos.
   const qaLine = '                      ? "Este endereço está fora da área de entrega disponível."';
-  const qaReplacement = '                      ? (merchant?.id === "62f314cd-e792-45bc-8363-bf2b60f2ee58" ? "Teste APOIS: " + String(deliveryQuote.reason) + " · " + String(deliveryQuote.distance_km ?? "?") + " km" : "Este endereço está fora da área de entrega disponível.")';
-  if (next.includes(qaLine)) next = next.replace(qaLine, qaReplacement);
+  const qaReplacement = '                      ? "TESTE APOIS - razão: " + String(deliveryQuote?.reason ?? "sem_razao") + " · distância: " + String(deliveryQuote?.distance_km ?? "?") + " km · loja: " + String(merchant?.id ?? "sem_id").slice(0,8)';
+  if (!next.includes(qaReplacement)) {
+    if (!next.includes(qaLine)) throw new Error('[FAIL] checkout sem linha de cobertura esperada');
+    next = next.replace(qaLine, qaReplacement);
+  }
   return next;
 }, (source) =>
   source.includes('const { data: freshQuoteData, error: freshQuoteError }') &&
   source.includes('setDeliveryQuote(freshQuote as DeliveryQuote)') &&
+  source.includes('TESTE APOIS - razão:') &&
   !source.includes('if (fulfillmentType === "delivery" && deliveryQuoteLoading)\n        throw new Error("Aguarde a validação da área de entrega.");'),
 'Entregas: confirma cobertura novamente no servidor antes do pedido e informa razão real do bloqueio');
 
