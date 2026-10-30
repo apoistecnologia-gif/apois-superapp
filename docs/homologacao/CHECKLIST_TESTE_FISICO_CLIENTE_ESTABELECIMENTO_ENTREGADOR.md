@@ -37,6 +37,15 @@ Em transação temporária (sem gravar ativação), as condições **funcionaram
 - A prorrogação não criou pedidos, não movimentou dinheiro, não criou recursos Supabase e não mudou o método comercial PIX. A loja QA continua segregada por RLS e o controle pode ser desligado manualmente após os testes.
 - O prazo de validade não é uma janela de disponibilidade física do entregador; GPS e disponibilidade precisam ser checados quando o teste for executado.
 
+## Correção do catálogo e endereço QA após teste em Android (29/10/2026)
+
+- O APK QA usa o **mesmo catálogo e banco** da APOIS Entregas. Lojas comerciais podem aparecer quando o endereço padrão real é de sua cidade; não fazer pedido nelas durante homologação.
+- A conta de Cliente Entregas autorizada usa outro login do Entregador. O cliente tinha endereço padrão de **Petrolina/PE**, fazendo a tela inicial buscar a loja comercial de Petrolina.
+- Corrigida a grafia da cidade da loja QA e do único registro de cidade associado: `ItainÃ³polis` → `Itainópolis`. O trigger de segurança rebaixou automaticamente a aprovação ao reconhecer alteração de cidade; verificada a identidade, as mesmas coordenadas e a única loja QA da cidade, a aprovação/atividade da loja QA foram restauradas. Nenhuma outra loja foi modificada.
+- Inserido um **endereço de destino QA com GPS** no perfil da conta Cliente Entregas real, identificado como `TESTE — Centro de Itainópolis (não entregar)`. **Não foi alterado o endereço padrão original de Petrolina.** O cliente deve selecionar o endereço QA na tela de endereços; não usar GPS atual da zona rural como destino da cidade.
+- Verificação de RLS autenticada sob identidade do cliente: 1 loja QA listável em Itainópolis e 1 produto visível, com 1 endereço QA visível. Cotação de entrega `eligible=true`, aproximadamente 8,21 km em linha reta, `delivery_fee=0`.
+- Conta independente sem autorização: 0 loja QA e 0 produtos; 0 pedidos gerados; 1 dupla de pagamento fictício autorizada até 30/11/2026.
+
 ## Participantes QA preparados
 - Cliente: conta de homologação `qa-cliente@apois-test.dev` já existente; ainda sem endereço com GPS salvo.
 - Estabelecimento: `APOIS TESTE Entregas`, slug `apois-teste-entregas-homologacao-20261029`, vinculado à conta QA do comerciante. Criado inativo, fechado e sem entregas, em cidade QA anteriormente configurada (Itainópolis/PI), com o ponto de retirada georreferenciado fornecido pelo responsável; cadastro continua fechado e inativo.
