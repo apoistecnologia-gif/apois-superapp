@@ -39,6 +39,8 @@ if(!h.includes("APOIS_COURIER_HISTORY_LIGHT_V1")){
  h=h.replaceAll('text-zinc-600','text-[#5F6978]').replaceAll('text-zinc-500','text-[#596374]');
  h=h.replaceAll('text-zinc-400','text-[#485567]').replaceAll('text-zinc-300','text-[#1F2937]').replaceAll('text-zinc-200','text-[#141B29]');
  h=h.replaceAll('border-zinc-900','border-[#E5E7EB]').replaceAll('border-zinc-800','border-[#E5E7EB]');
+ h=h.replaceAll('border-accent/30','border-[#E6E8EC]').replaceAll('border-accent/20','border-[#E6E8EC]');
+ h=h.replaceAll('border-accent','border-[#E6E8EC]').replaceAll('bg-accent/5','bg-[#FFF1F3]');
  h=h.replaceAll('bg-black/55','bg-[#F8F9FB]').replaceAll('bg-black/65','bg-[#F7F8FA]').replaceAll('bg-black','bg-white');
  h=h.replace('rounded-[1.6rem] border border-[#E5E7EB]/90 bg-[linear-gradient(145deg,#101010,#080808)] p-4 shadow-[0_14px_36px_rgba(0,0,0,0.38)]',
   'rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm');
