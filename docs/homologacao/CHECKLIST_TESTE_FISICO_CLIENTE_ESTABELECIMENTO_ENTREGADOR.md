@@ -13,6 +13,12 @@ Data de preparação: 29/10/2026. Ambiente de banco: Entregas de produção (com
 - Ponto de retirada em Gameleira e endereço fictício de destino na cidade estão cadastrados no Supabase; o endereço do ponto de retirada **não aparece nesta documentação pública**.
 - A liberação real do teste aguarda aplicativo Cliente de homologação instalado e autenticado na conta QA, estabelecimento aberto somente com visibilidade verificada, e entregador disponível. Não gerar pedido ou deslocamento antes de confirmar o dispositivo.
 
+## Pré-voo operacional com ROLLBACK (29/10/2026)
+
+Em transação temporária (sem gravar ativação), as condições **funcionaram simultaneamente**: `merchant_accepting_orders=true`, `merchant_subscription_in_good_standing=true` pela exceção de teste, `apois_check_test_cash_access=true` somente para a dupla QA e **1 entregador próximo elegível** na região. Todas as modificações de simulação foram revertidas.
+
+**Porta de segurança:** ainda falta testar o aplicativo físico de cliente QA. Não ativar loja nem habilitar a dupla de pagamento enquanto o build de homologação separado e o login QA não estiverem disponíveis e verificados. Nada foi cobrado e não houve despacho real.
+
 ## Participantes QA preparados
 - Cliente: conta de homologação `qa-cliente@apois-test.dev` já existente; ainda sem endereço com GPS salvo.
 - Estabelecimento: `APOIS TESTE Entregas`, slug `apois-teste-entregas-homologacao-20261029`, vinculado à conta QA do comerciante. Criado inativo, fechado e sem entregas, em cidade QA anteriormente configurada (Itainópolis/PI), com o ponto de retirada georreferenciado fornecido pelo responsável; cadastro continua fechado e inativo.
