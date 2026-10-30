@@ -44,6 +44,22 @@ function sanitizeLegacyBrandInDist(directory) {
   }
 }
 
+function localizeCourierRuntimeAssets(directory) {
+  for (const entry of readdirSync(directory)) {
+    const file = resolve(directory, entry);
+    if (statSync(file).isDirectory()) { localizeCourierRuntimeAssets(file); continue; }
+    if (!/\.(html|js|mjs|css|json)$/.test(entry)) continue;
+    const source = readFileSync(file, 'utf8');
+    // Only emitted local asset URL prefixes; never APIs, auth routes or state.
+    const next = source
+      .replace(/(["'`])\/assets\//g, '$1/modules/entregador/assets/')
+      .replaceAll('/./assets/', '/modules/entregador/assets/')
+      .replace(/\/__l5e\/assets-v1\/[a-zA-Z0-9-]+\/delivery-hero\.png/g,
+        'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22/%3E');
+    if (next !== source) writeFileSync(file, next, 'utf8');
+  }
+}
+
 function requireMarker(source, marker, label) {
   if (!source.includes(marker)) {
     console.error(`[FAIL] bundle Parceiro: ${label} — ausente: ${marker}`);
@@ -103,6 +119,7 @@ for (const [name, source] of modules) {
   cpSync(source, target, { recursive: true });
   sanitizeLegacyBrandInDist(target);
   if (name === 'entregador') {
+    localizeCourierRuntimeAssets(target);
     // Same SSR asset normalization as the Cliente shell: TanStack manifests
     // can emit /./assets even after the initial HTML attribute rewrite.
     const entry = resolve(target, 'index.html');
