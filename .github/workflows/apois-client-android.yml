@@ -213,37 +213,49 @@ jobs:
           grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
           echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
 
-      # Somente homologação: use certificado estável sem colocar chave privada no Git.
-      # Primeiro build: cria a chave e grava como secret via PAT existente.
-      # Builds futuros: restauram exatamente o mesmo arquivo.
+      # Chave QA criptografada antes de entrar no cache do Actions.
+      # O token privado existente protege a chave, sem conceder novas permissões.
+      - name: Restore encrypted QA signing from Actions cache
+        id: qa_signing_restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .qa-signing/android-debug-keystore.enc
+          key: apois-client-qa-encrypted-signing-v1
+
       - name: Restore persistent QA Android debug signing
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
         run: |
           set -euo pipefail
-          mkdir -p "$HOME/.android"
+          mkdir -p "$HOME/.android" .qa-signing
           KEYSTORE="$HOME/.android/debug.keystore"
+          ENCRYPTED=".qa-signing/android-debug-keystore.enc"
           if [ -n "${QA_DEBUG_KEYSTORE_BASE64:-}" ]; then
             printf '%s' "$QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
             echo "[OK] QA signing restored from protected GitHub Actions secret"
+          elif [ -s "$ENCRYPTED" ]; then
+            test -n "${GH_TOKEN:-}" || { echo "::error::QA encrypted key requires token"; exit 1; }
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$ENCRYPTED" -out "$KEYSTORE" -pass env:GH_TOKEN
+            echo "[OK] Reused encrypted QA signing identity"
           else
-            if [ -z "${GH_TOKEN:-}" ]; then
-              echo "::error::QA signing secret missing and repository token unavailable; refusing to sign with a new ephemeral key"
-              exit 1
-            fi
-            echo "[INFO] Initializing protected QA debug signing material"
+            test -n "${GH_TOKEN:-}" || { echo "::error::QA signing storage unavailable"; exit 1; }
+            echo "[INFO] Creating one dedicated QA signing identity"
             keytool -genkeypair -noprompt -keystore "$KEYSTORE" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=Android Debug,O=APOIS QA,C=BR" >/dev/null
-            if ! base64 -w0 "$KEYSTORE" | gh secret set APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 --repo "$GITHUB_REPOSITORY"; then
-              rm -f "$KEYSTORE"
-              echo "::error::Unable to persist QA signing secret securely; aborting APK build"
-              exit 1
-            fi
-            echo "[OK] QA debug keystore persisted as protected GitHub Actions secret"
+            openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in "$KEYSTORE" -out "$ENCRYPTED" -pass env:GH_TOKEN
+            echo "[OK] QA private key encrypted for reuse"
           fi
           test -s "$KEYSTORE"
           keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
-          echo "[OK] Stable QA signing identity verified"
+          keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | grep 'SHA256:' | head -n 1
+          echo "[OK] Reusable QA signing identity verified"
+
+      - name: Save encrypted QA signing in Actions cache
+        if: steps.qa_signing_restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .qa-signing/android-debug-keystore.enc
+          key: apois-client-qa-encrypted-signing-v1
 
       - name: Stamp monotonic QA Android version
         shell: bash
