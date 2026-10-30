@@ -75,7 +75,7 @@ requireMarkers('.work/entregas/src/routes/perfil/index.tsx', [
 requireMarkers('.work/entregas/src/routes/perfil/dados-pessoais.tsx', [
   'await removeCustomerPushRegistration(true);',
   '<AppBottomNav activeTab="perfil" />',
-  'pb-[calc(env(safe-area-inset-bottom)+7rem)]',
+  'pb-[calc(env(safe-area-inset-bottom)+9rem)]',
   'request_own_account_deletion',
   'Solicitar exclusão da conta',
   'Não foi possível solicitar a exclusão da conta. Tente novamente.',
