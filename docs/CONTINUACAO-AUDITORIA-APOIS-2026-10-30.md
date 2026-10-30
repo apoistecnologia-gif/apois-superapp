@@ -139,3 +139,14 @@ Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/c
 - Comparação do bloco anterior de commits (`508f79382e...` até `4f850255ad...`): apenas scripts de homologação e documentação. Nenhum snapshot protegido de `sources/` alterado.
 - **Ainda falta** revisão do contraste do componente `AdminSupportPanel` (rótulos de chamados/mensagens de 9–10 px e cinzas escuros). Corrigir isoladamente, verificar scripts idempotentes e CI. Depois fazer revisão renderizada de Admin Entregas/Estabelecimento e demais módulos quando existir ambiente seguro de homologação.
 - **Não declarar homologação visual real ou teste Android**: os três jobs são build/testes WEB sem capturas novas autenticadas, nem teste físico de GPS/Maps, notificação, PIN ou RLS de avatar.
+
+## CONTINUIDADE — ADMIN SUPORTE — 30/10/2026
+
+- **Preflight WEB mais recente do código:** [41144738866](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41144738866), commit `f993f1ad3102b8c529d03741ac29d77d84ad8976`: **SUCCESS nos 3 jobs** (Cliente, Parceiro, Estabelecimento/Admin Entregas).
+- `scripts/fix-entregas-admin-support-contrast-v1.mjs` inclui ajuste de contraste/tamanho de rótulos de tickets, horários e mensagens em `AdminSupportPanel.tsx`. Estilos cinza-escuros e 9/10px foram substituídos por textos com contraste maior e fonte legível.
+- Preservados os handlers de resposta externa, nota interna, transições aberto/em atendimento/resolvido/fechado, anexo por `createSignedUrl(path, 60)` e proteção `noopener noreferrer`.
+- Correção isolada no build `scripts/build-merchant-panel.mjs`; aplicada em simulação com **segunda execução idempotente (zero escrita extra)**, além da compilação WEB oficial.
+- Antes dela, `AdminReviewsPanel` e `AdminCourierSettlementsPanel` também passaram 3/3 jobs no [preflight 41144551669](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41144551669). Nada foi alterado nas regras de cálculo, busca, resolução de disputa ou storage.
+- **Nenhum APK, deploy, merge, Supabase SQL/migration, produção ou snapshots protegidos modificados.**
+- **Pendência real:** visual renderizado de páginas autenticadas, fontes no browser/mobile e validação física dos quatro módulos. Build WEB verde não substitui E2E, GPS/Maps, avatar RLS, push ou pagamento de verdade. Não declarar homologação final.
+
