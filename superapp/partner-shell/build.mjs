@@ -102,6 +102,13 @@ for (const [name, source] of modules) {
   mkdirSync(target, { recursive: true });
   cpSync(source, target, { recursive: true });
   sanitizeLegacyBrandInDist(target);
+  if (name === 'entregador') {
+    // Same SSR asset normalization as the Cliente shell: TanStack manifests
+    // can emit /./assets even after the initial HTML attribute rewrite.
+    const entry = resolve(target, 'index.html');
+    const html = readFileSync(entry, 'utf8');
+    writeFileSync(entry, html.replaceAll('/./assets/', './assets/').replaceAll('../assets/', './assets/'), 'utf8');
+  }
   console.log(`[OK] ${name} copiado para o APOIS Parceiro e saneado contra tokens visuais legados`);
 }
 

@@ -69,6 +69,12 @@ if (process.env.APOIS_MOTORISTA_WORKSPACE) {
     'className="flex min-h-[56px] w-full items-center justify-center gap-3 rounded-[18px] border border-[#D9DDE3] bg-white px-4 py-3 text-[14px] font-black text-[#111827] shadow-sm disabled:opacity-60"'
   );
 
+  // Decorative hero was a remote platform asset absent from the offline APK.
+  // Keep the existing gradient layers; use a self-contained neutral image.
+  source = source
+    .replace('src={deliveryHeroAsset.url}', 'src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22%3E%3Cpath fill=%22%23F7F7F8%22 d=%22M0 0h1v1H0z%22/%3E%3C/svg%3E"')
+    .replace('import deliveryHeroAsset from "@/assets/delivery-hero.png.asset.json";\\n', '');
+
   must(source, ['data-apois-partner-auth-v17','APOIS_PARTNER_LOGO_DATA_URL','bg-[#F7F7F8]','bg-[#E51B23]'], 'login Motorista visual v17');
   if (source.includes('MovviLogo') || source.includes('#F6BE1C') || source.includes('#C88A08')) {
     throw new Error('[FAIL] login Motorista ainda contém identidade visual antiga');
