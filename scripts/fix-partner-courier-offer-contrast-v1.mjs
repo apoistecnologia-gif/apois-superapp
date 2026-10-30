@@ -60,11 +60,11 @@ edit("src/components/CourierPremiumViews.tsx",(input)=>{
  // Earlier map/home hardeners may add a margin, fallback or change
  // the text color; preserve all of those while removing truncation.
  // Only match the pickup address expression, never unrelated labels.
- const pickupAddress=/<p className="([^"]*)">\\s*(\\{pickup\\.address_line \\|\\| pickup\\.street(?: \\|\\| "[^"]+")?\\})\\s*<\\/p>/;
+ const pickupAddress=/<p className="([^"]*)">\s*(\{pickup\.address_line \|\| pickup\.street(?: \|\| "[^"]+")?\})\s*<\/p>/;
  if(!src.includes('line-clamp-2 break-words text-xs text-zinc-500') && !src.includes('data-apois-pickup-address-wrap-v1')){
    const found=src.match(pickupAddress);
    if(!found || !found[1].includes("truncate"))throw Error("[FAIL] Courier UI pickup address not uniquely recognized");
-   const fixed=found[1].replace(/\\btruncate\\b/, "line-clamp-2 break-words");
+   const fixed=found[1].replace(/\btruncate\b/, "line-clamp-2 break-words");
    src=src.replace(found[0], '<p data-apois-pickup-address-wrap-v1 className="'+fixed+'">'+found[2]+'</p>');
  }
  return src;
