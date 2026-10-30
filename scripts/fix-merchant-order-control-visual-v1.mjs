@@ -10,15 +10,15 @@ for(const [a,b] of [["className=\"fixed bottom-5 left-5 z-[990] text-white\"","d
 }
 // The preceding mobile hardeners may alter CTA widths. Locate only the
 // "Solicitar entregador" action, preserving requestCourier and all order logic.
-const handler='onClick={() => void requestCourier(readyDeliveryOrder.id)}';
-const handlerAt=s.indexOf(handler);
-if(handlerAt<0 || s.indexOf(handler,handlerAt+1)>=0)
+const label='Solicitar entregador · Pedido #';
+const labelAt=s.indexOf(label);
+if(labelAt<0 || s.indexOf(label,labelAt+1)>=0)
+  throw Error("[FAIL] Merchant courier CTA label not uniquely found");
+const buttonAt=s.lastIndexOf('<button',labelAt);
+if(buttonAt<0 || labelAt-buttonAt>1500 || !s.slice(buttonAt,labelAt).includes('requestCourier('))
   throw Error("[FAIL] Merchant courier request CTA not uniquely found");
-const buttonAt=s.lastIndexOf('<button',handlerAt);
-const labelAt=s.indexOf('Solicitar entregador',handlerAt);
-const classAt=s.indexOf('className="',handlerAt+handler.length);
-if(buttonAt<0 || classAt<0 || labelAt<0 || classAt>labelAt || classAt-handlerAt>600)
-  throw Error("[FAIL] Merchant courier CTA structure unexpected");
+const classAt=s.indexOf('className="',buttonAt);
+if(classAt<0 || classAt>labelAt)throw Error("[FAIL] Merchant CTA class not found");
 const oldClassEnd=s.indexOf('"',classAt+11);
 if(oldClassEnd<0 || oldClassEnd>labelAt)throw Error("[FAIL] Merchant CTA class malformed");
 const safeClass="mb-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#C9141B] bg-[#E51B23] px-3 py-3 text-xs font-black uppercase text-white shadow-lg disabled:opacity-60 sm:w-[420px]";
