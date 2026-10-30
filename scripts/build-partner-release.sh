@@ -182,6 +182,7 @@ node "$ROOT/scripts/fix-partner-courier-offer-contrast-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-simple-journey-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-map-journey-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-completion-light-v1.mjs"
+node "$ROOT/scripts/fix-partner-courier-idle-status-v1.mjs"
 require_contains 'APOIS_COURIER_SIMPLE_FLOW_V1' "$ENTREGADOR/src/components/CourierPremiumViews.tsx" 'Entregador com coleta e PIN como únicas ações da entrega'
 require_contains 'APOIS_COURIER_AUTOMATIC_STAGES_V1' "$ENTREGADOR/src/routes/courier.tsx" 'Transições autenticadas preservadas sem botões redundantes'
 require_contains 'APOIS_COURIER_MAPS_URL_NO_API_KEY_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação Google Maps externa disponível sem chave API da APOIS'
