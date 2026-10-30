@@ -154,7 +154,8 @@ requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
 
 
 requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
-requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
+requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','APOIS_PIN_AFTER_ACCEPT_V1','get_passenger_ride_security_code','code={passengerPin}','status === "motorista_chegou"'],'Corrida ativa usa mapa real e PIN buscado com autorização após aceite/chegada');
+forbidMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['<SecurityCodeCard code={ride.security_code}'],'PIN nunca deve vir diretamente de public.rides');
 requireMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['postgres_changes','canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)'],'Corridas mantém Realtime e bloqueia cancelamento após chegada/início da viagem');
 forbidMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"]'],'Corridas não permite cancelamento em viagem');
 
@@ -175,7 +176,7 @@ requireMarkers('.work/entregas/src/integrations/supabase/client.ts',['storageKey
 requireMarkers('.work/entregas/src/components/AuthSessionIsolation.tsx',['window.location.hash.startsWith("#/")'],'isolamento de sessão Entregas entende Hash History');
 requireMarkers('.work/entregas/src/components/GoogleLoginButton.tsx',['function getNativeAuthCallback()','VITE_APOIS_NATIVE_SCHEME','__APOIS_SUPERAPP_AUTH_BRIDGE__','APOIS_GOOGLE_PENDING_KEY','APOIS_GOOGLE_FORWARD_KEY','consumeForwardedGoogleCallback','apois:entregas-google-callback'],'Google OAuth Entregas retorna pelo package unificado e consome callback no módulo correto');
 requireMarkers('.work/entregas/src/routes/register.tsx',['emailRedirectTo: "br.com.apois.app://auth/callback"'],'cadastro Entregas usa callback unificado');
-requireMarkers('.work/entregas/src/routes/login.tsx',['redirectTo: "br.com.apois.app://auth/reset"','data-apois-customer-login-red-v3','src={apoisClientBrand}','bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF8F8_58%,#FFF1F2_100%)]','<GoogleLoginButton />'],'Login Entregas mantém reset/Google e usa visual claro APOIS vermelho/branco');
+requireMarkers('.work/entregas/src/routes/login.tsx',['redirectTo: Capacitor.isNativePlatform() ? "br.com.apois.app://auth/reset" : new URL("/redefinir-senha", window.location.origin).toString()','data-apois-customer-login-red-v3','src={apoisClientBrand}','bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF8F8_58%,#FFF1F2_100%)]','<GoogleLoginButton />'],'Login Entregas mantém reset/Google e usa visual claro APOIS vermelho/branco');
 requireMarkers('.work/entregas/src/lib/customer-push.ts',['register_superapp_customer_push_device','_app_package: "br.com.apois.app"','const isDeliveryPush =','if (!target) return;'],'Push Entregas filtra produto e registra package correto');
 forbidMarkers('.work/entregas/src/lib/customer-push.ts',['PushNotifications.unregister()'],'logout Entregas não invalida token FCM compartilhado');
 requireMarkers('.work/entregas/src/routes/checkout.tsx',['const paymentMethod = "cash";','paymentMethod: "cash"','if (paymentMethod !== "cash")'],'checkout Entregas permanece cash-only e fail-closed');
