@@ -27,6 +27,7 @@ jobs:
       APP_LABEL: "APOIS Cliente"
       APP_VERSION_CODE: "12"
       APP_VERSION_NAME: "1.0.11"
+      QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -211,6 +212,50 @@ jobs:
           MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
           echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
+
+      # Somente homologação: use certificado estável sem colocar chave privada no Git.
+      # Primeiro build: cria a chave e grava como secret via PAT existente.
+      # Builds futuros: restauram exatamente o mesmo arquivo.
+      - name: Restore persistent QA Android debug signing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          KEYSTORE="$HOME/.android/debug.keystore"
+          if [ -n "${QA_DEBUG_KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+            echo "[OK] QA signing restored from protected GitHub Actions secret"
+          else
+            if [ -z "${GH_TOKEN:-}" ]; then
+              echo "::error::QA signing secret missing and repository token unavailable; refusing to sign with a new ephemeral key"
+              exit 1
+            fi
+            echo "[INFO] Initializing protected QA debug signing material"
+            keytool -genkeypair -noprompt -keystore "$KEYSTORE" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=Android Debug,O=APOIS QA,C=BR" >/dev/null
+            if ! base64 -w0 "$KEYSTORE" | gh secret set APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 --repo "$GITHUB_REPOSITORY"; then
+              rm -f "$KEYSTORE"
+              echo "::error::Unable to persist QA signing secret securely; aborting APK build"
+              exit 1
+            fi
+            echo "[OK] QA debug keystore persisted as protected GitHub Actions secret"
+          fi
+          test -s "$KEYSTORE"
+          keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
+          echo "[OK] Stable QA signing identity verified"
+
+      - name: Stamp monotonic QA Android version
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLE_FILE="superapp/shell/android/app/build.gradle"
+          test -s "$GRADLE_FILE"
+          sed -i -E "s/(versionCode[[:space:]]+)[0-9]+/\\1${GITHUB_RUN_NUMBER}/" "$GRADLE_FILE"
+          sed -i -E "s/(versionName[[:space:]]+)\"[^\"]*\"/\\1\"1.0.11-qa.${GITHUB_RUN_NUMBER}\"/" "$GRADLE_FILE"
+          grep -Fq "versionCode ${GITHUB_RUN_NUMBER}" "$GRADLE_FILE"
+          grep -Fq "versionName \"1.0.11-qa.${GITHUB_RUN_NUMBER}\"" "$GRADLE_FILE"
+          echo "[OK] Android QA versionCode=${GITHUB_RUN_NUMBER} stamped"
 
       - name: Build installable debug APK
         shell: bash
