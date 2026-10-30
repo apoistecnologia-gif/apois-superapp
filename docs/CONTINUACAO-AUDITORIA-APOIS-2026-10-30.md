@@ -52,3 +52,31 @@ Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/c
 - **Próximo passo no novo chat:** verificar conclusão/log da execução 41136225745 e prosseguir erro por erro até preflight web verde. Não assumir que um run queued/in_progress passou. Este workflow não gera APK.
 
 - **ÚLTIMO ERRO REAL CONFIRMADO:** Execução 41136225745 parou em `scripts/harden-partner-driver-registration-exit-v3.mjs`: `[FAIL] Motorista V3 form top matches=0` (linha 51). Raiz visual do sucesso já foi resolvida, mas a barra superior do formulário também estava pré-estilizada por hardener anterior. No novo chat, corrigir especificamente a substituição de `border-b border-white/5 bg-[#050607]/95` de forma idempotente e segura, testar preflight de novo. Não modificar o formulário funcional ou desmontar os botões de saída.
+
+## RETOMADA ATUALIZADA — HOMOLOGAÇÃO WEB — 30/10/2026 (substitui informações antigas acima)
+
+**Fonte de verdade e limites:** continuar exclusivamente no repositório `apoistecnologia-gif/apois-superapp` e branch `fix/entregas-homologacao-ajustes-20261030`, sem editar bases fixadas, sem gerar APK, sem fazer deploy/merge, sem SQL de mutação no Supabase e sem cobranças. O preflight permitido é `.github/workflows/apois-partner-preflight.yml`, com três jobs **WEB-only**.
+
+### Resultado real mais recente confirmado
+- GitHub Actions run **41138780733**: `WEB-only cliente` **SUCCESS**, `WEB-only estabelecimento` **SUCCESS**, `audit-web-only` **FAILURE**.
+  https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41138780733
+- Cliente WEB compila Corridas + Entregas, shell unificado e verifica dist, recovery, PIN autorizado, isolamento e segurança. Não é APK nem teste Android real.
+- Painel Estabelecimento/Admin Entregas WEB passou **após** correção de `build-merchant-panel.mjs` que passou a gerar `src/assets/apoisClientBrandData.ts` via `harden-entregas-superapp-brand-assets.mjs` ANTES do typecheck. Inclui contrato de cash/pending, sem gateway eletrônico ativo.
+- O Parceiro compilou scripts, passou testes unitários (5 pass) e parou em **TypeScript TS1005: missing `}` em `CourierPremiumViews.tsx(991,1)`**. Causa real encontrada no texto de `const component` em `scripts/fix-partner-courier-simple-journey-v1.mjs`: terminava em `</section> );` sem fechar `ActiveDelivery`. Correção salva no commit **`9e50434856f35fe9f6ce38c2b166529fa5b95bf6`**. **Ainda não há prova de preflight verde posterior a esse patch**; verificar novo run ou executar preflight WEB autorizado, nunca APK.
+
+### Erros já superados e preservações verificadas
+- `harden-partner-driver-registration-exit-v3.mjs`: aceita cabeçalho do formulário já transformado por marca, cadastro/sair preservados.
+- `fix-partner-courier-offer-contrast-v1.mjs`: leitura legível do endereço de retirada após hardeners.
+- `fix-partner-courier-manual-online-v1.mjs`: login offline quando sem entrega ativa, atualização manual, falha de rede preserva último estado. Confirmado em logs de preflight, não em dispositivo.
+- `fix-partner-courier-map-journey-v1.mjs`: card compacto e `NAVEGAR` externo para estabelecimento/cliente sem Routes API paga, suporta classe de mapa `clamp(24rem,62dvh,36rem)` do hardener prévio. Passou execução WEB antes do TypeScript.
+- `fix-partner-courier-completion-light-v1.mjs`: sem fundo preto, cabeçalho e botão compactos; regex JSX corrigido; passou simulação isolada e o preflight avançou depois dele.
+- `fix-merchant-order-control-visual-v1.mjs`: troca cores/contraste por classe sem alterar pedido; quando a versão atual só possui CTA inline `requestCourier(order.id)`, preserva o CTA em vez de exigir o antigo flutuante. Painel WEB verde.
+- `scripts/audit-superapp-static.mjs`: pin oficial de Entregas alinhado ao `.apois/source-lock.json` (`2f4606e0...`), allowlist restrita aos QUATRO workflows QA preexistentes; extra workflow de homologação criado durante diagnóstico foi **excluído** e os 3 jobs agora estão dentro do preflight permitido.
+- `scripts/verify-superapp-dist.mjs`: teste de PIN autorizado (não ler direto `ride.security_code`), redirecionamento nativo/web de recuperação; `scripts/verify-superapp-customer-security.mjs`: safe area de perfil do Cliente Entregas 9rem; ambos validados pelos builds web Cliente.
+- Nenhum deploy, merge, migration, criação de pedido real ou APK realizado neste ciclo.
+
+### Próxima ação exata
+1. Consultar execuções GitHub de `fix/entregas-homologacao-ajustes-20261030` mais recentes que commit `9e50434856f35fe9f6ce38c2b166529fa5b95bf6`; identificar se **audit-web-only Parceiro** está verde. Usar jobs/logs, não inferências. Se continuar TS/JS error, corrigir a causa no script de produção do workspace, sempre preservando 2 APKs/4 módulos e serviços financeiros.
+2. Só depois de preflight WEB verde fazer auditoria renderizada real de cada tela de Cliente, Parceiro e painéis (desktop/celular) em ambiente de teste; não afirmar visual validado por leitura de arquivos ou scripts. A dívida Google Maps continua bloqueando homologação completa da navegação paga.
+3. Validar cadastro/login, app offline manual, aceite, rota, retirada, PIN, entrega final e sincronização de pedidos; avatar precisa de RLS individual de bucket antes de teste. Condições das corridas e Safe2Pay devem ser mantidas.
+4. Fazer outro handoff se a conversa ficar longa, informando último commit/teste e pendências concretas. A seção de handoff antiga, acima, foi preservada como histórico e **não representa a situação atual**.
