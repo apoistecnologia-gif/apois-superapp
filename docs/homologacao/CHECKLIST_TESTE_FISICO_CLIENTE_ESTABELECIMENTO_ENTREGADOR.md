@@ -2,6 +2,17 @@
 
 Data de preparação: 29/10/2026. Ambiente de banco: Entregas de produção (com acesso a dinheiro de teste restrito e desabilitado por padrão).
 
+## 29/10/2026 — proteções de acesso aplicadas e testadas
+
+- A migração `20261029_qa_store_private_visibility.sql` foi aplicada ao Supabase Entregas existente, sem criar projeto ou branch de banco. Três políticas **RESTRICTIVE** isolam a loja, os produtos e as categorias QA sem substituir políticas dos estabelecimentos reais.
+- A migração `20261029_qa_delivery_quote_private.sql` foi aplicada: o RPC de cotação não fornece distância à loja de teste para uma conta não autorizada.
+- Durante transações SQL com ROLLBACK, simulei loja ativa + autorização cash por 20 minutos: a conta cliente QA viu exatamente uma loja e seu produto, com `preview_delivery_quote.eligible=true`. A conta QA de entregador, sem permissão de cliente, não viu loja/produto e recebeu `eligible=false` com distância omitida.
+- Os testes foram revertidos. **Não foi feita ativação permanente.** A loja segue fechada, sem dinheiro de teste liberado, sem pedido e sem chamado de entregador.
+- Foi cadastrado calendário QA 24h (sete dias) enquanto a loja está inativa. Esses horários não abrem loja por si próprios.
+- `create-order` com PIX verdadeiro para a loja QA é rejeitado no banco por um trigger exclusivo; para loja comercial real o fluxo PIX original permanece inalterado.
+- Ponto de retirada em Gameleira e endereço fictício de destino na cidade estão cadastrados no Supabase; o endereço do ponto de retirada **não aparece nesta documentação pública**.
+- A liberação real do teste aguarda aplicativo Cliente de homologação instalado e autenticado na conta QA, estabelecimento aberto somente com visibilidade verificada, e entregador disponível. Não gerar pedido ou deslocamento antes de confirmar o dispositivo.
+
 ## Participantes QA preparados
 - Cliente: conta de homologação `qa-cliente@apois-test.dev` já existente; ainda sem endereço com GPS salvo.
 - Estabelecimento: `APOIS TESTE Entregas`, slug `apois-teste-entregas-homologacao-20261029`, vinculado à conta QA do comerciante. Criado inativo, fechado e sem entregas, em cidade QA anteriormente configurada (Itainópolis/PI), com o ponto de retirada georreferenciado fornecido pelo responsável; cadastro continua fechado e inativo.
