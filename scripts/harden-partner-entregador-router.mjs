@@ -6,9 +6,9 @@ import { resolve } from 'node:path';
 const vitePath = resolve(process.cwd(), process.env.APOIS_ENTREGAS_WORKSPACE || '.work/partner-entregador', 'vite.config.ts');
 const viteBefore = readFileSync(vitePath, 'utf8');
 if (!viteBefore.includes('vite: { base: "./" },')) {
-  const anchor = 'export default defineConfig({\\n';
+  const anchor = 'export default defineConfig({\n';
   if (!viteBefore.includes(anchor)) throw Error('[FAIL] Courier Vite config drift');
-  writeFileSync(vitePath, viteBefore.replace(anchor, anchor + '  vite: { base: "./" },\\n'), 'utf8');
+  writeFileSync(vitePath, viteBefore.replace(anchor, anchor + '  vite: { base: "./" },\n'), 'utf8');
 }
 console.log('[OK] Entregador Parceiro: assets e preloads relativos ao módulo');
 
