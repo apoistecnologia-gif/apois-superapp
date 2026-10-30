@@ -74,6 +74,26 @@ jobs:
           test -s superapp/partner-shell/dist/index.html
           echo "[OK] Motorista + Entregador: web bundles e checks prontos para posterior APK"
 
+      - name: Install isolated browser QA tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/apois-browser-qa" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.62.1
+          "$RUNNER_TEMP/apois-browser-qa/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Render anonymous WEB screens with external network blocked
+        shell: bash
+        env:
+          APOIS_PLAYWRIGHT_ROOT: ${{ runner.temp }}/apois-browser-qa
+        run: node scripts/audit-browser-public-v1.mjs parceiro
+      - name: Preserve browser QA screenshots and metrics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: apois-browser-parceiro-${{ github.sha }}
+          path: qa-browser/parceiro/
+          if-no-files-found: warn
+          retention-days: 7
+
   # Only WEB builders: no Gradle, Capacitor Android, deployment or SQL mutations.
   web-other-modules:
     name: WEB-only ${{ matrix.target }}
@@ -144,3 +164,25 @@ jobs:
             )
             echo "[OK] Painel Admin Entregas: rotas WEB compiladas isoladamente, nenhum deploy"
           fi
+
+      - name: Install isolated browser QA tools
+        if: matrix.target == 'cliente'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/apois-browser-qa" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.62.1
+          "$RUNNER_TEMP/apois-browser-qa/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Render anonymous WEB screens with external network blocked
+        if: matrix.target == 'cliente'
+        shell: bash
+        env:
+          APOIS_PLAYWRIGHT_ROOT: ${{ runner.temp }}/apois-browser-qa
+        run: node scripts/audit-browser-public-v1.mjs cliente
+      - name: Preserve browser QA screenshots and metrics
+        if: ${{ always() && matrix.target == 'cliente' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: apois-browser-cliente-${{ github.sha }}
+          path: qa-browser/cliente/
+          if-no-files-found: warn
+          retention-days: 7
