@@ -180,6 +180,8 @@ node "$ROOT/scripts/harden-partner-courier-registration-exit-v3.mjs"
 node "$ROOT/scripts/fix-partner-courier-offer-contrast-v1.mjs"
 # QA: no extra confirmation steps; preserve courier PIN and server transitions.
 node "$ROOT/scripts/fix-partner-courier-simple-journey-v1.mjs"
+# Reset previous online availability only on a new login/app entry, not on refresh.
+node "$ROOT/scripts/fix-partner-courier-manual-online-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-map-journey-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-completion-light-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-idle-status-v1.mjs"
@@ -189,6 +191,7 @@ require_contains 'APOIS_COURIER_PROFILE_EDIT_V1' "$ENTREGADOR/src/components/Cou
 require_contains 'data-apois-courier-history-light-v1' "$ENTREGADOR/src/components/CourierPanels.tsx" 'Histórico de entregas em contraste claro'
 require_contains 'APOIS_COURIER_SIMPLE_FLOW_V1' "$ENTREGADOR/src/components/CourierPremiumViews.tsx" 'Entregador com coleta e PIN como únicas ações da entrega'
 require_contains 'APOIS_COURIER_AUTOMATIC_STAGES_V1' "$ENTREGADOR/src/routes/courier.tsx" 'Transições autenticadas preservadas sem botões redundantes'
+require_contains 'APOIS_COURIER_MANUAL_ONLINE_V1' "$ENTREGADOR/src/routes/courier.tsx" 'Entregador fica offline após login sem entrega ativa'
 require_contains 'APOIS_COURIER_MAPS_URL_NO_API_KEY_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação Google Maps externa disponível sem chave API da APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
 
