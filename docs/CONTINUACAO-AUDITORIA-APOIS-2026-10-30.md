@@ -9,7 +9,7 @@ Continuar auditoria real e visual de 4 módulos (Cliente Corridas, Cliente Entre
 - Último commit de código no momento do handoff: `cb0f1688ada6c3aba53fc1faf19e49d3691f6a0b`
 - Relatório detalhado: `docs/AUDITORIA-APOIS-HOMOLOGACAO-2026-10-30.md`
 - Preflight WEB sem APK: `.github/workflows/apois-partner-preflight.yml`
-- Execução do último commit observada **em andamento, sem conclusão confirmada**: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41136225745
+- Execução do último commit **falhou no preflight WEB, sem APK**: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41136225745
 - As primeiras execuções falharam em scripts de marca que esperavam classes/legendas antigas. Script de cadastro Motorista ajustado; script extra redundante de título Admin retirado do build. **Verificar logs atuais, não assumir aprovação.**
 - Commits apenas no superapp, não editar snapshots `sources/`, não alterar projetos protegidos.
 - Banco Entregas **confirmado**: `ptgkwyyolrdgnqketkjj`. Banco Corridas distinto; usar o source-lock atual.
@@ -50,3 +50,5 @@ Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/c
 - Run 41136039087 falhou ainda no seletor do cadastro Motorista. Refatorado fallback para localizar a raiz JSX do componente, sem mudar regras de cadastro.
 - Run 41136190950 falhou por erro de escape em busca do `return (` da raiz. Corrigido em `cb0f1688ad`.
 - **Próximo passo no novo chat:** verificar conclusão/log da execução 41136225745 e prosseguir erro por erro até preflight web verde. Não assumir que um run queued/in_progress passou. Este workflow não gera APK.
+
+- **ÚLTIMO ERRO REAL CONFIRMADO:** Execução 41136225745 parou em `scripts/harden-partner-driver-registration-exit-v3.mjs`: `[FAIL] Motorista V3 form top matches=0` (linha 51). Raiz visual do sucesso já foi resolvida, mas a barra superior do formulário também estava pré-estilizada por hardener anterior. No novo chat, corrigir especificamente a substituição de `border-b border-white/5 bg-[#050607]/95` de forma idempotente e segura, testar preflight de novo. Não modificar o formulário funcional ou desmontar os botões de saída.
