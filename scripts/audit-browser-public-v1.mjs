@@ -62,6 +62,12 @@ try {
           visibleControls: [...document.querySelectorAll('button,a,input')].filter(e => e.getBoundingClientRect().width > 0).length,
         }));
         Object.assign(item, metrics);
+        item.assetReferences = await page.evaluate(() =>
+          [...document.querySelectorAll('link[href],script[src]')].map(e => e.getAttribute('href') || e.getAttribute('src'))
+            .filter(value => value && value.includes('assets/')));
+        const entryPath = resolve(root, path.split('#')[0].slice(1));
+        const entryHtml = readFileSync(entryPath, 'utf8');
+        item.assetSerialization = (entryHtml.match(/.{0,24}assets.{0,90}/g) || []).slice(0, 40);
         item.blockedHosts = [...blocked].sort();
         item.screenshot = name + '-' + width + '.png';
         await page.screenshot({ path: resolve(output, item.screenshot), fullPage: true });
