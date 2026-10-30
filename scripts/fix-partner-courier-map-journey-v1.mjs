@@ -13,8 +13,12 @@ function change(before,after,label){
 change('import { supabase } from "@/integrations/supabase/client";',
  'import { supabase } from "@/integrations/supabase/client";\nimport { Capacitor } from "@capacitor/core";\nimport { Browser } from "@capacitor/browser";',
  'native external navigation');
-change('const BRAND_GOLD = "#F6BE1C";',
- 'const BRAND_GOLD = "#E51B23";','new red route identity');
+// Earlier branding hardener renames BRAND_GOLD to APOIS_RED; accept either source.
+if(s.includes('const BRAND_GOLD = "#F6BE1C";')) {
+ change('const BRAND_GOLD = "#F6BE1C";','const APOIS_RED = "#E51B23";','brand constant');
+ s=s.replaceAll("BRAND_GOLD","APOIS_RED");
+}
+if(!s.includes('const APOIS_RED = "#E51B23";')) throw Error("[FAIL] Canonical APOIS red not found");
 change('    if (!targetChanged && moved < 50 && elapsed < 30_000) return;',
  '    if (!targetChanged && (elapsed < 180_000 || moved < 500)) return;',
  'protect Google route quota');
@@ -66,9 +70,17 @@ routeReplace('text-lg font-black text-primary','text-sm font-black text-[#B91C32
 routeReplace('            {formatDuration(metrics.durationSeconds)}',
  '              {metrics.durationSeconds > 0 ? formatDuration(metrics.durationSeconds) : "Consultar no mapa"}',
  'honest ETA');
-routeReplace('className={\x60relative w-full bg-zinc-900 \x24{expanded ? "h-[36rem] min-h-[72vh] max-h-[44rem]" : "h-[29rem] min-h-[62vh] max-h-[36rem]"}\x60}',
- 'className="relative h-[clamp(265px,43dvh,470px)] w-full bg-[#F3F4F6]"',
- 'compact visible map');
+// Previous visual hardeners already changed the large map's size and background.
+const compactMap = 'className="relative h-[clamp(265px,43dvh,470px)] w-full bg-[#F3F4F6]"';
+if(!route.includes(compactMap)) {
+ const oldClasses = [
+  'className={\x60relative w-full bg-zinc-900 \x24{expanded ? "h-[36rem] min-h-[72vh] max-h-[44rem]" : "h-[29rem] min-h-[62vh] max-h-[36rem]"}\x60}',
+  'className={\x60relative w-full bg-[#F3F4F6] \x24{expanded ? "h-[65dvh] min-h-[430px]" : "h-[58dvh] min-h-[390px]"}\x60}'
+ ];
+ const found=oldClasses.find(oldClass=>route.includes(oldClass));
+ if(!found)throw Error("[FAIL] Courier route map responsive class not recognized");
+ route=route.replace(found,compactMap);
+}
 routeReplace('              colorScheme={ColorScheme.DARK}',
  '              colorScheme={ColorScheme.LIGHT}',
  'light map color');
