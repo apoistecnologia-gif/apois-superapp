@@ -15,7 +15,7 @@ const label='Solicitar entregador · Pedido #';
 // Style the final floating CTA; never change its requestCourier handler.
 const labelAt=s.lastIndexOf(label);
 if(labelAt<0)
-  throw Error("[FAIL] Merchant courier CTA label not found");
+  throw Error("[FAIL] Merchant courier CTA label not found; nearby static JSX="+s.split("\n").filter((line)=>/Solicitar|requestCourier|readyDeliveryOrder/.test(line)).slice(-12).map((line)=>line.trim().slice(0,160)).join(" | "));
 const buttonAt=Math.max(s.lastIndexOf('<button',labelAt),s.lastIndexOf('<Button',labelAt));
 if(buttonAt<0 || labelAt-buttonAt>1500 || !s.slice(buttonAt,labelAt).includes('requestCourier('))
   throw Error("[FAIL] Merchant courier request CTA not uniquely found: buttonAt="+buttonAt+" labelAt="+labelAt+" handler="+s.slice(Math.max(0,buttonAt),labelAt).includes("requestCourier("));
