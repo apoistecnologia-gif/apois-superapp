@@ -4,7 +4,9 @@ const path=resolve(process.env.APOIS_ENTREGAS_WORKSPACE || ".work/partner-entreg
 if(!existsSync(path))throw Error("[FAIL] CourierPanels missing");
 const initial=readFileSync(path,"utf8");
 let s=initial;
-const importAnchor='import logoAsset from "@/assets/logo.png.asset.json";';
+const importAnchor=s.includes('import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";')
+ ? 'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";'
+ : 'import logoAsset from "@/assets/logo.png.asset.json";';
 const imports='import { useEffect, useRef, useState } from "react";\nimport type { FormEvent } from "react";\nimport { Camera, Pencil } from "lucide-react";\nimport { toast } from "sonner";\nimport { supabase } from "@/integrations/supabase/client";';
 if(!s.includes(imports)) {
  if(!s.includes(importAnchor))throw Error("[FAIL] Courier panel imports moved");
