@@ -73,3 +73,67 @@ jobs:
           test -s superapp/partner-shell/dist/modules/entregador/index.html
           test -s superapp/partner-shell/dist/index.html
           echo "[OK] Motorista + Entregador: web bundles e checks prontos para posterior APK"
+
+  # Only WEB builders: no Gradle, Capacitor Android, deployment or SQL mutations.
+  web-other-modules:
+    name: WEB-only ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [cliente, estabelecimento]
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      CORRIDAS_ANDROID_MAPS_API_KEY: ""
+      ENTREGAS_WEB_MAPS_API_KEY: ${{ secrets.ENTREGAS_WEB_MAPS_API_KEY }}
+      ENTREGAS_GOOGLE_MAPS_MAP_ID: ${{ vars.ENTREGAS_GOOGLE_MAPS_MAP_ID }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - name: Checkout pinned protected repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${APOIS_REPO_TOKEN:-}"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          npm run verify:pins
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.bun/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
+      - name: Static audit + isolated WEB build only
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run audit:ui
+          if [ "${{ matrix.target }}" = "cliente" ]; then
+            npm run build:corridas
+            npm run build:entregas
+            npm run build:shell
+            npm run harden:auth-deeplinks
+            npm run inject:push-routing
+            npm run verify:dist
+            test -s superapp/shell/dist/modules/corridas/index.html
+            test -s superapp/shell/dist/modules/entregas/index.html
+            echo "[OK] Cliente Corridas e Cliente Entregas: WEB preflight, nenhum APK"
+          else
+            npm run build:merchant
+            test -s .vercel/output/config.json
+            echo "[OK] Painel Estabelecimento/Admin Entregas: build local, nenhum deploy"
+          fi
