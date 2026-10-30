@@ -80,3 +80,18 @@ Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/c
 2. Só depois de preflight WEB verde fazer auditoria renderizada real de cada tela de Cliente, Parceiro e painéis (desktop/celular) em ambiente de teste; não afirmar visual validado por leitura de arquivos ou scripts. A dívida Google Maps continua bloqueando homologação completa da navegação paga.
 3. Validar cadastro/login, app offline manual, aceite, rota, retirada, PIN, entrega final e sincronização de pedidos; avatar precisa de RLS individual de bucket antes de teste. Condições das corridas e Safe2Pay devem ser mantidas.
 4. Fazer outro handoff se a conversa ficar longa, informando último commit/teste e pendências concretas. A seção de handoff antiga, acima, foi preservada como histórico e **não representa a situação atual**.
+
+## RESULTADO CONFIRMADO — 30/10/2026, após correção do Parceiro
+- **Execução oficial WEB: 41140195643 — SUCCESS, três jobs verdes**, commit `821419b570a72953fd709a3b5452052c38dff71a` (posteriormente acrescentado apenas relatório documental).
+  https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41140195643
+- `WEB-only cliente`: SUCCESS (Cliente Corridas + Entregas).
+- `WEB-only estabelecimento`: SUCCESS (Estabelecimento / Admin Entregas).
+- `audit-web-only`: SUCCESS (Parceiro Motorista + Entregador, TypeScript, builds, testes de integração/preflight estático).
+- A correção da chave JSX do `ActiveDelivery` avançou o TypeScript e revelou três regressões subsequentes: import duplicado de `Capacitor` (corrigido em `fix-partner-courier-map-journey-v1.mjs`), referência `import.meta.env.VITE_SUPABASE_URL` exigindo bracket access TypeScript (correção `fix-partner-courier-env-type-v1.mjs` integrada ao build), e botões/props de troca de papel ausentes no `CourierProfilePanel` (restaurados em `fix-partner-courier-profile-history-v1.mjs`).
+- O último bloqueio era uma verificação desatualizada esperando cores de mapa antigas; ajustado `scripts/audit-partner-preflight-v1.mjs` para exigir paleta clara APOIS realmente construída, sem reduzir cobertura. A auditoria verifica fechamento JSX do fluxo simplificado para evitar regressão.
+- **Todas as alterações de código da retomada ficaram na branch de integração.** Comparação entre commit `9e504348...` e `821419b5...`: somente scripts, build, verificações e documento; nenhuma origem fixada `sources/`, banco, migration ou configuração de produção mudou.
+- **NENHUM APK, deploy, merge, cobrança ou mutação de Supabase nesta etapa.**
+- **Atenção:** três builds WEB aprovados **não** equivalem a homologação visual renderizada, teste físico Android, serviços de Maps ativos ou produção autorizada.
+- Matriz de cobertura visual estática e pendências: `docs/MATRIZ-VISUAL-HOMOLOGACAO-2026-10-30.md`. É uma revisão de código e capturas anteriores, não capturas atuais.
+- Próxima etapa correta: obter screenshots reais de login/home/mapas/pedidos/perfil/histórico dos quatro módulos e painéis desktop/celular, validar contraste, conteúdo e controles em ambiente de teste, verificar E2E com GPS/Maps (cobrança em disputa), RLS individual do avatar, notificações e status de pedido pós-PIN. **Não liberar produção/gerar APK sem autorização.**
+- As informações de "preflight falhou" nas seções anteriores são histórico; **a execução mais recente confirmada está VERDE**.
