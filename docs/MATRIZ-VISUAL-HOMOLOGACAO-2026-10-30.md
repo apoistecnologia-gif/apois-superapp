@@ -30,3 +30,11 @@ Fontes: inspeção do código nos snapshots fixados pelo `.apois/source-lock.jso
 - No Entregador, os estados intermediários obrigatórios continuam no backend; simplificação é apenas de ações visíveis.
 - Nunca mascarar erro de CI ou substituir verificação por skip. A última falha de auditoria antes do commit `821419b570a7` foi teste de estilo de mapa desatualizado; ajustado para exigir exatamente o estilo claro atual.
 - Novo teste WEB em execução: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41140195643 . **Não marcar aprovado até conclusão**.
+
+## Correção incremental do WorkspaceShell — retomada 30/10/2026
+- Script versionado: `scripts/fix-entregas-workspace-shell-light-v1.mjs`; acoplado a `scripts/build-merchant-panel.mjs` **após** as demais transformações existentes, sem alterar as fontes protegidas.
+- Cabeçalho e navegação desktop/mobile agora usam fundo claro, texto escuro e seleção vermelho APOIS. Cartões de métricas/estado vazio também usam fundo claro e texto escuro. Acessibilidade: botões abrir/fechar menu com rótulos.
+- Importante: **área operacional de conteúdo ainda usa base escura `#101114` e texto branco intencionalmente**, porque as páginas Admin Entregas existentes contêm `bg-black/bg-zinc-950` que dependem de texto herdado branco. Tornar toda a raiz clara antes de converter esses filhos criaria texto escuro em cartões escuros. Não apresentar isso como migração visual global concluída.
+- Fluxos `merchant_new_order_alert`, `playMerchantOrderAlert`, `onTabChange`, saída, abas, realtime e pagamentos foram preservados pela transformação, com marcadores/asserções no script.
+- GitHub Actions WEB **41140864156**, commit `44d2405b65db973a847192121ef3ce82999c5ac0`: **SUCCESS em audit-web-only, WEB-only cliente e WEB-only estabelecimento**; não houve APK, deploy, merge nem SQL de produção. https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41140864156
+- **Continua pendente** teste visual renderizado de páginas reais (por papéis e estados) e homologação Android com GPS/Maps após liberação externa da plataforma. Não inferir screenshots de builds verdes.
