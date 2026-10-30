@@ -408,6 +408,10 @@ if (name === 'corridas') {
       process.exit(1);
     }
   }
+  // Intentional QA GPS correction AFTER visual byte-integrity verification.
+  // The check above ensures visual migration itself never touches Maps/GPS.
+  // Snapshot below treats this small functional correction as the new baseline.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-current-gps-fallback-v1.mjs')]);
   protectedCorridasMapRuntimeAfterVisual = new Map(
     protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
   );
