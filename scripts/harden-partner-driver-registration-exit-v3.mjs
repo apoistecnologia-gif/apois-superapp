@@ -20,6 +20,21 @@ function once(s,a,b,label){
     if(!rootTag.includes("className="))throw Error("[FAIL] Motorista V3 root must have class: "+label);
     return s.slice(0,tagStart)+b+s.slice(tagEnd+1);
   }
+  if(label==="form top" && n===0){
+    // Prior visual hardeners may have already restyled the signup header.
+    // Replace only its two visual tokens and retain sticky positioning,
+    // safe-area padding, navigation actions and all functional content.
+    const tags=[...s.matchAll(/<header className="([^"]+)">/g)];
+    if(tags.length!==1 || !tags[0][1].includes("sticky top-0") || !tags[0][1].includes("z-30"))
+      throw Error("[FAIL] Motorista V3 signup header not uniquely recognized");
+    const oldHeader=tags[0][0];
+    let classes=tags[0][1];
+    classes=classes.replace(/\\bborder-b\\s+border-[^\\s"]+/, "border-b border-[#E5E7EB]");
+    classes=classes.replace(/\\bbg-[^\\s"]+/, "bg-white/95");
+    if(!classes.includes("border-b border-[#E5E7EB]") || !classes.includes("bg-white/95"))
+      throw Error("[FAIL] Motorista V3 signup header contrast unresolved");
+    return s.replace(oldHeader, '<header className="'+classes+'">');
+  }
   throw Error("[FAIL] Motorista V3 "+label+" matches="+n);
 }
 if(src.includes("APOIS_DRIVER_REGISTRATION_EXIT_V3"))throw Error("[FAIL] duplicate driver signup patch");
