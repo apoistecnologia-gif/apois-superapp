@@ -21,6 +21,14 @@ function once(source, before, after, label) {
 }
 edit('src/routes/pedido/$orderId/index.tsx', (input) => {
   let source = input;
+  source = once(source,
+    'import { useCallback, useEffect, useMemo, useState } from "react";',
+    'import { useCallback, useEffect, useMemo, useRef, useState } from "react";',
+    'useRef for delivered toast');
+  source = once(source,
+    '  const [loading, setLoading] = useState(true);',
+    '  const [loading, setLoading] = useState(true);\n  const lastSeenOrderStatus = useRef<string | null>(null);',
+    'track delivered status transition');
   const poll = [
     '  // APOIS_CUSTOMER_ORDER_REFRESH_V1',
     '  // Realtime can miss an update; the order in Supabase is authoritative.',
@@ -48,6 +56,22 @@ edit('src/routes/pedido/$orderId/index.tsx', (input) => {
   ].join('\n');
   if (!source.includes('APOIS_CUSTOMER_ORDER_REFRESH_V1')) {
     source = once(source, '  const cancelOrder = async () => {', poll + '\n  const cancelOrder = async () => {', 'refresh order');
+  }
+  const notifyDelivered = [
+    '  // APOIS_CUSTOMER_DELIVERED_FEEDBACK_V1',
+    '  useEffect(() => {',
+    '    const status = order?.status ?? null;',
+    '    if (status === "delivered" && lastSeenOrderStatus.current && lastSeenOrderStatus.current !== "delivered") {',
+    '      toast.success("Pedido entregue! A entrega foi concluída.");',
+    '    }',
+    '    lastSeenOrderStatus.current = status;',
+    '  }, [order?.status]);',
+    ''
+  ].join('\\n');
+  if (!source.includes('APOIS_CUSTOMER_DELIVERED_FEEDBACK_V1')) {
+    source = once(source, '  const cancelOrder = async () => {',
+      notifyDelivered + '\\n  const cancelOrder = async () => {',
+      'show delivered confirmation toast');
   }
   const oldMap = [
     '        {!isPickup && !isCancelled && !isRefunded ? (',
@@ -79,7 +103,7 @@ edit('src/routes/pedido/$orderId/index.tsx', (input) => {
     'hide confirmation PIN after delivery'
   );
   return source;
-}, ['APOIS_CUSTOMER_ORDER_REFRESH_V1','Entrega concluída!', 'order.status !== "delivered"']);
+}, ['APOIS_CUSTOMER_ORDER_REFRESH_V1','APOIS_CUSTOMER_DELIVERED_FEEDBACK_V1','Entrega concluída!', 'order.status !== "delivered"']);
 
 edit('src/components/CustomerDeliveryMap.tsx', (input) => {
   let source = input;
