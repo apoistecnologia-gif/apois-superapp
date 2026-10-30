@@ -14,8 +14,13 @@ const label='Solicitar entregador · Pedido #';
 // Repeated layouts may contain both inline and floating delivery CTAs.
 // Style the final floating CTA; never change its requestCourier handler.
 const labelAt=s.lastIndexOf(label);
-if(labelAt<0)
-  throw Error("[FAIL] Merchant courier CTA label not found; nearby static JSX="+s.split("\n").filter((line)=>/Solicitar|requestCourier|readyDeliveryOrder/.test(line)).slice(-12).map((line)=>line.trim().slice(0,160)).join(" | "));
+if(labelAt<0) {
+  // The current order-center hardener already consolidated the floating
+  // request action into each order card. Preserve this operational CTA.
+  const inlineHandler='onClick={() => void requestCourier(order.id)}';
+  if(!s.includes(inlineHandler) || !s.includes("Solicitar entregador"))
+    throw Error("[FAIL] Merchant courier CTA missing: neither floating nor inline request action");
+} else {
 const buttonAt=Math.max(s.lastIndexOf('<button',labelAt),s.lastIndexOf('<Button',labelAt));
 if(buttonAt<0 || labelAt-buttonAt>1500 || !s.slice(buttonAt,labelAt).includes('requestCourier('))
   throw Error("[FAIL] Merchant courier request CTA not uniquely found: buttonAt="+buttonAt+" labelAt="+labelAt+" handler="+s.slice(Math.max(0,buttonAt),labelAt).includes("requestCourier("));
@@ -25,6 +30,7 @@ const oldClassEnd=s.indexOf('"',classAt+11);
 if(oldClassEnd<0 || oldClassEnd>labelAt)throw Error("[FAIL] Merchant CTA class malformed");
 const safeClass="mb-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#C9141B] bg-[#E51B23] px-3 py-3 text-xs font-black uppercase text-white shadow-lg disabled:opacity-60 sm:w-[420px]";
 s=s.slice(0,classAt)+'className="'+safeClass+'"'+s.slice(oldClassEnd+1);
+}
 if(!s.includes("data-apois-merchant-orders-light-v1")||s.includes('className="fixed bottom-5 left-5 z-[990] text-white"'))throw Error("[FAIL] merchant visual safety gate");
 if(s!==before)writeFileSync(file,s,"utf8");
 console.log("[OK] merchant floating order center: light APOIS, mobile safe-area, no business changes");
