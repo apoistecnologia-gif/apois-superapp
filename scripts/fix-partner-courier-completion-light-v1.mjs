@@ -22,7 +22,7 @@ patch("src/components/CourierCompletionSupport.tsx",(input)=>{
  if(begin<0 || end<0)throw Error("[FAIL] Courier completion boundaries not recognized");
  let panel=src.slice(begin,end);
  if(!panel.includes('data-apois-completion-light-v1')){
-  const root=/<section\\s+role="status"\\s+aria-live="polite"\\s+className="[^"]+"/;
+  const root=/<section\s+role="status"\s+aria-live="polite"\s+className="[^"]+"/;
   if(!root.test(panel))throw Error("[FAIL] Courier completion root not recognized");
   panel=panel.replace(root, '<section role="status" aria-live="polite" data-apois-completion-light-v1 className="relative -mt-2 overflow-hidden rounded-[1.5rem] border border-[#F2CDD2] bg-white px-4 pb-4 pt-3 text-center text-[#111827] shadow-[0_10px_30px_rgba(17,24,39,0.08)]"');
  }
