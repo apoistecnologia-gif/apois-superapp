@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - fix/apois-partner-courier-gps-logo-push-20261027
+      - fix/entregas-homologacao-ajustes-20261030
     paths:
       - '.github/workflows/apois-partner-preflight.yml'
       - 'scripts/**'
