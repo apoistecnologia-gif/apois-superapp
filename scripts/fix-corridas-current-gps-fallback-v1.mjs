@@ -38,6 +38,22 @@ edit("src/components/map/PassengerMap.tsx",(original)=>{
    '// APOIS_CORRIDAS_NO_FALSE_PETROLINA_CENTER_V1: neutral Brazil view until real GPS arrives.\nconst DEFAULT_CENTER = { lat: -14.2350, lng: -51.9253 };',
    'remove city-specific false location');
  s=exact(s,'zoom: origin ? 16 : 13,','zoom: origin ? 16 : 5,','neutral map zoom');
+ s=exact(s,
+  'mapService.createMap(mapElementRef.current, nativeApiKey, origin ?? DEFAULT_CENTER);',
+  'mapService.createMap(mapElementRef.current, nativeApiKey, origin ?? DEFAULT_CENTER, origin ? 16 : 5);',
+  'neutral native zoom when GPS is unavailable');
+
  s=exact(s,'mapRef.current.setZoom(13);','mapRef.current.setZoom(5);','neutral view on camera update');
  return s;
 },['APOIS_CORRIDAS_NO_FALSE_PETROLINA_CENTER_V1','zoom: origin ? 16 : 5']);
+
+
+edit("src/services/maps/map-service.ts",(original)=>{
+ let s=original;
+ s=exact(s,
+  '    initialPosition?: MapCoordinates,\n  ): Promise<GoogleMap> {',
+  '    initialPosition?: MapCoordinates,\n    initialZoom?: number,\n  ): Promise<GoogleMap> {',
+  'optional native initial zoom');
+ s=exact(s,'          zoom: DEFAULT_ZOOM,','          zoom: initialZoom ?? DEFAULT_ZOOM,','native zoom override');
+ return s;
+},['initialZoom?: number','zoom: initialZoom ?? DEFAULT_ZOOM']);
