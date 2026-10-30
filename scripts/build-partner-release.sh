@@ -176,6 +176,8 @@ node "$ROOT/scripts/harden-partner-courier-map-client-style-v4.mjs"
 node "$ROOT/scripts/harden-partner-courier-online-speed-v4.mjs"
 node "$ROOT/scripts/harden-apois-entregas-email-auth-v1.mjs"
 node "$ROOT/scripts/harden-partner-courier-registration-exit-v3.mjs"
+# Scoped visual fixes for courier screenshots; do not change GPS, delivery transitions or payments.
+node "$ROOT/scripts/fix-partner-courier-offer-contrast-v1.mjs"
 
 cd "$ENTREGADOR"
 require_contains 'register_courier_push_device_v2' src/lib/courier-push.ts 'Push do Entregador registrado'
