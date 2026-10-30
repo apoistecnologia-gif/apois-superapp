@@ -162,10 +162,10 @@ if(process.argv.includes("--dist")){
   all(read(".work/partner-motorista/src/styles.css"),["APOIS_DRIVER_PIN_RIDE_V4","data-apois-pickup-top-v4","data-apois-pin-v4"],"Motorista ride and PIN theme independent of global dark CSS");
 
   all(read(".work/partner-motorista/src/components/MovviMap.tsx"),[
-    "isDriverRole ? [] : getMapStyleForTheme(theme)",
-    'isDriverRole ? "#F8F9FA" : getMapBackgroundForTheme(theme)',
+    'isDriverRole ? getMapStyleForTheme("light") : getMapStyleForTheme(theme)',
+    'isDriverRole ? getMapBackgroundForTheme("light") : getMapBackgroundForTheme(theme)',
     "clickableIcons: isDriverRole",
-  ],"Motorista uses Google standard map and readable road/city labels");
+  ],"Motorista uses APOIS client light map palette with visible road/city labels");
   all(read(".work/partner-motorista/src/lib/voiceNav.ts"),[
     "Arrival is only allowed by the GPS movement guard",
     "if (/destino|destination|arriv|",
