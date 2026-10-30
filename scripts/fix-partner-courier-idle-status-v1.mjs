@@ -8,7 +8,7 @@ if(!s.includes("APOIS_COURIER_STATUS_IDLE_ONLY_V1")){
  const from='<div data-apois-courier-inline-status className="mx-auto w-full max-w-lg py-2">';
  const old='<CourierStatusCard online={online} busy={busy === "online"} activeJob={activeJob} onToggle={toggleOnline} />';
  if(s.includes(from) && s.includes(old)){
-  s=s.replace('        '+from,'        {/* APOIS_COURIER_STATUS_IDLE_ONLY_V1 */}\n        {!activeJob && !completedJob ? (\n        '+from);
+  s=s.replace('        '+from,'        {/* APOIS_COURIER_STATUS_IDLE_ONLY_V1 */}\n        {online && !activeJob && !completedJob ? (\n        '+from);
   s=s.replace('        </div>\n      </main>\n\n      <CourierSupportSheet','        </div>\n        ) : null}\n      </main>\n\n      <CourierSupportSheet');
  }else{
   const before=[
@@ -20,10 +20,10 @@ if(!s.includes("APOIS_COURIER_STATUS_IDLE_ONLY_V1")){
    '        />'
   ].join("\n");
   if(!s.includes(before))throw Error("[FAIL] Courier availability placement unknown");
-  s=s.replace(before,'        {/* APOIS_COURIER_STATUS_IDLE_ONLY_V1 */}\n        {!activeJob && !completedJob ? (\n'+before+'\n        ) : null}');
+  s=s.replace(before,'        {/* APOIS_COURIER_STATUS_IDLE_ONLY_V1 */}\n        {online && !activeJob && !completedJob ? (\n'+before+'\n        ) : null}');
  }
 }
-if(!s.includes("APOIS_COURIER_STATUS_IDLE_ONLY_V1") || !s.includes("!activeJob && !completedJob")){
+if(!s.includes("APOIS_COURIER_STATUS_IDLE_ONLY_V1") || !s.includes("online && !activeJob && !completedJob")){
  throw Error("[FAIL] Courier availability must not obscure an active route");
 }
 if(s!==original)writeFileSync(path,s,"utf8");
