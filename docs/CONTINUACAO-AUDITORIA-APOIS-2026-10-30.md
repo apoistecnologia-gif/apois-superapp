@@ -6,10 +6,10 @@ Continuar auditoria real e visual de 4 módulos (Cliente Corridas, Cliente Entre
 ## Ponto exato
 - Repositório de integração **único**: `apoistecnologia-gif/apois-superapp`
 - Branch: `fix/entregas-homologacao-ajustes-20261030`
-- Último commit de código no momento do handoff: `3d72b4eaf6ed8db667aeb55b9baa92afde97f6eb`
+- Último commit de código no momento do handoff: `cb0f1688ada6c3aba53fc1faf19e49d3691f6a0b`
 - Relatório detalhado: `docs/AUDITORIA-APOIS-HOMOLOGACAO-2026-10-30.md`
 - Preflight WEB sem APK: `.github/workflows/apois-partner-preflight.yml`
-- Execução do último commit observada **em andamento, sem conclusão confirmada**: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41136039087
+- Execução do último commit observada **em andamento, sem conclusão confirmada**: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41136225745
 - As primeiras execuções falharam em scripts de marca que esperavam classes/legendas antigas. Script de cadastro Motorista ajustado; script extra redundante de título Admin retirado do build. **Verificar logs atuais, não assumir aprovação.**
 - Commits apenas no superapp, não editar snapshots `sources/`, não alterar projetos protegidos.
 - Banco Entregas **confirmado**: `ptgkwyyolrdgnqketkjj`. Banco Corridas distinto; usar o source-lock atual.
@@ -43,3 +43,10 @@ Continuar auditoria real e visual de 4 módulos (Cliente Corridas, Cliente Entre
 
 ## Regra de comunicação
 Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/capturas. Se o chat ficar pesado, retornar a este handoff. Trabalhar com um problema de cada vez e não solicitar novamente informações já documentadas.
+
+## Registro adicional dos testes reais de CI
+- Run 41135695024 falhou no hardener de cadastro do Motorista: seletor raiz já tinha mudado com a transformação visual anterior.
+- Runs 41135877179 e 41135950121 falharam em ajuste cosmético de título Admin: a fonte já havia sido transformada. O ajuste extra foi retirado do build.
+- Run 41136039087 falhou ainda no seletor do cadastro Motorista. Refatorado fallback para localizar a raiz JSX do componente, sem mudar regras de cadastro.
+- Run 41136190950 falhou por erro de escape em busca do `return (` da raiz. Corrigido em `cb0f1688ad`.
+- **Próximo passo no novo chat:** verificar conclusão/log da execução 41136225745 e prosseguir erro por erro até preflight web verde. Não assumir que um run queued/in_progress passou. Este workflow não gera APK.
