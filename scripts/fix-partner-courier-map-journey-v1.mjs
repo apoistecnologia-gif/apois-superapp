@@ -60,9 +60,12 @@ routeReplace('text-[9px] font-black uppercase tracking-[0.18em] text-accent',
  'text-[10px] font-black uppercase tracking-[0.12em] text-[#BC1530]',
  'route heading contrast');
 routeReplace('text-xs text-zinc-500','text-xs text-[#596371]','route subtitle contrast');
-routeReplace('className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-accent/40 bg-gradient-to-br from-primary to-accent px-3 text-[11px] font-black text-white shadow-[0_8px_22px_rgba(200,138,8,0.24)] active:scale-95"',
- 'className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#E90024] px-3 text-xs font-black text-white shadow-md active:scale-95"',
- 'navigation CTA');
+// Previous mobile styling may have updated the route CTA class in place.
+// Match the unique navigation handler, not a brittle old style string.
+const navCtas=[...route.matchAll(/onClick=\{openNavigation\}\s+className="([^"]+)"/g)];
+if(navCtas.length!==1)throw Error("[FAIL] Courier navigation CTA not uniquely found");
+route=route.replace(navCtas[0][0],
+  'onClick={openNavigation}\n          className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#E90024] px-3 text-xs font-black text-white shadow-md active:scale-95"');
 routeReplace('<ExternalLink className="h-4 w-4" /> Rotas',
  '<Navigation className="h-4 w-4" /> NAVEGAR',
  'navigation CTA label');
