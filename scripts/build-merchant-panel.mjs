@@ -88,6 +88,7 @@ for (const script of [
   'fix-entregas-admin-realtime-legibility-v1.mjs',
   'fix-entregas-admin-reviews-contrast-v1.mjs',
   'fix-entregas-admin-settlements-contrast-v1.mjs',
+  'fix-entregas-admin-support-contrast-v1.mjs',
 ]) {
   const args = script === 'harden-superapp-module-mobile-ui.mjs'
     ? [resolve(root, `scripts/${script}`), 'entregas']
