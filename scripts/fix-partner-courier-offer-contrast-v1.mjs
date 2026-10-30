@@ -61,11 +61,18 @@ edit("src/components/CourierPremiumViews.tsx",(input)=>{
  // the text color; preserve all of those while removing truncation.
  // Only match the pickup address expression, never unrelated labels.
  const pickupAddress=/<p className="([^"]*)">\s*(\{pickup\.address_line \|\| pickup\.street(?: \|\| "[^"]+")?\})\s*<\/p>/;
- if(!src.includes('line-clamp-2 break-words text-xs text-zinc-500') && !src.includes('data-apois-pickup-address-wrap-v1')){
-   const found=src.match(pickupAddress);
-   if(!found || !found[1].includes("truncate"))throw Error("[FAIL] Courier UI pickup address not uniquely recognized");
-   const fixed=found[1].replace(/\btruncate\b/, "line-clamp-2 break-words");
-   src=src.replace(found[0], '<p data-apois-pickup-address-wrap-v1 className="'+fixed+'">'+found[2]+'</p>');
+ const activeAnchor="const pickup = job.pickup_address ?? {};"
+ const activeAt=src.indexOf(activeAnchor);
+ if(activeAt<0)throw Error("[FAIL] Courier active-delivery pickup section missing");
+ const active=src.slice(activeAt);
+ if(!active.includes('data-apois-pickup-address-wrap-v1')){
+   const found=active.match(pickupAddress);
+   if(!found || !found[1].includes("truncate")){
+     if(!active.includes("line-clamp-2 break-words text-xs"))throw Error("[FAIL] Courier UI pickup address not uniquely recognized");
+   }else{
+     const fixed=found[1].replace(/\btruncate\b/, "line-clamp-2 break-words");
+     src=src.slice(0,activeAt)+active.replace(found[0], '<p data-apois-pickup-address-wrap-v1 className="'+fixed+'">'+found[2]+'</p>');
+   }
  }
  return src;
 },['data-apois-courier-active-sheet','data-apois-courier-pin-title','Confirmar coleta','Entrega em andamento']);
