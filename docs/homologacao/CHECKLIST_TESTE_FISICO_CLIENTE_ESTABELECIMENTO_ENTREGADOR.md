@@ -24,11 +24,18 @@ Em transação temporária (sem gravar ativação), as condições **funcionaram
 - GitHub Actions **40979430511**, workflow `APOIS Cliente QA Dinheiro Sem PIX`: concluído com **success** e artifact `APOIS-Cliente-ENTREGAS-QA-DINHEIRO`. Android appId isolado: `br.com.apois.cliente.qa`, nome `APOIS Cliente TESTE`; fontes QA cash e avisos NÃO PAGAR dentro do APK confirmados.
 - Painel Estabelecimento de homologação publicado no Vercel, projeto `apois-estabelecimento-visual-preview`, branch `fix/apois-merchant-cash-qa-20261029` do repositório `apoistecnologia-gif/apois-entregas`. Build READY; central de pedidos e alerta reconhecem cash/pending; exceção à mensalidade é apenas de UI para o merchant QA.
 - Operador usa uma conta já existente com acesso de **manager exclusivamente à loja QA**, sem modificar lojas comerciais; destino público de teste marcado como endereço padrão dessa conta e identificado como NÃO ENTREGAR. Não armazenar credenciais ou dados pessoais no GitHub.
-- Loja `APOIS TESTE Entregas` ativada **apenas após** testes RLS/quote autorizada e não autorizada. Conta de operador autorizada no allowlist privado por **90 minutos**, expiração **29/10/2026 às 23:02 America/Fortaleza**.
+- Loja `APOIS TESTE Entregas` ativada **apenas após** testes RLS/quote autorizada e não autorizada. A autorização privada do operador foi prorrogada a pedido do proprietário para **30/11/2026 às 23:59 America/Fortaleza**. A autorização continua limitada a uma única dupla cliente/loja, sem habilitar PIX real.
 - Verificação final: `merchant_accepting_orders=true`, `enabled=true` apenas para cliente de teste, `test_orders=0`, **um courier online elegível** no raio de 20km. Usuário não autorizado vê zero loja/produtos. Restrição PIX/paid da loja QA via trigger; os outros estabelecimentos não são afetados.
 - Próxima ação precisa ocorrer no **aparelho**, não no banco: instalar APK de homologação, entrar com conta de operador, selecionar Entregas, abrir a única loja QA visível, adicionar produto fictício, conferir destino Centro/Itainópolis e finalizar pedido em DINHEIRO — TESTE. Não pagar, não entregar produto real nem acionar Correios.
 - No painel de preview, autenticar a mesma conta de operador, aceitar pedido e solicitar entregador após status pronto. Usar Entregador já existente online na região; aceitar oferta, marcar coleta e concluir de maneira exclusivamente simulada.
 - Após teste, DESATIVAR allowlist e fechar a loja QA. Não movimentar dinheiro nem saldos ou Pix verdadeiro.
+
+## Prorrogação autorizada (29/10/2026)
+
+- A conta de operador QA autorizada foi prorrogada no Supabase existente até **30/11/2026 23:59:59 America/Fortaleza**; antes expiraria em 29/10 às 23:02.
+- Verificação SQL após a atualização: `apois_check_test_cash_access=true` para a dupla do operador, `false` para a segunda conta QA; **somente 1 dupla ativa e 0 pedidos**.
+- A prorrogação não criou pedidos, não movimentou dinheiro, não criou recursos Supabase e não mudou o método comercial PIX. A loja QA continua segregada por RLS e o controle pode ser desligado manualmente após os testes.
+- O prazo de validade não é uma janela de disponibilidade física do entregador; GPS e disponibilidade precisam ser checados quando o teste for executado.
 
 ## Participantes QA preparados
 - Cliente: conta de homologação `qa-cliente@apois-test.dev` já existente; ainda sem endereço com GPS salvo.
