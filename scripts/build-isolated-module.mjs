@@ -425,7 +425,7 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/verify-entregas-auto-address-cep-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-personal-data-light-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-location-identified-state.mjs')]);
-  run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-checkout-mobile-ui.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-checkout-coverage-diagnostic.mjs')]);
 }
 
 const config = manifest.modules[name];
