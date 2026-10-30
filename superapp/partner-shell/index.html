@@ -145,6 +145,13 @@
       .primary-action { font-size:12px;padding:0 6px; }
       .round-action { width:42px;height:42px; }
     }
+
+    /* APOIS_PARTNER_CARD_READABILITY_V1: decorative silhouettes must not sit
+       behind labels. Keep both entry buttons and all navigation unchanged. */
+    .partner-card:before { opacity:.08; }
+    .partner-card:after,.partner-card .vehicle-mark { display:none; }
+    .partner-card .card-title { max-width:100%;min-width:0; }
+    .partner-card p { max-width:100%; }
   </style>
 </head>
 <body>
