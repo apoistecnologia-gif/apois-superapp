@@ -1,0 +1,149 @@
+{
+  "commit": "9f0bed2013869bbeee2fb4c22b7369465174bc85",
+  "run_id": 41147248909,
+  "scope": "Public anonymous Chromium initial render only; all external requests blocked; no login submissions, Google OAuth, authenticated roles, Maps or native Android tests",
+  "viewports": [
+    {
+      "width": 360,
+      "height": 800
+    },
+    {
+      "width": 1280,
+      "height": 900
+    }
+  ],
+  "results": [
+    {
+      "target": "cliente",
+      "name": "seletor",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "corridas-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "entregas-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "seletor",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "corridas-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "entregas-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "seletor",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "motorista-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "entregador-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "seletor",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "motorista-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "entregador-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "localFailures": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13021632513,
+      "name": "apois-browser-parceiro-9f0bed2013869bbeee2fb4c22b7369465174bc85",
+      "expires_at": "2026-11-06T23:56:59Z"
+    },
+    {
+      "id": 13021448052,
+      "name": "apois-browser-cliente-9f0bed2013869bbeee2fb4c22b7369465174bc85",
+      "expires_at": "2026-11-06T23:56:27Z"
+    }
+  ]
+}

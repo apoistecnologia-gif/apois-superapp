@@ -87,3 +87,40 @@ Todas as provas de aprovação são de scripts de transformação e build WEB, *
 - Nenhum APK/AAB, deploy, merge, SQL remoto, cobrança ou edição de `sources/`, APIs, Auth ou produção. Diff deste patch: somente novo script e uma inclusão no builder.
 - **Próximo trabalho:** inspeção renderizada dos quatro módulos e três painéis em ambiente isolado com contas de homologação e backend de teste, especialmente modal a 320/360/390px, teclado e telas baixas; preservar operações de cadastro sem submeter em produção. Não existe evidência atual de capturas autenticadas ou ambiente E2E seguro nos artefatos desta execução (o run anterior não tinha artifacts).
 - **Gates restantes antes da homologação final:** triagem do lint e lockfile, confirmação das rotas acima no bundle final, capturas reais de login/cadastro/home/mapa/pedidos/perfil/histórico e estados loading/error/empty, RBAC por papel, E2E despacho→retirada→PIN→delivered, GPS/Maps, push/reconexão/background e avatar/RLS. Android e integrações externas permanecem pendentes; policy de avatar não aplicada. Não chamar o ecossistema de homologado.
+
+## AUDITORIA COM NAVEGADOR — 30/10/2026 — RESULTADO ATUAL
+
+**Último código validado:** `9f0bed2013869bbeee2fb4c22b7369465174bc85`.
+[Preflight 41147248909](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41147248909): **completed / SUCCESS nos três jobs**, conferidos individualmente.
+Esta seção atualiza o estado anterior sem reiniciar a auditoria.
+
+### Evidência nova
+- Foi acrescentado `scripts/audit-browser-public-v1.mjs` ao workflow WEB existente. Usa Playwright 1.62.1/Chromium, servidor estático loopback sobre os bundles finais e contextos sem sessão; toda requisição externa é bloqueada antes de sair do navegador. Nenhuma credencial de usuário, login real, cobrança, chamada Maps ou mutação de backend foi usada.
+- **12/12 renderizações passaram:** seletores Cliente e Parceiro + logins Cliente Corridas, Cliente Entregas, Motorista e Entregador, cada um a 360×800 e 1280×900.
+- Nas 12 renderizações finais: conteúdo e controles visíveis, sem overflow horizontal detectado, sem pageerror e sem recurso local HTTP >=400. Isso **não testa clique de todos os controles, submissão, autenticação, foco completo ou contraste de todos os estados**.
+- Capturas reais foram baixadas e inspecionadas nesta sessão, incluindo logins, seletor Parceiro antes/depois e Entregador final. Não são mockups. Telas privadas não foram abertas.
+- Registro compacto permanente: `docs/evidence/PUBLIC-BROWSER-2026-10-30.json`. Screenshots/relatórios completos estão nos artifacts do run, com retenção de 7 dias (expiram em 06/11/2026).
+- Job Estabelecimento: typecheck EXIT 0; **48 pass / 0 fail em 8 arquivos**; builds WEB Cliente/Estabelecimento/Admin Entregas concluídos. Parceiro também passou typechecks, builds e seus gates existentes.
+- Lint Entregas permanece **FAIL: 2.279 erros, 350 avisos**, mesma contagem anterior. O resultado verde de CI não declara lint aprovado; a política herdada de continuar após lint não foi ampliada.
+
+### Achados e correções
+| ID | Evidência / causa | Correção final | Estado |
+| --- | --- | --- | --- |
+| EM-BOOT-034 | Primeiro run de navegador 41145944566: Entregador requisitava chunks e CSS em /assets na raiz; pageerrors e arquivos 404, apesar do build verde | `harden-partner-entregador-router.mjs` agora define `vite: { base: "./" }` no workspace Parceiro, como já fazia o adaptador Cliente. `partner-shell/build.mjs` normaliza /./assets e ../assets no HTML final, como o shell Cliente. Reescrita intermediária de prefixos foi retirada; não há alias no servidor de teste para mascarar o erro | Corrigido e validado no Chromium, 360/1280, sem 404 ou pageerror |
+| EM-UI-035 | Screenshot do seletor Parceiro mostrava silhuetas e disco vermelho atrás das descrições/títulos | CSS local oculta somente pseudoimagem/vehicle-mark decorativos, reduz disco e amplia área dos textos. Ambos os botões por papel, handlers, travas operacionais e deep links preservados | Corrigido e validado por captura final e gate |
+| EM-ASSET-036 | Imagem decorativa delivery-hero dependia de /__l5e/assets-v1/... ausente no pacote offline | Fallback local transparente/neutro no script visual e no artefato compilado específico, mantendo logo oficial e camadas de gradiente; sem alterar formulário | Corrigido e validado: nenhuma requisição 404 desse asset no run final |
+| EM-QA-032 (revisão) | Gate pré-build lia os placeholders da origem protegida, não a árvore transformada | Inspeção de `build-isolated-module.mjs` comprovou que `restore-corridas-wallet-screen.mjs` / `restore-corridas-history-screen.mjs` e os respectivos verificadores já executam no build. Não recriar essas telas | Alerta de placeholder não prova ausência na UI final; funcionamento autenticado continua não testado |
+| EM-QA-031/033 | Lint herdado e fallback de instalação --no-save | Documentados, sem formatação ampla nem mudança financeira | Pendentes |
+
+### Falhas intermediárias e preservação
+- Runs 41145944566, 41146244678, 41146300138, 41146586883 e 41146815117 detectaram o problema de assets em graus diferentes; não foram tratados como aprovados.
+- Run 41146906592 parou no transformador Vite por escape literal de newline; corrigido e testado sobre a fixture pinada com duas aplicações. Run 41147071557 revelou prefixo duplicado da correção intermediária; reescrita removida em `9f0bed20`.
+- Não houve skip de gate para obter sucesso. `41147248909` é o resultado final comprovado.
+- Diferenças desde `6c7aacf6` restritas ao workflow WEB permitido, scripts de integração/QA e shell Parceiro; nenhum `sources/`, backend, migration, API, Auth, pagamento ou produção alterado. Nenhum APK/AAB, deploy ou merge.
+
+### Prontidão para APKs de teste e próximo passo
+- **Não declarar auditoria funcional integral ou homologação final.** O novo gate cobre apenas inicialização pública.
+- Antes de recomendar a rodada ampla de APKs: revisar telas autenticadas de home/mapas/pedidos/perfil/ganhos/histórico e painéis por papel em ambiente de homologação, e fechar os bloqueios funcionais encontrados nessa revisão. Essa sessão não possui conta/backend de teste autenticado identificado; não usar sessão ou backend de produção como substituto.
+- Testes físicos de GPS/background/push/safe-area/OAuth nativo exigirão os APKs de teste posteriormente autorizados; são gates da homologação final, **não testes já realizados nem exigência circular para compilar o primeiro APK**.
+- A ausência de chave Android nos logs do preflight é intencional: o workflow WEB define esse valor vazio. Ela não demonstra ausência do secret no workflow Android, que foi apenas lido, nunca executado. Disponibilidade real de Maps/quotas e configuração de Entregas ainda precisa de validação externa.
+- Próximos alvos: cadastro/recuperação sem envio real, navegação/controle de senha, quatro módulos autenticados, Admin Corridas (ainda sem nova captura), Estabelecimento/Admin Entregas, contraste completo, teclado e estados loading/error/empty. Depois E2E despacho→aceite→retirada→PIN→delivered, avatar/RLS e serviços externos. Preservar fluxo simplificado do Entregador.
