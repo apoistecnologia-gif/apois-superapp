@@ -63,7 +63,7 @@ routeReplace('text-[9px] font-black uppercase text-zinc-600',
  'metrics label');
 routeReplace('text-lg font-black text-white','text-sm font-black text-[#111827]','light metrics value');
 routeReplace('text-lg font-black text-primary','text-sm font-black text-[#B91C32]','ETA value');
-routeReplace('              {formatDuration(metrics.durationSeconds)}',
+routeReplace('            {formatDuration(metrics.durationSeconds)}',
  '              {metrics.durationSeconds > 0 ? formatDuration(metrics.durationSeconds) : "Consultar no mapa"}',
  'honest ETA');
 routeReplace('className={\x60relative w-full bg-zinc-900 \x24{expanded ? "h-[36rem] min-h-[72vh] max-h-[44rem]" : "h-[29rem] min-h-[62vh] max-h-[36rem]"}\x60}',
