@@ -112,3 +112,11 @@ Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/c
 - Ambos os scripts adicionados ao **build WEB isolado do Estabelecimento**, depois do `WorkspaceShell`. Testes isolados aplicaram as substituições na fonte fixada e reaplicaram sem duplicação; pipeline WEB real passou por typecheck/build/testes existentes.
 - Nenhuma migração ampla/global de páginas internas foi feita; Admin Coverage permanece com cartões escuros até validação visual real, evitando texto invisível. A mudança não altera geometrias, raios, seleção de cidade, inscrições, pedidos nem operações financeiras.
 - **Ainda não validado:** telas renderizadas logadas em navegador e Android reais, e testes GPS/Maps, avatar Storage com RLS, pedidos E2E com PIN e autenticação de papéis. Não declarar homologação completa nem produção pronta só pelos builds.
+
+## GATE WEB AMPLIADO — 30/10/2026 — 41141759094
+
+- **Preflight real 41141759094: SUCCESS nos três jobs** (`WEB-only cliente`, `WEB-only estabelecimento` e `audit-web-only`). https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41141759094
+- Foi incluído no job WEB de Estabelecimento, apenas no GitHub Actions efêmero, um segundo comando de build: `(cd .work/entregas && APOIS_MOBILE_BUILD=0 bun run build:admin)`. Assim, além de `build:merchant`, as rotas **Admin Entregas também compilaram separadamente**, com log explícito `[OK] Painel Admin Entregas: rotas WEB compiladas isoladamente, nenhum deploy`.
+- A execução 41141538529 já havia confirmado 3/3 verdes para os patches de contraste `AdminCourierOperationalGates.tsx` e `AdminCoveragePanel.tsx`. Os scripts são idempotentes na fonte de referência, com handlers/consultas preservados.
+- A comparação de commits a partir de `f3c5f44e...` até `0dbed7d5...` mostra somente scripts de styling, `scripts/build-merchant-panel.mjs`, o workflow de **QA WEB** e documentos. Nenhum `sources/`, migration, segredo, backend, regra de negócio ou produção foi modificado.
+- Ainda não foram obtidas capturas das telas em navegador com conta/autorização real, testes Android físicos nem verificação de integração GPS/Maps. Não marcar homologação final nem produzir APK/publicar sem autorização.
