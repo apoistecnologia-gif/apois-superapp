@@ -7,6 +7,7 @@ on:
     branches:
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-android-github-homolog-20261029
+      - test/apois-pix-simulado-isolado-20261029
     paths:
       - '.github/workflows/apois-client-android.yml'
 
