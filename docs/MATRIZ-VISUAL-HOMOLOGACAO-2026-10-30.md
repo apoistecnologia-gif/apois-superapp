@@ -57,3 +57,14 @@ Fontes: inspeção do código nos snapshots fixados pelo `.apois/source-lock.jso
 - Os invariantes estáticos incluem filtros, consultas e totais financeiros do painel Pedidos, além das fontes `delivery_jobs`, `courier_availability`, `courier_locations`, `GoogleMap` e atualização manual de operações em tempo real. Não são testes E2E com pedidos reais.
 - Razões de contraste *teóricas* calculadas a partir dos pares de cores do código (não medição de pixels renderizados): `#CBD5E1` sobre `#09090B` **13,40:1**; `#475467` sobre branco **7,69:1**; `#7A4B00` sobre `#FFFAEB` **7,10:1**; branco sobre `#E90024` **4,68:1**. Todos superam WCAG AA 4,5:1 para texto normal, se a combinação final renderizada for realmente essa.
 - **Escopo:** branch de homologação, somente scripts de transformação e `build-merchant-panel.mjs`. Sem APK, deploy, merge, alteração de banco ou API paga. Ainda pendentes capturas renderizadas com autenticação real e testes físicos Android/GPS/Maps.
+
+## Revisão incremental — Admin Avaliações / Repasses / Suporte — 30/10/2026
+
+| Tela | Problema comprovado no snapshot | Patch visual isolado | Verificação |
+| --- | --- | --- | --- |
+| Admin Avaliações | Rótulos de nota/nome com 10px; cinza `zinc-600/700` em fundo escuro | `fix-entregas-admin-reviews-contrast-v1.mjs`, textos 12px e `#CBD5E1`; filtros/notas/comentários preservados | Preflight 41144368108, 3/3 SUCCESS |
+| Admin Repasses | Tabela com estado/vencimento/disputa em 10px e baixo contraste | `fix-entregas-admin-settlements-contrast-v1.mjs`, textos 12px e `#CBD5E1`; total/prova/resolveDispute preservados | Preflight 41144551669, 3/3 SUCCESS |
+| Admin Suporte | IDs, horários, prioridades e mensagens em 9–10px e `zinc-600/700` | `fix-entregas-admin-support-contrast-v1.mjs`, textos 11–12px e `#CBD5E1`; assinatura de anexo/replies/estados preservados | Preflight 41144738866, 3/3 SUCCESS |
+
+Todas as provas de aprovação são de scripts de transformação e build WEB, **não de screenshots renderizadas**. Essas melhorias são locais: o resto do conteúdo do Admin pode manter cartões escuros enquanto a migração visual ocorrer gradualmente. Não foram alterados os repositórios de origem, regras financeiras, Auth, mapas, APIs ou produção.
+
