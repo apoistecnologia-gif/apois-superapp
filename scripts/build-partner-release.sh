@@ -72,7 +72,7 @@ node "$ROOT/scripts/harden-partner-motorista-google-roadmap-v5.mjs"
 # Restore the same official APOIS cartographic palette seen in the customer app.
 # Keep GPS, road navigation and automatic camera logic intact.
 node "$ROOT/scripts/fix-partner-motorista-client-map-style-v1.mjs"
-node "$ROOT/scripts/fix-partner-admin-legacy-brand-v1.mjs"
+# Admin Corridas headings are already transformed by prior branding; do not run an additional fragile cosmetic patch.
 node "$ROOT/scripts/harden-partner-motorista-arrival-voice-v5.mjs"
 node "$ROOT/scripts/harden-partner-driver-trip-ux-v6.mjs"
 node "$ROOT/scripts/harden-partner-driver-passenger-name-v6.mjs"
