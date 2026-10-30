@@ -11,9 +11,11 @@ for(const [a,b] of [["className=\"fixed bottom-5 left-5 z-[990] text-white\"","d
 // The preceding mobile hardeners may alter CTA widths. Locate only the
 // "Solicitar entregador" action, preserving requestCourier and all order logic.
 const label='Solicitar entregador · Pedido #';
-const labelAt=s.indexOf(label);
-if(labelAt<0 || s.indexOf(label,labelAt+1)>=0)
-  throw Error("[FAIL] Merchant courier CTA label not uniquely found");
+// Repeated layouts may contain both inline and floating delivery CTAs.
+// Style the final floating CTA; never change its requestCourier handler.
+const labelAt=s.lastIndexOf(label);
+if(labelAt<0)
+  throw Error("[FAIL] Merchant courier CTA label not found");
 const buttonAt=Math.max(s.lastIndexOf('<button',labelAt),s.lastIndexOf('<Button',labelAt));
 if(buttonAt<0 || labelAt-buttonAt>1500 || !s.slice(buttonAt,labelAt).includes('requestCourier('))
   throw Error("[FAIL] Merchant courier request CTA not uniquely found: buttonAt="+buttonAt+" labelAt="+labelAt+" handler="+s.slice(Math.max(0,buttonAt),labelAt).includes("requestCourier("));
