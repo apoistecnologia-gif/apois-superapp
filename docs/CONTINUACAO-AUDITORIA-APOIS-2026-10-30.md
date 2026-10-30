@@ -129,3 +129,13 @@ Não afirmar que testes visuais em produção, build, ou APK passaram sem logs/c
 - **Importante:** esta é auditoria ESTÁTICA + build WEB; a renderização real das páginas autenticadas, responsividade em navegador e testes Android físicos ainda não foram realizados. A conta Maps continua sendo dependência externa. Não afirmar homologação final.
 - **Restrições:** nenhum APK, deploy, merge, migração, SQL em produção ou alteração dos snapshots protegidos.
 - Próxima revisão segura: Admin Suporte/Avaliações/Repasses (identificar rótulos escuros e tamanho, corrigir apenas com classes locais e gates); depois capturas reais das quatro áreas e painéis com conta de homologação, sem acionar serviços pagos sem permissão.
+
+## CONTINUIDADE — AVALIAÇÕES E REPASSES ADMIN — 30/10/2026
+
+- **Preflight WEB confirmado: [41144551669](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41144551669) = SUCCESS nos 3 jobs**, referente ao commit de código `4f850255ada579054756680abf693ba577c9d31e`. Cliente, Parceiro e Estabelecimento/Admin Entregas compilaram e passaram verificações automatizadas.
+- `scripts/fix-entregas-admin-reviews-contrast-v1.mjs` corrige exclusivamente tipografia/contraste em `AdminReviewsPanel.tsx`: notas, nomes, campos e rótulos anteriormente com `text-zinc-600/700` ou `text-[10px]`. Preserva filtros por avaliação, busca, recarga, nomes, notas reais e comentários.
+- `scripts/fix-entregas-admin-settlements-contrast-v1.mjs` corrige tipografia/contraste em `AdminCourierSettlementsPanel.tsx`: cabeçalhos, datas, valores informativos e motivos das disputas; preserva totais, vencimento, comprovantes, status, `resolveDispute`, filtros e a tabela com scroll horizontal.
+- As duas correções estão somente no fluxo de build WEB isolado de `scripts/build-merchant-panel.mjs`. Foram testadas em simulação com segunda execução idempotente (zero escritas extras) e pelo preflight real. **Nenhuma migration, alteração de Supabase, API, pagamento, deploy ou APK**.
+- Comparação do bloco anterior de commits (`508f79382e...` até `4f850255ad...`): apenas scripts de homologação e documentação. Nenhum snapshot protegido de `sources/` alterado.
+- **Ainda falta** revisão do contraste do componente `AdminSupportPanel` (rótulos de chamados/mensagens de 9–10 px e cinzas escuros). Corrigir isoladamente, verificar scripts idempotentes e CI. Depois fazer revisão renderizada de Admin Entregas/Estabelecimento e demais módulos quando existir ambiente seguro de homologação.
+- **Não declarar homologação visual real ou teste Android**: os três jobs são build/testes WEB sem capturas novas autenticadas, nem teste físico de GPS/Maps, notificação, PIN ou RLS de avatar.
