@@ -292,7 +292,10 @@ jobs:
           APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner -perm -111 | sort -V | tail -n 1)"
           test -n "$APKSIGNER"
           "$APKSIGNER" verify --verbose "$APK" >/dev/null
-          APK_CERT="$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr '[:upper:]' '[:lower:]')"
+          APK_CERT_DETAILS="$("$APKSIGNER" verify --print-certs "$APK")"
+          echo "[DIAG] Android signer certificate information:"
+          printf '%s\n' "$APK_CERT_DETAILS" | grep -Ei 'Signer|certificate' | head -n 8 || true
+          APK_CERT="$(printf '%s\n' "$APK_CERT_DETAILS" | grep -Eio '[[:xdigit:]]{64}' | head -n 1 | tr '[:upper:]' '[:lower:]' || true)"
           QA_CERT="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -alias androiddebugkey -storepass android | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           echo "[DIAG] Expected QA certificate SHA-256: ${QA_CERT:-empty}"
           echo "[DIAG] Actual APK certificate SHA-256: ${APK_CERT:-empty}"
