@@ -20,7 +20,7 @@ if(!s.includes("APOIS_VEHICLE_SIX_PHOTOS_V1")){
   s=replace(s,"  const allDocsReady = completedItems === 4;",'  const allDocsReady = completedItems === (vehicleCategory==="carros"?16:4);',"ready");
   s=replace(s,"if (!selfie || !cnhFront || !cnhBack || !vehicleDoc || !vehiclePhoto) {",'if (!selfie || !cnhFront || !cnhBack || !vehicleDoc || !vehiclePhoto || (parsed.data.category==="carros"&&!inspectionReady)) {',"required");
   s=replace(s,'type Bucket = "driver-selfies" | "driver-cnh" | "vehicle-documents";','type Bucket = "driver-selfies" | "driver-cnh" | "vehicle-documents" | "apois-inspections";',"photo bucket type");
-  s=replace(s,'type Label = "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo";','type Label = "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo" | "right" | "left" | "dashboard" | "front_seats" | "rear_seats";',"photo slot type");
+  s=replace(s,'type Label = "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo";','type Label = "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo" | "right" | "left" | "dashboard" | "front_seats" | "rear_seats" | "tire_fl" | "tire_fr" | "tire_rl" | "tire_rr" | "belt_front" | "belt_rear" | "headlights_on";',"photo slot type");
   s=replace(s,"      const documents = await Promise.all([",[
     '      const inspectionPhotos=parsed.data.category==="carros" ? await Promise.all(inspectionSlots.map(async ({key})=>{',
     '        const file=inspection[key]; if(!file)throw Error("Foto da vistoria ausente");',
