@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-partner-courier-gps-logo-push-20261027
       - fix/apois-android-github-homolog-20261029
