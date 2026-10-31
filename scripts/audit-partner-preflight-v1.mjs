@@ -95,6 +95,25 @@ all(driverRoute,[
   "MovviHeader",
 ], "Motorista source profile and uploads preserved");
 const driverFix=read("scripts/harden-partner-motorista-profile-contrast-v2.mjs");
+const courierAvatarPolicy=read("supabase/entregas-forward-migrations/courier_profile_avatar_scoped_upload.sql");
+all(courierAvatarPolicy,[
+  "APOIS courier own profile avatar upload",
+  "FOR INSERT TO authenticated",
+  "(storage.foldername(name))[1] = (SELECT auth.uid())::text",
+  "(storage.foldername(name))[2] = 'courier-profile'",
+  "apois_can_upload_own_courier_avatar()",
+  "c.status = 'approved'",
+  "c.is_active IS TRUE",
+  "p.is_active IS TRUE",
+  "REVOKE ALL ON FUNCTION public.apois_can_upload_own_courier_avatar() FROM PUBLIC, anon"
+], "Pending scoped courier avatar policy, no production grant");
+const courierAvatarDiagnostics=read("scripts/fix-partner-courier-avatar-diagnostics-v1.mjs");
+all(courierAvatarDiagnostics,[
+  "APOIS_COURIER_AVATAR_UPLOAD_DIAGNOSTIC_V1",
+  'user.id + "/courier-profile/"',
+  "upsert: false"
+], "Courier own-profile avatar diagnostics");
+all(build,["fix-partner-courier-avatar-diagnostics-v1.mjs"],"Avatar QA patch integrated in Partner build");
 const courierFix=read("scripts/harden-partner-courier-driver-inspired-home-v1.mjs");
 all(driverFix,["data-apois-driver-profile-v2","max-w-full break-words","text-[#111827]"],"Driver pinned profile patch");
 all(courierFix,[
