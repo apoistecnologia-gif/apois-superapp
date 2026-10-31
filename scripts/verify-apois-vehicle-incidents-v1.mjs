@@ -10,7 +10,7 @@ for(const marker of ["NÃO APLICADA","apois_vehicle_inspection_photos",
 "apois_vehicle_inspection_review_events","apois_require_vehicle_inspection",
 "apois_case_events","apois_case_evidence","ENABLE ROW LEVEL SECURITY",
 "apois_case_access","apois_open_ride_case","apois_case_reply",
-"apois_case_internal_note","apois_case_register_evidence",
+"apois_case_internal_note","apois_request_driver_statement","driver_response_requested_at","apois_case_register_evidence",
 "visible_to_parties","storage.objects FOR SELECT TO authenticated",
 "driver_id=NEW.id","review_status='approved'",
 "REVOKE ALL ON public.apois_case_events,public.apois_case_evidence",
@@ -34,6 +34,7 @@ if(role==="partner"){
  assert.ok(staff.includes(marker),"Missing admin review: "+marker);
  assert.ok(driver.includes("ApoisCaseWorkroom"),"Driver must have response UI");
  assert.ok(admin.includes("ApoisCaseWorkroom"),"Admin must have case workspace");
+ assert.ok(workroom.includes("apois_request_driver_statement"),"Staff must invite driver only after triage");
  assert.ok(workroom.includes("apois_case_reply")&&workroom.includes("apois_case_internal_note"),"Case response/private notes missing");
  assert.ok(workroom.includes('disabled={role==="staff"&&privateNote}'),"Internal notes must not upload party-visible files");
 }else{
