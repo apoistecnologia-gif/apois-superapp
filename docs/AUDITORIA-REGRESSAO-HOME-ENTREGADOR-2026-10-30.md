@@ -75,3 +75,11 @@ A captura Android do proprietário comprovou falha não coberta pelos testes pú
 - Verificações: módulos e preflight integrado no job APK passaram; preflight WEB independente [41164238980](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41164238980) completed/success 3 jobs.
 - Instalação/atualização do Parceiro 1.0.22, logo em aparelho, navegação, PIN E2E e compatibilidade de assinatura com 1.0.21 **não foram testados**. Não desinstalar app nem remover dados automaticamente.
 - Cliente 1.0.11 ainda **sem novo APK** após o ajuste PIN porque [41164253048](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41164253048) parou corretamente na proteção do certificado QA. Não rotacionar keystore, não mascarar bloqueio e não apresentar APK anterior como atualizado.
+
+## 31/10/2026 — Recuperação de assinatura QA e novo Cliente
+- Compilação temporária na branch histórica `test/apois-pix-simulado-isolado-20261029` com checkout **explícito e conferido** da fonte homologação atualizada `d991fe55f6bca8c4d535c2ace1feedbae0675cea`, contendo a correção de PIN, sem copiar código da branch histórica para o produto.
+- Run `41208441088`, job `124558222159`, `completed/success`. Cache criptografado QA original recuperado, certificado original SHA256 `97eaf64ee20ef16b2765a6dff5e96a25dbad4da12ccb6e5c2cd48d4c9c2f61f4` conferido via keytool e apksigner; `BUILD SUCCESSFUL`.
+- Android QA versão real `1.0.11-qa.67`, versionCode `67` (superior ao 64 instalado). Artefato `13044772905`; arquivo `APOIS-Cliente-TESTE-PIN-QA.apk`, 8.335.845 bytes, SHA256 `d19cc05ed0da3b5eed7ba80b3b3c8c33adda1a72a87f639a056b300cdbbdd44a`. Arquivo ZIP validado (CRC sem erros).
+- Workflow temporário foi restaurado ao byte-exato SHA de conteúdo original `fe2f20cda896c050aa88335671190569e4dabd58` pelo commit `a62e0b0c4423b64fc76e13f1cc3035df47dc42a5`; nenhuma modificação persistente nas fontes protegidas.
+- **Secret QA permanente ainda vazio e pendente**; sucesso do cache histórico não implica secret reparado ou cache disponível na branch atual. Nenhuma chave privada publicada ou oferecida em conversa.
+- Homologação funcional do PIN no Android com duas contas continua pendente: após retirada, cliente deve ver código e entregador deve concluir; conferir status entregue sem PIN.
