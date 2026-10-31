@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
@@ -24,7 +25,7 @@ const origin = 'http://127.0.0.1:' + server.address().port;
 const routes = target === 'cliente'
   ? [['seletor', '/index.html'], ['corridas-login', '/modules/corridas/index.html#/login'], ['entregas-login', '/modules/entregas/index.html#/login']]
   : [['seletor', '/index.html'], ['motorista-login', '/modules/motorista/index.html#/motorista/login'], ['entregador-login', '/modules/entregador/index.html#/courier']];
-const report = { target, network: 'All non-loopback requests blocked; no backend/auth/payment/maps calls permitted', scope: 'Anonymous initial render only, not authenticated E2E or Android', results: [] };
+const report = { target, network: 'All non-loopback requests blocked; no backend/auth/payment/maps calls permitted', scope: 'Anonymous render and public interactions only; no form submissions, authenticated E2E or Android', results: [] };
 let browser;
 let failed = false;
 try {
@@ -72,6 +73,61 @@ try {
         item.screenshot = name + '-' + width + '.png';
         await page.screenshot({ path: resolve(output, item.screenshot), fullPage: true });
         item.passed = metrics.textLength > 20 && metrics.visibleControls > 0 && !metrics.horizontalOverflow && pageErrors.length === 0 && localFailures.length === 0;
+
+        item.interactions = [];
+        if (name !== 'seletor') {
+          const password = page.locator('input[type="password"]').first();
+          await password.waitFor({ state: 'visible' });
+          const samplePassword = 'QA-only-not-a-real-password';
+          await password.fill(samplePassword);
+          const markedToggle = await password.evaluate(input => {
+            let parent = input.parentElement;
+            for (let level = 0; parent && level < 3; level++, parent = parent.parentElement) {
+              const buttons = [...parent.querySelectorAll('button')].filter(button =>
+                button.type === 'button' && button.querySelector('svg') && !button.innerText.trim());
+              if (buttons.length === 1) { buttons[0].dataset.apoisQaPasswordToggle = 'true'; return true; }
+            }
+            return false;
+          });
+          assert.ok(markedToggle, name + ': password toggle not found');
+          const toggle = page.locator('[data-apois-qa-password-toggle="true"]');
+          await toggle.click();
+          assert.equal(await page.locator('input').evaluateAll(inputs =>
+            inputs.find(input => input.value === 'QA-only-not-a-real-password')?.type), 'text', name + ': reveal password');
+          await toggle.click();
+          assert.equal(await password.inputValue(), samplePassword, name + ': toggle changed password');
+          await password.fill('');
+          item.interactions.push({ action: 'password reveal/hide without changing value', passed: true });
+
+          await page.goto(origin + path, { waitUntil: 'networkidle' });
+          await page.getByText('Esqueci minha senha', { exact: true }).first().click();
+          await page.waitForTimeout(600);
+          const recoveryText = await page.locator('body').innerText();
+          assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
+          await page.screenshot({ path: resolve(output, name + '-recovery-' + width + '.png'), fullPage: true });
+          item.interactions.push({ action: 'open password recovery without submitting', passed: true });
+
+          await page.goto(origin + path, { waitUntil: 'networkidle' });
+          const registration = page.getByText(/^(?:Criar conta|Criar minha conta|Cadastrar como motorista|Cadastre-se)$/i).first();
+          await registration.click();
+          await page.waitForTimeout(600);
+          const registrationText = await page.locator('body').innerText();
+          assert.match(registrationText, /cadastro|cadastr|crie sua|criar (?:uma |sua )?conta|nome completo/i, name + ': registration UI did not open');
+          assert.ok(await page.locator('input').count() >= 2, name + ': registration form absent');
+          await page.screenshot({ path: resolve(output, name + '-register-' + width + '.png'), fullPage: true });
+          item.interactions.push({ action: 'open registration without submitting', passed: true });
+        } else {
+          // Both role/service entries must navigate to the correct packaged module.
+          for (const module of target === 'cliente' ? ['corridas', 'entregas'] : ['motorista', 'entregador']) {
+            await page.goto(origin + path, { waitUntil: 'networkidle' });
+            await page.locator('[data-module="' + module + '"]').first().click();
+            await page.waitForURL(url => url.pathname.includes('/modules/' + module + '/index.html'), { timeout: 10000 });
+            item.interactions.push({ action: 'selector opens ' + module, passed: true });
+          }
+        }
+        assert.equal(pageErrors.length, 0, name + ': runtime errors during public interactions');
+        assert.equal(localFailures.length, 0, name + ': missing resources during public interactions');
+
         if (!item.passed) failed = true;
       } catch (error) {
         item.passed = false;
