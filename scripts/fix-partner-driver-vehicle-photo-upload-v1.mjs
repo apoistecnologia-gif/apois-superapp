@@ -13,6 +13,10 @@ if(!src.includes("APOIS_VEHICLE_INSPECTION_UPLOAD_V1")){
  if(!pattern.test(src))throw Error("[FAIL] original path naming moved");
  src=src.replace(pattern,'      const path = doc.bucket==="apois-inspections" ? authUser.id+"/"+doc.label+"/"+crypto.randomUUID().replace(/-/g,"")+"."+cleanExt(doc.fileName) : authUser.id+"/"+doc.label+"-"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"."+cleanExt(doc.fileName);');
  change('      paths[doc.label] = path;','      paths[doc.label] = path;\n      if(doc.bucket==="apois-inspections") inspectionPaths[doc.label]=path;',"path tracking");
+ // Every registration upload uses a fresh unique object path; never request overwrite.
+ // Supabase Storage upsert:true requires UPDATE and SELECT permissions, which evidence buckets deny.
+ if((src.match(/upsert: true,/g)||[]).length!==2)throw Error("[FAIL] unexpectedly changed Storage upload contract");
+ src=src.replaceAll("upsert: true,","upsert: false,");
  change('    if (error) throw new Error(readableRegistrationError(error.message));',[
  '    if (error) throw new Error(readableRegistrationError(error.message));',
  '    committed=true;',
