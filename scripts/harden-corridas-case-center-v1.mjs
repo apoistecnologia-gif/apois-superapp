@@ -19,11 +19,20 @@ if(!src.includes(modal))throw Error("[FAIL] Case popup anchor");
 src=src.replace(modal,'      {showCaseCenter&&<div className="fixed inset-0 z-[999] overflow-y-auto bg-[#090B0E]"><ApoisCaseCenter initialRideId={ride.id} onClose={()=>setShowCaseCenter(false)}/></div>}\n'+modal);
 writeFileSync(p,src,"utf8");
 }
-const archive=resolve(root,"src/routes/_authenticated.corridas.tsx");
-let history=readFileSync(archive,"utf8");
+const archive=resolve(root,"src/routes/_authenticated.ocorrencias.tsx");
+writeFileSync(archive,[
+ 'import {createFileRoute} from "@tanstack/react-router";',
+ 'import {ApoisCaseCenter} from "@/components/ApoisCaseCenter";',
+ 'export const Route=createFileRoute("/_authenticated/ocorrencias")({component:OccurrencesPage});',
+ 'function OccurrencesPage(){return <div className="h-full overflow-y-auto bg-[#090B0E]"><ApoisCaseCenter /></div>;}',
+].join("\n"),"utf8");
+const historyPath=resolve(root,"src/routes/_authenticated.corridas.tsx");
+let history=readFileSync(historyPath,"utf8");
 if(!history.includes("APOIS_CASES_ARCHIVE_V1")){
-history=history.replace('import { createFileRoute } from "@tanstack/react-router";','import { createFileRoute } from "@tanstack/react-router";\nimport { ApoisCaseCenter } from "@/components/ApoisCaseCenter";\n// APOIS_CASES_ARCHIVE_V1');
-history=history.replace('  return <div className="p-6 text-white">Suas Corridas</div>;','  return <div className="h-full overflow-y-auto bg-[#090B0E]"><ApoisCaseCenter /></div>;');
-writeFileSync(archive,history,"utf8");
+ history=history.replace('import { createFileRoute } from "@tanstack/react-router";',
+ 'import { createFileRoute, Link } from "@tanstack/react-router";\n// APOIS_CASES_ARCHIVE_V1');
+ history=history.replace('  return <div className="p-6 text-white">Suas Corridas</div>;',
+ '  return <div className="space-y-4 p-6 text-white"><h1 className="text-xl font-bold">Suas Corridas</h1><Link to="/ocorrencias" className="block rounded-xl border border-[#E00029]/40 p-4 text-sm font-bold text-red-300">Central de Ocorrências · Meus protocolos</Link></div>;');
+ writeFileSync(historyPath,history,"utf8");
 }
 console.log("[OK] Passenger: open ride-linked ticket, photos, protocol, timeline and follow-up.");
