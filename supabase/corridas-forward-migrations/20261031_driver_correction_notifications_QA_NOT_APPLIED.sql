@@ -81,7 +81,11 @@ BEGIN
  jsonb_build_object('type','driver_correction','request_id',v_id));
  SELECT coalesce(nullif(trim(u.email),''),nullif(trim(d.email),'')) INTO v_email
  FROM public.users u WHERE u.id=d.user_id;
- IF v_email IS NOT NULL AND v_email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+
+ IF v_email IS NOT NULL AND v_email ~ '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$' THEN
+   INSERT INTO public.apois_driver_correction_email_outbox(request_id,to_email)
+   VALUES(v_id,v_email);
+ ELSE v_email:=NULL;
+ END IF;
  INSERT INTO public.audit_logs(actor_id,action,entity_type,entity_id,metadata)
  VALUES((SELECT auth.uid()),'admin.driver.correction_requested','driver',d.id::text,
  jsonb_build_object('request_id',v_id,'items',v_items,'reason',trim(_reason)));
