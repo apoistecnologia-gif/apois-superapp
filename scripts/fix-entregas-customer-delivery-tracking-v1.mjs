@@ -102,8 +102,20 @@ edit('src/routes/pedido/$orderId/index.tsx', (input) => {
     '        {!isPickup && order.status !== "delivered" && deliveryJob?.status === "arrived_destination" ? (',
     'hide confirmation PIN after delivery'
   );
+  // APOIS_CUSTOMER_DELIVERY_PIN_STAGE_V1
+  // Pickup has been confirmed by the courier; allow the customer to see
+  // their existing server-issued PIN during travel, not only upon arrival.
+  // The backend continues to validate PIN and delivery authorization.
+  source = once(source,
+    '      if (jobData?.status === "arrived_destination") {',
+    '      if (["picked_up", "on_the_way", "arrived_destination"].includes(jobData?.status ?? "")) {',
+    'read confirmation PIN after pickup');
+  source = once(source,
+    'deliveryJob?.status === "arrived_destination" ? (',
+    '["picked_up", "on_the_way", "arrived_destination"].includes(deliveryJob?.status ?? "") ? (',
+    'display customer PIN from confirmed pickup');
   return source;
-}, ['APOIS_CUSTOMER_ORDER_REFRESH_V1','APOIS_CUSTOMER_DELIVERED_FEEDBACK_V1','Entrega concluída!', 'order.status !== "delivered"']);
+}, ['APOIS_CUSTOMER_ORDER_REFRESH_V1','APOIS_CUSTOMER_DELIVERED_FEEDBACK_V1','Entrega concluída!', 'order.status !== "delivered"','APOIS_CUSTOMER_DELIVERY_PIN_STAGE_V1']);
 
 edit('src/components/CustomerDeliveryMap.tsx', (input) => {
   let source = input;
