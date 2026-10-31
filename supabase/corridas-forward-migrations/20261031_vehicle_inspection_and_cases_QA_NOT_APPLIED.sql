@@ -148,8 +148,14 @@ BEGIN
    NEW.apois_inspection_required := (NEW.category='carros');
  ELSIF NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
        AND NEW.apois_inspection_required THEN
-   IF (SELECT count(DISTINCT slot) FROM public.apois_vehicle_inspection_photos
-       WHERE driver_id=NEW.id AND submitted_at>=NEW.created_at AND review_status='approved')<6 THEN
+   IF (SELECT count(*) FROM (
+         SELECT DISTINCT ON (slot) slot,review_status
+           FROM public.apois_vehicle_inspection_photos
+          WHERE driver_id=NEW.id
+            AND declared_plate=NEW.vehicle_plate
+            AND submitted_at>=NEW.created_at
+          ORDER BY slot,submitted_at DESC,id DESC
+       ) latest WHERE latest.review_status='approved')<6 THEN
        RAISE EXCEPTION 'vehicle_inspection_incomplete';
    END IF;
  END IF;
