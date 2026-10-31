@@ -274,3 +274,20 @@ Continuam pendentes:
 - Avatar/Storage e RLS individual; nenhuma policy remota foi aplicada.
 - Triagem de lint e reprodutibilidade do lockfile.
 - Nenhuma operação financeira, deploy ou liberação de produção está autorizada por esses testes.
+
+
+## APKs DE TESTE AUTORIZADOS — 31/10/2026 UTC (30/10 no Brasil)
+
+O proprietário autorizou expressamente gerar os APKs e disponibilizar download na conversa. A restrição anterior de não gerar APK foi substituída somente para esta rodada de testes. Deploy, publicação em lojas, AAB, produção, migrations, cobranças e merge continuam fora do escopo.
+
+- HEAD usado na compilação: `3aa60d1e385384270d3119a2033d5811328d78d7`, descendente do último código WEB aprovado `65878d2b977fc3300faaa0f3a9c40ad268f63251`. Apenas inclusão da branch obrigatória nos filtros push dos dois workflows Android existentes; sem mudança de fontes pinadas ou lógica.
+- **Parceiro:** [run 41158242762](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41158242762), completed/success, job `124409716819`, todas as etapas obrigatórias aprovadas. Gradle: BUILD SUCCESSFUL; preflight integrado e navegação do bundle passaram; upload concluído.
+- Artefato `13025344719`, `APOIS-Parceiro-TESTE`; APK real extraído, CRC do ZIP/APK aprovado e módulos Motorista/Entregador presentes. Pacote `br.com.apois.parceiro`, versionName `1.0.20`, versionCode `21`, minSdk 24 (Android 7.0), targetSdk 36, debug.
+- Arquivo `APOIS-Parceiro-TESTE.apk`: **7.471.540 bytes**, SHA-256 `00c1a63edc2b48c088231df1b766da1f90a67fc172bafc3398555b9eb71837d4`. ZIP de transporte: SHA-256 `454af332d62bd11a6e6d501d7c3d614f08aaf21a1e5d01181e6307273b5927cc`, conferido contra digest do Actions. APK disponibilizado para download na conversa. Retenção do artefato Actions até 07/11/2026 UTC.
+- **Cliente bloqueado:** [run 41158242726](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41158242726), completed/failure no job `124409716924`, etapa Restore persistent QA Android debug signing. Builds Corridas/Entregas/shell e criação Android passaram; assembleDebug/upload não executados. **Não existe APK Cliente novo desta rodada.**
+- Causa comprovada: secret `APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64` vazio e cache `apois-client-qa-encrypted-signing-v1` indisponível nesta branch. O workflow tentou gerar identidade temporária, mas a guarda de fingerprint rejeitou corretamente e nada foi publicado/cacheado. Não houve troca da assinatura esperada nem remoção da guarda.
+- Histórico `41096860712`, branch `test/apois-pix-simulado-isolado-20261029`: logs comprovam reutilização do cache e certificado QA esperado `97eaf64ee20ef16b2765a6dff5e96a25dbad4da12ccb6e5c2cd48d4c9c2f61f4`. Isso comprova disponibilidade histórica nessa branch, não na branch atual. APK antigo não foi apresentado como resultado novo.
+- Desbloqueio Cliente: responsável deve restaurar **o keystore QA existente**, correspondente ao fingerprint acima, no secret já previsto `APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64`; não enviar chave privada no chat nem versioná-la. Depois reexecutar o job falho na mesma branch. Não alterar branch protegida/default, pacote, OAuth ou fingerprint para contornar.
+- Limitações confirmadas no job Cliente: Firebase unificado não fornecido/push desabilitado; browser key/map ID Entregas ausentes. Corridas usa fallback Maps JavaScript intencional no debug. Parceiro materializou o Firebase existente; isso não comprova recebimento de push real.
+- APK Parceiro usa debug signing do runner. Não foi comprovada compatibilidade de atualização com APK anterior nem funcionamento OAuth nativo. Não sugerir remoção de instalação/dados sem diagnosticar eventual conflito.
+- O build não executa pedidos/contas/serviços reais. Ainda pendentes testes físicos de instalação, login/Google, sessão, GPS/Maps, push/background, teclado/safe-area, E2E despacho/retirada/PIN, painéis privados, avatar/RLS e pendências de lint/lockfile. **Não declarar homologação final.** Nenhum deploy, merge, SQL remoto ou cobrança executado.
