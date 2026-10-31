@@ -59,7 +59,7 @@ BEGIN
       AND NOT (v_user=ANY(COALESCE(r.offered_driver_ids,'{}'::uuid[])))
   ) x
   WHERE x.distance_km<=5
-  ORDER BY NULL
+  ORDER BY x.distance_km ASC
   LIMIT 10;
   RETURN COALESCE(v_calls,'[]'::jsonb);
 END;
