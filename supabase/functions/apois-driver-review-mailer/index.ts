@@ -2,7 +2,7 @@
 // Requires RESEND_API_KEY and APOIS_EMAIL_FROM (verified domain) in Supabase secrets.
 // This function is not deployed as part of the WEB-only QA preflight.
 import {serve} from "https://deno.land/std@0.224.0/http/server.ts";
-import {createClient} from "npm:@supabase/supabase-js@2";
+import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 
 const json=(code:number,data:unknown)=>new Response(JSON.stringify(data),{
  status:code,headers:{"content-type":"application/json","cache-control":"no-store"}
