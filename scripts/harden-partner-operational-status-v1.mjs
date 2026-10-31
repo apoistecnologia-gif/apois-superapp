@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,mkdirSync} from "node:fs";
 import {resolve,dirname} from "node:path";
 const motor=resolve(".work/partner-motorista/src/routes/motorista.app.tsx");
 const courier=resolve(".work/partner-entregador/src/routes/courier.tsx");
-const component=String.raw\`
+const component=String.raw`
 import { useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -100,7 +100,7 @@ export function ApoisStatusCheck({role,online,onClose,approved,documentsReady}:{
     </div>
   );
 }
-\`;
+`;
 for(const root of [".work/partner-motorista",".work/partner-entregador"]){
  const target=resolve(root,"src/components/ApoisStatusCheck.tsx");
  mkdirSync(dirname(target),{recursive:true});
