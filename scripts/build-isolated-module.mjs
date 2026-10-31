@@ -416,6 +416,7 @@ if (name === 'corridas') {
     protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
   );
   console.log('[OK] Corridas: migração visual preservou byte a byte Maps/GPS/Places');
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-ride-comfort-preferences-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-dispatch-ux-v1.mjs')]);
 }
 if (name === 'entregas') {
