@@ -108,7 +108,7 @@ edit('src/routes/pedido/$orderId/index.tsx', (input) => {
   // The backend continues to validate PIN and delivery authorization.
   source = once(source,
     '      if (jobData?.status === "arrived_destination") {',
-    '      if (["picked_up", "on_the_way", "arrived_destination"].includes(jobData?.status ?? "")) {',
+    '      // APOIS_CUSTOMER_DELIVERY_PIN_STAGE_V1\n      if (["picked_up", "on_the_way", "arrived_destination"].includes(jobData?.status ?? "")) {',
     'read confirmation PIN after pickup');
   source = once(source,
     'deliveryJob?.status === "arrived_destination" ? (',
