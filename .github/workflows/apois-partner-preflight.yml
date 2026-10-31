@@ -61,6 +61,7 @@ jobs:
           node --check scripts/audit-partner-preflight-v1.mjs
           node scripts/audit-partner-preflight-v1.mjs
           node scripts/test-partner-shell-navigation-v2.mjs
+          node --test scripts/test-courier-navigation-busy-v1.mjs
       - name: Build web modules and run typechecks - NO ANDROID APK
         shell: bash
         run: |
