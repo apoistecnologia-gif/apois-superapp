@@ -81,9 +81,137 @@ BEGIN
  jsonb_build_object('type','driver_correction','request_id',v_id));
  SELECT coalesce(nullif(trim(u.email),''),nullif(trim(d.email),'')) INTO v_email
  FROM public.users u WHERE u.id=d.user_id;
- IF v_email IS NOT NULL AND v_email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' THEN
+ IF v_email IS NOT NULL AND v_email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+
+ INSERT INTO public.audit_logs(actor_id,action,entity_type,entity_id,metadata)
+ VALUES((SELECT auth.uid()),'admin.driver.correction_requested','driver',d.id::text,
+ jsonb_build_object('request_id',v_id,'items',v_items,'reason',trim(_reason)));
+ RETURN jsonb_build_object('request_id',v_id,'email_queued',v_email IS NOT NULL);
+END; $$;
+REVOKE ALL ON FUNCTION public.apois_admin_request_driver_correction(uuid,text[],text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_admin_request_driver_correction(uuid,text[],text) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.apois_driver_my_corrections()
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $$
+ SELECT coalesce(jsonb_agg(jsonb_build_object(
+  'id',q.id,'required_items',q.required_items,'reason',q.reason,'state',q.state,
+  'created_at',q.created_at,'resubmitted_at',q.resubmitted_at
+ ) ORDER BY q.created_at DESC),'[]'::jsonb)
+ FROM public.apois_driver_correction_requests q
+ JOIN public.drivers d ON d.id=q.driver_id
+ WHERE d.user_id=public.mobility_user_id() AND (SELECT auth.uid()) IS NOT NULL
+ LIMIT 10;
+$$;
+REVOKE ALL ON FUNCTION public.apois_driver_my_corrections() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_driver_my_corrections() TO authenticated;
+
+-- Upload a new photo into a new immutable object, only for one's own pending correction.
+CREATE OR REPLACE FUNCTION public.apois_driver_correct_inspection_photo(
+ _slot text,_path text
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $$
+DECLARE d public.drivers%rowtype; q public.apois_driver_correction_requests%rowtype;
+BEGIN
+ IF (SELECT auth.uid()) IS NULL THEN RAISE EXCEPTION 'login_required'; END IF;
+ SELECT * INTO d FROM public.drivers WHERE user_id=public.mobility_user_id() FOR UPDATE;
+ SELECT * INTO q FROM public.apois_driver_correction_requests
+ WHERE driver_id=d.id AND state='correction_required' ORDER BY created_at DESC LIMIT 1 FOR UPDATE;
+ IF NOT FOUND OR _slot IS NULL OR NOT (_slot=ANY(q.required_items)) OR
+   _slot NOT IN ('right','left','dashboard','front_seats','rear_seats',
+    'tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on')
+ THEN RAISE EXCEPTION 'photo_not_requested'; END IF;
+ IF _path IS NULL OR length(_path)>255 OR
+ _path !~ ('^'||(SELECT auth.uid())::text||'/'||_slot||'/[a-zA-Z0-9_-]{12,64}\.(jpg|png|webp)$')
+ OR NOT EXISTS(SELECT 1 FROM storage.objects o WHERE o.bucket_id='apois-inspections'
+   AND o.name=_path AND o.owner_id=(SELECT auth.uid())::text)
+ THEN RAISE EXCEPTION 'invalid_photo'; END IF;
+ INSERT INTO public.apois_vehicle_inspection_photos(
+  driver_id,slot,bucket_id,object_path,submitted_by,declared_plate)
+ VALUES(d.id,_slot,'apois-inspections',_path,(SELECT auth.uid()),d.vehicle_plate);
+ RETURN true;
+END; $$;
+REVOKE ALL ON FUNCTION public.apois_driver_correct_inspection_photo(text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_driver_correct_inspection_photo(text,text) TO authenticated;
+
+-- Declared manufacture year correction is restricted to pending/new applicants.
+CREATE OR REPLACE FUNCTION public.apois_driver_correct_manufacture_year(_year integer)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $$
+DECLARE d public.drivers%rowtype;
+BEGIN
+ IF (SELECT auth.uid()) IS NULL THEN RAISE EXCEPTION 'login_required'; END IF;
+ SELECT * INTO d FROM public.drivers WHERE user_id=public.mobility_user_id() FOR UPDATE;
+ IF NOT FOUND OR d.approval_status='aprovado' OR NOT EXISTS(
+  SELECT 1 FROM public.apois_driver_correction_requests q
+  WHERE q.driver_id=d.id AND q.state='correction_required' AND 'manufacture_year'=ANY(q.required_items)
+ ) THEN RAISE EXCEPTION 'year_correction_not_authorized'; END IF;
+ IF _year<extract(year FROM CURRENT_DATE)::int-10 OR _year>extract(year FROM CURRENT_DATE)::int
+ THEN RAISE EXCEPTION 'car_manufacture_year_out_of_policy'; END IF;
+ UPDATE public.drivers SET vehicle_year=_year,updated_at=now() WHERE id=d.id;
+ RETURN true;
+END; $$;
+REVOKE ALL ON FUNCTION public.apois_driver_correct_manufacture_year(integer) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_driver_correct_manufacture_year(integer) TO authenticated;
+
+-- The driver acknowledges re-submission; the team still reviews all photos and documents.
+CREATE OR REPLACE FUNCTION public.apois_driver_resubmit_corrections(_request_id uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $$
+DECLARE q public.apois_driver_correction_requests%rowtype; d public.drivers%rowtype; slot_name text;
+BEGIN
+ IF (SELECT auth.uid()) IS NULL THEN RAISE EXCEPTION 'login_required'; END IF;
+ SELECT * INTO d FROM public.drivers WHERE user_id=public.mobility_user_id() FOR UPDATE;
+ SELECT * INTO q FROM public.apois_driver_correction_requests
+ WHERE id=_request_id AND driver_id=d.id AND state='correction_required' FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'correction_request_not_found'; END IF;
+ FOREACH slot_name IN ARRAY q.required_items LOOP
+  IF slot_name IN ('right','left','dashboard','front_seats','rear_seats',
+   'tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on')
+    AND NOT EXISTS(SELECT 1 FROM public.apois_vehicle_inspection_photos p
+       WHERE p.driver_id=d.id AND p.slot=slot_name AND p.submitted_at>=q.created_at)
+  THEN RAISE EXCEPTION 'required_photo_not_resubmitted:%',slot_name; END IF;
+ END LOOP;
+ UPDATE public.apois_driver_correction_requests SET state='resubmitted',resubmitted_at=now()
+ WHERE id=q.id;
+ UPDATE public.drivers SET documents_status='pending_review',updated_at=now() WHERE id=d.id;
+ INSERT INTO public.audit_logs(actor_id,action,entity_type,entity_id,metadata)
+ VALUES((SELECT auth.uid()),'driver.corrections.resubmitted','driver',d.id::text,
+ jsonb_build_object('request_id',q.id));
+ RETURN true;
+END; $$;
+REVOKE ALL ON FUNCTION public.apois_driver_resubmit_corrections(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_driver_resubmit_corrections(uuid) TO authenticated;
+
+-- Only user-managed staff may trigger queued email; service role is the sole mail writer.
+CREATE OR REPLACE FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(_request_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $$
+ SELECT (SELECT auth.uid()) IS NOT NULL AND private.has_permission('users.manage')
+   AND EXISTS(SELECT 1 FROM public.apois_driver_correction_email_outbox o
+    WHERE o.request_id=_request_id AND o.status IN ('queued','failed'));
+$$;
+REVOKE ALL ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) TO authenticated;
+
+-- Guard even the existing canonical admin_set_driver_approval RPC.
+CREATE OR REPLACE FUNCTION private.apois_prevent_approval_during_corrections()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $$
+BEGIN
+ IF NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
+ AND EXISTS(SELECT 1 FROM public.apois_driver_correction_requests q
+   WHERE q.driver_id=NEW.id AND q.state='correction_required')
+ THEN RAISE EXCEPTION 'driver_has_unresolved_corrections'; END IF;
+ RETURN NEW;
+END; $$;
+DROP TRIGGER IF EXISTS apois_prevent_approval_during_corrections ON public.drivers;
+CREATE TRIGGER apois_prevent_approval_during_corrections
+BEFORE UPDATE OF approval_status ON public.drivers
+FOR EACH ROW EXECUTE FUNCTION private.apois_prevent_approval_during_corrections();
+ THEN
    INSERT INTO public.apois_driver_correction_email_outbox(request_id,to_email)
    VALUES(v_id,v_email);
+ ELSE v_email:=NULL;
  END IF;
  INSERT INTO public.audit_logs(actor_id,action,entity_type,entity_id,metadata)
  VALUES((SELECT auth.uid()),'admin.driver.correction_requested','driver',d.id::text,
