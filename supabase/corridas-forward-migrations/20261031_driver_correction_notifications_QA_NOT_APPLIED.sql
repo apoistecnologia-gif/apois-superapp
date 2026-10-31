@@ -198,7 +198,7 @@ GRANT EXECUTE ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail
 -- staff review. Canonical driverDocuments.mobile updates drivers.vehicle_photo_url.
 CREATE OR REPLACE FUNCTION private.apois_snapshot_front_on_document_change()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $
+AS $$
 DECLARE owner_auth uuid;
 BEGIN
  IF NEW.category<>'carros' OR NEW.vehicle_photo_url IS NULL THEN RETURN NEW; END IF;
@@ -215,7 +215,7 @@ BEGIN
  VALUES(NEW.id,'front','vehicle-documents',NEW.vehicle_photo_url,owner_auth,NEW.vehicle_plate)
  ON CONFLICT(object_path) DO NOTHING;
  RETURN NEW;
-END; $;
+END; $$;
 DROP TRIGGER IF EXISTS apois_snapshot_front_on_vehicle_change ON public.drivers;
 CREATE TRIGGER apois_snapshot_front_on_vehicle_change
 AFTER INSERT OR UPDATE OF vehicle_photo_url ON public.drivers
@@ -325,7 +325,7 @@ BEGIN
  IF NOT FOUND THEN RAISE EXCEPTION 'correction_request_not_found'; END IF;
  FOREACH slot_name IN ARRAY q.required_items LOOP
   IF slot_name IN ('right','left','dashboard','front_seats','rear_seats',
-   'tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on')
+   'tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on','front')
     AND NOT EXISTS(SELECT 1 FROM public.apois_vehicle_inspection_photos p
        WHERE p.driver_id=d.id AND p.slot=slot_name AND p.submitted_at>=q.created_at)
   THEN RAISE EXCEPTION 'required_photo_not_resubmitted:%',slot_name; END IF;
