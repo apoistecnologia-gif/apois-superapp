@@ -155,10 +155,9 @@ BEGIN
            OR OLD.vehicle_photo_url IS DISTINCT FROM NEW.vehicle_photo_url)
    THEN NEW.apois_inspection_required := true;
    END IF;
- END IF;
- IF TG_OP='UPDATE'
-    AND NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
-    AND NEW.apois_inspection_required THEN
+   -- Only UPDATE has a valid OLD record; avoid referencing it on INSERT.
+   IF NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
+      AND NEW.apois_inspection_required THEN
    IF (SELECT count(*) FROM (
          SELECT DISTINCT ON (slot) slot,review_status
            FROM public.apois_vehicle_inspection_photos
@@ -168,6 +167,7 @@ BEGIN
           ORDER BY slot,submitted_at DESC,id DESC
        ) latest WHERE latest.review_status='approved')<6 THEN
        RAISE EXCEPTION 'vehicle_inspection_incomplete';
+   END IF;
    END IF;
  END IF;
  RETURN NEW;
