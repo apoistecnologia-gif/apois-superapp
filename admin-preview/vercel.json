@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'Install managed by pinned isolated build script'",
+  "buildCommand": "cd .. && bash scripts/build-admin-vercel-preview.sh && mkdir -p admin-preview/dist && cp -a dist-admin-preview/. admin-preview/dist/",
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
