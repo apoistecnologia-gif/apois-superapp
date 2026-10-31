@@ -195,3 +195,19 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) TO authenticated;
+
+-- Guard even the existing canonical admin_set_driver_approval RPC.
+CREATE OR REPLACE FUNCTION private.apois_prevent_approval_during_corrections()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $$
+BEGIN
+ IF NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
+ AND EXISTS(SELECT 1 FROM public.apois_driver_correction_requests q
+   WHERE q.driver_id=NEW.id AND q.state='correction_required')
+ THEN RAISE EXCEPTION 'driver_has_unresolved_corrections'; END IF;
+ RETURN NEW;
+END; $$;
+DROP TRIGGER IF EXISTS apois_prevent_approval_during_corrections ON public.drivers;
+CREATE TRIGGER apois_prevent_approval_during_corrections
+BEFORE UPDATE OF approval_status ON public.drivers
+FOR EACH ROW EXECUTE FUNCTION private.apois_prevent_approval_during_corrections();
