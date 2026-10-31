@@ -26,8 +26,8 @@ if [ ! -f sources/apois-corridas-motorista-admin/src/routes/admin.motoristas.tsx
   cat > "$ASKPASS_SCRIPT" <<'EOF'
 #!/usr/bin/env sh
 case "$1" in
-  *Username*) printf '%s\\n' 'x-access-token' ;;
-  *Password*) printf '%s\\n' "$APOIS_PREVIEW_GITHUB_TOKEN" ;;
+  *Username*) printf '%s\n' 'x-access-token' ;;
+  *Password*) printf '%s\n' "$APOIS_PREVIEW_GITHUB_TOKEN" ;;
   *) exit 1 ;;
 esac
 EOF
