@@ -166,7 +166,7 @@ BEGIN
  IF NOT FOUND THEN RAISE EXCEPTION 'correction_request_not_found'; END IF;
  FOREACH slot_name IN ARRAY q.required_items LOOP
   IF slot_name IN ('right','left','dashboard','front_seats','rear_seats',
-   'tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on')
+   'tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on','front')
     AND NOT EXISTS(SELECT 1 FROM public.apois_vehicle_inspection_photos p
        WHERE p.driver_id=d.id AND p.slot=slot_name AND p.submitted_at>=q.created_at)
   THEN RAISE EXCEPTION 'required_photo_not_resubmitted:%',slot_name; END IF;
@@ -192,6 +192,33 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) TO authenticated;
+
+
+-- When vehicle front photo changes, snapshot its new immutable file for independent
+-- staff review. Canonical driverDocuments.mobile updates drivers.vehicle_photo_url.
+CREATE OR REPLACE FUNCTION private.apois_snapshot_front_on_document_change()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $
+DECLARE owner_auth uuid;
+BEGIN
+ IF NEW.category<>'carros' OR NEW.vehicle_photo_url IS NULL OR
+   (TG_OP='UPDATE' AND OLD.vehicle_photo_url IS NOT DISTINCT FROM NEW.vehicle_photo_url)
+ THEN RETURN NEW; END IF;
+ SELECT u.auth_user_id INTO owner_auth FROM public.users u WHERE u.id=NEW.user_id;
+ IF owner_auth IS NULL OR split_part(NEW.vehicle_photo_url,'/',1)<>owner_auth::text THEN RETURN NEW; END IF;
+ IF NOT EXISTS(SELECT 1 FROM storage.objects o
+  WHERE o.bucket_id='vehicle-documents' AND o.name=NEW.vehicle_photo_url
+    AND o.owner_id=owner_auth::text) THEN RETURN NEW; END IF;
+ INSERT INTO public.apois_vehicle_inspection_photos(
+  driver_id,slot,bucket_id,object_path,submitted_by,declared_plate)
+ VALUES(NEW.id,'front','vehicle-documents',NEW.vehicle_photo_url,owner_auth,NEW.vehicle_plate)
+ ON CONFLICT(object_path) DO NOTHING;
+ RETURN NEW;
+END; $;
+DROP TRIGGER IF EXISTS apois_snapshot_front_on_vehicle_change ON public.drivers;
+CREATE TRIGGER apois_snapshot_front_on_vehicle_change
+AFTER INSERT OR UPDATE OF vehicle_photo_url ON public.drivers
+FOR EACH ROW EXECUTE FUNCTION private.apois_snapshot_front_on_document_change();
 
 -- Guard even the existing canonical admin_set_driver_approval RPC.
 CREATE OR REPLACE FUNCTION private.apois_prevent_approval_during_corrections()
