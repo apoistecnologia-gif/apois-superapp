@@ -32,7 +32,7 @@ if(role==="partner"){
  assert.ok(uploader.includes(marker),"Missing immutable upload step: "+marker);
  assert.ok((uploader.match(/upsert: false,/g)||[]).length>=2,"New registration objects must never request Storage overwrite");
  assert.ok(!uploader.includes("upsert: true"),"Private evidence cannot use upsert:true");
- for(const marker of ["APOIS_ADMIN_INSPECTION_REVIEW_V1","apois_review_vehicle_photo","inspection_photos","Abrir foto original"])
+ for(const marker of ["APOIS_ADMIN_INSPECTION_REVIEW_V1","apois_review_vehicle_photo","inspection_photos","Visualizar foto internamente"])
  assert.ok(staff.includes(marker),"Missing admin review: "+marker);
  assert.ok(driver.includes("ApoisCaseWorkroom"),"Driver must have response UI");
  assert.ok(admin.includes("ApoisCaseWorkroom"),"Admin must have case workspace");
