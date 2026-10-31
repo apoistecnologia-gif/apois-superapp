@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS public.apois_vehicle_inspection_photos (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  driver_id uuid NOT NULL REFERENCES public.drivers(id),
- slot text NOT NULL CHECK(slot IN ('front','right','left','dashboard','front_seats','rear_seats')),
+ slot text NOT NULL CHECK(slot IN ('front','right','left','dashboard','front_seats','rear_seats','tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on')),
  bucket_id text NOT NULL CHECK(bucket_id IN ('vehicle-documents','apois-inspections')),
  object_path text NOT NULL UNIQUE,
  submitted_by uuid NOT NULL,
@@ -79,7 +79,7 @@ FOR INSERT TO authenticated
 WITH CHECK (
  bucket_id='apois-inspections'
  AND (storage.foldername(name))[1]=(SELECT auth.uid())::text
- AND (storage.foldername(name))[2] IN ('right','left','dashboard','front_seats','rear_seats')
+ AND (storage.foldername(name))[2] IN ('right','left','dashboard','front_seats','rear_seats','tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on')
  AND (storage.foldername(name))[3] IS NULL
  AND storage.extension(name) IN ('jpg','png','webp')
 );
@@ -98,14 +98,14 @@ BEGIN
  IF NOT FOUND OR d.category<>'carros' THEN RAISE EXCEPTION 'driver_car_required'; END IF;
  IF d.vehicle_photo_url IS NULL OR split_part(d.vehicle_photo_url,'/',1)<>(SELECT auth.uid())::text
  THEN RAISE EXCEPTION 'front_photo_required'; END IF;
- IF _slots IS NULL OR jsonb_typeof(_slots)<>'object' OR (SELECT count(*) FROM jsonb_object_keys(_slots))<>5 THEN
-   RAISE EXCEPTION 'five_photos_required';
+ IF _slots IS NULL OR jsonb_typeof(_slots)<>'object' OR (SELECT count(*) FROM jsonb_object_keys(_slots))<>12 THEN
+   RAISE EXCEPTION 'twelve_additional_photos_required';
  END IF;
  -- Front is already verified at registration; keep immutable review snapshot.
  INSERT INTO public.apois_vehicle_inspection_photos(driver_id,slot,bucket_id,object_path,submitted_by,declared_plate)
  VALUES(d.id,'front','vehicle-documents',d.vehicle_photo_url,(SELECT auth.uid()),d.vehicle_plate)
  ON CONFLICT (object_path) DO NOTHING;
- FOREACH slot_name IN ARRAY ARRAY['right','left','dashboard','front_seats','rear_seats']
+ FOREACH slot_name IN ARRAY ARRAY['right','left','dashboard','front_seats','rear_seats','tire_fl','tire_fr','tire_rl','tire_rr','belt_front','belt_rear','headlights_on']
  LOOP
    path_name := _slots->>slot_name;
    IF path_name IS NULL OR length(path_name)>255
@@ -158,6 +158,11 @@ BEGIN
    -- Only UPDATE has a valid OLD record; avoid referencing it on INSERT.
    IF NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
       AND NEW.apois_inspection_required THEN
+      -- Vehicle year is declared *year of manufacture*, max 10 full calendar years.
+      IF NEW.vehicle_year IS NULL OR NEW.vehicle_year < extract(year from CURRENT_DATE)::int-10
+         OR NEW.vehicle_year > extract(year from CURRENT_DATE)::int THEN
+        RAISE EXCEPTION 'apois_car_manufacture_year_out_of_policy';
+      END IF;
    IF (SELECT count(*) FROM (
          SELECT DISTINCT ON (slot) slot,review_status
            FROM public.apois_vehicle_inspection_photos
@@ -165,8 +170,8 @@ BEGIN
             AND declared_plate=NEW.vehicle_plate
             AND submitted_at>=NEW.created_at
           ORDER BY slot,submitted_at DESC,id DESC
-       ) latest WHERE latest.review_status='approved')<6 THEN
-       RAISE EXCEPTION 'vehicle_inspection_incomplete';
+       ) latest WHERE latest.review_status='approved')<13 THEN
+       RAISE EXCEPTION 'vehicle_inspection_13_photos_incomplete';
    END IF;
    END IF;
  END IF;
