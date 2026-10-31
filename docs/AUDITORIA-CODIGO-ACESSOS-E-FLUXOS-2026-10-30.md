@@ -72,3 +72,31 @@ A análise de código pode continuar com as contas no sistema atual; a informaç
 Permanecem sem execução autenticada real: fluxo completo de corrida/entrega, perfis, avatar/RLS, isolamento de papéis no banco vivo, painéis privados e efeitos externos.
 Não afirmar auditoria integral, homologação de produção ou ausência de todos os bugs.
 Não gerar APK até autorização. GPS/push/background/OAuth nativo e safe-area física serão testados na fase nativa, não são provas produzidas por build WEB.
+
+## CONTINUIDADE — RECUPERAÇÃO DA ENTRADA OFFLINE — 30/10/2026
+
+- **Código validado:** `65878d2b977fc3300faaa0f3a9c40ad268f63251`.
+- **Preflight oficial:** [41156377895](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41156377895), completed / SUCCESS nos três jobs, conferidos individualmente.
+- **EM-FUNC-041, P1:** se autenticação/carregamento inicial falhasse, o efeito de entrada já estava marcado como iniciado. A tentativa posterior de loadAll() recebia resetOnEntry=false e podia pular a verificação de entrada offline, mesmo sem ter concluído a primeira leitura válida. Também ocorria quando o perfil inicial ainda não estava aprovado e sua primeira operação era carregada depois.
+- Correção em `scripts/fix-partner-courier-manual-online-v1.mjs`: ref local `initialEntryResetPendingRef` permanece true até o primeiro loadCourierOperations aprovado/ativo concluir. As retentativas carregam `requireEntryReset`; após sucesso, o ref fica false e refresh normal conserva a escolha manual online/offline.
+- A guarda existente `resetOnEntry && !jobsRes.data && effectiveAvailability?.is_online`, a checagem de erros de jobs/disponibilidade e a RPC já existente permanecem iguais. Não altera uma entrega ativa, não introduz nova tabela/endpoint nem novo passo de retirada/PIN.
+- **Prova local antes/depois:** cinco cenários; antes **2 PASS / 3 FAIL**, depois **5 PASS / 0 FAIL**. Cenários: falha inicial de auth; falha inicial de operações; refresh após sucesso; perfil inicialmente pendente; falha posterior de refresh sem reinstaurar reset.
+- No CI, `scripts/test-courier-entry-retry-v1.mjs` roda **após build:partner**, lendo o loadAll real da árvore .work/partner-entregador já transformada por todo o pipeline. Executa o callback com respostas sintéticas controladas, sem rede; não é teste de conta ou banco vivo. Na reprodução local, os dois trechos do callback vêm das substituições reais do transformador escolhido.
+- O primeiro ensaio de fixture crua não continha o hardening de disponibilidade que precede esse script; esse ensaio não foi tratado como reprodução do bug. O teste final usa a árvore integral construída no CI, evitando fixture incompatível.
+- **Regressões preservadas:** novo teste 5/5 e teste de concorrência anterior 4/4 passaram; typechecks/bundles e testes públicos de navegador continuaram aprovados. Estabelecimento/Admin Entregas mantiveram os 48 testes e builds.
+- **Correção do registro de lint:** log atual = **2.630 problemas: 2.280 erros, 350 avisos**. O run anterior 41155555285 já tinha a mesma contagem; esta correção não aumentou o lint. As seções que citam 2.279 erros descrevem execuções mais antigas. O lint continua FAIL e não foi suprimido.
+- Comparação desta etapa: somente script de entrada, novo teste e uma linha no workflow WEB permitido. Sem snapshots protegidos, Supabase remoto, migrations, pagamentos, deploy, merge, APK/AAB ou operações nas contas existentes.
+
+### Próximo estágio: primeira rodada limitada de APKs de teste
+Os gates WEB disponíveis estão verdes após as correções bloqueantes reproduzidas. Há base para **uma primeira compilação de APKs de teste destinada a interface, login, sessão e comportamento do aparelho**, usando depois as contas existentes do sistema atual.
+Isso é uma decisão de avançar a fase de teste, não uma conclusão de homologação integral. Não é necessário alegar teste físico antes de existir o primeiro APK.
+
+**Nenhum APK foi gerado.** A proibição original continua valendo até instrução específica do usuário para gerar os aplicativos.
+Não disparar workflow Android com este handoff sozinho.
+
+Continuam pendentes:
+- Fluxos privados reais de pedido/corrida, despacho, aceite, retirada e PIN ponta a ponta; painéis privados por papel, inclusive Admin Corridas.
+- GPS/Maps e cobrança/quotas externas, OAuth nativo, push/background/reconexão e teclado/safe-area em aparelho.
+- Avatar/Storage e RLS individual; nenhuma policy remota foi aplicada.
+- Triagem de lint e reprodutibilidade do lockfile.
+- Nenhuma operação financeira, deploy ou liberação de produção está autorizada por esses testes.
