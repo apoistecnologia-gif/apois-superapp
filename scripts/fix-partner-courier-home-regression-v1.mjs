@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 const root=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||".work/partner-entregador");
 function edit(file,fn){const p=resolve(root,file),a=readFileSync(p,"utf8"),b=fn(a);if(a!==b)writeFileSync(p,b);}
-function once(s,a,b,label){if(s.includes(b))return s;if(s.split(a).length!==2)throw Error("[FAIL] Courier home repair: "+label);return s.replace(a,b);}
+function once(s,a,b,label){const n=s.split(a).length-1;if(n===1)return s.replace(a,b);if(n===0&&s.includes(b))return s;throw Error("[FAIL] Courier home repair: "+label+" ("+n+")");}
 edit("src/routes/courier.tsx",s=>{
  s=once(s,"{online && !activeJob && !completedJob ? (","{!activeJob && !completedJob ? (","offline availability visibility");
  return s;

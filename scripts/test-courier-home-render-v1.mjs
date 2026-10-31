@@ -24,7 +24,7 @@ const gate=route.match(/\{([^{}\n]+)\s*\?\s*\(\s*<div data-apois-courier-inline-
 assert.ok(gate,'actual availability gate absent');
 const visible=new Function('online','activeJob','completedJob','return ('+gate[1]+')');
 for(const online of [false,true]){
- assert.equal(visible(online,null,null),true);
+ assert.equal(visible(online,null,null),true,'offline/online availability expression: '+gate[1]);
  assert.equal(visible(online,{id:'synthetic'},null),false);
  assert.equal(visible(online,null,{id:'synthetic'}),false);
 }
