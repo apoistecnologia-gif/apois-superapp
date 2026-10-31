@@ -24,6 +24,35 @@ CREATE INDEX IF NOT EXISTS apois_vehicle_inspection_driver_slot_idx
 ALTER TABLE public.apois_vehicle_inspection_photos ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.apois_vehicle_inspection_photos FROM PUBLIC,anon,authenticated;
 
+-- Every admin review decision is permanently recorded, including reversals.
+CREATE TABLE IF NOT EXISTS public.apois_vehicle_inspection_review_events (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ photo_id uuid NOT NULL REFERENCES public.apois_vehicle_inspection_photos(id),
+ actor_auth_id uuid,
+ previous_status text NOT NULL,
+ new_status text NOT NULL,
+ review_note text,
+ recorded_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS apois_inspection_reviews_photo_idx
+ ON public.apois_vehicle_inspection_review_events(photo_id,recorded_at);
+ALTER TABLE public.apois_vehicle_inspection_review_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.apois_vehicle_inspection_review_events FROM PUBLIC,anon,authenticated;
+CREATE OR REPLACE FUNCTION private.apois_audit_inspection_photo_review()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $$
+BEGIN
+ IF OLD.review_status IS DISTINCT FROM NEW.review_status OR OLD.review_note IS DISTINCT FROM NEW.review_note THEN
+   INSERT INTO public.apois_vehicle_inspection_review_events(photo_id,actor_auth_id,previous_status,new_status,review_note)
+   VALUES(NEW.id,NEW.reviewed_by,OLD.review_status,NEW.review_status,NEW.review_note);
+ END IF;
+ RETURN NEW;
+END; $$;
+DROP TRIGGER IF EXISTS apois_audit_inspection_review ON public.apois_vehicle_inspection_photos;
+CREATE TRIGGER apois_audit_inspection_review
+AFTER UPDATE OF review_status,review_note ON public.apois_vehicle_inspection_photos
+FOR EACH ROW EXECUTE FUNCTION private.apois_audit_inspection_photo_review();
+
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 VALUES ('apois-inspections','apois-inspections',false,8388608,ARRAY['image/jpeg','image/png','image/webp']::text[])
 ON CONFLICT(id) DO NOTHING;
