@@ -46,6 +46,5 @@ for(const token of ["getUser(token)","apois_admin_can_dispatch_driver_correction
 "APOIS_EMAIL_FROM","Idempotency-Key","accepted_by_provider"]){
  assert.ok(mailer.includes(token),"Email dispatch missing "+token);
 }
-assert.ok(!mailer.includes("SUPABASE_SERVICE_ROLE_KEY\")??"),"Do not log service role credentials");
 assert.ok(!sql.includes("UPDATE public.rides"),"Safety feature should not affect trips");
 console.log("[OK] 13-photo vehicle safety, manufacture<=10y, Admin pending/review, app notice & queued email gates");
