@@ -38,7 +38,7 @@ if(!s.includes("APOIS_VEHICLE_SIX_PHOTOS_V1")){
   '<h3 className="text-sm font-extrabold text-white">Vistoria fotográfica · 13 fotos obrigatórias</h3>',
   '<p className="text-xs text-zinc-400">Fotos privadas para análise do estado do carro. Não inclua pessoas.</p>',
   '{inspectionSlots.map(({key,label})=><DocumentCard key={key} title={label} done={Boolean(inspection[key])}>',
-  '<DriverDocumentField id={"inspection-"+key} label={label} helper={"Foto nítida: "+label.toLowerCase()}',
+  '<DriverDocumentField id={"inspection-"+key} label={label} helper={key.startsWith("tire_")?"Mostre lateral e sulcos da banda de rodagem, sem ocultar danos":key.startsWith("belt_")?"Mostre os fechos, cintos e estado aparente dos assentos":key==="headlights_on"?"Foto frontal com ambos os faróis acesos e visíveis":"Foto nítida: "+label.toLowerCase()}',
   ' accept="image/jpeg,image/png,image/webp" file={inspection[key]??null}',
   ' onChange={file=>setInspection(prev=>({...prev,[key]:file??undefined}))}/>',
   '</DocumentCard>)}',
