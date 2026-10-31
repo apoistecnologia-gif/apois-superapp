@@ -37,6 +37,12 @@ Arquivo: `supabase/corridas-forward-migrations/20261031_vehicle_inspection_and_c
 - Dar prazo razoável para manifestação, sem atrasar medidas de proteção em denúncias graves e sem revelar dados pessoais não necessários. Não fazer decisão automática de culpa.
 - Referência orientativa: ANPD, guia de segurança da informação e controles de autenticação, autorização e auditoria: https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte
 
+## Triagem, manifestação e atualizações
+- A partir desta revisão, o motorista **não** obtém acesso a reclamações automaticamente. O schema adiciona `driver_response_requested_at`, e a política de leitura só permite ao motorista responsável ver o caso quando o atendente acionar `apois_request_driver_statement` no Admin. Isso reduz exposição prematura dos dados do cliente.
+- A resposta do motorista permanece registrada em `apois_case_events` como `driver_response`, com autenticação; ambos veem as atualizações públicas, e apenas equipe autorizada vê notas internas.
+- O Cliente e a área de esclarecimentos consultam novas atualizações a cada 30 segundos quando há um protocolo aberto na tela. Não há Push nativo de chamados nesta etapa: é uma pendência opcional.
+- Regras de triagem de urgência, prazo de resposta e autoridade de moderação devem ser aprovadas pela operação e equipe jurídica antes da publicação. Não presumir responsabilidade do motorista sem análise.
+
 ## Critérios de homologação ainda pendentes
 1. Cadastro motorista novo em ambiente controlado com seis fotos, falha/retry de upload e revisão de cada ângulo pelo Admin.
 2. Aprovação bloqueada enquanto houver foto pendente/reprovada; aprovar apenas seis revisões, sem afetar 3 motoristas legados aprovados.
