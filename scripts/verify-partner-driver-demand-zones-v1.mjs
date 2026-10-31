@@ -22,7 +22,7 @@ for(const marker of [
 assert.equal((client.match(/apois_get_driver_demand_zones/g)||[]).length,1,"one RPC caller");
 assert.ok(!client.includes('from("rides").select("origin_lat'),"No direct read of rider GPS");
 for(const marker of [
-  "NOT_APPLIED","HAVING count(DISTINCT r.id)>=3",
+  "NÃO APLICADA","HAVING count(DISTINCT r.id)>=3",
   "r.created_at > now()-interval '30 minutes'",
   "d.approval_status='aprovado'",
   "d.is_online IS TRUE",
