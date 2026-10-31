@@ -74,6 +74,7 @@ node "$ROOT/scripts/harden-partner-motorista-google-roadmap-v5.mjs"
 node "$ROOT/scripts/fix-partner-motorista-client-map-style-v1.mjs"
 # APOIS Driver demand map: only aggregate live zones, never show individual passengers.
 node "$ROOT/scripts/harden-partner-motorista-demand-map-v1.mjs"
+node "$ROOT/scripts/verify-partner-driver-demand-zones-v1.mjs"
 # Admin Corridas headings are already transformed by prior branding; do not run an additional fragile cosmetic patch.
 node "$ROOT/scripts/harden-partner-motorista-arrival-voice-v5.mjs"
 node "$ROOT/scripts/harden-partner-driver-trip-ux-v6.mjs"
