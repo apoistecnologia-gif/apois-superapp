@@ -55,3 +55,11 @@ Complemento: `supabase/corridas-forward-migrations/20261031_driver_correction_no
 - Auditoria documental não equivale a laudo mecânico; sugerir declaração do motorista, manutenção, inspeções por amostragem e política de guarda de provas. Imagens comprimidas no fluxo cadastral não constituem “original bruto” da câmera.
 
 **Situação:** recursos escritos e conectados na QA; servidores de produção e APKs atuais permanecem inalterados por esta melhoria.
+
+## Verificação consolidada
+- **GitHub Actions WEB-only run `41224424141`: 3/3 SUCCESS**, incluindo `audit-web-only` com typecheck e build Motorista/Admin/Entregador, Cliente WEB e Estabelecimento WEB. Os scripts de 13 fotos e pendências foram verificados no workspace isolado.
+- As migrations complementares em QA foram novamente executadas em conjunto dentro de uma transação `BEGIN;`/`ROLLBACK;` no Supabase Corridas: funções foram compiladas e, sem sessão, o acesso às correções retornou `[]`.
+- O fluxo canônico que troca a foto da frente do veículo agora registra **nova versão independente** da fotografia para reanálise, e o motorista precisa reenviá-la se for um dos itens solicitados. Arquivos anteriores não são apagados.
+- Consulta read-only após a verificação confirma que as tabelas e RPCs deste novo recurso ainda **não existem em produção**. Não há fotos, pendências ou e-mails reais criados nesta etapa.
+- A Edge Function de e-mail está versionada, **não implantada**, e ainda depende de segredos de provedor e domínio remetente. Assim, no aplicativo atualmente instalado não existe envio de e-mail desta nova rotina.
+- Não houve APK/AAB, deploy, merge ou alterações ao banco produção.
