@@ -5,7 +5,7 @@ let src=readFileSync(path,"utf8");
 function change(a,b,name){if(!src.includes(a))throw Error("[FAIL] Vehicle upload "+name);src=src.replace(a,b);}
 if(!src.includes("APOIS_VEHICLE_INSPECTION_UPLOAD_V1")){
  change('bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents";','bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents" | "apois-inspections";',"bucket");
- change('label: "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo";','label: "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo" | "right" | "left" | "dashboard" | "front_seats" | "rear_seats";',"labels");
+ change('label: "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo";','label: "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo" | "right" | "left" | "dashboard" | "front_seats" | "rear_seats" | "tire_fl" | "tire_fr" | "tire_rl" | "tire_rr" | "belt_front" | "belt_rear" | "headlights_on";',"labels");
  change('  documents: [DriverDocument, DriverDocument, DriverDocument, DriverDocument, DriverDocument];','  documents: [DriverDocument, DriverDocument, DriverDocument, DriverDocument, DriverDocument];\n  inspection_photos?: DriverDocument[];',"input");
  change('  let photoPath: string | null = null;','  // APOIS_VEHICLE_INSPECTION_UPLOAD_V1: add immutable inspection records after registration.\n  let photoPath: string | null = null;\n  let committed=false;\n  const inspectionPaths: Record<string,string>={};',"tracker");
  change('    for (const doc of input.documents) {','    for (const doc of [...input.documents,...(input.inspection_photos??[])]) {',"files");
@@ -21,7 +21,7 @@ if(!src.includes("APOIS_VEHICLE_INSPECTION_UPLOAD_V1")){
  '    if (error) throw new Error(readableRegistrationError(error.message));',
  '    committed=true;',
  '    if(input.category==="carros"){',
- '      if(["right","left","dashboard","front_seats","rear_seats"].some(slot=>!inspectionPaths[slot]))',
+ '      if(["right","left","dashboard","front_seats","rear_seats","tire_fl","tire_fr","tire_rl","tire_rr","belt_front","belt_rear","headlights_on"].some(slot=>!inspectionPaths[slot]))',
  '        throw new Error("Vistoria fotográfica incompleta.");',
  '      const result=await (supabase as any).rpc("apois_submit_driver_vehicle_inspection",{_slots:inspectionPaths});',
  '      if(result.error)throw new Error("Cadastro recebido, mas a vistoria está pendente. Contate a equipe APOIS.");',
