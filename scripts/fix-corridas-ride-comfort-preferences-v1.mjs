@@ -15,8 +15,8 @@ patch("src/hooks/rides/use-ride-request.tsx",s=>{
   '  confirmRide: (comfort?: RideComfortPreferences) => Promise<RideRequestResponse | null>;',"context");
  s=rep(s,'  const confirmRide = useCallback(async (): Promise<RideRequestResponse | null> => {',
   '  // APOIS_RIDE_COMFORT_PREFS_V1\n  const confirmRide = useCallback(async (comfort?: RideComfortPreferences): Promise<RideRequestResponse | null> => {',"callback");
- s=rep(s,'        service_details: {},',
-  '        service_details: selectedCategory.code === "carros" && comfort ? {ride_comfort_preferences: comfort} : {},',"payload");
+ s=rep(s,'        service_details: selectedCategory.details ?? {},',
+  '        service_details: { ...(selectedCategory.details ?? {}), ...(selectedCategory.code === "carros" && comfort ? {ride_comfort_preferences: comfort} : {}) },',"payload preserves category details");
  return s;
 });
 patch("src/routes/_authenticated.revisar-solicitacao.tsx",s=>{
