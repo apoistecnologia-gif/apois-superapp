@@ -25,6 +25,8 @@ for(const marker of [
   "NÃO APLICADA","HAVING count(DISTINCT r.id)>=3",
   "r.created_at > now()-interval '30 minutes'",
   "d.approval_status='aprovado'",
+  "JOIN public.users u ON u.id=d.user_id",
+  "u.auth_user_id=(SELECT auth.uid())",
   "d.is_online IS TRUE",
   "d.last_location_at > now()-interval '5 minutes'",
   "r.cancelled_at IS NULL",
