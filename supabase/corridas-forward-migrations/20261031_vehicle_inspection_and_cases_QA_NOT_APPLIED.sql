@@ -195,10 +195,15 @@ ALTER TABLE public.apois_case_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.apois_case_evidence ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.apois_case_events,public.apois_case_evidence FROM PUBLIC,anon,authenticated;
 
+-- The staff must triage before disclosing allegations/evidence to the driver.
+ALTER TABLE public.passenger_support_tickets
+ ADD COLUMN IF NOT EXISTS driver_response_requested_at timestamptz,
+ ADD COLUMN IF NOT EXISTS driver_response_requested_by uuid;
+
 -- Driver may consult only cases involving a ride assigned to their account.
 CREATE POLICY "apois case ticket linked driver read" ON public.passenger_support_tickets
 FOR SELECT TO authenticated
-USING (ride_id IS NOT NULL AND EXISTS (
+USING (ride_id IS NOT NULL AND driver_response_requested_at IS NOT NULL AND EXISTS (
   SELECT 1 FROM public.rides ride JOIN public.drivers d ON d.id=ride.driver_id
   WHERE ride.id=passenger_support_tickets.ride_id AND d.user_id=public.mobility_user_id()
 ));
@@ -214,7 +219,7 @@ BEGIN
  IF NOT FOUND THEN RETURN 'none'; END IF;
  IF private.has_permission('support.read') THEN RETURN 'staff'; END IF;
  IF t.passenger_id=public.mobility_user_id() THEN RETURN 'passenger'; END IF;
- IF t.ride_id IS NOT NULL AND EXISTS(
+ IF t.ride_id IS NOT NULL AND t.driver_response_requested_at IS NOT NULL AND EXISTS(
    SELECT 1 FROM public.rides r JOIN public.drivers d ON d.id=r.driver_id
    WHERE r.id=t.ride_id AND d.user_id=public.mobility_user_id())
  THEN RETURN 'driver'; END IF;
@@ -256,6 +261,28 @@ END; $$;
 CREATE SEQUENCE IF NOT EXISTS public.apois_case_protocol_seq AS bigint;
 REVOKE ALL ON FUNCTION public.apois_open_ride_case(uuid,text,text,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.apois_open_ride_case(uuid,text,text,text) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.apois_request_driver_statement(_ticket_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $$
+DECLARE v_case public.passenger_support_tickets%rowtype;
+BEGIN
+ IF (SELECT auth.uid()) IS NULL OR NOT private.has_permission('support.read') THEN RAISE EXCEPTION 'forbidden'; END IF;
+ SELECT * INTO v_case FROM public.passenger_support_tickets WHERE id=_ticket_id FOR UPDATE;
+ IF NOT FOUND OR v_case.status NOT IN ('open','in_progress') THEN RAISE EXCEPTION 'case_unavailable'; END IF;
+ IF v_case.ride_id IS NULL OR NOT EXISTS (
+   SELECT 1 FROM public.rides r WHERE r.id=v_case.ride_id AND r.driver_id IS NOT NULL
+ ) THEN RAISE EXCEPTION 'driver_not_assigned'; END IF;
+ IF v_case.driver_response_requested_at IS NOT NULL THEN RETURN; END IF;
+ UPDATE public.passenger_support_tickets
+ SET driver_response_requested_at=now(),driver_response_requested_by=(SELECT auth.uid()),updated_at=now()
+ WHERE id=_ticket_id;
+ INSERT INTO public.apois_case_events(ticket_id,actor_user_id,actor_role,kind,message)
+ VALUES(_ticket_id,(SELECT auth.uid()),'staff','status',
+        'A equipe APOIS solicitou esclarecimentos ao motorista.');
+END; $$;
+REVOKE ALL ON FUNCTION public.apois_request_driver_statement(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_request_driver_statement(uuid) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.apois_case_reply(_ticket_id uuid,_message text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
