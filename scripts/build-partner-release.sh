@@ -151,6 +151,7 @@ cd "$ROOT"
 node "$ROOT/scripts/reconcile-partner-motorista-lockfile.mjs"
 cd "$MOTORISTA"
 bun install --frozen-lockfile
+node "$ROOT/scripts/fix-partner-tanstack-error-boundary-v1.mjs"
 bun run typecheck
 npm run build:motorista
 cd "$ROOT"
