@@ -201,9 +201,10 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $
 DECLARE owner_auth uuid;
 BEGIN
- IF NEW.category<>'carros' OR NEW.vehicle_photo_url IS NULL OR
-   (TG_OP='UPDATE' AND OLD.vehicle_photo_url IS NOT DISTINCT FROM NEW.vehicle_photo_url)
- THEN RETURN NEW; END IF;
+ IF NEW.category<>'carros' OR NEW.vehicle_photo_url IS NULL THEN RETURN NEW; END IF;
+ IF TG_OP='UPDATE' THEN
+   IF OLD.vehicle_photo_url IS NOT DISTINCT FROM NEW.vehicle_photo_url THEN RETURN NEW; END IF;
+ END IF;
  SELECT u.auth_user_id INTO owner_auth FROM public.users u WHERE u.id=NEW.user_id;
  IF owner_auth IS NULL OR split_part(NEW.vehicle_photo_url,'/',1)<>owner_auth::text THEN RETURN NEW; END IF;
  IF NOT EXISTS(SELECT 1 FROM storage.objects o
