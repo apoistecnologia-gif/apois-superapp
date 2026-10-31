@@ -67,8 +67,11 @@ cat > "$OUTPUT/vercel.json" <<'EOF'
 {"version":2,"routes":[{"handle":"filesystem"},{"src":"/(.*)","dest":"/index.html"}]}
 EOF
 find "$OUTPUT" -type f -name '*.map' -delete
-if grep -REqi 'sb_secret_|RESEND_API_KEY=|SUPABASE_SERVICE_ROLE_KEY=|x-access-token:' "$OUTPUT"; then
-  echo '[FAIL] Potential secret marker found in public WEB output'
+# Block actual secret-shaped values, not harmless names of environment variables
+# or protective runtime checks embedded in the minified client code.
+# Never echo matched content or environment variable values to build logs.
+if grep -REq 'sb_secret_[A-Za-z0-9_-]{20,}|github_pat_[A-Za-z0-9_]{25,}|ghp_[A-Za-z0-9]{30,}|re_[A-Za-z0-9]{30,}|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*=[[:space:]]*eyJ[A-Za-z0-9_-]{15,}|RESEND_API_KEY[[:space:]]*=[[:space:]]*re_[A-Za-z0-9]{15,}|x-access-token:[A-Za-z0-9_-]{20,}' "$OUTPUT"; then
+  echo '[FAIL] Potential secret value detected in public WEB output; preview blocked.'
   exit 1
 fi
 grep -Fq 'APOIS' "$OUTPUT/index.html" || {
