@@ -10,6 +10,8 @@ mkdir -p "$MOTORISTA" "$ENTREGADOR"
 tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-corridas-motorista-admin" -cf - . | tar -C "$MOTORISTA" -xf -
 tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-entregas" -cf - . | tar -C "$ENTREGADOR" -xf -
 node "$ROOT/scripts/normalize-partner-workspaces.mjs" "$MOTORISTA" "$ENTREGADOR"
+# Isolated six-check status diagnostics; no Android artifact or backend mutation.
+node "$ROOT/scripts/harden-partner-operational-status-v1.mjs"
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
