@@ -12,6 +12,7 @@ tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-entregas" -cf 
 node "$ROOT/scripts/normalize-partner-workspaces.mjs" "$MOTORISTA" "$ENTREGADOR"
 # Security: upgrade CVE-2026-102989 within .work copies only.
 node "$ROOT/scripts/harden-partner-tanstack-cve-2026-102989.mjs"
+node "$ROOT/scripts/fix-partner-tanstack-api-route-types-v1.mjs"
 # Isolated six-check status diagnostics; no Android artifact or backend mutation.
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
