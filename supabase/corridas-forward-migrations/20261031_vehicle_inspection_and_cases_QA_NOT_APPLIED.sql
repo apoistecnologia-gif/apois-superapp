@@ -31,6 +31,19 @@ INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 VALUES ('apois-case-evidence','apois-case-evidence',false,8388608,ARRAY['image/jpeg','image/png','image/webp','application/pdf']::text[])
 ON CONFLICT(id) DO NOTHING;
 
+-- Original signup already uploads selfie, CNH, CRLV, front vehicle view and avatar;
+-- production storage currently has no INSERT policies, so keep all uploads private
+-- and limit these existing buckets to the signed-in user's own UUID prefix.
+CREATE POLICY "apois initial driver documents upload own" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+ bucket_id IN ('driver-selfies','driver-cnh','vehicle-documents','profile-photos')
+ AND (storage.foldername(name))[1]=(SELECT auth.uid())::text
+ AND (storage.foldername(name))[2] IS NULL
+ AND storage.extension(name) IN ('jpg','png','webp','pdf')
+);
+-- No client UPDATE/DELETE of document evidence; users can send a new UUID path.
+
 -- Own temporary upload path: auth-uuid / slot / random-file (cannot overwrite).
 CREATE POLICY "apois vehicle inspection upload own file" ON storage.objects
 FOR INSERT TO authenticated
