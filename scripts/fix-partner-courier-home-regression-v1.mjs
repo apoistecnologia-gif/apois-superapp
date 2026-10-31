@@ -13,9 +13,10 @@ for(const file of ["src/routes/courier.tsx","src/components/CourierPremiumViews.
    if(!s.includes('import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";'))
     s='import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";\n'+s;
    s=s.replaceAll("src={logoAsset.url}","src={APOIS_PARTNER_LOGO_DATA_URL}");
-   s=s.replaceAll('alt="APOIS ENTREGA"','alt="APOIS"');
+
    if(!s.includes("logoAsset."))s=s.replace('import logoAsset from "@/assets/logo.png.asset.json";\n',"");
   }
+  if(s.includes("src={APOIS_PARTNER_LOGO_DATA_URL}")) s=s.replaceAll('alt="APOIS ENTREGA"','alt="APOIS"');
   return s;
  });
 }
