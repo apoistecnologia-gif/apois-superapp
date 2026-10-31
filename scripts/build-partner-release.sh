@@ -10,6 +10,8 @@ mkdir -p "$MOTORISTA" "$ENTREGADOR"
 tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-corridas-motorista-admin" -cf - . | tar -C "$MOTORISTA" -xf -
 tar --exclude=node_modules --exclude=.git -C "$ROOT/sources/apois-entregas" -cf - . | tar -C "$ENTREGADOR" -xf -
 node "$ROOT/scripts/normalize-partner-workspaces.mjs" "$MOTORISTA" "$ENTREGADOR"
+# Security: upgrade CVE-2026-102989 within .work copies only.
+node "$ROOT/scripts/harden-partner-tanstack-cve-2026-102989.mjs"
 # Isolated six-check status diagnostics; no Android artifact or backend mutation.
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
@@ -254,6 +256,8 @@ export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
 export VITE_SUPABASE_URL="https://ptgkwyyolrdgnqketkjj.supabase.co"
 export VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY"
+# Reconcile patched TanStack lockfile only in discarded Entregador workspace.
+bun install --lockfile-only
 bun install --frozen-lockfile
 bun test src/lib/courier-dispatch-readiness.test.ts src/lib/courier-operation-readiness.test.ts
 bun run typecheck
