@@ -9,6 +9,7 @@ Usuário autorizou expressamente a migração de avaliações individuais de pro
 - Identificador de histórico: `20261031150244`.
 - Nome no histórico: `apois_product_order_reviews_authenticated_v1_20261031`.
 - Foi utilizada a proposta `20261031_product_order_reviews_NOT_APPLIED.sql` como base, com revisão adicional (não executar o arquivo preliminar como nova migração): sem BEGIN/COMMIT explícito, com validação de conta ativa, e exigência de avaliação do pedido existente antes de avaliações dos produtos, tanto na RLS INSERT como na RPC específica.
+- SQL exato executado, recuperado do histórico e versionado em `supabase/migrations/20261031150244_apois_product_order_reviews_authenticated_v1_20261031.sql` (commit `5fbe59c`). O cabeçalho histórico do SQL fazia referência à proposta preliminar, mas o identificador do histórico confirma a aplicação efetiva. Não reaplicar a mesma versão.
 - Tabela criada: `public.product_order_reviews`.
 - Funções novas: `public.submit_order_product_reviews(uuid,jsonb)` e `public.submit_order_review_with_products(uuid,smallint,smallint,text,jsonb)`.
 - RPC existente `public.submit_order_review` preservada, sem alteração.
