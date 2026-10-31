@@ -16,7 +16,7 @@ if(process.argv[2]==="motorista"){
  rep('          onOpenStatusCheck={()=>setShowStatusCheck(true)}',
    '          onOpenStatusCheck={()=>setShowStatusCheck(true)}\n          onOpenCalls={()=>setAvailableCallsOpen(true)}',"driver entry callback");
  rep('      <ApoisDriverBottomNav hidden={!!ratingRide} />',
-   '      {/* APOIS_AVAILABLE_CALLS_V1 */}\n      <ApoisAvailableCalls role="motorista" online={online} open={availableCallsOpen}\n        onClose={()=>setAvailableCallsOpen(false)} onAccepted={()=>{setAvailableCallsOpen(false);void resyncDriverRides();}} />\n      <ApoisDriverBottomNav hidden={!!ratingRide} />',"driver panel");
+   '      {/* APOIS_AVAILABLE_CALLS_V1 */}\n      <ApoisAvailableCalls role="motorista" online={online} open={availableCallsOpen}\n        onClose={()=>setAvailableCallsOpen(false)} onAccepted={()=>{setAvailableCallsOpen(false);window.dispatchEvent(new Event("apois:driver-push"));}} />\n      <ApoisDriverBottomNav hidden={!!ratingRide} />',"driver panel");
  rep('  canUseTestLocation, onUseTestLocation, onOpenStatusCheck,',
    '  canUseTestLocation, onUseTestLocation, onOpenStatusCheck, onOpenCalls,',"driver panel props");
  rep('  onOpenStatusCheck: () => void;',
