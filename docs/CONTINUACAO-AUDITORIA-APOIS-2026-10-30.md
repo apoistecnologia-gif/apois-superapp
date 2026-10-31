@@ -237,3 +237,12 @@ Relatório permanente: `docs/evidence/PUBLIC-INTERACTIONS-2026-10-30.json`.
 - Alternativa para auditoria visual isolada: fixtures sintéticas explicitamente identificadas, sem prova de integração real. Elas não substituem homologação autenticada.
 - Testes físicos Android, OAuth nativo, GPS/background, push e serviços externos continuarão na fase posterior de APKs autorizados; não afirmar que já passaram.
 - Próxima retomada: usar este código e evidências, **não repetir as correções de logo, senha, seletor ou caminhos do Entregador já verificadas**. Resolver a disponibilidade de homologação autenticada, triagem de lint/lockfile e os gates externos documentados.
+
+## RETOMADA — CÓDIGO E CONTAS DO SISTEMA ATUAL — 30/10/2026
+- O proprietário confirmou que as contas já existem no sistema atual e determinou continuar pela análise do código. Isso permite continuar inspeção/testes isolados sem exigir outra estrutura ou repetir perguntas sobre ambiente.
+- Relatório: `docs/AUDITORIA-CODIGO-ACESSOS-E-FLUXOS-2026-10-30.md`, com mapa dos quatro módulos e três painéis, resolução de identidades e limites da evidência.
+- **EM-FUNC-040 corrigido:** realtime podia fazer cleanup do efeito de início de rota antes de a RPC concluir, impedindo a liberação de busy no Entregador. Agora a tentativa atual libera seus controles, e respostas antigas não liberam uma tentativa mais nova. Somente estado local; estágios/PIN/RPC/pagamentos preservados.
+- Código `0225ee20302c01d75041f726612c8d390d34d754`; [run 41155555285](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41155555285) **3/3 SUCCESS**, conferidos.
+- Reprodução isolada do efeito gerado: script anterior 2 pass/2 fail; corrigido **4 pass/0 fail**. `scripts/test-courier-navigation-busy-v1.mjs` executado também no CI. Cliente/Parceiro mantêm testes públicos e builds existentes; painéis Entregas mantêm builds.
+- Nenhuma conta foi acessada/alterada; sem APK, deploy, merge, SQL, migration ou cobrança.
+- Continuar pelo código e testes autorizados. Registrar separadamente o que exige sessão real: private UI/E2E/RLS implantada/Maps/avatar/Android. Fonte não comprova existência de usuário individual nem comportamento do banco vivo. Lint/lockfile permanecem pendentes, sem mascarar os avisos.
