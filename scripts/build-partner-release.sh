@@ -84,6 +84,7 @@ node "$ROOT/scripts/harden-partner-driver-registration-exit-v3.mjs"
 node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" motorista
 node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" motorista
+node "$ROOT/scripts/fix-partner-motorista-ride-comfort-v1.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
