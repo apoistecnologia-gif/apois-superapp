@@ -101,3 +101,14 @@ A captura Android do proprietário comprovou falha não coberta pelos testes pú
 - Não houve APK, AAB, deploy, merge ou alteração de SQL/produçao nesta etapa.
 
 - Preflight final sem APK 41211392232: WEB-only cliente SUCCESS, WEB-only estabelecimento SUCCESS e audit-web-only SUCCESS. Logs do Cliente confirmam execução de scripts/fix-entregas-customer-order-reviews-v1.mjs e do teste scripts/test-entregas-review-to-one-v1.mjs. O teste visual é de páginas anônimas; rota autenticada de avaliações, RPCs de produto e Android ainda não homologados fisicamente.
+
+
+## 31/10/2026 — Migração de avaliações de produtos confirmada no Supabase
+- Solicitação do proprietário autorizou expressamente a migração do banco de produção do APOIS Entregas **sem gerar APK/deploy**.
+- Supabase de Entregas: ref `ptgkwyyolrdgnqketkjj` (não é o projeto de Corridas). A consulta `list_migrations` confirmou versão `20261031150244`, nome `apois_product_order_reviews_authenticated_v1_20261031`.
+- A tentativa de aplicar novamente SQL de migração encontrou política já existente; **não houve segunda aplicação**. A leitura posterior confirmou que `public.product_order_reviews` já existe, com RLS habilitado, políticas SELECT e INSERT restritas ao cliente autenticado, pedido entregue, usuário ativo e avaliação prévia do pedido.
+- RPCs disponíveis e verificadas: `public.submit_order_product_reviews(uuid,jsonb)` e `public.submit_order_review_with_products(uuid,smallint,smallint,text,jsonb)`, ambas SECURITY INVOKER e EXECUTE apenas para `authenticated`, sem acesso `anon`. A RPC original `public.submit_order_review` foi preservada.
+- Restrições verificadas: nota 1–5; comentário até 500 caracteres; UNIQ order_item_id; FKs para pedido/item/usuário. Permissões: SELECT/INSERT de tabela só para authenticated com RLS; anon sem direitos.
+- Contagem verificada após migração: 7 pedidos, 7 itens, 0 reviews originais, 0 avaliações individuais de produtos; nenhum histórico foi migrado artificialmente. Verificação dos advisors não apontou alerta próprio de `product_order_reviews`; existem alertas herdados de outras áreas não abordados.
+- IMPORTANTE: `docs/qa-sql/20261031_product_order_reviews_NOT_APPLIED.sql` é um **rascunho histórico anterior** à migração efetivamente registrada no Supabase. Não executar esse rascunho novamente.
+- Ainda pendentes: teste real de uma avaliação autenticada, fluxo de edição/visualização no APK futuro e homologação física após autorização de build. **Nenhum APK/AAB, deploy, merge ou alteração no Supabase Corridas.**
