@@ -30,6 +30,8 @@ if(role==="partner"){
  assert.ok(signup.includes(marker),"Missing driver photo step: "+marker);
  for(const marker of ["APOIS_VEHICLE_INSPECTION_UPLOAD_V1","apois-inspections","apois_submit_driver_vehicle_inspection","if(!committed)"])
  assert.ok(uploader.includes(marker),"Missing immutable upload step: "+marker);
+ assert.ok((uploader.match(/upsert: false,/g)||[]).length>=2,"New registration objects must never request Storage overwrite");
+ assert.ok(!uploader.includes("upsert: true"),"Private evidence cannot use upsert:true");
  for(const marker of ["APOIS_ADMIN_INSPECTION_REVIEW_V1","apois_review_vehicle_photo","inspection_photos","Abrir foto original"])
  assert.ok(staff.includes(marker),"Missing admin review: "+marker);
  assert.ok(driver.includes("ApoisCaseWorkroom"),"Driver must have response UI");
