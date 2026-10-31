@@ -15,8 +15,34 @@ test "$(bun --version)" = "1.3.14"
 
 if [ ! -f sources/apois-corridas-motorista-admin/src/routes/admin.motoristas.tsx ] || \
    [ ! -f sources/apois-entregas/src/routes/courier.tsx ]; then
+  # Vercel does not authenticate private Git submodules by default.
+  # This secret must be a short-lived GitHub fine-grained token with only
+  # Contents:Read for the three pinned source repositories.
+  if [ -z "${APOIS_PREVIEW_GITHUB_TOKEN:-}" ]; then
+    echo '[BLOCKED] Configure APOIS_PREVIEW_GITHUB_TOKEN in the isolated Vercel QA project (Preview environment).'
+    exit 2
+  fi
+  ASKPASS_SCRIPT="$(mktemp)"
+  cat > "$ASKPASS_SCRIPT" <<'EOF'
+#!/usr/bin/env sh
+case "$1" in
+  *Username*) printf '%s\\n' 'x-access-token' ;;
+  *Password*) printf '%s\\n' "$APOIS_PREVIEW_GITHUB_TOKEN" ;;
+  *) exit 1 ;;
+esac
+EOF
+  chmod 700 "$ASKPASS_SCRIPT"
+  export GIT_ASKPASS="$ASKPASS_SCRIPT"
+  export GIT_TERMINAL_PROMPT=0
+  cleanup_submodule_auth() {
+    rm -f "$ASKPASS_SCRIPT"
+    unset GIT_ASKPASS APOIS_PREVIEW_GITHUB_TOKEN
+  }
+  trap cleanup_submodule_auth EXIT
   git submodule sync --recursive
   git submodule update --init --recursive
+  cleanup_submodule_auth
+  trap - EXIT
 fi
 test -f sources/apois-corridas-motorista-admin/src/routes/admin.motoristas.tsx
 test -f sources/apois-entregas/src/routes/courier.tsx
