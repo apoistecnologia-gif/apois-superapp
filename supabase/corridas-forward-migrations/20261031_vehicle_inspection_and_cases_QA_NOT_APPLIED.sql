@@ -56,7 +56,7 @@ BEGIN
  IF NOT FOUND OR d.category<>'carros' THEN RAISE EXCEPTION 'driver_car_required'; END IF;
  IF d.vehicle_photo_url IS NULL OR split_part(d.vehicle_photo_url,'/',1)<>(SELECT auth.uid())::text
  THEN RAISE EXCEPTION 'front_photo_required'; END IF;
- IF _slots IS NULL OR jsonb_typeof(_slots)<>'object' OR jsonb_object_length(_slots)<>5 THEN
+ IF _slots IS NULL OR jsonb_typeof(_slots)<>'object' OR (SELECT count(*) FROM jsonb_object_keys(_slots))<>5 THEN
    RAISE EXCEPTION 'five_photos_required';
  END IF;
  -- Front is already verified at registration; keep immutable review snapshot.
@@ -83,6 +83,21 @@ GRANT EXECUTE ON FUNCTION public.apois_submit_driver_vehicle_inspection(jsonb) T
 
 -- Fail closed for new car registrations; preserve legacy approved drivers.
 ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS apois_inspection_required boolean NOT NULL DEFAULT false;
+CREATE OR REPLACE FUNCTION public.apois_review_vehicle_photo(_id uuid,_approved boolean,_note text DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $
+BEGIN
+ IF NOT private.has_permission('drivers.approve') AND NOT private.has_permission('drivers.manage') THEN RAISE EXCEPTION 'forbidden'; END IF;
+ IF length(coalesce(_note,''))>500 THEN RAISE EXCEPTION 'invalid_note'; END IF;
+ UPDATE public.apois_vehicle_inspection_photos
+ SET review_status=CASE WHEN _approved THEN 'approved' ELSE 'rejected' END,
+     reviewed_at=now(),reviewed_by=(SELECT auth.uid()),review_note=nullif(trim(_note),'')
+ WHERE id=_id;
+ IF NOT FOUND THEN RAISE EXCEPTION 'photo_not_found'; END IF;
+END; $;
+REVOKE ALL ON FUNCTION public.apois_review_vehicle_photo(uuid,boolean,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_review_vehicle_photo(uuid,boolean,text) TO authenticated;
+
 CREATE OR REPLACE FUNCTION private.apois_require_vehicle_inspection()
 RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
 AS $$
@@ -92,7 +107,7 @@ BEGIN
  ELSIF NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
        AND NEW.apois_inspection_required THEN
    IF (SELECT count(DISTINCT slot) FROM public.apois_vehicle_inspection_photos
-       WHERE driver_id=NEW.id AND submitted_at>=NEW.created_at)<6 THEN
+       WHERE driver_id=NEW.id AND submitted_at>=NEW.created_at AND review_status='approved')<6 THEN
        RAISE EXCEPTION 'vehicle_inspection_incomplete';
    END IF;
  END IF;
@@ -193,6 +208,7 @@ DECLARE role_name text; event_id uuid;
 BEGIN
  role_name:=public.apois_case_access(_ticket_id);
  IF role_name NOT IN ('passenger','driver','staff') THEN RAISE EXCEPTION 'case_not_authorized'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.passenger_support_tickets WHERE id=_ticket_id AND status IN ('open','in_progress')) THEN RAISE EXCEPTION 'case_closed'; END IF;
  IF length(trim(coalesce(_message,''))) NOT BETWEEN 3 AND 4000 THEN RAISE EXCEPTION 'invalid_reply'; END IF;
  INSERT INTO public.apois_case_events(ticket_id,actor_user_id,actor_role,kind,message)
  VALUES(_ticket_id,(SELECT auth.uid()),role_name,
@@ -233,6 +249,7 @@ DECLARE v_id uuid; v_role text;
 BEGIN
  v_role:=public.apois_case_access(_ticket_id);
  IF v_role NOT IN ('passenger','driver','staff') THEN RAISE EXCEPTION 'case_not_authorized'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.passenger_support_tickets WHERE id=_ticket_id AND status IN ('open','in_progress')) THEN RAISE EXCEPTION 'case_closed'; END IF;
  IF length(_path)>260 OR _path !~ ('^'||_ticket_id::text||'/'||(SELECT auth.uid())::text||'/[a-zA-Z0-9_-]{12,64}\.(jpg|png|webp|pdf)$')
  OR _mime NOT IN ('image/jpeg','image/png','image/webp','application/pdf')
  OR length(trim(coalesce(_name,''))) NOT BETWEEN 1 AND 160 THEN RAISE EXCEPTION 'invalid_evidence'; END IF;
