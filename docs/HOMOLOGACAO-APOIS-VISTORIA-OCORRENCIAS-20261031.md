@@ -63,3 +63,11 @@ Arquivo: `supabase/corridas-forward-migrations/20261031_vehicle_inspection_and_c
 - É necessária avaliação sobre arquivamento criptográfico (SHA-256 calculado no servidor), retenção parametrizada, preservação em disputa judicial e relatório de exportação autenticado. Esses recursos probatórios avançados não foram implementados; não alegar que exista cadeia de custódia pericial certificada.
 - **Validação de SQL:** esquema completo compilou com `BEGIN;` + `ROLLBACK;`, criou as entidades temporariamente e verificou `apois_case_access(NULL) = none`; nenhum dado persistido.
 - Nova migração continua `NOT_APPLIED`, por proteção ao cadastro atual dos motoristas. Não aplicar ou publicar sem testes conjuntos de interface e servidor.
+
+## Revisão adicional da prontidão para publicação (31/10/2026)
+- A RPC canônica `driver_complete_registration_v3` usa `INSERT ... ON CONFLICT(user_id) DO UPDATE`. A regra da vistoria foi ajustada para cobrir INSERT e UPDATE de placa/categoria/foto do veículo, sem impor reaprovação aos motoristas legados que não alteraram o carro.
+- A trigger lê `OLD` somente no ramo UPDATE, para evitar falha durante INSERT. O aceite exige foto aprovada mais recente de cada um dos seis ângulos para a placa atual.
+- Em `scripts/fix-partner-driver-vehicle-photo-upload-v1.mjs`, todos os uploads do cadastro usam `upsert:false`, pois são caminhos exclusivos e as políticas Storage liberam INSERT, não substituição. O teste `scripts/verify-apois-vehicle-incidents-v1.mjs` protege esse requisito.
+- O conjunto atualizado de regras SQL foi testado novamente por `BEGIN ... ROLLBACK` no Supabase Corridas; sem sessão, acesso a casos retorna `none`. Não houve alteração persistente, aplicação de DDL, inserção de evidências ou dados fictícios.
+- Auditoria WEB 41222471688: todos os 3 jobs SUCCESS. Alterações suplementares de segurança mantidas na branch sem APK ou deploy.
+- **Limite de produção:** cadastro com seis fotos e política de aprovação devem ser ativados de maneira coordenada com a versão do app que captura essas imagens; até lá, é uma implementação QA sem uso real.
