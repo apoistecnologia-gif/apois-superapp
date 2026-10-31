@@ -15,7 +15,7 @@ for(const text of ["data-apois-ride-comfort-prefs-v1","selectedCategory?.code ==
  "Quero ouvir música","Prefiro sem música","Prefiro ligado","Prefiro desligado"]){
  assert.ok(screen.includes(text),"Client UX missing "+text);
 }
-assert.ok(request.includes('service_details: selectedCategory.code === "carros" && comfort ? {ride_comfort_preferences: comfort} : {}'),"Ride request must send preferences only for cars");
+assert.ok(request.includes('service_details: { ...(selectedCategory.details ?? {}), ...(selectedCategory.code === "carros" && comfort ? {ride_comfort_preferences: comfort} : {}) }'),"Ride request must preserve existing service details and send prefs for cars");
 assert.ok(request.includes('supabase.functions.invoke("request-ride"'),"Existing ride service preserved");
 assert.ok(!request.includes('update({ service_details:'),"Never mutate accepted ride or fare after request");
 console.log("[OK] Cliente Corridas: per-ride comfort preferences; no new payment or pricing code.");
