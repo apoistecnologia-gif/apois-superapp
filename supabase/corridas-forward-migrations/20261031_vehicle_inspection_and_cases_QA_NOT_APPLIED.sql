@@ -147,6 +147,14 @@ ALTER TABLE public.apois_case_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.apois_case_evidence ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.apois_case_events,public.apois_case_evidence FROM PUBLIC,anon,authenticated;
 
+-- Driver may consult only cases involving a ride assigned to their account.
+CREATE POLICY "apois case ticket linked driver read" ON public.passenger_support_tickets
+FOR SELECT TO authenticated
+USING (ride_id IS NOT NULL AND EXISTS (
+  SELECT 1 FROM public.rides ride JOIN public.drivers d ON d.id=ride.driver_id
+  WHERE ride.id=passenger_support_tickets.ride_id AND d.user_id=public.mobility_user_id()
+));
+
 -- Security-definer identity predicate checks ownership against the existing ride.
 CREATE OR REPLACE FUNCTION public.apois_case_access(_ticket_id uuid)
 RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO ''
@@ -218,6 +226,22 @@ BEGIN
 END; $$;
 REVOKE ALL ON FUNCTION public.apois_case_reply(uuid,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.apois_case_reply(uuid,text) TO authenticated;
+
+-- Staff private note is not visible to passenger or driver; records remain immutable.
+CREATE OR REPLACE FUNCTION public.apois_case_internal_note(_ticket_id uuid,_message text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $
+DECLARE v_id uuid;
+BEGIN
+ IF (SELECT auth.uid()) IS NULL OR NOT private.has_permission('support.read') THEN RAISE EXCEPTION 'forbidden'; END IF;
+ IF length(trim(coalesce(_message,''))) NOT BETWEEN 3 AND 4000 THEN RAISE EXCEPTION 'invalid_note'; END IF;
+ INSERT INTO public.apois_case_events(ticket_id,actor_user_id,actor_role,kind,visible_to_parties,message)
+ VALUES(_ticket_id,(SELECT auth.uid()),'staff','internal_note',false,trim(_message))
+ RETURNING id INTO v_id;
+ RETURN v_id;
+END; $;
+REVOKE ALL ON FUNCTION public.apois_case_internal_note(uuid,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.apois_case_internal_note(uuid,text) TO authenticated;
 
 -- Evidence must be append-only and attributable to account and case; upload 8MB max.
 CREATE POLICY "apois case upload authorized" ON storage.objects FOR INSERT TO authenticated
