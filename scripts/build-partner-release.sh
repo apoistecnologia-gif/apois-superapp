@@ -262,6 +262,7 @@ export VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQb
 bun install --lockfile-only
 bun install --frozen-lockfile
 bun test src/lib/courier-dispatch-readiness.test.ts src/lib/courier-operation-readiness.test.ts
+node "$ROOT/scripts/fix-partner-entregas-tanstack-boundary-v1.mjs"
 bun run typecheck
 bun run build
 require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output/public 'Bundle Entregador usa Supabase Entregas canônico atual'
