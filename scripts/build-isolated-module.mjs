@@ -418,6 +418,7 @@ if (name === 'corridas') {
   console.log('[OK] Corridas: migração visual preservou byte a byte Maps/GPS/Places');
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-ride-comfort-preferences-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-ride-comfort-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-case-center-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-dispatch-ux-v1.mjs')]);
 }
 if (name === 'entregas') {
