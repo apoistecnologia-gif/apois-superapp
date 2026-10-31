@@ -109,11 +109,21 @@ try {
 
           await page.goto(origin + path, { waitUntil: 'networkidle' });
           const registration = page.getByText(/^(?:Criar conta|Criar minha conta|Cadastrar como motorista|Cadastre-se)$/i).first();
+          const beforeRegistrationText = await page.locator('body').innerText();
           await registration.click();
           await page.waitForTimeout(600);
           const registrationText = await page.locator('body').innerText();
+          assert.notEqual(registrationText, beforeRegistrationText, name + ': registration click did not change the page');
           assert.match(registrationText, /cadastro|cadastr|crie sua|criar (?:uma |sua )?conta|nome completo/i, name + ': registration UI did not open');
           assert.ok(await page.locator('input').count() >= 2, name + ': registration form absent');
+          if (name === 'entregas-login') {
+            const expectedBrand = 'data:image/png;base64,' + readFileSync(resolve('superapp/branding/apois-client-red-logo.b64'), 'utf8').trim();
+            item.registrationOfficialBrand = await page.locator('img').evaluateAll((images, expected) => images.some(image => image.src === expected), expectedBrand);
+            assert.equal(item.registrationOfficialBrand, true, 'Customer Entregas registration does not render the official embedded brand');
+          }
+          // Dismiss the previous feedback toast through its real close control.
+          const toastClose = page.locator('[data-sonner-toast] button[data-close-button]').first();
+          if (await toastClose.isVisible()) await toastClose.click();
           await page.screenshot({ path: resolve(output, name + '-register-' + width + '.png'), fullPage: true });
           item.interactions.push({ action: 'open registration without submitting', passed: true });
         } else {
