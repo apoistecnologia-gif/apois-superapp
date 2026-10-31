@@ -1,0 +1,281 @@
+{
+  "commit": "5c77ee772fdb8d5f4b84abc919b8eba03cbd1f5f",
+  "run_id": 41149559064,
+  "scope": "Offline public UI interactions only. No form submissions, authenticated backend E2E, Maps/payment calls or Android build.",
+  "results": [
+    {
+      "target": "cliente",
+      "name": "seletor",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "selector opens corridas",
+          "passed": true
+        },
+        {
+          "action": "selector opens entregas",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "corridas-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "entregas-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "registrationOfficialBrand": true,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "seletor",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "selector opens corridas",
+          "passed": true
+        },
+        {
+          "action": "selector opens entregas",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "corridas-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "cliente",
+      "name": "entregas-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "registrationOfficialBrand": true,
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "seletor",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "selector opens motorista",
+          "passed": true
+        },
+        {
+          "action": "selector opens entregador",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "motorista-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "entregador-login",
+      "width": 360,
+      "height": 800,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "seletor",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "selector opens motorista",
+          "passed": true
+        },
+        {
+          "action": "selector opens entregador",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "motorista-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    },
+    {
+      "target": "parceiro",
+      "name": "entregador-login",
+      "width": 1280,
+      "height": 900,
+      "passed": true,
+      "interactions": [
+        {
+          "action": "password reveal/hide without changing value",
+          "passed": true
+        },
+        {
+          "action": "open password recovery without submitting",
+          "passed": true
+        },
+        {
+          "action": "open registration without submitting",
+          "passed": true
+        }
+      ],
+      "pageErrors": [],
+      "localFailures": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13022123277,
+      "name": "apois-browser-cliente-5c77ee772fdb8d5f4b84abc919b8eba03cbd1f5f",
+      "expires_at": "2026-11-07T00:21:14Z"
+    },
+    {
+      "id": 13021873919,
+      "name": "apois-browser-parceiro-5c77ee772fdb8d5f4b84abc919b8eba03cbd1f5f",
+      "expires_at": "2026-11-07T00:21:09Z"
+    }
+  ]
+}

@@ -204,3 +204,36 @@ Esta seção atualiza o estado anterior sem reiniciar a auditoria.
 - Testes físicos de GPS/background/push/safe-area/OAuth nativo exigirão os APKs de teste posteriormente autorizados; são gates da homologação final, **não testes já realizados nem exigência circular para compilar o primeiro APK**.
 - A ausência de chave Android nos logs do preflight é intencional: o workflow WEB define esse valor vazio. Ela não demonstra ausência do secret no workflow Android, que foi apenas lido, nunca executado. Disponibilidade real de Maps/quotas e configuração de Entregas ainda precisa de validação externa.
 - Próximos alvos: cadastro/recuperação sem envio real, navegação/controle de senha, quatro módulos autenticados, Admin Corridas (ainda sem nova captura), Estabelecimento/Admin Entregas, contraste completo, teclado e estados loading/error/empty. Depois E2E despacho→aceite→retirada→PIN→delivered, avatar/RLS e serviços externos. Preservar fluxo simplificado do Entregador.
+
+## CONTINUIDADE — INTERAÇÕES PÚBLICAS — 30/10/2026
+
+**Código validado:** `5c77ee772fdb8d5f4b84abc919b8eba03cbd1f5f`.
+[Preflight 41149559064](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41149559064): **completed / SUCCESS, três jobs conferidos individualmente**.
+Relatório permanente: `docs/evidence/PUBLIC-INTERACTIONS-2026-10-30.json`.
+
+### O que foi executado
+- `scripts/audit-browser-public-v1.mjs` agora verifica interações reais no Chromium, com rede externa inteiramente bloqueada, além das 12 renderizações iniciais (quatro logins e dois seletores, 360×800 e 1280×900).
+- **32 ações verificadas**: 8 acessos aos módulos pelo seletor; 8 verificações de revelar/ocultar senha sem modificar o valor; 8 acionamentos de recuperação; 8 aberturas de cadastro.
+- O gate foi reforçado após a captura revelar que src correto não bastava: CSS legado por alt ainda substituía a imagem. A alteração local de alt evita esse seletor; não houve mudança global de tema. Captura final confirma logo oficial circular, sem o SVG legado. O teste exige imagem visível, src oficial e ausência de content:url.
+- Nas verificações de recuperação, os módulos que têm rota própria abriram a interface; no Cliente Entregas o clique com e-mail vazio exibiu a validação para informar e-mail. **Não houve solicitação de e-mail ou teste de recebimento do link.** O rótulo técnico do relatório “open password recovery” não deve ser interpretado como envio de recuperação.
+- Cadastro: clique deve mudar o conteúdo, apresentar formulário e, no Cliente Entregas, renderizar a URI da arte oficial versionada. A marca foi confirmada no DOM nas duas larguras, não apenas por leitura de fonte. Os formulários não foram submetidos e nenhum usuário foi criado.
+- As capturas incluem cadastro/recuperação. O toast deixado pela validação é fechado pelo controle real antes da captura de cadastro. Screenshots temporários estão nos artifacts com retenção de sete dias.
+- **Todos os 12 casos e 32 ações passaram**, sem pageerrors nem recursos locais ausentes. Estabelecimento/Admin Entregas conservaram build/typecheck/testes WEB, sem novo teste autenticado de painel.
+- Lint herdado permanece FAIL com 2.279 erros e 350 avisos; 48 testes de Entregas passam. Nenhuma regra de lint/teste foi desabilitada nesta retomada. Runs 41148841078 e 41149191292 passaram etapas anteriores, mas não substituem o resultado final reforçado 41149559064.
+
+### Problemas encontrados e corrigidos
+| ID | Evidência | Correção | Estado |
+| --- | --- | --- | --- |
+| EM-UI-037 | Run 41148452102 falhou apenas no Cliente: após navegar para cadastro, fallback da logo buscava /apois-logo.svg na raiz do pacote. Captura mostrava identidade antiga | `harden-entregas-superapp-brand-theme.mjs` incorpora a arte oficial em `register.tsx`, alterando exclusivamente import, src, alt e dimensão do img. O alt legado acionava uma regra de system-theme.css com content:url que substituía a arte, mesmo com src correto. Verificação reversível garante que os demais bytes do formulário permanecem iguais | Corrigido e validado: run 41148841078 verde para a referência do asset; run final 41149559064 também comprova ausência da substituição CSS; marca oficial verificada no DOM, com dimensão visível e content computado normal/none, e confirmada na captura final |
+| EM-UI-038 | Captura de feedback de recuperação tinha text-red-300 sobre fundo claro rosado, com leitura fraca | Mesma rotina troca somente as classes dos dois avisos do login para fundo #FEF3F2 e texto #B42318, mantendo mensagens, condições e callbacks (par de cores teórico: 1,75:1 para #FCA5A5 sobre #FEF3F2 antes; 6,05:1 para #B42318 sobre #FEF3F2 depois) | Corrigido e validado em build e captura; não é auditoria WCAG completa |
+| EM-QA-039 | O gate anterior só provava renderização inicial e presença de controles | Testes de clique, preservação do valor da senha, transição real de cadastro, marca renderizada e ausência de recursos locais quebrados | Corrigido e validado no escopo público |
+
+**Preservação:** comparação desde `142783bf` até o código testado altera somente dois scripts. Nenhum snapshot protegido, banco, migration, backend, contrato, autenticação, API ou regra financeira alterado. Nenhum APK/AAB, deploy, merge, cobrança ou envio de formulário realizado.
+
+### Limite real para continuar
+- A revisão pública automatizada avançou; **não declarar a auditoria funcional integral encerrada nem recomendar a rodada ampla de APKs apenas por esses testes**.
+- Não foi identificado nos documentos consultados um ambiente autenticável de homologação com contas por papel. As áreas privadas permanecem sem execução real: home/mapas/pedidos/ganhos/perfil/histórico dos quatro módulos, Estabelecimento e Admins Entregas/Corridas, autorização/RLS e E2E com PIN.
+- Para avançar nessa parte, é necessário identificar um ambiente e acessos de teste por papel que possam ser usados sem modificar produção. Não inventar credenciais, simular autorização bem-sucedida como se fosse backend real, nem criar usuários/pedidos em produção.
+- Alternativa para auditoria visual isolada: fixtures sintéticas explicitamente identificadas, sem prova de integração real. Elas não substituem homologação autenticada.
+- Testes físicos Android, OAuth nativo, GPS/background, push e serviços externos continuarão na fase posterior de APKs autorizados; não afirmar que já passaram.
+- Próxima retomada: usar este código e evidências, **não repetir as correções de logo, senha, seletor ou caminhos do Entregador já verificadas**. Resolver a disponibilidade de homologação autenticada, triagem de lint/lockfile e os gates externos documentados.
