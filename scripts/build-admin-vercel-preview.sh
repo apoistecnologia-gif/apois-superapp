@@ -54,8 +54,10 @@ esac
 test -n "${CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY:-}"
 test -n "${CORRIDAS_WEB_MAPS_API_KEY:-}"
 npm run build:partner
+# Assemble standalone Admin-only routes; Motorista APK tree excludes /admin/*.
+node "$ROOT/scripts/build-corridas-admin-spa-v1.mjs"
 
-SOURCE="$ROOT/.work/partner-motorista/dist/client"
+SOURCE="$ROOT/.work/partner-motorista/dist/admin-preview"
 test -s "$SOURCE/index.html"
 test -d "$SOURCE/assets"
 rm -rf "$OUTPUT"
