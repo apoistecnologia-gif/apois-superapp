@@ -1,4 +1,6 @@
--- APOIS ENTREGAS — correção QA proposta, NÃO APLICAR sem autorização de produção.
+-- APOIS ENTREGAS — APLICADA com autorização em produção em 31/10/2026.
+-- Migration oficial: supabase/migrations/20261031151515_apois_courier_avatar_own_scoped_insert_20261031.sql
+-- NÃO REAPLICAR: o histórico do Supabase já contém esta política.
 -- Somente INSERT da foto pública na pasta individual de entregador aprovado.
 -- Sem modificar documentos, aprovação, RLS de perfis, pagamentos ou fotos existentes.
 -- Motivo: public.couriers tem RLS sem SELECT policy; um EXISTS direto da policy
