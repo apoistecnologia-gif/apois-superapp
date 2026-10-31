@@ -15,7 +15,7 @@ const status=premium.slice(a,b);
 const c=maps.indexOf('function RecenterControl('),d=maps.indexOf('export function CourierLiveMap(',c);
 assert.ok(c>=0&&d>c);
 const recenter=maps.slice(c,d);
-const home=route.indexOf('const online = Boolean(availability?.is_online)');
+const home=route.lastIndexOf('const online = Boolean(availability?.is_online)');
 const h=route.indexOf('<header',home),end=route.indexOf('</header>',h);
 assert.ok(home>=0&&h>home&&end>h);
 const header=route.slice(h,end+9);
