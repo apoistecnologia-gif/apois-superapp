@@ -81,6 +81,10 @@ node "$ROOT/scripts/harden-partner-motorista-arrival-voice-v5.mjs"
 node "$ROOT/scripts/harden-partner-driver-trip-ux-v6.mjs"
 node "$ROOT/scripts/harden-partner-driver-passenger-name-v6.mjs"
 node "$ROOT/scripts/harden-partner-driver-registration-exit-v3.mjs"
+# QA: private vehicle inspection (front/right/left/dashboard/front and rear seats).
+node "$ROOT/scripts/fix-partner-driver-vehicle-photo-form-v1.mjs"
+node "$ROOT/scripts/fix-partner-driver-vehicle-photo-upload-v1.mjs"
+node "$ROOT/scripts/fix-partner-admin-vehicle-inspection-v1.mjs"
 node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" motorista
 node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" motorista
