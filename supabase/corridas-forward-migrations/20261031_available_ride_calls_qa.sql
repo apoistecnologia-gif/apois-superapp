@@ -37,6 +37,7 @@ BEGIN
     ) ORDER BY x.distance_km ASC), '[]'::jsonb)
     INTO v_calls
   FROM (
+    SELECT * FROM (
     SELECT r.id,r.category,r.estimated_price,r.search_expires_at,
       6371*acos(least(1,greatest(-1,
         cos(radians(r.origin_lat::double precision))*cos(radians(d.current_lat::double precision))
@@ -57,10 +58,11 @@ BEGIN
       AND (r.payment_method IS DISTINCT FROM 'pix' OR r.payment_status='paid')
       AND NOT (v_user=ANY(COALESCE(r.rejected_driver_ids,'{}'::uuid[])))
       AND NOT (v_user=ANY(COALESCE(r.offered_driver_ids,'{}'::uuid[])))
-  ) x
-  WHERE x.distance_km<=5
-  ORDER BY x.distance_km ASC
-  LIMIT 10;
+    ) filtered
+    WHERE filtered.distance_km<=5
+    ORDER BY filtered.distance_km ASC
+    LIMIT 10
+  ) x;
   RETURN COALESCE(v_calls,'[]'::jsonb);
 END;
 $apois$;
