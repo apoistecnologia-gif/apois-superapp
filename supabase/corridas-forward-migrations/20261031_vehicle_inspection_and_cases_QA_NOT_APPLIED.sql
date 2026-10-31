@@ -146,8 +146,19 @@ AS $$
 BEGIN
  IF TG_OP='INSERT' THEN
    NEW.apois_inspection_required := (NEW.category='carros');
- ELSIF NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
-       AND NEW.apois_inspection_required THEN
+ ELSE
+   -- Canonical registration v3 UPSERT may UPDATE an existing pending driver row.
+   -- When a new car/photo is registered, mark it for inspection without blocking
+   -- already approved legacy drivers whose vehicle has not changed.
+   IF NEW.category='carros'
+      AND (OLD.category IS DISTINCT FROM NEW.category
+           OR OLD.vehicle_photo_url IS DISTINCT FROM NEW.vehicle_photo_url)
+   THEN NEW.apois_inspection_required := true;
+   END IF;
+ END IF;
+ IF TG_OP='UPDATE'
+    AND NEW.approval_status='aprovado' AND OLD.approval_status IS DISTINCT FROM 'aprovado'
+    AND NEW.apois_inspection_required THEN
    IF (SELECT count(*) FROM (
          SELECT DISTINCT ON (slot) slot,review_status
            FROM public.apois_vehicle_inspection_photos
@@ -163,7 +174,7 @@ BEGIN
 END; $$;
 DROP TRIGGER IF EXISTS apois_require_vehicle_inspection_on_driver ON public.drivers;
 CREATE TRIGGER apois_require_vehicle_inspection_on_driver
-BEFORE INSERT OR UPDATE OF approval_status ON public.drivers
+BEFORE INSERT OR UPDATE OF approval_status,category,vehicle_photo_url ON public.drivers
 FOR EACH ROW EXECUTE FUNCTION private.apois_require_vehicle_inspection();
 
 -- Existing canonical passenger ticket is retained; do not create a parallel case.
