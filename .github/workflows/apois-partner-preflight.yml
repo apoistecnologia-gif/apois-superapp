@@ -86,7 +86,9 @@ jobs:
         shell: bash
         env:
           APOIS_PLAYWRIGHT_ROOT: ${{ runner.temp }}/apois-browser-qa
-        run: node scripts/audit-browser-public-v1.mjs parceiro
+        run: |
+          node scripts/audit-browser-public-v1.mjs parceiro
+          node scripts/test-courier-home-render-v1.mjs
       - name: Preserve browser QA screenshots and metrics
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
