@@ -20,6 +20,12 @@ for(const file of ["src/routes/courier.tsx","src/components/CourierPremiumViews.
   return s;
  });
 }
+// The offer overlay has a separate official logo. Its legacy alt triggered
+// the global CSS content:url replacement and resurfaced the yellow asset.
+edit("src/components/CourierOfferOverlay.tsx",s=>{
+ if(!s.includes('src={APOIS_PARTNER_LOGO_DATA_URL}'))throw Error("[FAIL] Official offer logo is missing");
+ return once(s,'alt="APOIS ENTREGA" className="h-11 w-auto object-contain"','alt="APOIS" className="h-11 w-auto object-contain"',"offer logo prevents legacy CSS substitution");
+});
 edit("src/components/CourierRouteMap.tsx",s=>once(s,
  'aria-label="Recentralizar mapa"\n      className="absolute right-3 top-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-accent/40 bg-black/90 text-white shadow-xl backdrop-blur active:scale-95"',
  'aria-label="Recentralizar mapa"\n      data-apois-courier-recenter\n      className="absolute right-3 top-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-[#D0D5DD] bg-white text-[#111827] shadow-md active:scale-95"',
