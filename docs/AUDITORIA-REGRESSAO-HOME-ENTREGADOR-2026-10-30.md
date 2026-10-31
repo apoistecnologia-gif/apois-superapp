@@ -99,3 +99,5 @@ A captura Android do proprietário comprovou falha não coberta pelos testes pú
 - Avaliação individual de produtos com notas 1 a 5 e comentário por item preparada na UI. A persistência fica desativada enquanto o servidor não tiver suporte; nunca exibir falsa confirmação de armazenamento. RPC antiga de avaliação do pedido preservada para os campos existentes.
 - SQL de revisão separado e NÃO APLICADO: docs/qa-sql/20261031_product_order_reviews_NOT_APPLIED.sql, com proteção RLS, posse do pedido, entrega concluída e atomicidade ao submeter avaliação conjunta. A aplicação futura exige autorização explícita.
 - Não houve APK, AAB, deploy, merge ou alteração de SQL/produçao nesta etapa.
+
+- Preflight final sem APK 41211392232: WEB-only cliente SUCCESS, WEB-only estabelecimento SUCCESS e audit-web-only SUCCESS. Logs do Cliente confirmam execução de scripts/fix-entregas-customer-order-reviews-v1.mjs e do teste scripts/test-entregas-review-to-one-v1.mjs. O teste visual é de páginas anônimas; rota autenticada de avaliações, RPCs de produto e Android ainda não homologados fisicamente.
