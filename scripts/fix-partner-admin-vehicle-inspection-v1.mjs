@@ -8,11 +8,11 @@ let p="src/lib/driverDocs.functions.ts",s=read(p);
 if(!s.includes("APOIS_ADMIN_VEHICLE_INSPECTION_V1")){
  s=rep(s,"    return out;",[
  '    // APOIS_ADMIN_VEHICLE_INSPECTION_V1: private, staff-only temporary links.',
- '    const inspection=await supabaseAdmin.from("apois_vehicle_inspection_photos")',
+ '    const inspection=await (supabaseAdmin as any).from("apois_vehicle_inspection_photos")',
  '      .select("id,slot,bucket_id,object_path,review_status,review_note,submitted_at")',
  '      .eq("driver_id",data.driverId).order("submitted_at",{ascending:false});',
  '    if(inspection.error)throw Error("inspection_unavailable");',
- '    const photographs=await Promise.all((inspection.data??[]).map(async (item)=>{',
+ '    const photographs=await Promise.all((inspection.data??[]).map(async (item: {id:string;slot:string;bucket_id:string;object_path:string;review_status:string;review_note:string|null;submitted_at:string})=>{',
  '      const signed=await supabaseAdmin.storage.from(item.bucket_id).createSignedUrl(item.object_path,600);',
  '      if(signed.error)throw Error("photo_signed_url_failed");',
  '      return {id:item.id,slot:item.slot,url:signed.data?.signedUrl??null,',
