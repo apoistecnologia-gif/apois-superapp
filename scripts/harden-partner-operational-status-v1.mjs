@@ -118,8 +118,8 @@ function modify(file,changes){
 if(process.argv[2]==="motorista") modify(motor,[
  ['import { MovviMap } from "@/components/MovviMap";',
  'import { MovviMap } from "@/components/MovviMap";\nimport { ApoisStatusCheck } from "@/components/ApoisStatusCheck";','driver import'],
- ['  const [sideMenuOpen, setSideMenuOpen] = useState(false);',
- '  const [sideMenuOpen, setSideMenuOpen] = useState(false);\n  const [showStatusCheck,setShowStatusCheck]=useState(false);','driver state'],
+ ['  const [incoming, setIncoming] = useState<RideRow | null>(null);',
+ '  const [showStatusCheck,setShowStatusCheck]=useState(false);\n  const [incoming, setIncoming] = useState<RideRow | null>(null);','driver state'],
  ['          onUseTestLocation={ativarLocalizacaoTesteBrasil}',
  '          onUseTestLocation={ativarLocalizacaoTesteBrasil}\n          onOpenStatusCheck={()=>setShowStatusCheck(true)}','driver callback'],
  ['      <DriverVoiceToggle\n', '      {showStatusCheck && <ApoisStatusCheck role="motorista" online={online} onClose={()=>setShowStatusCheck(false)} />}\n\n      <DriverVoiceToggle\n','driver modal'],
