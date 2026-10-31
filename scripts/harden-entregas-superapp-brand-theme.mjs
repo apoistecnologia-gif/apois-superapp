@@ -207,6 +207,8 @@ loginSource = loginSource
 if (!loginSource.includes('rgba(201,20,27,0.18)') && !loginSource.includes('rgba(229,27,35,0.22)')) {
   throw new Error('login.tsx: brilho vermelho do botão Entrar não foi confirmado');
 }
+// Public recovery/validation feedback on the light customer login.
+loginSource = loginSource.replaceAll("rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-medium leading-relaxed text-red-300", "rounded-2xl border border-red-500/30 bg-[#FEF3F2] px-4 py-3 text-sm font-medium leading-relaxed text-[#B42318]");
 writeFileSync(loginPath, loginSource, 'utf8');
 
 
@@ -295,3 +297,28 @@ if (finalAdminSupportSource.includes('text-blue-300') || finalAdminSupportSource
 console.log('[OK] Estabelecimento: tela de sessão expirada (server.ts) segue identidade APOIS branco + preto + vermelho.');
 console.log('[OK] Estabelecimento/Admin: brilho do botão Entrar em login.tsx segue identidade APOIS branco + preto + vermelho.');
 console.log('[OK] Admin: badge "Em atendimento" do painel de suporte segue identidade APOIS.');
+
+
+// Public registration must use the same self-contained official brand as login.
+// Change only the import and img src; preserve every field, handler and callback.
+const registerPath = resolve(root, workspace, 'src/routes/register.tsx');
+const registerBefore = readFileSync(registerPath, 'utf8');
+const oldRegisterImport = 'import logoAsset from "@/assets/logo.png.asset.json";';
+const newRegisterImport = 'import apoisClientBrand from "@/assets/apoisClientBrandData";';
+const oldRegisterSrc = 'src={logoAsset.url}';
+const newRegisterSrc = 'src={apoisClientBrand}';
+let registerAfter = registerBefore;
+if (registerBefore.includes(oldRegisterSrc)) {
+  if (registerBefore.split(oldRegisterSrc).length !== 2 ||
+      registerBefore.split(oldRegisterImport).length !== 2) {
+    throw Error('[FAIL] Customer registration brand source drift');
+  }
+  registerAfter = registerBefore.replace(oldRegisterImport, newRegisterImport).replace(oldRegisterSrc, newRegisterSrc);
+  if (registerAfter.replace(newRegisterImport, oldRegisterImport).replace(newRegisterSrc, oldRegisterSrc) !== registerBefore) {
+    throw Error('[FAIL] Non-brand registration change');
+  }
+} else if (!registerBefore.includes(newRegisterImport) || !registerBefore.includes(newRegisterSrc)) {
+  throw Error('[FAIL] Customer registration official brand missing');
+}
+if (registerAfter !== registerBefore) writeFileSync(registerPath, registerAfter, 'utf8');
+console.log('[OK] Customer registration uses embedded official brand; form/auth unchanged');
