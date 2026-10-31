@@ -40,22 +40,42 @@ serve(async (req)=>{
  const sender=Deno.env.get("APOIS_EMAIL_FROM");
  if(!key||!sender)return json(503,{status:"queued",error:"email_provider_not_configured"});
  const reason=String(requestRow.data.reason??"").slice(0,1000);
+ const itemLabels:Record<string,string>={
+   front:"Foto da frente do veículo",right:"Foto do lado direito",left:"Foto do lado esquerdo",
+   dashboard:"Foto do painel",front_seats:"Foto dos bancos dianteiros",
+   rear_seats:"Foto dos bancos traseiros",tire_fl:"Foto do pneu dianteiro esquerdo",
+   tire_fr:"Foto do pneu dianteiro direito",tire_rl:"Foto do pneu traseiro esquerdo",
+   tire_rr:"Foto do pneu traseiro direito",belt_front:"Foto dos cintos dianteiros",
+   belt_rear:"Foto dos cintos traseiros",headlights_on:"Foto dos faróis acesos",
+   selfie:"Selfie do motorista",cnh_front:"CNH (frente)",cnh_back:"CNH (verso)",
+   crlv:"Documento do veículo (CRLV)",manufacture_year:"Ano de fabricação do veículo"
+ };
  const items=(Array.isArray(requestRow.data.required_items)?requestRow.data.required_items:[])
-  .map((item:string)=>String(item).slice(0,60));
+  .map((item:string)=>itemLabels[String(item)]??"Documento ou fotografia pendente");
  const name=String(driver.data?.name??"Motorista").slice(0,120);
  const body=[
-  "APOIS Corridas — Pendência no cadastro de motorista",
+  "APOIS CORRIDAS — CORREÇÕES NECESSÁRIAS NO CADASTRO",
   "",
   "Olá, "+name+".",
-  "Nossa equipe analisou seu cadastro e identificou correções necessárias.",
   "",
-  "Itens: "+items.join(", "),
-  "Orientação da equipe: "+reason,
+  "Nossa equipe analisou seu cadastro no APOIS Corridas e identificou informações que precisam ser corrigidas antes da aprovação.",
   "",
-  "Entre no aplicativo APOIS Motorista, abra Status do cadastro ou Meus documentos, confira os detalhes e envie o material solicitado.",
-  "Seu cadastro continua em análise até a conferência da equipe.",
+  "ITENS PENDENTES:",
+  ...items.map(item=>"• "+item),
+  "",
+  "ORIENTAÇÃO DA EQUIPE APOIS:",
+  reason,
+  "",
+  "COMO REGULARIZAR:",
+  "Acesse o aplicativo APOIS Motorista e entre em Meus Documentos ou Status do cadastro. Consulte as pendências, envie os arquivos solicitados e peça uma nova análise.",
+  "",
+  "Seu cadastro permanecerá em análise até a conferência da nossa equipe.",
   "",
   "Se você não reconhece este cadastro, entre em contato pelos canais oficiais da APOIS.",
+  "",
+  "Atenciosamente,",
+  "Equipe de Segurança e Cadastro",
+  "APOIS Corridas",
  ].join("\n");
  const response=await fetch("https://api.resend.com/emails",{
   method:"POST",
