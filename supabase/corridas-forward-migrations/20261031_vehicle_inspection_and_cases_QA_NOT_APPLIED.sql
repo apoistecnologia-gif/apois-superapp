@@ -85,7 +85,7 @@ GRANT EXECUTE ON FUNCTION public.apois_submit_driver_vehicle_inspection(jsonb) T
 ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS apois_inspection_required boolean NOT NULL DEFAULT false;
 CREATE OR REPLACE FUNCTION public.apois_review_vehicle_photo(_id uuid,_approved boolean,_note text DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $
+AS $$
 BEGIN
  IF NOT private.has_permission('users.manage') THEN RAISE EXCEPTION 'forbidden'; END IF;
  IF length(coalesce(_note,''))>500 THEN RAISE EXCEPTION 'invalid_note'; END IF;
@@ -94,7 +94,7 @@ BEGIN
      reviewed_at=now(),reviewed_by=(SELECT auth.uid()),review_note=nullif(trim(_note),'')
  WHERE id=_id;
  IF NOT FOUND THEN RAISE EXCEPTION 'photo_not_found'; END IF;
-END; $;
+END; $$;
 REVOKE ALL ON FUNCTION public.apois_review_vehicle_photo(uuid,boolean,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.apois_review_vehicle_photo(uuid,boolean,text) TO authenticated;
 
@@ -230,7 +230,7 @@ GRANT EXECUTE ON FUNCTION public.apois_case_reply(uuid,text) TO authenticated;
 -- Staff private note is not visible to passenger or driver; records remain immutable.
 CREATE OR REPLACE FUNCTION public.apois_case_internal_note(_ticket_id uuid,_message text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
-AS $
+AS $$
 DECLARE v_id uuid;
 BEGIN
  IF (SELECT auth.uid()) IS NULL OR NOT private.has_permission('support.read') THEN RAISE EXCEPTION 'forbidden'; END IF;
@@ -239,7 +239,7 @@ BEGIN
  VALUES(_ticket_id,(SELECT auth.uid()),'staff','internal_note',false,trim(_message))
  RETURNING id INTO v_id;
  RETURN v_id;
-END; $;
+END; $$;
 REVOKE ALL ON FUNCTION public.apois_case_internal_note(uuid,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.apois_case_internal_note(uuid,text) TO authenticated;
 
