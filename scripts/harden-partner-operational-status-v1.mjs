@@ -143,10 +143,10 @@ if(process.argv[2]==="entregador") {
   let content=readFileSync(courier,"utf8");
   const marker='data-apois-courier-status-check-v1';
   if(!content.includes(marker)){
-    const match=content.match(/<CourierStatusCard\\b[\\s\\S]{0,800}?\\/>/);
+    const match=content.match(/<CourierStatusCard\b[\s\S]{0,800}?\/>/);
     if(!match)throw Error("[FAIL] Courier status card unavailable for diagnostic entry");
-    const button='<button type="button" data-apois-courier-status-check-v1 onClick={()=>setStatusCheckOpen(true)} className="w-full rounded-xl border border-[#E00029]/35 bg-white px-4 py-2 text-sm font-bold text-[#E00029]">Teste de Status · 6 verificações</button>\\n        ';
-    content=content.replace(match[0],match[0]+'\\n        '+button);
+    const button='<button type="button" data-apois-courier-status-check-v1 onClick={()=>setStatusCheckOpen(true)} className="w-full rounded-xl border border-[#E00029]/35 bg-white px-4 py-2 text-sm font-bold text-[#E00029]">Teste de Status · 6 verificações</button>\n        ';
+    content=content.replace(match[0],match[0]+'\n        '+button);
     writeFileSync(courier,content,"utf8");
   }
 }
