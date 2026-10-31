@@ -54,12 +54,12 @@ if(!s.includes("APOIS_ADMIN_INSPECTION_REVIEW_V1")){
  s=rep(s,"  async function openDetails(driver: DriverRow) {",fn+"\n\n  async function openDetails(driver: DriverRow) {","review action");
  const view=[
  '            <section data-apois-admin-vehicle-inspection-v1 className="space-y-3 rounded-xl border border-primary/20 p-3">',
- '              <h3 className="text-sm font-extrabold">Vistoria fotográfica do veículo (6 ângulos)</h3>',
+ '              <h3 className="text-sm font-extrabold">Vistoria fotográfica do veículo (13 fotos)</h3>',
  '              <p className="text-xs text-muted-foreground">Arquivos privados com acesso temporário, decisões individuais e histórico de envio.</p>',
  '              {selected.category==="carros" && docs?.inspection_photos.length===0 && <p className="text-sm text-amber-600">Vistoria ainda não enviada. Não aprove sem todas as fotos analisadas.</p>}',
  '              <div className="grid gap-3 sm:grid-cols-2">',
  '                {docs?.inspection_photos.map(photo=><article key={photo.id} className="space-y-2 rounded-xl border border-border p-3">',
- '                  <div className="flex items-center justify-between gap-2"><strong className="text-xs">{({front:"Frente",right:"Lado direito",left:"Lado esquerdo",dashboard:"Painel",front_seats:"Bancos dianteiros",rear_seats:"Bancos traseiros"} as Record<string,string>)[photo.slot]??photo.slot}</strong><span className="text-[10px]">{photo.review_status}</span></div>',
+ '                  <div className="flex items-center justify-between gap-2"><strong className="text-xs">{({front:"Frente",right:"Lado direito",left:"Lado esquerdo",dashboard:"Painel",front_seats:"Bancos dianteiros",rear_seats:"Bancos traseiros",tire_fl:"Pneu dianteiro esquerdo",tire_fr:"Pneu dianteiro direito",tire_rl:"Pneu traseiro esquerdo",tire_rr:"Pneu traseiro direito",belt_front:"Cintos dianteiros",belt_rear:"Cintos traseiros",headlights_on:"Faróis acesos"} as Record<string,string>)[photo.slot]??photo.slot}</strong><span className="text-[10px]">{photo.review_status}</span></div>',
  '                  {photo.url?<a href={photo.url} target="_blank" rel="noreferrer noopener" className="block rounded-lg border border-border p-2 text-sm font-semibold text-primary">Abrir foto original (link temporário)</a>:<p className="text-xs text-destructive">Foto indisponível</p>}',
  '                  <p className="text-[10px] text-muted-foreground">{photo.submitted_at?new Date(photo.submitted_at).toLocaleString("pt-BR"):"Sem data"}</p>',
  '                  {photo.review_note&&<p className="text-xs text-destructive">{photo.review_note}</p>}',
