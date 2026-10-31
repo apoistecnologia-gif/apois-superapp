@@ -135,10 +135,21 @@ if(process.argv[2]==="entregador") modify(courier,[
  'import { CourierLocationTracker, type CourierPosition } from "@/components/CourierLocationTracker";\nimport { ApoisStatusCheck } from "@/components/ApoisStatusCheck";','courier import'],
  ['  const [profileOpen, setProfileOpen] = useState(false);',
  '  const [profileOpen, setProfileOpen] = useState(false);\n  const [statusCheckOpen,setStatusCheckOpen]=useState(false);','courier modal state'],
- ['        <CourierStatusCard\n          online={online}',
- '        <button type="button" onClick={()=>setStatusCheckOpen(true)}\n          className="w-full rounded-xl border border-[#E00029]/35 bg-white px-4 py-2 text-sm font-bold text-[#E00029]">\n          Teste de Status · 6 verificações\n        </button>\n        <CourierStatusCard\n          online={online}','courier status button'],
+
  ['      <CourierSupportSheet\n', '      {statusCheckOpen&&<ApoisStatusCheck role="entregador" online={online}\n        approved={courier?.status==="approved"&&courier?.is_active===true}\n        documentsReady={documents?.length>0?documents.every((doc:any)=>doc.status==="approved"):null}\n        onClose={()=>setStatusCheckOpen(false)} />}\n      <CourierSupportSheet\n','courier modal']
 ]);
+// Preserve every existing CourierStatusCard prop and layout; add a compact adjacent control.
+if(process.argv[2]==="entregador") {
+  let content=readFileSync(courier,"utf8");
+  const marker='data-apois-courier-status-check-v1';
+  if(!content.includes(marker)){
+    const match=content.match(/<CourierStatusCard\\b[\\s\\S]{0,800}?\\/>/);
+    if(!match)throw Error("[FAIL] Courier status card unavailable for diagnostic entry");
+    const button='<button type="button" data-apois-courier-status-check-v1 onClick={()=>setStatusCheckOpen(true)} className="w-full rounded-xl border border-[#E00029]/35 bg-white px-4 py-2 text-sm font-bold text-[#E00029]">Teste de Status · 6 verificações</button>\\n        ';
+    content=content.replace(match[0],match[0]+'\\n        '+button);
+    writeFileSync(courier,content,"utf8");
+  }
+}
 const motorResult=readFileSync(motor,"utf8"),courierResult=readFileSync(courier,"utf8");
 for(const x of ["showStatusCheck","onOpenStatusCheck","role=\"motorista\""])if(process.argv[2]==="motorista"&&!motorResult.includes(x))throw Error("Motor missing "+x);
 for(const x of ["statusCheckOpen","role=\"entregador\""])if(process.argv[2]==="entregador"&&!courierResult.includes(x))throw Error("Courier missing "+x);
