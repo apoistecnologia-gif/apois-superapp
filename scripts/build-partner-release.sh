@@ -86,6 +86,7 @@ node "$ROOT/scripts/fix-partner-driver-vehicle-photo-form-v1.mjs"
 node "$ROOT/scripts/fix-partner-driver-vehicle-photo-upload-v1.mjs"
 node "$ROOT/scripts/fix-partner-admin-vehicle-inspection-v1.mjs"
 node "$ROOT/scripts/fix-partner-support-case-workroom-v1.mjs"
+node "$ROOT/scripts/verify-apois-vehicle-incidents-v1.mjs" partner
 node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" motorista
 node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" motorista
