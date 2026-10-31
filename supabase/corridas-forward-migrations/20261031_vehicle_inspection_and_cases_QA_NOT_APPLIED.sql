@@ -87,7 +87,7 @@ CREATE OR REPLACE FUNCTION public.apois_review_vehicle_photo(_id uuid,_approved 
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $
 BEGIN
- IF NOT private.has_permission('drivers.approve') AND NOT private.has_permission('drivers.manage') THEN RAISE EXCEPTION 'forbidden'; END IF;
+ IF NOT private.has_permission('users.manage') THEN RAISE EXCEPTION 'forbidden'; END IF;
  IF length(coalesce(_note,''))>500 THEN RAISE EXCEPTION 'invalid_note'; END IF;
  UPDATE public.apois_vehicle_inspection_photos
  SET review_status=CASE WHEN _approved THEN 'approved' ELSE 'rejected' END,
