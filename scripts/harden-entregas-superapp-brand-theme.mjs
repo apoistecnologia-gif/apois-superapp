@@ -314,7 +314,13 @@ if (registerBefore.includes(oldRegisterSrc)) {
     throw Error('[FAIL] Customer registration brand source drift');
   }
   registerAfter = registerBefore.replace(oldRegisterImport, newRegisterImport).replace(oldRegisterSrc, newRegisterSrc);
-  if (registerAfter.replace(newRegisterImport, oldRegisterImport).replace(newRegisterSrc, oldRegisterSrc) !== registerBefore) {
+  // Legacy CSS targets alt="APOIS ENTREGA" and replaces the img via content:url.
+  // Use the official brand alt, avoiding that legacy selector locally.
+  registerAfter = registerAfter.replace('alt="APOIS ENTREGA"', 'alt="APOIS"')
+    .replace('className="mb-3 h-14 w-auto object-contain"', 'className="mb-3 h-20 w-20 object-contain"');
+  if (registerAfter.replace(newRegisterImport, oldRegisterImport).replace(newRegisterSrc, oldRegisterSrc)
+      .replace('alt="APOIS"', 'alt="APOIS ENTREGA"')
+      .replace('className="mb-3 h-20 w-20 object-contain"', 'className="mb-3 h-14 w-auto object-contain"') !== registerBefore) {
     throw Error('[FAIL] Non-brand registration change');
   }
 } else if (!registerBefore.includes(newRegisterImport) || !registerBefore.includes(newRegisterSrc)) {

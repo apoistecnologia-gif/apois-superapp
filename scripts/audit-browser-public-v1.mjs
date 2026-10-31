@@ -118,7 +118,7 @@ try {
           assert.ok(await page.locator('input').count() >= 2, name + ': registration form absent');
           if (name === 'entregas-login') {
             const expectedBrand = 'data:image/png;base64,' + readFileSync(resolve('superapp/branding/apois-client-red-logo.b64'), 'utf8').trim();
-            item.registrationOfficialBrand = await page.locator('img').evaluateAll((images, expected) => images.some(image => image.src === expected), expectedBrand);
+            item.registrationOfficialBrand = await page.locator('img').evaluateAll((images, expected) => images.some(image => image.src === expected && image.getBoundingClientRect().width > 0 && ['normal', 'none'].includes(getComputedStyle(image).content)), expectedBrand);
             assert.equal(item.registrationOfficialBrand, true, 'Customer Entregas registration does not render the official embedded brand');
           }
           // Dismiss the previous feedback toast through its real close control.
