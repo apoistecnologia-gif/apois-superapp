@@ -1,6 +1,6 @@
 # APOIS Corridas — vistoria fotográfica e Central de Ocorrências (QA)
 
-Data: 31/10/2026. Branch única: `fix/entregas-homologacao-ajustes-20261030`.
+Data: 31/10/2026. Última revisão técnica: 31/10/2026. Branch única: `fix/entregas-homologacao-ajustes-20261030`.
 Fontes de Corridas Cliente e Motorista/Admin continuam pinadas somente para leitura. Nenhum APK/AAB gerado, nenhuma publicação, merge ou alteração de produção nesta etapa.
 
 ## Escopo e descoberta inicial
@@ -48,3 +48,12 @@ Arquivo: `supabase/corridas-forward-migrations/20261031_vehicle_inspection_and_c
 8. Revisão jurídica das políticas de guarda e acesso antes de colocar dados reais.
 
 **Estado:** código QA escrito; banco de produção intacto; não declarar homologação final sem testes físicos.
+
+## Resultado técnico de build e ressalvas de prova
+- GitHub Actions WEB-only `41221945351`: **3/3 jobs SUCCESS** (Cliente, Estabelecimento, auditoria WEB com Motorista/Admin/Entregador). Compilação de bundle não substitui teste Android autenticado.
+- Testes automatizados das duas interfaces e RLS a nível de código: `scripts/verify-apois-vehicle-incidents-v1.mjs` executado pelos builds.
+- Atualizações de protocolo passam a ser consultadas automaticamente a cada 30 segundos quando o caso está aberto, além de opção manual.
+- **Fotos da vistoria:** o app aplica compressão/otimização antes de enviar; são evidências visuais do estado aparente, mas não os arquivos originais brutos da câmera nem laudo mecânico. Fotografias do Cliente ou Motorista anexadas a uma ocorrência são enviadas como arquivos selecionados sem compressão automática nesse fluxo.
+- É necessária avaliação sobre arquivamento criptográfico (SHA-256 calculado no servidor), retenção parametrizada, preservação em disputa judicial e relatório de exportação autenticado. Esses recursos probatórios avançados não foram implementados; não alegar que exista cadeia de custódia pericial certificada.
+- **Validação de SQL:** esquema completo compilou com `BEGIN;` + `ROLLBACK;`, criou as entidades temporariamente e verificou `apois_case_access(NULL) = none`; nenhum dado persistido.
+- Nova migração continua `NOT_APPLIED`, por proteção ao cadastro atual dos motoristas. Não aplicar ou publicar sem testes conjuntos de interface e servidor.
