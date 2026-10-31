@@ -19,7 +19,9 @@ BEGIN
   SELECT d.current_lat::double precision, d.current_lng::double precision
     INTO driver_lat,driver_lng
   FROM public.drivers d
-  WHERE d.user_id=(SELECT auth.uid())
+  JOIN public.users u ON u.id=d.user_id
+  WHERE u.auth_user_id=(SELECT auth.uid())
+    AND u.deleted_at IS NULL AND u.blocked_at IS NULL AND u.suspended_at IS NULL
     AND d.approval_status='aprovado'
     AND d.is_online IS TRUE
     AND d.blocked_at IS NULL AND d.suspended_at IS NULL
