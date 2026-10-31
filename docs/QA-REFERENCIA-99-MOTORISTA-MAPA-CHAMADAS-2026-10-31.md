@@ -61,3 +61,15 @@
 - Análise e proposta documentadas em 31/10/2026.
 - **Sem implementação de central/Mapa de Chamadas/diagnósticos nesta etapa**: exige desenho de API, testes de concorrência, privacidade e autorização de modificações específicas de backend.
 - **Nenhum APK gerado, nenhuma alteração em Supabase, deploy ou mudança financeira.**
+
+## Evolução implementada no código QA — mapa de demanda pulsante
+- Recuperado requisito anterior do usuário: somente pontos pulsantes de DEMANDA em áreas, sem dados de passageiro ou detalhes clicáveis, aparecem quando Motorista está ONLINE e sem corrida ativa; somem ao aceitar. Nova identidade APOIS usa três intensidades em tons vermelhos, não amarelo legado.
+- Implementado no script `scripts/harden-partner-motorista-demand-map-v1.mjs`, acionado em `scripts/build-partner-release.sh` **somente** no workspace efêmero `.work/partner-motorista`. Não alterar fontes pinadas.
+- OverlayView do mapa Google existente, pontos anônimos pequenos e `animate-ping`, sem clique, sem nome/telefone/ID/lat-lng individual. Intervalo 30s, cleanup de timer, desligado offline, com oferta/viagem/avaliação ou GPS ausente; falha da RPC = mapa sem pontos (sem dados inventados).
+- Backend SQL PROPOSTO, NÃO APLICADO: `supabase/corridas-forward-migrations/20261031_driver_demand_zones_qa_NOT_APPLIED.sql`. RPC sem parâmetros para derivar posição do motorista no servidor, validando cadastro aprovado (`aprovado`), ONLINE, GPS recente, suspensões/bloqueios e identidade via `public.users.auth_user_id -> public.drivers.user_id`, pois `drivers.user_id` é ID operacional e **não** `auth.uid()`.
+- Pedidos com origem válida, não cancelados, criados nos últimos 30 minutos e em estados legítimos de demanda são agrupados em grade fixa de 0,025 grau (~2,7km de latitude). Só publicar células com **pelo menos 3 solicitações**, até 8 focos, num raio aproximado de 15km. RPC retorna apenas centro aproximado e intensidade, sem contagem exata/ID/endereço; RPC bloqueia anon.
+- Min3 significa que em regiões sem dados suficientes o mapa não terá nenhum ponto; não usar animações fictícias nem afirmar que há passageiro quando não há.
+- Gate `scripts/verify-partner-driver-demand-zones-v1.mjs` incorporado ao `build:partner`; testa privacidade, autenticação, exibição condicional, não uso de consultas brutas a corridas, cleanup e limite da consulta agregada.
+- Preflight SEM APK `41215442079`: audit-web-only SUCCESS, WEB-only estabelecimento SUCCESS, WEB-only cliente SUCCESS. O módulo Motorista compilou com o overlay. Tela autenticada e dados reais ainda não testados no Android.
+- **Atenção:** o app atualmente instalado não exibe esta camada; ela só estará disponível após autorização da migração backend e de nova geração/instalação de APK. Nem SQL de Corridas nem APK foram executados nesta etapa.
+- Central de Solicitações Disponíveis e Teste de Status permanecem planejados: não afirmar que foram implementados como parte desta alteração. Não converter pedidos expirados ou cancelados em ofertas válidas.
