@@ -50,3 +50,12 @@ A captura Android do proprietário comprovou falha não coberta pelos testes pú
 - APK Cliente 1.0.11-qa.64 não foi alterado nesta correção. Novo teste não foi empacotado como rota do aplicativo.
 - Instalação/atualização e home completa com conta real no Android permanecem por conferir. Assinatura debug Parceiro é a do runner; não foi demonstrada compatibilidade de atualização com APK anterior. Não instruir limpeza de dados/desinstalação automaticamente.
 - Lint e lockfile herdados continuam pendentes. Sem fontes protegidas, deploy, merge, AAB, alteração de Supabase/produção, migrations ou pagamentos. Não declarar homologação final.
+
+## Registro de teste físico — 31/10/2026 — Cliente/Entregador #7
+- O usuário confirmou instalação e abertura do Parceiro 1.0.21. Capturas reais: oferta #7, mapa/CTA NAVEGAR externo, tela após retirada com campo PIN, e cliente #7 em "Saiu para entrega" sem PIN exibido.
+- Evidência visual positiva: oferta/aceite, tela de rota até estabelecimento e etapa "Indo ao cliente" após retirada. Nova rota externa específica e retorno ao aplicativo ainda sem teste E2E completo.
+- Falha real P1: o Cliente não mostra PIN enquanto pedido está em viagem. Código do pin Entregas mostra que a busca do PIN e o card estavam limitados a delivery_job.status === "arrived_destination"; o Entregador simplificado só alcança esse estado ao tentar concluir com PIN. Isto gera dependência circular.
+- Ajuste proposto/commit de código `0afd6e7de380f45fea218e714967652610a0a914`: em `scripts/fix-entregas-customer-delivery-tracking-v1.mjs`, exibir e buscar PIN existente apenas para `picked_up`, `on_the_way`, `arrived_destination`, com entrega ainda não concluída. Não criar PIN, não mudar RPC, RLS, segredo, backend ou produção.
+- **Estado atual:** ajuste versionado na branch de homologação, ainda sem build WEB/Android nem teste real no cliente atualizado. NÃO declarar resolvido fisicamente. Testar recuperação do PIN autorizado, pedido antes da retirada sem PIN, após retirada com PIN, finalização com PIN e estado entregue sem PIN. Se RLS impedir leitura, investigar acesso autorizado sem abrir secrets genericamente.
+- Outra divergência da captura: logo amarela antiga no modal de nova oferta; corrigir de forma isolada após localizar a origem CSS/asset, sem rebranding global.
+- Nenhum deploy, merge, migration, operação financeira, edição de fontes protegidas ou APK novo nesta etapa.
