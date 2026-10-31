@@ -191,6 +191,7 @@ node "$ROOT/scripts/fix-partner-courier-completion-light-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-idle-status-v1.mjs"
 # Profilo/historico: telas claras e campos de contato, sem alterar aprovacoes.
 node "$ROOT/scripts/fix-partner-courier-profile-history-v1.mjs"
+node "$ROOT/scripts/fix-partner-courier-avatar-diagnostics-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-env-type-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-home-regression-v1.mjs"
 require_contains 'APOIS_COURIER_PROFILE_EDIT_V1' "$ENTREGADOR/src/components/CourierPanels.tsx" 'Perfil e contatos do entregador editáveis'
