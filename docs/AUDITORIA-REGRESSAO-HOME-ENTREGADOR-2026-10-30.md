@@ -68,3 +68,10 @@ A captura Android do proprietário comprovou falha não coberta pelos testes pú
 - Segunda tentativa Android Cliente `41164253048`: FAILURE **depois** da compilação, na etapa de recuperar assinatura QA. `APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64` vazio, cache indisponível na branch. Runner criou keystore novo com fingerprint `6E:4D:1E:E6:1A:6B:34:29:75:26:4B:FE:DD:8D:93:40:AA:4F:CF:AB:8F:FA:EF:B5:A2:D2:39:FA:69:E3:DE:80`; gate rejeitou contra certificado QA original `97ea...61f4`. **Não trocar fingerprint, não instalar APK com outra chave nem recomendar desinstalar app.** Secret continua pendente.
 - Android Parceiro 1.0.22, versionCode 23: execução `41164171847` iniciada, resultado final ainda pendente no registro. Build existente não autoriza afirmar homolagação física.
 - Sem deploy/merge, alteração no banco, fontes protegidas, pagamentos ou assinatura QA.
+
+## Resultado definitivo do Parceiro 1.0.22 — 31/10/2026
+- GitHub Actions [41164171847](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41164171847): completed/success, job build-partner-apk. Fonte compilada `2dbe3bf0d45f0b4eb2e5624e28f22c81d1338af5`, versionName `1.0.22`, versionCode `23`.
+- Artefato GitHub `13029035566`, `APOIS-Parceiro-TESTE`. ZIP CRC validado; APK final `APOIS-Parceiro-TESTE-1.0.22.apk` extraído com 7.471.720 bytes, SHA256 `f83fb0ed181c87a74a8af92e5729d46a55c0533f707e75729c276b6e91dd4b7d`.
+- Verificações: módulos e preflight integrado no job APK passaram; preflight WEB independente [41164238980](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41164238980) completed/success 3 jobs.
+- Instalação/atualização do Parceiro 1.0.22, logo em aparelho, navegação, PIN E2E e compatibilidade de assinatura com 1.0.21 **não foram testados**. Não desinstalar app nem remover dados automaticamente.
+- Cliente 1.0.11 ainda **sem novo APK** após o ajuste PIN porque [41164253048](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41164253048) parou corretamente na proteção do certificado QA. Não rotacionar keystore, não mascarar bloqueio e não apresentar APK anterior como atualizado.
