@@ -5,7 +5,7 @@ let s=readFileSync(file,"utf8");
 if(s.includes("APOIS_CUSTOMER_PRODUCT_REVIEW_V1"))process.exit(0);
 function rep(a,b,name){if(!s.includes(a))throw Error("[FAIL] review patch "+name);s=s.replace(a,b)}
 rep('  delivery_jobs: Array<{ courier_id: string | null }> | null;\n};',
-'  delivery_jobs: Array<{ courier_id: string | null }> | null;\n  order_items: Array<{ id:string; product_name:string; quantity:number }> | null;\n};',"order item type");
+'  delivery_jobs: { courier_id: string | null } | Array<{ courier_id: string | null }> | null;\n  order_items: Array<{ id:string; product_name:string; quantity:number }> | null;\n};',"order item type");
 rep('  const [comment, setComment] = useState("");',
 '  const [comment, setComment] = useState("");\n  // APOIS_CUSTOMER_PRODUCT_REVIEW_V1\n  const [productEnabled,setProductEnabled]=useState(false);\n  const [ratings,setRatings]=useState<Record<string,number>>({});\n  const [notes,setNotes]=useState<Record<string,string>>({});\n  const [productsSaved,setProductsSaved]=useState(false);\n  const [loadError,setLoadError]=useState<string|null>(null);',"state");
 rep('.select("id,order_number,status,merchants(name,logo_url),delivery_jobs(courier_id)")',
@@ -60,5 +60,7 @@ rep('disabled={submitting || !merchantRating || (hasCourier && !deliveryRating)}
 'disabled={submitting || (!alreadyReviewed && (!merchantRating || (hasCourier && !deliveryRating))) || (productEnabled && (order.order_items??[]).some((item)=>!ratings[item.id]))}',"submit disabled");
 rep('{submitting ? "Enviando..." : "Enviar avaliação"}',
 '{submitting ? "Enviando..." : alreadyReviewed ? "Avaliar produtos" : "Enviar avaliação"}',"submit text");
+rep('  const hasCourier = Boolean(order?.delivery_jobs?.some((job) => Boolean(job.courier_id)));',
+'  // The delivery_jobs.order_id UNIQUE constraint makes this a to-one relation.\n  // PostgREST may return an object, not an array; never call .some on the object.\n  const linkedJobs = order?.delivery_jobs;\n  const hasCourier = Array.isArray(linkedJobs)\n    ? linkedJobs.some((job) => Boolean(job?.courier_id))\n    : Boolean(linkedJobs?.courier_id);',"one-to-one delivery relation");
 writeFileSync(file,s,"utf8");
 console.log("[OK] Customer review isolated patch: guarded route, existing ratings preserved, staged product ratings");
