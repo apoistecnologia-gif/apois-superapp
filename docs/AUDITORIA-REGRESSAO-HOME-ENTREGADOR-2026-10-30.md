@@ -59,3 +59,12 @@ A captura Android do proprietário comprovou falha não coberta pelos testes pú
 - **Estado atual:** ajuste versionado na branch de homologação, ainda sem build WEB/Android nem teste real no cliente atualizado. NÃO declarar resolvido fisicamente. Testar recuperação do PIN autorizado, pedido antes da retirada sem PIN, após retirada com PIN, finalização com PIN e estado entregue sem PIN. Se RLS impedir leitura, investigar acesso autorizado sem abrir secrets genericamente.
 - Outra divergência da captura: logo amarela antiga no modal de nova oferta; corrigir de forma isolada após localizar a origem CSS/asset, sem rebranding global.
 - Nenhum deploy, merge, migration, operação financeira, edição de fontes protegidas ou APK novo nesta etapa.
+
+## Continuação 31/10/2026 — Correções solicitadas e CI nativo
+- Ajuste do PIN do Cliente em `scripts/fix-entregas-customer-delivery-tracking-v1.mjs`: após a retirada confirmada, consulta e exibição do PIN existente nos estados `picked_up`, `on_the_way`, `arrived_destination`. A validação do PIN permanece na RPC server-side. Commits `0afd6e7` e ajuste do marcador `a9595be`.
+- A logo do overlay de oferta era componente separado (`CourierOfferOverlay.tsx`): ainda tinha `alt="APOIS ENTREGA"` acionando possível substituição CSS de asset legado. Script final agora exige URL de logo oficial e altera alt localmente para `APOIS`. Commit `b6995e3`, sem mudanças de lógica na oferta.
+- Preflight WEB `41164238980`: 3 jobs SUCCESS; certifica builds/contratos web, não as telas privadas no Android.
+- Primeiro Android Cliente `41164169102`: FAILURE, gate de marcador `APOIS_CUSTOMER_DELIVERY_PIN_STAGE_V1` ausente no output transformado. Corrigido no commit `a9595be` e recompilado.
+- Segunda tentativa Android Cliente `41164253048`: FAILURE **depois** da compilação, na etapa de recuperar assinatura QA. `APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64` vazio, cache indisponível na branch. Runner criou keystore novo com fingerprint `6E:4D:1E:E6:1A:6B:34:29:75:26:4B:FE:DD:8D:93:40:AA:4F:CF:AB:8F:FA:EF:B5:A2:D2:39:FA:69:E3:DE:80`; gate rejeitou contra certificado QA original `97ea...61f4`. **Não trocar fingerprint, não instalar APK com outra chave nem recomendar desinstalar app.** Secret continua pendente.
+- Android Parceiro 1.0.22, versionCode 23: execução `41164171847` iniciada, resultado final ainda pendente no registro. Build existente não autoriza afirmar homolagação física.
+- Sem deploy/merge, alteração no banco, fontes protegidas, pagamentos ou assinatura QA.
