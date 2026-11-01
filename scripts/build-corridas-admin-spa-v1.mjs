@@ -28,6 +28,10 @@ write("src/admin-preview-route-tree.ts",imports.join("\n")+"\n\n"+routes.join("\
 write("src/admin-preview.tsx","import {StrictMode} from \"react\";\nimport {createRoot} from \"react-dom/client\";\nimport {QueryClient} from \"@tanstack/react-query\";\nimport {createRouter,RouterProvider} from \"@tanstack/react-router\";\nimport {routeTree} from \"./admin-preview-route-tree\";\nimport {startInstance} from \"./start\";\nimport \"./styles.css\";\nimport \"./apois-admin-theme.css\";\nasync function bootstrap(){\n try{(window as unknown as {__TSS_START_OPTIONS__?: unknown}).__TSS_START_OPTIONS__=await startInstance.getOptions();}catch{}\n const router=createRouter({routeTree:routeTree as any,context:{queryClient:new QueryClient()},scrollRestoration:true,defaultPreloadStaleTime:0});\n const root=document.getElementById(\"root\");\n if(!root)throw Error(\"Admin Preview: mount element missing\");\n createRoot(root).render(<StrictMode><RouterProvider router={router}/></StrictMode>);\n}\nvoid bootstrap().catch(e=>{\n console.error(\"[APOIS Admin Preview] Falha ao inicializar\",e instanceof Error?e.message:\"erro\");\n const root=document.getElementById(\"root\");\n if(root)root.textContent=\"Não foi possível abrir o painel administrativo. Atualize a página ou contate a equipe APOIS.\";\n});");
 let html=read("index.mobile.html");
 html=html.replaceAll("APOIS Motorista","APOIS Admin — Homologação");
+// Route /admin/login must resolve assets from /assets, never /admin/assets.
+if(!html.includes('<base href="./">'))throw Error("[FAIL] Admin preview: expected mobile relative base not found");
+html=html.replace('<base href="./">','<base href="/">');
+html=html.replace("Homologação para Android.","Homologação administrativa WEB.");
 html=html.replace('class="dark" style="color-scheme: dark"','class="light" style="color-scheme: light"');
 html=html.replace('document.documentElement.classList.add("dark");','document.documentElement.classList.remove("dark");');
 html=html.replace('document.documentElement.style.colorScheme = "dark";','document.documentElement.style.colorScheme = "light";');
@@ -38,6 +42,10 @@ let config=read("vite.mobile.config.ts");
 const pattern=/const activeRouteTree = resolve\([\s\S]*?\n\);/;
 if(!pattern.test(config))throw Error("[FAIL] Admin config route alias moved");
 config=config.replace(pattern,'const activeRouteTree = resolve(__dirname, "src/admin-preview-route-tree.ts");');
+// Never send administrator server-function requests or credentials to legacy Lovable.
+const legacyServerFn='const REMOTE_SERVER_FN_BASE = "https://movvi-go-connect.lovable.app/_serverFn/";';
+if(!config.includes(legacyServerFn))throw Error("[FAIL] Admin preview: server function endpoint changed; review required");
+config=config.replace(legacyServerFn,'const REMOTE_SERVER_FN_BASE = "/_serverFn/";');
 config=config.replace('outDir: "dist/client"','outDir: "dist/admin-preview"');
 config=config.replace('input: "index.mobile.html"','input: "index.admin-preview.html"');
 if(!config.includes('dist/admin-preview')||!config.includes('src/admin-preview-route-tree.ts'))throw Error("[FAIL] Admin config mismatch");
@@ -50,10 +58,17 @@ if(build.status!==0)throw Error("[FAIL] Admin SPA build exited "+build.status);
 const original=resolve(workspace,"dist/admin-preview/index.admin-preview.html"),dest=resolve(workspace,"dist/admin-preview/index.html");
 if(!existsSync(original))throw Error("[FAIL] Admin preview HTML absent");
 renameSync(original,dest);
+const outputHtml=readFileSync(dest,"utf8");
+if(!outputHtml.includes('<base href="/">'))throw Error("[FAIL] Admin preview: relative asset base");
+for(const tag of [...outputHtml.matchAll(/(?:src|href)="(\.\/assets\/[^"]+)"/g)]){
+ const resolved=new URL(tag[1], "https://qa.example/admin/login");
+ if(!resolved.pathname.startsWith("/assets/"))throw Error("[FAIL] Admin preview: asset would resolve under /admin/");
+}
 const assetFiles=readdirSync(resolve(workspace,"dist/admin-preview/assets")).filter(p=>p.endsWith(".js"));
 const js=assetFiles.map(p=>readFileSync(resolve(workspace,"dist/admin-preview/assets",p),"utf8")).join("\n");
 for(const marker of ["Pendenciar cadastro","Visualizar foto internamente","/admin/login","/admin/motoristas"]){
  if(!js.includes(marker))throw Error("[FAIL] Admin preview expected marker missing: "+marker);
 }
 if(js.includes("Nova corrida. Embarque em"))throw Error("[FAIL] Admin preview includes operational Motorista app");
+if(js.includes("https://movvi-go-connect.lovable.app/_serverFn/"))throw Error("[FAIL] Admin preview would send admin operations to legacy backend");
 console.log("[OK] Admin-only SPA has login, documents, pendencies, no Motorista operational route.");
