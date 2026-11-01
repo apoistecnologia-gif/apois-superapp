@@ -40,7 +40,7 @@ for(const path of visualPaths){
  if(typeof content!=="string"||!content.trim())throw Error("[FAIL] Admin visual file missing: "+path);
  if(path==="src/routes/admin.dashboard.tsx"){
   // The pinned map component predates the later missingApiKeyMessage prop.
-  const oldTag=/<MovviMap center=\\{mapCenter\\} missingApiKeyMessage="[^"]+">/;
+  const oldTag=/<MovviMap center=\{mapCenter\} missingApiKeyMessage="[^"]+">/;
   if(!oldTag.test(content))throw Error("[FAIL] Admin Dashboard compatibility anchor changed");
   content=content.replace(oldTag,"<MovviMap center={mapCenter}>");
  }
