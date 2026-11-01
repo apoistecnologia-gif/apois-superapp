@@ -58,11 +58,16 @@ if(build.status!==0)throw Error("[FAIL] Admin SPA build exited "+build.status);
 const original=resolve(workspace,"dist/admin-preview/index.admin-preview.html"),dest=resolve(workspace,"dist/admin-preview/index.html");
 if(!existsSync(original))throw Error("[FAIL] Admin preview HTML absent");
 renameSync(original,dest);
-const outputHtml=readFileSync(dest,"utf8");
+let outputHtml=readFileSync(dest,"utf8");
 if(!outputHtml.includes('<base href="/">'))throw Error("[FAIL] Admin preview: relative asset base");
-for(const tag of [...outputHtml.matchAll(/(?:src|href)="(\.\/assets\/[^"]+)"/g)]){
- const resolved=new URL(tag[1], "https://qa.example/admin/login");
- if(!resolved.pathname.startsWith("/assets/"))throw Error("[FAIL] Admin preview: asset would resolve under /admin/");
+// Root-relative asset URLs also remain correct when a page is deep-linked or refreshed.
+outputHtml=outputHtml.replace(/(src|href)="\.\/assets\//g,'$1="/assets/');
+writeFileSync(dest,outputHtml,"utf8");
+const assetUrls=[...outputHtml.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map(m=>m[1]);
+if(assetUrls.length<2)throw Error("[FAIL] Admin preview: JavaScript/CSS asset references missing");
+for(const asset of assetUrls){
+ const resolved=new URL(asset,"https://qa.example/admin/login");
+ if(!resolved.pathname.startsWith("/assets/"))throw Error("[FAIL] Admin preview: deep-link asset resolution invalid");
 }
 const assetFiles=readdirSync(resolve(workspace,"dist/admin-preview/assets")).filter(p=>p.endsWith(".js"));
 const js=assetFiles.map(p=>readFileSync(resolve(workspace,"dist/admin-preview/assets",p),"utf8")).join("\n");
