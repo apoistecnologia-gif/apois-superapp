@@ -24,7 +24,7 @@ const base="http://127.0.0.1:"+server.address().port,results=[];
 let browser,fail=false;
 try{
  browser=await chromium.launch({headless:true});
- for(const [width,height] of [[360,800],[1280,900]]){
+ for(const [width,height] of [[320,700],[360,800],[390,844],[1280,900]]){
   const context=await browser.newContext({viewport:{width,height},serviceWorkers:"block"});
   await context.route("**/*",route=>{
    if(new URL(route.request().url()).origin===base)return route.continue();
