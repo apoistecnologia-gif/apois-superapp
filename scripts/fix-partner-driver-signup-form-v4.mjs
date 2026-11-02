@@ -102,7 +102,7 @@ form = once(form,
   '<form ref={formRef} onSubmit={onSubmit} onInputCapture={uppercaseDriverField} method="post" noValidate className="min-w-0">',
   "uppercase typed fields without changing email or password");
 
-const oldBirth = '<DSInput name="birth_date" required type="date" className="h-12 min-w-0 bg-[#0D0F11] [color-scheme:dark]" />';
+const oldBirth = '<DSInput name="birth_date" required type="date" className="h-12 min-w-0 bg-white [color-scheme:dark]" />';
 const newBirth = '<DSInput name="birth_date" required type="text" inputMode="numeric" autoComplete="bday" ' +
   'placeholder="DD/MM/AAAA" maxLength={10} value={birthDateDisplay} ' +
   'onChange={(event) => setBirthDateDisplay(maskDriverBirthDate(event.currentTarget.value))} ' +
