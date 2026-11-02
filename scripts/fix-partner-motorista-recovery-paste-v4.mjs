@@ -34,7 +34,7 @@ const fn = [
   '      const raw=recoveryLink.trim();',
   '      if(raw.length>4096 || raw.length<40 || /[\\u0000-\\u001f\\u007f]/.test(raw)) throw Error("invalid_link");',
   '      const url=new URL(raw);',
-  '      const apiOrigin=new URL(supabase.supabaseUrl).origin;',
+  '      const apiOrigin="https://tbbzkrfupmqdywnzgnms.supabase.co";',
   '      if(url.origin!==apiOrigin || url.hostname!=="tbbzkrfupmqdywnzgnms.supabase.co"',
   '        || url.pathname!=="/auth/v1/verify" || url.searchParams.get("type")!=="recovery"',
   '        || url.username || url.password)throw Error("invalid_link");',
