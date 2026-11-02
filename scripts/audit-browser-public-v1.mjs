@@ -117,7 +117,7 @@ try {
           item.interactions=[...(item.interactions||[]),{action:'title does not overlap switch button',passed:true}];
         }
         if (name === 'entregas-login') {
-          const primary=page.locator('[data-apois-entregas-login-submit-contrast-v1]').first();
+          const primary=page.locator('[data-apois-entregas-login-label-v2]').first();
           await primary.waitFor({state:'visible'});
           const c=await primary.evaluate(el=>{const s=getComputedStyle(el);
             return {color:s.color,fill:s.webkitTextFillColor}});
