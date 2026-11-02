@@ -11,7 +11,9 @@ for(const name of names){
  const matches=s.split(name).length-1;
  if(matches===0 && name.includes("text-lg"))continue; // secondary login may be removed in isolated customer mode
  if(matches!==1)throw Error("[FAIL] Entregas login CTA "+name+" anchors="+matches);
- s=s.replace(name,"data-apois-entregas-login-submit-contrast-v1 "+name);
+ const anchor='className="h-14 w-full rounded-2xl '+name;
+ if(s.split(anchor).length!==2)throw Error("[FAIL] CTA class anchor "+name);
+ s=s.replace(anchor,'data-apois-entregas-login-submit-contrast-v1\n                className="h-14 w-full rounded-2xl '+name);
 }
 writeFileSync(file,s,"utf8");
 const cssPath=resolve(root,"src/system-theme.css");
