@@ -21,9 +21,16 @@ Todas as alterações de interface e registro são aplicadas apenas nas cópias 
 - Histórico/Financeiro/Notificações/Perfil: contraste elevado e prévia de perfil próprio com campos públicos apenas.
 - Entregador: indicador verde de varredura no estado online sem entrega; verificação remota real em `courier_availability`.
 
-## Migração pendente de autorização
+## Atualização de produção — 02/11/2026 (autorizada)
+- Autorização explícita recebida para **somente** corrigir a criação do perfil interno em novos cadastros de Motorista.
+- Migração aplicada com sucesso no Supabase Corridas `tbbzkrfupmqdywnzgnms`: `apois_corridas_driver_auth_signup_profile_trigger_20261102`.
+- Trigger `auth.users / AFTER INSERT / apois_driver_auth_signup_profile` ativo, condição de execução `raw_user_meta_data->>'role' = 'driver'`, função existente `public.handle_new_user()`.
+- Auditoria pós-migração: três registros em `public.drivers`, 11 em `auth.users`, 10 perfis internos ativos; **zero** contas de Auth com metadata `role=driver` sem perfil correspondente.
+- Não foram criados novos usuários, alteradas aprovações, migrado Entregas ou gerado APK. Não há teste funcional com novo cadastro após esta ativação. O gatilho atua apenas em novas inserções, não realiza backfill.
+
+## Histórico do SQL de revisão (agora aplicado com aprovação)
 Arquivo de revisão: `database/review/20261102_corridas_driver_signup_profile_trigger_REVIEW_ONLY.sql`.
-Esse SQL prepara somente o gatilho de criação do perfil **para novas contas com role driver**, reutilizando `public.handle_new_user`. Precisa de aprovação explícita, revisão de segurança, validação e aplicação controlada; não executar etapa 2 ou backfill genérico. O gatilho não resolve contas existentes sem perfil.
+Esse SQL prepara somente o gatilho de criação do perfil **para novas contas com role driver**, reutilizando `public.handle_new_user`. A aplicação autorizada do gatilho foi concluída em 02/11/2026, conforme registro acima. Não executar etapa 2 ou backfill genérico. O gatilho não resolve contas antigas sem perfil.
 
 ## Gates de verificação sem APK
 - Inspeção read-only de funções, permissões e contagens no Supabase concluída.
