@@ -181,7 +181,17 @@ try {
             assert.equal(visual.value,'qa-contraste@example.invalid','Motorista recovery email must accept typing');
             assert.equal(visual.color,'rgb(17, 24, 39)','Motorista recovery email must have dark visible text');
             assert.equal(visual.fill,'rgb(17, 24, 39)','Android-style Webkit text fill must be dark');
-            assert.equal(visual.caret,'rgb(17, 24, 39)','Recovery input caret must remain readable');
+            // APOIS_CARET_CONTRAST_V1: brand-red caret is valid if it contrasts with its painted input background.
+            const ratio=await email.evaluate(el=>{
+              const style=getComputedStyle(el);
+              const parse=value=>{const found=value.match(/^rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);return found?[Number(found[1]),Number(found[2]),Number(found[3])]:null;};
+              const ink=parse(style.caretColor),background=parse(style.backgroundColor);
+              if(!ink||!background)return 0;
+              const lum=color=>color.reduce((sum,channel,i)=>{const v=channel/255;const linear=v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;return sum+linear*[0.2126,0.7152,0.0722][i];},0);
+              const a=lum(ink),b=lum(background);
+              return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
+            });
+            assert.ok(ratio>=3,'Recovery caret must have >=3:1 contrast against its own input background');
             item.recoveryEmailContrast={color:visual.color,fill:visual.fill,caret:visual.caret,scheme:visual.scheme,passed:true};
             item.interactions.push({action:'email typed and contrast computed (no submission)',passed:true});
             // The new recovery must accept a numeric code, not a clickable link.
