@@ -9,7 +9,7 @@ const start=s.indexOf("export function CourierWaitingSheet(");
 const end=s.indexOf("export function CourierOfflineCard(",start);
 if(start<0||end<start)throw Error("[FAIL] Courier waiting panel not found");
 let panel=s.slice(start,end);
-const anchor='      <div className="mt-4 grid grid-cols-3';
+const anchor='      <div className="mt-2 grid grid-cols-3 divide-x divide-[#E5E7EB] rounded-xl bg-[#F7F7F8] p-2">';
 if(panel.split(anchor).length!==2)throw Error("[FAIL] Waiting metrics anchor changed");
 const scanning=`      <div data-apois-courier-search-scan-v1 role="status" aria-live="polite"
         className="relative mt-4 overflow-hidden rounded-[20px] border border-[#B5E5CF] bg-[#EFFBF4] p-4 text-[#13533B]">
