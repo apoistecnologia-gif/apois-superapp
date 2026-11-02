@@ -141,7 +141,7 @@ requireAll('superapp/partner-shell/build.mjs', [
   "['motorista', resolve(root, '../../.work/partner-motorista/dist/client')]",
   "['entregador', resolve(root, '../../.work/partner-entregador/.output/public')]",
   "forbidMarker(driverBundle, 'Chat em breve'",
-  "forbidMarker(driverBundle, 'Abrir menu'",
+  "requireMarker(driverBundle, 'Abrir menu lateral'",
   "forbidMarker(driverBundle, 'Solicitar saque'",
   "forbidMarker(courierBundle, 'Solicitar saque'",
   'apois-parceiro:operational-role',
