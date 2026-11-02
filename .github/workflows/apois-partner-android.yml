@@ -142,6 +142,10 @@ jobs:
           npm run build:partner
           # Gate QA: não publicar um APK antigo que omita o cadastro com 13 fotos e o fluxo de pendências.
           node scripts/verify-apois-13-photo-driver-pendencies-v1.mjs
+          grep -Fq 'APOIS_ANDROID_DRIVER_PHOTO_CAPTURE_V2' .work/partner-motorista/src/components/DriverDocumentField.tsx
+          grep -Fq 'APOIS_ANDROID_IMAGE_FALLBACK_V2' .work/partner-motorista/src/lib/imageCompress.ts
+          grep -R -Fq 'data-apois-driver-photo-field-v2' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Preparando arquivo...' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'data-apois-driver-corrections-v1' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'Faróis acesos' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/motorista
