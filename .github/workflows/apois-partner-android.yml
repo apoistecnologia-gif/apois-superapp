@@ -1,5 +1,6 @@
 name: APOIS Parceiro Android APK
 # test workflow: GitHub Actions debug APK — courier home structurally non-overlapping inline availability
+# QA motorista V4: signup email confirmation + uppercase personal fields + typed birth mask
 
 on:
   workflow_dispatch:
