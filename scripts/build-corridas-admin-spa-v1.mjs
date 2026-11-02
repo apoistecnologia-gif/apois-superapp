@@ -108,7 +108,7 @@ for(const asset of assetUrls){
 }
 const assetFiles=readdirSync(resolve(workspace,"dist/admin-preview/assets")).filter(p=>p.endsWith(".js"));
 const js=assetFiles.map(p=>readFileSync(resolve(workspace,"dist/admin-preview/assets",p),"utf8")).join("\n");
-for(const marker of ["Pendenciar cadastro","Visualizar foto internamente","/admin/login","/admin/motoristas","/admin/recuperar-senha","/admin/redefinir-senha","APOIS_ADMIN_GUARD_NAV_CACHE_V1"]){
+for(const marker of ["Pendenciar cadastro","Visualizar foto internamente","/admin/login","/admin/motoristas","/admin/recuperar-senha","/admin/redefinir-senha","data-apois-admin-guard-cache-v1"]){
  if(!js.includes(marker))throw Error("[FAIL] Admin preview expected marker missing: "+marker);
 }
 if(js.includes("Nova corrida. Embarque em"))throw Error("[FAIL] Admin preview includes operational Motorista app");
