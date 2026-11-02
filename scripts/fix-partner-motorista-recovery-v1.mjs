@@ -15,10 +15,14 @@ recovery=unique(recovery,
  '<input name="email" type="email" autoComplete="email" inputMode="email" required placeholder="seuemail@exemplo.com"',
  '<input data-apois-driver-recovery-email-v1 name="email" type="email" autoComplete="email" inputMode="email" required placeholder="seuemail@exemplo.com"',
  "email input");
-recovery=unique(recovery,
- '<p className="mt-3 break-words text-sm leading-6 text-zinc-500">Se existir uma conta para esse endereço, enviamos um link seguro para criar uma nova senha.</p>',
- '<p className="mt-3 break-words text-sm leading-6 text-[#4B5563]">A solicitação foi recebida. Se o e-mail estiver cadastrado e o servidor permitir o envio, você receberá um link para definir a senha. Esta mensagem não confirma que a senha foi alterada.</p>',
- "successful reset copy");
+// Other QA visual hardeners can change the <p> styling; replace only the content.
+const oldResetCopy="Se existir uma conta para esse endereço, enviamos um link seguro para criar uma nova senha.";
+if(recovery.includes(oldResetCopy)) {
+  recovery=recovery.replace(oldResetCopy,
+    "A solicitação foi recebida. Se o e-mail estiver cadastrado, você poderá receber um link para definir a senha. Esta mensagem não confirma que a senha foi alterada.");
+} else {
+  console.log("[NOTE] Recovery receipt already customized; keeping existing success copy.");
+}
 writeFileSync(recoveryFile,recovery,"utf8");
 
 const cssPath=resolve(base,"src/apois-ui-hardening-round3.css");
