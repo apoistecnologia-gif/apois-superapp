@@ -7,7 +7,7 @@ const write=(p,text)=>writeFileSync(resolve(workspace,p),text,"utf8");
 if(!existsSync(resolve(workspace,"node_modules/vite/bin/vite.js")))throw Error("[FAIL] Admin preview: Vite not installed");
 const adminPaths=[
  "administradores","analytics","assinaturas","backups","categorias","configuracoes",
- "corridas","cupons","dashboard","financeiro-motoristas","financeiro","login",
+ "corridas","cupons","dashboard","financeiro-motoristas","financeiro","login","recuperar-senha","redefinir-senha",
  "logs","mapa","motoristas","notificacoes","operacoes","pagamentos",
  "passageiros","precos","relatorios","seguranca","suporte"
 ];
@@ -46,6 +46,20 @@ for(const path of visualPaths){
  }
  write(path,content);
 }
+// Restore the original released desktop login and its real password-recovery routes.
+const authSnapshot=JSON.parse(readFileSync(resolve(root,"admin-preview/original-admin-auth-snapshot.json"),"utf8"));
+const authFiles=["src/routes/admin.login.tsx","src/routes/admin.recuperar-senha.tsx","src/routes/admin.redefinir-senha.tsx"];
+if(authSnapshot.source_repository!=="apoistecnologia-gif/movvi-go-connect"||authSnapshot.source_commit!=="2280c0979a7d047334916768faf519993bcb1e92")throw Error("[FAIL] Admin original auth snapshot mismatch");
+if(Object.keys(authSnapshot.files??{}).length!==authFiles.length)throw Error("[FAIL] Unexpected Admin auth snapshot file count");
+for(const path of authFiles){
+ const content=authSnapshot.files[path];
+ if(typeof content!=="string"||!content.trim())throw Error("[FAIL] Missing original Admin auth file: "+path);
+ write(path,content);
+}
+if(!read("src/routes/admin.login.tsx").includes("data-apois-admin-desktop-login"))throw Error("[FAIL] Original split desktop login not restored");
+if(!read("src/routes/admin.recuperar-senha.tsx").includes("resetPasswordForEmail"))throw Error("[FAIL] Secure password recovery not restored");
+const guardFix=spawnSync(process.execPath,["scripts/fix-admin-guard-navigation-v1.mjs"],{cwd:root,stdio:"inherit"});
+if(guardFix.status!==0)throw Error("[FAIL] QA Admin Guard navigation patch failed");
 if(!read("src/apois-admin-theme.css").includes("APOIS_ADMIN_RED_2026"))throw Error("[FAIL] Original red Admin theme missing");
 if(!read("src/components/admin/AdminSidebar.tsx").includes("APOIS_OFFICIAL_RED_LOGO_URL"))throw Error("[FAIL] Official Admin logo missing");
 if(!read("src/lib/adminVisual.ts").includes("#E51B23"))throw Error("[FAIL] Admin map color not restored");
@@ -94,7 +108,7 @@ for(const asset of assetUrls){
 }
 const assetFiles=readdirSync(resolve(workspace,"dist/admin-preview/assets")).filter(p=>p.endsWith(".js"));
 const js=assetFiles.map(p=>readFileSync(resolve(workspace,"dist/admin-preview/assets",p),"utf8")).join("\n");
-for(const marker of ["Pendenciar cadastro","Visualizar foto internamente","/admin/login","/admin/motoristas"]){
+for(const marker of ["Pendenciar cadastro","Visualizar foto internamente","/admin/login","/admin/motoristas","/admin/recuperar-senha","/admin/redefinir-senha","APOIS_ADMIN_GUARD_NAV_CACHE_V1"]){
  if(!js.includes(marker))throw Error("[FAIL] Admin preview expected marker missing: "+marker);
 }
 if(js.includes("Nova corrida. Embarque em"))throw Error("[FAIL] Admin preview includes operational Motorista app");
