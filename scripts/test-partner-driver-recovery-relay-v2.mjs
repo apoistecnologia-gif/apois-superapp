@@ -1,0 +1,52 @@
+import assert from "node:assert/strict";
+import {readFileSync,existsSync} from "node:fs";
+import {resolve} from "node:path";
+import vm from "node:vm";
+// APOIS_DRIVER_RECOVERY_RELAY_TEST_V2 — synthetic URL only. Never use a real reset token.
+const root=process.cwd();
+const shellPath=resolve(root,"superapp/partner-shell/index.html");
+const driverPath=resolve(root,".work/partner-motorista/src/lib/auth/driverPasswordRecovery.ts");
+const configPath=resolve(root,"scripts/configure-partner-android.mjs");
+assert.ok(existsSync(shellPath) && existsSync(driverPath),"Handoff source files missing");
+const html=readFileSync(shellPath,"utf8");
+const rawScripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
+const script=rawScripts.find(x=>x.includes("function relayDeepLink(rawUrl)"));
+assert.ok(script,"Original Partner shell callback router not found");
+const store=new Map();
+let redirected="";
+const fakeLocation={origin:"https://localhost",assign:url=>{redirected=url},replace:url=>{redirected=url}};
+const fakeLocalStorage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
+const fakeSessionStorage={
+ getItem:key=>store.get(key)??null,
+ setItem:(key,value)=>store.set(key,value),
+ removeItem:key=>store.delete(key),
+};
+const sandbox={window:{location:fakeLocation},document:{querySelectorAll:()=>[]},
+  sessionStorage:fakeSessionStorage,localStorage:fakeLocalStorage,
+  URL,URLSearchParams,console};
+vm.createContext(sandbox);
+vm.runInContext(script,sandbox,{timeout:2000});
+const testLink="apoismotorista://auth/redefinir-senha?code=synthetic_code_no_real_credentials&type=recovery";
+assert.equal(vm.runInContext("relayDeepLink("+JSON.stringify(testLink)+")",sandbox,{timeout:1500}),true);
+assert.equal(store.get("apois-parceiro:motorista-recovery-url"),testLink);
+assert.match(redirected,/\/modules\/motorista\/index\.html#\/motorista\/login$/);
+assert.equal(vm.runInContext('relayDeepLink("https://unrelated.invalid/")',sandbox,{timeout:1500}),false);
+assert.equal(store.get("apois-parceiro:motorista-recovery-url"),testLink);
+const driver=readFileSync(driverPath,"utf8");
+assert.ok(driver.includes("APOIS_DRIVER_RECOVERY_PENDING_RELAY_V2"),"Motorista V2 callback handler missing");
+assert.ok(driver.includes('const PARTNER_PENDING_RECOVERY_KEY = "apois-parceiro:motorista-recovery-url"'),"Storage key differs");
+assert.ok(driver.includes("pending = sessionStorage.getItem(PARTNER_PENDING_RECOVERY_KEY)"),"Pending callback never read");
+assert.ok(driver.includes("sessionStorage.removeItem(PARTNER_PENDING_RECOVERY_KEY)"),"Pending recovery URL not erased");
+assert.ok(driver.includes("if (pending) await handle({ url: pending })"),"Pending callback not consumed");
+assert.ok(driver.indexOf('sessionStorage.getItem(PARTNER_PENDING_RECOVERY_KEY)') > driver.indexOf('await App.getLaunchUrl()'),"Native callback ordering wrong");
+assert.ok(readFileSync(configPath,"utf8").includes('android:scheme="apoismotorista"'),"Native recovery scheme not declared");
+const dist=resolve(root,"superapp/partner-shell/dist/modules/motorista");
+if(existsSync(dist)){
+ const {readdirSync}=await import("node:fs");
+ const {join}=await import("node:path");
+ const walk=(path)=>readdirSync(path,{withFileTypes:true}).flatMap(d=>d.isDirectory()?walk(join(path,d.name)):[join(path,d.name)]);
+ const js=walk(dist).filter(p=>p.endsWith(".js"));
+ assert.ok(js.length,"Motorista bundle missing");
+ assert.ok(js.some(p=>readFileSync(p,"utf8").includes("apois-parceiro:motorista-recovery-url")),"Recovery handoff not bundled");
+}
+console.log("[OK] Partner shell stores one synthetic recovery callback and navigates to Motorista; module reads, consumes and deletes pending link; native scheme registered.");
