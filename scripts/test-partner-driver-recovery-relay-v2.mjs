@@ -61,13 +61,17 @@ assert.ok(recoveryCss.includes("APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3"),"Nati
 assert.ok(recoveryCss.includes("-webkit-autofill:focus"),"Autofill contrast missing focus selector");
 assert.ok(recoveryReset.includes('to: "/motorista/login", replace: true'),"Reset success must return to login");
 console.log("[OK] Motorista recovery email input: typed, auto-filled, focused text contrast and safe post-reset login present.");
-assert.ok(recoveryForm.includes("APOIS_DRIVER_RECOVERY_PASTE_FALLBACK_V4"),"Manual recovery verification fallback missing");
-assert.ok(recoveryForm.includes("data-apois-driver-recovery-paste-v4"),"Manual copy-link recovery form missing");
-assert.ok(recoveryForm.includes('supabase.auth.verifyOtp({token_hash:tokenHash,type:"recovery"})'),
-  "Pasted recovery link must be verified by Supabase OTP, not navigated externally");
-assert.ok(recoveryForm.includes('url.hostname!=="tbbzkrfupmqdywnzgnms.supabase.co"'),
-  "Pasted recovery URL must reject other domains");
-assert.ok(recoveryForm.includes('setRecoveryLink("")'),"Successful recovery should clear sensitive pasted link");
-console.log("[OK] Driver manual recovery fallback requires project URL, recovery token verification and ephemeral input.");
+// Reuse the OTP verification contract already introduced in APOIS Estabelecimento.
+assert.ok(recoveryForm.includes("APOIS_DRIVER_RECOVERY_EMAIL_OTP_V5"),"Motorista must use OTP recovery");
+assert.ok(recoveryForm.includes('supabase.auth.verifyOtp({'),"OTP verification must use Supabase Auth");
+assert.ok(recoveryForm.includes('type: "recovery"'),"OTP type must be recovery");
+assert.ok(recoveryForm.includes('token: sanitizedCode'),"Numeric user code must be verified");
+assert.ok(recoveryForm.includes('email: parsed.data.email.trim().toLowerCase()'),"OTP must be bound to the provided email");
+assert.ok(recoveryForm.includes('to: "/motorista/redefinir-senha", replace: true'),"OTP must navigate only on verified session");
+assert.ok(recoveryForm.includes('data-apois-driver-recovery-otp-input-v5'),"Numeric OTP form must be rendered");
+assert.ok(recoveryForm.includes('autoComplete="one-time-code"'),"Android numeric OTP autofill must be available");
+assert.ok(!recoveryForm.includes("data-apois-driver-recovery-paste-v4"),"Unsafe legacy copy-link option must be removed from Motorista");
+assert.ok(!recoveryForm.includes("setRecoveryLink"),"Recovery links must not be retained in state");
+console.log("[OK] Motorista recovery OTP: email+numeric token+recovery session; no manual link parsing.");
 
 console.log("[OK] Partner shell stores one synthetic recovery callback and navigates to Motorista; module reads, consumes and deletes pending link; native scheme registered.");
