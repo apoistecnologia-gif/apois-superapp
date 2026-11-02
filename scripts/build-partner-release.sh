@@ -101,6 +101,7 @@ node "$ROOT/scripts/fix-partner-driver-auth-resume-v5.mjs"
 node "$ROOT/scripts/fix-partner-driver-registration-preflight-v6.mjs"
 node "$ROOT/scripts/fix-partner-driver-existing-passenger-v7.mjs"
 node "$ROOT/scripts/fix-partner-driver-password-success-v2.mjs"
+node "$ROOT/scripts/fix-partner-driver-auth-notice-v8.mjs"
 if ! grep -Fq 'data-apois-driver-recovery-email-v1' "$MOTORISTA/src/routes/motorista.recuperar-senha.tsx"; then echo '[FAIL] Motorista recovery input contrast missing'; exit 1; fi
 if ! grep -Fq 'recovery callback may be pending' "$MOTORISTA/src/routes/__root.tsx"; then echo '[FAIL] Motorista recovery callback navigation guard missing'; exit 1; fi
 node "$ROOT/scripts/fix-partner-admin-vehicle-inspection-v1.mjs"
