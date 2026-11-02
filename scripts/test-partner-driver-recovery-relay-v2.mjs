@@ -34,11 +34,12 @@ assert.equal(vm.runInContext('relayDeepLink("https://unrelated.invalid/")',sandb
 assert.equal(store.get("apois-parceiro:motorista-recovery-url"),testLink);
 const driver=readFileSync(driverPath,"utf8");
 assert.ok(driver.includes("APOIS_DRIVER_RECOVERY_PENDING_RELAY_V2"),"Motorista V2 callback handler missing");
-assert.ok(driver.includes('const PARTNER_PENDING_RECOVERY_KEY = "apois-parceiro:motorista-recovery-url"'),"Storage key differs");
-assert.ok(driver.includes("pending = sessionStorage.getItem(PARTNER_PENDING_RECOVERY_KEY)"),"Pending callback never read");
-assert.ok(driver.includes("sessionStorage.removeItem(PARTNER_PENDING_RECOVERY_KEY)"),"Pending recovery URL not erased");
-assert.ok(driver.includes("if (pending) await handle({ url: pending })"),"Pending callback not consumed");
-assert.ok(driver.indexOf('sessionStorage.getItem(PARTNER_PENDING_RECOVERY_KEY)') > driver.indexOf('await App.getLaunchUrl()'),"Native callback ordering wrong");
+assert.ok(driver.includes('const PARTNER_FORWARDED_RECOVERY_KEY = "apois-parceiro:motorista-recovery-url"'),"Storage key differs");
+assert.ok(driver.includes("forwardedUrl = window.sessionStorage.getItem(PARTNER_FORWARDED_RECOVERY_KEY)"),"Pending callback never read");
+assert.ok(driver.includes("window.sessionStorage.removeItem(PARTNER_FORWARDED_RECOVERY_KEY)"),"Pending recovery URL not erased");
+assert.ok(driver.includes("if (forwardedUrl) await handle({ url: forwardedUrl })"),"Pending callback not consumed");
+assert.ok(driver.indexOf('window.sessionStorage.getItem(PARTNER_FORWARDED_RECOVERY_KEY)') > driver.indexOf('await App.getLaunchUrl()'),"Native callback ordering wrong");
+assert.ok(driver.indexOf('window.sessionStorage.getItem(PARTNER_FORWARDED_RECOVERY_KEY)') > driver.indexOf('não foi possível ler launch URL'),"Forwarded callback must be read after native launch error is handled");
 assert.ok(readFileSync(configPath,"utf8").includes('android:scheme="apoismotorista"'),"Native recovery scheme not declared");
 const dist=resolve(root,"superapp/partner-shell/dist/modules/motorista");
 if(existsSync(dist)){
