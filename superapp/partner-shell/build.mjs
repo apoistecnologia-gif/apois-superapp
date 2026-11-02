@@ -154,7 +154,7 @@ forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque 
 forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
 forbidMarker(driverBundle, 'Carteira — APOIS Motorista', 'Motorista não leva a rota da carteira custodial antiga');
 forbidMarker(driverBundle, 'Chat em breve', 'Motorista não exibe ação de chat sem implementação');
-forbidMarker(driverBundle, 'Abrir menu', 'Motorista não recompila menu lateral duplicado na tela principal');
+requireMarker(driverBundle, 'Abrir menu lateral', 'Motorista disponibiliza o menu lateral solicitado com navegação preservada');
 forbidMarker(driverBundle, 'apois:splash:motorista', 'Motorista não mostra splash interna depois do seletor Parceiro');
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
 
