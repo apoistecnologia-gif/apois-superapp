@@ -10,8 +10,8 @@ if(s.split(before).length!==2)throw Error("[FAIL] auth guard insertion point mov
 // call the upsert RPC for an already-existing driver, as it resets approval.
 const after=`  const authUser = await ensureAuthenticatedAccount(input);
   // APOIS_DRIVER_EXISTING_PROFILE_GUARD_V6
-  const { data: existingDriver, error: existingError } = await (supabase as any).rpc("driver_get_profile");
-  if (existingError) {
+  const { data: existingDriver, error: verifyError } = await (supabase as any).rpc("driver_get_profile");
+  if (verifyError) {
     throw new Error("Não foi possível verificar seu cadastro no servidor. Nenhum arquivo foi enviado. Tente entrar novamente.");
   }
   if (existingDriver && typeof existingDriver === "object" && existingDriver.id) {
