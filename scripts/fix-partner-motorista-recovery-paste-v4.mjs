@@ -67,7 +67,6 @@ one('  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {',
     fn+'  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {',
     "link verifier action");
 const ui = [
-'              </form>',
 '              <section data-apois-driver-recovery-paste-v4 className="mt-6 min-w-0 rounded-2xl border border-[#e5e7eb] bg-white p-3 text-[#111827]">',
 '                <h2 className="text-sm font-extrabold">O link abriu uma página em branco?</h2>',
 '                <p className="mt-2 text-xs leading-5 text-[#374151]">Solicite um novo e-mail. Sem abrir o link, toque e segure o botão recebido e escolha Copiar link. Depois cole abaixo para definir sua nova senha no APOIS.</p>',
@@ -85,6 +84,7 @@ const ui = [
 '                </form>',
 '              </section>'
 ].join("\n");
-one('              </form>\n            </>\n          )}',ui+'\n            </>\n          )}',"manual fallback UI");
+// Display the fallback even AFTER resetPasswordForEmail sets sent=true.
+one('          )}\n        </section>', '          )}\n' + ui + '\n        </section>', "manual fallback visible in both sent/unsent states");
 writeFileSync(file,s,"utf8");
 console.log("[OK] Motorista recovery manual link fallback uses strict project URL + single-use verifyOtp; no token persistence.");
