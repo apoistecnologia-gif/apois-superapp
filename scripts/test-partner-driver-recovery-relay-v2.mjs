@@ -56,7 +56,7 @@ const recoveryCss = readFileSync(resolve(root,".work/partner-motorista/src/apois
 const recoveryReset = readFileSync(resolve(root,".work/partner-motorista/src/routes/motorista.redefinir-senha.tsx"),"utf8");
 assert.ok(recoveryForm.includes("data-apois-driver-recovery-email-v1") && recoveryForm.includes('WebkitTextFillColor:"#111827"'),
   "Recovery email input must explicitly force dark typed text in Android WebView");
-assert.match(recoveryForm,/colorScheme: "light"/,"Recovery input must not inherit Android dark input autofill theme");
+assert.match(recoveryForm,/colorScheme:\s*"light"/,"Recovery input must not inherit Android dark input autofill theme");
 assert.ok(recoveryCss.includes("APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3"),"Native autofill CSS safety rule absent");
 assert.ok(recoveryCss.includes("-webkit-autofill:focus"),"Autofill contrast missing focus selector");
 assert.ok(recoveryReset.includes('to: "/motorista/login", replace: true'),"Reset success must return to login");
