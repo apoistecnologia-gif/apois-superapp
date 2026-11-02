@@ -18,8 +18,8 @@ const check=`
     throw new Error("Sua conta de acesso existe, mas o perfil interno ainda não foi criado. Não refaça o cadastro com outro e-mail. Procure o suporte APOIS para regularizar o vínculo.");
   }
 
-  const { data: existingDriver, error: profileError } = await supabase.rpc("driver_get_profile");
-  if (profileError) {
+  const { data: existingDriver, error: verifyError } = await supabase.rpc("driver_get_profile");
+  if (verifyError) {
     throw new Error("Não foi possível verificar se você já é motorista. Nenhum documento foi enviado. Tente novamente mais tarde.");
   }
   if (existingDriver && typeof existingDriver === "object" && !Array.isArray(existingDriver) && typeof existingDriver.id === "string" && existingDriver.id) {
