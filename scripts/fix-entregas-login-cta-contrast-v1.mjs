@@ -20,8 +20,8 @@ const cssPath=resolve(root,"src/system-theme.css");
 let css=readFileSync(cssPath,"utf8");
 if(css.includes("APOIS_ENTREGAS_LOGIN_CTA_CONTRAST_V1"))throw Error("[FAIL] CSS patch twice");
 css += "\n/* APOIS_ENTREGAS_LOGIN_CTA_CONTRAST_V1: red button cannot inherit black text */\n" +
- "html.apois-entregas-customer-light-v4 button[data-apois-entregas-login-submit-contrast-v1],\n" +
- "html.apois-entregas-customer-light-v4 [data-apois-entregas-login-submit-contrast-v1] {\n" +
+ "button[data-apois-entregas-login-submit-contrast-v1],\n" +
+ "[data-apois-entregas-login-submit-contrast-v1] {\n" +
  " color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important;\n}\n";
 writeFileSync(cssPath,css,"utf8");
 console.log("[OK] Entregas login CTA white text on APOIS red backgrounds; business logic preserved.");
