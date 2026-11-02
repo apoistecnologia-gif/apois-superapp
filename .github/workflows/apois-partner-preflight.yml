@@ -101,7 +101,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: apois-browser-parceiro-${{ github.sha }}
-          path: qa-browser/parceiro/
+          path: |
+            qa-browser/parceiro/
+            qa-browser/admin-corridas/
           if-no-files-found: warn
           retention-days: 7
 
