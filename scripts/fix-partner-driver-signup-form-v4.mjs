@@ -78,10 +78,10 @@ form = once(form,
   '      setError("Informe sua data de nascimento válida no formato DD/MM/AAAA (idade mínima de 18 anos).");\n' +
   '      return;\n' +
   '    }\n' +
-  '    for (const key of DRIVER_UPPERCASE_FIELDS) {',
-'      if (typeof rawData[key] === "string") rawData[key] = (rawData[key] as string).toLocaleUpperCase("pt-BR");',
-'    }',
-'    const parsed = schema.safeParse({ ...rawData, birth_date: birthISO });',
+  '    for (const key of DRIVER_UPPERCASE_FIELDS) {\n' +
+  '      if (typeof rawData[key] === "string") rawData[key] = (rawData[key] as string).toLocaleUpperCase("pt-BR");\n' +
+  '    }\n' +
+  '    const parsed = schema.safeParse({ ...rawData, birth_date: birthISO });',
   "ISO date submitted to existing backend contract");
 
 form = once(form,
@@ -114,6 +114,9 @@ if (birthInputs.length !== 1 || !birthInputs[0][0].includes('type="date"'))
   throw Error("[FAIL] Cadastro V4 birth date field is not uniquely recognized");
 form = form.replace(birthInputs[0][0], newBirth);
 
+if (!form.includes('    }\n    const parsed = schema.safeParse({ ...rawData, birth_date: birthISO });')) {
+  throw Error("[FAIL] Signup V4 uppercase normalization block incomplete");
+}
 write(formFile, form);
 
 const loginFile = "src/routes/motorista.login.tsx";
