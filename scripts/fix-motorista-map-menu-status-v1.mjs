@@ -16,9 +16,9 @@ app=swap(app,'import { ApoisDriverBottomNav } from "@/components/ApoisDriverBott
 "preserve active ride recovery while removing bottom nav");
 app=swap(app,'      <ApoisDriverBottomNav hidden={!!ratingRide} />',
 '      <DriverActiveRideRecovery />',"remove redundant bottom navigation");
-app=swap(app,'  const navReserve = "calc(env(safe-area-inset-bottom) + 76px)";',
-'  const navReserve = "env(safe-area-inset-bottom)";',
-"restore map area below unused bottom navigation");
+const reserveMatches=[...app.matchAll(/const navReserve = "[^"]+";/g)];
+if(reserveMatches.length!==1)throw Error("[FAIL] Motorista map reserve changed; expected one idle navReserve");
+app=app.replace(reserveMatches[0][0], 'const navReserve = "env(safe-area-inset-bottom)";');
 // Real diagnosis should be able to complete even when Supabase networking stalls.
 if(!status.includes('export function ApoisStatusCheck'))throw Error("[FAIL] Status component changed");
 status=swap(status,'  const test=useCallback(async()=>{',
