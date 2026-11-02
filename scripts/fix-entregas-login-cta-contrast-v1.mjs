@@ -15,6 +15,12 @@ for(const name of names){
  if(s.split(anchor).length!==2)throw Error("[FAIL] CTA class anchor "+name);
  s=s.replace(anchor,'data-apois-entregas-login-submit-contrast-v1\n                className="h-14 w-full rounded-2xl '+name);
 }
+// An inline child span beats inherited dark button foreground on the light login page.
+const buttonLabel=String.fromCharCode(34)+"Entrar"+String.fromCharCode(34);
+const buttonLabelCount=s.split(buttonLabel).length-1;
+if(buttonLabelCount<1||buttonLabelCount>3)throw Error("[FAIL] Entregas CTA text anchor "+buttonLabelCount);
+s=s.replaceAll(buttonLabel,
+ '<span data-apois-entregas-login-label-v2 style={{color:"#FFFFFF",WebkitTextFillColor:"#FFFFFF"}}>Entrar</span>');
 writeFileSync(file,s,"utf8");
 const cssPath=resolve(root,"src/system-theme.css");
 let css=readFileSync(cssPath,"utf8");
