@@ -78,7 +78,10 @@ form = once(form,
   '      setError("Informe sua data de nascimento válida no formato DD/MM/AAAA (idade mínima de 18 anos).");\n' +
   '      return;\n' +
   '    }\n' +
-  '    const parsed = schema.safeParse({ ...rawData, birth_date: birthISO });',
+  '    for (const key of DRIVER_UPPERCASE_FIELDS) {',
+'      if (typeof rawData[key] === "string") rawData[key] = (rawData[key] as string).toLocaleUpperCase("pt-BR");',
+'    }',
+'    const parsed = schema.safeParse({ ...rawData, birth_date: birthISO });',
   "ISO date submitted to existing backend contract");
 
 form = once(form,
