@@ -61,4 +61,13 @@ assert.ok(recoveryCss.includes("APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3"),"Nati
 assert.ok(recoveryCss.includes("-webkit-autofill:focus"),"Autofill contrast missing focus selector");
 assert.ok(recoveryReset.includes('to: "/motorista/login", replace: true'),"Reset success must return to login");
 console.log("[OK] Motorista recovery email input: typed, auto-filled, focused text contrast and safe post-reset login present.");
+assert.ok(recoveryForm.includes("APOIS_DRIVER_RECOVERY_PASTE_FALLBACK_V4"),"Manual recovery verification fallback missing");
+assert.ok(recoveryForm.includes("data-apois-driver-recovery-paste-v4"),"Manual copy-link recovery form missing");
+assert.ok(recoveryForm.includes('supabase.auth.verifyOtp({token_hash:tokenHash,type:"recovery"})'),
+  "Pasted recovery link must be verified by Supabase OTP, not navigated externally");
+assert.ok(recoveryForm.includes('url.hostname!=="tbbzkrfupmqdywnzgnms.supabase.co"'),
+  "Pasted recovery URL must reject other domains");
+assert.ok(recoveryForm.includes('setRecoveryLink("")'),"Successful recovery should clear sensitive pasted link");
+console.log("[OK] Driver manual recovery fallback requires project URL, recovery token verification and ephemeral input.");
+
 console.log("[OK] Partner shell stores one synthetic recovery callback and navigates to Motorista; module reads, consumes and deletes pending link; native scheme registered.");
