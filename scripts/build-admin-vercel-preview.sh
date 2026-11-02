@@ -46,6 +46,10 @@ EOF
 fi
 test -f sources/apois-corridas-motorista-admin/src/routes/admin.motoristas.tsx
 test -f sources/apois-entregas/src/routes/courier.tsx
+# Server-only document signer must be present and pass authorization regression checks.
+test -s admin-preview/api/admin/driver-documents.js
+node --check admin-preview/api/admin/driver-documents.js
+node scripts/test-admin-preview-private-documents-v1.mjs
 
 case "${CORRIDAS_VITE_SUPABASE_URL:-}" in
   https://tbbzkrfupmqdywnzgnms.supabase.co) ;;
