@@ -7,9 +7,9 @@ import { useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Result = {label:string;status:"ok"|"warn"|"unknown";detail:string};
-export function ApoisStatusCheck({role,online,onClose,approved,documentsReady}:{
+export function ApoisStatusCheck({role,online,onClose,approved,documentsReady,courierId}:{
   role:"motorista"|"entregador";online:boolean;onClose:()=>void;
-  approved?:boolean|null;documentsReady?:boolean|null;
+  approved?:boolean|null;documentsReady?:boolean|null;courierId?:string|null;
 }) {
   const [busy,setBusy]=useState(false);
   const [results,setResults]=useState<Result[]>([]);
@@ -50,6 +50,16 @@ export function ApoisStatusCheck({role,online,onClose,approved,documentsReady}:{
             docsOk=String(data.documents_status??"") === "approved";
             backendOnline=data.is_online===true;
           }
+          // APOIS_COURIER_AVAILABILITY_VERIFIED_V2:
+          // Incoming-offers RPC verifies dispatch, not online availability.
+          // Courier has a distinct authenticated availability row.
+          if(role==="entregador"&&courierId){
+            const remote=await supabase.from("courier_availability").select("is_online")
+              .eq("courier_id",courierId).maybeSingle();
+            if(!remote.error&&remote.data){
+              backendOnline=remote.data.is_online===true;
+            }
+          }
         }
       } catch {serverReady=false;}
     }
@@ -66,7 +76,7 @@ export function ApoisStatusCheck({role,online,onClose,approved,documentsReady}:{
     add("6. Servidor de chamadas",serverReady?"ok":"warn",
       serverReady?"API consultada com sucesso. Isso não garante permissão de notificações PUSH.":"Não foi possível consultar a API de ofertas. Verifique a conexão e tente novamente.");
     setResults(output);setTested(true);setBusy(false);
-  },[role,online,approved,documentsReady]);
+  },[role,online,approved,documentsReady,courierId]);
   return (
     <div className="fixed inset-0 z-[999] flex items-end justify-center bg-black/65 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] sm:items-center"
       role="dialog" aria-modal="true" aria-labelledby="apois-status-check-title">
@@ -136,7 +146,7 @@ if(process.argv[2]==="entregador") modify(courier,[
  ['  const [profileOpen, setProfileOpen] = useState(false);',
  '  const [profileOpen, setProfileOpen] = useState(false);\n  const [statusCheckOpen,setStatusCheckOpen]=useState(false);','courier modal state'],
 
- ['      <CourierSupportSheet\n', '      {statusCheckOpen&&<ApoisStatusCheck role="entregador" online={online}\n        approved={courier?.status==="approved"&&courier?.is_active===true}\n        documentsReady={documents?.length>0?documents.every((doc:any)=>doc.status==="approved"):null}\n        onClose={()=>setStatusCheckOpen(false)} />}\n      <CourierSupportSheet\n','courier modal']
+ ['      <CourierSupportSheet\n', '      {statusCheckOpen&&<ApoisStatusCheck role="entregador" online={online} courierId={courier?.id??null}\n        approved={courier?.status==="approved"&&courier?.is_active===true}\n        documentsReady={documents?.length>0?documents.every((doc:any)=>doc.status==="approved"):null}\n        onClose={()=>setStatusCheckOpen(false)} />}\n      <CourierSupportSheet\n','courier modal']
 ]);
 // Preserve every existing CourierStatusCard prop and layout; add a compact adjacent control.
 if(process.argv[2]==="entregador") {
