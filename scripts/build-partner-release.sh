@@ -68,6 +68,7 @@ node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
 node "$ROOT/scripts/harden-partner-motorista-login-focus-v19.mjs"
 node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/fix-motorista-internal-contrast-v1.mjs"
+node "$ROOT/scripts/fix-motorista-history-own-profile-v2.mjs"
 node "$ROOT/scripts/harden-partner-google-callback-recovery.mjs"
 node "$ROOT/scripts/harden-partner-motorista-google-pkce-v20.mjs"
 node "$ROOT/scripts/harden-partner-ride-homologation-v2.mjs"
@@ -93,6 +94,7 @@ node "$ROOT/scripts/fix-partner-driver-photo-capture-v2.mjs"
 node "$ROOT/scripts/fix-partner-driver-native-photo-v3.mjs"
 node "$ROOT/scripts/fix-partner-driver-signup-form-v4.mjs"
 node "$ROOT/scripts/fix-partner-driver-auth-resume-v5.mjs"
+node "$ROOT/scripts/fix-partner-driver-existing-profile-v6.mjs"
 node "$ROOT/scripts/fix-partner-admin-vehicle-inspection-v1.mjs"
 node "$ROOT/scripts/fix-partner-admin-pendencies-preview-v1.mjs"
 node "$ROOT/scripts/fix-partner-support-case-workroom-v1.mjs"
@@ -101,6 +103,7 @@ node "$ROOT/scripts/verify-apois-vehicle-incidents-v1.mjs" partner
 node "$ROOT/scripts/verify-apois-13-photo-driver-pendencies-v1.mjs"
 node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" motorista
 node "$ROOT/scripts/fix-motorista-map-menu-status-v1.mjs"
+node "$ROOT/scripts/fix-motorista-global-sidebar-v2.mjs"
 node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/fix-partner-motorista-ride-comfort-v1.mjs"
