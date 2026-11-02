@@ -102,9 +102,9 @@ node "$ROOT/scripts/fix-partner-driver-correction-center-v1.mjs"
 node "$ROOT/scripts/verify-apois-vehicle-incidents-v1.mjs" partner
 node "$ROOT/scripts/verify-apois-13-photo-driver-pendencies-v1.mjs"
 node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" motorista
+node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/fix-motorista-map-menu-status-v1.mjs"
 node "$ROOT/scripts/fix-motorista-global-sidebar-v2.mjs"
-node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" motorista
 node "$ROOT/scripts/fix-partner-motorista-ride-comfort-v1.mjs"
 node "$ROOT/scripts/verify-partner-motorista-ride-comfort-v1.mjs"
