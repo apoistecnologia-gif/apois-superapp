@@ -1,6 +1,7 @@
 name: APOIS Parceiro Android APK
 # test workflow: GitHub Actions debug APK — courier home structurally non-overlapping inline availability
 # QA motorista V4: signup email confirmation + uppercase personal fields + typed birth mask
+# V4 QA gate: correct normalized uppercase submission in generated React form
 
 on:
   workflow_dispatch:
