@@ -94,6 +94,7 @@ jobs:
           APOIS_PLAYWRIGHT_ROOT: ${{ runner.temp }}/apois-browser-qa
         run: |
           node scripts/audit-browser-public-v1.mjs parceiro
+          node scripts/audit-admin-preview-render-v2.mjs
           node scripts/test-courier-home-render-v1.mjs
       - name: Preserve browser QA screenshots and metrics
         if: ${{ always() }}
