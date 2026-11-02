@@ -144,6 +144,9 @@ jobs:
           node scripts/verify-apois-13-photo-driver-pendencies-v1.mjs
           grep -Fq 'APOIS_ANDROID_DRIVER_PHOTO_CAPTURE_V2' .work/partner-motorista/src/components/DriverDocumentField.tsx
           grep -Fq 'APOIS_ANDROID_IMAGE_FALLBACK_V2' .work/partner-motorista/src/lib/imageCompress.ts
+          grep -Fq 'APOIS_NATIVE_DRIVER_PHOTO_PICKER_V3' .work/partner-motorista/src/components/DriverDocumentField.tsx
+          grep -Fq 'CameraResultType.Base64' .work/partner-motorista/src/lib/driverNativePhotoPicker.ts
+          grep -R -Fq 'getPhoto' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'data-apois-driver-photo-field-v2' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'Preparando arquivo...' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'data-apois-driver-corrections-v1' superapp/partner-shell/dist/modules/motorista
@@ -178,6 +181,9 @@ jobs:
           bunx cap add android
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           bunx cap sync android
+          # Native Camera is required: never deliver a WebView-only photo chooser again.
+          test -s android/app/src/main/assets/capacitor.plugins.json
+          grep -Fq 'CameraPlugin' android/app/src/main/assets/capacitor.plugins.json
           cd ../..
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
