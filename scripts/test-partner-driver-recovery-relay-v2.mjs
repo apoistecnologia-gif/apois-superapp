@@ -50,4 +50,15 @@ if(existsSync(dist)){
  assert.ok(js.length,"Motorista bundle missing");
  assert.ok(js.some(p=>readFileSync(p,"utf8").includes("apois-parceiro:motorista-recovery-url")),"Recovery handoff not bundled");
 }
+// Guard the previously regressed white-on-white recovery input, including Android autofill.
+const recoveryForm = readFileSync(resolve(root,".work/partner-motorista/src/routes/motorista.recuperar-senha.tsx"),"utf8");
+const recoveryCss = readFileSync(resolve(root,".work/partner-motorista/src/apois-ui-hardening-round3.css"),"utf8");
+const recoveryReset = readFileSync(resolve(root,".work/partner-motorista/src/routes/motorista.redefinir-senha.tsx"),"utf8");
+assert.match(recoveryForm,/data-apois-driver-recovery-email-v1[^>]*WebkitTextFillColor: "#111827"/,
+  "Recovery input must force dark typed text in Android WebView");
+assert.match(recoveryForm,/colorScheme: "light"/,"Recovery input must not inherit Android dark input autofill theme");
+assert.ok(recoveryCss.includes("APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3"),"Native autofill CSS safety rule absent");
+assert.ok(recoveryCss.includes("-webkit-autofill:focus"),"Autofill contrast missing focus selector");
+assert.ok(recoveryReset.includes('to: "/motorista/login", replace: true'),"Reset success must return to login");
+console.log("[OK] Motorista recovery email input: typed, auto-filled, focused text contrast and safe post-reset login present.");
 console.log("[OK] Partner shell stores one synthetic recovery callback and navigates to Motorista; module reads, consumes and deletes pending link; native scheme registered.");
