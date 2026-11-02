@@ -93,6 +93,38 @@ try {
         }));
         Object.assign(item, metrics);
         await checkReadableInputColors(page,name+" login "+width);
+        if (name === 'corridas-login') {
+          // Check actual painted title text fragments vs the floating module switch.
+          const intersections=await page.evaluate(()=>{
+            const title=document.querySelector('[data-apois-client-login-title-v2]');
+            if(!title)return ['missing_title_marker'];
+            const ranges=[];
+            const walk=document.createTreeWalker(title,NodeFilter.SHOW_TEXT);
+            while(walk.nextNode()){
+              const node=walk.currentNode;
+              if(!node.textContent?.trim())continue;
+              const range=document.createRange();range.selectNodeContents(node);
+              for(const rect of range.getClientRects())ranges.push(rect);
+            }
+            const controls=[...document.querySelectorAll('button,a,[role="button"]')]
+              .filter(el=>!title.contains(el)).map(el=>el.getBoundingClientRect())
+              .filter(r=>r.width>20 && r.height>20 && r.top<350 && r.bottom>title.getBoundingClientRect().top);
+            const intersection=(a,b)=>a.left<b.right-2 && a.right>b.left+2 &&
+              a.top<b.bottom-2 && a.bottom>b.top+2;
+            return ranges.flatMap((rect,i)=>controls.some(r=>intersection(rect,r))?[i]:[]);
+          });
+          assert.deepEqual(intersections,[],'Corridas title text overlaps a floating navigation control');
+          item.interactions=[...(item.interactions||[]),{action:'title does not overlap switch button',passed:true}];
+        }
+        if (name === 'entregas-login') {
+          const primary=page.locator('[data-apois-entregas-login-submit-contrast-v1]').first();
+          await primary.waitFor({state:'visible'});
+          const c=await primary.evaluate(el=>{const s=getComputedStyle(el);
+            return {color:s.color,fill:s.webkitTextFillColor}});
+          assert.equal(c.color,'rgb(255, 255, 255)','Entregas primary login button label must be white on red');
+          assert.equal(c.fill,'rgb(255, 255, 255)','Android webkit submit fill must remain white on red');
+          item.interactions=[...(item.interactions||[]),{action:'red submit button contrast',passed:true}];
+        }
         item.assetReferences = await page.evaluate(() =>
           [...document.querySelectorAll('link[href],script[src]')].map(e => e.getAttribute('href') || e.getAttribute('src'))
             .filter(value => value && value.includes('assets/')));
