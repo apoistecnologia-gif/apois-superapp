@@ -19,7 +19,7 @@ edit("src/routes/motorista.ganhos.tsx",s=>{
     '<div data-apois-driver-finance-contrast-v2 className="min-h-[100dvh] min-w-0 bg-[#F7F7F8] text-[#111827]">',"finance shell");
   s=replaceOnce(s,'bg-gradient-to-br from-[#2A2108] via-[#121416] to-[#090A0B] p-4 sm:p-5',
     'bg-gradient-to-br from-[#29212A] via-[#15171C] to-[#111317] p-4 text-white sm:p-5',"dark hero foreground");
-  s=replaceOnce(s,'text-[#666B73]">Saldo disponível','text-[#E5E7EB]">Saldo disponível',"summary label");
+  s=replaceOnce(s,'text-[#666B73]">Ganhos registrados','text-[#E5E7EB]">Saldo disponível',"summary label");
   s=replaceOnce(s,'border border-[#E2E4E8] bg-[#F7F7F8] p-3"><p className="break-words text-[11px] font-black uppercase tracking-[0.12em] text-[#777D85]">',
     'border border-[#D9DDE3] bg-white p-3 text-[#111827]"><p className="break-words text-[11px] font-black uppercase tracking-[0.12em] text-[#596372]">',"pending cards");
   s=replaceOnce(s,'danger ? "text-red-400" : "text-zinc-200"',
