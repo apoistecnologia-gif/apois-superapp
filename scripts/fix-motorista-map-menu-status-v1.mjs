@@ -19,6 +19,25 @@ app=swap(app,'      <ApoisDriverBottomNav hidden={!!ratingRide} />',
 const reserveMatches=[...app.matchAll(/const navReserve = "[^"]+";/g)];
 if(reserveMatches.length!==1)throw Error("[FAIL] Motorista map reserve changed; expected one idle navReserve");
 app=app.replace(reserveMatches[0][0], 'const navReserve = "env(safe-area-inset-bottom)";');
+// The upstream mobile-ui hardener removes DriverSideMenu and its trigger.
+// Reintroduce the existing audited component after that hardener; do not create a clone.
+const sideMenuImport='import { DriverSideMenu } from "@/components/DriverSideMenu";';
+if(!app.includes(sideMenuImport)){
+  const pos='import { DriverActiveRideRecovery } from "@/components/DriverActiveRideRecovery";';
+  if(!app.includes(pos))throw Error("[FAIL] Missing ride recovery import for side-menu insertion");
+  app=app.replace(pos,pos+'\nimport { Menu } from "lucide-react";\n'+sideMenuImport);
+}
+const menuState='  const [showStatusCheck,setShowStatusCheck]=useState(false);';
+if(app.split(menuState).length!==2)throw Error("[FAIL] Status check state not found for menu placement");
+app=app.replace(menuState,menuState+'\n  const [sideMenuOpen,setSideMenuOpen]=useState(false);');
+const driverNameAnchor='<div className="min-w-0 flex-1 leading-tight">';
+if(app.split(driverNameAnchor).length!==2)throw Error("[FAIL] Driver top bar greeting not found");
+app=app.replace(driverNameAnchor,
+  '<button type="button" onClick={()=>setSideMenuOpen(true)} aria-label="Abrir menu lateral" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#E51B23]"><Menu className="h-5 w-5" aria-hidden="true"/></button>\n          '+driverNameAnchor);
+const gpsAnchor='      {/* (status de GPS é mostrado dentro do painel inferior) */}';
+if(app.split(gpsAnchor).length!==2)throw Error("[FAIL] Driver side menu render position missing");
+app=app.replace(gpsAnchor,
+  '      <DriverSideMenu open={sideMenuOpen} onOpenChange={setSideMenuOpen} onLogout={handleLogout} />\n'+gpsAnchor);
 // Real diagnosis should be able to complete even when Supabase networking stalls.
 if(!status.includes('export function ApoisStatusCheck'))throw Error("[FAIL] Status component changed");
 status=swap(status,'  const test=useCallback(async()=>{',
