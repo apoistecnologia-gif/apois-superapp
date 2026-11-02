@@ -47,8 +47,10 @@ fi
 test -f sources/apois-corridas-motorista-admin/src/routes/admin.motoristas.tsx
 test -f sources/apois-entregas/src/routes/courier.tsx
 # Server-only document signer must be present and pass authorization regression checks.
-test -s admin-preview/api/admin/driver-documents.js
-node --check admin-preview/api/admin/driver-documents.js
+test -s api/admin/driver-documents.js
+node --check api/admin/driver-documents.js
+# Vercel functions require a root api/ directory, not admin-preview/api.
+cmp -s api/admin/driver-documents.js admin-preview/api/admin/driver-documents.js || { echo "[FAIL] Isolated server endpoint source drift"; exit 1; }
 node scripts/test-admin-preview-private-documents-v1.mjs
 
 case "${CORRIDAS_VITE_SUPABASE_URL:-}" in
