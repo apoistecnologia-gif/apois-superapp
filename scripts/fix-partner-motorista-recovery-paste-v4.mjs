@@ -68,7 +68,7 @@ one('  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {',
     "link verifier action");
 const ui = [
 '              <section data-apois-driver-recovery-paste-v4 className="mt-6 min-w-0 rounded-2xl border border-[#e5e7eb] bg-white p-3 text-[#111827]">',
-'                <h2 className="text-sm font-extrabold">O link abriu uma página em branco?</h2>',
+'                <details><summary className="cursor-pointer list-none text-sm font-extrabold text-[#991b1b]">O link não abriu? Usar link copiado</summary><div className="mt-3">',
 '                <p className="mt-2 text-xs leading-5 text-[#374151]">Solicite um novo e-mail. Sem abrir o link, toque e segure o botão recebido e escolha Copiar link. Depois cole abaixo para definir sua nova senha no APOIS.</p>',
 '                <form onSubmit={usePastedRecoveryLink} className="mt-3 space-y-3">',
 '                  <label className="block text-xs font-semibold" htmlFor="apois-recovery-pasted-link">Link de recuperação recebido por e-mail</label>',
@@ -82,6 +82,7 @@ const ui = [
 '                    {recoveryLinkBusy?"Verificando link...":"Usar link no aplicativo"}',
 '                  </button>',
 '                </form>',
+'                </div></details>',
 '              </section>'
 ].join("\n");
 // Display the fallback even AFTER resetPasswordForEmail sets sent=true.
