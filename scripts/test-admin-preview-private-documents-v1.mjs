@@ -28,7 +28,8 @@ try{
  globalThis.fetch=async(url,options={})=>{
   const u=String(url);requests.push({url:u,headers:options.headers,method:options.method});
   if(u.endsWith("/auth/v1/user"))return response({id:userId});
-  if(u.includes("/rpc/admin_has_permission"))return response(permission);
+  if(u.includes("/rest/v1/profiles?"))return response([{role:"admin",active:true}]);
+  if(u.includes("/rest/v1/role_permissions?"))return response(permission?[{permission:"drivers.read"}]:[]);
   if(u.includes("/rest/v1/drivers?"))return response([{user_id:userId,selfie_url:ownerId+"/profile.jpg",cnh_url:null,cnh_back_url:null,vehicle_document_url:null,vehicle_photo_url:null}]);
   if(u.includes("/rest/v1/users?"))return response([{auth_user_id:ownerId}]);
   if(u.includes("/rest/v1/apois_vehicle_inspection_photos?"))return response([{id:driverId,slot:"front",bucket_id:"apois-inspections",object_path:ownerId+"/front.jpg",review_status:"pending",review_note:null,submitted_at:"2026-11-02T14:00:00Z"}]);
@@ -44,7 +45,8 @@ try{
  assert.match(yes.body.selfie_url,/^https:\/\/tbbzkrfupmqdywnzgnms\.supabase\.co\/storage\/v1\/object\/sign\//);
  assert.equal(signs,2);
  assert.equal(yes.headers["cache-control"],"private, no-store, max-age=0");
- assert.ok(requests.some(x=>x.url.includes("/rpc/admin_has_permission")&&x.headers?.Authorization==="Bearer "+jwt));
+ assert.ok(requests.some(x=>x.url.includes("/rest/v1/profiles?")&&x.headers?.Authorization==="Bearer test_service_role_qa"));
+ assert.ok(requests.some(x=>x.url.includes("/rest/v1/role_permissions?")&&x.headers?.Authorization==="Bearer test_service_role_qa"));
  assert.ok(requests.filter(x=>x.url.includes("/rest/v1/drivers?")).every(x=>x.headers.Authorization==="Bearer test_service_role_qa"));
  assert.equal(JSON.stringify(yes.body).includes("test_service_role_qa"),false);
  assert.equal(JSON.stringify(yes.body).includes(jwt),false);
