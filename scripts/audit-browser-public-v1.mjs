@@ -184,7 +184,7 @@ try {
             // APOIS_CARET_CONTRAST_V1: brand-red caret is valid if it contrasts with its painted input background.
             const ratio=await email.evaluate(el=>{
               const style=getComputedStyle(el);
-              const parse=value=>{const found=value.match(/^rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);return found?[Number(found[1]),Number(found[2]),Number(found[3])]:null;};
+              const parse=value=>{const found=value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);return found?[Number(found[1]),Number(found[2]),Number(found[3])]:null;};
               const ink=parse(style.caretColor),background=parse(style.backgroundColor);
               if(!ink||!background)return 0;
               const lum=color=>color.reduce((sum,channel,i)=>{const v=channel/255;const linear=v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;return sum+linear*[0.2126,0.7152,0.0722][i];},0);
