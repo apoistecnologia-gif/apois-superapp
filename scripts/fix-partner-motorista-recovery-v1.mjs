@@ -15,6 +15,14 @@ recovery=unique(recovery,
  '<input name="email" type="email" autoComplete="email" inputMode="email" required placeholder="seuemail@exemplo.com"',
  '<input data-apois-driver-recovery-email-v1 name="email" type="email" autoComplete="email" inputMode="email" required placeholder="seuemail@exemplo.com"',
  "email input");
+/* APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3: native autofill and light
+   Motorista theme must never render white text over the white input surface.
+   Applied to the exact email control; other inputs remain untouched. */
+recovery=unique(recovery,
+ 'data-apois-driver-recovery-email-v1 name="email" type="email" autoComplete="email" inputMode="email" required placeholder="seuemail@exemplo.com" className=',
+ 'data-apois-driver-recovery-email-v1 name="email" type="email" autoComplete="email" inputMode="email" required placeholder="seuemail@exemplo.com" style={{ color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827", colorScheme: "light" }} className=',
+ "inline native email contrast");
+
 // Other QA visual hardeners can change the <p> styling; replace only the content.
 const oldResetCopy="Se existir uma conta para esse endereço, enviamos um link seguro para criar uma nova senha.";
 if(recovery.includes(oldResetCopy)) {
@@ -28,6 +36,7 @@ writeFileSync(recoveryFile,recovery,"utf8");
 const cssPath=resolve(base,"src/apois-ui-hardening-round3.css");
 let css=readFileSync(cssPath,"utf8");
 if(css.includes("APOIS_MOTORISTA_RECOVERY_HARDEN_V1"))throw Error("[FAIL] CSS already patched");
+css+=`\n/* APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3: match light input surface including autofill. */\nhtml input[data-apois-driver-recovery-email-v1],\nhtml input[data-apois-driver-recovery-email-v1]:focus,\nhtml input[data-apois-driver-recovery-email-v1]:active,\nhtml input[data-apois-driver-recovery-email-v1]:-webkit-autofill,\nhtml input[data-apois-driver-recovery-email-v1]:-webkit-autofill:focus {\n  color:#111827 !important;\n  -webkit-text-fill-color:#111827 !important;\n  caret-color:#111827 !important;\n  color-scheme:light !important;\n}\nhtml input[data-apois-driver-recovery-email-v1]::placeholder { color:#6b7280 !important; -webkit-text-fill-color:#6b7280 !important; opacity:1; }\n`;
 css+=`\n/* APOIS_MOTORISTA_RECOVERY_HARDEN_V1: email on white background must remain readable in Android WebView. */\ninput[data-apois-driver-recovery-email-v1],\ninput[data-apois-driver-recovery-email-v1]:focus,\ninput[data-apois-driver-recovery-email-v1]:-webkit-autofill {\n  color:#111827 !important;\n  -webkit-text-fill-color:#111827 !important;\n  caret-color:#111827 !important;\n}\ninput[data-apois-driver-recovery-email-v1]::placeholder {\n  color:#6B7280 !important;\n  -webkit-text-fill-color:#6B7280 !important;\n  opacity:1;\n}\n`;
 writeFileSync(cssPath,css,"utf8");
 
