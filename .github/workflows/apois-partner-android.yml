@@ -141,7 +141,14 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           npm run build:partner
           # Gate QA: não publicar um APK antigo que omita o cadastro com 13 fotos e o fluxo de pendências.
+          node --check scripts/fix-partner-driver-signup-form-v4.mjs
           node scripts/verify-apois-13-photo-driver-pendencies-v1.mjs
+          grep -Fq 'APOIS_DRIVER_SIGNUP_FORM_V4' .work/partner-motorista/src/routes/motorista.cadastro.tsx
+          grep -Fq 'parseDriverBirthDateBR' .work/partner-motorista/src/routes/motorista.cadastro.tsx
+          grep -Fq 'onInputCapture={uppercaseDriverField}' .work/partner-motorista/src/routes/motorista.cadastro.tsx
+          grep -Fq 'apois-driver-await-email-v4' .work/partner-motorista/src/routes/motorista.login.tsx
+          grep -R -Fq 'DD/MM/AAAA' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Confirme o e-mail recebido' superapp/partner-shell/dist/modules/motorista
           grep -Fq 'APOIS_ANDROID_DRIVER_PHOTO_CAPTURE_V2' .work/partner-motorista/src/components/DriverDocumentField.tsx
           grep -Fq 'APOIS_ANDROID_IMAGE_FALLBACK_V2' .work/partner-motorista/src/lib/imageCompress.ts
           grep -Fq 'APOIS_NATIVE_DRIVER_PHOTO_PICKER_V3' .work/partner-motorista/src/components/DriverDocumentField.tsx
