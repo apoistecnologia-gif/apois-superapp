@@ -33,7 +33,7 @@ edit("src/routes/motorista.notificacoes.tsx",s=>{
     'bg-gradient-to-br from-[#291A21] via-[#17171C] to-[#101014] p-4 text-white',"notice hero");
   s=replaceOnce(s,'text-[#666B73]">\n                    {unread === 0',
     'text-[#E5E7EB]">\n                    {unread === 0',"unread indicator");
-  s=replaceOnce(s,'? "border-white/[0.06] bg-[#0D0F11]/95"',
+  s=replaceOnce(s,'? "border-white/[0.06] bg-white/95"',
     '? "border-[#E2E4E8] bg-white"',"read notice light surface");
   s=replaceOnce(s,': "border-[#E51B23]/22 bg-gradient-to-br from-[#1B1607] via-[#111315] to-[#0D0F11] shadow-[0_20px_52px_-34px_rgba(229,27,35,.42)]"',
     ': "border-[#F1A3A7] bg-[#FFF7F8] shadow-[0_12px_30px_-23px_rgba(229,27,35,.25)]"',"unread notice light surface");
