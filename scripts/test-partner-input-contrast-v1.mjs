@@ -26,7 +26,10 @@ try{
   const snapshot=Object.fromEntries(Object.keys(entries).map(p=>[p,readFileSync(join(base,p),"utf8")]));
   for(const [rel,content] of Object.entries(snapshot)) {
     if(rel.endsWith(".tsx"))assert.equal(content.split("data-apois-input-contrast-v1").length-1,1);
-    else for(const token of ["APOIS_INPUT_CONTRAST_V1","#111827","-webkit-text-fill-color",":-webkit-autofill",":focus-visible","::placeholder"])assert(content.includes(token),token);
+    else {
+      for(const token of ["APOIS_INPUT_CONTRAST_V1","#111827","-webkit-text-fill-color",":-webkit-autofill",":focus-visible","::placeholder"])assert(content.includes(token),token);
+      if(mode==="motorista") for(const token of ["APOIS_MOTORISTA_PASSWORD_REVEAL_320_V1","flex:1 1 0% !important","flex:0 0 44px !important"])assert(content.includes(token),token);
+    }
   }
   r=run();assert.equal(r.status,0,r.stderr);
   for(const [rel,content] of Object.entries(snapshot))assert.equal(readFileSync(join(base,rel),"utf8"),content,"Idempotence "+rel);
