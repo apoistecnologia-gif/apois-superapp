@@ -35,6 +35,11 @@ if(!original.includes(marker)){
     root+" :is(input,textarea)::placeholder {color:#596372 !important;-webkit-text-fill-color:#596372 !important;opacity:1 !important;}",
     fields+":focus-visible {border-color:#C9141B !important;outline:2px solid #C9141B !important;outline-offset:1px;}",
     auto+","+auto+":hover,"+auto+":focus {-webkit-box-shadow:0 0 0 1000px #FFFFFF inset !important;box-shadow:0 0 0 1000px #FFFFFF inset !important;-webkit-text-fill-color:#111827 !important;caret-color:#C9141B !important;}",
+    ...(mode==="motorista" ? [
+      "/* APOIS_MOTORISTA_PASSWORD_REVEAL_320_V1: preserve the existing button when the input shrinks at 320px. */",
+      ':is([data-apois-input-contrast-v1]) input[name="password"] {width:0 !important;min-width:0 !important;flex:1 1 0% !important;}',
+      ':is([data-apois-input-contrast-v1]) button[aria-label="Mostrar senha"],:is([data-apois-input-contrast-v1]) button[aria-label="Ocultar senha"] {display:grid !important;flex:0 0 44px !important;position:relative !important;z-index:2;opacity:1 !important;visibility:visible !important;pointer-events:auto !important;}',
+    ]:[]),
     ""
   ].join("\n");
   writeFileSync(cssPath,original+css,"utf8");
