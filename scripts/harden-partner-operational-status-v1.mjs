@@ -54,7 +54,7 @@ export function ApoisStatusCheck({role,online,onClose,approved,documentsReady,co
           // Incoming-offers RPC verifies dispatch, not online availability.
           // Courier has a distinct authenticated availability row.
           if(role==="entregador"&&courierId){
-            const remote=await supabase.from("courier_availability").select("is_online")
+            const remote=await (supabase as any).from("courier_availability").select("is_online")
               .eq("courier_id",courierId).maybeSingle();
             if(!remote.error&&remote.data){
               backendOnline=remote.data.is_online===true;
