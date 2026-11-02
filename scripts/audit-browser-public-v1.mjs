@@ -104,6 +104,25 @@ try {
           await page.waitForTimeout(600);
           const recoveryText = await page.locator('body').innerText();
           assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
+          if (name === 'motorista-login') {
+            // Reproduce the originally reported white-on-white regression in a
+            // real browser DOM, without sending any email or contacting Auth.
+            const email = page.locator('input[data-apois-driver-recovery-email-v1]').first();
+            await email.waitFor({state:'visible'});
+            await email.fill('qa-contraste@example.invalid');
+            const visual = await email.evaluate(element => {
+              const style=getComputedStyle(element);
+              return { color:style.color,fill:style.webkitTextFillColor,caret:style.caretColor,
+                value:element.value,scheme:style.colorScheme};
+            });
+            assert.equal(visual.value,'qa-contraste@example.invalid','Motorista recovery email must accept typing');
+            assert.equal(visual.color,'rgb(17, 24, 39)','Motorista recovery email must have dark visible text');
+            assert.equal(visual.fill,'rgb(17, 24, 39)','Android-style Webkit text fill must be dark');
+            assert.equal(visual.caret,'rgb(17, 24, 39)','Recovery input caret must remain readable');
+            item.recoveryEmailContrast={color:visual.color,fill:visual.fill,caret:visual.caret,scheme:visual.scheme,passed:true};
+            item.interactions.push({action:'email typed and contrast computed (no submission)',passed:true});
+          }
+
           await page.screenshot({ path: resolve(output, name + '-recovery-' + width + '.png'), fullPage: true });
           item.interactions.push({ action: 'open password recovery without submitting', passed: true });
 
