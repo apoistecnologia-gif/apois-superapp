@@ -38,7 +38,7 @@ async function ensureAuthenticatedAccount(input: DriverRegistrationInput) {
 }
 `;
 s=s.slice(0,start)+block+s.slice(end);
-replace('    return {\n      ok: true as const,','    const { data: verified, error: verifyError } = await (supabase as any).from("drivers").select("id,approval_status").eq("user_id",authUser.id).maybeSingle();\n    if (verifyError || !verified?.id) throw new Error("Cadastro processado, mas a confirmação do perfil não foi possível. Entre novamente para verificar a situação antes de reenviar.");\n    return {\n      ok: true as const,',"read-after-write");
+replace('    return {\n      ok: true as const,','    // RPC returns the committed drivers row with an internal public.users foreign key; auth.uid differs.\n    if (!data || typeof data !== "object" || typeof data.id !== "string" || !data.id) {\n      throw new Error("Cadastro sem confirmação de persistência. Entre novamente para verificar o status antes de reenviar.");\n    }\n    return {\n      ok: true as const,',"RPC confirmed driver id");
 // Preserve the registration form UX V4, but show an accurate status at login.
 const formPath=resolve(".work/partner-motorista/src/routes/motorista.cadastro.tsx");
 let form=readFileSync(formPath,"utf8");
