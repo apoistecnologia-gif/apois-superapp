@@ -62,6 +62,7 @@ one('      if (event === "SIGNED_OUT" || !session) {\n        requestRef.current
 one('      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {\n        setRetryNonce',
   '      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {\n        if (navigationGrant && navigationGrant.userId !== session.user.id) navigationGrant = null;\n        setRetryNonce',
   "session change cache clear");
+one('  return <>{children}</>;', '  return <><span hidden aria-hidden="true" data-apois-admin-guard-cache-v1 />{children}</>;', "stable QA-only bundle marker");
 if(!s.includes("NAV_GRANT_TTL_MS = 12_000")||!s.includes('navigationGrant = null;'))throw Error("[FAIL] Admin nav auth cache missing");
 writeFileSync(path,s,"utf8");
 console.log("[OK] Corridas Admin QA route transitions reuse short validated access; Supabase RBAC reverified on every route and cache purged on auth changes.");
