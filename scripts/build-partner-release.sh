@@ -66,6 +66,8 @@ node "$ROOT/scripts/harden-partner-red-visual.mjs"
 node "$ROOT/scripts/harden-partner-auth-visual-v17.mjs"
 node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
 node "$ROOT/scripts/harden-partner-motorista-login-focus-v19.mjs"
+# Password recovery callback: no reroute to map; readable email input; return to login on reset.
+node "$ROOT/scripts/fix-partner-motorista-recovery-v1.mjs"
 node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/fix-motorista-internal-contrast-v1.mjs"
 node "$ROOT/scripts/fix-motorista-history-own-profile-v2.mjs"
@@ -95,6 +97,8 @@ node "$ROOT/scripts/fix-partner-driver-native-photo-v3.mjs"
 node "$ROOT/scripts/fix-partner-driver-signup-form-v4.mjs"
 node "$ROOT/scripts/fix-partner-driver-auth-resume-v5.mjs"
 node "$ROOT/scripts/fix-partner-driver-registration-preflight-v6.mjs"
+if ! grep -Fq 'data-apois-driver-recovery-email-v1' "$MOTORISTA/src/routes/motorista.recuperar-senha.tsx"; then echo '[FAIL] Motorista recovery input contrast missing'; exit 1; fi
+if ! grep -Fq 'recovery callback may be pending' "$MOTORISTA/src/routes/__root.tsx"; then echo '[FAIL] Motorista recovery callback navigation guard missing'; exit 1; fi
 node "$ROOT/scripts/fix-partner-admin-vehicle-inspection-v1.mjs"
 node "$ROOT/scripts/fix-partner-admin-pendencies-preview-v1.mjs"
 node "$ROOT/scripts/fix-partner-support-case-workroom-v1.mjs"
