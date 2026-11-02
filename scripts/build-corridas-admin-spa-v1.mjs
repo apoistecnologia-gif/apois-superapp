@@ -58,6 +58,21 @@ for(const path of visualPaths){
  }
  write(path,content);
 }
+// APOIS_ADMIN_NAV_FINANCE_RESTORE_V1: expose the already-existing read-only
+// Assinaturas/Pagamentos pages under existing permissions; never add a dead link
+// or restore unverified legacy payment actions.
+let sidebar=read("src/components/admin/AdminSidebar.tsx");
+const financeNavAnchor='  { to: "/admin/financeiro", label: "Financeiro", icon: Wallet, permission: "finance.read" },';
+if(sidebar.split(financeNavAnchor).length!==2)throw Error("[FAIL] Original Admin finance menu anchor changed");
+if(!read("src/routes/admin.assinaturas.tsx").includes('createFileRoute("/admin/assinaturas")')||
+   !read("src/routes/admin.pagamentos.tsx").includes('createFileRoute("/admin/pagamentos")'))
+ throw Error("[FAIL] Admin finance subpages are not present");
+sidebar=sidebar.replace('  Wallet,\n  ScrollText,','  Wallet,\n  CreditCard,\n  Receipt,\n  ScrollText,');
+sidebar=sidebar.replace(financeNavAnchor,financeNavAnchor+
+ '\n  { to: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard, permission: "drivers.read" },'+
+ '\n  { to: "/admin/pagamentos", label: "Pagamentos", icon: Receipt, permission: "finance.read" },');
+write("src/components/admin/AdminSidebar.tsx",sidebar);
+
 // APOIS_ADMIN_PREVIEW_DOCUMENT_API_V1: the Vercel QA preview is static.
 // TanStack createServerFn has no backend at /_serverFn/. Use our authenticated
 // Vercel QA API only for document signing. No source repository is modified.
@@ -141,7 +156,7 @@ for(const asset of assetUrls){
 }
 const assetFiles=readdirSync(resolve(workspace,"dist/admin-preview/assets")).filter(p=>p.endsWith(".js"));
 const js=assetFiles.map(p=>readFileSync(resolve(workspace,"dist/admin-preview/assets",p),"utf8")).join("\n");
-for(const marker of ["Pendenciar cadastro","Visualizar foto internamente","/admin/login","/admin/motoristas","/admin/recuperar-senha","/admin/redefinir-senha","data-apois-admin-guard-cache-v1"]){
+for(const marker of ["Pendenciar cadastro","Visualizar foto internamente","/admin/assinaturas","/admin/pagamentos","/admin/login","/admin/motoristas","/admin/recuperar-senha","/admin/redefinir-senha","data-apois-admin-guard-cache-v1"]){
  if(!js.includes(marker))throw Error("[FAIL] Admin preview expected marker missing: "+marker);
 }
 if(js.includes("Nova corrida. Embarque em"))throw Error("[FAIL] Admin preview includes operational Motorista app");
