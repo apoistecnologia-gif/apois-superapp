@@ -39,5 +39,18 @@ async function ensureAuthenticatedAccount(input: DriverRegistrationInput) {
 `;
 s=s.slice(0,start)+block+s.slice(end);
 replace('    return {\n      ok: true as const,','    const { data: verified, error: verifyError } = await (supabase as any).from("drivers").select("id,approval_status").eq("user_id",authUser.id).maybeSingle();\n    if (verifyError || !verified?.id) throw new Error("Cadastro processado, mas a confirmação do perfil não foi possível. Entre novamente para verificar a situação antes de reenviar.");\n    return {\n      ok: true as const,',"read-after-write");
+// Preserve the registration form UX V4, but show an accurate status at login.
+const formPath=resolve(".work/partner-motorista/src/routes/motorista.cadastro.tsx");
+let form=readFileSync(formPath,"utf8");
+const old='err.message === "Conta criada. Confirme seu e-mail e depois entre para concluir o cadastro."';
+if(form.split(old).length!==2)throw Error("[FAIL] V4 confirmation handling moved");
+form=form.replace(old,'err.message.includes("Nenhum documento foi enviado.")');
+writeFileSync(formPath,form,"utf8");
+const loginPath=resolve(".work/partner-motorista/src/routes/motorista.login.tsx");
+let login=readFileSync(loginPath,"utf8");
+const oldText='Sua conta de acesso foi criada. Confirme o e-mail recebido e depois entre. ';
+if(login.split(oldText).length!==2)throw Error("[FAIL] V4 login confirmation notice moved");
+login=login.replace(oldText,'Verifique seu e-mail. Se recebeu uma confirmação, conclua-a e depois entre. Se a conta já existia, use sua senha ou a recuperação de acesso. ');
+writeFileSync(loginPath,login,"utf8");
 writeFileSync(path,s,"utf8");
 console.log("[OK] Driver signup resumes existing confirmed account and never falsely claims a new account on obfuscated signup.");
