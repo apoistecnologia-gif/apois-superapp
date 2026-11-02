@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 const require=createRequire(import.meta.url);
-const handler=require("../admin-preview/api/admin/driver-documents.js");
+const handler=require("../api/admin/driver-documents.js");
 const keys=["CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY","CORRIDAS_SUPABASE_SERVICE_ROLE_KEY"];
 const old=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
 const priorFetch=globalThis.fetch;
