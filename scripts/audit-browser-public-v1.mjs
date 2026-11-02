@@ -121,6 +121,17 @@ try {
             assert.equal(visual.caret,'rgb(17, 24, 39)','Recovery input caret must remain readable');
             item.recoveryEmailContrast={color:visual.color,fill:visual.fill,caret:visual.caret,scheme:visual.scheme,passed:true};
             item.interactions.push({action:'email typed and contrast computed (no submission)',passed:true});
+            // Exercise the safe manual fallback with a synthetic malicious-origin
+            // URL. No actual recovery token and no network/auth call is allowed.
+            const paste=page.locator('#apois-recovery-pasted-link');
+            await paste.waitFor({state:'visible'});
+            await paste.fill('https://untrusted.invalid/auth/v1/verify?token=synthetic1234567890abcdef&type=recovery');
+            await page.getByRole('button',{name:'Usar link no aplicativo'}).click();
+            const rejection=await page.locator('[data-apois-driver-recovery-paste-v4] [role="alert"]').innerText();
+            assert.match(rejection,/n[aã]o [eé] um link de recupera[cç][aã]o v[aá]lido/i,
+              'Untrusted recovery link must be rejected without contacting Auth');
+            item.interactions.push({action:'reject forged recovery link locally',passed:true});
+
           }
 
           await page.screenshot({ path: resolve(output, name + '-recovery-' + width + '.png'), fullPage: true });
