@@ -71,6 +71,8 @@ jobs:
           node --test scripts/test-courier-entry-retry-v1.mjs
           node scripts/audit-partner-preflight-v1.mjs --dist
           node scripts/test-partner-shell-navigation-v2.mjs --dist
+          node --check scripts/fix-partner-motorista-recovery-relay-v2.mjs
+          node scripts/test-partner-driver-recovery-relay-v2.mjs
           test -s superapp/partner-shell/dist/modules/motorista/index.html
           test -s superapp/partner-shell/dist/modules/entregador/index.html
           test -s superapp/partner-shell/dist/index.html
