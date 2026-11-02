@@ -45,7 +45,7 @@ if(!s.includes("APOIS_VEHICLE_SIX_PHOTOS_V1")){
   '</section>}',
   ].join("\n");
   s=replace(s,anchor,extra,"inspection fields");
-  s=replace(s,"{completedItems}/4</span>",'{completedItems}/{vehicleCategory==="carros"?9:4}</span>',"counter");
+  s=replace(s,"{completedItems}/4</span>",'{completedItems}/{vehicleCategory==="carros"?16:4}</span>',"counter");
   save(file,s);
 }
 console.log("[OK] Motorista cadastro: six-angle photo form and extra photos in registration payload.");
