@@ -228,7 +228,6 @@ node "$ROOT/scripts/fix-partner-courier-avatar-diagnostics-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-env-type-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-home-regression-v1.mjs"
 node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" entregador
-node "$ROOT/scripts/fix-courier-status-availability-v1.mjs"
 # Visual scanning indicator on online idle waiting screen; no effect on dispatch.
 node "$ROOT/scripts/fix-partner-courier-search-scan-v1.mjs"
 node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" entregador
