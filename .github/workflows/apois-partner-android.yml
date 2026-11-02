@@ -25,8 +25,8 @@ jobs:
       BUN_VERSION: "1.3.14"
       PARTNER_APP_PACKAGE: "br.com.apois.parceiro"
       PARTNER_APP_LABEL: "APOIS Parceiro"
-      PARTNER_VERSION_CODE: "26"
-      PARTNER_VERSION_NAME: "1.0.25"
+      PARTNER_VERSION_CODE: "27"
+      PARTNER_VERSION_NAME: "1.0.26"
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -157,6 +157,11 @@ jobs:
           grep -Fq 'APOIS_DRIVER_RECOVERY_PENDING_RELAY_V2' .work/partner-motorista/src/lib/auth/driverPasswordRecovery.ts
           grep -Fq 'window.sessionStorage.removeItem(PARTNER_FORWARDED_RECOVERY_KEY)' .work/partner-motorista/src/lib/auth/driverPasswordRecovery.ts
           node scripts/test-partner-driver-recovery-relay-v2.mjs
+          node --check scripts/fix-partner-motorista-recovery-paste-v4.mjs
+          grep -Fq 'APOIS_DRIVER_RECOVERY_PASTE_FALLBACK_V4' .work/partner-motorista/src/routes/motorista.recuperar-senha.tsx
+          grep -Fq 'data-apois-driver-recovery-paste-v4' .work/partner-motorista/src/routes/motorista.recuperar-senha.tsx
+          grep -Fq 'APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3' .work/partner-motorista/src/apois-ui-hardening-round3.css
+          grep -R -Fq 'data-apois-driver-recovery-paste-v4' superapp/partner-shell/dist/modules/motorista
           grep -Fq 'data-apois-driver-recovery-email-v1' .work/partner-motorista/src/routes/motorista.recuperar-senha.tsx
           grep -Fq 'APOIS_MOTORISTA_RECOVERY_HARDEN_V1' .work/partner-motorista/src/apois-ui-hardening-round3.css
           grep -Fq 'recovery callback may be pending' .work/partner-motorista/src/routes/__root.tsx
