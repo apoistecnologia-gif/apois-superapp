@@ -108,7 +108,7 @@ const newBirth = '<DSInput name="birth_date" required type="text" inputMode="num
   'onChange={(event) => setBirthDateDisplay(maskDriverBirthDate(event.currentTarget.value))} ' +
   'onKeyDown={(event) => { if (event.key === "Backspace" && birthDateDisplay.endsWith("/")) { ' +
   'event.preventDefault(); setBirthDateDisplay(birthDateDisplay.slice(0, -2)); } }} ' +
-  'className="h-12 min-w-0 bg-[#0D0F11] tabular-nums" />';
+  'className="h-12 min-w-0 bg-white tabular-nums" />';
 form = once(form, oldBirth, newBirth, "typed date input");
 
 write(formFile, form);
