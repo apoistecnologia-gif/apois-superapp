@@ -59,7 +59,8 @@ jobs:
           node --check scripts/harden-partner-courier-push-diagnostics-v1.mjs
           node --check scripts/harden-partner-courier-waiting-compact-v2.mjs
           node --check scripts/audit-partner-preflight-v1.mjs
-          node --check admin-preview/api/admin/driver-documents.js
+          node --check api/admin/driver-documents.js
+          cmp -s api/admin/driver-documents.js admin-preview/api/admin/driver-documents.js
           node scripts/test-admin-preview-private-documents-v1.mjs
           node scripts/audit-partner-preflight-v1.mjs
           node scripts/test-partner-shell-navigation-v2.mjs
