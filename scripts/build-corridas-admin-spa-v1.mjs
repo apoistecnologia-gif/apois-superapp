@@ -58,6 +58,39 @@ for(const path of visualPaths){
  }
  write(path,content);
 }
+// APOIS_ADMIN_PREVIEW_DOCUMENT_API_V1: the Vercel QA preview is static.
+// TanStack createServerFn has no backend at /_serverFn/. Use our authenticated
+// Vercel QA API only for document signing. No source repository is modified.
+const adminDriversFile="src/routes/admin.motoristas.tsx";
+let adminDrivers=read(adminDriversFile);
+const replaceDrivers=(needle,replacement,label)=>{
+ const occurrences=adminDrivers.split(needle).length-1;
+ if(occurrences!==1)throw Error("[FAIL] Admin preview "+label+": expected one anchor; got "+occurrences);
+ adminDrivers=adminDrivers.replace(needle,replacement);
+};
+replaceDrivers('import { useServerFn } from "@tanstack/react-start";',
+ '/* APOIS_ADMIN_PREVIEW_DOCUMENT_API_V1: serverFn replaced by isolated authenticated QA API */',
+ "remove unserved TanStack backend");
+replaceDrivers('import { getDriverDocumentUrls } from "@/lib/driverDocs.functions";',
+ '/* Secure signed docs are served by /api/admin/driver-documents on Vercel QA. */',
+ "drop unserved server import");
+replaceDrivers('  const getDocs = useServerFn(getDriverDocumentUrls);',
+ '  async function getDocs({data}:{data:{driverId:string}}){\n' +
+ '    const {data:auth,error:authError}=await supabase.auth.getSession();\n' +
+ '    if(authError||!auth.session?.access_token)throw new Error("admin_session_missing");\n' +
+ '    const response=await fetch("/api/admin/driver-documents",{\n' +
+ '      method:"POST",cache:"no-store",headers:{\n' +
+ '        "Content-Type":"application/json",Authorization:"Bearer "+auth.session.access_token\n' +
+ '      },body:JSON.stringify({driverId:data.driverId})\n' +
+ '    });\n' +
+ '    if(!response.ok)throw new Error("admin_document_service_"+response.status);\n' +
+ '    const result=await response.json();\n' +
+ '    if(!result||typeof result!=="object")throw new Error("admin_document_invalid_response");\n' +
+ '    return result;\n' +
+ '  }',
+ "replace serverFn with authenticated QA route");
+write(adminDriversFile,adminDrivers);
+
 const guardFix=spawnSync(process.execPath,["scripts/fix-admin-guard-navigation-v1.mjs"],{cwd:root,stdio:"inherit"});
 if(guardFix.status!==0)throw Error("[FAIL] QA Admin Guard navigation patch failed");
 if(!read("src/apois-admin-theme.css").includes("APOIS_ADMIN_RED_2026"))throw Error("[FAIL] Original red Admin theme missing");
