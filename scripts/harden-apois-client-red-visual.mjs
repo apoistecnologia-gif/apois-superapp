@@ -199,7 +199,7 @@ function LoginPage() {
       <div className="relative z-10 mx-auto flex min-h-full w-full max-w-[430px] flex-col">
         <div className="mb-5 mt-4 flex justify-center"><img src={logo} alt="APOIS" className="h-28 w-56 object-contain" /></div>
         <div className="mb-6 text-center">
-          <h1 className="text-[34px] font-black leading-tight tracking-[-.04em]">Entrar na sua <span className="text-[#E51B23]">conta</span></h1>
+          <h1 data-apois-client-login-title-v2 className="mx-auto max-w-[290px] pr-9 text-[30px] font-black leading-tight tracking-[-.04em] sm:max-w-none sm:pr-0 sm:text-[34px]">Entrar na sua <span className="text-[#E51B23]">conta</span></h1>
           <p className="mx-auto mt-2 max-w-[330px] text-[16px] font-medium leading-snug text-[#666B73]">Acesse com e-mail e senha ou continue com sua conta Google.</p>
         </div>
         <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_18px_55px_rgba(17,17,17,.10)] backdrop-blur">
