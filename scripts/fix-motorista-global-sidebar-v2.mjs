@@ -39,15 +39,5 @@ change("src/routes/motorista.ganhos.tsx",[
  ['      <ApoisDriverBottomNav />',
   '      <ApoisDriverBottomNav />\n      <DriverSideMenu open={sideMenuOpen} onOpenChange={setSideMenuOpen} />',"finance menu render"]
 ]);
-change("src/routes/motorista.carteira.tsx",[
- ['  RefreshCw,\n  Send,','  RefreshCw,\n  Menu,\n  Send,',"wallet menu icon"],
- ['import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";',
-  'import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";\nimport { DriverSideMenu } from "@/components/DriverSideMenu";',"wallet drawer import"],
- ['function DriverWalletPage() {\n  const navigate = useNavigate();',
-  'function DriverWalletPage() {\n  const navigate = useNavigate();\n  const [sideMenuOpen, setSideMenuOpen] = useState(false);',"wallet state"],
- ['          <button type="button" aria-label="Atualizar carteira"',
-  '          <button type="button" aria-label="Abrir menu lateral" onClick={() => setSideMenuOpen(true)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D9DDE3] bg-white text-[#111827]"><Menu className="h-5 w-5" aria-hidden="true"/></button>\n          <button type="button" aria-label="Atualizar carteira"',"wallet drawer trigger"],
- ['      <ApoisDriverBottomNav />',
-  '      <ApoisDriverBottomNav />\n      <DriverSideMenu open={sideMenuOpen} onOpenChange={setSideMenuOpen} />',"wallet sidebar render"]
-]);
+// A rota carteira é redirecionada para ganhos pelo contrato financeiro; não duplicar menu nela.
 console.log("[OK] APOIS Motorista: menu lateral em todas as páginas internas, preservando recuperação de corrida ativa.");
