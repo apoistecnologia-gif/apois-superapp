@@ -59,7 +59,7 @@ let browser;
 let failed = false;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const [width, height] of [[360, 800], [1280, 900]]) {
+  for (const [width, height] of [[320, 700], [360, 800], [390, 844], [1280, 900]]) {
     for (const [name, path] of routes) {
       const context = await browser.newContext({ viewport: { width, height }, serviceWorkers: 'block', reducedMotion: 'reduce' });
       // No persistence, credentials or mocked successful authentication.
@@ -166,6 +166,7 @@ try {
           await page.waitForTimeout(600);
           const recoveryText = await page.locator('body').innerText();
           await checkReadableInputColors(page,name+" recovery "+width);
+          assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': recovery overflows '+width+'px');
           assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
           if (name === 'motorista-login') {
             // Reproduce the originally reported white-on-white regression in a
@@ -230,6 +231,7 @@ try {
           const toastClose = page.locator('[data-sonner-toast] button[data-close-button]').first();
           if (await toastClose.isVisible()) await toastClose.click();
           await checkReadableInputColors(page,name+" register "+width);
+          assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': registration overflows '+width+'px');
           if(name==='motorista-login'){
             // Stop before any authentication/network: only verify new onboarding UI.
             await page.locator('[name="vehicle_model"]').fill('Modelo de auditoria');
