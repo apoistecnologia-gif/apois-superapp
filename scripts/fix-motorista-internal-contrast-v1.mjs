@@ -42,7 +42,7 @@ edit("src/routes/motorista.notificacoes.tsx",s=>{
 });
 edit("src/components/profile/DriverProfessionalProfileDialog.tsx",s=>{
   s=replaceOnce(s,'className="max-h-[92dvh] w-[calc(100vw-24px)] max-w-md min-w-0 overflow-y-auto overscroll-contain bg-card p-4 sm:w-[calc(100vw-32px)] sm:p-6"',
-    'className="max-h-[min(78dvh,680px)] w-[calc(100vw-32px)] max-w-md min-w-0 overflow-y-auto overscroll-contain rounded-3xl border border-[#D9DDE3] bg-white p-5 text-[#111827] shadow-2xl sm:p-6',"modal geometry");
+    'className="max-h-[min(78dvh,680px)] w-[calc(100vw-32px)] max-w-md min-w-0 overflow-y-auto overscroll-contain rounded-3xl border border-[#D9DDE3] bg-white p-5 text-[#111827] shadow-2xl sm:p-6"',"modal geometry");
   s=replaceOnce(s,'className="break-words pr-8 text-center text-[15px] font-bold leading-5 tracking-tight"',
     'className="break-words pr-8 text-center text-[16px] font-bold leading-5 tracking-tight text-[#111827]"',"modal title");
   return s;
