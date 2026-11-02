@@ -39,6 +39,7 @@ if(!original.includes(marker)){
       "/* APOIS_MOTORISTA_PASSWORD_REVEAL_320_V1: preserve the existing button when the input shrinks at 320px. */",
       ':is([data-apois-input-contrast-v1]) input[name="password"] {width:0 !important;min-width:0 !important;flex:1 1 0% !important;}',
       ':is([data-apois-input-contrast-v1]) button[aria-label="Mostrar senha"],:is([data-apois-input-contrast-v1]) button[aria-label="Ocultar senha"] {display:grid !important;flex:0 0 44px !important;position:relative !important;z-index:2;opacity:1 !important;visibility:visible !important;pointer-events:auto !important;}',
+      '@media (max-width:340px) {[data-apois-input-contrast-v1] input[name="password"] {font-size:14px !important;}}',
     ]:[]),
     ""
   ].join("\n");
