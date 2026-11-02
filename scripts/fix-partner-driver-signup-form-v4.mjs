@@ -109,7 +109,10 @@ const newBirth = '<DSInput name="birth_date" required type="text" inputMode="num
   'onKeyDown={(event) => { if (event.key === "Backspace" && birthDateDisplay.endsWith("/")) { ' +
   'event.preventDefault(); setBirthDateDisplay(birthDateDisplay.slice(0, -2)); } }} ' +
   'className="h-12 min-w-0 bg-white tabular-nums" />';
-form = once(form, oldBirth, newBirth, "typed date input");
+const birthInputs = [...form.matchAll(/<DSInput\s+name="birth_date"[^>]*\/\>/g)];
+if (birthInputs.length !== 1 || !birthInputs[0][0].includes('type="date"'))
+  throw Error("[FAIL] Cadastro V4 birth date field is not uniquely recognized");
+form = form.replace(birthInputs[0][0], newBirth);
 
 write(formFile, form);
 
