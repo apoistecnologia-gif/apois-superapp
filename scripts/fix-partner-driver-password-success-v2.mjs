@@ -25,7 +25,7 @@ reset=one(reset,'Link confirmado</p>','Código verificado</p>',"OTP success word
 write(resetPath,reset);
 const loginPath="src/routes/motorista.login.tsx";
 let login=read(loginPath);
-if(!login.includes("APOIS_DRIVER_EXISTING_PASSENGER_ONBOARD_V7"))throw Error("[FAIL] login missing V7 onboarding");
+if(!login.includes("data-apois-existing-driver-cta-v7"))throw Error("[FAIL] login missing V7 onboarding CTA");
 login=one(login,'  const [registrationNotice, setRegistrationNotice] = useState(false);',
 '  const [registrationNotice, setRegistrationNotice] = useState(false);\n'+
 '  const [passwordUpdatedNotice,setPasswordUpdatedNotice]=useState(false);\n'+
