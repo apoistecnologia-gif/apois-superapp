@@ -50,7 +50,7 @@ async function signer(bucket, rawPath, owner, service) {
   );
   const relative = data.signedURL || data.signedUrl;
   if (typeof relative !== "string") throw new Error("signing_missing_result");
-  const final = new URL(relative, URL_BASE);
+  const final = new URL(relative.startsWith("/object/sign/") ? "/storage/v1" + relative : relative, URL_BASE);
   if (final.origin !== URL_BASE || !final.pathname.startsWith("/storage/v1/object/sign/"))
     throw new Error("signing_untrusted_response");
   return final.toString();
