@@ -121,17 +121,18 @@ try {
             assert.equal(visual.caret,'rgb(17, 24, 39)','Recovery input caret must remain readable');
             item.recoveryEmailContrast={color:visual.color,fill:visual.fill,caret:visual.caret,scheme:visual.scheme,passed:true};
             item.interactions.push({action:'email typed and contrast computed (no submission)',passed:true});
-            // Exercise the safe manual fallback with a synthetic malicious-origin
-            // URL. No actual recovery token and no network/auth call is allowed.
-            await page.locator('[data-apois-driver-recovery-paste-v4] summary').click();
-            const paste=page.locator('#apois-recovery-pasted-link');
-            await paste.waitFor({state:'visible'});
-            await paste.fill('https://untrusted.invalid/auth/v1/verify?token=synthetic1234567890abcdef&type=recovery');
-            await page.getByRole('button',{name:'Usar link no aplicativo'}).click();
-            const rejection=await page.locator('[data-apois-driver-recovery-paste-v4] [role="alert"]').innerText();
-            assert.match(rejection,/n[aã]o [eé] um link de recupera[cç][aã]o v[aá]lido/i,
-              'Untrusted recovery link must be rejected without contacting Auth');
-            item.interactions.push({action:'reject forged recovery link locally',passed:true});
+            // The new recovery must accept a numeric code, not a clickable link.
+            const otpInput=page.locator('[data-apois-driver-recovery-otp-input-v5]');
+            await otpInput.waitFor({state:'visible'});
+            await otpInput.fill('12ab345');
+            assert.equal(await otpInput.inputValue(),'12345','Motorista OTP input must strip non-digits');
+            const verifyButton=page.getByRole('button',{name:'Verificar código e continuar'});
+            assert.ok(await verifyButton.isDisabled(),'Short OTP must not be submitted');
+            await otpInput.fill('123456');
+            assert.equal(await otpInput.inputValue(),'123456','Six-digit OTP accepted');
+            assert.ok(await verifyButton.isEnabled(),'Valid-length OTP should enable verification');
+            // Never submit a code or send email during visual tests.
+            item.interactions.push({action:'numeric OTP input 6-digit validation without Auth request',passed:true});
 
           }
 
