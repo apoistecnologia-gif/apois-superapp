@@ -9,6 +9,7 @@ const names=["bg-gradient-to-r from-primary to-accent text-base font-black upper
 if(s.includes("data-apois-entregas-login-submit-contrast-v1"))throw Error("[FAIL] CTA patch twice");
 for(const name of names){
  const matches=s.split(name).length-1;
+ if(matches===0 && name.includes("text-lg"))continue; // secondary login may be removed in isolated customer mode
  if(matches!==1)throw Error("[FAIL] Entregas login CTA "+name+" anchors="+matches);
  s=s.replace(name,"data-apois-entregas-login-submit-contrast-v1 "+name);
 }
