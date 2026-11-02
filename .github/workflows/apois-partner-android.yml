@@ -140,6 +140,10 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           npm run build:partner
+          # Gate QA: não publicar um APK antigo que omita o cadastro com 13 fotos e o fluxo de pendências.
+          node scripts/verify-apois-13-photo-driver-pendencies-v1.mjs
+          grep -R -Fq 'data-apois-driver-corrections-v1' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Faróis acesos' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/entregador
           grep -R -Fq 'data-apois-partner-auth-v18' superapp/partner-shell/dist/modules/motorista
