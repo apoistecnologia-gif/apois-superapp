@@ -68,6 +68,7 @@ node "$ROOT/scripts/harden-partner-motorista-visual-v18.mjs"
 node "$ROOT/scripts/harden-partner-motorista-login-focus-v19.mjs"
 # Password recovery callback: no reroute to map; readable email input; return to login on reset.
 node "$ROOT/scripts/fix-partner-motorista-recovery-v1.mjs"
+node "$ROOT/scripts/fix-partner-motorista-recovery-relay-v2.mjs"
 node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/fix-motorista-internal-contrast-v1.mjs"
 node "$ROOT/scripts/fix-motorista-history-own-profile-v2.mjs"
