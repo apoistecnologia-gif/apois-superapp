@@ -26,6 +26,35 @@ const routes = target === 'cliente'
   ? [['seletor', '/index.html'], ['corridas-login', '/modules/corridas/index.html#/login'], ['entregas-login', '/modules/entregas/index.html#/login']]
   : [['seletor', '/index.html'], ['motorista-login', '/modules/motorista/index.html#/motorista/login'], ['entregador-login', '/modules/entregador/index.html#/courier']];
 const report = { target, network: 'All non-loopback requests blocked; no backend/auth/payment/maps calls permitted', scope: 'Anonymous render and public interactions only; no form submissions, authenticated E2E or Android', results: [] };
+// APOIS_INPUT_CONTRAST_ALL_FOUR_V1: inspect effective text/foreground, not just CSS classes.
+async function checkReadableInputColors(page, screen) {
+ const failures=await page.evaluate(()=>{
+  const opaque=raw=>{
+   const m=raw.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
+   if(!m)return null;
+   const alpha=m[4]===undefined?1:Number(m[4]);
+   return alpha>=0.96?[Number(m[1]),Number(m[2]),Number(m[3])]:null;
+  };
+  const luma=a=>0.2126*a[0]+0.7152*a[1]+0.0722*a[2];
+  return [...document.querySelectorAll('input:not([type="hidden"]), textarea')].flatMap((el)=>{
+   const rect=el.getBoundingClientRect();
+   if(rect.width<15||rect.height<10||rect.bottom<0||rect.top>innerHeight)return [];
+   const s=getComputedStyle(el);
+   let bg=opaque(s.backgroundColor),parent=el.parentElement;
+   while(!bg&&parent){bg=opaque(getComputedStyle(parent).backgroundColor);parent=parent.parentElement;}
+   const ink=opaque(s.webkitTextFillColor)||opaque(s.color);
+   if(!bg||!ink)return [];
+   const isLight=luma(bg)>220;
+   const tooLight=luma(ink)>187;
+   if(isLight&&tooLight)return [{screen:el.getAttribute('name')||el.id||'unnamed',
+    color:s.color,fill:s.webkitTextFillColor,bg:s.backgroundColor,parentLuma:luma(bg)}];
+   return [];
+  });
+ });
+ assert.deepEqual(failures,[],screen+": white/light input text on light input surface");
+ return true;
+}
+
 let browser;
 let failed = false;
 try {
@@ -63,6 +92,7 @@ try {
           visibleControls: [...document.querySelectorAll('button,a,input')].filter(e => e.getBoundingClientRect().width > 0).length,
         }));
         Object.assign(item, metrics);
+        await checkReadableInputColors(page,name+" login "+width);
         item.assetReferences = await page.evaluate(() =>
           [...document.querySelectorAll('link[href],script[src]')].map(e => e.getAttribute('href') || e.getAttribute('src'))
             .filter(value => value && value.includes('assets/')));
@@ -103,6 +133,7 @@ try {
           await page.getByText('Esqueci minha senha', { exact: true }).first().click();
           await page.waitForTimeout(600);
           const recoveryText = await page.locator('body').innerText();
+          await checkReadableInputColors(page,name+" recovery "+width);
           assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
           if (name === 'motorista-login') {
             // Reproduce the originally reported white-on-white regression in a
@@ -156,6 +187,7 @@ try {
           // Dismiss the previous feedback toast through its real close control.
           const toastClose = page.locator('[data-sonner-toast] button[data-close-button]').first();
           if (await toastClose.isVisible()) await toastClose.click();
+          await checkReadableInputColors(page,name+" register "+width);
           await page.screenshot({ path: resolve(output, name + '-register-' + width + '.png'), fullPage: true });
           item.interactions.push({ action: 'open registration without submitting', passed: true });
         } else {
