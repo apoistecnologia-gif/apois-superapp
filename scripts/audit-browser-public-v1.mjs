@@ -123,6 +123,7 @@ try {
             item.interactions.push({action:'email typed and contrast computed (no submission)',passed:true});
             // Exercise the safe manual fallback with a synthetic malicious-origin
             // URL. No actual recovery token and no network/auth call is allowed.
+            await page.locator('[data-apois-driver-recovery-paste-v4] summary').click();
             const paste=page.locator('#apois-recovery-pasted-link');
             await paste.waitFor({state:'visible'});
             await paste.fill('https://untrusted.invalid/auth/v1/verify?token=synthetic1234567890abcdef&type=recovery');
