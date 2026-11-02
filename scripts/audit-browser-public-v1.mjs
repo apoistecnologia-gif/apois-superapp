@@ -220,6 +220,23 @@ try {
           const toastClose = page.locator('[data-sonner-toast] button[data-close-button]').first();
           if (await toastClose.isVisible()) await toastClose.click();
           await checkReadableInputColors(page,name+" register "+width);
+          if(name==='motorista-login'){
+            // Stop before any authentication/network: only verify new onboarding UI.
+            await page.locator('[name="vehicle_model"]').fill('Modelo de auditoria');
+            await page.locator('[name="vehicle_plate"]').fill('ABC1D23');
+            await page.locator('[name="vehicle_year"]').fill('2024');
+            await page.locator('[name="vehicle_color"]').fill('Branco');
+            await page.getByRole('button',{name:'Continuar',exact:true}).click();
+            const reuse=page.getByRole('checkbox',{name:'Já tenho conta APOIS Passageiro'});
+            await reuse.waitFor({state:'visible'});
+            await reuse.check();
+            assert.ok(await reuse.isChecked(),'Existing APOIS Passenger account option must be selectable');
+            await checkReadableInputColors(page,name+" step2 "+width);
+            const birth=page.locator('input[name="birth_date"]');
+            assert.equal(await birth.getAttribute('type'),'text','Birth date must be typed, not calendar picker');
+            item.interactions.push({action:'registration step2 existing-account choice, typed birth date, no server calls',passed:true});
+            await page.screenshot({path:resolve(output,'motorista-register-account-'+width+'.png'),fullPage:true});
+          }
           await page.screenshot({ path: resolve(output, name + '-register-' + width + '.png'), fullPage: true });
           item.interactions.push({ action: 'open registration without submitting', passed: true });
         } else {
