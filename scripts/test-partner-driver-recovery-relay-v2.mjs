@@ -74,4 +74,13 @@ assert.ok(!recoveryForm.includes("data-apois-driver-recovery-paste-v4"),"Unsafe 
 assert.ok(!recoveryForm.includes("setRecoveryLink"),"Recovery links must not be retained in state");
 console.log("[OK] Motorista recovery OTP: email+numeric token+recovery session; no manual link parsing.");
 
+const loginUi = readFileSync(resolve(root,".work/partner-motorista/src/routes/motorista.login.tsx"),"utf8");
+assert.ok(loginUi.includes("APOIS_DRIVER_AUTH_NOTICE_DEDUP_V8"),"Login must discard stale confirmation notices at each attempt");
+assert.ok(loginUi.includes("registrationNotice && !error && !passwordUpdatedNotice"),
+  "A signup/verification banner must never coexist with a driver-profile error or password-updated notice");
+assert.ok(loginUi.includes("data-apois-existing-driver-cta-v7"),
+  "Existing passenger account without driver must retain its continuation action");
+console.log("[OK] Motorista login: no contradictory signup success and missing-driver messages.");
+
+
 console.log("[OK] Partner shell stores one synthetic recovery callback and navigates to Motorista; module reads, consumes and deletes pending link; native scheme registered.");
