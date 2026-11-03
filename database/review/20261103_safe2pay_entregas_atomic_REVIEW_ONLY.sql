@@ -79,6 +79,18 @@ BEGIN
       processing_error=excluded.processing_error;
    RETURN jsonb_build_object('ok',false,'manual_review',true,'reason','refund_without_authorization');
  END IF;
+ -- A refund cannot be reconciled safely while the corresponding order does not show a paid or already-refunded state.
+ -- Treat the mismatch as an operator task rather than introducing a synthetic paid->refunded transition.
+ IF v_mapped='refunded'
+    AND v_order.payment_status IS DISTINCT FROM 'paid'
+    AND v_order.payment_status IS DISTINCT FROM 'refunded' THEN
+   INSERT INTO public.safe2pay_webhook_events
+   (provider_transaction_id,transaction_status_code,event_key,payload_hash,processed_at,processing_error)
+   VALUES (_provider_transaction_id,_status_code,v_event_key,_payload_hash,NULL,'refund_without_paid_domain_manual_review')
+   ON CONFLICT(event_key) DO UPDATE SET processed_at=NULL,
+      processing_error=excluded.processing_error;
+   RETURN jsonb_build_object('ok',false,'manual_review',true,'reason','refund_without_paid_domain');
+ END IF;
  -- A late successful charge after a locally terminal failed/expired transaction
  -- cannot be discarded as a stale status. Record unresolved work for authorized review.
  IF v_current IN ('failed','expired') AND v_mapped='authorized' THEN
