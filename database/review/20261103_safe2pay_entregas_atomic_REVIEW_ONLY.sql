@@ -66,6 +66,16 @@ BEGIN
    WHEN '1' THEN 'pending' WHEN '2' THEN 'processing'
    WHEN '3' THEN 'authorized' WHEN '6' THEN 'refunded'
    WHEN '13' THEN 'chargeback' ELSE NULL END;
+ -- The provider may report 19 (Pix refund in progress) before 6 (refunded).
+ -- Never reverse a paid order/ride, payout or wallet based on an in-progress refund.
+ IF _status_code='19' THEN
+   INSERT INTO public.safe2pay_webhook_events
+   (provider_transaction_id,transaction_status_code,event_key,payload_hash,processed_at,processing_error)
+   VALUES (_provider_transaction_id,_status_code,v_event_key,_payload_hash,NULL,'pix_refund_in_progress_manual_reconciliation_required')
+   ON CONFLICT(event_key) DO UPDATE SET processed_at=NULL,
+      processing_error=excluded.processing_error;
+   RETURN jsonb_build_object('ok',false,'manual_review',true,'reason','pix_refund_in_progress');
+ END IF;
  IF v_mapped IS NULL THEN
    -- Safe2Pay also emits refusal/dispute/cancellation states (e.g. 5,7,8,12,14).
    -- Never permanently acknowledge an unknown financial state as processed.
