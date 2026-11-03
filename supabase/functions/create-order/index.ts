@@ -217,7 +217,12 @@ Deno.serve(async (request: Request) => {
 
   // Fail closed if the authoritative result is anything other than cash/pending.
 // Concurrent cancel/refund/failure must not be returned as a new valid order.
-  if (snapshot.payment_method !== "cash" || snapshot.payment_status !== "pending") {
+  if (
+    snapshot.payment_method !== "cash" ||
+    snapshot.payment_status !== "pending" ||
+    typeof snapshot.status !== "string" ||
+    ["cancelled", "refunded", "delivered"].includes(snapshot.status)
+  ) {
     console.error("create-order rejected inconsistent financial snapshot", {
       orderId: snapshot.id,
       paymentMethod: snapshot.payment_method,

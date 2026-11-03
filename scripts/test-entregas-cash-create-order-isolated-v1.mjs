@@ -164,6 +164,22 @@ for(const invalidStatus of ["cancelled","failed","refunded","processing"]){
   noProviderCalls(f);
  });
 }
+for (const terminalStatus of ["cancelled", "refunded", "delivered"]) {
+ await check("Cash order in terminal state " + terminalStatus + " cannot be returned as fresh checkout",async()=>{
+  const f=fixture({snapshot:{status:terminalStatus,payment_status:"pending"}});
+  const r=await f.send();
+  assert.equal(r.status,500);
+  assert.equal(r.body.code,"FINANCIAL_CONTRACT_MISMATCH");
+  noProviderCalls(f);
+ });
+}
+await check("Nonterminal cash order remains resumable without gateway",async()=>{
+ const f=fixture({snapshot:{status:"preparing",payment_status:"pending"}});
+ const r=await f.send();
+ assert.equal(r.status,200);
+ assert.equal(r.body.status,"preparing");
+ noProviderCalls(f);
+});
 await check("Backend cannot transform cash request into Pix",async()=>{
  const f=fixture({snapshot:{payment_method:"pix"}});const r=await f.send();
  assert.equal(r.status,500);assert.equal(r.body.code,"FINANCIAL_CONTRACT_MISMATCH");
