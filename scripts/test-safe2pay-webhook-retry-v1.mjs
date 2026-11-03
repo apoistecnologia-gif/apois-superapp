@@ -35,6 +35,9 @@ for (const [product,source] of Object.entries(sql)) {
     assert.match(source,/unsupported_status_manual_review/);
     assert.match(source,/refund_without_authorization_manual_review/);
     assert.match(source,/refund_without_paid_domain_manual_review/);
+    assert.match(source, product==="rides" ? /safe2pay_ride_passenger_charge_mismatch/ : /safe2pay_order_total_mismatch/);
+    if(product==="rides") assert.match(source,/coalesce\(v_ride\.passenger_charge_cents, round\(v_ride\.estimated_price\*100\)::bigint\)/);
+    else assert.match(source,/round\(v_order\.total\*100\)::bigint/);
     assert.match(source,/v_(?:ride|order)\.payment_status IS DISTINCT FROM 'paid'/);
     if (product==="orders") assert.match(source,/safe2pay_order_other_provider_paid_requires_review/);
     assert.match(source,/v_mapped = 'chargeback' OR v_target = 'chargeback'/);
@@ -61,14 +64,14 @@ await check("Entregas initial Safe2Pay authorization is staged as an atomic RPC,
   const compiled=new Bun.Transpiler({loader:"ts",target:"browser"}).transformSync(source);
   assert.ok(compiled.length>1000,"staged Edge source should transpile");
 });
-function fake(product,{fail=false,missing=false}={}) {
+function fake(product,{fail=false,missing=false,domainAmount=12.5}={}) {
   let handler, calls=0, rejectOnce=fail;
   const state={transaction:"pending",domain:"pending",event:null};
   const adapter={ async rpc(method,args){
     calls++;assert.equal(method,"apois_safe2pay_apply_event_atomic");
     if(missing)return{error:{code:"PGRST202"},data:null};
     const isCorrectRef=args._reference===("apois-"+(product==="rides"?"ride":"order")+"-fixture");
-    if(!isCorrectRef||args._amount!==12.5)return{error:{code:"23514"},data:null};
+    if(!isCorrectRef||args._amount!==12.5||domainAmount!==12.5)return{error:{code:"23514"},data:null};
     const next={"1":"pending","2":"processing","3":"authorized","6":"refunded","13":"chargeback"}[args._status_code];
     if(next==="chargeback")return{error:null,data:{ok:false,manual_review:true,reason:"chargeback"}};
     if(!next)return{error:null,data:{ok:false,manual_review:true,reason:"unsupported_status"}};
@@ -117,6 +120,14 @@ for(const product of ["rides","orders"]){
     assert.equal((await h.send("3")).code,200);
     assert.equal(h.state.domain,"paid");
     assert.equal(h.state.event,"3");
+  });
+  await check(product+": provider amount cannot authorize a differently priced domain",async()=>{
+    const h=fake(product,{domainAmount:25});
+    const response=await h.send("3");
+    assert.equal(response.code,503);
+    assert.equal(h.state.transaction,"pending");
+    assert.equal(h.state.domain,"pending");
+    assert.equal(h.state.event,null);
   });
   await check(product+": refund, stale event and idempotent replay",async()=>{
     const h=fake(product);
