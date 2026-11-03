@@ -7,6 +7,16 @@ if(!src.includes("APOIS_VEHICLE_INSPECTION_UPLOAD_V1")){
  change('bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents";','bucket: "driver-selfies" | "driver-cnh" | "vehicle-documents" | "apois-inspections";',"bucket");
  change('label: "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo";','label: "selfie" | "cnh" | "cnh_back" | "veiculo" | "vehicle_photo" | "right" | "left" | "dashboard" | "front_seats" | "rear_seats" | "tire_fl" | "tire_fr" | "tire_rl" | "tire_rr" | "belt_front" | "belt_rear" | "headlights_on";',"labels");
  change('  documents: [DriverDocument, DriverDocument, DriverDocument, DriverDocument, DriverDocument];','  documents: [DriverDocument, DriverDocument, DriverDocument, DriverDocument, DriverDocument];\n  inspection_photos?: DriverDocument[];',"input");
+ change('  const authUser = await ensureAuthenticatedAccount(input);',[
+  '  // APOIS_DRIVER_INSPECTION_PREFLIGHT_BEFORE_AUTH_V1: never create Auth or upload if mandatory inspection photos are absent or duplicated.',
+  '  if(input.category==="carros"){',
+  '    const slots=["right","left","dashboard","front_seats","rear_seats","tire_fl","tire_fr","tire_rl","tire_rr","belt_front","belt_rear","headlights_on"];',
+  '    const photos=input.inspection_photos??[];',
+  '    if(photos.length!==slots.length||slots.some(slot=>photos.filter(doc=>doc.bucket==="apois-inspections"&&doc.label===slot&&doc.base64.trim().length>0).length!==1))',
+  '      throw new Error("Vistoria fotográfica incompleta ou com fotos repetidas.");',
+  '  }',
+  '  const authUser = await ensureAuthenticatedAccount(input);',
+ ].join("\\n"),"pre-auth inspection proof");
  change('  let photoPath: string | null = null;','  // APOIS_VEHICLE_INSPECTION_UPLOAD_V1: add immutable inspection records after registration.\n  let photoPath: string | null = null;\n  let committed=false;\n  let registrationAttempted=false;\n  const inspectionPaths: Record<string,string>={};',"tracker");
  change('    for (const doc of input.documents) {','    for (const doc of [...input.documents,...(input.inspection_photos??[])]) {',"files");
  const pattern=/      const path = .+doc\.label.+Date\.now\(\).+cleanExt\(doc\.fileName\).+;/;
