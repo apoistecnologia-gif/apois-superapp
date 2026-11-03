@@ -50,7 +50,9 @@ test -f sources/apois-entregas/src/routes/courier.tsx
 test -s api/admin/driver-documents.js
 node --check api/admin/driver-documents.js
 # Vercel functions require a root api/ directory, not admin-preview/api.
-cmp -s api/admin/driver-documents.js admin-preview/api/admin/driver-documents.js || { echo "[FAIL] Isolated server endpoint source drift"; exit 1; }
+# Vercel's minimal build image may not ship cmp. Node.js is already required above.
+# Compare both server-only endpoints byte-for-byte; missing/drifted files still fail closed.
+node -e 'const fs = require("node:fs"); try { const root = fs.readFileSync("api/admin/driver-documents.js"); const preview = fs.readFileSync("admin-preview/api/admin/driver-documents.js"); if (!root.equals(preview)) process.exit(1); } catch { process.exit(1); }' || { echo "[FAIL] Isolated server endpoint source drift"; exit 1; }
 node scripts/test-admin-preview-private-documents-v1.mjs
 
 case "${CORRIDAS_VITE_SUPABASE_URL:-}" in
