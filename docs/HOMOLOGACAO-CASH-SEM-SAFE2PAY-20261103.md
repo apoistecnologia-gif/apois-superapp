@@ -141,3 +141,34 @@ Os testes PostgreSQL confirmaram, **em esquema sintético mínimo**, a leitura d
 A comparação dos commits com o último relatório mostra somente mudanças em `scripts/qa/`, `scripts/test-cash-postgres-isolated-v1.sh` e no arquivo de migração de Corridas. Nenhum arquivo `sources/`, `source-lock`, submódulo ou workflow alterado nesta rodada. **Os bancos oficiais continuam com os oito bloqueios cash operacionais já documentados.**
 
 **NÃO LIBERAR APK/PRODUÇÃO:** os testes SQL usam relações e identidades artificiais; falta ambiente de staging reproduzindo o **esquema completo**, inclusive trigger, Auth, Storage, KYC documental, ledger e fluxos autenticados de corrida/entrega. Falta homologar Android físico, GPS, push e PIN; Safe2Pay segue escolhida, mas fora da fase cash. Não executar SQL REVIEW_ONLY/forward em produção sem staging completo e decisão expressa.
+
+---
+
+## Aceitação, conclusão e frescor GPS — SQL isolado (03/11/2026)
+
+**Alvo exclusivo:** branch `fix/entregas-homologacao-ajustes-20261030` de `apoistecnologia-gif/apois-superapp`. Todos os commits abaixo estão somente na branch de homologação. Nenhuma Edge Function, migração ou APK implantado; produção sem modificações.
+
+### Segurança cash-only: Safe2Pay no aceite de corridas
+
+- **Correção no commit `0209cf771b5e42227c9b05bb9121ea3291ef297c`** em `supabase/corridas-forward-migrations/20260905162500_remove_retired_driver_subscription_gates.sql`: `driver_accept_ride` e `driver_accept_ride_candidate_legacy` agora rejeitam `payment_flow` com prefixo `safe2pay` (comparação normalizada por `lower(btrim(...))`), além dos marcadores já bloqueados `mercadopago_marketplace`, `asaas`, `pagbank` e `openpix`. Corridas `cash` com `direct_to_driver` permanecem válidas; não foi removida a capacidade histórica de crédito direto para futura reativação autorizada.
+- `scripts/qa/ride-acceptance-fixture-v1.sql`, `scripts/qa/extract-corridas-acceptance-sql-v1.mjs`, `scripts/qa/ride-acceptance-assertions-v1.sql`: quarto banco PostgreSQL 17 isolado, extraindo e executando os **dois corpos SQL reais propostos** da migração, com dados sintéticos, ofertas expiradas e rejeitadas, métodos inválidos, provedor aposentado, KYC, suspensão, bloqueio, aceite cash e motorista ocupado.
+- Commits `a651e2193837593488907bb543056a55eb35b1fa` e `dd66a5eb756973e806036e9be5e8cb55e214799a`: exclusivamente correções dos próprios testes (metacomando psql e leitura do estado persistido como proprietário da fixture). Erros intermediários não foram apagados do histórico; o commit `dd66a5e` passou **3/3 jobs WEB** no [CI 41739929611](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41739929611).
+
+### Finalização e liberação de próxima corrida
+
+- **Commit `a48328e02fb6a1a69d10ee9a921b234310f97db2`**: quinto banco PostgreSQL 17 descartável, executando diretamente a função versionada `driver_finish_ride` e o trigger versionado `enforce_driver_operational_stage_transition`.
+- Testes verificam recusa ao finalizar corrida de outro motorista, bloqueio a finalizar duas vezes, promoção de próxima corrida para motorista elegível online com KYC/GPS recentes, liberação da próxima corrida quando o motorista tem KYC pendente, foi suspenso ou tem GPS antigo/está offline, limpeza de associação/PIN/ofertas e registros de auditoria. São **cenários sintéticos**, não comprovam trigger real de settlement ou pagamento físico.
+- [GitHub Actions 41740238583](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41740238583): **3/3 jobs WEB SUCCESS**.
+
+### Restrição de frescor GPS na aceitação
+
+- **Commit `7659e04f6cf0cf31b2b0d4dedfcadab8a7c71200`**: reforço exclusivo na *migração ainda não aplicada* de `driver_accept_ride_candidate_legacy`, exigindo coordenadas válidas dentro dos limites já presentes no projeto e `last_location_at` entre 120 segundos antes e 30 segundos depois de `now()`. A validação entra depois de aprovação, bloqueio/suspensão, presença online e KYC. Mensagem controlada `driver_location_stale`, SQLSTATE 42501.
+- Os testes do quarto banco PostgreSQL foram estendidos com quatro motoristas sintéticos online e aprovados mas com GPS ausente, antigo, fora da faixa ou com timestamp futuro. O caso válido passa com localização atualizada. Não mudamos a função real em produção.
+- [GitHub Actions 41740590888](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41740590888): passo `PostgreSQL 17 disposable cash-contract tests` **aprovado**; a conclusão total dos três jobs WEB deve ser consultada no próprio run antes de marcar build completo como aprovado.
+
+### Limites, proteção de fontes e release
+
+- Comparação com HEAD anterior `101ebbc1f85bef6760b4dbbdcdd69568e2b34f3b`: alterações apenas em scripts/qa, execução de SQL QA e migração Corridas. **Nenhum arquivo `sources/`, source-lock, workflow, configuração do Supabase ou secret alterado.**
+- Os ambientes Supabase conectados são **somente produção**; não há staging com o esquema completo. A migração de Corridas segue **não aplicada**; os quatro gates de assinatura legada e os quatro gates cash/RLS Entregas da produção continuam como bloqueios de liberação até implantação autorizada e revalidação em isolamento.
+- Testes SQL reais contra tabelas artificiais **não validam** esquema completo, autenticação/JWT real, concorrência/locks entre sessões, settlement verdadeiro, Maps/GPS em dispositivo físico, push, PIN ou vistoria de 13 fotos.
+- **NÃO EMITIR APK FINAL NEM PROMOVER PRODUÇÃO**. Safe2Pay permanece escolhida para fase futura, mas está eletronicamente desativada nesta homologação em dinheiro.
