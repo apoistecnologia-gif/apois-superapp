@@ -27,6 +27,24 @@ const routes = target === 'cliente'
   : [['seletor', '/index.html'], ['motorista-login', '/modules/motorista/index.html#/motorista/login'], ['entregador-login', '/modules/entregador/index.html#/courier']];
 const report = { target, network: 'All non-loopback requests blocked; no backend/auth/payment/maps calls permitted', scope: 'Anonymous render and public interactions only; no form submissions, authenticated E2E or Android', results: [] };
 // APOIS_INPUT_CONTRAST_ALL_FOUR_V1: inspect effective text/foreground, not just CSS classes.
+// APOIS_HEADING_INTERSECTION_AUDIT_V1: inspect painted glyph rectangles at every public form step.
+async function checkHeadingIntersections(page, label) {
+ const hits=await page.evaluate(()=>{
+  const visible=element=>{const r=element.getBoundingClientRect(),s=getComputedStyle(element);return r.width>8&&r.height>8&&s.visibility!=="hidden"&&s.display!=="none";};
+  const controls=[...document.querySelectorAll('button,a,[role="button"]')].filter(visible);
+  const intersects=(a,b)=>a.left<b.right-2&&a.right>b.left+2&&a.top<b.bottom-2&&a.bottom>b.top+2;
+  return [...document.querySelectorAll('h1,h2')].filter(visible).flatMap(heading=>{
+   const walker=document.createTreeWalker(heading,NodeFilter.SHOW_TEXT),rects=[];
+   while(walker.nextNode()){if(!walker.currentNode.textContent?.trim())continue;const range=document.createRange();range.selectNodeContents(walker.currentNode);rects.push(...range.getClientRects());}
+   return controls.filter(control=>!control.contains(heading)&&!heading.contains(control)).flatMap(control=>{
+     if(!rects.some(rect=>intersects(rect,control.getBoundingClientRect())))return [];
+     return [{heading:heading.textContent?.trim().slice(0,80),control:control.getAttribute("aria-label")||control.textContent?.trim().slice(0,60)||control.tagName}];
+   });
+  });
+ });
+ assert.deepEqual(hits,[],label+": a heading is physically covered by another clickable control");
+}
+
 async function checkReadableInputColors(page, screen) {
  const failures=await page.evaluate(()=>{
   const opaque=raw=>{
@@ -166,6 +184,7 @@ try {
           await page.waitForTimeout(600);
           const recoveryText = await page.locator('body').innerText();
           await checkReadableInputColors(page,name+" recovery "+width);
+          await checkHeadingIntersections(page,name+" recovery "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': recovery overflows '+width+'px');
           assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
           if (name === 'motorista-login') {
@@ -231,6 +250,7 @@ try {
           const toastClose = page.locator('[data-sonner-toast] button[data-close-button]').first();
           if (await toastClose.isVisible()) await toastClose.click();
           await checkReadableInputColors(page,name+" register "+width);
+          await checkHeadingIntersections(page,name+" register "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': registration overflows '+width+'px');
           if(name==='motorista-login'){
             // Stop before any authentication/network: only verify new onboarding UI.
