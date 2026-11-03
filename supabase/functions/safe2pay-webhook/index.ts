@@ -12,7 +12,7 @@ function text(value: unknown): string {
 function number(value: unknown): number | null {
   // Number(null), Number("") and Number(false) return zero: reject missing or non-numeric callback fields.
   if (typeof value !== "number" && typeof value !== "string") return null;
-  if (typeof value === "string" && !/^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$/.test(value.trim())) return null;
+  if (typeof value === "string" && !/^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(value.trim())) return null;
   const n = Number(value);
   return Number.isFinite(n) && Number.isSafeInteger(Math.round(n * 100)) ? n : null;
 }
