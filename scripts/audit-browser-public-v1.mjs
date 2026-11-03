@@ -35,6 +35,12 @@ async function checkSwitcherClearance(page, label) {
   if(!button)return {missing:true,overlaps:[]};
   const box=button.getBoundingClientRect();
   const hits=[];
+  const overlayVisible=!!document.querySelector('[data-sonner-toast], [role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]');
+  const switcherHidden=getComputedStyle(button).visibility==='hidden';
+  if(overlayVisible){
+    return {missing:false,overlaps:switcherHidden?[]:['switcher must yield to active overlay'],width:box.width,height:box.height,top:box.top,hiddenForOverlay:switcherHidden};
+  }
+  if(switcherHidden)hits.push('service switcher remained hidden after overlay closed');
   const intersect=(r)=>r.width>1&&r.height>1&&r.left<box.right-2&&r.right>box.left+2&&r.top<box.bottom-2&&r.bottom>box.top+2;
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
   while(walker.nextNode()){
