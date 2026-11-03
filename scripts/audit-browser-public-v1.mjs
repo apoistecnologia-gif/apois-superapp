@@ -88,6 +88,35 @@ async function checkHeadingIntersections(page, label) {
  assert.deepEqual(hits,[],label+": a heading is physically covered by another clickable control");
 }
 
+// APOIS_FORM_CONTRAST_WCAG_V1 — measured luminance for actual browser-rendered public forms.
+async function checkFormContrast(page,label) {
+ const violations=await page.evaluate(()=>{
+  const parse=v=>{const m=(v||'').match(/^rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?\\)$/);
+   return m && (m[4]===undefined||Number(m[4])>=0.96) ? [Number(m[1]),Number(m[2]),Number(m[3])] : null;};
+  const linear=v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;};
+  const lum=c=>0.2126*linear(c[0])+0.7152*linear(c[1])+0.0722*linear(c[2]);
+  const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+  return [...document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),textarea')]
+   .flatMap(el=>{
+    if(el.disabled)return[];
+    const rect=el.getBoundingClientRect(),style=getComputedStyle(el);
+    if(rect.width<25||rect.height<15||rect.bottom<=0||rect.top>=innerHeight||style.display==='none'||style.visibility==='hidden')return[];
+    let bg=parse(style.backgroundColor);let parent=el.parentElement;
+    while(!bg&&parent){bg=parse(getComputedStyle(parent).backgroundColor);parent=parent.parentElement;}
+    if(!bg)return[];
+    const text=parse(style.webkitTextFillColor)||parse(style.color);
+    const placeholderStyle=getComputedStyle(el,'::placeholder');
+    const placeholder=parse(placeholderStyle.color)||parse(placeholderStyle.webkitTextFillColor);
+    const name=el.id||el.name||el.placeholder?.slice(0,35)||'unnamed';
+    const fails=[];
+    if(text&&contrast(text,bg)<4.5)fails.push({name,kind:'text',ratio:Number(contrast(text,bg).toFixed(2)),ink:style.color,bg:style.backgroundColor});
+    if(el.placeholder?.trim()&&placeholder&&contrast(placeholder,bg)<4.5)fails.push({name,kind:'placeholder',ratio:Number(contrast(placeholder,bg).toFixed(2)),ink:placeholderStyle.color,bg:style.backgroundColor});
+    return fails;
+   });
+ });
+ assert.deepEqual(violations,[],label+': form typing and placeholders must meet 4.5:1 contrast');
+}
+
 async function checkReadableInputColors(page, screen) {
  const failures=await page.evaluate(()=>{
   const opaque=raw=>{
@@ -154,6 +183,7 @@ try {
         }));
         Object.assign(item, metrics);
         await checkReadableInputColors(page,name+" login "+width);
+          await checkFormContrast(page,name+" login "+width);
         if(target==="cliente"&&name!=="seletor") item.switchClearance=await checkSwitcherClearance(page,name+" login "+width);
         if (name === 'corridas-login') {
           // Check actual painted title text fragments vs the floating module switch.
@@ -228,6 +258,7 @@ try {
           await page.waitForTimeout(600);
           const recoveryText = await page.locator('body').innerText();
           await checkReadableInputColors(page,name+" recovery "+width);
+          await checkFormContrast(page,name+" recovery "+width);
           await checkHeadingIntersections(page,name+" recovery "+width);
           if(target==="cliente"&&name!=="seletor") item.recoverySwitchClearance=await checkSwitcherClearance(page,name+" recovery "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': recovery overflows '+width+'px');
@@ -295,6 +326,7 @@ try {
           const toastClose = page.locator('[data-sonner-toast] button[data-close-button]').first();
           if (await toastClose.isVisible()) await toastClose.click();
           await checkReadableInputColors(page,name+" register "+width);
+          await checkFormContrast(page,name+" register "+width);
           await checkHeadingIntersections(page,name+" register "+width);
           if(target==="cliente"&&name!=="seletor") item.registrationSwitchClearance=await checkSwitcherClearance(page,name+" register "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': registration overflows '+width+'px');
@@ -310,6 +342,7 @@ try {
             await reuse.check();
             assert.ok(await reuse.isChecked(),'Existing APOIS Passenger account option must be selectable');
             await checkReadableInputColors(page,name+" step2 "+width);
+          await checkFormContrast(page,name+" step2 "+width);
             const birth=page.locator('input[name="birth_date"]');
             assert.equal(await birth.getAttribute('type'),'text','Birth date must be typed, not calendar picker');
             item.interactions.push({action:'registration step2 existing-account choice, typed birth date, no server calls',passed:true});
