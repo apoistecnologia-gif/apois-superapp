@@ -15,7 +15,7 @@ for (const marker of [
   'p_customer_user_id: userData.user.id',
   'p_payment_method: paymentMethod',
   'snapshot.payment_method !== "cash"',
-  'snapshot.payment_status === "paid"',
+  'snapshot.payment_status !== "pending"',
   'FINANCIAL_CONTRACT_MISMATCH',
 ]) if (!edge.includes(marker)) fail(`create-order perdeu contrato: ${marker}`);
 
