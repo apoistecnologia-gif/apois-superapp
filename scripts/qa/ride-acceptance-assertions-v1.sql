@@ -1,10 +1,9 @@
 -- Execute both staged acceptance RPCs directly on a disposable PG17 server.
 -- no Supabase credentials, external APIs, payments or production mutations.
-\\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000007',true);
--- Correct test JWT is the AUTH user ID, not the domain profile ID.
+-- JWT subject is the Auth ID; mobility_user_id maps it to the domain user.
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000007',true);
 
 DO $t$
