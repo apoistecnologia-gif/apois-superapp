@@ -13,11 +13,20 @@ patch('src/routes/_public.tsx', [
   ['relative w-full max-w-[430px] min-h-[100dvh] bg-black overflow-hidden flex flex-col', 'relative w-full max-w-[430px] min-h-[100dvh] bg-[#F7F7F8] overflow-hidden flex flex-col'],
 ]);
 
-// APOIS_CORRIDAS_RECOVERY_BACK_HITAREA_V1: a full-width flex-item overlapped
-// the top-right service switcher's hit area even though its text fit on the left.
-patch('src/routes/_public.recuperar-senha.tsx', [
-  ['className="mb-8 inline-flex items-center text-gray-400"', 'className="mb-8 inline-flex w-fit items-center text-gray-400"'],
-]);
+// APOIS_CORRIDAS_RECOVERY_BACK_HITAREA_V2 — enforce a true content-sized back link
+// after all earlier visual transformations, including different link text colors.
+{
+  const filename=resolve('.work/corridas/src/routes/_public.recuperar-senha.tsx');
+  const before=readFileSync(filename,'utf8');
+  const match=before.match(/<Link to="\/login" className="([^"]*)">/g);
+  if(!match||match.length!==1||!match[0].includes('inline-flex'))throw Error('[FAIL] Corridas recovery back link contract drift');
+  const old=match[0];
+  const next=old.includes(' w-fit ') ? old : old.replace('inline-flex ','inline-flex w-fit ');
+  if(!next.includes('w-fit'))throw Error('[FAIL] Corridas recovery back width not constrained');
+  const updated=before.replace(old,next);
+  writeFileSync(filename,updated,'utf8');
+  if(!readFileSync(filename,'utf8').includes('inline-flex w-fit'))throw Error('[FAIL] Corridas back Link width not persisted');
+}
 
 patch('src/routes/_public.index.tsx', [
   ['min-h-screen bg-black flex items-center justify-center', 'min-h-screen bg-[#F7F7F8] flex items-center justify-center'],
