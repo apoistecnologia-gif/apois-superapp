@@ -123,8 +123,8 @@ const moduleBridgeScript = `
 
   // APOIS_CORRIDAS_RECOVERY_BACK_HITAREA_V3: the back link was a stretched
   // flex item covering the switcher's top-right tap area on 320–390px.
-  function keepRecoveryBackLinkCompact() {
-    if (!/recuperar-senha/.test(window.location.hash || '')) return;
+  function keepPublicBackLinkCompact() {
+    if (!/(?:recuperar-senha|cadastro)/.test(window.location.hash || '')) return;
     var links = document.querySelectorAll('a');
     Array.prototype.forEach.call(links, function (link) {
       if (!/^Voltar para o login/i.test((link.textContent || '').trim())) return;
@@ -156,12 +156,12 @@ const moduleBridgeScript = `
   function initialize() {
     mountSwitcher();
     syncSwitcherVisibility();
-    keepRecoveryBackLinkCompact();
+    keepPublicBackLinkCompact();
     repairBrokenPassengerAvatar(document);
     var observer = new MutationObserver(function (mutations) {
       mountSwitcher();
       syncSwitcherVisibility();
-      keepRecoveryBackLinkCompact();
+      keepPublicBackLinkCompact();
       mutations.forEach(function (mutation) {
         mutation.addedNodes.forEach(function (node) {
           if (node && node.nodeType === 1) repairBrokenPassengerAvatar(node);
