@@ -40,13 +40,28 @@ export function safe2PayIsEnabled(): boolean {
   return env("SAFE2PAY_PROVIDER_ENABLED") === "1";
 }
 
-function environment(): string {
-  return env("SAFE2PAY_ENVIRONMENT").toLowerCase() || "production";
+// Fail closed: an absent or misspelled environment must never become a real Pix payment.
+function environment(): "production" | "sandbox" {
+  const value = env("SAFE2PAY_ENVIRONMENT").toLowerCase();
+  if (value !== "production" && value !== "sandbox") {
+    throw new Error("safe2pay_environment_explicitly_required");
+  }
+  return value;
 }
 
 function productionApiKey(): string {
   const key = env("SAFE2PAY_API_KEY");
   if (!key) throw new Error("safe2pay_production_api_key_missing");
+  return key;
+}
+
+// Marketplace sandbox calls must never silently fall back to live credentials.
+function marketplaceApiKey(): string {
+  if (environment() === "production") return productionApiKey();
+  const key = env("SAFE2PAY_API_KEY_SANDBOX");
+  if (!key) throw new Error("safe2pay_sandbox_key_missing");
+  const productionKey = env("SAFE2PAY_API_KEY");
+  if (productionKey && key === productionKey) throw new Error("safe2pay_sandbox_key_matches_production");
   return key;
 }
 
@@ -58,6 +73,9 @@ function callbackUrl(): string {
 
 export function assertSafe2PayReady(): void {
   if (!safe2PayIsEnabled()) throw new Error("safe2pay_provider_disabled");
+  // The public Pix API has not been confirmed as a sandbox. Never send an actual
+  // Pix request while the deployment is configured for test or an invalid env.
+  if (environment() !== "production") throw new Error("safe2pay_pix_sandbox_not_confirmed");
   productionApiKey();
   callbackUrl();
 }
@@ -143,8 +161,8 @@ export async function createSafe2PayPix(input: Safe2PayPixInput): Promise<Record
 
 export async function createSafe2PaySubaccount(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
   if (!payload || typeof payload !== "object") throw new Error("safe2pay_invalid_subaccount_payload");
-  const useSandbox = environment() !== "production";
-  const key = useSandbox ? env("SAFE2PAY_API_KEY_SANDBOX") || productionApiKey() : productionApiKey();
+  if (!safe2PayIsEnabled()) throw new Error("safe2pay_provider_disabled");
+  const key = marketplaceApiKey();
   const response = await fetch(SUBACCOUNT_URL, {
     method: "POST",
     headers: { "content-type": "application/json", "X-API-KEY": key },
@@ -282,7 +300,7 @@ export async function getSafe2PaySubaccount(receiverId: number): Promise<Record<
   if (!Number.isInteger(receiverId) || receiverId <= 0) throw new Error("safe2pay_invalid_receiver");
   const response = await fetch(
     `https://api.safe2pay.com.br/v2/marketplace/get?id=${encodeURIComponent(String(receiverId))}`,
-    { headers: { "X-API-KEY": productionApiKey() } },
+    { headers: { "X-API-KEY": marketplaceApiKey() } },
   );
   const result = await response.json().catch(() => ({})) as Record<string, unknown>;
   if (!response.ok || result.HasError === true) {
