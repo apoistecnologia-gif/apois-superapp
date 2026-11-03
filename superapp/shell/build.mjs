@@ -63,6 +63,8 @@ for (const [name, source] of modules) {
   console.log(`[OK] ${name} copiado para dist/modules/${name}`);
 }
 
+// APOIS_SWITCHER_SAFE_CORNER_V1: the floating service control must stay above page headers,
+// not over login/recovery headlines or form hints. Normal stacking also yields to native dialogs.
 // Ponte visual do Superapp: permite trocar Corridas <-> Entregas sem encerrar
 // nenhuma sessão. Cada módulo já persiste sua própria sessão em chaves separadas.
 // O botão apenas volta ao seletor principal; não chama signOut().
@@ -86,9 +88,9 @@ const moduleBridgeScript = `
     button.setAttribute('title', 'Trocar serviço');
     button.innerHTML = '<span aria-hidden="true">⇄</span>';
     button.style.position = 'fixed';
-    button.style.right = '14px';
-    button.style.top = 'calc(max(env(safe-area-inset-top), 12px) + 154px)';
-    button.style.zIndex = '2147483646';
+    button.style.right = 'max(12px, env(safe-area-inset-right))';
+    button.style.top = 'calc(max(env(safe-area-inset-top), 12px) + 8px)';
+    button.style.zIndex = '40';
     button.style.width = '44px';
     button.style.height = '44px';
     button.style.borderRadius = '14px';
