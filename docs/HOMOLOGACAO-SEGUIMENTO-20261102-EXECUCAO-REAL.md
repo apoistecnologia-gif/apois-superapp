@@ -301,3 +301,22 @@ No SQL Editor dos projetos oficiais, o responsável executou transações de REV
 - Gate continua **NÃO APTO PARA APK/PRODUÇÃO**: Auth real e rotas staff não testadas, E2E banco de staging, Safe2Pay/ledger/repasses, corridas física/entregas física e documentação do sandbox Pix pendentes.
 
 **Proteção:** as únicas mudanças de código desta rodada até `c1d5ee9` foram `scripts/audit-browser-public-v1.mjs`, `scripts/audit-admin-preview-render-v2.mjs` e `scripts/build-corridas-admin-spa-v1.mjs`. Nenhuma alteração em `sources/`, submódulos, source-lock, pipelines GitHub, migrations, Supabase de produção, Vercel Production ou pagamentos.
+
+---
+
+## 03/11/2026 — Revisão adicional de usabilidade mobile 320 px — Motorista
+
+**Defeito reproduzido:** artefato GitHub `apois-browser-parceiro-c1d5ee9c...` exibia placeholder `Digite sua senh` com último caractere cortado na senha de `/motorista/login` a 320px, apesar de a auditoria de overflow da página estar verde. O botão de exibir senha estava visível.
+
+**Correção aplicada somente na branch QA:**
+- `scripts/harden-partner-motorista-visual-v18.mjs`: placeholder encurtado de `Digite sua senha` para `Sua senha` dentro do formulário cujo rótulo já é `SENHA`. Mantidos input password, handler de login, acessibilidade, botão revelar/ocultar e sua área de toque.
+- `scripts/audit-browser-public-v1.mjs`: acrescenta medição com Canvas da largura de texto efetiva do pseudo-elemento `::placeholder` comparada à largura útil do input; exige espaço positivo e botão Mostrar senha com área mínima `44 x 44`. A regra é validada nos navegadores anônimos a 320/360/390/1280px, com requisições externas bloqueadas.
+
+**Evidências:**
+- CI `https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41653289385`, commit `96540cc344d51f6208278f48e7ffee841f278670`: **3/3 WEB success**. Captura `parceiro/motorista-login-320.png` do artefato mostra `Sua senha` inteiramente visível.
+- CI `https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41653373911`, commit `61c445109e76ccbf9f7f42941358e65d1c262e7f`: **3/3 WEB success**. Nos quatro screenshots `motorista-login`, os relatórios registram `passwordPlaceholderFits=true` e `passwordRevealHitboxOk=true`; o Admin mantém 4/4 telas WEB aprovadas.
+- Vercel `apois-corridas-admin-homologacao` já servia Preview `READY` do commit `61c4451`, com SSO mantido. Isso **não** equivale a E2E de login real nem a aprovação de APK.
+
+**Não modificado:** fontes protegidas `sources/`, configurações de produção, regras financeiras, Safe2Pay, Supabase, algoritmos de login, Vercel Production, release Android, source-lock ou GitHub workflows. Testes foram anônimos, sem submissões e sem internet externa.
+
+**Pendências preservadas:** Admin documento privado em fail-closed por ausência de segredo de serviço no Preview; avaliação para credencial isolada de menor privilégio, backend financeiro Safe2Pay (ledger, estorno, repasse e sandbox Pix), testes PostgreSQL em ambiente isolado, Android físico e login autenticado.
