@@ -28,6 +28,8 @@ if(!css.includes(marker)){
     'html.apois-entregas-customer-light-v4 [data-apois-entregas-home-v5="true"] [class*="bg-gradient-to-"] [class~="text-white"]{color:#FFFFFF!important;}',
     'html.apois-entregas-customer-light-v4 [data-apois-entregas-home-v5="true"] input{background:#FFFFFF;color:#161B25;border-color:#E5E7EB;}',
     'html.apois-entregas-customer-light-v4 [data-apois-entregas-home-v5="true"] input::placeholder{color:#69717D;opacity:1;}',
+    '/* APOIS_ENTREGAS_CUSTOMER_PLACEHOLDER_WCAG_V1: contrast verified on customer login/forms, not courier/admin. */',
+    'html.apois-entregas-customer-light-v4 :is(input,textarea)::placeholder{color:#596372!important;opacity:1!important;-webkit-text-fill-color:#596372!important;}',
     'html.apois-entregas-customer-light-v4 [data-apois-entregas-customer-nav-v5="true"]{background:#FFFFFF!important;border-color:#E5E7EB!important;box-shadow:0 -4px 16px rgba(22,27,37,.05);}',
     'html.apois-entregas-customer-light-v4 [data-apois-entregas-customer-nav-v5="true"] [aria-current="page"]{color:#E51B23;}',
     '/* Texto de CTA permanece branco; alertas e status conservam suas cores semanticas. */',
