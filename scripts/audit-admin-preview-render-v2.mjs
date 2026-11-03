@@ -57,6 +57,35 @@ try{
    assert.equal(missing.length,0,"Admin missing assets: "+missing.join("; "));
    rec.color=text.color;rec.widthOk=true;rec.logoOk=true;rec.jsErrors=0;rec.missingAssets=0;rec.passed=true;
    await page.screenshot({path:resolve(out,"admin-corridas-login-"+width+".png"),fullPage:true});
+   // Real client-side recovery navigation, with no emails, account mutations,
+   // or calls to a production Auth service.
+   await page.getByText("Esqueci minha senha",{exact:true}).click();
+   await page.waitForURL(url=>url.pathname==="/admin/recuperar-senha",{timeout:8000});
+   assert.ok(await page.getByRole("heading",{name:"Recuperar senha"}).isVisible(),
+    "Admin password-recovery route did not render");
+   const recoveryEmail=page.locator('input#recovery-email');
+   await recoveryEmail.fill("visual-recovery-qa@example.invalid");
+   const recoveryVisual=await recoveryEmail.evaluate(el=>{
+    const style=getComputedStyle(el);
+    return {value:el.value,color:style.color,fill:style.webkitTextFillColor,
+      width:document.documentElement.scrollWidth,viewport:innerWidth};
+   });
+   assert.equal(recoveryVisual.value,"visual-recovery-qa@example.invalid");
+   assert.notEqual(recoveryVisual.color,"rgb(255, 255, 255)",
+    "Admin recovery text invisible on white input");
+   assert.notEqual(recoveryVisual.fill,"rgb(255, 255, 255)",
+    "Admin recovery WebKit text fill invisible");
+   assert.ok(recoveryVisual.width<=recoveryVisual.viewport+2,
+    "Admin recovery layout overflows horizontally");
+   assert.ok(await page.getByRole("button",{name:"Enviar link de recuperação"}).isVisible());
+   assert.equal(errors.length,0,"Admin recovery runtime error");
+   assert.equal(missing.length,0,"Admin recovery asset missing");
+   await page.screenshot({path:resolve(out,"admin-corridas-recovery-"+width+".png"),fullPage:true});
+   await page.getByText("Voltar ao login",{exact:true}).click();
+   await page.waitForURL(url=>url.pathname==="/admin/login",{timeout:8000});
+   assert.ok(await page.getByRole("heading",{name:"Entrar no painel"}).isVisible(),
+    "Admin recovery return to login failed");
+   rec.recoveryRoute=true;rec.recoveryBackToLogin=true;rec.recoveryNoSubmission=true;
   }catch(err){rec.error=String(err.message).slice(0,330);rec.passed=false;fail=true}
   results.push(rec);
   await context.close();
@@ -64,7 +93,7 @@ try{
 }finally{
  if(browser)await browser.close();
  await new Promise(resolve=>server.close(resolve));
- writeFileSync(resolve(out,"report.json"),JSON.stringify({scope:"Admin Corridas login only, no authenticated operations",results},null,2));
+ writeFileSync(resolve(out,"report.json"),JSON.stringify({scope:"Admin Corridas anonymous login + password recovery navigation; no email submission or authenticated operations",results},null,2));
 }
 for(const x of results)console.log((x.passed?"[OK] ":"[FAIL] ")+"Admin Corridas login "+x.width+"px "+(x.error||"professional layout, logo, input contrast, assets"));
 if(fail)process.exitCode=1;
