@@ -155,6 +155,15 @@ await check("Backend cannot claim cash is electronically paid",async()=>{
  const f=fixture({snapshot:{payment_status:"paid"}});const r=await f.send();
  assert.equal(r.status,500);assert.equal(r.body.code,"FINANCIAL_CONTRACT_MISMATCH");
 });
+for(const invalidStatus of ["cancelled","failed","refunded","processing"]){
+ await check("Reject unexpected cash order snapshot status "+invalidStatus,async()=>{
+  const f=fixture({snapshot:{payment_status:invalidStatus}});
+  const r=await f.send();
+  assert.equal(r.status,500);
+  assert.equal(r.body.code,"FINANCIAL_CONTRACT_MISMATCH");
+  noProviderCalls(f);
+ });
+}
 await check("Backend cannot transform cash request into Pix",async()=>{
  const f=fixture({snapshot:{payment_method:"pix"}});const r=await f.send();
  assert.equal(r.status,500);assert.equal(r.body.code,"FINANCIAL_CONTRACT_MISMATCH");
