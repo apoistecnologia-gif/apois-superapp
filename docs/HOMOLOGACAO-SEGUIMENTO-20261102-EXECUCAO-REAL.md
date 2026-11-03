@@ -202,3 +202,38 @@ As duas funções `get_asaas_subaccount_secret` e `store_asaas_subaccount_secret
 ### Bloqueios e limites
 
 A implementação atômica Safe2Pay ainda não foi testada em PostgreSQL isolado nem publicada, e **a conciliação do ledger do estabelecimento continua pendente**. Não usar builds WEB como comprovação de pagamento real. A Vercel Admin Corridas continua reservada até a cota de novos deploys ser liberada; nenhuma nova tentativa. Não há autorização para APK, merge, publicação ou alteração de produção.
+
+---
+
+## Continuação executada — 03/11/2026 — bloqueio Safe2Pay, preço efetivo e estabilidade da auditoria WEB
+
+**HEAD de código aprovado:** `d1181af3feee1b2e77cdf6404fcfb19e42f185c3`.
+**GitHub Actions:** https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41576613333 — **3/3 SUCCESS WEB-only**. Não foram executados APK, merge, deploy de produção ou alterações nos Supabases.
+
+### P0 financeiro — inconsistência confirmada nos bancos reais
+
+1. O banco **Entregas** tem `safe2pay_order_transactions`, `payments` e `wallet_transactions` distintos. O SQL revisado `database/review/20261103_safe2pay_entregas_atomic_REVIEW_ONLY.sql` **ainda não cria/reconcilia `payments`, nem reserva `merchant_net`** via `reserve_paid_order_merchant_net`. A função ativa de reserva usa idempotency key `order-merchant-funded:<order_id>`, e a tabela `payments` exige `idempotency_key` único e oferece índice único parcial `(provider,provider_charge_id)`. Não é seguro inventar lançamentos ou publicar o callback sem harmonizar essas estruturas. A correção transacional continua **NÃO LIBERADA** para produção e exige testes isolados com ledger/rollback.
+2. Ambos os SQLs revisados agora comparam valores recebidos e armazenados com o valor autorizado pelo domínio: `orders.total` em Entregas; `rides.passenger_charge_cents` em Corridas, com fallback à estimativa para legados, usando a mesma referência empregada pela RPC ativa `activate_prepaid_pix_ride`. Inconsistências retornam exceção (transação abortada), impedindo pagamento insuficiente ou valores com fração de centavo. **Review only, não aplicado**.
+3. `supabase/functions/safe2pay-create-order-pix/index.ts` na branch não marca uma cobrança como expirada somente pelo relógio local; se um QR antigo ultrapassar seu TTL, retorna `409 safe2pay_expiry_requires_provider_reconciliation` e NÃO cria outro Pix enquanto a instituição não confirmar o encerramento da cobrança. Evita cobrança duplicada após pagamento tardio. A Edge ativa de produção **não foi modificada**.
+4. O teste `scripts/test-safe2pay-webhook-retry-v1.mjs` inclui preço divergente nas duas verticais, preservando replay/chargeback/refund seguro. Run `41576341268` confirmou **29 testes isolados Safe2Pay aprovados**, mas não substitui PG E2E real.
+
+### Gate independente de produção
+
+Foi criado `scripts/verify-safe2pay-production-readiness-v1.mjs`, exposto em `package.json` por `npm run verify:safe2pay-production-readiness`. É um teste **intencionalmente fail-closed (exit 1)** enquanto faltarem reconciliação canônica em `payments`, reserva/reversão no ledger, caminho de cobrança inicial Corridas ainda bloqueado e SQLs de revisão não aprovados. O comando **não é executado como bloqueio de builds WEB**; em `scripts/audit-payment-boundary.mjs` apenas se verifica que o gate continua bloqueando financeiramente. O CI `41576341268` confirmou `WEB-only QA passed; separate financial release gate correctly blocks incomplete ledger reconciliation`. A aprovação do WEB não autoriza APK/release.
+
+### Auditoria do Entregador — falso negativo cronométrico investigado
+
+As execuções `41575899551` e `41576026941` falharam no teste anônimo `entregador-login: registration click did not change the page` na largura de 390 px, depois de uma espera fixa de 600 ms. O código-fonte PINADO `sources/apois-entregas/src/routes/register.tsx` tem guarda de rota assíncrona `beforeLoad` que espera `supabase.auth.getSession()`; a rota original `src/routes/login.tsx` utiliza `<Link to="/register">`. A hipótese foi de tempo de navegação insuficiente no teste, não de falha funcional comprovada no aplicativo.
+
+Foi reforçado **somente o teste** em `scripts/audit-browser-public-v1.mjs`: espera até 6 segundos por mudança real de rota, campo de nome e telefone para Entregador/Cliente; para Motorista exige campo do veículo. Em caso de falha ainda registra rota e controles e reprova o CI. A execução `41576613333` terminou **3/3 jobs SUCCESS**, incluindo a auditoria do Entregador em múltiplas resoluções. **Nenhuma fonte protegida ou lógica de navegação foi alterada para mascarar o resultado.** Ainda falta E2E autenticado e físico Android.
+
+### Segurança Supabase: risco antigo confirmado novamente, sem alteração
+
+As RPCs públicas `get_asaas_subaccount_secret(uuid)` e `store_asaas_subaccount_secret(uuid,text)` em Corridas continuam com EXECUTE para `anon`, `authenticated` e `service_role`. Leitura do corpo real não encontrou checagem `auth.uid()` nem `private.has_permission`: a primeira lê o valor descriptografado do Vault e a segunda cria/substitui segredos. Nenhuma outra função PostgreSQL referenciando essas RPCs foi encontrada em busca delimitada. **Prioridade P0 de intervenção humana autorizada** sobre o arquivo já preparado `database/review/20261102_corridas_asaas_vault_rpc_privileges_REVIEW_ONLY.sql`; as ferramentas antes bloquearam aplicação. Não contornar bloqueio e não divulgar valores. As quatro RPCs financeiras/dispatch de Entregas continuam com EXECUTE público e também não foram modificadas.
+
+### Estado operacional
+
+- Nenhum estorno, ledger, saldo, aprovação, sessão, conta Auth, e-mail ou Edge Function de produção foi modificado.
+- Vercel Admin Corridas continua reservada por cota de deployments; sem novas tentativas.
+- Branch `fix/entregas-homologacao-ajustes-20261030`, sem alterações em `sources/`, `source-lock`, submódulos, workflows, branches protegidas.
+- **APKs NÃO LIBERADOS** até fechamento dos P0 financeiros/ACL e homologação Android real.
