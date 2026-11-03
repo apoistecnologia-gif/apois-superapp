@@ -109,7 +109,7 @@ if (failed) process.exit(1);
 ok('Boundary financeiro final auditado: gateways antigos ficam fora dos fluxos ativos e cash/pending continua operacional.');
 
 // Run the isolated callback simulations using the Bun already pinned by the WEB QA builder.
-// The public package.json contract stays unchanged; no provider or network calls occur.
+// This WEB-only audit remains separate from the fail-closed Safe2Pay production gate.
 const { spawnSync } = await import('node:child_process');
 const replayCheck = spawnSync('bun', ['scripts/test-safe2pay-webhook-retry-v1.mjs'], { stdio: 'inherit' });
 if (replayCheck.error || replayCheck.status !== 0) {
@@ -117,3 +117,15 @@ if (replayCheck.error || replayCheck.status !== 0) {
   process.exit(1);
 }
 ok('Safe2Pay: reenvio, zero registros e estornos simulados sem gravar em bancos reais.');
+const releaseGate = spawnSync(process.execPath, ['scripts/verify-safe2pay-production-readiness-v1.mjs'], {
+  encoding: 'utf8',
+});
+if (releaseGate.error || releaseGate.status !== 1 ||
+  !releaseGate.stderr.includes('[BLOCKED]') ||
+  !releaseGate.stdout.includes('One-transaction canonical payments reconciliation for Entregas')) {
+  console.error('[FAIL] The Safe2Pay production release gate did not block missing canonical payments.');
+  console.error(releaseGate.stdout ?? '', releaseGate.stderr ?? '');
+  process.exit(1);
+}
+ok('WEB-only QA passed; separate financial release gate correctly blocks incomplete ledger reconciliation.');
+
