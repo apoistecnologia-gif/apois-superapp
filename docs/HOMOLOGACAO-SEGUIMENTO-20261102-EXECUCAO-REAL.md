@@ -140,3 +140,38 @@ O relato anterior de "zero projetos acessíveis" foi causado pela consulta com f
 - Metadados de variáveis na Vercel homologação confirmam **nomes cadastrados no Preview**: \`APOIS_PREVIEW_GITHUB_TOKEN\`, \`CORRIDAS_VITE_SUPABASE_URL\`, \`CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY\`, \`CORRIDAS_WEB_MAPS_API_KEY\`, \`VITE_SUPABASE_URL\`, \`VITE_SUPABASE_PUBLISHABLE_KEY\`. Valores não foram lidos/descriptografados nem testados; existência do nome não comprova validade do token ou configuração.
 - Tentativas de obter eventos/build logs por integração Vercel retornaram 404 para a implantação, mesmo com escopo explícito e hostname. Não contornar; pedir ao responsável apenas o conteúdo do **Build Logs** dessa implantação, nunca tokens ou valores de variáveis.
 - Não houve mudança de deploy, domínio, SSO, configurações ou variáveis. Não reabilitar produção antecipadamente.
+
+---
+
+## Continuação verificada — 03/11/2026 — Vercel reservada e correções independentes
+
+**Código validado:** `b16d47f44e056e17d7d132d90e6a2329a420daca`.
+**GitHub Actions:** https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41572311458 — `3/3 SUCCESS`, WEB-only. Evidências explícitas do job `audit-web-only`: `[PASS] 8 isolated driver review mail regressions` e `[PASS] 7 runtime pre-Auth vehicle photo cases`. Nenhuma conta real, e-mail ou upload foi produzido.
+
+### Vercel: PENDENTE POR COTA, NÃO BLOQUEAR OUTRAS FRENTES
+
+O log fornecido pelo proprietário identificou com precisão `scripts/build-admin-vercel-preview.sh: line 53: cmp: command not found`. Submódulos foram sincronizados e baixados sem falha impeditiva. A correção já aplicada na branch substituiu `cmp` por `node -e` que compara os dois arquivos privados byte a byte; script `scripts/verify-partner-portability.mjs` exige que a proteção permaneça. O preflight GitHub 3/3 passou no commit `ac9767f3234e8048bd4221cb64d6abfc4b3b57c8`.
+
+A criação de nova implantação exclusivamente Preview no projeto `apois-corridas-admin-homologacao` (`prj_aiE8SAZZsN0qflEmMAw9qrcirQNx`) recebeu `402 api-deployments-free-per-day` (cota da conta esgotada, retry informado após um dia). **Reservar Vercel, sem novos deploys, sem trocar conta, sem promoção, sem alterar domínios.** Uma execução pronta no GitHub não é prova de implantação READY. Projeto principal `apois-corridas-admin` deve permanecer preservado.
+
+### Motorista — correção implementada no gerador isolado, não na fonte protegida
+
+Em `scripts/fix-partner-driver-vehicle-photo-upload-v1.mjs`, o pré-requisito dos 12 slots extras (13º slot frontal já obrigatório em documents) é comprovado **antes de `ensureAuthenticatedAccount`**. Exige exatamente uma foto por slot no bucket privado `apois-inspections` e payload não vazio. Impede o caso em que a documentação incompleta cria conta Auth para depois falhar. Preservadas limpeza segura antes da tentativa de cadastro, persistência após commit ambíguo e retry limitado da RPC de vistoria. O teste executa a função TypeScript preparada em VM com 7 cenários negativos/positivos e bloqueia side effects Auth sem documentos completos. O teste positivo apenas chega ao stub Auth, não cadastra motorista.
+
+Arquivo de teste: `scripts/test-driver-registration-preauth-v1.mjs`, executado pelo gate atual `scripts/verify-apois-13-photo-driver-pendencies-v1.mjs`.
+
+### Outbox e e-mail de correção — confirmação segura de persistência
+
+A Edge `apois-driver-review-mailer` **já está ACTIVE v4 em Corridas** e a definição ativa tem o defeito de sucesso falso se a gravação do aceite falhar. A correção foi preparada somente em `supabase/functions/apois-driver-review-mailer/index.ts`: exige ID de recibo do provedor, executa atualização condicional `queued/failed`, lê o registro atualizado e retorna 503 se não houver confirmação; não produz sucesso artificial.
+
+A RPC pública protegida `apois_admin_can_dispatch_driver_correction_mail(uuid)` está ativa e limita execução a staff autenticado com `users.manage`, mas atualmente não permite consulta idempotente de outbox já aceita. Foi preparado o SQL independente `database/review/20261103_corridas_mailer_outbox_idempotent_read_REVIEW_ONLY.sql` para preservar RBAC e permitir leitura de aceite previamente concluído, sem novo envio. **NÃO APLICADO.** A migration histórica de notificações foi restaurada à versão anterior; não reexecutar.
+
+Teste `scripts/test-driver-review-mailer-reconciliation-v1.mjs`: 8 cenários isolados (auth inválida, autorização negada, sucesso persistido, erro de gravação, zero linhas, recibo ausente, erro de provedor, repetição sem segundo envio). **Sem rede/Resend real.**
+
+Consulta apenas de leitura no Corridas: `apois_driver_correction_email_outbox` e `apois_vehicle_inspection_photos` sem registros no momento da verificação. Nenhum e-mail ou dado do usuário alterado.
+
+### P0 ainda impedem Android
+
+As duas funções `get_asaas_subaccount_secret` e `store_asaas_subaccount_secret` ainda têm EXECUTE por anon/authenticated em Corridas. As quatro RPCs privilegiadas de Entregas seguem pendentes. O Safe2Pay atômico está apenas em REVIEW_ONLY, a criação de cobrança Corridas permanece bloqueada por salvaguardas da ferramenta e os estornos históricos OpenPix permanecem não conciliados. É necessária homologação PostgreSQL isolada/rollback e intervenção autorizada antes de revogar permissões ou implantar rotinas de pagamento e cadastro. 13 fotos requerem teste físico e compatibilidade legada.
+
+**Nenhum merge, APK, release, SQL DDL, saldo, status ou implantação de produção foi executado nesta etapa.**
