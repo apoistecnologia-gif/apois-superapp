@@ -31,6 +31,7 @@ for (const [product,source] of Object.entries(sql)) {
       source.indexOf("UPDATE public."+domain+" SET payment_status"),source.lastIndexOf("INSERT INTO public.safe2pay_webhook_events")];
     assert.ok(pos.every((v,i)=>v>=0&&(i===0||v>pos[i-1])),"SQL must lock before all mutations");
     assert.match(source,/manual_chargeback_reconciliation_required/);
+    assert.match(source,/authorized_after_failed_or_expired_manual_review/);
     assert.match(source,/ON CONFLICT \(event_key\) DO UPDATE/);
     assert.doesNotMatch(source,/UPDATE public\.(?:refunds|wallets|driver_wallets|payouts)/);
   });
@@ -97,7 +98,7 @@ for(const product of ["rides","orders"]){
     const h=fake(product);
     assert.equal((await h.send("3")).code,200);
     const result=await h.send("13");
-    assert.equal(result.code,202);
+    assert.equal(result.code,503);
     assert.equal(result.body.manual_review,true);
     assert.equal(h.state.domain,"paid");
   });
