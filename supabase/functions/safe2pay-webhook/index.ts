@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
   const outcome = result.data as Record<string, unknown> | null;
   if (!outcome || typeof outcome !== "object") return json(503, { error: "invalid_atomic_response" });
   if (outcome.manual_review === true) {
-    return json(202, { ok: false, manual_review: true, reason: outcome.reason ?? "manual_review" });
+    return json(503, { ok: false, manual_review: true, reason: outcome.reason ?? "manual_review" });
   }
   if (outcome.ok !== true) return json(503, { error: "atomic_reconciliation_not_confirmed" });
   return json(outcome.ignored === true ? 202 : 200, {
