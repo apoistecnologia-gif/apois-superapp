@@ -214,5 +214,8 @@ if(process.argv.includes("--dist")){
   check(existsSync("superapp/partner-shell/dist/modules/entregador/index.html"),"Courier module copied");
   check(!existsSync("build/APOIS-Parceiro-TESTE.apk"),"Preflight did not generate an Android APK");
 }
+const { spawnSync } = await import('node:child_process');
+const guardResult = spawnSync(process.execPath, ['scripts/test-driver-registration-guard-review-v1.mjs'], { stdio: 'inherit' });
+check(!guardResult.error && guardResult.status === 0, 'Driver registration review-only guard contract');
 if(failures)process.exit(1);
 console.log("[OK] APOIS Partner web preflight: all scoped static and integration assertions passed.");
