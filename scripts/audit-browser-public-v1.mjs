@@ -28,6 +28,43 @@ const routes = target === 'cliente'
 const report = { target, network: 'All non-loopback requests blocked; no backend/auth/payment/maps calls permitted', scope: 'Anonymous render and public interactions only; no form submissions, authenticated E2E or Android', results: [] };
 // APOIS_INPUT_CONTRAST_ALL_FOUR_V1: inspect effective text/foreground, not just CSS classes.
 // APOIS_HEADING_INTERSECTION_AUDIT_V1: inspect painted glyph rectangles at every public form step.
+// APOIS_SWITCHER_SAFE_CORNER_BROWSER_V1 — checks actual rendered glyphs and hit targets, not just headlines.
+async function checkSwitcherClearance(page, label) {
+ const result=await page.evaluate(()=>{
+  const button=document.getElementById('apois-switch-service');
+  if(!button)return {missing:true,overlaps:[]};
+  const box=button.getBoundingClientRect();
+  const hits=[];
+  const intersect=(r)=>r.width>1&&r.height>1&&r.left<box.right-2&&r.right>box.left+2&&r.top<box.bottom-2&&r.bottom>box.top+2;
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  while(walker.nextNode()){
+   const node=walker.currentNode;
+   if(!node.textContent?.trim())continue;
+   const el=node.parentElement;
+   if(!el||button.contains(el)||el.closest('script,style,[aria-hidden="true"],[hidden]'))continue;
+   const css=getComputedStyle(el);
+   if(css.display==='none'||css.visibility==='hidden'||Number(css.opacity)===0)continue;
+   const range=document.createRange();
+   range.selectNodeContents(node);
+   if([...range.getClientRects()].some(intersect)){
+     hits.push('texto:'+node.textContent.trim().slice(0,45));
+   }
+  }
+  const controls=[...document.querySelectorAll('button,a,input,textarea,select,[role="button"]')];
+  for(const el of controls){
+    if(button===el||button.contains(el)||el.contains(button))continue;
+    const css=getComputedStyle(el);
+    if(css.display==='none'||css.visibility==='hidden')continue;
+    if(intersect(el.getBoundingClientRect()))hits.push('controle:'+(el.getAttribute('aria-label')||el.textContent?.trim().slice(0,45)||el.tagName));
+  }
+  return {missing:false,overlaps:hits.slice(0,12),width:box.width,height:box.height,top:box.top};
+ });
+ assert.equal(result.missing,false,label+': service switcher missing');
+ assert.ok(result.width>=44&&result.height>=44,label+': service switcher tap target below 44px');
+ assert.deepEqual(result.overlaps,[],label+': service switcher obscures content');
+ return result;
+}
+
 async function checkHeadingIntersections(page, label) {
  const hits=await page.evaluate(()=>{
   const visible=element=>{const r=element.getBoundingClientRect(),s=getComputedStyle(element);return r.width>8&&r.height>8&&s.visibility!=="hidden"&&s.display!=="none";};
@@ -111,6 +148,7 @@ try {
         }));
         Object.assign(item, metrics);
         await checkReadableInputColors(page,name+" login "+width);
+        item.switchClearance=await checkSwitcherClearance(page,name+" login "+width);
         if (name === 'corridas-login') {
           // Check actual painted title text fragments vs the floating module switch.
           const intersections=await page.evaluate(()=>{
@@ -185,6 +223,7 @@ try {
           const recoveryText = await page.locator('body').innerText();
           await checkReadableInputColors(page,name+" recovery "+width);
           await checkHeadingIntersections(page,name+" recovery "+width);
+          item.recoverySwitchClearance=await checkSwitcherClearance(page,name+" recovery "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': recovery overflows '+width+'px');
           assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
           if (name === 'motorista-login') {
@@ -251,6 +290,7 @@ try {
           if (await toastClose.isVisible()) await toastClose.click();
           await checkReadableInputColors(page,name+" register "+width);
           await checkHeadingIntersections(page,name+" register "+width);
+          item.registrationSwitchClearance=await checkSwitcherClearance(page,name+" register "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': registration overflows '+width+'px');
           if(name==='motorista-login'){
             // Stop before any authentication/network: only verify new onboarding UI.
