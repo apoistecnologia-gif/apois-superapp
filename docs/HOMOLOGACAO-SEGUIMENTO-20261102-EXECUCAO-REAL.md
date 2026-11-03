@@ -175,3 +175,30 @@ Consulta apenas de leitura no Corridas: `apois_driver_correction_email_outbox` e
 As duas funções `get_asaas_subaccount_secret` e `store_asaas_subaccount_secret` ainda têm EXECUTE por anon/authenticated em Corridas. As quatro RPCs privilegiadas de Entregas seguem pendentes. O Safe2Pay atômico está apenas em REVIEW_ONLY, a criação de cobrança Corridas permanece bloqueada por salvaguardas da ferramenta e os estornos históricos OpenPix permanecem não conciliados. É necessária homologação PostgreSQL isolada/rollback e intervenção autorizada antes de revogar permissões ou implantar rotinas de pagamento e cadastro. 13 fotos requerem teste físico e compatibilidade legada.
 
 **Nenhum merge, APK, release, SQL DDL, saldo, status ou implantação de produção foi executado nesta etapa.**
+
+---
+
+## Continuação comprovada — 03/11/2026 — Safe2Pay, outbox e revisão de segurança
+
+**Último código homologado:** `b96f33550c2d0ae26c0a4d0260fe16e4889ba2ad`.
+**CI WEB (sem APK):** https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41573350788 — **3/3 SUCCESS**.
+
+### Correções reais na branch, sem deploy
+
+- `supabase/functions/safe2pay-webhook/index.ts`: corrigida a expressão regular que rejeitava texto decimal válido como `12.50`. Continua rejeitando formatos inválidos, centavos fracionários e payload sem segredo; verificado com o código da Edge em VM e mocks.
+- `database/review/20261103_safe2pay_corridas_atomic_REVIEW_ONLY.sql` e `database/review/20261103_safe2pay_entregas_atomic_REVIEW_ONLY.sql`: estorno de transação já autorizada, mas com pedido/corrida sem estado prévio `paid` ou `refunded`, passa a registrar `refund_without_paid_domain_manual_review`, sem fabricar transição financeira. **REVIEW ONLY, NÃO APLICADO.**
+- `supabase/functions/apois-driver-review-mailer/index.ts`: quando Resend rejeita o envio, a resposta `failed` só é confirmada após `UPDATE ... RETURNING` condicional em outbox; falha de gravação, concorrência ou zero linhas causam `503` (não há falso estado persistido). Proteção anterior para aceite do provedor foi mantida.
+- `scripts/test-safe2pay-webhook-retry-v1.mjs`: **27 cenários isolados** passaram no job Estabelecimento, cobrindo ambos os produtos, rollback simulado, string decimal, dinheiro fracionário, refund com domínio pendente, chargeback e estados fora de ordem.
+- `scripts/test-driver-review-mailer-reconciliation-v1.mjs`: **10 cenários isolados** passaram no job Parceiro/Admin, incluindo falha de persistência após sucesso **ou** rejeição do provedor. Os **7 cenários pré-Auth** das 12 fotos complementares também passaram, sem criar contas ou fazer uploads.
+
+**Provas:** job Estabelecimento registrou `[PASS] 27 Safe2Pay isolated tests`; job `audit-web-only` registrou `[PASS] 10 isolated driver review mail regressions`, `[PASS] 7 runtime pre-Auth vehicle photo cases` e verificação de 13 fotos.
+
+### Alertas Supabase — triagem read-only
+
+- Advisors de segurança em ambos os projetos foram consultados sem DDL. Há avisos amplos de funções `SECURITY DEFINER` executáveis por `anon` e `authenticated`; **nem todos significam acesso indevido**. Por exemplo, `public.activate_prepaid_pix_ride` tem guarda interna `auth.role() = 'service_role'`, e o resumo financeiro em Corridas verifica `auth.uid()` + `private.has_permission('finance.read')`. Não revogar essas chamadas indiscriminadamente.
+- **Os seis privilégios P0 anteriormente identificados continuam pendentes**: duas RPC Asaas em Corridas e quatro financeiras/dispatch em Entregas. Requerem intervenção autorizada, verificação de chamadores, rollback e teste em ambiente PostgreSQL isolado. Não houve contorno dos bloqueios.
+- Advisors também indicam `Leaked Password Protection Disabled` nos dois projetos. Esse recurso depende da disponibilidade do plano Supabase (documentação atual: Pro ou superior). Não alterar Auth sem avaliar impacto em login e cadastro. Referência: https://supabase.com/docs/guides/auth/password-security
+
+### Bloqueios e limites
+
+A implementação atômica Safe2Pay ainda não foi testada em PostgreSQL isolado nem publicada, e **a conciliação do ledger do estabelecimento continua pendente**. Não usar builds WEB como comprovação de pagamento real. A Vercel Admin Corridas continua reservada até a cota de novos deploys ser liberada; nenhuma nova tentativa. Não há autorização para APK, merge, publicação ou alteração de produção.
