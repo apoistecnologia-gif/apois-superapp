@@ -13,3 +13,20 @@ if (failure) {
   process.exit(1);
 }
 console.log('[OK] scripts/build-partner-modules.sh não contém opções GNU-only');
+
+const adminBuildScript = readFileSync(resolve('scripts/build-admin-vercel-preview.sh'), 'utf8');
+if (/\bcmp\s+-s\b/.test(adminBuildScript)) {
+  console.error('[FAIL] Admin Vercel QA requires cmp, which is missing on the Vercel build image.');
+  process.exit(1);
+}
+if (!adminBuildScript.includes('node -e ') || !adminBuildScript.includes('root.equals(preview)')) {
+  console.error('[FAIL] Admin QA server-only endpoint must retain a strict byte comparison.');
+  process.exit(1);
+}
+const adminHandler = readFileSync(resolve('api/admin/driver-documents.js'));
+const previewHandler = readFileSync(resolve('admin-preview/api/admin/driver-documents.js'));
+if (!adminHandler.equals(previewHandler)) {
+  console.error('[FAIL] Admin QA endpoint source files differ.');
+  process.exit(1);
+}
+console.log('[OK] Admin Vercel QA: no cmp dependency, byte-for-byte endpoint integrity preserved.');
