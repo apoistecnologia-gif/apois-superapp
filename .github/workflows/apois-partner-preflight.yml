@@ -66,6 +66,10 @@ jobs:
           node scripts/audit-partner-preflight-v1.mjs
           node scripts/test-partner-shell-navigation-v2.mjs
           node --test scripts/test-courier-navigation-busy-v1.mjs
+      - name: PostgreSQL 17 disposable cash-contract tests (synthetic, no Supabase)
+        shell: bash
+        run: bash scripts/test-cash-postgres-isolated-v1.sh
+
       - name: Build web modules and run typechecks - NO ANDROID APK
         shell: bash
         run: |
