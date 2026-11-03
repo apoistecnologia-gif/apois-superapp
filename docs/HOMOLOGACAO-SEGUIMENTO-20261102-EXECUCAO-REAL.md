@@ -127,3 +127,16 @@ O preflight 41564251300 comprova três jobs WEB (Cliente, Estabelecimento/Admin 
 - **APKs:** aguardar resolução dos P0 acima, ledger Safe2Pay, login Admin Vercel, vistoria 13 fotos física e testes Android.
 
 **Situação do último preflight:** ver execução GitHub Actions 41569097271 e checar o resultado conclusivo, não inferir sucesso por status in_progress. Nenhum merge ou release foi autorizado.
+
+
+## Retificação verificada — acesso à Vercel (03/11/2026)
+
+O relato anterior de "zero projetos acessíveis" foi causado pela consulta com filtro de equipe, e não pela inexistência de projetos. Na integração atual, **list_projects sem filtro teamId** retornou 8 projetos APOIS, todos do workspace \`mariajuvelina403-7231s-projects\` (teamId \`team_shDkxHdc4ARgsiLdRaLSz0zA\`). A captura enviada pelo usuário coincide com essa relação. **Não é necessário conectar outra conta Vercel**, salvo mudança futura de permissões.
+
+- Admin Corridas existente: projeto \`apois-corridas-admin\`, ID \`prj_hQLbIy31b8lbvhQU0iz6U6u38Srq\`, domínio \`admin-corridas.apoisbrasil.com.br\`, último deploy retornado \`dpl_GzYiV4R4wVDrXHJ3KVFWSaNhAvJE\` READY, preview não equivale a teste autenticado.
+- Admin Corridas homologação: projeto \`apois-corridas-admin-homologacao\`, ID \`prj_aiE8SAZZsN0qflEmMAw9qrcirQNx\`, última implantação retornada \`dpl_FTYiDQY2idiFjFM3tLUa5z2UyRxc\` ERROR, para commit \`3fc9563e6a139f0cf102e8280d7bccad12248e66\`.
+- Erro retornado pelo detalhe da implantação, sem inferir causa específica: código \`ENOENT\`, comando \`cd .. && bash scripts/build-admin-vercel-preview.sh && mkdir -p admin-preview/dist && cp -a dist-admin-preview/. admin-preview/dist/\` encerrou com exit 1.
+- Repositório possui \`admin-preview/vercel.json\` com esse comando e \`scripts/build-admin-vercel-preview.sh\`. Portanto, a falha pode ocorrer em um passo interno e não está provado que falte o script.
+- Metadados de variáveis na Vercel homologação confirmam **nomes cadastrados no Preview**: \`APOIS_PREVIEW_GITHUB_TOKEN\`, \`CORRIDAS_VITE_SUPABASE_URL\`, \`CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY\`, \`CORRIDAS_WEB_MAPS_API_KEY\`, \`VITE_SUPABASE_URL\`, \`VITE_SUPABASE_PUBLISHABLE_KEY\`. Valores não foram lidos/descriptografados nem testados; existência do nome não comprova validade do token ou configuração.
+- Tentativas de obter eventos/build logs por integração Vercel retornaram 404 para a implantação, mesmo com escopo explícito e hostname. Não contornar; pedir ao responsável apenas o conteúdo do **Build Logs** dessa implantação, nunca tokens ou valores de variáveis.
+- Não houve mudança de deploy, domínio, SSO, configurações ou variáveis. Não reabilitar produção antecipadamente.
