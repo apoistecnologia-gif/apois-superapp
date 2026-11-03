@@ -47,6 +47,13 @@ await check("Entregas initial Safe2Pay authorization is staged as an atomic RPC,
   assert.match(source,/status: "pending",/);
   assert.match(source,/authorized_at: null,/);
   assert.match(source,/if \(insertError\) throw new Error/);
+  assert.match(source,/order_paid_outside_safe2pay/);
+  assert.match(source,/existing_safe2pay_amount_mismatch/);
+  assert.match(source,/safe2pay_expire_race_requires_retry/);
+  assert.match(source,/safe2pay_existing_authorized_not_reconciled/);
+  assert.match(source,/safe2pay_initial_authorization_not_reconciled/);
+  assert.equal(source.split('await admin.rpc("apois_safe2pay_apply_event_atomic"').length-1,2,
+    "Both new and reused authorized charges must pass the same transactional RPC");
   assert.doesNotMatch(source,/await admin\.from\("orders"\)\.update\(\{ payment_status: "paid" \}/);
   const compiled=new Bun.Transpiler({loader:"ts",target:"browser"}).transformSync(source);
   assert.ok(compiled.length>1000,"staged Edge source should transpile");
