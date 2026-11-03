@@ -32,4 +32,12 @@ docker exec "$name" createdb -U postgres driver_guard_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < scripts/qa/driver-registration-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < database/review/20261102_driver_complete_registration_v3_approved_guard_REVIEW_ONLY.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < scripts/qa/driver-registration-assertions-v1.sql
-echo '[PASS] Real PostgreSQL 17 synthetic cash RLS and driver registration guard. Production untouched.'
+# Verify the ACTUAL staged Corridas online/stage-transition functions as SQL
+# in a third synthetic, isolated database. No production migration is applied.
+docker exec "$name" createdb -U postgres driver_operations_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-fixture-v1.sql
+node scripts/qa/extract-corridas-operational-sql-v1.mjs | docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa -c   'GRANT EXECUTE ON FUNCTION apois_rpc_private.driver_set_presence(boolean,numeric,numeric,numeric,numeric) TO authenticated'
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-assertions-v1.sql
+echo '[PASS] Real PostgreSQL 17 synthetic Entregas RLS, driver registration and Corridas operational functions. Production untouched.'
