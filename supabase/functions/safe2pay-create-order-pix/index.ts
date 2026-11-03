@@ -109,13 +109,15 @@ Deno.serve(async (req) => {
         expiresAt <= Date.now();
 
       if (expiredLocally) {
-        const { data: expired, error: expireError } = await admin
-          .from("safe2pay_order_transactions")
-          .update({ status: "expired", updated_at: new Date().toISOString() })
-          .eq("id", existing.id)
-          .in("status", ["pending","processing"])
-          .select("id").maybeSingle();
-        if (expireError || !expired) throw new Error("safe2pay_expire_race_requires_retry");
+        // The local QR expiry is NOT proof that the provider charge is cancelled.
+        // Issuing another charge can double-bill a customer whose first Pix settled late.
+        // Keep the original pending charge intact until a trusted provider reconciliation
+        // confirms it is terminal. Do not create a new charge from this callback.
+        return json(409, {
+          error: "safe2pay_expiry_requires_provider_reconciliation",
+          orderId: order.id,
+          reference: existing.reference,
+        });
       } else {
         if (Math.round(Number(existing.amount) * 100) !== Math.round(amount * 100)) {
           return json(409, { error: "existing_safe2pay_amount_mismatch" });
