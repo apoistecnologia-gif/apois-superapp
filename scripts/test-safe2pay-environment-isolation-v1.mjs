@@ -10,6 +10,7 @@ assert.match(source,/safe2pay_environment_explicitly_required/);
 assert.match(source,/safe2pay_pix_sandbox_not_confirmed/);
 assert.match(source,/safe2pay_sandbox_key_missing/);
 assert.match(source,/safe2pay_sandbox_key_matches_production/);
+assert.match(source,/safe2pay_sandbox_marketplace_unverified/);
 assert.doesNotMatch(source,/env\("SAFE2PAY_API_KEY_SANDBOX"\)\s*\|\|\s*productionApiKey\(\)/);
 const stripped=source.replace(/^export\s+/gm,"");
 const compiled=new Bun.Transpiler({loader:"ts",target:"browser"}).transformSync(stripped);
@@ -20,6 +21,7 @@ function fixture(config={}){
   SAFE2PAY_ENVIRONMENT:"sandbox",
   SAFE2PAY_API_KEY:"prod-fixture-key",
   SAFE2PAY_API_KEY_SANDBOX:"sandbox-fixture-key",
+  SAFE2PAY_SANDBOX_MARKETPLACE_CONFIRMED:"1",
   SAFE2PAY_CALLBACK_URL:"https://callbacks.invalid/safe2pay",
   ...config};
  let calls=[];
@@ -56,6 +58,12 @@ await rejectsBeforeFetch("Unknown environment cannot become production Pix",
 await rejectsBeforeFetch("Disabled provider cannot create Pix",
  {SAFE2PAY_ENVIRONMENT:"production",SAFE2PAY_PROVIDER_ENABLED:"0"},
  f=>f.api.createSafe2PayPix(f.pixInput),"safe2pay_provider_disabled");
+await rejectsBeforeFetch("Sandbox marketplace cannot create before support confirms test endpoint",
+ {SAFE2PAY_SANDBOX_MARKETPLACE_CONFIRMED:""},
+ f=>f.api.createSafe2PaySubaccount({Name:"fixture"}),"safe2pay_sandbox_marketplace_unverified");
+await rejectsBeforeFetch("Unverified sandbox endpoint cannot fetch subaccount data",
+ {SAFE2PAY_SANDBOX_MARKETPLACE_CONFIRMED:"0"},
+ f=>f.api.getSafe2PaySubaccount(42),"safe2pay_sandbox_marketplace_unverified");
 await rejectsBeforeFetch("Sandbox subaccount without sandbox key never uses live key",
  {SAFE2PAY_API_KEY_SANDBOX:""},
  f=>f.api.createSafe2PaySubaccount({Name:"fixture"}),"safe2pay_sandbox_key_missing");
