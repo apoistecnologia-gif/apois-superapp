@@ -17,8 +17,11 @@ if(!src.includes("APOIS_VEHICLE_INSPECTION_UPLOAD_V1")){
  // Supabase Storage upsert:true requires UPDATE and SELECT permissions, which evidence buckets deny.
  if((src.match(/upsert: true,/g)||[]).length!==2)throw Error("[FAIL] unexpectedly changed Storage upload contract");
  src=src.replaceAll("upsert: true,","upsert: false,");
- change('    const { data, error } = await (supabase as any).rpc("driver_complete_registration_v3", {',
- '    // Prevent cleanup of possibly committed documents on ambiguous network failure.\\n    registrationAttempted=true;\\n    const { data, error } = await (supabase as any).rpc("driver_complete_registration_v3", {',"registration RPC uncertainty");
+ change('    const { data, error } = await (supabase as any).rpc("driver_complete_registration_v3", {',[
+  '    // Do not clean possibly committed documents when the registration RPC response is lost.',
+  '    registrationAttempted=true;',
+  '    const { data, error } = await (supabase as any).rpc("driver_complete_registration_v3", {',
+ ].join("\n"),"registration RPC uncertainty");
  change('    if (error) throw new Error(readableRegistrationError(error.message));',[
  '    if (error) throw new Error(readableRegistrationError(error.message));',
  '    committed=true;',
@@ -26,12 +29,12 @@ if(!src.includes("APOIS_VEHICLE_INSPECTION_UPLOAD_V1")){
  '      if(["right","left","dashboard","front_seats","rear_seats","tire_fl","tire_fr","tire_rl","tire_rr","belt_front","belt_rear","headlights_on"].some(slot=>!inspectionPaths[slot]))',
  '        throw new Error("Vistoria fotográfica incompleta.");',
  '      const result=await (supabase as any).rpc("apois_submit_driver_vehicle_inspection",{_slots:inspectionPaths});',
- '      if(result.error){
-        // Idempotent RPC; a repeat can recover from a dropped response or brief network interruption.
-        await new Promise(resolve=>setTimeout(resolve,350));
-        const retry=await (supabase as any).rpc("apois_submit_driver_vehicle_inspection",{_slots:inspectionPaths});
-        if(retry.error)throw new Error("Cadastro recebido, mas a vistoria está pendente. Contate a equipe APOIS.");
-      }',
+ '      if(result.error){',
+ '        // The inspection RPC is idempotent (object_path unique). Retry only this submission.',
+ '        await new Promise<void>(resolve=>setTimeout(resolve,350));',
+ '        const retry=await (supabase as any).rpc("apois_submit_driver_vehicle_inspection",{_slots:inspectionPaths});',
+ '        if(retry.error)throw new Error("Cadastro recebido, mas a vistoria está pendente. Contate a equipe APOIS.");',
+ '      }',
  '    }',
  ].join("\n"),"inspection RPC");
  change('    await Promise.allSettled(uploaded.map((item) => supabase.storage.from(item.bucket).remove([item.path])));',
