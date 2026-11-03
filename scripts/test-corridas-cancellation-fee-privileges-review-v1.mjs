@@ -18,4 +18,4 @@ for(const role of ['anon','authenticated','service_role'])assert.ok(sql.includes
 assert.ok(sql.indexOf('BEGIN;')<sql.indexOf('$preflight$;'));
 assert.ok(sql.indexOf('$postflight$;')<sql.lastIndexOf('COMMIT;'));
 assert.doesNotMatch(sql,/GRANT EXECUTE ON FUNCTION [^\n]+ TO (?:PUBLIC|anon|authenticated)\s*;/);
-console.log('[OK] REVIEW ONLY P0 cancellation-fee RPC grant contract: no public/auth access, service_role retained, transaction/preflight/postflight. NOT DEPLOYED.');
+console.log('[OK] REVIEW ONLY P0 cancellation-fee RPC grant contract: no public/auth access, service_role retained, transaction/preflight/postflight. SQL execution is outside this test; check Supabase migration history for production status.');
