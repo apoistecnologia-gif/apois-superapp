@@ -91,10 +91,21 @@ serve(async (req)=>{
   }).eq("id",mail.id);
   return json(502,{status:"failed",error:"provider_rejected"});
  }
- await service.from("apois_driver_correction_email_outbox").update({
-  status:"accepted_by_provider",accepted_at:new Date().toISOString(),
-  provider_id:String((payload as {id?:string}).id??""),
-  attempts:mail.attempts+1,last_error_code:null
- }).eq("id",mail.id);
+ // A successful HTTP response without a provider ID is not a durable delivery receipt.
+ const providerId=typeof (payload as {id?:unknown})?.id==="string"
+  ? String((payload as {id:string}).id).trim() : "";
+ if(!providerId)return json(503,{status:"queued",error:"provider_receipt_missing"});
+ // Fail closed: only report success after the outbox confirms the accepted status.
+ // Conditional UPDATE avoids overwriting a concurrent acknowledgement.
+ const {data:recorded,error:recordError}=await service
+  .from("apois_driver_correction_email_outbox").update({
+   status:"accepted_by_provider",accepted_at:new Date().toISOString(),
+   provider_id:providerId,attempts:mail.attempts+1,last_error_code:null
+  }).eq("id",mail.id).in("status",["queued","failed"]).select("id").maybeSingle();
+ if(recordError||!recorded){
+  // The Resend Idempotency-Key is fixed by requestId. Retrying must not fabricate
+  // an accepted database state or silently claim that the email was recorded.
+  return json(503,{status:"queued",error:"provider_acceptance_not_recorded"});
+ }
  return json(200,{status:"accepted_by_provider"});
 });
