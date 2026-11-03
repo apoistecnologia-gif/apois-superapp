@@ -58,6 +58,11 @@ function productionApiKey(): string {
 // Marketplace sandbox calls must never silently fall back to live credentials.
 function marketplaceApiKey(): string {
   if (environment() === "production") return productionApiKey();
+  // The marketplace endpoint shares an official-looking production hostname.
+  // Never probe it in sandbox mode before support confirms test routing.
+  if (env("SAFE2PAY_SANDBOX_MARKETPLACE_CONFIRMED") !== "1") {
+    throw new Error("safe2pay_sandbox_marketplace_unverified");
+  }
   const key = env("SAFE2PAY_API_KEY_SANDBOX");
   if (!key) throw new Error("safe2pay_sandbox_key_missing");
   const productionKey = env("SAFE2PAY_API_KEY");
