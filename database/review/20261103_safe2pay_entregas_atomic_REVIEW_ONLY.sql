@@ -67,6 +67,16 @@ BEGIN
    RETURN jsonb_build_object('ok',true,'ignored',true,'reason','unsupported_status');
  END IF;
  v_current := v_tx.status;
+ -- A late successful charge after a locally terminal failed/expired transaction
+ -- cannot be discarded as a stale status. Record unresolved work for authorized review.
+ IF v_current IN ('failed','expired') AND v_mapped='authorized' THEN
+   INSERT INTO public.safe2pay_webhook_events
+   (provider_transaction_id,transaction_status_code,event_key,payload_hash,processed_at,processing_error)
+   VALUES (_provider_transaction_id,_status_code,v_event_key,_payload_hash,NULL,'authorized_after_failed_or_expired_manual_review')
+   ON CONFLICT(event_key) DO UPDATE SET processed_at=NULL,
+      processing_error=excluded.processing_error;
+   RETURN jsonb_build_object('ok',false,'manual_review',true,'reason','authorized_after_terminal');
+ END IF;
  v_current_rank := CASE v_current WHEN 'pending' THEN 10 WHEN 'processing' THEN 20
    WHEN 'authorized' THEN 30 WHEN 'expired' THEN 40 WHEN 'failed' THEN 40
    WHEN 'refunded' THEN 50 WHEN 'chargeback' THEN 60 ELSE 0 END;
