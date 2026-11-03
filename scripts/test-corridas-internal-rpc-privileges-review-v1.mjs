@@ -23,4 +23,4 @@ assert.ok(sql.indexOf('BEGIN;')<sql.indexOf('$preflight$;'));
 assert.ok(sql.indexOf('$postflight$;')<sql.lastIndexOf('COMMIT;'));
 assert.doesNotMatch(sql,/GRANT EXECUTE ON FUNCTION [^\n]+ TO (?:PUBLIC|anon|authenticated)\s*;/);
 assert.ok(sql.includes('public.cancel_own_ride')&&sql.includes('public.driver_confirm_cash_payment'),'protected calls must be considered in review');
-console.log('[OK] REVIEW ONLY: internal ride cancellation/settlement/schedule RPC grants require service_role; public adapters preserve users. NOT APPLIED.');
+console.log('[OK] REVIEW ONLY: internal ride cancellation/settlement/schedule RPC grants require service_role; public adapters preserve users. SQL execution is outside this test; check Supabase migration history for production status.');
