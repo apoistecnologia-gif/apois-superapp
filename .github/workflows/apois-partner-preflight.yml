@@ -8,6 +8,7 @@ on:
       - '.github/workflows/apois-partner-preflight.yml'
       - 'scripts/**'
       - 'superapp/partner-shell/**'
+      - 'superapp/shell/**'
   workflow_dispatch:
 permissions:
   contents: read
