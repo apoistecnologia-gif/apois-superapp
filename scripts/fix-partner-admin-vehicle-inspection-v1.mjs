@@ -64,7 +64,7 @@ if(!s.includes("APOIS_ADMIN_INSPECTION_REVIEW_V1")){
  '                  <p className="text-[10px] text-muted-foreground">{photo.submitted_at?new Date(photo.submitted_at).toLocaleString("pt-BR"):"Sem data"}</p>',
  '                  {photo.review_note&&<p className="text-xs text-destructive">{photo.review_note}</p>}',
  '                  <div className="grid grid-cols-2 gap-2">',
- '                    <DSButton variant="outline" size="sm" disabled={Boolean(inspectionBusy)} onClick={()=>void reviewVehiclePhoto(photo.id,true)}>Aprovar foto</DSButton>',
+ '                    <DSButton variant="outline" size="sm" disabled={Boolean(inspectionBusy)||!photo.url} title={!photo.url?"Foto indisponível para análise":"Aprovar somente após visualizar a foto"} onClick={()=>void reviewVehiclePhoto(photo.id,true)}>Aprovar foto</DSButton>',
  '                    <DSButton variant="outline" size="sm" disabled={Boolean(inspectionBusy)} onClick={()=>void reviewVehiclePhoto(photo.id,false)}>Reprovar foto</DSButton>',
  '                  </div>',
  '                </article>)}',
