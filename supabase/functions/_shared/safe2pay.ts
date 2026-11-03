@@ -303,7 +303,8 @@ export function extractSafe2PaySubaccountPublic(payload: Record<string, unknown>
 
 
 export async function getSafe2PaySubaccount(receiverId: number): Promise<Record<string, unknown>> {
-  if (!Number.isInteger(receiverId) || receiverId <= 0) throw new Error("safe2pay_invalid_receiver");
+  if (!safe2PayIsEnabled()) throw new Error("safe2pay_provider_disabled");
+  if (!Number.isSafeInteger(receiverId) || receiverId <= 0) throw new Error("safe2pay_invalid_receiver");
   const response = await fetch(
     `https://api.safe2pay.com.br/v2/marketplace/get?id=${encodeURIComponent(String(receiverId))}`,
     { headers: { "X-API-KEY": marketplaceApiKey() } },
