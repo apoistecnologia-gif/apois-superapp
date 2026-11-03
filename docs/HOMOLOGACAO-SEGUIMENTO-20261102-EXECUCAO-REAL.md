@@ -91,3 +91,39 @@ O preflight 41564251300 comprova três jobs WEB (Cliente, Estabelecimento/Admin 
 **NÃO PRONTO PARA APK:** dependências críticas de ACL, homologação PostgreSQL Safe2Pay, aplicação da guarda de cadastro aprovado, Stage2 com compatibilidade legada, E2E das 13 fotos e Android real, integração de mapas/push e acesso ao Vercel QA. O preflight WEB 3/3 garante apenas build/controles WEB e testes locais. Não autoriza publicação.
 
 **Garantias desta rodada:** nenhum merge, APK, deploy, migration em produção, alteração de saldo, status de motorista ou pagamento, source-lock, fonte protegida ou submódulo.
+
+---
+
+## Continuação — 03/11/2026 UTC / 02/11/2026 Fortaleza — P0 integridade real antes dos APKs
+
+**Escopo:** somente `apoistecnologia-gif/apois-superapp`, branch `fix/entregas-homologacao-ajustes-20261030`. Nenhuma mudança em `sources/`, source-lock, submódulos, produção Supabase/Vercel, APK, status de motoristas, estornos ou ledger.
+
+### Confirmado por leitura de produção (não por simulação)
+
+- Ativas, sem redeploy: Corridas `safe2pay-webhook` v13 SHA `2f1e58d94c1dfe3990aba6a21b5157d0b147e190cc72425ea55290f40a16bf71`, Entregas v10 mesmo SHA; ambas `verify_jwt=false` e autenticação por `SecretKey` própria.
+- Ativas: `safe2pay-create-ride-pix` Corridas v14 SHA `de5d152ec393b7af12f2b1cc7ff90a550d3b0029a7b80ed1f49e7c11d2cdb76f`; `safe2pay-create-order-pix` Entregas v10 SHA `fc7876c2a39092dd03da191b3c25740cb2a39821a29ca2c44cac19d3a211880d`.
+- Corridas `safe2pay_ride_transactions`: 0 registros; Entregas `safe2pay_order_transactions`: 0 registros; sem dev branches disponíveis nos dois Supabases oficiais.
+- **Defeito extra:** o fluxo de criação de cobrança Pix também atualiza status fora de uma transação atômica quando a Safe2Pay responde autorizado imediatamente; em Entregas a atualização original de `orders` nem valida erro/zero linhas, e em Corridas `rides` não exige linha realmente alterada. Não é suficiente corrigir só o webhook.
+- Tabelas e constraints reais foram conferidas: `provider_transaction_id` é bigint nas duas, `event_key` único, `payments` Entregas é tabela financeira separada, com outras possíveis origens. O ledger do estabelecimento (`reserve_paid_order_merchant_net` / reversão) não é automaticamente reconciliado pela proposta atual. **Bloqueia release financeiro até verificação completa**, não inventar estornos ou lançamentos.
+- Duas RPCs legadas Asaas (Corridas) e quatro RPCs privilegiadas (Entregas) continuam executáveis por `anon` e `authenticated`. Os SQLs de revisão de revogação não foram aplicados porque ferramentas já haviam imposto bloqueios de segurança. Não contornar.
+- A equipe Vercel conectada `team_shDkxHdc4ARgsiLdRaLSz0zA` retornou zero projetos ao pesquisar APOIS. Exige acesso à equipe correta do Admin Corridas.
+
+### Correções de branch **não aplicadas em produção**
+
+1. `supabase/functions/safe2pay-webhook/index.ts`: rejeita valores financeiros ausentes/nulos, bool/objetos ou centavos fracionários; desconhecidos de Safe2Pay (por exemplo 5, 7, 8, 12, 14, 15, 19) tornam-se pendência para conciliação, não falso sucesso `2xx`.
+2. `database/review/20261103_safe2pay_{corridas,entregas}_atomic_REVIEW_ONLY.sql`: desconhecidos, chargeback após estorno, estorno sem autorização prévia e autorização tardia após failed/expired ficam registrados para revisão, sem marcar pedido/corrida como quitado; Entregas protege até quando o status local está inconsistente com pagamento confirmado por outro provedor.
+3. `database/review/20261102_driver_complete_registration_v3_approved_guard_REVIEW_ONLY.sql`: adicionada segunda defesa no `ON CONFLICT DO UPDATE WHERE`, além do `FOR UPDATE` antecipado, para não rebaixar motorista caso o status mude por aprovação concorrente. Testes estáticos das duas proteções ampliados. **Ainda não aplicada**.
+4. `supabase/functions/safe2pay-create-order-pix/index.ts`: cópia da função ativa de Entregas apenas em staging, com shared adapter em `supabase/functions/_shared/safe2pay.ts`; pagamento inicialmente autorizado passa pela RPC transacional, conflito de gravação não é ignorado, reuso de pedido pago por outro provedor não é identificado falsamente como Safe2Pay, reuso de transação autorizada exige conciliação, expirados concorrentes exigem checagem de linha e divergências de valores são bloqueadas. Não fazer deploy sem aplicação e teste da RPC de Entregas.
+5. **Corridas `safe2pay-create-ride-pix`**: a tentativa de registrar a cópia corrigida da função integral na branch foi **BLOQUEADA pelas salvaguardas da ferramenta**; respeitado o bloqueio, não houve novo envio ou tentativa de contorno. A fonte ativa permanece com escrita não atômica no pagamento inicial. Isso **bloqueia homologação financeira e geração do APK** até canal autorizado resolver e testar.
+6. `scripts/test-safe2pay-webhook-retry-v1.mjs`: teste de callback e contratos sem pagamentos reais, expandido para 23 verificações simuladas/estáticas com o novo fluxo Entregas, estornos fora de ordem e validação financeira; a proposta SQL ainda exige E2E PostgreSQL real e rollback em ambiente isolado.
+
+**Documentação Safe2Pay consultada:** https://developers.safe2pay.com.br/reference/status-transacional e https://developers.safe2pay.com.br/docs/webhooks-overview (reenvio com intervalo de 5h e máximo 5 novas tentativas). Os eventos pendentes precisam de reconciliação própria; reenvio do provedor não é garantia de processamento definitivo.
+
+### Dependências que precisam de intervenção humana autorizada
+
+- **Vercel:** conceder acesso à equipe/projeto corretos do Admin Corridas na conexão. Compartilhar URL ou nome do projeto, nunca tokens.
+- **Supabase staging:** autorizar orçamento/custo de branches descartáveis, ou disponibilizar uma instância isolada sem dados de produção, para validar transações RPC/trigger/RLS e simular falhas/reversões reais sem alterar pagamentos.
+- **RPC ACL:** após testes isolados, operador autorizado deve revisar assinaturas/chamadores e aplicar os scripts de segurança no SQL Editor correto com rollback e testes de regressão. NÃO executar scripts REVIEW_ONLY indiscriminadamente em produção.
+- **APKs:** aguardar resolução dos P0 acima, ledger Safe2Pay, login Admin Vercel, vistoria 13 fotos física e testes Android.
+
+**Situação do último preflight:** ver execução GitHub Actions 41569097271 e checar o resultado conclusivo, não inferir sucesso por status in_progress. Nenhum merge ou release foi autorizado.
