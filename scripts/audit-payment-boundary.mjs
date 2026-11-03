@@ -117,6 +117,12 @@ if (replayCheck.error || replayCheck.status !== 0) {
   process.exit(1);
 }
 ok('Safe2Pay: reenvio, zero registros e estornos simulados sem gravar em bancos reais.');
+const sandboxCheck = spawnSync('bun', ['scripts/test-safe2pay-environment-isolation-v1.mjs'], { stdio: 'inherit' });
+if (sandboxCheck.error || sandboxCheck.status !== 0) {
+  console.error('[FAIL] QA Safe2Pay sandbox isolation: a test configuration could reach live credentials.');
+  process.exit(1);
+}
+ok('Safe2Pay: configuração de sandbox isolada de produção e Pix real bloqueado em ambiente de teste.');
 const releaseGate = spawnSync(process.execPath, ['scripts/verify-safe2pay-production-readiness-v1.mjs'], {
   encoding: 'utf8',
 });
