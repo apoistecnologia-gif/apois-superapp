@@ -163,6 +163,19 @@ for(const product of ["rides","orders"]){
     assert.equal((await h.send("13")).code,503);
     assert.equal(h.state.domain,"refunded");
   });
+  await check(product+": decimal text amount is accepted while sub-cent text is rejected",async()=>{
+    const h=fake(product);
+    const valid=await h.send("3",{Amount:"12.50"});
+    assert.equal(valid.code,200,"Decimal-string currency should be accepted");
+    assert.equal(h.state.domain,"paid");
+    assert.equal(h.calls,1);
+    const invalid=fake(product);
+    for(const amount of ["12.345","12\\x50","12,50","1e1","-12.50",""]){
+      const result=await invalid.send("3",{Amount:amount});
+      assert.equal(result.code,400,"Malformed or sub-cent currency unexpectedly accepted: "+amount);
+    }
+    assert.equal(invalid.calls,0);
+  });
   await check(product+": absent or malformed financial fields never call RPC",async()=>{
     const h=fake(product);
     for(const payload of [
