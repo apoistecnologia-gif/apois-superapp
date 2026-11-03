@@ -53,7 +53,13 @@ begin
     approved_at=case when public.drivers.approval_status in ('suspenso','bloqueado') then public.drivers.approved_at else null end,
     motivo_reprovacao=case when public.drivers.approval_status in ('suspenso','bloqueado') then public.drivers.motivo_reprovacao else null end,
     is_online=false,updated_at=now()
+  -- Defense in depth for concurrent registration/admin approval: a newly approved
+  -- row must not be overwritten even if it changed after the precheck.
+  where public.drivers.approval_status not in ('aprovado','suspenso','bloqueado')
   returning * into v_driver;
+  if not found then
+    raise exception 'driver_registration_closed' using errcode='42501';
+  end if;
   return to_jsonb(v_driver);
 end;
 $function$
