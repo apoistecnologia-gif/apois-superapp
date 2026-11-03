@@ -106,7 +106,7 @@ begin
   v_profile_id := public.mobility_user_id();
   if v_profile_id is null then raise exception 'driver_profile_missing' using errcode='42501'; end if;
 
-  select lower(btrim(coalesce(r.payment_method,''))), coalesce(r.service_details->>'payment_flow','')
+  select lower(btrim(coalesce(r.payment_method,''))), lower(btrim(coalesce(r.service_details->>'payment_flow','')))
     into v_method, v_flow
   from public.rides r
   where r.id = _ride_id
@@ -121,7 +121,7 @@ begin
   if v_method not in ('cash','dinheiro','money','credit','credit_card','cartao_credito') then
     raise exception 'electronic_payment_not_configured' using errcode='55000';
   end if;
-  if v_flow in ('mercadopago_marketplace','asaas','pagbank','openpix') then
+  if v_flow LIKE 'safe2pay%' or v_flow in ('mercadopago_marketplace','asaas','pagbank','openpix') then
     raise exception 'retired_payment_flow_not_supported' using errcode='55000';
   end if;
 
@@ -179,7 +179,8 @@ begin
 
   v_method := lower(btrim(coalesce(v_ride.payment_method,'')));
   if v_method not in ('cash','dinheiro','money','credit','credit_card','cartao_credito')
-     or coalesce(v_ride.service_details->>'payment_flow','') in ('mercadopago_marketplace','asaas','pagbank','openpix') then
+     or lower(btrim(coalesce(v_ride.service_details->>'payment_flow',''))) LIKE 'safe2pay%'
+     or lower(btrim(coalesce(v_ride.service_details->>'payment_flow',''))) in ('mercadopago_marketplace','asaas','pagbank','openpix') then
     raise exception 'electronic_payment_not_configured' using errcode='55000';
   end if;
 
