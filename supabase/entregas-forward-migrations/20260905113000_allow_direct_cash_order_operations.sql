@@ -129,6 +129,18 @@ begin
     raise exception 'order can no longer be rejected';
   end if;
 
+  -- APOIS_CASH_REJECT_NO_GATEWAY_REFUND_V1: cash must never silently enter
+  -- the electronic refund path. Fail before modifying jobs, offers or orders.
+  -- Any pre-existing payment row for cash requires independent reconciliation.
+  if v_order.payment_method = 'cash' then
+    if v_order.payment_status is distinct from 'pending' then
+      raise exception 'cash_payment_state_requires_manual_reconciliation' using errcode='55000';
+    end if;
+    if exists (select 1 from public.payments p where p.order_id = _order_id) then
+      raise exception 'cash_gateway_payment_record_requires_manual_reconciliation' using errcode='55000';
+    end if;
+  end if;
+
   select * into v_job
   from public.delivery_jobs dj
   where dj.order_id = _order_id

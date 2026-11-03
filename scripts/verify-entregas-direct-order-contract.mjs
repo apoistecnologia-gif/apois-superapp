@@ -47,6 +47,23 @@ for (const marker of [
   'current_user_is_merchant_member',
 ]) if (!migration.includes(marker)) fail(`migration cash/pending incompleta: ${marker}`);
 
+// A cash order must not fall into the existing electronic refund path, even if
+// a legacy payment row or inconsistent payment_status exists.
+const guardStart = migration.indexOf('APOIS_CASH_REJECT_NO_GATEWAY_REFUND_V1');
+const firstJobMutation = migration.indexOf('select * into v_job');
+if (guardStart < 0 || firstJobMutation < 0 || guardStart > firstJobMutation) {
+  fail('merchant cash guard is not before delivery-job cancellation');
+} else {
+  const cashGuard = migration.slice(guardStart, firstJobMutation);
+  for (const required of [
+    "if v_order.payment_method = 'cash' then",
+    "v_order.payment_status is distinct from 'pending'",
+    "from public.payments p where p.order_id = _order_id",
+    "cash_payment_state_requires_manual_reconciliation",
+    "cash_gateway_payment_record_requires_manual_reconciliation",
+  ]) if (!cashGuard.includes(required)) fail('merchant cash guard missing: ' + required);
+}
+
 if (!failed) {
   ok('create-order aceita somente cash direto e deriva customer da sessão autenticada');
   ok('create-order não chama provider e rejeita snapshot paid fabricado');
