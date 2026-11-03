@@ -69,4 +69,6 @@ assert.ok(!sql.includes("UPDATE public.rides"),"Safety feature should not affect
 const {spawnSync}=await import("node:child_process");
 const mailTest=spawnSync("bun",["scripts/test-driver-review-mailer-reconciliation-v1.mjs"],{stdio:"inherit"});
 assert.ok(!mailTest.error && mailTest.status===0,"Outbox mailer must never falsely acknowledge a failed database write");
+const preauthTest=spawnSync("bun",["scripts/test-driver-registration-preauth-v1.mjs"],{stdio:"inherit"});
+assert.ok(!preauthTest.error && preauthTest.status===0,"Vehicle inspection must reject incomplete or duplicate photos before Auth signup");
 console.log("[OK] 13-photo vehicle safety, manufacture<=10y, Admin pending/review, app notice & queued email gates");
