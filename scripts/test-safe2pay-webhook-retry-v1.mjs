@@ -35,6 +35,7 @@ for (const [product,source] of Object.entries(sql)) {
     assert.match(source,/unsupported_status_manual_review/);
     assert.match(source,/refund_without_authorization_manual_review/);
     assert.match(source,/refund_without_paid_domain_manual_review/);
+    assert.match(source,/pix_refund_in_progress_manual_reconciliation_required/);
     assert.match(source, product==="rides" ? /safe2pay_ride_passenger_charge_mismatch/ : /safe2pay_order_total_mismatch/);
     if(product==="rides") assert.match(source,/coalesce\(v_ride\.passenger_charge_cents, round\(v_ride\.estimated_price\*100\)::bigint\)/);
     else assert.match(source,/round\(v_order\.total\*100\)::bigint/);
@@ -76,6 +77,7 @@ function fake(product,{fail=false,missing=false,domainAmount=12.5}={}) {
     if(!isCorrectRef||args._amount!==12.5||domainAmount!==12.5)return{error:{code:"23514"},data:null};
     const next={"1":"pending","2":"processing","3":"authorized","6":"refunded","13":"chargeback"}[args._status_code];
     if(next==="chargeback")return{error:null,data:{ok:false,manual_review:true,reason:"chargeback"}};
+    if(args._status_code==="19")return{error:null,data:{ok:false,manual_review:true,reason:"pix_refund_in_progress"}};
     if(!next)return{error:null,data:{ok:false,manual_review:true,reason:"unsupported_status"}};
     if(next==="refunded"&&!["authorized","refunded"].includes(state.transaction))
       return{error:null,data:{ok:false,manual_review:true,reason:"refund_without_authorization"}};
@@ -183,6 +185,19 @@ for(const product of ["rides","orders"]){
     result=await h.send("3");
     assert.equal(result.code,503);
     assert.equal(h.state.domain,"pending");
+  });
+  await check(product+": Pix status 19 keeps paid state and requires refund reconciliation",async()=>{
+    const h=fake(product);
+    assert.equal((await h.send("3")).code,200);
+    const refundInProgress=await h.send("19");
+    assert.equal(refundInProgress.code,503);
+    assert.equal(refundInProgress.body.manual_review,true);
+    assert.equal(refundInProgress.body.reason,"pix_refund_in_progress");
+    assert.equal(h.state.transaction,"authorized");
+    assert.equal(h.state.domain,"paid");
+    assert.equal((await h.send("6")).code,200);
+    assert.equal(h.state.transaction,"refunded");
+    assert.equal(h.state.domain,"refunded");
   });
   await check(product+": chargeback after a recorded refund still requires review",async()=>{
     const h=fake(product);
