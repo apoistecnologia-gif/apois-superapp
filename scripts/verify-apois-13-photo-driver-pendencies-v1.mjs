@@ -46,6 +46,12 @@ for(const token of ["getUser(token)","apois_admin_can_dispatch_driver_correction
 "APOIS_EMAIL_FROM","Idempotency-Key","accepted_by_provider"]){
  assert.ok(mailer.includes(token),"Email dispatch missing "+token);
 }
+const preauthGuard=uploader.indexOf("APOIS_DRIVER_INSPECTION_PREFLIGHT_BEFORE_AUTH_V1");
+const authCreate=uploader.indexOf("const authUser = await ensureAuthenticatedAccount(input);");
+assert.ok(preauthGuard>=0 && preauthGuard<authCreate,"Mandatory inspection must fail before creating an Auth account");
+assert.ok(uploader.includes("photos.length!==slots.length") &&
+  uploader.includes('photos.filter(doc=>doc.bucket==="apois-inspections"&&doc.label===slot&&doc.base64.trim().length>0).length!==1'),
+  "All 12 unique inspection slots must be checked before Auth or uploads");
 assert.ok(uploader.includes("registrationAttempted=true;"),"Registration must mark ambiguous RPC boundary");
 assert.ok(uploader.includes("if(!registrationAttempted&&!committed)"),"Upload cleanup must stop after an ambiguous registration RPC");
 assert.ok(uploader.includes("new Promise<void>(resolve=>setTimeout(resolve,350))"),"Inspector upload retry should remain bounded");
@@ -59,4 +65,8 @@ for(const marker of ["REVIEW ONLY; NOT APPLIED","private.has_permission('users.m
   assert.ok(staffStorageReview.includes(marker),"Server-side photo approval Storage ownership guard missing "+marker);
 
 assert.ok(!sql.includes("UPDATE public.rides"),"Safety feature should not affect trips");
+// Run isolated Edge-function simulations; never send real emails or change Supabase data.
+const {spawnSync}=await import("node:child_process");
+const mailTest=spawnSync("bun",["scripts/test-driver-review-mailer-reconciliation-v1.mjs"],{stdio:"inherit"});
+assert.ok(!mailTest.error && mailTest.status===0,"Outbox mailer must never falsely acknowledge a failed database write");
 console.log("[OK] 13-photo vehicle safety, manufacture<=10y, Admin pending/review, app notice & queued email gates");
