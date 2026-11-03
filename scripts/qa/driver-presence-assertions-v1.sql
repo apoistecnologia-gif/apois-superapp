@@ -4,6 +4,21 @@ BEGIN;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',true);
 
+-- Match the actual production RPC signature: four trailing numeric args
+-- have DEFAULT NULL::numeric. Omission must continue to work after staging.
+DO $test$
+DECLARE default_count integer;
+BEGIN
+ SELECT pronargdefaults INTO default_count
+ FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+ WHERE n.nspname='apois_rpc_private' AND p.proname='driver_set_presence';
+ IF default_count IS DISTINCT FROM 4 THEN
+  RAISE EXCEPTION 'driver_set_presence lost 4 optional GPS parameters: %', default_count;
+ END IF;
+ RAISE NOTICE '[PASS] Corridas driver_set_presence preserves four existing optional parameters';
+END;
+$test$;
+
 -- Approved and KYC-ready: online without any legacy subscription column.
 DO $test$
 DECLARE result jsonb;
@@ -72,6 +87,18 @@ BEGIN
   IF NOT rejected THEN RAISE EXCEPTION 'invalid GPS case % accepted',test_number; END IF;
  END LOOP;
  RAISE NOTICE '[PASS] GPS/heading/speed negative cases';
+END;
+$test$;
+
+-- Existing one-argument callers must still be able to go offline safely.
+DO $test$
+DECLARE result jsonb;
+BEGIN
+ SELECT apois_rpc_private.driver_set_presence(false) INTO result;
+ IF (result->>'is_online')::boolean IS DISTINCT FROM false THEN
+  RAISE EXCEPTION 'single-argument offline RPC contract broke';
+ END IF;
+ RAISE NOTICE '[PASS] Single-argument driver presence RPC remains compatible';
 END;
 $test$;
 

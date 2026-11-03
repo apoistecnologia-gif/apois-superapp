@@ -7,10 +7,10 @@
 
 create or replace function apois_rpc_private.driver_set_presence(
   _online boolean,
-  _lat numeric,
-  _lng numeric,
-  _heading numeric,
-  _speed numeric
+  _lat numeric DEFAULT NULL::numeric,
+  _lng numeric DEFAULT NULL::numeric,
+  _heading numeric DEFAULT NULL::numeric,
+  _speed numeric DEFAULT NULL::numeric
 )
 returns jsonb
 language plpgsql
