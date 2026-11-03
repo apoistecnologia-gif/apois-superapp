@@ -54,7 +54,17 @@ Deno.serve(async (req) => {
     if (orderError) throw new Error(`order_lookup_failed:${orderError.message}`);
     if (!order) return json(404, { error: "order_not_found" });
     if (["cancelled","refunded"].includes(String(order.status))) return json(409, { error: "order_not_payable" });
-    if (order.payment_status === "paid") return json(200, { reused: true, status: "authorized", orderId: order.id });
+    if (order.payment_status === "paid") {
+      // Do not present a legacy or unrelated payment as an authorized Safe2Pay charge.
+      const confirmed = await admin.from("safe2pay_order_transactions")
+        .select("id,provider_transaction_id,reference,status")
+        .eq("order_id", order.id).eq("status", "authorized")
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (confirmed.error) throw new Error("safe2pay_paid_order_lookup_failed");
+      if (!confirmed.data) return json(409, { error: "order_paid_outside_safe2pay" });
+      return json(200, { reused: true, status: "authorized", orderId: order.id,
+        transactionId: confirmed.data.provider_transaction_id, reference: confirmed.data.reference });
+    }
 
     const { data: profile, error: profileError } = await admin
       .from("profiles")
@@ -99,13 +109,35 @@ Deno.serve(async (req) => {
         expiresAt <= Date.now();
 
       if (expiredLocally) {
-        const { error: expireError } = await admin
+        const { data: expired, error: expireError } = await admin
           .from("safe2pay_order_transactions")
           .update({ status: "expired", updated_at: new Date().toISOString() })
           .eq("id", existing.id)
-          .in("status", ["pending","processing"]);
-        if (expireError) throw new Error(`safe2pay_expire_local_failed:${expireError.message}`);
+          .in("status", ["pending","processing"])
+          .select("id").maybeSingle();
+        if (expireError || !expired) throw new Error("safe2pay_expire_race_requires_retry");
       } else {
+        if (Math.round(Number(existing.amount) * 100) !== Math.round(amount * 100)) {
+          return json(409, { error: "existing_safe2pay_amount_mismatch" });
+        }
+        if (existing.status === "authorized") {
+          // Reconcile a previous authorized transaction before reporting it as paid.
+          const bytes = new TextEncoder().encode(JSON.stringify({
+            recoveredProviderTransactionId: existing.provider_transaction_id,
+            reference: existing.reference, statusCode: "3",
+          }));
+          const digest = await crypto.subtle.digest("SHA-256", bytes);
+          const hash = Array.from(new Uint8Array(digest),
+            (b) => b.toString(16).padStart(2, "0")).join("");
+          const reconciled = await admin.rpc("apois_safe2pay_apply_event_atomic", {
+            _provider_transaction_id: existing.provider_transaction_id,
+            _status_code: "3", _reference: existing.reference,
+            _amount: amount, _payload_hash: hash,
+          });
+          if (reconciled.error || reconciled.data?.ok !== true) {
+            throw new Error("safe2pay_existing_authorized_not_reconciled");
+          }
+        }
         return json(200, {
           reused: true,
           reference: existing.reference,
