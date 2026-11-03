@@ -54,6 +54,15 @@ BEGIN
  IF v_ride.payment_method IS DISTINCT FROM 'pix' THEN
     RAISE EXCEPTION 'safe2pay_payment_method_mismatch' USING ERRCODE='23514';
  END IF;
+ -- Match the immutable rider fare + processing fee snapshot; legacy rides fall back to estimated price.
+ -- A provider charge must never pay a ride whose stored passenger charge is different.
+ IF v_tx.amount <= 0 OR v_tx.amount <> round(v_tx.amount,2)
+    OR _amount <> round(_amount,2)
+    OR round(v_tx.amount*100)::bigint IS DISTINCT FROM
+       coalesce(v_ride.passenger_charge_cents, round(v_ride.estimated_price*100)::bigint)
+ THEN
+    RAISE EXCEPTION 'safe2pay_ride_passenger_charge_mismatch' USING ERRCODE='23514';
+ END IF;
  v_mapped := CASE _status_code
    WHEN '1' THEN 'pending' WHEN '2' THEN 'processing'
    WHEN '3' THEN 'authorized' WHEN '6' THEN 'refunded'
