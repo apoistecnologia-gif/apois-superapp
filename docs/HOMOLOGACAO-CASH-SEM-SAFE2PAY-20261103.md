@@ -75,3 +75,31 @@ A lista `OQUE PRECISA TER NO APP DO MOTORISTA.pdf` solicita, entre outros: multa
 **Evidência de testes:** GitHub Actions [41725146466](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41725146466) — **3/3 jobs WEB aprovados**, com **23 casos cash** executando a cópia do handler em memória. Nenhuma operação financeira real. O lint global do legado Entregas registra milhares de ocorrências e é tratado como warning pela esteira; o CI verde não significa lint global corrigido.
 
 **Status geral:** a homologação cash continua **BLOQUEADA pelos oito gates PostgreSQL** (quatro Corridas, quatro Entregas). O cash já implantado Entregas é uma exceção restrita a contas de QA, não o fluxo geral. Não anunciar pronto para produção nem emitir APK final.
+
+---
+
+## Execução complementar — 03/11/2026, PostgreSQL descartável e gates WEB
+
+**Último commit de código/testes validado:** `1c33e3b79c8a988f19e90fad9439e500f7f98a4e`.
+**CI WEB final (3/3 SUCCESS):** https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41733670288
+
+### Correções efetivas e evidência
+
+1. `6001e255f0fcd5bf5a66f57813bce0546821e675`: a cópia QA da Edge `create-order` não aceita como checkout recém-criado pedidos cash em estado terminal `cancelled`, `refunded` ou `delivered`, mesmo se `payment_status=pending`. Os testes isolados passaram de 23 para **27 verificações**; **não há Edge implantada por esse commit**.
+2. `fec07a5291d22cb64191ce0f5fc042d4c753656c`: a migração ainda não aplicada `20260905113000_allow_direct_cash_order_operations.sql` passou a **bloquear, antes de mutações**, o cancelamento cash com estado financeiro diferente de pending ou com qualquer registro em `public.payments`; requer conciliação manual em vez de gerar refund eletrônico. Contrato protegido por `scripts/verify-entregas-direct-order-contract.mjs`. CI 41732619460 **3/3 sucesso**.
+3. `f59d4c9eb6869087fcf7af2f943aa8b7461a0694`, `4610099fdb590f0b2a9a202400938917eb3647f6`: teste real no PostgreSQL **17.6 isolado, em contêiner descartável sem rede/portas expostas**, integrado como passo ao workflow WEB preexistente (nenhum workflow novo). O primeiro teste enfrentou corrida de inicialização do próprio contêiner, corrigida após aguardar término do init e confirmar `SELECT 1` no servidor definitivo. Evidência de sucesso 41733254793.
+4. `1c33e3b79c8a988f19e90fad9439e500f7f98a4e`: adicionado segundo banco SQL descartável para executar a **proposta original de proteção** `driver_complete_registration_v3` (arquivo REVIEW_ONLY, sem aplicação no Supabase). O log de 41733670288 registrou `[PASS] Registration blocked for aprovado`, `suspenso` e `bloqueado`, e `[PASS] Real PostgreSQL synthetic driver registration guard: 6 status cases, no downgrade`.
+
+Os testes PostgreSQL confirmaram, **em esquema sintético mínimo**, a leitura dos pedidos cash/pending, itens e histórico apenas pelo estabelecimento correto, o cancelamento cash sem reembolso fictício, o bloqueio de pedido cash vinculado a pagamento eletrônico, a ausência de mutação de oferta/job em caso de falha e a preservação do cancelamento eletrônico pago legado. Testes de driver cobriram novo, reprovado, pendente, aprovado, suspenso e bloqueado, preservando os últimos três. **Não são E2E no esquema integral Supabase, nem simulam todos os triggers, Auth real, Storage, concorrência, Android ou GPS.**
+
+### Reconfirmações sem mutação
+
+- Supabase Corridas `tbbzkrfupmqdywnzgnms`: 4 gates antigos de assinatura do motorista continuam faltando na produção.
+- Supabase Entregas `ptgkwyyolrdgnqketkjj`: 3 políticas gerais de leitura cash/pending do estabelecimento e 1 contrato de cancelamento continuam faltando na produção.
+- Contagem agregada (read-only): **zero** pedidos cash/pending com registro associado em `public.payments` no momento da consulta.
+- Ambos os projetos Supabase conectados são **produção** e não têm dev branches; não rodamos DDL nem testes mutáveis nesses bancos.
+- Vercel `apois-corridas-admin-homologacao` foi consultada **sem filtro de teamId**: projeto acessível, SSO `enabled=true`, Preview mais recente do commit `1c33e3b` em `READY`. Variáveis de Preview inspecionadas **somente por nomes e alvos, sem decrypt**; `CORRIDAS_SUPABASE_SERVICE_ROLE_KEY` permanece ausente. `READY` não é E2E autenticado do Admin nem libera documentos privados.
+
+**Release/APK:** continua **NÃO LIBERADO**. Antes de tocar a produção é preciso staging compatível com o esquema completo (KYC, RLS, triggers, permissões, funções chamadoras e reversão), homologação real dos pedidos/corridas em dinheiro, vistoria de 13 fotos, Admin privado, Android físico/GPS/push. Safe2Pay permanece provedora escolhida, mas desativada durante os testes cash, sem pagamentos bancários.
+
+**Preservação:** nenhuma migração/Edge foi implantada, nenhum saldo, pedido, aprovação ou pagamento real foi alterado; nenhum merge, publicação Android ou Vercel Production; `sources/`, submódulos e source-lock continuam intactos.
