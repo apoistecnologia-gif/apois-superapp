@@ -103,3 +103,41 @@ Os testes PostgreSQL confirmaram, **em esquema sintético mínimo**, a leitura d
 **Release/APK:** continua **NÃO LIBERADO**. Antes de tocar a produção é preciso staging compatível com o esquema completo (KYC, RLS, triggers, permissões, funções chamadoras e reversão), homologação real dos pedidos/corridas em dinheiro, vistoria de 13 fotos, Admin privado, Android físico/GPS/push. Safe2Pay permanece provedora escolhida, mas desativada durante os testes cash, sem pagamentos bancários.
 
 **Preservação:** nenhuma migração/Edge foi implantada, nenhum saldo, pedido, aprovação ou pagamento real foi alterado; nenhum merge, publicação Android ou Vercel Production; `sources/`, submódulos e source-lock continuam intactos.
+
+---
+
+## Homologação SQL reforçada — associação real e integridade de contratos (03/11/2026)
+
+**Escopo:** branch `fix/entregas-homologacao-ajustes-20261030` do único repositório autorizado. Nenhuma implantação de migrações ou Edge Functions, nenhum pagamento, saldo, motorista, pedido ou dado Auth de produção modificado.
+
+### 1. Entregas — autorização com semântica aproximada das funções reais
+
+**Commit `f12dacd6460b74bc309686a36723c87d49d60c52`:**
+- Substituiu o teste anterior, que usava a variável arbitrária `apois.qa.merchant_id`, por helpers PostgreSQL baseados no corpo de `pg_get_functiondef` efetivamente consultado no Supabase Entregas: `current_user_is_active`, `has_role`, `current_user_is_admin` e `current_user_is_merchant_member`.
+- Exercitou oito identidades: proprietário A, proprietário B, funcionário autorizado, funcionário suspenso, vínculo removido, perfil desativado, administrador e terceiro sem vínculo. Conferiu RLS de `orders`, `order_items` e `order_status_history`.
+- Verificou cinco tentativas de cancelamento com identidade indevida, além de privilégios `EXECUTE` da função `SECURITY DEFINER` para `anon` e `authenticated`.
+- **Limite:** dados, perfis e memberships são sintéticos; as funções foram reconstruídas conforme leitura de produção, não exportadas do PostgreSQL oficial como um clone completo. A assinatura criptográfica de JWT, os outros triggers e as demais RLS não foram exercitados.
+
+### 2. Corridas — SQL real de presença e mudança de etapa
+
+**Commits `98c7d12d20be831937078c8c1f3f105e0c9a55c5` e `0388daffbde5d06f0afc2b07ddee4bc1dbda53e0`:**
+- O preflight existente cria um terceiro banco isolado `driver_operations_qa` no mesmo contêiner PostgreSQL 17, **sem rede externa e sem portas publicadas**.
+- O extrator `scripts/qa/extract-corridas-operational-sql-v1.mjs` usa o texto **exato da migração versionada**, sem reescrever a lógica: `apois_rpc_private.driver_set_presence` e `private.enforce_driver_operational_stage_transition`.
+- A bateria verifica presença online de aprovado com KYC, identidade de domínio do motorista, recusa de suspenso/bloqueado/em análise/KYC incompleto, coordenadas ou velocidade/direção inválidas, saída offline sem GPS, mudança permitida de status da corrida e sete transições impedidas.
+- Corrigida no próprio teste a criação duplicada do papel `authenticated`: papéis PostgreSQL são globais ao cluster, apesar de cada fixture usar banco separado.
+- **Evidência:** execução [41737894342](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41737894342), **3/3 WEB SUCCESS**. Logs registram `[PASS] Eight isolated JWT role/ownership/RLS states`, `[PASS] Five unauthorized member/tenant cancellation attempts denied`, `[PASS] Approved KYC driver online without legacy subscription` e `[PASS] Approved stage and seven rejected stage transitions`.
+
+### 3. Compatibilidade identificada na função de presença
+
+**Commit `4bd32c46ce18b1203989fe46345674547409267e`:**
+- Comparação **read-only da assinatura SQL ativa em produção** de `driver_set_presence(boolean,numeric,numeric,numeric,numeric)` comprovou **quatro argumentos numéricos opcionais com `DEFAULT NULL::numeric`**.
+- A migração preparada inicialmente omitira esses defaults; isso poderia quebrar chamadores que omitem localização/velocidade ao ficar offline.
+- A migração ainda NÃO APLICADA agora preserva os quatro defaults. A suíte SQL confirma `pg_proc.pronargdefaults=4` e executa `driver_set_presence(false)` com apenas um argumento.
+- A função ativa ainda contém o bloqueio de assinatura aposentado; **essa correção foi exclusivamente na migração preparada, sem qualquer mudança na produção**.
+- CI do commit: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41738214219 (usar estado conclusivo da execução, não inferir sucesso pelo passo PostgreSQL).
+
+### Segurança, diferenças e decisão
+
+A comparação dos commits com o último relatório mostra somente mudanças em `scripts/qa/`, `scripts/test-cash-postgres-isolated-v1.sh` e no arquivo de migração de Corridas. Nenhum arquivo `sources/`, `source-lock`, submódulo ou workflow alterado nesta rodada. **Os bancos oficiais continuam com os oito bloqueios cash operacionais já documentados.**
+
+**NÃO LIBERAR APK/PRODUÇÃO:** os testes SQL usam relações e identidades artificiais; falta ambiente de staging reproduzindo o **esquema completo**, inclusive trigger, Auth, Storage, KYC documental, ledger e fluxos autenticados de corrida/entrega. Falta homologar Android físico, GPS, push e PIN; Safe2Pay segue escolhida, mas fora da fase cash. Não executar SQL REVIEW_ONLY/forward em produção sem staging completo e decisão expressa.
