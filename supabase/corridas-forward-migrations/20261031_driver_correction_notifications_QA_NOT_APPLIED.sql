@@ -192,9 +192,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
 AS $$
  SELECT (SELECT auth.uid()) IS NOT NULL AND private.has_permission('users.manage')
    AND EXISTS(SELECT 1 FROM public.apois_driver_correction_email_outbox o
-    WHERE o.request_id=_request_id AND o.status IN ('queued','failed','accepted_by_provider'));
- -- Already accepted requests may be read idempotently by authorized staff.
- -- The Edge mailer refuses to resend accepted requests.
+    WHERE o.request_id=_request_id AND o.status IN ('queued','failed'));
 $$;
 REVOKE ALL ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.apois_admin_can_dispatch_driver_correction_mail(uuid) TO authenticated;
