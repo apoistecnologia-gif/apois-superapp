@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(pwd)"
 node "$ROOT/scripts/test-partner-input-contrast-v1.mjs"
 node "$ROOT/scripts/test-driver-approval-guard-review-v1.mjs"
+node "$ROOT/scripts/test-entregas-privileged-rpc-review-v1.mjs"
 MOTORISTA="$ROOT/.work/partner-motorista"
 ENTREGADOR="$ROOT/.work/partner-entregador"
 
