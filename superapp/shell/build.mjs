@@ -109,6 +109,18 @@ const moduleBridgeScript = `
     document.body.appendChild(button);
   }
 
+  // APOIS_SWITCHER_OVERLAY_COURTESY_V1: alerts and modal dialogs must take priority.
+  // MutationObserver is already present; no second listener or timer is added.
+  function syncSwitcherVisibility() {
+    var button = document.getElementById('apois-switch-service');
+    if (!button) return;
+    var activeOverlay = document.querySelector('[data-sonner-toast], [role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]');
+    var hide = !!activeOverlay;
+    var desired = hide ? 'hidden' : 'visible';
+    if (button.style.visibility !== desired) button.style.visibility = desired;
+    button.style.pointerEvents = hide ? 'none' : 'auto';
+  }
+
   // Corridas: se a foto externa do Google falhar, nunca mostrar o texto quebrado
   // "Foto". Trocamos por uma inicial legível do passageiro.
   function repairBrokenPassengerAvatar(root) {
@@ -131,9 +143,11 @@ const moduleBridgeScript = `
 
   function initialize() {
     mountSwitcher();
+    syncSwitcherVisibility();
     repairBrokenPassengerAvatar(document);
     var observer = new MutationObserver(function (mutations) {
       mountSwitcher();
+      syncSwitcherVisibility();
       mutations.forEach(function (mutation) {
         mutation.addedNodes.forEach(function (node) {
           if (node && node.nodeType === 1) repairBrokenPassengerAvatar(node);
