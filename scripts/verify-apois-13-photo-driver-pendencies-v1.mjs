@@ -50,5 +50,9 @@ assert.ok(uploader.includes("registrationAttempted=true;"),"Registration must ma
 assert.ok(uploader.includes("if(!registrationAttempted&&!committed)"),"Upload cleanup must stop after an ambiguous registration RPC");
 assert.ok(uploader.includes("new Promise<void>(resolve=>setTimeout(resolve,350))"),"Inspector upload retry should remain bounded");
 assert.ok(uploader.includes("const retry=await (supabase as any).rpc(\"apois_submit_driver_vehicle_inspection\""),"Inspector retry must only repeat idempotent RPC");
+const frontStorageReview=readFileSync("database/review/20261103_corridas_inspection_front_storage_guard_REVIEW_ONLY.sql","utf8");
+for(const marker of ["REVIEW ONLY; NOT APPLIED","front_photo_storage_missing_or_not_owned","o.bucket_id='vehicle-documents'","o.name=d.vehicle_photo_url","o.owner_id=(SELECT auth.uid())::text"])
+  assert.ok(frontStorageReview.includes(marker),"Proposed frontal Storage ownership check missing "+marker);
+assert.ok(admin.includes('disabled={Boolean(inspectionBusy)||!photo.url}'),"Admin must not approve missing signed vehicle photo");
 assert.ok(!sql.includes("UPDATE public.rides"),"Safety feature should not affect trips");
 console.log("[OK] 13-photo vehicle safety, manufacture<=10y, Admin pending/review, app notice & queued email gates");
