@@ -54,5 +54,9 @@ const frontStorageReview=readFileSync("database/review/20261103_corridas_inspect
 for(const marker of ["REVIEW ONLY; NOT APPLIED","front_photo_storage_missing_or_not_owned","o.bucket_id='vehicle-documents'","o.name=d.vehicle_photo_url","o.owner_id=(SELECT auth.uid())::text"])
   assert.ok(frontStorageReview.includes(marker),"Proposed frontal Storage ownership check missing "+marker);
 assert.ok(admin.includes('disabled={Boolean(inspectionBusy)||!photo.url}'),"Admin must not approve missing signed vehicle photo");
+const staffStorageReview=readFileSync("database/review/20261103_corridas_admin_inspection_review_storage_guard_REVIEW_ONLY.sql","utf8");
+for(const marker of ["REVIEW ONLY; NOT APPLIED","private.has_permission('users.manage')","inspection_photo_missing_or_unowned","JOIN storage.objects o ON o.bucket_id=p.bucket_id AND o.name=p.object_path","o.owner_id=u.auth_user_id::text"])
+  assert.ok(staffStorageReview.includes(marker),"Server-side photo approval Storage ownership guard missing "+marker);
+
 assert.ok(!sql.includes("UPDATE public.rides"),"Safety feature should not affect trips");
 console.log("[OK] 13-photo vehicle safety, manufacture<=10y, Admin pending/review, app notice & queued email gates");
