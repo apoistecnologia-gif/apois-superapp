@@ -164,7 +164,7 @@ A comparação dos commits com o último relatório mostra somente mudanças em 
 
 - **Commit `7659e04f6cf0cf31b2b0d4dedfcadab8a7c71200`**: reforço exclusivo na *migração ainda não aplicada* de `driver_accept_ride_candidate_legacy`, exigindo coordenadas válidas dentro dos limites já presentes no projeto e `last_location_at` entre 120 segundos antes e 30 segundos depois de `now()`. A validação entra depois de aprovação, bloqueio/suspensão, presença online e KYC. Mensagem controlada `driver_location_stale`, SQLSTATE 42501.
 - Os testes do quarto banco PostgreSQL foram estendidos com quatro motoristas sintéticos online e aprovados mas com GPS ausente, antigo, fora da faixa ou com timestamp futuro. O caso válido passa com localização atualizada. Não mudamos a função real em produção.
-- [GitHub Actions 41740590888](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41740590888): passo `PostgreSQL 17 disposable cash-contract tests` **aprovado**; a conclusão total dos três jobs WEB deve ser consultada no próprio run antes de marcar build completo como aprovado.
+- [GitHub Actions 41740590888](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41740590888): **3/3 jobs WEB SUCCESS**, com aprovação do PostgreSQL 17 descartável, build WEB e renderização anônima. Logs confirmam os quatro casos de GPS inválido, bloqueio Safe2Pay em ambas as funções, aceite cash válido, transições de fila, prevenção de dupla finalização e rastreabilidade em audit_logs.
 
 ### Limites, proteção de fontes e release
 
@@ -172,3 +172,12 @@ A comparação dos commits com o último relatório mostra somente mudanças em 
 - Os ambientes Supabase conectados são **somente produção**; não há staging com o esquema completo. A migração de Corridas segue **não aplicada**; os quatro gates de assinatura legada e os quatro gates cash/RLS Entregas da produção continuam como bloqueios de liberação até implantação autorizada e revalidação em isolamento.
 - Testes SQL reais contra tabelas artificiais **não validam** esquema completo, autenticação/JWT real, concorrência/locks entre sessões, settlement verdadeiro, Maps/GPS em dispositivo físico, push, PIN ou vistoria de 13 fotos.
 - **NÃO EMITIR APK FINAL NEM PROMOVER PRODUÇÃO**. Safe2Pay permanece escolhida para fase futura, mas está eletronicamente desativada nesta homologação em dinheiro.
+
+
+### Gates de produção reconfirmados após os testes
+
+Consulta **somente de leitura** aos projetos oficiais, após CI 41740590888:
+- Corridas `tbbzkrfupmqdywnzgnms`: as quatro funções de presença, aceite legado, conclusão e transição de etapa continuam com dependência legada `driver_subscription_allows_rides` no banco real; **4/4 bloqueios permanecem**.
+- Entregas `ptgkwyyolrdgnqketkjj`: as três políticas operacionais de leitura (`orders`, `order_items`, `order_status_history`) e a liberação de `merchant_reject_order` para `cash/pending` continuam ausentes; **4/4 bloqueios permanecem**.
+
+**Decisão de release mantida:** o trabalho está versionado e testado em banco descartável; não é autorização para aplicar em produção, gerar APK final ou declarar homologação completa. Falta cópia isolada do esquema completo, testes em aparelho Android, Auth real e aprovação explícita do caminho de implantação.
