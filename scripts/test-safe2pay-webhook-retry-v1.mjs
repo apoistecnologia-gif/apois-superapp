@@ -32,6 +32,9 @@ for (const [product,source] of Object.entries(sql)) {
     assert.ok(pos.every((v,i)=>v>=0&&(i===0||v>pos[i-1])),"SQL must lock before all mutations");
     assert.match(source,/manual_chargeback_reconciliation_required/);
     assert.match(source,/authorized_after_failed_or_expired_manual_review/);
+    assert.match(source,/unsupported_status_manual_review/);
+    assert.match(source,/refund_without_authorization_manual_review/);
+    assert.match(source,/v_mapped = 'chargeback' OR v_target = 'chargeback'/);
     assert.match(source,/ON CONFLICT \(event_key\) DO UPDATE/);
     assert.doesNotMatch(source,/UPDATE public\.(?:refunds|wallets|driver_wallets|payouts)/);
   });
@@ -46,7 +49,12 @@ function fake(product,{fail=false,missing=false}={}) {
     if(!isCorrectRef||args._amount!==12.5)return{error:{code:"23514"},data:null};
     const next={"1":"pending","2":"processing","3":"authorized","6":"refunded","13":"chargeback"}[args._status_code];
     if(next==="chargeback")return{error:null,data:{ok:false,manual_review:true,reason:"chargeback"}};
-    const rank={pending:10,processing:20,authorized:30,refunded:50,chargeback:60};
+    if(!next)return{error:null,data:{ok:false,manual_review:true,reason:"unsupported_status"}};
+    if(next==="refunded"&&!["authorized","refunded"].includes(state.transaction))
+      return{error:null,data:{ok:false,manual_review:true,reason:"refund_without_authorization"}};
+    if(next==="authorized"&&["failed","expired"].includes(state.transaction))
+      return{error:null,data:{ok:false,manual_review:true,reason:"authorized_after_terminal"}};
+    const rank={pending:10,processing:20,authorized:30,failed:40,expired:40,refunded:50,chargeback:60};
     const actual=rank[next]>=rank[state.transaction]?next:state.transaction;
     if(rejectOnce){rejectOnce=false;return{error:{code:"TX_ROLLBACK_FIXTURE"},data:null};}
     // A simulated DB transaction: publish all columns only after every phase succeeds.
@@ -101,6 +109,50 @@ for(const product of ["rides","orders"]){
     assert.equal(result.code,503);
     assert.equal(result.body.manual_review,true);
     assert.equal(h.state.domain,"paid");
+  });
+  await check(product+": unknown official provider status fails closed for manual reconciliation",async()=>{
+    const h=fake(product);
+    for(const code of ["5","7","8","12","14","15","19"]){
+      const result=await h.send(code);
+      assert.equal(result.code,503,"Unexpected status "+code);
+      assert.equal(result.body.manual_review,true);
+    }
+    assert.equal(h.state.transaction,"pending");
+    assert.equal(h.state.domain,"pending");
+  });
+  await check(product+": refund before paid and authorization after failed/expired require review",async()=>{
+    const h=fake(product);
+    let result=await h.send("6");
+    assert.equal(result.code,503);
+    assert.equal(result.body.manual_review,true);
+    assert.equal(h.state.domain,"pending");
+    h.state.transaction="expired";
+    result=await h.send("3");
+    assert.equal(result.code,503);
+    assert.equal(result.body.manual_review,true);
+    assert.equal(h.state.domain,"pending");
+    h.state.transaction="failed";
+    result=await h.send("3");
+    assert.equal(result.code,503);
+    assert.equal(h.state.domain,"pending");
+  });
+  await check(product+": chargeback after a recorded refund still requires review",async()=>{
+    const h=fake(product);
+    assert.equal((await h.send("3")).code,200);
+    assert.equal((await h.send("6")).code,200);
+    assert.equal((await h.send("13")).code,503);
+    assert.equal(h.state.domain,"refunded");
+  });
+  await check(product+": absent or malformed financial fields never call RPC",async()=>{
+    const h=fake(product);
+    for(const payload of [
+      {Amount:null},{Amount:""},{Amount:false},{Amount:"12.345"},
+      {Amount:12.345},{IdTransaction:null},{IdTransaction:""},
+      {IdTransaction:false},{IdTransaction:"foo"}
+    ]){
+      assert.equal((await h.send("3",payload)).code,400,JSON.stringify(payload));
+    }
+    assert.equal(h.calls,0);
   });
   await check(product+": unavailable transaction RPC never returns success",async()=>{
     const h=fake(product,{missing:true});
