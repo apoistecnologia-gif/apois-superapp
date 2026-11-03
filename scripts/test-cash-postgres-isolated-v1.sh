@@ -27,4 +27,9 @@ test "$ready" = true || { echo '[FAIL] Disposable PostgreSQL did not finish init
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-assertions-v1.sql
-echo '[PASS] Real PostgreSQL 17 synthetic RLS / merchant cash cancellation checks. Production untouched.'
+# Independent empty database for the Motorista approved-status protection.
+docker exec "$name" createdb -U postgres driver_guard_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < scripts/qa/driver-registration-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < database/review/20261102_driver_complete_registration_v3_approved_guard_REVIEW_ONLY.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < scripts/qa/driver-registration-assertions-v1.sql
+echo '[PASS] Real PostgreSQL 17 synthetic cash RLS and driver registration guard. Production untouched.'
