@@ -86,9 +86,15 @@ serve(async (req)=>{
  });
  const payload=await response.json().catch(()=>({}));
  if(!response.ok){
-  await service.from("apois_driver_correction_email_outbox").update({
-   status:"failed",attempts:mail.attempts+1,last_error_code:"provider_http_"+response.status
-  }).eq("id",mail.id);
+  const {data:failureRecorded,error:failureRecordError}=await service
+   .from("apois_driver_correction_email_outbox").update({
+    status:"failed",attempts:mail.attempts+1,last_error_code:"provider_http_"+response.status
+   }).eq("id",mail.id).in("status",["queued","failed"]).select("id").maybeSingle();
+  if(failureRecordError||!failureRecorded){
+   // Never say the provider rejection was persisted when a concurrent acceptance
+   // or a database failure prevented updating the outbox.
+   return json(503,{status:"queued",error:"provider_rejection_not_recorded"});
+  }
   return json(502,{status:"failed",error:"provider_rejected"});
  }
  // A successful HTTP response without a provider ID is not a durable delivery receipt.
