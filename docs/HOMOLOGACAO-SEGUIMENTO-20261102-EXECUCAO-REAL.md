@@ -281,3 +281,23 @@ No SQL Editor dos projetos oficiais, o responsável executou transações de REV
 - **NÃO PRONTO PARA PROD/APK**: Safe2Pay exige sandbox Pix oficialmente confirmado (pode não existir na API pública), conciliação canônica `payments`, wallet/ledger e refund, E2E PostgreSQL isolado, integração create-ride Corridas ainda não homologada, Admin Vercel reservada por cota e testes Android físico. As seis ACLs críticas Asaas/Entregas foram corrigidas anteriormente pelo responsável e confirmadas por leitura; não reexecutar os scripts REVOKE.
 
 **Proteção de escopo:** nenhum `sources/`, `source-lock`, submódulo, GitHub workflow, merge, deployment Vercel, migração ou Edge Function de produção foi alterado.
+
+---
+
+## 03/11/2026 — Vercel Pro, inspeção visual por artefato e correção da recuperação Admin
+
+**Plano:** Vercel team `mariajuvelina403-7231s-projects` confirmado como `pro` pela API Vercel. O preview `apois-corridas-admin-homologacao` passou a criar deployments `READY`, sem bloqueio `402 api-deployments-free-per-day`.
+
+**Escopo protegido:** branch `fix/entregas-homologacao-ajustes-20261030`, sem release/merge/Android/Supabase/money. O build de Admin Corridas utiliza Vercel Preview sob SSO. O acesso direto de inspeção remota pelo conector recebeu HTTP `403` em `read_protection_bypass`: **não foi desativado SSO e não foram executados testes autenticados de staff**. As prévias separadas de Estabelecimento/Entregas/Vistas Corridas ainda apontam para commits antigos de outubro e não comprovam a branch atual.
+
+### Evidência real e correções
+- Obtidos e examinados os ZIPs de screenshot/report JSON dos artefatos GitHub Actions, não apenas o status dos jobs. As telas Cliente e Parceiro tiveram testes anônimos em 320/360/390/1280px com rede externa bloqueada; nenhum e-mail, autenticação real ou comando operacional foi enviado.
+- `scripts/audit-browser-public-v1.mjs`: eliminada a falsa aprovação que confundia toast de validação de email vazio com tela de recuperação; os fluxos Entregas/Entregador ficam no login quando email não foi preenchido. O teste aguarda o redirecionamento assíncrono legítimo `#/courier -> #/login?redirect=...` antes da asserção; Motorista e Cliente Corridas continuam verificando suas telas dedicadas de recuperação.
+- `scripts/audit-admin-preview-render-v2.mjs`: teste real de `/admin/login -> /admin/recuperar-senha -> /admin/login`, texto visível do email, registro de screenshots e proibição implícita de envio (botão de envio nunca clicado), nas quatro larguras.
+- Screenshot anterior revelou corte real do rótulo `Enviar link de recuperação` no botão de 320px, ainda que a página não tivesse overflow. `scripts/build-corridas-admin-spa-v1.mjs` aplica **somente classes visuais** ao botão da rota original restaurada, permitindo quebra de linha e altura flexível; sem mudança de handlers, API ou sistema de login. Nova medição do navegador usa retângulos reais das letras e `scrollWidth` para impedir corte interno de texto.
+- CI `https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41642486343` **3/3 WEB success**, commit `c1d5ee9c102a156671a2a5a88319013d1c7d94dc`. Artefatos `apois-browser-parceiro-c1d5ee9...` mostram **4/4 verificações Admin** com `recoveryButtonContentFits=true` e **12/12 verificações Parceiro** aprovadas. Captura 320px confirma botão inteiro e legível com texto quebrado.
+- O painel de Admin possui seis variáveis de ambiente de Preview listadas; **`CORRIDAS_SUPABASE_SERVICE_ROLE_KEY` não está configurada**. A função `api/admin/driver-documents.js` faz fail-closed com `503 preview_document_service_unconfigured`; não afirmar que visualização de fotos/docs está pronta, nem pedir/expor/chavear service_role em chat. Preferir homologação isolada e análise de menor privilégio.
+- Observação visual de P2 não alterada: placeholder de senha Motorista pode encurtar o último caractere em 320px. Deve receber correção somente visual, acompanhada de validação de legibilidade e de área de toque de 44px do botão de revelar senha. Não encurtar a área de toque.
+- Gate continua **NÃO APTO PARA APK/PRODUÇÃO**: Auth real e rotas staff não testadas, E2E banco de staging, Safe2Pay/ledger/repasses, corridas física/entregas física e documentação do sandbox Pix pendentes.
+
+**Proteção:** as únicas mudanças de código desta rodada até `c1d5ee9` foram `scripts/audit-browser-public-v1.mjs`, `scripts/audit-admin-preview-render-v2.mjs` e `scripts/build-corridas-admin-spa-v1.mjs`. Nenhuma alteração em `sources/`, submódulos, source-lock, pipelines GitHub, migrations, Supabase de produção, Vercel Production ou pagamentos.
