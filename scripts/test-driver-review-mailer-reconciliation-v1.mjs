@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const source=readFileSync("supabase/functions/apois-driver-review-mailer/index.ts","utf8");
-const sql=readFileSync("supabase/corridas-forward-migrations/20261031_driver_correction_notifications_QA_NOT_APPLIED.sql","utf8");
+const sql=readFileSync("database/review/20261103_corridas_mailer_outbox_idempotent_read_REVIEW_ONLY.sql","utf8");
 assert.match(sql,/o\.status IN \('queued','failed','accepted_by_provider'\)/);
 assert.match(source,/getUser\(token\)/);
 assert.match(source,/apois_admin_can_dispatch_driver_correction_mail/);
