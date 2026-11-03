@@ -311,6 +311,14 @@ try {
           }
           await page.screenshot({ path: resolve(output, name + '-register-' + width + '.png'), fullPage: true });
           item.interactions.push({ action: 'open registration without submitting', passed: true });
+          if(target==="cliente"){
+            // APOIS_SWITCHER_RETURN_TO_SELECTOR_V1: real click, no signOut() or fake module route.
+            await page.locator('#apois-switch-service').click();
+            await page.waitForURL(url=>url.pathname==='/index.html',{timeout:10000});
+            assert.ok(await page.locator('[data-module="corridas"]').isVisible(),'Switcher must return to real APOIS service selector');
+            assert.ok(await page.locator('[data-module="entregas"]').isVisible(),'Switcher cannot remove Entregas entry');
+            item.interactions.push({action:'switch back to real service selector without Auth calls',passed:true});
+          }
         } else {
           // Both role/service entries must navigate to the correct packaged module.
           for (const module of target === 'cliente' ? ['corridas', 'entregas'] : ['motorista', 'entregador']) {
