@@ -107,3 +107,13 @@ if (merchantWatcher) {
 
 if (failed) process.exit(1);
 ok('Boundary financeiro final auditado: gateways antigos ficam fora dos fluxos ativos e cash/pending continua operacional.');
+
+// Run the isolated callback simulations using the Bun already pinned by the WEB QA builder.
+// The public package.json contract stays unchanged; no provider or network calls occur.
+const { spawnSync } = await import('node:child_process');
+const replayCheck = spawnSync('bun', ['scripts/test-safe2pay-webhook-retry-v1.mjs'], { stdio: 'inherit' });
+if (replayCheck.error || replayCheck.status !== 0) {
+  console.error('[FAIL] Simulação isolada de reenvio Safe2Pay não passou.');
+  process.exit(1);
+}
+ok('Safe2Pay: reenvio, zero registros e estornos simulados sem gravar em bancos reais.');
