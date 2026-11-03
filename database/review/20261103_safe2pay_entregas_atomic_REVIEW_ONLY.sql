@@ -115,14 +115,16 @@ BEGIN
    IF v_order.status IN ('cancelled','refunded') OR v_order.payment_status='refunded' THEN
      RAISE EXCEPTION 'safe2pay_order_terminal_requires_review' USING ERRCODE='23514';
    END IF;
-   IF v_order.payment_status='paid' AND (v_current NOT IN ('authorized','refunded')
-      OR EXISTS (SELECT 1 FROM public.payments p
-         WHERE p.order_id=v_order.id AND p.status='paid'
-         AND p.provider IS DISTINCT FROM 'safe2pay')) THEN
+   IF EXISTS (SELECT 1 FROM public.payments p
+      WHERE p.order_id=v_order.id AND p.status='paid'
+        AND p.provider IS DISTINCT FROM 'safe2pay') THEN
+     RAISE EXCEPTION 'safe2pay_order_other_provider_paid_requires_review' USING ERRCODE='23514';
+   END IF;
+   IF v_order.payment_status='paid' AND v_current NOT IN ('authorized','refunded') THEN
      RAISE EXCEPTION 'safe2pay_order_already_paid_requires_review' USING ERRCODE='23514';
    END IF;
  ELSIF v_target='refunded' THEN
-   IF v_order.payment_status='paid' AND EXISTS (SELECT 1 FROM public.payments p
+   IF EXISTS (SELECT 1 FROM public.payments p
        WHERE p.order_id=v_order.id AND p.status='paid'
        AND p.provider IS DISTINCT FROM 'safe2pay') THEN
      RAISE EXCEPTION 'safe2pay_order_refund_provider_conflict' USING ERRCODE='23514';
