@@ -46,5 +46,9 @@ for(const token of ["getUser(token)","apois_admin_can_dispatch_driver_correction
 "APOIS_EMAIL_FROM","Idempotency-Key","accepted_by_provider"]){
  assert.ok(mailer.includes(token),"Email dispatch missing "+token);
 }
+assert.ok(uploader.includes("registrationAttempted=true;"),"Registration must mark ambiguous RPC boundary");
+assert.ok(uploader.includes("if(!registrationAttempted&&!committed)"),"Upload cleanup must stop after an ambiguous registration RPC");
+assert.ok(uploader.includes("new Promise<void>(resolve=>setTimeout(resolve,350))"),"Inspector upload retry should remain bounded");
+assert.ok(uploader.includes("const retry=await (supabase as any).rpc(\"apois_submit_driver_vehicle_inspection\""),"Inspector retry must only repeat idempotent RPC");
 assert.ok(!sql.includes("UPDATE public.rides"),"Safety feature should not affect trips");
 console.log("[OK] 13-photo vehicle safety, manufacture<=10y, Admin pending/review, app notice & queued email gates");
