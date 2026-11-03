@@ -13,6 +13,7 @@
     "status:modules": "node scripts/status-modules.mjs",
     "audit:static": "node scripts/audit-superapp-static.mjs",
     "audit:payment-boundary": "node scripts/audit-payment-boundary.mjs",
+    "verify:safe2pay-production-readiness": "node scripts/verify-safe2pay-production-readiness-v1.mjs",
     "verify:backend-auth": "node scripts/verify-backend-authorization-boundaries.mjs",
     "verify:legacy-provider-runtime": "node scripts/verify-legacy-provider-runtime-quarantine.mjs",
     "verify:retired-provider-source": "node scripts/verify-retired-provider-source.mjs",
