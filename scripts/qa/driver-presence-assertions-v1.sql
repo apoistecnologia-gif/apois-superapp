@@ -23,7 +23,7 @@ $test$;
 DO $test$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_set_presence(true,-9.40,-40.50,90,5) INTO result;
+ SELECT public.driver_set_presence(true,-9.40,-40.50,90,5) INTO result;
  IF (result->>'is_online')::boolean IS DISTINCT FROM true
     OR (result->>'operationally_eligible')::boolean IS DISTINCT FROM true THEN
   RAISE EXCEPTION 'approved KYC driver cannot go online: %',result;
@@ -46,7 +46,7 @@ BEGIN
    format('00000000-0000-4000-8000-%s',lpad(test_number::text,12,'0')),true);
   rejected:=false;
   BEGIN
-   PERFORM apois_rpc_private.driver_set_presence(true,-9.4,-40.5,NULL,NULL);
+   PERFORM public.driver_set_presence(true,-9.4,-40.5,NULL,NULL);
   EXCEPTION WHEN OTHERS THEN
    GET STACKED DIAGNOSTICS err=MESSAGE_TEXT;
    IF err<>expected THEN RAISE; END IF;
@@ -71,13 +71,13 @@ BEGIN
   rejected:=false;
   BEGIN
    IF test_number=1 THEN
-    PERFORM apois_rpc_private.driver_set_presence(true,NULL,-40.50,90,5);
+    PERFORM public.driver_set_presence(true,NULL,-40.50,90,5);
    ELSIF test_number=2 THEN
-    PERFORM apois_rpc_private.driver_set_presence(true,12,-40.50,90,5);
+    PERFORM public.driver_set_presence(true,12,-40.50,90,5);
    ELSIF test_number=3 THEN
-    PERFORM apois_rpc_private.driver_set_presence(true,-9.4,-40.5,360,5);
+    PERFORM public.driver_set_presence(true,-9.4,-40.5,360,5);
    ELSE
-    PERFORM apois_rpc_private.driver_set_presence(true,-9.4,-40.5,90,-1);
+    PERFORM public.driver_set_presence(true,-9.4,-40.5,90,-1);
    END IF;
   EXCEPTION WHEN OTHERS THEN
    GET STACKED DIAGNOSTICS err=MESSAGE_TEXT;
@@ -94,7 +94,7 @@ $test$;
 DO $test$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_set_presence(false) INTO result;
+ SELECT public.driver_set_presence(false) INTO result;
  IF (result->>'is_online')::boolean IS DISTINCT FROM false THEN
   RAISE EXCEPTION 'single-argument offline RPC contract broke';
  END IF;
@@ -106,7 +106,7 @@ $test$;
 DO $test$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_set_presence(false,NULL,NULL,NULL,NULL) INTO result;
+ SELECT public.driver_set_presence(false,NULL,NULL,NULL,NULL) INTO result;
  IF (result->>'is_online')::boolean IS DISTINCT FROM false THEN
   RAISE EXCEPTION 'driver could not go offline';
  END IF;

@@ -23,7 +23,7 @@ BEGIN
   test_id:=format('30000000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid;
   rejected:=false;
   BEGIN
-   PERFORM apois_rpc_private.driver_accept_ride(test_id);
+   PERFORM public.driver_accept_ride(test_id);
   EXCEPTION WHEN OTHERS THEN
    GET STACKED DIAGNOSTICS observed=MESSAGE_TEXT;
    IF observed<>expected THEN
@@ -37,6 +37,8 @@ BEGIN
 END;
 $t$;
 
+-- The legacy private entrypoint can only be invoked by service_role.
+SET LOCAL ROLE service_role;
 DO $t$
 DECLARE n integer; test_id uuid; observed text; rejected boolean;
 BEGIN
@@ -57,6 +59,7 @@ BEGIN
  RAISE NOTICE '[PASS] Legacy acceptance also rejects Safe2Pay by direct call';
 END;
 $t$;
+SET LOCAL ROLE authenticated;
 
 DO $t$
 DECLARE n integer; test_id uuid; observed text; rejected boolean; expected text;
@@ -71,7 +74,7 @@ BEGIN
     (CASE n WHEN 109 THEN 8 WHEN 110 THEN 2 WHEN 111 THEN 3 WHEN 112 THEN 4 ELSE 5 END)::text,12,'0')),true);
   rejected:=false;
   BEGIN
-   PERFORM apois_rpc_private.driver_accept_ride(test_id);
+   PERFORM public.driver_accept_ride(test_id);
   EXCEPTION WHEN OTHERS THEN
    GET STACKED DIAGNOSTICS observed=MESSAGE_TEXT;
    IF observed<>expected THEN RAISE EXCEPTION 'driver case %: got %, wanted %',n,observed,expected; END IF;
@@ -96,7 +99,7 @@ BEGIN
    format('00000000-0000-4000-8000-%s',lpad(driver_n::text,12,'0')),true);
   rejected:=false;
   BEGIN
-   PERFORM apois_rpc_private.driver_accept_ride(ride);
+   PERFORM public.driver_accept_ride(ride);
   EXCEPTION WHEN SQLSTATE '42501' THEN
    GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT;
    IF msg<>'driver_location_stale' THEN RAISE; END IF;
@@ -112,7 +115,7 @@ $t$;
 DO $t$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_accept_ride(
+ SELECT public.driver_accept_ride(
  '30000000-0000-4000-8000-000000000117') INTO result;
  IF result->>'status'<>'motorista_a_caminho'
  OR result->>'payment_method'<>'cash'
@@ -127,7 +130,7 @@ DO $t$
 DECLARE rejected boolean:=false; observed text;
 BEGIN
  BEGIN
-  PERFORM apois_rpc_private.driver_accept_ride('30000000-0000-4000-8000-000000000101');
+  PERFORM public.driver_accept_ride('30000000-0000-4000-8000-000000000101');
  EXCEPTION WHEN OTHERS THEN
   GET STACKED DIAGNOSTICS observed=MESSAGE_TEXT;
   IF observed<>'driver_busy' THEN RAISE; END IF;

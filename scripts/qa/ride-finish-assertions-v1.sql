@@ -9,7 +9,7 @@ DO $t$
 DECLARE rejected boolean:=false; msg text;
 BEGIN
  BEGIN
-  PERFORM apois_rpc_private.driver_finish_ride('30000000-0000-4000-8000-000000000301');
+  PERFORM public.driver_finish_ride('30000000-0000-4000-8000-000000000301');
  EXCEPTION WHEN OTHERS THEN
   GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT;
   IF msg<>'invalid_ride_transition' THEN RAISE; END IF;
@@ -26,7 +26,7 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000007'
 DO $t$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_finish_ride('30000000-0000-4000-8000-000000000301') INTO result;
+ SELECT public.driver_finish_ride('30000000-0000-4000-8000-000000000301') INTO result;
  IF (result->>'promoted_queued_ride_id')::uuid IS DISTINCT FROM
   '30000000-0000-4000-8000-000000000302'::uuid
  OR result->>'status'<>'finalizada'
@@ -42,7 +42,7 @@ DO $t$
 DECLARE rejected boolean:=false; msg text;
 BEGIN
  BEGIN
-  PERFORM apois_rpc_private.driver_finish_ride('30000000-0000-4000-8000-000000000301');
+  PERFORM public.driver_finish_ride('30000000-0000-4000-8000-000000000301');
  EXCEPTION WHEN OTHERS THEN
   GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT;
   IF msg<>'invalid_ride_transition' THEN RAISE; END IF;
@@ -59,7 +59,7 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000008'
 DO $t$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_finish_ride('30000000-0000-4000-8000-000000000303') INTO result;
+ SELECT public.driver_finish_ride('30000000-0000-4000-8000-000000000303') INTO result;
  IF (result->>'released_queued_ride_id')::uuid IS DISTINCT FROM
   '30000000-0000-4000-8000-000000000304'::uuid OR result->>'promoted_queued_ride_id' IS NOT NULL THEN
   RAISE EXCEPTION 'ineligible KYC queue not released: %',result;
@@ -73,7 +73,7 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000003'
 DO $t$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_finish_ride('30000000-0000-4000-8000-000000000305') INTO result;
+ SELECT public.driver_finish_ride('30000000-0000-4000-8000-000000000305') INTO result;
  IF (result->>'released_queued_ride_id')::uuid IS DISTINCT FROM
   '30000000-0000-4000-8000-000000000306'::uuid THEN
   RAISE EXCEPTION 'suspended driver queue not released: %',result;
@@ -86,7 +86,7 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000006'
 DO $t$
 DECLARE result jsonb;
 BEGIN
- SELECT apois_rpc_private.driver_finish_ride('30000000-0000-4000-8000-000000000307') INTO result;
+ SELECT public.driver_finish_ride('30000000-0000-4000-8000-000000000307') INTO result;
  IF (result->>'released_queued_ride_id')::uuid IS DISTINCT FROM
   '30000000-0000-4000-8000-000000000308'::uuid THEN
   RAISE EXCEPTION 'offline/stale driver queue not released: %',result;
