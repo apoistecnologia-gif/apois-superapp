@@ -77,7 +77,30 @@ try{
     "Admin recovery WebKit text fill invisible");
    assert.ok(recoveryVisual.width<=recoveryVisual.viewport+2,
     "Admin recovery layout overflows horizontally");
-   assert.ok(await page.getByRole("button",{name:"Enviar link de recuperação"}).isVisible());
+   const recoveryAction=page.getByRole("button",{name:"Enviar link de recuperação"});
+   assert.ok(await recoveryAction.isVisible());
+   // The page may have no horizontal overflow while the button itself clips text.
+   const buttonContent=await recoveryAction.evaluate(element=>{
+    const button=element.getBoundingClientRect(),textRects=[];
+    const walker=document.createTreeWalker(element,NodeFilter.SHOW_TEXT);
+    while(walker.nextNode()){
+      if(!walker.currentNode.textContent?.trim())continue;
+      const range=document.createRange();
+      range.selectNodeContents(walker.currentNode);
+      for(const rect of range.getClientRects())textRects.push({
+        left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom});
+    }
+    return {button:{left:button.left,right:button.right,top:button.top,bottom:button.bottom},
+      textRects,clientWidth:element.clientWidth,scrollWidth:element.scrollWidth};
+   });
+   assert.ok(buttonContent.textRects.length>0,"Admin recovery button label absent");
+   assert.ok(buttonContent.textRects.every(r=>r.left>=buttonContent.button.left-1 &&
+     r.right<=buttonContent.button.right+1 &&
+     r.top>=buttonContent.button.top-1 &&
+     r.bottom<=buttonContent.button.bottom+1),
+    "Admin recovery button clips text at "+width+"px: "+JSON.stringify(buttonContent));
+   assert.ok(buttonContent.scrollWidth<=buttonContent.clientWidth+2,
+    "Admin recovery button has hidden horizontal overflow at "+width+"px");
    assert.equal(errors.length,0,"Admin recovery runtime error");
    assert.equal(missing.length,0,"Admin recovery asset missing");
    await page.screenshot({path:resolve(out,"admin-corridas-recovery-"+width+".png"),fullPage:true});
@@ -85,7 +108,7 @@ try{
    await page.waitForURL(url=>url.pathname==="/admin/login",{timeout:8000});
    assert.ok(await page.getByRole("heading",{name:"Entrar no painel"}).isVisible(),
     "Admin recovery return to login failed");
-   rec.recoveryRoute=true;rec.recoveryBackToLogin=true;rec.recoveryNoSubmission=true;
+   rec.recoveryRoute=true;rec.recoveryBackToLogin=true;rec.recoveryNoSubmission=true;rec.recoveryButtonContentFits=true;
   }catch(err){rec.error=String(err.message).slice(0,330);rec.passed=false;fail=true}
   results.push(rec);
   await context.close();
