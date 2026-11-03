@@ -126,6 +126,21 @@ await test("provider failure does not claim accepted",async()=>{
  assert.equal(f.mail.status,"failed");
  assert.equal(f.mail.attempts,1);
 });
+await test("provider rejection with database error cannot claim failure was persisted",async()=>{
+ const f=makeFixture({providerStatus:429,writeError:true});
+ const result=await f.invoke();
+ assert.equal(result.status,503);
+ assert.equal(result.body.error,"provider_rejection_not_recorded");
+ assert.equal(f.mail.status,"queued");
+ assert.equal(f.sends,1);
+});
+await test("provider rejection with zero updated rows is retriable and never overwrites acceptance",async()=>{
+ const f=makeFixture({providerStatus:429,zeroRows:true});
+ const result=await f.invoke();
+ assert.equal(result.status,503);
+ assert.equal(result.body.error,"provider_rejection_not_recorded");
+ assert.equal(f.mail.status,"queued");
+});
 await test("accepted outbox is acknowledged idempotently, without duplicate email",async()=>{
  const f=makeFixture({accepted:true});const r=await f.invoke();
  assert.equal(r.status,200);
