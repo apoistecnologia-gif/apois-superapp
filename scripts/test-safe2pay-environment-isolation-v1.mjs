@@ -68,6 +68,11 @@ await rejectsBeforeFetch("Sandbox subaccount lookup never falls back to live API
 await rejectsBeforeFetch("Invalid environment blocks subaccount creation",
  {SAFE2PAY_ENVIRONMENT:"test"},
  f=>f.api.createSafe2PaySubaccount({Name:"fixture"}),"safe2pay_environment_explicitly_required");
+await rejectsBeforeFetch("Subaccount lookup is blocked when the provider is disabled",
+ {SAFE2PAY_PROVIDER_ENABLED:"0"},
+ f=>f.api.getSafe2PaySubaccount(42),"safe2pay_provider_disabled");
+await rejectsBeforeFetch("Unsafe large subaccount receiver IDs cannot be rounded",
+ {},f=>f.api.getSafe2PaySubaccount(Number.MAX_SAFE_INTEGER+1),"safe2pay_invalid_receiver");
 await check("Sandbox subaccount creation uses only dedicated sandbox key",async()=>{
  const f=fixture();
  await f.api.createSafe2PaySubaccount({Name:"fixture"});
