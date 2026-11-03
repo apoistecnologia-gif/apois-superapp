@@ -35,6 +35,16 @@ for (const [existing, denied] of [
   assert.equal(existing !== null && statuses.includes(existing), denied, "review guard mismatch: " + String(existing));
 }
 console.log("[OK] Seven review-only status fixtures preserve approved/suspended/blocked and allow reviewable/new records");
+// A stale precheck must never reset a row approved/suspended by a concurrent transaction.
+// Conditional INSERT ... ON CONFLICT DO UPDATE WHERE is checked while locking the target row.
+const upsert = sql.slice(driverUpsert);
+const conditional = upsert.indexOf("where public.drivers.approval_status not in ('aprovado','suspenso','bloqueado')");
+const returning = upsert.indexOf("returning * into v_driver;");
+const rejectConflict = upsert.indexOf("if not found then\n    raise exception 'driver_registration_closed' using errcode='42501';\n  end if;");
+assert.ok(conditional > 0 && conditional < returning && rejectConflict > returning,
+  "Concurrent approval must be protected at UPSERT conflict boundary, not only by the precheck");
+console.log("[OK] Conflict UPSERT cannot demote a driver approved/blocked during registration");
+
 
 for (const marker of [
   "auth.uid()::text || '/'",
