@@ -316,12 +316,21 @@ try {
           // sometimes observes the old login before navigation settles. Keep the
           // actual DOM/route contract mandatory instead of suppressing failures.
           try {
-            await page.waitForFunction(previous => {
+            await page.waitForFunction(({ previous, screen }) => {
               const current = document.body.innerText;
-              return current !== previous &&
-                /cadastro|cadastr|crie sua|criar (?:uma |sua )?conta|nome completo/i.test(current) &&
+              if (current === previous) return false;
+              if (screen === 'entregador-login' || screen === 'entregas-login') {
+                const route = location.pathname + location.hash;
+                return /\/register(?:[/?#]|$)/.test(route) &&
+                  !!document.querySelector('input[autocomplete="name"]') &&
+                  !!document.querySelector('input[autocomplete="tel"]');
+              }
+              if (screen === 'motorista-login') {
+                return !!document.querySelector('input[name="vehicle_model"]');
+              }
+              return /cadastro|cadastr|crie sua|criar (?:uma |sua )?conta|nome completo/i.test(current) &&
                 document.querySelectorAll('input').length >= 2;
-            }, beforeRegistrationText, { timeout: 6000 });
+            }, { previous: beforeRegistrationText, screen: name }, { timeout: 6000 });
           } catch {
             const diagnostic = await page.evaluate(() => ({
               route: location.pathname + location.search + location.hash,
