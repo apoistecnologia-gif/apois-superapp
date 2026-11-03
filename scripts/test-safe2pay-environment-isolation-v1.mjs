@@ -101,4 +101,23 @@ await check("Explicit production Pix uses production API and IsSandbox false (mo
  assert.equal(payload.IsSandbox,false);
  assert.equal(payload.PaymentMethod,"6");
 });
+await rejectsBeforeFetch("Pix item with fractional cents is rejected before any provider call",
+ {SAFE2PAY_ENVIRONMENT:"production"},
+ f=>f.api.createSafe2PayPix({...f.pixInput,
+   products:[{Code:"ride",Description:"QA",UnitPrice:10.005,Quantity:1}]}),
+ "safe2pay_fractional_cent_not_allowed");
+await rejectsBeforeFetch("Pix marketplace split with fractional cents is rejected",
+ {SAFE2PAY_ENVIRONMENT:"production"},
+ f=>f.api.createSafe2PayPix({...f.pixInput,
+   splits:[{IdReceiver:42,CodeTaxType:2,Amount:10.005,IsPayTax:false}]}),
+ "safe2pay_fractional_cent_not_allowed");
+await check("Exact cents and floating point representation are accepted without rounding value",async()=>{
+ const f=fixture({SAFE2PAY_ENVIRONMENT:"production"});
+ await f.api.createSafe2PayPix({...f.pixInput,
+   products:[{Code:"one",Description:"QA",UnitPrice:0.1,Quantity:1},
+     {Code:"two",Description:"QA",UnitPrice:0.2,Quantity:1}],
+   splits:[{IdReceiver:42,CodeTaxType:2,Amount:0.3,IsPayTax:false}]});
+ assert.equal(f.calls.length,1);
+ assert.equal(JSON.parse(f.calls[0].body).PaymentMethod,"6");
+});
 console.log("[PASS] "+count+" isolated Safe2Pay environment isolation checks; no real provider requests.");
