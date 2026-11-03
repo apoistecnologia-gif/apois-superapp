@@ -1,7 +1,8 @@
 -- Operational Corridas test fixture: PostgreSQL only, synthetic identities.
 -- The actual staged functions will be extracted from the versioned migration.
 -- This is NOT a full Supabase schema, Auth/JWT validation or real KYC evidence.
-CREATE ROLE authenticated;
+-- The authenticated cluster role was created by the first QA database.
+-- PostgreSQL roles are cluster-global, unlike tables/schemas.
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
 CREATE SCHEMA apois_rpc_private;
