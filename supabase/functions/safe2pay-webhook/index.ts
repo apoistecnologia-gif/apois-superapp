@@ -10,6 +10,9 @@ function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : String(value ?? "").trim();
 }
 function number(value: unknown): number | null {
+  // Number(null), Number("") and Number(false) return zero: reject missing or non-numeric callback fields.
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  if (typeof value === "string" && !/^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$/.test(value.trim())) return null;
   const n = Number(value);
   return Number.isFinite(n) && Number.isSafeInteger(Math.round(n * 100)) ? n : null;
 }
@@ -51,8 +54,8 @@ Deno.serve(async (req) => {
   const reference = text(payload.Reference);
   const amount = number(payload.Amount);
   if (!transactionId || !Number.isSafeInteger(transactionId) || transactionId <= 0 ||
-      !/^[0-9]{1,3}$/.test(statusCode) || !reference ||
-      amount === null || amount < 0) {
+      !/^[0-9]{1,3}$/.test(statusCode) || !reference || reference.length > 256 ||
+      amount === null || amount < 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
     return json(400, { error: "invalid_webhook_payload" });
   }
   const prefix = product === "rides" ? "apois-ride-" : "apois-order-";
