@@ -185,6 +185,33 @@ try {
         await checkReadableInputColors(page,name+" login "+width);
           await checkFormContrast(page,name+" login "+width);
         if(target==="cliente"&&name!=="seletor") item.switchClearance=await checkSwitcherClearance(page,name+" login "+width);
+        if (name === 'motorista-login') {
+          // A 320px screenshot caught 'Digite sua senha' truncated inside the
+          // input even though the whole page had no horizontal overflow.
+          // Validate the *computed placeholder text width*, not page scrollWidth.
+          const passwordMetrics=await page.locator('input[name="password"]').first().evaluate(el=>{
+            const placeholder=getComputedStyle(el,'::placeholder');
+            const field=getComputedStyle(el);
+            const canvas=document.createElement('canvas');
+            const ctx=canvas.getContext('2d');
+            if(!ctx)return {unsupported:true};
+            ctx.font=[placeholder.fontStyle,placeholder.fontWeight,placeholder.fontSize,placeholder.fontFamily].join(' ');
+            const text=el.getAttribute('placeholder')||'';
+            const letterSpacing=parseFloat(placeholder.letterSpacing)||0;
+            const paintedWidth=ctx.measureText(text).width+Math.max(text.length-1,0)*letterSpacing;
+            const usableWidth=el.clientWidth-(parseFloat(field.paddingLeft)||0)-(parseFloat(field.paddingRight)||0);
+            const reveal=el.parentElement?.querySelector('button[aria-label="Mostrar senha"]');
+            const rect=reveal?.getBoundingClientRect();
+            return {text,paintedWidth,usableWidth,buttonWidth:rect?.width??0,buttonHeight:rect?.height??0};
+          });
+          assert.equal(passwordMetrics.text,'Sua senha','Motorista login placeholder must remain short for narrow screens');
+          assert.ok(passwordMetrics.paintedWidth<=passwordMetrics.usableWidth-1,
+            'Motorista password placeholder clipped on '+width+'px: '+JSON.stringify(passwordMetrics));
+          assert.ok(passwordMetrics.buttonWidth>=44&&passwordMetrics.buttonHeight>=44,
+            'Motorista password visibility toggle must preserve 44px hitbox');
+          item.passwordPlaceholderFits=true;
+          item.passwordRevealHitboxOk=true;
+        }
         if (name === 'corridas-login') {
           // Check actual painted title text fragments vs the floating module switch.
           const intersections=await page.evaluate(()=>{
