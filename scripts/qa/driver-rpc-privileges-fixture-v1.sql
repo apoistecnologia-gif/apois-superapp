@@ -1,6 +1,7 @@
 -- Reproduce read-only inspected Corridas production EXECUTE boundaries
 -- (2026-11-03): private SECURITY DEFINER RPCs are service_role-only;
--- public SECURITY DEFINER wrappers expose authenticated/anon/service_role.
+-- public SECURITY DEFINER wrappers are hardened to authenticated/service_role
+-- by the un-applied migration. Existing production anon grants are not copied.
 -- Synthetic isolated PostgreSQL only; JWT signature validation is NOT tested.
 \set ON_ERROR_STOP on
 GRANT USAGE ON SCHEMA apois_rpc_private TO service_role;
@@ -20,7 +21,7 @@ BEGIN
     AS $body$ SELECT apois_rpc_private.driver_set_presence($1,$2,$3,$4,$5); $body$;$sql$;
   REVOKE ALL ON FUNCTION public.driver_set_presence(boolean,numeric,numeric,numeric,numeric) FROM PUBLIC;
   GRANT EXECUTE ON FUNCTION public.driver_set_presence(boolean,numeric,numeric,numeric,numeric)
-    TO anon, authenticated, service_role;
+    TO authenticated, service_role;
  END IF;
  IF to_regprocedure('apois_rpc_private.driver_accept_ride(uuid)') IS NOT NULL THEN
   REVOKE ALL ON FUNCTION apois_rpc_private.driver_accept_ride(uuid) FROM PUBLIC, anon, authenticated;
@@ -29,7 +30,7 @@ BEGIN
     RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path TO ''
     AS $body$ SELECT apois_rpc_private.driver_accept_ride($1); $body$;$sql$;
   REVOKE ALL ON FUNCTION public.driver_accept_ride(uuid) FROM PUBLIC;
-  GRANT EXECUTE ON FUNCTION public.driver_accept_ride(uuid) TO anon, authenticated, service_role;
+  GRANT EXECUTE ON FUNCTION public.driver_accept_ride(uuid) TO authenticated, service_role;
  END IF;
  IF to_regprocedure('apois_rpc_private.driver_accept_ride_candidate_legacy(uuid)') IS NOT NULL THEN
   REVOKE ALL ON FUNCTION apois_rpc_private.driver_accept_ride_candidate_legacy(uuid)
@@ -44,7 +45,7 @@ BEGIN
     RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path TO ''
     AS $body$ SELECT apois_rpc_private.driver_finish_ride($1); $body$;$sql$;
   REVOKE ALL ON FUNCTION public.driver_finish_ride(uuid) FROM PUBLIC;
-  GRANT EXECUTE ON FUNCTION public.driver_finish_ride(uuid) TO anon, authenticated, service_role;
+  GRANT EXECUTE ON FUNCTION public.driver_finish_ride(uuid) TO authenticated, service_role;
  END IF;
  IF to_regprocedure('private.enforce_driver_operational_stage_transition()') IS NOT NULL THEN
   REVOKE ALL ON FUNCTION private.enforce_driver_operational_stage_transition()

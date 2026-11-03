@@ -20,7 +20,7 @@ BEGIN
    IF NOT direct THEN
     IF to_regprocedure(entrypoint) IS NULL
        OR NOT has_function_privilege('authenticated',entrypoint,'EXECUTE')
-       OR NOT has_function_privilege('anon',entrypoint,'EXECUTE') THEN
+       OR has_function_privilege('anon',entrypoint,'EXECUTE') THEN
      RAISE EXCEPTION 'Production-compatible public wrapper ACL missing: %',entrypoint;
     END IF;
    END IF;
@@ -29,12 +29,11 @@ BEGIN
  IF has_function_privilege('authenticated','private.driver_kyc_is_ready(uuid)','EXECUTE') THEN
   RAISE EXCEPTION 'KYC helper exposed to authenticated';
  END IF;
- RAISE NOTICE '[PASS] Private Corridas RPCs are service_role-only, public wrappers preserve Auth ACL';
+ RAISE NOTICE '[PASS] Private Corridas RPCs are service_role-only; staged public wrappers deny anon and permit authenticated';
 END;
 $test$;
--- An anonymous caller can reach public wrappers (as in production), but
--- should be rejected because auth.uid() is absent. Do not let anonymous
--- callers impersonate the trusted internal service-role API.
+-- Stage removes anon EXECUTE on all three public wrappers. A test anon
+-- connection must now be denied by PostgreSQL privileges before execution.
 BEGIN;
 SET LOCAL ROLE anon;
 SELECT set_config('request.jwt.claim.sub','',true);
@@ -56,14 +55,14 @@ BEGIN
    EXECUTE 'SELECT ' || sig;
   EXCEPTION WHEN SQLSTATE '42501' THEN
    GET STACKED DIAGNOSTICS reason=MESSAGE_TEXT;
-   IF reason <> 'unauthorized' THEN
-    RAISE EXCEPTION 'Anon wrapper got %, expected unauthorized',reason;
+   IF reason NOT LIKE 'permission denied for function %' THEN
+    RAISE EXCEPTION 'Anonymous wrapper got %, expected SQL privilege denial',reason;
    END IF;
    rejected:=true;
   END;
   IF NOT rejected THEN RAISE EXCEPTION 'Anonymous caller bypassed authorization: %',sig; END IF;
  END LOOP;
- RAISE NOTICE '[PASS] Anon wrapper calls fail closed without JWT identity';
+ RAISE NOTICE '[PASS] Anon wrapper calls denied by PostgreSQL EXECUTE ACL';
 END;
 $test$;
 COMMIT;

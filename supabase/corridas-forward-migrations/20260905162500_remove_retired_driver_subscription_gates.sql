@@ -417,3 +417,12 @@ $function$;
 -- the current operational functions above may call it after this migration.
 comment on function private.driver_subscription_allows_rides(text) is
   'Historical electronic membership helper. Not part of current driver operational eligibility while provider policy is NOT_CONFIGURED.';
+
+-- APOIS AUTHENTICATED-ONLY MOTORISTA RPC API — production advisor 0028:
+-- These public SECURITY DEFINER wrappers delegate to private functions
+-- and require auth.uid(). No successful anonymous operation is supported.
+-- Preserve authenticated/service_role EXECUTE; never grant anon to bypass
+-- the backend's strict driver identity, KYC, eligibility or GPS checks.
+revoke execute on function public.driver_set_presence(boolean,numeric,numeric,numeric,numeric) from public, anon;
+revoke execute on function public.driver_accept_ride(uuid) from public, anon;
+revoke execute on function public.driver_finish_ride(uuid) from public, anon;
