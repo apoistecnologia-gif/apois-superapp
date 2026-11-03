@@ -28,7 +28,7 @@ if(role==="partner"){
  const workroom=read("src/components/ApoisCaseWorkroom.tsx");
  for(const marker of ["APOIS_VEHICLE_SIX_PHOTOS_V1","front_seats","rear_seats","dashboard","right","left","inspectionReady"])
  assert.ok(signup.includes(marker),"Missing driver photo step: "+marker);
- for(const marker of ["APOIS_VEHICLE_INSPECTION_UPLOAD_V1","apois-inspections","apois_submit_driver_vehicle_inspection","if(!committed)"])
+ for(const marker of ["APOIS_VEHICLE_INSPECTION_UPLOAD_V1","apois-inspections","apois_submit_driver_vehicle_inspection","registrationAttempted=true;","if(!registrationAttempted&&!committed)"])
  assert.ok(uploader.includes(marker),"Missing immutable upload step: "+marker);
  assert.ok((uploader.match(/upsert: false,/g)||[]).length>=2,"New registration objects must never request Storage overwrite");
  assert.ok(!uploader.includes("upsert: true"),"Private evidence cannot use upsert:true");
