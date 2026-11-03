@@ -59,14 +59,26 @@ BEGIN
    WHEN '3' THEN 'authorized' WHEN '6' THEN 'refunded'
    WHEN '13' THEN 'chargeback' ELSE NULL END;
  IF v_mapped IS NULL THEN
+   -- Safe2Pay also emits refusal/dispute/cancellation states (e.g. 5,7,8,12,14).
+   -- Never permanently acknowledge an unknown financial state as processed.
    INSERT INTO public.safe2pay_webhook_events
    (provider_transaction_id,transaction_status_code,event_key,payload_hash,processed_at,processing_error)
-   VALUES (_provider_transaction_id,_status_code,v_event_key,_payload_hash,now(),'unsupported_status:'||_status_code)
-   ON CONFLICT(event_key) DO UPDATE SET processed_at=excluded.processed_at,
+   VALUES (_provider_transaction_id,_status_code,v_event_key,_payload_hash,NULL,'unsupported_status_manual_review:'||_status_code)
+   ON CONFLICT(event_key) DO UPDATE SET processed_at=NULL,
       processing_error=excluded.processing_error;
-   RETURN jsonb_build_object('ok',true,'ignored',true,'reason','unsupported_status');
+   RETURN jsonb_build_object('ok',false,'manual_review',true,'reason','unsupported_status');
  END IF;
  v_current := v_tx.status;
+ -- A refund without an earlier confirmed authorization is not proof of a paid domain row.
+ -- Keep this for operator reconciliation rather than inventing a refund/ledger movement.
+ IF v_mapped='refunded' AND v_current NOT IN ('authorized','refunded') THEN
+   INSERT INTO public.safe2pay_webhook_events
+   (provider_transaction_id,transaction_status_code,event_key,payload_hash,processed_at,processing_error)
+   VALUES (_provider_transaction_id,_status_code,v_event_key,_payload_hash,NULL,'refund_without_authorization_manual_review')
+   ON CONFLICT(event_key) DO UPDATE SET processed_at=NULL,
+      processing_error=excluded.processing_error;
+   RETURN jsonb_build_object('ok',false,'manual_review',true,'reason','refund_without_authorization');
+ END IF;
  -- A late successful charge after a locally terminal failed/expired transaction
  -- cannot be discarded as a stale status. Record unresolved work for authorized review.
  IF v_current IN ('failed','expired') AND v_mapped='authorized' THEN
@@ -88,7 +100,7 @@ BEGIN
  ELSE
    v_target := v_mapped;
  END IF;
- IF v_target = 'chargeback' THEN
+ IF v_mapped = 'chargeback' OR v_target = 'chargeback' THEN
    -- Do not fabricate a refund, reverse any ledger or silently acknowledge a chargeback.
    INSERT INTO public.safe2pay_webhook_events
    (provider_transaction_id,transaction_status_code,event_key,payload_hash,processed_at,processing_error)
