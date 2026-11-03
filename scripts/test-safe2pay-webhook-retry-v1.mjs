@@ -34,6 +34,8 @@ for (const [product,source] of Object.entries(sql)) {
     assert.match(source,/authorized_after_failed_or_expired_manual_review/);
     assert.match(source,/unsupported_status_manual_review/);
     assert.match(source,/refund_without_authorization_manual_review/);
+    assert.match(source,/refund_without_paid_domain_manual_review/);
+    assert.match(source,/v_(?:ride|order)\.payment_status IS DISTINCT FROM 'paid'/);
     if (product==="orders") assert.match(source,/safe2pay_order_other_provider_paid_requires_review/);
     assert.match(source,/v_mapped = 'chargeback' OR v_target = 'chargeback'/);
     assert.match(source,/ON CONFLICT \(event_key\) DO UPDATE/);
@@ -72,6 +74,8 @@ function fake(product,{fail=false,missing=false}={}) {
     if(!next)return{error:null,data:{ok:false,manual_review:true,reason:"unsupported_status"}};
     if(next==="refunded"&&!["authorized","refunded"].includes(state.transaction))
       return{error:null,data:{ok:false,manual_review:true,reason:"refund_without_authorization"}};
+    if(next==="refunded"&&!["paid","refunded"].includes(state.domain))
+      return{error:null,data:{ok:false,manual_review:true,reason:"refund_without_paid_domain"}};
     if(next==="authorized"&&["failed","expired"].includes(state.transaction))
       return{error:null,data:{ok:false,manual_review:true,reason:"authorized_after_terminal"}};
     const rank={pending:10,processing:20,authorized:30,failed:40,expired:40,refunded:50,chargeback:60};
@@ -121,6 +125,17 @@ for(const product of ["rides","orders"]){
     assert.equal((await h.send("1")).code,202);
     assert.equal((await h.send("6")).code,200);
     assert.equal(h.state.domain,"refunded");
+  });
+  await check(product+": refund with authorized transaction but unpaid domain is quarantined",async()=>{
+    const h=fake(product);
+    h.state.transaction="authorized";
+    h.state.domain="pending";
+    const response=await h.send("6");
+    assert.equal(response.code,503);
+    assert.equal(response.body.manual_review,true);
+    assert.equal(response.body.reason,"refund_without_paid_domain");
+    assert.equal(h.state.transaction,"authorized");
+    assert.equal(h.state.domain,"pending");
   });
   await check(product+": chargeback does not fabricate refunds and requires manual review",async()=>{
     const h=fake(product);
