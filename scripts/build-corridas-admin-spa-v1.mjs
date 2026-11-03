@@ -17,6 +17,14 @@ for(const path of authFiles){
 }
 if(!read("src/routes/admin.login.tsx").includes("data-apois-admin-desktop-login"))throw Error("[FAIL] Original split desktop login not restored");
 if(!read("src/routes/admin.recuperar-senha.tsx").includes("resetPasswordForEmail"))throw Error("[FAIL] Secure password recovery not restored");
+const recoveryPath="src/routes/admin.recuperar-senha.tsx";
+// Visual-only mobile fix in disposable QA workspace: preserve all handlers.
+const recoverySource=read(recoveryPath);
+const recoveryButtonAnchor='className="min-h-12 w-full rounded-xl bg-[#E51B23] font-bold text-white hover:bg-[#C9141B]"';
+if(recoverySource.split(recoveryButtonAnchor).length!==2)throw Error("[FAIL] Admin recovery button style anchor changed");
+write(recoveryPath,recoverySource.replace(recoveryButtonAnchor,
+ 'className="min-h-[56px] h-auto w-full whitespace-normal px-2 py-3 text-center text-[13px] leading-snug font-bold text-white bg-[#E51B23] hover:bg-[#C9141B] sm:text-base"'));
+
 const adminPaths=[
  "administradores","analytics","assinaturas","backups","categorias","configuracoes",
  "corridas","cupons","dashboard","financeiro-motoristas","financeiro","login","recuperar-senha","redefinir-senha",
