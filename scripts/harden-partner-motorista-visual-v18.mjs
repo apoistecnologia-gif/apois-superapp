@@ -50,7 +50,7 @@ function must(src,markers,label){
             <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[#5F6670]">Senha</span>
             <div className="flex h-[58px] items-center gap-3 rounded-[18px] border border-[#D9DDE3] bg-white px-3 pl-4 shadow-sm focus-within:border-[#E51B23] focus-within:ring-2 focus-within:ring-[#E51B23]/10">
               <LockKeyhole className="h-5 w-5 shrink-0 text-[#E51B23]" strokeWidth={1.9} aria-hidden="true" />
-              <input name="password" type={showPassword ? "text" : "password"} required autoComplete="current-password" placeholder="Digite sua senha" className="h-full min-w-0 flex-1 bg-transparent text-base font-semibold text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
+              <input name="password" type={showPassword ? "text" : "password"} required autoComplete="current-password" placeholder="Sua senha" className="h-full min-w-0 flex-1 bg-transparent text-base font-semibold text-[#111827] outline-none placeholder:text-[#9CA3AF]" />
               <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[#6B7280] transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51B23]">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
             </div>
           </label>
