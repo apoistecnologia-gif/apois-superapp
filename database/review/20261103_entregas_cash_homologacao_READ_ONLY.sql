@@ -44,4 +44,12 @@ SELECT gate, required, passed, detail FROM (
    EXISTS(SELECT 1 FROM public.platform_settings
      WHERE key='order_payment_provider' AND value='"safe2pay_marketplace"'::jsonb),
    'Informational ONLY: configured future provider does not authorize electronic cash-test'
+ UNION ALL
+ SELECT 'merchant_reject_order_anon_denied',true,
+   EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+     WHERE n.nspname='public' AND p.proname='merchant_reject_order'
+       AND pg_get_function_identity_arguments(p.oid)='_order_id uuid, _reason text'
+       AND NOT has_function_privilege('anon',p.oid,'EXECUTE')
+       AND has_function_privilege('authenticated',p.oid,'EXECUTE')),
+   'Cash cancellation SECURITY DEFINER RPC denies anon; staged migration revokes PUBLIC/anon while preserving authenticated'
 ) gates ORDER BY gate;
