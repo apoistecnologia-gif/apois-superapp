@@ -116,15 +116,17 @@ for (const product of ["orders", "rides"]) {
     assert.equal((await invoke(3)).code, 200);
     assert.equal(db.data[domain][0].payment_status, "paid");
     assert.ok(db.data.safe2pay_webhook_events[0].processed_at);
+    const successfulDomainUpdates = db.calls.filter(c => c.table === domain && c.kind === "update").length;
     assert.equal((await invoke(3)).code, 200);
+    assert.equal(db.calls.filter(c => c.table === domain && c.kind === "update").length, successfulDomainUpdates, "duplicate event must not rewrite paid domain");
     assert.equal(db.data.safe2pay_webhook_events.length, 1);
   });
-  await test(product + ": zero-row conditional updates must not acknowledge payment", async () => {
+  await test(product + ": terminal-state conditional updates must not acknowledge payment", async () => {
     const state = fixture(product);
     state[domain][0].status = product === "orders" ? "cancelled" : "cancelada_passageiro";
     const db = fakeDb(state);
     const invoke = makeHandler(db, product);
-    assert.equal((await invoke(3)).code, 500);
+    assert.equal((await invoke(3)).code, 409);
     assert.equal(db.data[domain][0].payment_status, "pending");
     assert.equal(db.data.safe2pay_webhook_events[0].processed_at, null);
   });
