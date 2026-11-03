@@ -8,7 +8,7 @@
 - Os submódulos em \`sources/\` e o \`source-lock\` ficam pinados; alterações de homologação acontecem nas cópias de integração e hardeners da branch.
 - Não rodar pagamentos reais, Pix, cartão, split, repasses bancários, manipulações de saldo, assinatura fictícia, cadastro/ordens/corridas de teste em produção ou migrações sem revisão e E2E isolado.
 - Não promover Vercel Preview para produção, não alterar autenticação/RLS para dar acesso público, não desativar SSO e não gerar APK como "homologado" só porque o CI WEB passou.
-- A opção de dinheiro é pagamento **fora da APOIS**. \`payment_status\` eletrônico continua \`pending\` e \`payment_provider\` deve continuar \`null\` para corridas diretas. Valor físico recebido não vira \`paid\` nem saldo eletronicamente liquidado por simulação.
+- A opção dinheiro representa pagamento fora da APOIS. Em **Entregas**, um pedido `cash` mantém `payment_status=pending` porque a APOIS não verifica o dinheiro físico. Em **Corridas**, a solicitação começa `pending`, mas o gatilho de conclusão atual registra `payment_status=paid` como quitação operacional presumida ao encerrar a viagem, sem confirmação externa. Isso NÃO representa Pix/cartão nem saldo de carteira: `payment_provider=null`, `wallet_amount=0`, `platform_fee=0`. Confirmar o recebimento físico é parte do teste.
 - Os motoristas recebem o valor integral da corrida diretamente. O estabelecimento responde pelos recebimentos dos pedidos e pelo repasse manual acordado com o entregador.
 
 ## Estado técnico verificado no banco real, somente leitura — 03/11/2026
@@ -20,7 +20,8 @@
 - \`apois_rpc_private.driver_set_presence\` verifica KYC: **PASS**, não fazer bypass.
 - **P0/BLOCK:** quatro funções ainda mencionam \`private.driver_subscription_allows_rides(v_driver.subscription_status)\`, o gate legado de cobrança: \`apois_rpc_private.driver_set_presence\`, \`driver_accept_ride_candidate_legacy\`, \`driver_finish_ride\` e \`private.enforce_driver_operational_stage_transition\`. Podem interferir em online, aceite de oferta, estágio e fila de próxima corrida.
 - A correção SQL pré-existente na branch é \`supabase/corridas-forward-migrations/20260905162500_remove_retired_driver_subscription_gates.sql\`. **Não aplicar em produção automaticamente**: testar assinatura, chamadores, KYC/ownership e corrida em PostgreSQL isolado antes.
-- Run da auditoria apenas-leitura: \`database/review/20261103_corridas_cash_homologacao_READ_ONLY.sql\` — 4 gates críticos \`false\`, 3 \`true\`.
+- O gatilho real `public.handle_completed_ride_settlement()` foi examinado: ao finalizar uma corrida `cash`, registra `wallet_amount=0`, `platform_fee=0`, `payment_provider=NULL` e `payment_status=paid` como quitação física presumida. Não existe confirmação bancária. A forma de conferir recebimento e lidar com contestação deve ser testada antes da liberação.
+- Run apenas-leitura: `database/review/20261103_corridas_cash_homologacao_READ_ONLY.sql` — 4 gates legados `false`; validação de não-creditamento cash na carteira e sinalização informativa da quitação automática.
 
 ### Entregas — Supabase \`ptgkwyyolrdgnqketkjj\`
 
