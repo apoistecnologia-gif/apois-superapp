@@ -161,4 +161,11 @@ await test("reference/amount mismatch rejects before financial domain mutation",
   assert.equal(db.data.orders[0].payment_status, "pending");
 });
 
+await test("reference mismatch rejects webhook without marking a payment", async () => {
+  const db = fakeDb(fixture("rides"));
+  const invoke = makeHandler(db, "rides");
+  assert.equal((await invoke(3, { Reference: "apois-ride-another" })).code, 409);
+  assert.equal(db.data.rides[0].payment_status, "pending");
+  assert.equal(db.data.safe2pay_webhook_events[0].processed_at, null);
+});
 console.log("[PASS] " + passed + " isolated Safe2Pay webhook simulations; NO real payments, no DB writes.");
