@@ -255,6 +255,9 @@ try {
           item.interactions.push({ action: 'password reveal/hide without changing value', passed: true });
 
           await page.goto(origin + path, { waitUntil: 'networkidle' });
+          // The courier entry is guarded: /courier legitimately redirects to
+          // /login?redirect=%2Fcourier before any recovery interaction.
+          const recoveryRouteBefore = new URL(page.url());
           await page.getByText('Esqueci minha senha', { exact: true }).first().click();
           await page.waitForTimeout(600);
           const recoveryText = await page.locator('body').innerText();
@@ -270,8 +273,7 @@ try {
             const warning = page.getByText(/Digite seu e-mail para receber o link de recupera(?:ç|c)[aã]o/i).first();
             await warning.waitFor({state:'visible',timeout:6000});
             const url = new URL(page.url());
-            const initialUrl = new URL(origin + path);
-            assert.equal(url.pathname + url.hash, initialUrl.pathname + initialUrl.hash,
+            assert.equal(url.pathname + url.hash, recoveryRouteBefore.pathname + recoveryRouteBefore.hash,
               name + ': blank-email recovery must stay on login');
             assert.ok(await page.locator('input[type="password"]').first().isVisible(),
               name + ': blank-email recovery should preserve login form');
