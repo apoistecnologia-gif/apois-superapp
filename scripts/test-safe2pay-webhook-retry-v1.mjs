@@ -55,7 +55,9 @@ await check("Entregas initial Safe2Pay authorization is staged as an atomic RPC,
   assert.match(source,/if \(insertError\) throw new Error/);
   assert.match(source,/order_paid_outside_safe2pay/);
   assert.match(source,/existing_safe2pay_amount_mismatch/);
-  assert.match(source,/safe2pay_expire_race_requires_retry/);
+  assert.match(source,/safe2pay_expiry_requires_provider_reconciliation/);
+  assert.doesNotMatch(source,/\.update\(\{ status: "expired", updated_at:/,
+    "Local QR expiration must not manufacture a terminal provider transaction");
   assert.match(source,/safe2pay_existing_authorized_not_reconciled/);
   assert.match(source,/safe2pay_initial_authorization_not_reconciled/);
   assert.equal(source.split('await admin.rpc("apois_safe2pay_apply_event_atomic"').length-1,2,
