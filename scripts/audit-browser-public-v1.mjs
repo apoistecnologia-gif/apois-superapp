@@ -91,7 +91,7 @@ async function checkHeadingIntersections(page, label) {
 // APOIS_FORM_CONTRAST_WCAG_V1 — measured luminance for actual browser-rendered public forms.
 async function checkFormContrast(page,label) {
  const violations=await page.evaluate(()=>{
-  const parse=v=>{const m=(v||'').match(/^rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?\\)$/);
+  const parse=v=>{const m=(v||'').match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
    return m && (m[4]===undefined||Number(m[4])>=0.96) ? [Number(m[1]),Number(m[2]),Number(m[3])] : null;};
   const linear=v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;};
   const lum=c=>0.2126*linear(c[0])+0.7152*linear(c[1])+0.0722*linear(c[2]);
