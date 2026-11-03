@@ -54,6 +54,14 @@ BEGIN
  IF v_order.payment_method IS DISTINCT FROM 'pix' THEN
     RAISE EXCEPTION 'safe2pay_payment_method_mismatch' USING ERRCODE='23514';
  END IF;
+ -- The provider transaction must cover exactly the order's authoritative total.
+ -- Compare cents; never mark a partially funded order as paid.
+ IF v_tx.amount <= 0 OR v_tx.amount <> round(v_tx.amount,2)
+    OR _amount <> round(_amount,2)
+    OR round(v_tx.amount*100)::bigint IS DISTINCT FROM round(v_order.total*100)::bigint
+ THEN
+    RAISE EXCEPTION 'safe2pay_order_total_mismatch' USING ERRCODE='23514';
+ END IF;
  v_mapped := CASE _status_code
    WHEN '1' THEN 'pending' WHEN '2' THEN 'processing'
    WHEN '3' THEN 'authorized' WHEN '6' THEN 'refunded'
