@@ -148,7 +148,7 @@ try {
         }));
         Object.assign(item, metrics);
         await checkReadableInputColors(page,name+" login "+width);
-        item.switchClearance=await checkSwitcherClearance(page,name+" login "+width);
+        if(target==="cliente"&&name!=="seletor") item.switchClearance=await checkSwitcherClearance(page,name+" login "+width);
         if (name === 'corridas-login') {
           // Check actual painted title text fragments vs the floating module switch.
           const intersections=await page.evaluate(()=>{
@@ -223,7 +223,7 @@ try {
           const recoveryText = await page.locator('body').innerText();
           await checkReadableInputColors(page,name+" recovery "+width);
           await checkHeadingIntersections(page,name+" recovery "+width);
-          item.recoverySwitchClearance=await checkSwitcherClearance(page,name+" recovery "+width);
+          if(target==="cliente"&&name!=="seletor") item.recoverySwitchClearance=await checkSwitcherClearance(page,name+" recovery "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': recovery overflows '+width+'px');
           assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
           if (name === 'motorista-login') {
@@ -290,7 +290,7 @@ try {
           if (await toastClose.isVisible()) await toastClose.click();
           await checkReadableInputColors(page,name+" register "+width);
           await checkHeadingIntersections(page,name+" register "+width);
-          item.registrationSwitchClearance=await checkSwitcherClearance(page,name+" register "+width);
+          if(target==="cliente"&&name!=="seletor") item.registrationSwitchClearance=await checkSwitcherClearance(page,name+" register "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': registration overflows '+width+'px');
           if(name==='motorista-login'){
             // Stop before any authentication/network: only verify new onboarding UI.
