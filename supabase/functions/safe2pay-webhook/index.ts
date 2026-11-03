@@ -159,47 +159,66 @@ Deno.serve(async (req) => {
       return json(500, { error: "transaction_update_failed" });
     }
 
-    if (product === "rides") {
+    if (product === "rides" && (mapped === "authorized" || mapped === "refunded")) {
       const rideId = String((tx.data as Record<string, unknown>).ride_id ?? "");
+      const read = await admin.from("rides")
+        .select("id,status,payment_method,payment_status,payment_provider,provider_payment_id")
+        .eq("id", rideId).maybeSingle();
+      if (read.error || !read.data) return json(500, { error: "ride_reconciliation_missing" });
+      if (read.data.payment_method !== "pix") return json(409, { error: "ride_payment_method_mismatch" });
       if (mapped === "authorized") {
-        const rideUpdate = await admin.from("rides")
-          .update({
-            payment_status: "paid",
-            payment_provider: "safe2pay",
-            provider_payment_id: String(transactionId),
-            payment_confirmed_at: now,
-            updated_at: now,
-          })
-          .eq("id", rideId)
-          .eq("payment_method", "pix")
-          .neq("status", "finalizada")
-          .neq("status", "cancelada_passageiro")
-          .neq("status", "cancelada_motorista")
-          .select("id").maybeSingle();
-        if (rideUpdate.error || !rideUpdate.data) return json(500, { error: "ride_payment_update_failed_or_no_rows" });
-      } else if (mapped === "refunded") {
+        if (["finalizada", "cancelada_passageiro", "cancelada_motorista"].includes(String(read.data.status))) {
+          return json(409, { error: "ride_terminal_state_requires_reconciliation" });
+        }
+        if (read.data.payment_status === "paid") {
+          if (read.data.payment_provider !== "safe2pay" || String(read.data.provider_payment_id) !== String(transactionId)) {
+            return json(409, { error: "ride_paid_by_different_transaction" });
+          }
+        } else {
+          const rideUpdate = await admin.from("rides")
+            .update({
+              payment_status: "paid", payment_provider: "safe2pay",
+              provider_payment_id: String(transactionId),
+              payment_confirmed_at: now, updated_at: now,
+            })
+            .eq("id", rideId).eq("payment_method", "pix")
+            .neq("status", "finalizada")
+            .neq("status", "cancelada_passageiro")
+            .neq("status", "cancelada_motorista")
+            .select("id").maybeSingle();
+          if (rideUpdate.error || !rideUpdate.data) return json(500, { error: "ride_payment_update_failed_or_no_rows" });
+        }
+      } else if (mapped === "refunded" && read.data.payment_status !== "refunded") {
         const rideUpdate = await admin.from("rides")
           .update({ payment_status: "refunded", payment_provider: "safe2pay", updated_at: now })
-          .eq("id", rideId)
-          .select("id").maybeSingle();
+          .eq("id", rideId).select("id").maybeSingle();
         if (rideUpdate.error || !rideUpdate.data) return json(500, { error: "ride_refund_update_failed_or_no_rows" });
       }
     }
 
-    if (product === "orders") {
+    if (product === "orders" && (mapped === "authorized" || mapped === "refunded")) {
       const orderId = String((tx.data as Record<string, unknown>).order_id ?? "");
+      const read = await admin.from("orders")
+        .select("id,status,payment_method,payment_status")
+        .eq("id", orderId).maybeSingle();
+      if (read.error || !read.data) return json(500, { error: "order_reconciliation_missing" });
+      if (read.data.payment_method !== "pix") return json(409, { error: "order_payment_method_mismatch" });
       if (mapped === "authorized") {
-        const orderUpdate = await admin.from("orders")
-          .update({ payment_status: "paid" })
-          .eq("id", orderId)
-          .neq("status", "cancelled")
-          .neq("status", "refunded")
-          .select("id").maybeSingle();
-        if (orderUpdate.error || !orderUpdate.data) return json(500, { error: "order_payment_update_failed_or_no_rows" });
-      } else if (mapped === "refunded") {
+        if (["cancelled", "refunded"].includes(String(read.data.status))) {
+          return json(409, { error: "order_terminal_state_requires_reconciliation" });
+        }
+        if (read.data.payment_status !== "paid") {
+          const orderUpdate = await admin.from("orders")
+            .update({ payment_status: "paid" })
+            .eq("id", orderId).eq("payment_method", "pix")
+            .neq("status", "cancelled").neq("status", "refunded")
+            .select("id").maybeSingle();
+          if (orderUpdate.error || !orderUpdate.data) return json(500, { error: "order_payment_update_failed_or_no_rows" });
+        }
+      } else if (mapped === "refunded" && read.data.payment_status !== "refunded") {
         const orderUpdate = await admin.from("orders")
           .update({ payment_status: "refunded" })
-          .eq("id", orderId)
+          .eq("id", orderId).eq("payment_method", "pix")
           .select("id").maybeSingle();
         if (orderUpdate.error || !orderUpdate.data) return json(500, { error: "order_refund_update_failed_or_no_rows" });
       }
