@@ -215,8 +215,9 @@ Deno.serve(async (request: Request) => {
     return new Response(JSON.stringify({ error: "Pedido criado, mas não foi possível carregar o resumo.", code: "SNAPSHOT_FAILED" }), { status: 500, headers: jsonHeaders });
   }
 
-  // Fail closed if a future/legacy DB function unexpectedly fabricated payment.
-  if (snapshot.payment_method !== "cash" || snapshot.payment_status === "paid") {
+  // Fail closed if the authoritative result is anything other than cash/pending.
+// Concurrent cancel/refund/failure must not be returned as a new valid order.
+  if (snapshot.payment_method !== "cash" || snapshot.payment_status !== "pending") {
     console.error("create-order rejected inconsistent financial snapshot", {
       orderId: snapshot.id,
       paymentMethod: snapshot.payment_method,
