@@ -237,3 +237,18 @@ As RPCs públicas `get_asaas_subaccount_secret(uuid)` e `store_asaas_subaccount_
 - Vercel Admin Corridas continua reservada por cota de deployments; sem novas tentativas.
 - Branch `fix/entregas-homologacao-ajustes-20261030`, sem alterações em `sources/`, `source-lock`, submódulos, workflows, branches protegidas.
 - **APKs NÃO LIBERADOS** até fechamento dos P0 financeiros/ACL e homologação Android real.
+
+---
+
+## Atualização de produção — 03/11/2026 — revisão de acesso executada manualmente pelo responsável
+
+**Importante:** esta seção substitui os apontamentos anteriores de ACL P0 *ainda não corrigida* para as seis funções listadas abaixo. Os apontamentos históricos registram o estado anterior, não o atual.
+
+No SQL Editor dos projetos oficiais, o responsável executou transações de REVOKE/GRANT limitadas aos seis RPCs privilegiados. As consultas após as transações foram confirmadas diretamente por ferramenta Supabase, apenas em modo leitura.
+
+- **APOIS Corridas** (`tbbzkrfupmqdywnzgnms`): `public.get_asaas_subaccount_secret(uuid)` e `public.store_asaas_subaccount_secret(uuid,text)` — `anon=false`, `authenticated=false`, `service_role=true`. A análise anterior encontrou zero registros em `public.asaas_subaccount_credentials` e nenhum chamador interno PostgreSQL dessas duas funções. O Asaas permanece aposentado.
+- **APOIS Entregas** (`ptgkwyyolrdgnqketkjj`): `public.dispatch_delivery_job_offers(uuid)`, `public.ensure_cancelled_paid_order_refund(uuid)`, `public.reserve_paid_order_merchant_net(uuid)`, `public.reverse_paid_order_merchant_reserve(uuid)` — cada qual retornou `anon=false`, `authenticated=false`, `service_role=true`.
+- Funções chamadoras em Entregas foram consultadas: `dispatch_new_delivery_job`, `merchant_request_courier`, `reject_delivery_offer`, `set_courier_online`, `update_courier_location` e `reverse_merchant_reserve_on_completed_refund` estão em contexto `SECURITY DEFINER` pertencente a `postgres`. Isso indica continuidade da permissão de execução interna, **mas não substitui E2E autenticado e validação de dispatch/estorno real em homologação**.
+- Nenhuma aplicação SQL nova foi efetuada pelo ChatGPT neste registro; as mudanças foram executadas no SQL Editor pelo responsável. Não foram solicitadas/inspecionadas credenciais Asaas, Safe2Pay ou valores de Vault. Sem alterações na Vercel, frontend protegido, saldo, reservas, ledger, pagamentos ou motoristas pelo ChatGPT.
+
+**ACL P0 das seis funções: encerrada após verificação positiva.** Permanecem pendentes os demais gates independentes: Safe2Pay atômico e ledger canônico, PostgreSQL E2E isolado, compatibilidade de Stage2 das 13 fotos, testes Android físico e Admin QA Vercel quando a cota voltar.
