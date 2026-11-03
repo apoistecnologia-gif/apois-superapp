@@ -134,7 +134,7 @@ Os testes PostgreSQL confirmaram, **em esquema sintético mínimo**, a leitura d
 - A migração preparada inicialmente omitira esses defaults; isso poderia quebrar chamadores que omitem localização/velocidade ao ficar offline.
 - A migração ainda NÃO APLICADA agora preserva os quatro defaults. A suíte SQL confirma `pg_proc.pronargdefaults=4` e executa `driver_set_presence(false)` com apenas um argumento.
 - A função ativa ainda contém o bloqueio de assinatura aposentado; **essa correção foi exclusivamente na migração preparada, sem qualquer mudança na produção**.
-- CI do commit: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41738214219 (usar estado conclusivo da execução, não inferir sucesso pelo passo PostgreSQL).
+- CI do commit: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41738214219 — **3/3 jobs WEB SUCCESS**, confirmado após conclusão, com a guarda de argumentos opcionais e chamada de um único argumento aprovadas no log PostgreSQL.
 
 ### Segurança, diferenças e decisão
 
