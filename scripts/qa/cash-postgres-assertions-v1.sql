@@ -3,7 +3,7 @@
 BEGIN;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','cccccccc-cccc-4ccc-8ccc-cccccccccccc',true);
-SELECT set_config('apois.qa.merchant_id','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true);
+-- Owner A is authorized by production-style merchants.owner_user_id, not a test tenant setting.
 DO $test$
 DECLARE n integer;
 BEGIN
@@ -14,6 +14,66 @@ BEGIN
  SELECT count(*) INTO n FROM public.order_status_history;
  IF n<>1 THEN RAISE EXCEPTION 'RLS history leaked or hid records: %',n; END IF;
  RAISE NOTICE '[PASS] Cash pending order, item and history RLS are merchant-scoped';
+END;
+$test$;
+
+-- Exercise exact ownership/member/status/profile/admin branches from the
+-- production helper logic. All tests run as authenticated with synthetic JWT
+-- subject; the real API still must validate JWT signature externally.
+DO $test$
+DECLARE test_id uuid; expected_orders integer; expected_details integer; actual_orders integer;
+ actual_items integer; actual_history integer;
+BEGIN
+ FOR test_id,expected_orders,expected_details IN
+  SELECT * FROM (VALUES
+   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,4,1), -- A owner
+   ('dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid,1,1), -- B owner
+   ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,4,1), -- active A staff
+   ('ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid,0,0), -- suspended A staff
+   ('66666666-6666-4666-8666-666666666666'::uuid,0,0), -- removed A staff
+   ('77777777-7777-4777-8777-777777777777'::uuid,0,0), -- disabled profile
+   ('88888888-8888-4888-8888-888888888888'::uuid,5,2), -- admin
+   ('99999999-9999-4999-8999-999999999999'::uuid,0,0)  -- outsider
+  ) cases(uid,orders,details)
+ LOOP
+  PERFORM set_config('request.jwt.claim.sub',test_id::text,true);
+  SELECT count(*) INTO actual_orders FROM public.orders;
+  SELECT count(*) INTO actual_items FROM public.order_items;
+  SELECT count(*) INTO actual_history FROM public.order_status_history;
+  IF actual_orders<>expected_orders OR actual_items<>expected_details OR actual_history<>expected_details THEN
+   RAISE EXCEPTION 'JWT %: expected %/% items and orders, got orders %, items %, history %',
+      test_id,expected_orders,expected_details,actual_orders,actual_items,actual_history;
+  END IF;
+ END LOOP;
+ PERFORM set_config('request.jwt.claim.sub','cccccccc-cccc-4ccc-8ccc-cccccccccccc',true);
+ RAISE NOTICE '[PASS] Eight isolated JWT role/ownership/RLS states, including revoked and inactive accounts';
+END;
+$test$;
+
+-- A rejected/suspended/inactive/nonmember cannot use SECURITY DEFINER
+-- merchant_reject_order even when they know another merchant's order UUID.
+DO $test$
+DECLARE test_id uuid; rejected boolean;
+BEGIN
+ FOR test_id IN SELECT * FROM (VALUES
+  ('ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid),
+  ('66666666-6666-4666-8666-666666666666'::uuid),
+  ('77777777-7777-4777-8777-777777777777'::uuid),
+  ('99999999-9999-4999-8999-999999999999'::uuid),
+  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid)
+ ) cases(uid) LOOP
+  PERFORM set_config('request.jwt.claim.sub',test_id::text,true);
+  rejected:=false;
+  BEGIN
+   PERFORM public.merchant_reject_order('11111111-1111-4111-8111-111111111111','cross tenant');
+  EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM <> 'merchant access required' THEN RAISE; END IF;
+   rejected:=true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'Unauthorized role could cancel cash order: %',test_id; END IF;
+ END LOOP;
+ PERFORM set_config('request.jwt.claim.sub','cccccccc-cccc-4ccc-8ccc-cccccccccccc',true);
+ RAISE NOTICE '[PASS] Five unauthorized member/tenant cancellation attempts denied';
 END;
 $test$;
 
@@ -54,7 +114,7 @@ $test$;
 SELECT public.merchant_reject_order('55555555-5555-4555-8555-555555555555','electronic regression');
 
 -- Wrong merchant cannot reject another merchant's order.
-SELECT set_config('apois.qa.merchant_id','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',true);
+SELECT set_config('request.jwt.claim.sub','dddddddd-dddd-4ddd-8ddd-dddddddddddd',true);
 DO $test$
 DECLARE rejected boolean := false;
 BEGIN
@@ -69,6 +129,19 @@ BEGIN
 END;
 $test$;
 COMMIT;
+
+-- Production migration should not grant anonymous EXECUTE to a SECURITY DEFINER RPC.
+DO $test$
+BEGIN
+ IF has_function_privilege('anon','public.merchant_reject_order(uuid,text)','EXECUTE') THEN
+  RAISE EXCEPTION 'Anonymous role may execute merchant cancellation';
+ END IF;
+ IF NOT has_function_privilege('authenticated','public.merchant_reject_order(uuid,text)','EXECUTE') THEN
+  RAISE EXCEPTION 'Authenticated merchant may not execute merchant cancellation';
+ END IF;
+ RAISE NOTICE '[PASS] Merchant privileged RPC EXECUTE is denied to anon and granted to authenticated';
+END;
+$test$;
 
 -- Postconditions as fixture owner (not as a user). No sensitive real data exists.
 DO $test$

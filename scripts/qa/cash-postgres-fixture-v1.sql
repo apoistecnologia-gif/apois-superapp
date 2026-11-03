@@ -7,11 +7,77 @@ CREATE ROLE service_role;
 CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
 AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-CREATE FUNCTION public.current_user_is_admin() RETURNS boolean LANGUAGE sql STABLE
-AS $$ SELECT COALESCE(current_setting('apois.qa.admin', true), '') = 'true' $$;
-CREATE FUNCTION public.current_user_is_merchant_member(_merchant uuid) RETURNS boolean
-LANGUAGE sql STABLE
-AS $$ SELECT COALESCE(current_setting('apois.qa.merchant_id', true), '') = _merchant::text $$;
+-- Authorization helpers transcribed from production Entregas pg_get_functiondef,
+-- read-only on 2026-11-03. These test role/ownership logic, but not Supabase
+-- JWT signature verification, all production RLS, or external Auth lifecycle.
+CREATE TYPE public.app_role AS ENUM ('admin','merchant','courier','customer');
+CREATE TABLE public.profiles(id uuid PRIMARY KEY,is_active boolean NOT NULL DEFAULT true);
+CREATE TABLE public.merchants(id uuid PRIMARY KEY,owner_user_id uuid,is_active boolean NOT NULL DEFAULT true);
+CREATE TABLE public.merchant_members(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),merchant_id uuid NOT NULL,
+ user_id uuid NOT NULL,status text NOT NULL DEFAULT 'active',role text NOT NULL DEFAULT 'staff');
+CREATE TABLE public.user_roles(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL,role public.app_role NOT NULL);
+
+CREATE FUNCTION public.current_user_is_active() RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id=(SELECT auth.uid()) AND p.is_active = true
+  );
+$function$;
+CREATE FUNCTION public.has_role(_user_id uuid,_role public.app_role) RETURNS boolean
+LANGUAGE sql STABLE SET search_path TO public,pg_temp
+AS $function$
+  SELECT _user_id=(SELECT auth.uid())
+    AND EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=_user_id AND role=_role);
+$function$;
+CREATE FUNCTION public.current_user_is_admin() RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+ SELECT public.current_user_is_active()
+   AND public.has_role((SELECT auth.uid()),'admin'::public.app_role);
+$function$;
+CREATE FUNCTION public.current_user_is_merchant_member(_merchant_id uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+ SELECT public.current_user_is_active()
+   AND EXISTS(
+     SELECT 1 FROM public.merchants m
+     WHERE m.id=_merchant_id
+       AND (
+         m.owner_user_id=(SELECT auth.uid())
+         OR EXISTS(
+           SELECT 1 FROM public.merchant_members mm
+           WHERE mm.merchant_id=_merchant_id
+             AND mm.user_id=(SELECT auth.uid())
+             AND mm.status='active'
+         )
+       )
+   );
+$function$;
+
+INSERT INTO public.profiles(id,is_active) VALUES
+ ('cccccccc-cccc-4ccc-8ccc-cccccccccccc',true),  -- owner of merchant A
+ ('dddddddd-dddd-4ddd-8ddd-dddddddddddd',true),  -- owner of merchant B
+ ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',true),  -- active member of merchant A
+ ('ffffffff-ffff-4fff-8fff-ffffffffffff',true),  -- suspended member of A
+ ('66666666-6666-4666-8666-666666666666',true),  -- removed member of A
+ ('77777777-7777-4777-8777-777777777777',false), -- inactive profile, active member
+ ('88888888-8888-4888-8888-888888888888',true),  -- active admin
+ ('99999999-9999-4999-8999-999999999999',true);  -- outsider
+INSERT INTO public.merchants(id,owner_user_id,is_active) VALUES
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc',true),
+ ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','dddddddd-dddd-4ddd-8ddd-dddddddddddd',true);
+INSERT INTO public.merchant_members(merchant_id,user_id,status) VALUES
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','active'),
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','ffffffff-ffff-4fff-8fff-ffffffffffff','suspended'),
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','66666666-6666-4666-8666-666666666666','removed'),
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','77777777-7777-4777-8777-777777777777','active');
+INSERT INTO public.user_roles(user_id,role) VALUES
+ ('88888888-8888-4888-8888-888888888888','admin');
+
 
 CREATE TABLE public.orders(
  id uuid PRIMARY KEY, merchant_id uuid NOT NULL, customer_user_id uuid NOT NULL,
