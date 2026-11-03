@@ -40,6 +40,20 @@ SELECT gate,required,passed,detail FROM (
    AND definition NOT ILIKE '%driver_subscription_allows_rides(v_driver.subscription_status)%'),
   'Ride state transition must not depend on legacy subscription'
  UNION ALL
+ SELECT 'cash_finish_has_no_platform_wallet_credit',true,
+  EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname='handle_completed_ride_settlement'
+      AND pg_get_functiondef(p.oid) ILIKE '%wallet_amount = 0%'
+      AND pg_get_functiondef(p.oid) ILIKE '%payment_provider = null%'
+      AND pg_get_functiondef(p.oid) ILIKE '%platform_fee = 0%'),
+  'Cash finish is recorded as a direct handoff, not withdrawable APOIS wallet funds'
+ UNION ALL
+ SELECT 'cash_finish_auto_marks_operational_paid',false,
+  EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname='handle_completed_ride_settlement'
+      AND pg_get_functiondef(p.oid) ILIKE '%set payment_status = ''paid''%'),
+  'Informational: ride completion auto-records paid cash WITHOUT external proof'
+ UNION ALL
  SELECT 'driver_online_checks_kyc',true,
   EXISTS(SELECT 1 FROM funcs WHERE schema_name='apois_rpc_private'
    AND proname='driver_set_presence' AND definition ILIKE '%driver_kyc_is_ready%'),
