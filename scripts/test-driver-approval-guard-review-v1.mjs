@@ -8,7 +8,14 @@ assert.ok(source.startsWith('-- REVIEW ONLY, NOT APPLIED TO PRODUCTION.'),'Never
 const auth=once('if auth.uid() is null then');
 const rowLock=once('select * into v_driver from public.drivers d where d.user_id=v_user.id for update;');
 const guard=once("if found and v_driver.approval_status in ('aprovado','suspenso','bloqueado') then");
-const failClosed=once("raise exception 'driver_registration_closed' using errcode='42501';");
+const exceptionText="raise exception 'driver_registration_closed' using errcode='42501';";
+assert.equal(source.split(exceptionText).length-1,2,
+  'Registration must deny both at row precheck and concurrent UPSERT conflict');
+const failClosed=source.indexOf(exceptionText);
+const conflictWhere=once("where public.drivers.approval_status not in ('aprovado','suspenso','bloqueado')");
+const conflictThrow=source.lastIndexOf(exceptionText);
+assert.ok(conflictThrow>conflictWhere && conflictWhere>source.indexOf("on conflict(user_id) do update set"),
+ 'Concurrent approval status must be guarded at conflict update and must raise on missing RETURNING');
 const updateUser=once('update public.users');
 const driverInsert=once('insert into public.drivers');
 const upsert=once('on conflict(user_id) do update set');
