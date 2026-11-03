@@ -39,6 +39,18 @@ for (const [product,source] of Object.entries(sql)) {
     assert.doesNotMatch(source,/UPDATE public\.(?:refunds|wallets|driver_wallets|payouts)/);
   });
 }
+await check("Entregas initial Safe2Pay authorization is staged as an atomic RPC, not a blind order update",()=>{
+  const source=readFileSync("supabase/functions/safe2pay-create-order-pix/index.ts","utf8");
+  assert.match(source,/REVIEW\/QA ONLY, NOT DEPLOYED/);
+  assert.match(source,/APOIS_SAFE2PAY_INITIAL_AUTH_ATOMIC_V1/);
+  assert.match(source,/await admin\.rpc\("apois_safe2pay_apply_event_atomic"/);
+  assert.match(source,/status: "pending",/);
+  assert.match(source,/authorized_at: null,/);
+  assert.match(source,/if \(insertError\) throw new Error/);
+  assert.doesNotMatch(source,/await admin\.from\("orders"\)\.update\(\{ payment_status: "paid" \}/);
+  const compiled=new Bun.Transpiler({loader:"ts",target:"browser"}).transformSync(source);
+  assert.ok(compiled.length>1000,"staged Edge source should transpile");
+});
 function fake(product,{fail=false,missing=false}={}) {
   let handler, calls=0, rejectOnce=fail;
   const state={transaction:"pending",domain:"pending",event:null};
