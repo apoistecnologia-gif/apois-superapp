@@ -113,6 +113,10 @@ BEGIN
 END;
 $t$;
 
+-- End authenticated transaction before asserting persisted state as fixture owner;
+-- an actual client should NOT get arbitrary SELECT on rides for testing.
+COMMIT;
+
 DO $t$
 DECLARE n integer;
 BEGIN
@@ -131,4 +135,3 @@ BEGIN
  RAISE NOTICE '[PASS] Blocked payment flows caused no acceptance side effects';
 END;
 $t$;
-COMMIT;
