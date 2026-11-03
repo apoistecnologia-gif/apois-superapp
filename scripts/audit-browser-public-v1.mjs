@@ -312,7 +312,26 @@ try {
           const registration = page.getByText(/^(?:Criar conta|Criar minha conta|Cadastrar como motorista|Cadastre-se)$/i).first();
           const beforeRegistrationText = await page.locator('body').innerText();
           await registration.click();
-          await page.waitForTimeout(600);
+          // TanStack /register beforeLoad awaits Auth.getSession(); a fixed 600 ms
+          // sometimes observes the old login before navigation settles. Keep the
+          // actual DOM/route contract mandatory instead of suppressing failures.
+          try {
+            await page.waitForFunction(previous => {
+              const current = document.body.innerText;
+              return current !== previous &&
+                /cadastro|cadastr|crie sua|criar (?:uma |sua )?conta|nome completo/i.test(current) &&
+                document.querySelectorAll('input').length >= 2;
+            }, beforeRegistrationText, { timeout: 6000 });
+          } catch {
+            const diagnostic = await page.evaluate(() => ({
+              route: location.pathname + location.search + location.hash,
+              formFields: document.querySelectorAll('input').length,
+              visibleSignup: Array.from(document.querySelectorAll('a,button'))
+                .filter(el => /criar (?:minha )?conta|cadastre-se/i.test(el.textContent ?? ''))
+                .map(el => ({tag:el.tagName,href:el.getAttribute('href'),disabled:el.hasAttribute('disabled')})),
+            }));
+            throw new Error(name + ': registration click did not open registration UI: ' + JSON.stringify(diagnostic));
+          }
           const registrationText = await page.locator('body').innerText();
           assert.notEqual(registrationText, beforeRegistrationText, name + ': registration click did not change the page');
           assert.match(registrationText, /cadastro|cadastr|crie sua|criar (?:uma |sua )?conta|nome completo/i, name + ': registration UI did not open');
