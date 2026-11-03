@@ -34,6 +34,7 @@ for (const [product,source] of Object.entries(sql)) {
     assert.match(source,/authorized_after_failed_or_expired_manual_review/);
     assert.match(source,/unsupported_status_manual_review/);
     assert.match(source,/refund_without_authorization_manual_review/);
+    if (product==="orders") assert.match(source,/safe2pay_order_other_provider_paid_requires_review/);
     assert.match(source,/v_mapped = 'chargeback' OR v_target = 'chargeback'/);
     assert.match(source,/ON CONFLICT \(event_key\) DO UPDATE/);
     assert.doesNotMatch(source,/UPDATE public\.(?:refunds|wallets|driver_wallets|payouts)/);
