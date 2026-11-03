@@ -320,3 +320,30 @@ No SQL Editor dos projetos oficiais, o responsável executou transações de REV
 **Não modificado:** fontes protegidas `sources/`, configurações de produção, regras financeiras, Safe2Pay, Supabase, algoritmos de login, Vercel Production, release Android, source-lock ou GitHub workflows. Testes foram anônimos, sem submissões e sem internet externa.
 
 **Pendências preservadas:** Admin documento privado em fail-closed por ausência de segredo de serviço no Preview; avaliação para credencial isolada de menor privilégio, backend financeiro Safe2Pay (ledger, estorno, repasse e sandbox Pix), testes PostgreSQL em ambiente isolado, Android físico e login autenticado.
+
+---
+
+## DECISÃO SUPERVENTENTE 03/11/2026 — RETOMADA CASH-ONLY, SAFE2PAY PENDENTE
+
+**Esta decisão substitui qualquer ordem anterior de executar Safe2Pay sandbox/Pix antes dos testes funcionais.** O proprietário escolheu manter a **Safe2Pay como provedor definitivo**, porém ainda precisa regularizar a conta em atraso; quer homologar **sem Safe2Pay, em dinheiro**, sem pagamento bancário real na fase inicial.
+
+**Relatório detalhado e roteiro canônico:** `docs/HOMOLOGACAO-CASH-SEM-SAFE2PAY-20261103.md` — reúne divergências entre as Edge Functions implantadas e as cópias de integração, resultados SQL read-only, correções realizadas, testes, matriz de pendências, requisitos do app Motorista e roteiro de QA.
+
+### Achados de auditoria em produção, SEM alterações (read-only)
+
+- **Entregas — quatro gates necessários BLOQUEADOS:** RLS genérica de leitura do estabelecimento para `orders`, `order_items` e `order_status_history` cash/pending; função `merchant_reject_order(uuid,text)` ainda só permite cancelar pedidos paid/refunded para merchant. SQL de correção já versionado para revisão: `supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql`, NÃO aplicado. `courier_payout_mode='merchant_manual'` continua correto.
+- A Edge Function `create-order` REAL implantada em Entregas é **v13**: `pix` e `cash` somente para dupla cliente/estabelecimento explicitamente autorizada por `apois_check_test_cash_access`; resultados cash levam `paymentMode='homologacao_sem_dinheiro'`. Há **1 autorização ativa e 4 pedidos de teste** (somente contagens obtidas). Portanto, **não confundir a cópia QA cash-only com a Edge real, nem autorizar comércio geral por uma rotina de teste**.
+- **Corridas — quatro gates necessários BLOQUEADOS:** quatro funções de motorista ainda dependem do helper antigo `private.driver_subscription_allows_rides`; SQL preparado para revisão `supabase/corridas-forward-migrations/20260905162500_remove_retired_driver_subscription_gates.sql`, NÃO aplicado. `finance.ride_electronic_payments_enabled=false` e `request-ride` v18 aceita `cash` sem provider.
+- `public.handle_completed_ride_settlement` ao finalizar corrida cash registra zero comissão e zero crédito de wallet, mas marca `payment_status='paid'` como recebimento físico presumido, SEM confirmação financeira externa. Não confundir este `paid` operacional com Pix/cartão comprovado. Necessária validação de recibo físico/contestação.
+- Gates de leitura no GitHub: `database/review/20261103_entregas_cash_homologacao_READ_ONLY.sql` e `database/review/20261103_corridas_cash_homologacao_READ_ONLY.sql`. **Não executar SQL mutável nos bancos vivos.**
+
+### O que foi realmente corrigido
+
+- O handler **da branch, não a Edge ativa** `supabase/functions/create-order/index.ts` agora aceita como sucesso de criação apenas `payment_method=cash` e `payment_status=pending`; respostas `paid/failed/refunded/cancelled/processing` falham fechadas. O teste de contrato foi atualizado.
+- `scripts/test-entregas-cash-create-order-isolated-v1.mjs`: executa código TypeScript do handler com Supabase falso em memória, sem rede/API/credenciais reais. Registrados **23 testes cash aprovados**; `scripts/audit-payment-boundary.mjs` incorpora a verificação no CI existente.
+- GitHub Actions `https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41725146466`: **3/3 WEB success** no commit `f98584dc40fa00b0a52bcf2ff22fe43c54d7bdb4`, execução confirmada nos logs do job Cliente. Commits posteriores somente SQL `READ_ONLY` e documentação.
+- **O lint global de Entregas continua com erros legados e é tratado como WARNING**, apesar do 3/3 WEB verde; não reportar lint como corrigido.
+
+### Ordem e bloqueios
+
+Prioridade imediata: PostgreSQL staging sem dados reais para revisar as duas migrações acima e E2E de cash com KYC/RLS/roles, pedido aceito/cancelado/itens/histórico, notificação/distribuição/entrega, repasse manual e corrida completa (GPS, PIN, voz, fila, cancelamento), com teste negativo de saldo/payments. Depois Android QA físico e telas autenticadas. **Não alterar produção, não ativar Safe2Pay, não marcar assinaturas fictícias, não mexer em 13 fotos Stage2 e não gerar APK como homologado só com CI WEB.** Preview Admin Vercel SSO e documentos server-only seguem pendentes.
