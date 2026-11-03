@@ -63,4 +63,25 @@ SELECT gate,required,passed,detail FROM (
   EXISTS(SELECT 1 FROM funcs WHERE schema_name='apois_rpc_private'
    AND proname='driver_accept_ride' AND definition ILIKE '%payment_method%'),
   'Canonical driver ride acceptance path has payment method boundary'
+ UNION ALL
+ SELECT 'driver_public_rpcs_authenticated_only',true,
+  (SELECT count(*)=3 AND bool_and(
+    has_function_privilege('authenticated',p.oid,'EXECUTE')
+    AND has_function_privilege('service_role',p.oid,'EXECUTE')
+    AND NOT has_function_privilege('anon',p.oid,'EXECUTE'))
+   FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='public'
+     AND p.proname IN ('driver_set_presence','driver_accept_ride','driver_finish_ride')),
+  'Public SECDEF driver API requires authenticated (anon revoked); staged migration only'
+ UNION ALL
+ SELECT 'driver_private_rpcs_service_role_only',true,
+  (SELECT count(*)=4 AND bool_and(
+    has_function_privilege('service_role',p.oid,'EXECUTE')
+    AND NOT has_function_privilege('authenticated',p.oid,'EXECUTE')
+    AND NOT has_function_privilege('anon',p.oid,'EXECUTE'))
+   FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='apois_rpc_private'
+     AND p.proname IN ('driver_set_presence','driver_accept_ride',
+       'driver_accept_ride_candidate_legacy','driver_finish_ride')),
+  'Private driver RPC remains service-role-only with the public wrappers as the app API'
 ) gate_results ORDER BY gate;
