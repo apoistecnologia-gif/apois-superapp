@@ -82,7 +82,13 @@ export function assertSafe2PayReady(): void {
 
 function normalizeMoney(value: number): number {
   if (!Number.isFinite(value) || value < 0) throw new Error("safe2pay_invalid_amount");
-  return Math.round(value * 100) / 100;
+  const cents = value * 100;
+  const nearestCent = Math.round(cents);
+  if (!Number.isSafeInteger(nearestCent) || Math.abs(cents - nearestCent) > 0.000001) {
+    // Do not silently round customer charges or marketplace splits.
+    throw new Error("safe2pay_fractional_cent_not_allowed");
+  }
+  return nearestCent / 100;
 }
 
 function productsTotal(products: Safe2PayProduct[]): number {
