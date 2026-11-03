@@ -228,7 +228,8 @@ try {
         await page.screenshot({ path: resolve(output, item.screenshot), fullPage: true });
         item.passed = metrics.textLength > 20 && metrics.visibleControls > 0 && !metrics.horizontalOverflow && pageErrors.length === 0 && localFailures.length === 0;
 
-        item.interactions = [];
+        // Preserve interaction evidence recorded during initial rendering checks.
+        item.interactions ||= [];
         if (name !== 'seletor') {
           const password = page.locator('input[type="password"]').first();
           await password.waitFor({ state: 'visible' });
@@ -262,7 +263,26 @@ try {
           await checkHeadingIntersections(page,name+" recovery "+width);
           if(target==="cliente"&&name!=="seletor") item.recoverySwitchClearance=await checkSwitcherClearance(page,name+" recovery "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': recovery overflows '+width+'px');
-          assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i, name + ': recovery UI did not open');
+          if (name === 'entregas-login' || name === 'entregador-login') {
+            // These flows intentionally require an email before asking Auth to
+            // send a recovery link. A validation toast is NOT a recovery page.
+            // The old regex passed on the toast and falsely reported navigation.
+            const warning = page.getByText(/Digite seu e-mail para receber o link de recupera(?:ç|c)[aã]o/i).first();
+            await warning.waitFor({state:'visible',timeout:6000});
+            const url = new URL(page.url());
+            const initialUrl = new URL(origin + path);
+            assert.equal(url.pathname + url.hash, initialUrl.pathname + initialUrl.hash,
+              name + ': blank-email recovery must stay on login');
+            assert.ok(await page.locator('input[type="password"]').first().isVisible(),
+              name + ': blank-email recovery should preserve login form');
+            item.interactions.push({
+              action:'empty-email password recovery validation without Auth request; login preserved',
+              passed:true
+            });
+          } else {
+            assert.match(recoveryText, /recuper|redefin|enviar.*(?:link|instru|c[oó]digo)/i,
+              name + ': dedicated recovery UI did not open');
+          }
           if (name === 'motorista-login') {
             // Reproduce the originally reported white-on-white regression in a
             // real browser DOM, without sending any email or contacting Auth.
@@ -306,7 +326,9 @@ try {
           }
 
           await page.screenshot({ path: resolve(output, name + '-recovery-' + width + '.png'), fullPage: true });
-          item.interactions.push({ action: 'open password recovery without submitting', passed: true });
+          if (name !== 'entregas-login' && name !== 'entregador-login') {
+            item.interactions.push({ action: 'open dedicated password recovery without submitting', passed: true });
+          }
 
           await page.goto(origin + path, { waitUntil: 'networkidle' });
           const registration = page.getByText(/^(?:Criar conta|Criar minha conta|Cadastrar como motorista|Cadastre-se)$/i).first();
