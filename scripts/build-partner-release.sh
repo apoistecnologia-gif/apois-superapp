@@ -7,6 +7,7 @@ node "$ROOT/scripts/test-driver-approval-guard-review-v1.mjs"
 node "$ROOT/scripts/test-entregas-privileged-rpc-review-v1.mjs"
 node "$ROOT/scripts/test-corridas-cancellation-fee-privileges-review-v1.mjs"
 node "$ROOT/scripts/test-corridas-internal-rpc-privileges-review-v1.mjs"
+node "$ROOT/scripts/test-corridas-asaas-vault-rpc-review-v1.mjs"
 MOTORISTA="$ROOT/.work/partner-motorista"
 ENTREGADOR="$ROOT/.work/partner-entregador"
 
