@@ -16,7 +16,7 @@ if(!src.includes("APOIS_VEHICLE_INSPECTION_UPLOAD_V1")){
   '      throw new Error("Vistoria fotográfica incompleta ou com fotos repetidas.");',
   '  }',
   '  const authUser = await ensureAuthenticatedAccount(input);',
- ].join("\\n"),"pre-auth inspection proof");
+ ].join("\n"),"pre-auth inspection proof");
  change('  let photoPath: string | null = null;','  // APOIS_VEHICLE_INSPECTION_UPLOAD_V1: add immutable inspection records after registration.\n  let photoPath: string | null = null;\n  let committed=false;\n  let registrationAttempted=false;\n  const inspectionPaths: Record<string,string>={};',"tracker");
  change('    for (const doc of input.documents) {','    for (const doc of [...input.documents,...(input.inspection_photos??[])]) {',"files");
  const pattern=/      const path = .+doc\.label.+Date\.now\(\).+cleanExt\(doc\.fileName\).+;/;
