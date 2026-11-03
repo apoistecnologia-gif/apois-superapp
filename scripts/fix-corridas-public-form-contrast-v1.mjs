@@ -10,8 +10,8 @@ for (const rel of [
 ]) {
  const path=resolve(root,rel),old=readFileSync(path,'utf8');
  if(old.includes(marker))continue;
- if((old.match(/<form\\s/g)||[]).length!==1)throw Error('[FAIL] Public form anchor drift: '+rel);
- const patched=old.replace(/<form(?=\\s)/,'<form '+marker);
+ if((old.match(/<form\s/g)||[]).length!==1)throw Error('[FAIL] Public form anchor drift: '+rel);
+ const patched=old.replace(/<form(?=\s)/,'<form '+marker);
  if(patched===old||!patched.includes('<form '+marker))throw Error('[FAIL] Public form not marked: '+rel);
  writeFileSync(path,patched,'utf8');
 }
@@ -21,7 +21,7 @@ const styleMarker='/* APOIS_CORRIDAS_PUBLIC_FORM_CONTRAST_V1 */';
 const rules=[
  styleMarker,
  '[data-apois-corridas-public-form-contrast-v1] :is(input:not([type="checkbox"]):not([type="radio"]),textarea)::placeholder {color:#596372 !important;opacity:1 !important;-webkit-text-fill-color:#596372 !important;}',
-].join('\\n');
-if(!css.includes(styleMarker))writeFileSync(cssPath,css+'\\n'+rules+'\\n','utf8');
+].join('\n');
+if(!css.includes(styleMarker))writeFileSync(cssPath,css+'\n'+rules+'\n','utf8');
 if(!readFileSync(cssPath,'utf8').includes(styleMarker))throw Error('[FAIL] Public CSS missing');
 console.log('[OK] Corridas signup/recovery placeholders are dark in public forms only, preserving authenticated screens and logic.');
