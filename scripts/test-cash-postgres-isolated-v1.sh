@@ -48,4 +48,13 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance
 node scripts/qa/extract-corridas-acceptance-sql-v1.mjs | docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa
 docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/ride-acceptance-assertions-v1.sql
-echo '[PASS] Real PostgreSQL 17 synthetic cash RLS, driver registration, presence and cash-ride acceptance. Production untouched.'
+# Fifth fully isolated PostgreSQL database: cash ride completion + queued-ride
+# promotion/release. Same migration SQL, synthetic identities and no money.
+docker exec "$name" createdb -U postgres ride_finish_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/driver-presence-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/ride-acceptance-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/ride-finish-fixture-v1.sql
+node scripts/qa/extract-corridas-finish-sql-v1.mjs | docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/ride-finish-assertions-v1.sql
+echo '[PASS] Real PostgreSQL 17 synthetic cash RLS, driver registration, ride acceptance and queued-ride completion. Production untouched.'
