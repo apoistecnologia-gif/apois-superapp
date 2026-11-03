@@ -106,3 +106,32 @@ WHERE id IN (
  '30000000-0000-4000-8000-000000000103',
  '30000000-0000-4000-8000-000000000115'
 );
+-- Fresh GPS is required for otherwise eligible offered drivers.
+UPDATE public.drivers SET last_location_at=now()
+WHERE id='20000000-0000-4000-8000-000000000007';
+
+-- Four otherwise eligible but location-invalid identities, all SYNTHETIC.
+INSERT INTO public.users(id,auth_user_id)
+SELECT format('10000000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid,
+       format('00000000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid
+FROM generate_series(9,12) n;
+INSERT INTO public.drivers(id,user_id,approval_status,is_online,kyc_ready,
+ current_lat,current_lng,last_location_at,name)
+SELECT format('20000000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid,
+       format('10000000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid,
+       'aprovado',true,true,
+       CASE WHEN n=11 THEN 12 ELSE -9.40 END,-40.50,
+       CASE WHEN n=9 THEN NULL
+            WHEN n=10 THEN now()-interval '10 minutes'
+            WHEN n=12 THEN now()+interval '60 minutes'
+            ELSE now() END,'QA GPS Safety Driver'
+FROM generate_series(9,12) n;
+
+INSERT INTO public.rides(id,status,payment_method,service_details,
+ offered_driver_ids,request_expires_at,origin_lat,origin_lng,destination_lat,destination_lng)
+SELECT format('30000000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid,
+ 'procurar_motorista','cash','{}'::jsonb,
+ ARRAY[format('10000000-0000-4000-8000-%s',
+    lpad((n-109)::text,12,'0'))::uuid],
+ now()+interval '5 minutes',-9.40,-40.50,-9.39,-40.49
+FROM generate_series(118,121) n;

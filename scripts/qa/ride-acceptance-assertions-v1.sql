@@ -84,6 +84,31 @@ BEGIN
 END;
 $t$;
 
+-- Stale/missing/out-of-bounds/future GPS is rejected even if the
+-- driver still has is_online=true and valid synthetic KYC/approval.
+DO $t$
+DECLARE n integer; msg text; rejected boolean; ride uuid; driver_n integer;
+BEGIN
+ FOR n IN 118..121 LOOP
+  ride:=format('30000000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid;
+  driver_n:=n-109;
+  PERFORM set_config('request.jwt.claim.sub',
+   format('00000000-0000-4000-8000-%s',lpad(driver_n::text,12,'0')),true);
+  rejected:=false;
+  BEGIN
+   PERFORM apois_rpc_private.driver_accept_ride(ride);
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+   GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT;
+   IF msg<>'driver_location_stale' THEN RAISE; END IF;
+   rejected:=true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'GPS-invalid driver % accepted an offer',driver_n; END IF;
+ END LOOP;
+ PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000007',true);
+ RAISE NOTICE '[PASS] Four invalid/missing/stale/future GPS offers rejected without active gateway';
+END;
+$t$;
+
 DO $t$
 DECLARE result jsonb;
 BEGIN

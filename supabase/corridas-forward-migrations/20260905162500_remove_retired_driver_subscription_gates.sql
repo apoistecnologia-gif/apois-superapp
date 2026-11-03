@@ -164,6 +164,16 @@ begin
   if v_driver.blocked_at is not null then raise exception 'driver_blocked'; end if;
   if not v_driver.is_online then raise exception 'driver_offline'; end if;
   if not private.driver_kyc_is_ready(v_driver.id) then raise exception 'driver_kyc_incomplete' using errcode='42501'; end if;
+  -- A cached online flag is not a fresh GPS position. This matches the
+  -- freshness window already enforced on next-ride promotion.
+  if v_driver.current_lat is null or v_driver.current_lng is null
+     or v_driver.current_lat not between -34 and 6
+     or v_driver.current_lng not between -74 and -32
+     or v_driver.last_location_at is null
+     or v_driver.last_location_at < now()-interval '120 seconds'
+     or v_driver.last_location_at > now()+interval '30 seconds' then
+    raise exception 'driver_location_stale' using errcode='42501';
+  end if;
 
   v_public_driver_name := nullif(split_part(trim(coalesce(v_driver.name,'')),' ',1),'');
 
