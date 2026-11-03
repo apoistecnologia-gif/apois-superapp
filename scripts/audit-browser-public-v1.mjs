@@ -257,6 +257,11 @@ try {
           await page.goto(origin + path, { waitUntil: 'networkidle' });
           // The courier entry is guarded: /courier legitimately redirects to
           // /login?redirect=%2Fcourier before any recovery interaction.
+          if (name === 'entregador-login') {
+            // Guarded /courier first redirects asynchronously to the real
+            // /login?redirect=%2Fcourier route. Wait for guard completion.
+            await page.waitForURL(url=>/#\/login(?:\?|$)/.test(url.hash),{timeout:12000});
+          }
           const recoveryRouteBefore = new URL(page.url());
           await page.getByText('Esqueci minha senha', { exact: true }).first().click();
           await page.waitForTimeout(600);
