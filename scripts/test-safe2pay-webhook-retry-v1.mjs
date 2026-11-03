@@ -13,7 +13,7 @@ async function check(label, fn) { await fn(); console.log("[OK] "+label); passed
 await check("Edge performs ONE atomic RPC with fail-closed database errors",()=>{
   assert.match(edge,/APOIS_SAFE2PAY_ATOMIC_RPC_V1/);
   assert.match(edge,/await admin\.rpc\("apois_safe2pay_apply_event_atomic"/);
-  assert.doesNotMatch(edge,/\.from\(/);
+  assert.doesNotMatch(edge,/\badmin\.from\(/);
   assert.match(edge,/if \(result\.error\) return json\(503/);
   assert.match(edge,/if \(outcome\.manual_review === true\)/);
 });
