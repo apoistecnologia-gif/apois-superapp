@@ -469,3 +469,9 @@ A leitura real, estritamente somente SQL `SELECT`, encontrou `public.driver_memb
 **Gates read-only:** foram adicionados `driver_monthly_tables_least_privilege` e `merchant_billing_tables_least_privilege` aos preflights oficiais. Com as migrações ainda não aplicadas, ambos devem continuar FAIL. Leitura mais recente dos preflights: **Corridas 11/16 gates obrigatórios FAIL; Entregas 11/14 FAIL**, **22 gates pendentes** no total. A elevação do número de gates representa a descoberta de duas novas exigências, não regressões de produção.
 
 **Mantido:** preço mensal dos motoristas R$49,90; preço dos estabelecimentos R$69,90; regra de assinatura obrigatória; constraint histórica dos provedores; ausência de pagamentos inventados; migração operacional Corridas com HOLD incondicional; sem alterações em bancos produtivos, interfaces, submódulos, workflows ou APKs. Ainda será preciso validar ACLs e acessos reais com API/JWT e esquema completo em homologação antes de implantar.
+
+---
+
+## POLÍTICA COMERCIAL ATUALIZADA EM 04/11/2026 — substitui preços antigos
+
+Os trechos históricos deste documento que indicam **Motorista R$49,90** foram superados pelo novo preço aprovado **Motorista R$59,90**. O estabelecimento permanece **R$69,90** e o entregador passa a ter mensalidade própria de **R$49,90**. Os valores técnicos versionados estão em `config/apois-monthly-pricing.json`. Consulte `docs/MENSALIDADES-APOIS-20261104.md` para os contratos staged e restrições de lançamento. **Nada disso foi implantado em produção nesta rodada.**
