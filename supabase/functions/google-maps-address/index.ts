@@ -140,6 +140,33 @@ async function nominatimReverse(lat: number, lng: number) {
   }];
 }
 
+// APOIS_PHOTON_AUTOCOMPLETE_TRANSIENT_RETRY_V1
+// Bound to the existing public Photon endpoint: 1 retry max, 4s per request.
+// Do not retry provider 403/429 or trigger any additional paid Maps requests.
+async function fetchPhotonSearchJson(url: URL) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    try {
+      const response = await fetch(url, { headers: photonHeaders, signal: controller.signal });
+      if (response.status === 429 || response.status === 403) {
+        throw new Error("Photon autocomplete access restricted");
+      }
+      if (!response.ok && response.status < 500) {
+        throw new Error("Photon autocomplete refused request");
+      }
+      if (response.ok) return await response.json();
+    } catch (error) {
+      if (error instanceof Error && /Photon autocomplete (access restricted|refused request)/.test(error.message)) throw error;
+      if (attempt === 1) throw new Error("Photon autocomplete temporarily unavailable");
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error("Photon autocomplete unavailable");
+}
+
 async function nominatimSearch(input: string, lat?: number, lng?: number) {
   const url = new URL("https://photon.komoot.io/api/");
   const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
@@ -155,9 +182,7 @@ async function nominatimSearch(input: string, lat?: number, lng?: number) {
     url.searchParams.set("zoom", "13");
     url.searchParams.set("location_bias_scale", "0.05");
   }
-  const response = await fetch(url, { headers: photonHeaders });
-  if (!response.ok) throw new Error(`Address search fallback HTTP ${response.status}`);
-  const payload = await response.json();
+  const payload = await fetchPhotonSearchJson(url);
   const features = Array.isArray(payload?.features) ? payload.features : [];
   return features.map((feature: any) => {
     const lng = Number(feature?.geometry?.coordinates?.[0]);
@@ -253,8 +278,14 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const predictions = await nominatimSearch(localizedInput, lat, lng);
-      return json({ predictions, provider: "nominatim" });
+      try {
+        const predictions = await nominatimSearch(localizedInput, lat, lng);
+        return json({ predictions, provider: "nominatim" });
+      } catch {
+        // Do not leak the typed address or the passenger's coordinates in provider URLs.
+        console.error("Photon autocomplete unavailable after bounded retry");
+        return json({ error: "Serviço de sugestões temporariamente indisponível. Tente novamente." }, 503);
+      }
     }
 
     if (action === "place_details") {
