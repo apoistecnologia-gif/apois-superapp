@@ -60,7 +60,7 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operatio
 node scripts/qa/extract-corridas-operational-sql-v1.mjs | docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-rpc-privileges-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-rpc-privileges-assertions-v1.sql
-docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status, driver_id ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-assertions-v1.sql
 # Fourth isolated QA database: execute both actual staged acceptance RPCs
 # to prove Safe2Pay is disabled and legitimate direct cash still works.
@@ -68,7 +68,7 @@ docker exec "$name" createdb -U postgres ride_acceptance_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/driver-presence-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/ride-acceptance-fixture-v1.sql
 node scripts/qa/extract-corridas-acceptance-sql-v1.mjs | docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa
-docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status, driver_id ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/driver-rpc-privileges-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/driver-rpc-privileges-assertions-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/ride-acceptance-assertions-v1.sql
@@ -79,7 +79,7 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa 
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/ride-acceptance-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/ride-finish-fixture-v1.sql
 node scripts/qa/extract-corridas-finish-sql-v1.mjs | docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa
-docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status, driver_id ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/driver-rpc-privileges-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/driver-rpc-privileges-assertions-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/ride-finish-assertions-v1.sql

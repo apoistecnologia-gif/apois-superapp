@@ -263,7 +263,12 @@ set search_path = ''
 as $function$
 declare v_driver public.drivers%rowtype;
 begin
-  if new.status is not distinct from old.status or new.status not in ('motorista_a_caminho','motorista_chegou','em_viagem') then return new; end if;
+  -- Production trigger fires on UPDATE OF status, driver_id. Replacing an
+  -- assigned driver while the operational status stays unchanged must NOT
+  -- bypass KYC/approval/suspension/block/online checks.
+  if new.status not in ('motorista_a_caminho','motorista_chegou','em_viagem') then return new; end if;
+  if new.status is not distinct from old.status
+     and new.driver_id is not distinct from old.driver_id then return new; end if;
   if new.driver_id is null then raise exception 'driver_required_for_ride_stage' using errcode='55000'; end if;
   select * into v_driver from public.drivers d where d.id=new.driver_id;
   if not found then raise exception 'driver_profile_missing' using errcode='55000'; end if;

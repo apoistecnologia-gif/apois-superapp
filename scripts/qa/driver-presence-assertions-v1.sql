@@ -161,3 +161,48 @@ BEGIN
  RAISE NOTICE '[PASS] Approved stage and seven rejected stage transitions';
 END;
 $test$;
+
+-- Production BEFORE UPDATE OF status, driver_id trigger also fires when a
+-- ride is reassigned without changing its current operational status. The
+-- prior implementation silently skipped all driver eligibility checks.
+DO $test$
+DECLARE attempted_id uuid; expected_error text; denied boolean; received text;
+BEGIN
+ FOR attempted_id,expected_error IN SELECT * FROM (VALUES
+  ('20000000-0000-4000-8000-000000000003'::uuid,'driver_suspended'::text),
+  ('20000000-0000-4000-8000-000000000004'::uuid,'driver_blocked'::text),
+  ('20000000-0000-4000-8000-000000000002'::uuid,'driver_kyc_incomplete'::text),
+  ('20000000-0000-4000-8000-000000000001'::uuid,'driver_offline'::text),
+  (NULL::uuid,'driver_required_for_ride_stage'::text)
+ ) cases(id,message)
+ LOOP
+  denied:=false;
+  BEGIN
+   UPDATE public.rides SET driver_id=attempted_id
+   WHERE id='30000000-0000-4000-8000-000000000007'
+    AND status='motorista_a_caminho';
+  EXCEPTION WHEN OTHERS THEN
+   GET STACKED DIAGNOSTICS received=MESSAGE_TEXT;
+   IF received IS DISTINCT FROM expected_error THEN
+    RAISE EXCEPTION 'Reassignment to % raised % expected %',
+      attempted_id,received,expected_error;
+   END IF;
+   denied:=true;
+  END;
+  IF NOT denied THEN RAISE EXCEPTION
+    'Ineligible driver reassignment succeeded without status change: %',attempted_id;
+  END IF;
+ END LOOP;
+ IF NOT EXISTS(SELECT 1 FROM public.rides
+  WHERE id='30000000-0000-4000-8000-000000000007'
+  AND status='motorista_a_caminho'
+  AND driver_id='20000000-0000-4000-8000-000000000007') THEN
+   RAISE EXCEPTION 'Rejected operational driver reassignment mutated ride';
+ END IF;
+ -- Ordinary updates to already assigned and eligible operational ride remain
+ -- backward compatible; no new assertion for unchanged driver_id is introduced.
+ UPDATE public.rides SET driver_id=driver_id
+ WHERE id='30000000-0000-4000-8000-000000000007';
+ RAISE NOTICE '[PASS] Same-status driver reassignment: suspended/blocked/KYC/offline/null denied without mutation';
+END;
+$test$;

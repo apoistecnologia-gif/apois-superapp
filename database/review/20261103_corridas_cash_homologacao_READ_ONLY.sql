@@ -84,4 +84,18 @@ SELECT gate,required,passed,detail FROM (
      AND p.proname IN ('driver_set_presence','driver_accept_ride',
        'driver_accept_ride_candidate_legacy','driver_finish_ride')),
   'Private driver RPC remains service-role-only with the public wrappers as the app API'
+ UNION ALL
+ SELECT 'driver_stage_reassignment_preserves_eligibility_checks',true,
+  EXISTS(
+    SELECT 1 FROM funcs WHERE schema_name='private'
+     AND proname='enforce_driver_operational_stage_transition'
+     AND definition ILIKE '%new.driver_id is not distinct from old.driver_id%'
+     AND definition NOT ILIKE '%new.status is not distinct from old.status or%'
+  ) AND EXISTS(
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid='public.rides'::regclass
+      AND t.tgfoid=to_regprocedure('private.enforce_driver_operational_stage_transition()')
+      AND NOT t.tgisinternal
+      AND pg_get_triggerdef(t.oid) ILIKE '%UPDATE OF status, driver_id%'
+  ), 'Driver change with unchanged operational status must still run block/approval/KYC/online validation'
 ) gate_results ORDER BY gate;
