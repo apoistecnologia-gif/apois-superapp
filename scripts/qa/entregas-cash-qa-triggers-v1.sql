@@ -169,6 +169,41 @@ BEGIN
 END;
 $qa$;
 
+-- Exercise the full positive cash cancellation path with an active courier
+-- offer. Earlier tests only tested blocked jobs or cash without delivery jobs.
+-- The merchant RPC must cancel the offer/job and emit exactly one event.
+INSERT INTO public.delivery_jobs(id,order_id,merchant_id,pickup_address,delivery_address,status)
+VALUES('abababab-abab-4aba-8aba-000000000901',
+ '34343434-3434-4343-8343-343434343434',
+ 'afafafaf-afaf-4afa-8afa-afafafafafaf',
+ '{}'::jsonb,'{}'::jsonb,'offered');
+INSERT INTO public.delivery_offers(id,delivery_job_id,courier_id,status,expires_at)
+VALUES('abababab-abab-4aba-8aba-000000000902',
+ 'abababab-abab-4aba-8aba-000000000901',
+ 'abababab-abab-4aba-8aba-abababababab','accepted',
+ now()+interval '5 minutes');
+
+-- The other tenant cannot cancel a cash offer or its order, even by UUID.
+BEGIN;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','dddddddd-dddd-4ddd-8ddd-dddddddddddd',true);
+DO $qa$
+DECLARE denied boolean:=false; msg text;
+BEGIN
+ BEGIN
+  PERFORM public.merchant_reject_order('34343434-3434-4343-8343-343434343434',
+   'cross merchant delivery-cancellation attempt');
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT;
+  IF msg<>'merchant access required' THEN RAISE; END IF;
+  denied:=true;
+ END;
+ IF NOT denied THEN RAISE EXCEPTION 'Cross-merchant QA cash cancellation succeeded'; END IF;
+ RAISE NOTICE '[PASS] Cross-merchant cash cancellation denied even with assigned courier';
+END;
+$qa$;
+COMMIT;
+
 -- The actual staged merchant rejection must operate with all real QA triggers.
 UPDATE public.orders SET status='preparing'
 WHERE id='34343434-3434-4343-8343-343434343434';
@@ -213,6 +248,24 @@ BEGIN
   WHERE order_id='34343434-3434-4343-8343-343434343434') THEN
   RAISE EXCEPTION 'QA cash cancellation created gateway records';
  END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.delivery_jobs
+  WHERE id='abababab-abab-4aba-8aba-000000000901'
+    AND status='cancelled' AND cancelled_at IS NOT NULL) THEN
+  RAISE EXCEPTION 'QA cash cancellation did not cancel assigned courier job';
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.delivery_offers
+  WHERE id='abababab-abab-4aba-8aba-000000000902'
+    AND status='cancelled' AND responded_at IS NOT NULL) THEN
+  RAISE EXCEPTION 'QA cash cancellation did not cancel accepted courier offer';
+ END IF;
+ IF (SELECT count(*) FROM public.delivery_events
+  WHERE delivery_job_id='abababab-abab-4aba-8aba-000000000901'
+  AND event_type='merchant_cancelled'
+  AND from_status='offered' AND to_status='cancelled'
+  AND actor_user_id='cccccccc-cccc-4ccc-8ccc-cccccccccccc')<>1 THEN
+  RAISE EXCEPTION 'QA cash cancellation event missing or duplicated on retry';
+ END IF;
+ RAISE NOTICE '[PASS] Merchant cash cancel releases assigned courier offer/job once, without provider refund';
  RAISE NOTICE '[PASS] QA cash trigger integration: cancelled/pending->cancelled, zero fees, no gateway records';
 END;
 $qa$;
