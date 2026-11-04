@@ -21,17 +21,24 @@ function text(value: unknown, maxLength = 500): string {
 }
 
 async function triggerRedispatch(rideId: string): Promise<{ ok: boolean; action?: string; status?: number }> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/dispatch-ride`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${SERVICE_ROLE}`,
-      apikey: SERVICE_ROLE,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ ride_id: rideId, mode: "redispatch" }),
-  });
-  const payload = await response.json().catch(() => ({})) as { action?: string };
-  return { ok: response.ok, action: payload.action, status: response.status };
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/dispatch-ride`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        apikey: SERVICE_ROLE,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ ride_id: rideId, mode: "redispatch" }),
+    });
+    const payload = await response.json().catch(() => ({})) as { action?: string };
+    return { ok: response.ok, action: payload.action, status: response.status };
+  } catch (error) {
+    // A RPC do motorista ja pode ter confirmado a rejeicao/cancelamento.
+    // Devolver estado de redispatch adiado evita induzir o app a repetir a mutacao.
+    console.error("[APOIS redispatch] network unavailable", error instanceof Error ? error.name : "unknown");
+    return { ok: false, status: 0 };
+  }
 }
 
 Deno.serve(async (req) => {
