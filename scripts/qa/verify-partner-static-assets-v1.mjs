@@ -39,6 +39,35 @@ function cssRefs(css){
  for(const m of css.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s)]+))\s*\)/gi))refs.push(m[1]??m[2]??m[3]);
  return refs;
 }
+// Authenticated screens can import local ESM chunks on demand. In addition
+// to HTML/CSS assets, validate static/dynamic literal JS import edges and
+// Vite dependency preload arrays. Computed imports need runtime E2E tests.
+export function jsLocalRefs(js){
+ const refs=[];
+ const patterns=[
+  /\bfrom\s*(["'])(\.{1,2}\/[^"'\r\n]+)\1/g,
+  /\bimport\s*(["'])(\.{1,2}\/[^"'\r\n]+)\1/g,
+  /\bimport\s*\(\s*(["'\x60])(\.{1,2}\/[^"'\x60\r\n]+)\1\s*\)/g,
+ ];
+ for(const pattern of patterns)for(const match of js.matchAll(pattern))refs.push(match[2]);
+ if(js.includes('__vite__mapDeps')){
+  for(const match of js.matchAll(/\bm\.f\s*=\s*\[([^\]]*)\]/g)){
+   for(const ref of match[1].matchAll(/(["'])(\.{1,2}\/[^"'\r\n]+)\1/g))refs.push(ref[2]);
+  }
+ }
+ return refs;
+}
+function filesWithJs(dir){
+ const out=[];
+ function walk(directory){
+  for(const name of readdirSync(directory)){
+   const full=resolve(directory,name);
+   if(statSync(full).isDirectory())walk(full);
+   else if(name.toLowerCase().endsWith('.js')||name.toLowerCase().endsWith('.mjs'))out.push(full);
+  }
+ }
+ walk(dir);return out;
+}
 function filesWithCss(dir){
  const out=[];
  function walk(directory){
@@ -69,6 +98,10 @@ export function verifyMobileBundleAssets(bundleRoot, entries, label){
  if(existsSync(root))for(const file of filesWithCss(root)){
   const owner=relative(root,file);
   for(const ref of cssRefs(readFileSync(file,'utf8')))check(owner,ref);
+ }
+ if(existsSync(root))for(const file of filesWithJs(root)){
+  const owner=relative(root,file);
+  for(const ref of jsLocalRefs(readFileSync(file,'utf8')))check(owner,ref);
  }
  if(errors.length)throw Error('[FAIL] APK '+label+' has '+errors.length+' missing/broken local assets:\n'+errors.slice(0,30).join('\n'));
  if(!inspected)throw Error('[FAIL] APK '+label+' did not verify any local script/style/asset reference');
