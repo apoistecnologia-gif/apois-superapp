@@ -173,6 +173,8 @@ workflows:
             exit 1
           fi
           echo "[OK] certificado APK Cliente confirmado: $ACTUAL_SHA1"
+          test -x "$BUILD_TOOLS/aapt" || { echo '[FAIL] Android aapt missing to inspect signed APK'; exit 1; }
+          "$BUILD_TOOLS/aapt" dump badging "$SIGNED_APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$APP_VERSION_CODE" "$APP_VERSION_NAME"
           "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED_APK"
           rm -f "$ALIGNED"
     artifacts:
@@ -313,6 +315,8 @@ workflows:
             exit 1
           fi
           echo "[OK] certificado APK Parceiro confirmado: $ACTUAL_SHA1"
+          test -x "$BUILD_TOOLS/aapt" || { echo '[FAIL] Android aapt missing to inspect signed Partner APK'; exit 1; }
+          "$BUILD_TOOLS/aapt" dump badging "$SIGNED" | node scripts/qa/verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$PARTNER_VERSION_CODE" "$PARTNER_VERSION_NAME"
           "$BUILD_TOOLS/zipalign" -v -c -P 16 4 "$SIGNED"
           rm -f "$ALIGNED"
     artifacts:
