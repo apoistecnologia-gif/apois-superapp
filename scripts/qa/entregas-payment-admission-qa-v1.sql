@@ -2,6 +2,9 @@
 -- PostgreSQL 17 disposable database. All identities/orders are synthetic.
 -- Does NOT enable general cash checkout or bypass subscription payment in production.
 \set ON_ERROR_STOP on
+CREATE ROLE anon;
+CREATE ROLE authenticated;
+CREATE ROLE service_role;
 CREATE SCHEMA private;
 CREATE TABLE public.merchants(
  id uuid PRIMARY KEY,

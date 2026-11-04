@@ -32,6 +32,9 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scri
 # merchant-subscription functions. Confirm general rollout is still BLOCKED.
 docker exec "$name" createdb -U postgres entregas_payment_admission_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < scripts/qa/entregas-payment-admission-qa-v1.sql
+# Verify the unapplied fix inside the sixth synthetic database.
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < supabase/entregas-forward-migrations/20261104010000_guard_merchant_subscription_fail_closed.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < scripts/qa/entregas-subscription-approved-assertions-v1.sql
 # Read-only verified production trigger is rehearsed after standard cash tests.
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/entregas-payment-stage-trigger-qa-v1.sql
 # Independent empty database for the Motorista approved-status protection.
