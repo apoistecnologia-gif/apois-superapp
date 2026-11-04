@@ -16,6 +16,9 @@ const yaml=readFileSync('codemagic.yaml','utf8');
 assert.ok(yaml.includes('verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$APP_VERSION_CODE" "$APP_VERSION_NAME"'));
 assert.ok(yaml.includes('verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$PARTNER_VERSION_CODE" "$PARTNER_VERSION_NAME"'));
 assert.ok(!yaml.includes('publishing:'),'APK contract guard cannot enable Play Store publication');
+assert.ok(readFileSync('.github/workflows/apois-client-android.yml','utf8').includes("if: github.event_name == 'workflow_dispatch'"),'Client QA APK job must run only when manually requested');
+assert.ok(readFileSync('.github/workflows/apois-partner-android.yml','utf8').includes("if: github.event_name == 'workflow_dispatch'"),'Partner QA APK job must run only when manually requested');
+
 for(const [path,expected] of [
  ['.github/workflows/apois-client-android.yml','verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$GITHUB_RUN_NUMBER"'],
  ['.github/workflows/apois-partner-android.yml','verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$((28 + GITHUB_RUN_NUMBER))"']
