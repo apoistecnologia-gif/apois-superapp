@@ -28,6 +28,8 @@ test "$ready" = true || { echo '[FAIL] Disposable PostgreSQL did not finish init
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-assertions-v1.sql
+# Read-only verified production trigger is rehearsed after standard cash tests.
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/entregas-payment-stage-trigger-qa-v1.sql
 # Independent empty database for the Motorista approved-status protection.
 docker exec "$name" createdb -U postgres driver_guard_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < scripts/qa/driver-registration-fixture-v1.sql
