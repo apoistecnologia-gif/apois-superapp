@@ -17,13 +17,13 @@ for(const s of [
  'status === 429',
  'status === 401 || status === 403',
  'status >= 500',
- 'setPickupLabel(null)',
- 'setPickupShortLabel(null)',
+ 'addressKnownRef.current ? "success" : "error"',
  'runningCell.current = false;',
  'timeout = setTimeout',
  'action: "reverse_geocode"'
 ])assert.ok(hook.includes(s),'Pickup failure handling regression '+s);
 assert.ok(!home.includes('Toque para tentar identificar o endereço'),'Misleading pickup CTA must be removed');
+assert.ok(!hook.includes('setPickupLabel(null)'),'Do not remove previously known address label during a temporary outage');
 assert.ok(!home.includes('address || "Sua localização atual"'),'Never report an unverified address');
 const origin=home.indexOf('data-apois-pickup-retry-v1');
 const branch=home.lastIndexOf('if (addressStatus === "error")',origin);

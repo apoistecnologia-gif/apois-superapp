@@ -232,7 +232,9 @@ requireText('scripts/harden-corridas-pickup-address-display.mjs', [
   'pickupLabel ||',
   'pickupShortLabel ||',
   'Identificando seu endereço...',
-  'Toque para tentar identificar o endereço',
+  'Endereço indisponível',
+  'Toque para tentar novamente',
+  'data-apois-pickup-retry-v1',
   'Home ainda usa fallback genérico "Sua localização atual"',
 ], 'Local de partida usa reverse geocoding real e não exibe fallback genérico');
 

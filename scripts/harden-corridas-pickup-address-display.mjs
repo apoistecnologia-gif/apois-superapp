@@ -57,9 +57,8 @@ const reportedReverse = `      // APOIS_PICKUP_REVERSE_DIAGNOSTIC_V1: do not tre
       }`;
 if (!hook.includes(failingReverse)) throw new Error('[FAIL] Corridas pickup: HTTP error mapping drift');
 hook = hook.replace(failingReverse, reportedReverse);
-const errorClear = '      setAddress(null);';
-if (!hook.includes(errorClear)) throw new Error('[FAIL] Corridas pickup: catch cleanup drift');
-hook = hook.replace(errorClear, errorClear + '\n      setPickupLabel(null);\n      setPickupShortLabel(null);');
+// A correção APOIS_TRIP_UX_V1 preserva endereço validado quando o geocoder falha.
+// Não alterar setAddress(null) aqui: o script posterior aplica a guarda existente.
 
 
 hook = hook
@@ -150,8 +149,6 @@ for (const marker of [
   'action: "reverse_geocode"',
   'setPickupShortLabel(exactShortLabel)',
   'APOIS_PICKUP_REVERSE_DIAGNOSTIC_V1',
-  'setPickupLabel(null)',
-  'setPickupShortLabel(null)',
 ]) {
   if (!read(hookPath).includes(marker)) throw new Error(`[FAIL] Corridas pickup: marcador ausente no hook (${marker})`);
 }
