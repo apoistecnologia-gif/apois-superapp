@@ -44,6 +44,24 @@ if (!hook.includes(oldBlock) && !hook.includes('const exactAddress = (resolved.a
 }
 if (hook.includes(oldBlock)) hook = hook.replace(oldBlock, newBlock);
 
+const failingReverse = '      if (reverseError) throw reverseError;';
+const reportedReverse = `      // APOIS_PICKUP_REVERSE_DIAGNOSTIC_V1: do not treat API outage as GPS failure.
+      if (reverseError) {
+        const status = (reverseError as { context?: { status?: number } }).context?.status;
+        if (status === 429) throw new Error("Limite de consultas atingido. Aguarde um minuto.");
+        if (status === 401 || status === 403) throw new Error("Não foi possível autenticar a consulta de endereço.");
+        if (typeof status === "number" && status >= 500) {
+          throw new Error("Serviço de endereços temporariamente indisponível.");
+        }
+        throw new Error("Não foi possível consultar o endereço. Verifique sua conexão.");
+      }`;
+if (!hook.includes(failingReverse)) throw new Error('[FAIL] Corridas pickup: HTTP error mapping drift');
+hook = hook.replace(failingReverse, reportedReverse);
+const errorClear = '      setAddress(null);';
+if (!hook.includes(errorClear)) throw new Error('[FAIL] Corridas pickup: catch cleanup drift');
+hook = hook.replace(errorClear, errorClear + '\n      setPickupLabel(null);\n      setPickupShortLabel(null);');
+
+
 hook = hook
   .replace('setAddress(null); // Clear address on real error', 'setAddress(null);')
   .replace('if (!location || !location.latitude || !location.longitude) return;', 'if (!location || !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) return;');
@@ -91,11 +109,34 @@ const currentAddressLine = `  const currentAddressText =
         pickupLabel ||
         pickupShortLabel ||
         (pickupAddressError
-          ? "Toque para tentar identificar o endereço"
+          ? "Endereço indisponível"
           : "Identificando seu endereço...");
 `;
 
 home = replaceCurrentAddressDeclaration(home, currentAddressLine);
+
+// On failure, the origin row must RETRY geocoding, not navigate to destination.
+// The original source mistakenly showed "Toque..." but always opened destination.
+const originalOriginClick = 'onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })}';
+const homeAddressIndex = home.indexOf('{currentAddressText}');
+const originClickIndex = home.lastIndexOf(originalOriginClick, homeAddressIndex);
+if (homeAddressIndex < 0 || originClickIndex < 0 || homeAddressIndex-originClickIndex > 1200) {
+  throw new Error('[FAIL] Corridas pickup: origin click/label structure changed');
+}
+const retryOriginClick = `onClick={() => {
+                if (addressStatus === "error") { void refreshAddress(); return; }
+                navigate({ to: "/buscar-destino", search: { stop: false } });
+              }}`;
+home = home.slice(0, originClickIndex) + retryOriginClick + home.slice(originClickIndex + originalOriginClick.length);
+const pickupLabelNode = /(\{currentAddressText\}\s*<\/p>)/;
+if (!pickupLabelNode.test(home)) throw new Error('[FAIL] Corridas pickup: label JSX node changed');
+home = home.replace(pickupLabelNode, `$1
+                  {addressStatus === "error" && (
+                    <p data-apois-pickup-retry-v1="true" className="mt-1 text-xs font-medium text-[#586272]">
+                      Toque para tentar novamente
+                    </p>
+                  )}`);
+
 
 home = home.replace(
   'onClick={() => refreshLocation()}',
@@ -108,6 +149,9 @@ for (const marker of [
   '"google-maps-address"',
   'action: "reverse_geocode"',
   'setPickupShortLabel(exactShortLabel)',
+  'APOIS_PICKUP_REVERSE_DIAGNOSTIC_V1',
+  'setPickupLabel(null)',
+  'setPickupShortLabel(null)',
 ]) {
   if (!read(hookPath).includes(marker)) throw new Error(`[FAIL] Corridas pickup: marcador ausente no hook (${marker})`);
 }
@@ -115,7 +159,9 @@ for (const marker of [
   'pickupLabel ||',
   'pickupShortLabel ||',
   'Identificando seu endereço...',
-  'Toque para tentar identificar o endereço',
+  'Endereço indisponível',
+  'Toque para tentar novamente',
+  'data-apois-pickup-retry-v1',
 ]) {
   if (!read(homePath).includes(marker)) throw new Error(`[FAIL] Corridas pickup: marcador ausente na Home (${marker})`);
 }

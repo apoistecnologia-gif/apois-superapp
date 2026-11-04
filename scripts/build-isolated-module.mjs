@@ -381,6 +381,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-flow-ux.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-timeout-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-pickup-retry-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-stops-confirm-display.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-stops-confirm-display.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-android-footer-safe-area.mjs')]);
