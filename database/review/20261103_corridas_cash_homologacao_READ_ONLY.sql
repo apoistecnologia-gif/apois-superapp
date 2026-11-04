@@ -162,4 +162,19 @@ SELECT gate,required,passed,detail FROM (
    ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
    WHERE n.nspname='public' AND c.relname IN('driver_memberships','driver_membership_charges')),
   'Billing rows remain own-SELECT but anon/driver cannot TRUNCATE or write subscriptions'
+ UNION ALL SELECT 'wallet_cancellation_financial_tables_least_privilege',true,
+  (SELECT count(*)=3 AND bool_and(
+    c.relrowsecurity
+    AND NOT has_table_privilege('anon',c.oid,'SELECT')
+    AND NOT has_table_privilege('anon',c.oid,'TRUNCATE')
+    AND has_table_privilege('authenticated',c.oid,'SELECT')
+    AND NOT has_table_privilege('authenticated',c.oid,'INSERT')
+    AND NOT has_table_privilege('authenticated',c.oid,'UPDATE')
+    AND NOT has_table_privilege('authenticated',c.oid,'DELETE')
+    AND NOT has_table_privilege('authenticated',c.oid,'TRUNCATE')
+    AND has_table_privilege('service_role',c.oid,'UPDATE')
+  ) FROM pg_class c JOIN pg_namespace n ON c.relnamespace=n.oid
+   WHERE n.nspname='public' AND c.relname IN
+    ('driver_wallets','driver_wallet_transactions','cancellation_fees')),
+  'Wallet/fee financial tables: own-SELECT only; no anonymous access or TRUNCATE'
 ) gate_results ORDER BY gate;
