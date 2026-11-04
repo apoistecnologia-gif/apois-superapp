@@ -129,4 +129,25 @@ SELECT gate,required,passed,detail FROM (
    AND pg_get_functiondef(p.oid) ILIKE '%mercadopago_marketplace%'
    AND pg_get_functiondef(p.oid) ILIKE '%credit_card%'
  ), 'Busy-driver offers must follow current cash/card-direct acceptance restrictions, not retired electronic gateways'
+ UNION ALL
+ SELECT 'sensitive_admin_and_pix_rpc_acl_restricted',true,
+  has_function_privilege('authenticated',to_regprocedure('public.admin_get_dashboard_metrics()'),'EXECUTE')
+  AND has_function_privilege('service_role',to_regprocedure('public.admin_get_dashboard_metrics()'),'EXECUTE')
+  AND NOT has_function_privilege('anon',to_regprocedure('public.admin_get_dashboard_metrics()'),'EXECUTE')
+  AND has_function_privilege('authenticated',to_regprocedure('public.admin_get_finance_summary(timestamp with time zone,timestamp with time zone)'),'EXECUTE')
+  AND has_function_privilege('service_role',to_regprocedure('public.admin_get_finance_summary(timestamp with time zone,timestamp with time zone)'),'EXECUTE')
+  AND NOT has_function_privilege('anon',to_regprocedure('public.admin_get_finance_summary(timestamp with time zone,timestamp with time zone)'),'EXECUTE')
+  AND has_function_privilege('authenticated',to_regprocedure('public.admin_provision_staff(uuid,public.app_role,text)'),'EXECUTE')
+  AND has_function_privilege('service_role',to_regprocedure('public.admin_provision_staff(uuid,public.app_role,text)'),'EXECUTE')
+  AND NOT has_function_privilege('anon',to_regprocedure('public.admin_provision_staff(uuid,public.app_role,text)'),'EXECUTE')
+  AND has_function_privilege('authenticated',to_regprocedure('public.admin_set_driver_approval(uuid,text,text)'),'EXECUTE')
+  AND has_function_privilege('service_role',to_regprocedure('public.admin_set_driver_approval(uuid,text,text)'),'EXECUTE')
+  AND NOT has_function_privilege('anon',to_regprocedure('public.admin_set_driver_approval(uuid,text,text)'),'EXECUTE')
+  AND has_function_privilege('authenticated',to_regprocedure('public.admin_set_driver_suspension(uuid,boolean,text)'),'EXECUTE')
+  AND has_function_privilege('service_role',to_regprocedure('public.admin_set_driver_suspension(uuid,boolean,text)'),'EXECUTE')
+  AND NOT has_function_privilege('anon',to_regprocedure('public.admin_set_driver_suspension(uuid,boolean,text)'),'EXECUTE')
+  AND has_function_privilege('service_role',to_regprocedure('public.activate_prepaid_pix_ride(uuid,text)'),'EXECUTE')
+  AND NOT has_function_privilege('authenticated',to_regprocedure('public.activate_prepaid_pix_ride(uuid,text)'),'EXECUTE')
+  AND NOT has_function_privilege('anon',to_regprocedure('public.activate_prepaid_pix_ride(uuid,text)'),'EXECUTE'),
+  'Admin APIs require authenticated caller; retired Pix activation only service_role'
 ) gate_results ORDER BY gate;

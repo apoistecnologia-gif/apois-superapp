@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 command -v docker >/dev/null || { echo '[FAIL] Docker required for isolated PostgreSQL fixture'; exit 1; }
 node scripts/qa/verify-corridas-public-rpc-acl-v1.mjs
 node scripts/qa/verify-forward-schema-preflights-v1.mjs
+node scripts/qa/verify-corridas-sensitive-rpc-acl-v1.mjs
 name="apois-cash-pg-qa-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
 cleanup(){ docker rm -f "$name" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
@@ -97,4 +98,10 @@ docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa -c 
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/driver-rpc-privileges-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/driver-rpc-privileges-assertions-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_finish_qa < scripts/qa/ride-finish-assertions-v1.sql
+# Additional fully isolated database for elevated public RPC ACL hardening:
+# no real users, no finance, no JWT and no production SQL writes.
+docker exec "$name" createdb -U postgres corridas_sensitive_acl_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d corridas_sensitive_acl_qa < scripts/qa/corridas-sensitive-rpc-acl-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d corridas_sensitive_acl_qa < supabase/corridas-forward-migrations/20261104031000_restrict_sensitive_admin_and_pix_public_rpc_acl.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d corridas_sensitive_acl_qa < scripts/qa/corridas-sensitive-rpc-acl-assertions-v1.sql
 echo '[PASS] Real PostgreSQL 17 synthetic cash RLS, driver registration, ride acceptance and queued-ride completion. Production untouched.'
