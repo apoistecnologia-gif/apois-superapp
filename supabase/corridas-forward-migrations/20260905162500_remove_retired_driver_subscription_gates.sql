@@ -314,7 +314,11 @@ begin
   if new.status<>'procurar_motorista' or new.driver_id is not null
      or new.origin_lat is null or new.origin_lng is null
      or new.origin_lat not between -34 and 6
-     or new.origin_lng not between -74 and -32 then return new; end if;
+     or new.origin_lng not between -74 and -32
+     -- Do not propose an already-expired ride to a busy driver: canonical
+     -- acceptance itself denies request_expires_at <= now().
+     or (new.request_expires_at is not null
+         and new.request_expires_at<=now()) then return new; end if;
   begin
     select coalesce((value #>> '{}')::numeric,5) into v_radius_km from public.app_settings where key='ride.next_offer_max_distance_km';
   exception when others then v_radius_km:=5;

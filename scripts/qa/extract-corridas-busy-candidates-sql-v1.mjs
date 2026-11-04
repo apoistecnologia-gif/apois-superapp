@@ -12,6 +12,7 @@ for(const invariant of [
  "d.last_location_at<=now()+interval '30 seconds'",
  "new.origin_lat not between -34 and 6",
  "new.origin_lng not between -74 and -32",
+ "new.request_expires_at<=now()",
  "private.driver_kyc_is_ready(d.id)",
  "d.blocked_at is null",
  "d.suspended_at is null",

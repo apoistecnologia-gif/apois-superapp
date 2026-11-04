@@ -42,6 +42,7 @@ for(const mark of [
  "d.last_location_at<=now()+interval '30 seconds'",
  "new.origin_lat not between -34 and 6",
  "new.origin_lng not between -74 and -32",
+ "new.request_expires_at<=now()",
 ]) if(!sql.includes(mark)) throw new Error("Busy-driver offer boundary regression: "+mark);
 console.log("[PASS] Corridas busy-driver offers require bounded coordinates and fresh GPS");
 

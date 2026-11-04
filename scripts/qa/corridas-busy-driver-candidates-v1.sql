@@ -33,6 +33,29 @@ BEGIN
 END;
 $t$;
 
+-- A request that expired while the search candidate list was being
+-- updated must not be offered; the canonical driver_accept_ride RPC cannot
+-- accept it even if the busy driver is otherwise eligible.
+INSERT INTO public.rides(id,status,category,origin_lat,origin_lng,
+ payment_method,service_details,request_expires_at,
+ candidate_driver_ids,offered_driver_ids)
+VALUES('30000000-0000-4000-8000-000000000917',
+ 'procurar_motorista','car',-9.40,-40.50,
+ 'cash','{}'::jsonb,now()-interval '1 minute',
+ '{}'::uuid[],'{}'::uuid[]);
+UPDATE public.rides SET candidate_driver_ids='{}'::uuid[]
+WHERE id='30000000-0000-4000-8000-000000000917';
+DO $t$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.rides
+  WHERE id='30000000-0000-4000-8000-000000000917'
+  AND cardinality(offered_driver_ids)>0) THEN
+  RAISE EXCEPTION 'Expired ride request was sent as a new busy-driver offer';
+ END IF;
+ RAISE NOTICE '[PASS] Expired ride requests do not generate busy-driver offers';
+END;
+$t$;
+
 -- Cached online flag with future GPS must never be eligible even if the
 -- driver/ride latitude and longitude are close.
 UPDATE public.drivers SET last_location_at=now()+interval '10 minutes'

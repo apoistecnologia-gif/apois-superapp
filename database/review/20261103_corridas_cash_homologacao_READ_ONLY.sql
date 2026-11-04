@@ -117,5 +117,6 @@ SELECT gate,required,passed,detail FROM (
    AND pg_get_functiondef(p.oid) ILIKE '%d.last_location_at<=now()+interval ''30 seconds''%'
    AND pg_get_functiondef(p.oid) ILIKE '%new.origin_lat not between -34 and 6%'
    AND pg_get_functiondef(p.oid) ILIKE '%new.origin_lng not between -74 and -32%'
+   AND pg_get_functiondef(p.oid) ILIKE '%new.request_expires_at<=now()%'
  ), 'Already busy drivers must not receive additional offers based on future GPS or wrapped coordinates'
 ) gate_results ORDER BY gate;
