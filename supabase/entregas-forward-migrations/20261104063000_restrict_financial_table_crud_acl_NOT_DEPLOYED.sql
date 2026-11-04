@@ -16,11 +16,27 @@ BEGIN
  AND p.cmd<>'SELECT') THEN
    RAISE EXCEPTION 'APOIS_FINANCE_ACL_WRITE_POLICY_DRIFT' USING ERRCODE='55000';
  END IF;
+ -- The three real payout-account policies must continue to bind reads,
+ -- inserts and updates to the wallet owner. A syntactically valid but
+ -- permissive replacement policy must fail before client write grants.
  IF (SELECT count(*) FROM pg_policies p WHERE p.schemaname='public'
-  AND p.tablename='payout_accounts' AND p.roles @> ARRAY['authenticated']::name[]
-  AND p.cmd IN ('SELECT','INSERT','UPDATE')) <> 3
- OR EXISTS(SELECT 1 FROM pg_policies p WHERE p.schemaname='public'
-  AND p.tablename='payout_accounts' AND p.cmd NOT IN ('SELECT','INSERT','UPDATE')) THEN
+  AND p.tablename='payout_accounts') <> 3
+ OR NOT EXISTS(SELECT 1 FROM pg_policies p WHERE p.schemaname='public'
+  AND p.tablename='payout_accounts'
+  AND p.policyname='Owners view payout accounts' AND p.cmd='SELECT'
+  AND p.roles @> ARRAY['authenticated']::name[]
+  AND p.qual ILIKE '%current_user_owns_wallet(wallet_id)%')
+ OR NOT EXISTS(SELECT 1 FROM pg_policies p WHERE p.schemaname='public'
+  AND p.tablename='payout_accounts'
+  AND p.policyname='Owners create payout accounts' AND p.cmd='INSERT'
+  AND p.roles @> ARRAY['authenticated']::name[]
+  AND p.with_check ILIKE '%current_user_owns_wallet(wallet_id)%')
+ OR NOT EXISTS(SELECT 1 FROM pg_policies p WHERE p.schemaname='public'
+  AND p.tablename='payout_accounts'
+  AND p.policyname='Owners update payout accounts' AND p.cmd='UPDATE'
+  AND p.roles @> ARRAY['authenticated']::name[]
+  AND p.qual ILIKE '%current_user_owns_wallet(wallet_id)%'
+  AND p.with_check ILIKE '%current_user_owns_wallet(wallet_id)%') THEN
    RAISE EXCEPTION 'APOIS_PAYOUT_ACCOUNT_OWNER_POLICY_DRIFT' USING ERRCODE='55000';
  END IF;
 END;
