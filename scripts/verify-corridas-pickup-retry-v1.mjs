@@ -10,7 +10,7 @@ for(const s of [
  'data-apois-pickup-retry-v1',
  'Toque para tentar novamente',
  'onClick={() => { refreshLocation(); void refreshAddress(); }}',
- 'navigate({ to: "/buscar-destino", search: { stop: false } });'
+ 'navigate({ to: "/buscar-destino", search: { stop: false } })'
 ])assert.ok(home.includes(s),'Pickup retry visual/behavior regression '+s);
 for(const s of [
  'APOIS_PICKUP_REVERSE_DIAGNOSTIC_V1',
