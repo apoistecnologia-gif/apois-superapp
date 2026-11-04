@@ -202,3 +202,29 @@ Consulta **somente de leitura** aos projetos oficiais, após CI 41740590888:
 **Diferença importante entre os ambientes:** a produção real ainda concede chamadas anônimas para esses wrappers e contém as quatro restrições Corridas de assinatura antiga; o PostgreSQL descartável verifica o comportamento **esperado da migração preparada**, não prova que foi aplicado ao Supabase. Em Entregas continuam os quatro bloqueios operacionais de cash/pending. Somando os dois produtos, são **oito gates operacionais conhecidos e dois gates adicionais de permissão anônima**, ainda não cumpridos na produção. Não confundir o CI verde com produção liberada.
 
 **Fonte protegida e decisão:** diff desta rodada toca apenas `supabase/corridas-forward-migrations/`, `scripts/qa/`, runner PostgreSQL e os dois arquivos `database/review/`; sem modificação em `sources/`, submódulos, source-lock ou workflows. Não executar revogações/migrações em produção sem validação de callers e staging fiel com o esquema completo. Nenhum APK final autorizado enquanto não forem testados Auth real, KYC/13 fotos, GPS, push, PIN e fluxo financeiro físico.
+
+---
+
+## Schema Entregas progressivamente fiel — integração de gatilho financeiro (03/11/2026)
+
+**Finalidade:** elevar a fidelidade dos testes PostgreSQL isolados sem copiar dados pessoais nem conectar ao Supabase oficial. O QA continua com esquema **sintético parcial**; não constitui clone integral da produção nem libera APK.
+
+### Fonte autoritativa e melhorias aplicadas
+
+- Consulta **somente de leitura** ao Supabase Entregas `ptgkwyyolrdgnqketkjj` validou tipos e colunas obrigatórias de `orders`, `order_items`, `order_status_history`, `payments`, `refunds`, `delivery_jobs`, `delivery_offers`, `delivery_events` e `admin_audit_logs`. Também foram lidas CHECK constraints e triggers relevantes, sem alterar nem executar nenhuma operação financeira real.
+- Commit `7c5b31a88ceae8f483f24eb0c96ffdede0aedbbd`: aprimorou a fixture `scripts/qa/cash-postgres-fixture-v1.sql` com tipos UUID, valores obrigatórios, estados válidos, estrutura financeira e campos essenciais similares aos de produção, além de 12 verificações explícitas de tipos/NOT NULL e tentativas de violar métodos/status.
+- Commits `0e141c94575d5fb3dc7db3b2407e3c6bf7b325ba`, `4274a7cd1c06bd5762a5ecef43d8013762b77ea6` e `fdc2b525e8fd9e488de282b9bd617a79c0468b39`: repararam problemas **exclusivos dos arquivos sintéticos de testes** identificados em CI (SQL duplicado ao substituir literalmente uma regex de moeda e conflito com nome do campo `relname` de `pg_class`). A migração operacional de Entregas NÃO foi modificada por esses commits. Em [41744590497](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41744590497), a nova bateria PostgreSQL passou.
+- Commit `16bc169c97d6589ca7d755cddc935243c001d03f`: criou `scripts/qa/entregas-payment-stage-trigger-qa-v1.sql` baseado no corpo efetivamente lido via `pg_get_functiondef` de `public.enforce_order_payment_before_fulfillment`, instalando o gatilho apenas no PostgreSQL descartável e verificando:
+  - Pedido `cash/pending` pode avançar até `preparing` sem marcar pagamento eletrônico como `paid`.
+  - Pedido `pix/pending` NÃO pode entrar em preparo; a tentativa deve ser recusada sem mutação do estado.
+  - Pedido `pix/paid` pode avançar em preparo, preservando o comportamento eletrônico legado.
+  - Pedido `cash/pending` em preparo pode ser cancelado pela função real proposta `merchant_reject_order`, sem criar registro de `refund` eletrônico e mantendo `payment_status='cancelled'`.
+- CI [41744829063](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41744829063): estágio isolado PostgreSQL **PASS**, builds WEB Cliente e Estabelecimento aprovados; o resultado final da auditoria visual deve ser confirmado no link ao encerrar.
+
+### Diferenciar teste de implantação
+
+A base QA aproxima a superfície de **nove tabelas** de Entregas, mas não reproduz todas as tabelas do banco, funções Auth, RLS legadas cumulativas, triggers de notificações, dispatch automático, saldos, webhooks e concorrência de duas sessões. O teste só executa os corpos do SQL versionado e um gatilho adicional lido da produção; não é autorização para DDL no Supabase.
+
+A base real continua com `orders`, `order_items`, `order_status_history` sem as políticas gerais `cash/pending`, `merchant_reject_order` sem a guarda de conciliação cash vigente e `anon` com EXECUTE na função pública. Consulta read-only novamente efetuada após os testes — **cinco gates Entregas** ainda bloqueados, além dos cinco conhecidos de Corridas. Não há branches de desenvolvimento nos dois projetos Supabase (listagem consultada, retorno vazio). Um ambiente staging real dependerá de uma decisão separada sobre infraestrutura, custo e proteção de dados.
+
+**Proteção de fontes:** nesta rodada a comparação GitHub mostrou alterações apenas em `scripts/qa/cash-postgres-fixture-v1.sql`, `scripts/qa/cash-postgres-assertions-v1.sql`, `scripts/qa/entregas-payment-stage-trigger-qa-v1.sql` e `scripts/test-cash-postgres-isolated-v1.sh`; nenhum `sources/`, workflow, submódulo ou source-lock modificado. Nenhuma migração aplicada em produção, nenhum merge, nenhum APK gerado.
