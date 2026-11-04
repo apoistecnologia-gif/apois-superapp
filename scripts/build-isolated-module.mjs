@@ -376,6 +376,9 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-kit-visual.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-category-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-save-favorites-in-search.mjs')]);
+  // Client destination search: show provider/network errors and reattempt suggestions without changing maps or ride actions.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-destination-suggestions-v2.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-passenger-destination-suggestions-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-compact-home-favorites.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-destination-pickup-contrast.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
