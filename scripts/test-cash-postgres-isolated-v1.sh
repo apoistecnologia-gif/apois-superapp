@@ -43,6 +43,8 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_paymen
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/entregas-payment-stage-trigger-qa-v1.sql
 # Cash terminal reconciliation is verified with synthetic gateway/refund anomalies.
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/entregas-cash-terminal-reconciliation-v1.sql
+# Production-derived cash-test triggers and authorization on real staged cancel RPC.
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/entregas-cash-qa-triggers-v1.sql
 # Independent empty database for the Motorista approved-status protection.
 docker exec "$name" createdb -U postgres driver_guard_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_guard_qa < scripts/qa/driver-registration-fixture-v1.sql
