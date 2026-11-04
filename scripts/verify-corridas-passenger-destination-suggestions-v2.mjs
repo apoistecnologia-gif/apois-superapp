@@ -22,6 +22,7 @@ for(const marker of [
   'handleFinalSelection(details)',
   'data-apois-favorite-save-mode="true"',
   'data-apois-stable-destination-sheet',
+  'query.trim().length < 3 ? (',
   'onClick={() => { setIsBottomSheetOpen(false); setIsPickingOnMap(true); }}',
 ])assert.ok(ui.includes(marker),"Search UX missing or regressed: "+marker);
 for(const marker of [
