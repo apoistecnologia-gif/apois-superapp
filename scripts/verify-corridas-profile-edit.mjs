@@ -66,7 +66,7 @@ for (const token of [
   'await navigate({ to: "/login", replace: true });',
 ]) assert.ok(ui.includes(token), "Perfil perdeu ação de exclusão: " + token);
 for (const token of [
-  'requestDeletion("request_own_account_deletion")',
+  'deletionClient.rpc("request_own_account_deletion")',
   'confirmation.trim() !== "EXCLUIR"',
   'data?.ok !== true',
   'rpcError.code === "55000"',
