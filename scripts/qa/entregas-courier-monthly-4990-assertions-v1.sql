@@ -20,7 +20,7 @@ INSERT INTO public.courier_monthly_charges(courier_id) VALUES
 ('20000000-0000-4000-8000-000000000001'),
 ('20000000-0000-4000-8000-000000000002');
 DO $t$
-DECLARE denied1 boolean:=false;denied2 boolean:=false;denied3 boolean:=false;
+DECLARE denied1 boolean:=false;denied2 boolean:=false;denied3 boolean:=false;denied4 boolean:=false;denied5 boolean:=false;
 BEGIN
  BEGIN
   INSERT INTO public.courier_monthly_memberships(courier_id,monthly_fee_cents)
@@ -37,8 +37,20 @@ BEGIN
   VALUES('20000000-0000-4000-8000-000000000001','received');
  EXCEPTION WHEN check_violation THEN denied3:=true;
  END;
- IF NOT denied1 OR NOT denied2 OR NOT denied3 THEN
-  RAISE EXCEPTION 'Invalid courier monthly amount or unverified receipt was admitted';
+ BEGIN
+  UPDATE public.courier_monthly_memberships
+   SET status='active',current_period_start=now(),
+       current_period_end=now()+interval '1 month'
+   WHERE courier_id='20000000-0000-4000-8000-000000000001';
+ EXCEPTION WHEN check_violation THEN denied4:=true;
+ END;
+ BEGIN
+  INSERT INTO public.courier_monthly_charges(courier_id,status,provider,provider_payment_id,paid_at)
+  VALUES('20000000-0000-4000-8000-000000000001','received','fake-provider','fake-receipt',now());
+ EXCEPTION WHEN check_violation THEN denied5:=true;
+ END;
+ IF NOT denied1 OR NOT denied2 OR NOT denied3 OR NOT denied4 OR NOT denied5 THEN
+  RAISE EXCEPTION 'Invalid monthly amount, fake active entitlement or unverified receipt was admitted';
  END IF;
  RAISE NOTICE '[PASS] Only R$49.90 courier records accepted; unverified paid receipts denied';
 END;
