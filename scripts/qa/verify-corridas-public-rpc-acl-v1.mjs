@@ -27,6 +27,8 @@ for (const [mark, message] of [
   "Cached presence eligibility must depend on current KYC"],
  ["and coalesce(v_driver.is_online,false) and not v_active_in_trip then",
   "KYC revocation must clear stale online state without GPS"],
+ ["and not v_operationally_eligible",
+  "Any ineligible cached online driver must be deactivated, not only KYC"],
  ["set is_online=false,updated_at=now()",
   "KYC revocation must persist an offline transition"]
 ]) {

@@ -64,6 +64,9 @@ docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-assertions-v1.sql
 # Post-approval KYC revocation: clear cached online state, keep active GPS tracking.
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-kyc-revocation-v1.sql
+# Suspended, blocked and disapproved cached-online drivers must also clear
+# availability. Active-trip GPS remains possible while not eligible.
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-ineligibility-revocation-v1.sql
 # Fourth isolated QA database: execute both actual staged acceptance RPCs
 # to prove Safe2Pay is disabled and legitimate direct cash still works.
 docker exec "$name" createdb -U postgres ride_acceptance_qa

@@ -50,13 +50,13 @@ begin
     and v_driver.blocked_at is null
     and v_kyc_ready;
 
-  -- When KYC is revoked while already online, immediately take the driver
-  -- offline even if a subsequent heartbeat has no GPS fix. Do not throw an
-  -- exception here: it would roll the state change back.
-  -- This is only for drivers with NO active trip; an active trip continues to
-  -- accept location updates below, but never remains available for new rides.
+  -- Invalidate any cached online state when the driver's eligibility is
+  -- revoked (KYC, approval, suspension or block). This must work even with
+  -- no GPS coordinates: throwing an exception here would roll back offline.
+  -- During an active trip, still accept GPS below to protect ride tracking,
+  -- but do not advertise the ineligible driver as available for new rides.
   if coalesce(_online,false)
-     and not v_kyc_ready
+     and not v_operationally_eligible
      and coalesce(v_driver.is_online,false)
      and not v_active_in_trip then
     update public.drivers

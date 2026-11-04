@@ -104,6 +104,7 @@ SELECT gate,required,passed,detail FROM (
    AND proname='driver_set_presence'
    AND definition ILIKE '%v_kyc_ready := coalesce(private.driver_kyc_is_ready%'
    AND definition ILIKE '%and v_kyc_ready%'
+   AND definition ILIKE '%and not v_operationally_eligible%'
    AND definition ILIKE '%and coalesce(v_driver.is_online,false)%'
    AND definition ILIKE '%set is_online=false,updated_at=now()%'
    AND definition ILIKE '%tracking_active_ride%'),
