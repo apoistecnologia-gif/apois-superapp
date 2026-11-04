@@ -40,3 +40,5 @@ As Edge Functions de fonte protegida em `sources/apois-corridas-motorista-admin`
 **Correção adicional na cadeia de redispatch:** recusa/cancelamento enviam resposta de redispatch adiado após erro de rede posterior à RPC já confirmada, para não induzir repetição de mutação. Reforçado por `scripts/qa/verify-corridas-redispatch-contract-v1.mjs`. Código staged, sem deploy.
 
 **Próximo gate real:** preflight verde no HEAD com proteção de presença + assinatura original recuperada + APK assinado com certificado pinado + integração autenticação/chamada em aparelhos. Até então, C-001/C-002/C-003 e redispatch são pendências de homologação; não declarar release completa.
+
+**Validação posterior:** [GitHub Actions 41890878851](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41890878851), commit de código `504e76c1`, **3/3 jobs SUCCESS**: preflight Parceiro WEB-only (incluindo typecheck e teste de presença), Cliente e Estabelecimento. **Sem APK, sem E2E autenticado ou publicação.**
