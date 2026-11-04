@@ -7,9 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 // O snapshot de tipos da fonte ainda não inclui esta RPC já existente na produção.
 type DeletionResult = { ok?: boolean };
 type DeletionError = { code?: string; message: string };
-const requestDeletion = supabase.rpc as unknown as (
-  name: "request_own_account_deletion"
-) => Promise<{ data: DeletionResult | null; error: DeletionError | null }>;
+const deletionClient = supabase as unknown as {
+  rpc: (name: "request_own_account_deletion") => Promise<{
+    data: DeletionResult | null;
+    error: DeletionError | null;
+  }>;
+};
 
 export function PassengerAccountDeletion({
   onConfirmed,
@@ -36,7 +39,7 @@ export function PassengerAccountDeletion({
     setError(null);
     let serverConfirmed = false;
     try {
-      const { data, error: rpcError } = await requestDeletion("request_own_account_deletion");
+      const { data, error: rpcError } = await deletionClient.rpc("request_own_account_deletion");
       if (rpcError) {
         if (rpcError.code === "55000" || rpcError.message.includes("active_ride_blocks_account_deletion")) {
           setError("Há uma corrida ativa. Finalize ou cancele a corrida antes de excluir a conta.");
