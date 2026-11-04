@@ -26,5 +26,24 @@ WITH checks AS (
  UNION ALL SELECT 'operational_ride_calls_reference_membership_evidence',TRUE,
  COALESCE((SELECT count(*)=3 AND bool_and(pg_get_functiondef(p.oid) ILIKE '%driver_membership%' OR pg_get_functiondef(p.oid) ILIKE '%paid_membership%') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='apois_rpc_private' AND p.proname IN ('driver_set_presence','driver_accept_ride_candidate_legacy','driver_finish_ride')),false),
  'Live operational RPCs need backend-authoritative paid membership (static heuristic, not E2E proof)'
+ UNION ALL SELECT 'monthly_billing_tables_least_privilege',TRUE,
+ (
+ SELECT count(*)=2 AND bool_and(
+  NOT has_table_privilege('anon',c.oid,'SELECT')
+  AND NOT has_table_privilege('anon',c.oid,'TRUNCATE')
+  AND NOT has_table_privilege('anon',c.oid,'INSERT')
+  AND NOT has_table_privilege('anon',c.oid,'UPDATE')
+  AND NOT has_table_privilege('anon',c.oid,'DELETE')
+  AND has_table_privilege('authenticated',c.oid,'SELECT')
+  AND NOT has_table_privilege('authenticated',c.oid,'TRUNCATE')
+  AND NOT has_table_privilege('authenticated',c.oid,'INSERT')
+  AND NOT has_table_privilege('authenticated',c.oid,'UPDATE')
+  AND NOT has_table_privilege('authenticated',c.oid,'DELETE')
+  AND has_table_privilege('service_role',c.oid,'UPDATE')
+ ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+ WHERE n.nspname='public'
+   AND c.relname IN ('driver_memberships','driver_membership_charges')
+ ),
+ 'Payment history stays own-SELECT for authenticated, zero anon grants, mutations service-only'
 )
 SELECT gate,required,ready,detail FROM checks ORDER BY gate;

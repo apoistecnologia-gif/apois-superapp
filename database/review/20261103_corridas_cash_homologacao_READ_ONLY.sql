@@ -150,4 +150,16 @@ SELECT gate,required,passed,detail FROM (
   AND NOT has_function_privilege('authenticated',to_regprocedure('public.activate_prepaid_pix_ride(uuid,text)'),'EXECUTE')
   AND NOT has_function_privilege('anon',to_regprocedure('public.activate_prepaid_pix_ride(uuid,text)'),'EXECUTE'),
   'Admin APIs require authenticated caller; retired Pix activation only service_role'
+ UNION ALL
+ SELECT 'driver_monthly_tables_least_privilege',true,
+  (SELECT count(*)=2 AND bool_and(
+     NOT has_table_privilege('anon',c.oid,'TRUNCATE')
+     AND NOT has_table_privilege('anon',c.oid,'SELECT')
+     AND NOT has_table_privilege('authenticated',c.oid,'TRUNCATE')
+     AND NOT has_table_privilege('authenticated',c.oid,'UPDATE')
+     AND has_table_privilege('authenticated',c.oid,'SELECT')
+     AND has_table_privilege('service_role',c.oid,'UPDATE')
+   ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname IN('driver_memberships','driver_membership_charges')),
+  'Billing rows remain own-SELECT but anon/driver cannot TRUNCATE or write subscriptions'
 ) gate_results ORDER BY gate;

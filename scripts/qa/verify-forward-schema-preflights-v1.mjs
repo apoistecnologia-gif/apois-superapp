@@ -44,7 +44,8 @@ for(const [project,projectId,required] of [
    "driver_memberships_monthly_fee_cents_check",
    "driver_membership_charges_amount_cents_check",
    "driver_subscription_allows_rides(text)",
-   "operational_ride_calls_reference_membership_evidence"
+   "operational_ride_calls_reference_membership_evidence",
+   "monthly_billing_tables_least_privilege"
  ]) if(!src.includes(mark))throw Error("Missing driver billing invariant: "+mark);
  if(/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|GRANT|REVOKE|CALL|DO|COPY|PERFORM)\b/i.test(sql))
   throw Error("Monthly billing diagnostic contains mutating SQL");
