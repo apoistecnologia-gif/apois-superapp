@@ -39,7 +39,7 @@ function decodeJwtClaims(token: string): { sub: string | null; exp: number } | n
 
 function localSupabaseSessionSnapshot(): { userId: string | null; accessToken: string } {
   try {
-    const url = String(import.meta.env.VITE_SUPABASE_URL ?? "").trim();
+    const url = String(import.meta.env["VITE_SUPABASE_URL"] ?? "").trim();
     if (!url) return { userId: null, accessToken: "" };
     const ref = new URL(url).hostname.split(".")[0]?.trim();
     if (!ref) return { userId: null, accessToken: "" };
@@ -88,8 +88,8 @@ export async function startCourierNativeLocation(): Promise<boolean> {
     session = refreshed.data.session;
   }
 
-  const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL ?? "").trim();
-  const publishableKey = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "").trim();
+  const supabaseUrl = String(import.meta.env["VITE_SUPABASE_URL"] ?? "").trim();
+  const publishableKey = String(import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "").trim();
   if (!supabaseUrl || !publishableKey) return false;
   const result = await CourierLocation.start({
     supabaseUrl,

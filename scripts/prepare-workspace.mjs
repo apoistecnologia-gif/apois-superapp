@@ -89,6 +89,8 @@ for (const name of names) {
       return (
         !normalized.includes('/.git/') &&
         !normalized.endsWith('/.git') &&
+        !normalized.includes('/backend-standalone/') &&
+        !normalized.endsWith('/backend-standalone') &&
         !normalized.includes('/node_modules/') &&
         !normalized.endsWith('/node_modules')
       );

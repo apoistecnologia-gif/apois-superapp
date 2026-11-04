@@ -7,14 +7,19 @@ const workspace = resolve(root, '.work/entregas');
 
 function run(bin, args, options = {}) {
   const command = process.platform === 'win32' && bin === 'bun' ? 'bun.cmd' : bin;
+  const cwd = options.cwd ?? root;
+  console.log(`[RUN] cwd=${cwd} :: ${command} ${args.join(' ')}`);
   const result = spawnSync(command, args, {
-    cwd: options.cwd ?? root,
+    cwd,
     env: options.env ?? process.env,
     stdio: 'inherit',
     shell: process.platform === 'win32' && command.endsWith('.cmd'),
   });
   if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  const status = result.status ?? 1;
+  console.log(`[EXIT ${status}] ${command} ${args.join(' ')}`);
+  if (status !== 0 && options.allowFailure !== true) process.exit(status);
+  return status;
 }
 
 if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
@@ -48,10 +53,6 @@ run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'entregas
 run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), 'entregas']);
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
-// harden-entregas-superapp-address-ux.mjs converts GoogleMapsAddressSelector.tsx off
-// TanStack server functions; neutralize-entregas-superapp-legacy.mjs (below) runs
-// harden-entregas-merchant-map-runtime.mjs, which verifies that conversion already
-// happened, so this must run first.
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-address-ux.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
 
@@ -68,12 +69,15 @@ for (const script of [
   'harden-entregas-superapp-notification-feed.mjs',
   'harden-entregas-superapp-address-confirmation.mjs',
   'harden-entregas-superapp-image-fallbacks.mjs',
+  'harden-entregas-overlay-layering.mjs',
   'harden-entregas-superapp-legal-routes.mjs',
   'harden-entregas-superapp-customer-ux.mjs',
   'harden-entregas-superapp-checkout-mobile-ui.mjs',
   'harden-entregas-order-finish-mobile-ui.mjs',
   'harden-superapp-module-mobile-ui.mjs',
   'harden-entregas-superapp-secondary-mobile-ui.mjs',
+  'harden-entregas-payment-provider-boundary.mjs',
+  'harden-entregas-direct-payment-operations.mjs',
 ]) {
   const args = script === 'harden-superapp-module-mobile-ui.mjs'
     ? [resolve(root, `scripts/${script}`), 'entregas']
@@ -81,23 +85,62 @@ for (const script of [
   run(process.execPath, args);
 }
 
-const env = {
+const baseEnv = {
   ...process.env,
-  VITE_APOIS_PRODUCT_MODE: 'merchant',
   APOIS_MOBILE_BUILD: '0',
 };
 
-// TanStack Start renders HTML per request; there is no static index.html to
-// capture. Deploy it the way it's meant to run: as a real Vercel Serverless
-// Function via Nitro's "vercel" preset, so each visitor's actual session is
-// read at request time by the running server. That's also why forcing
-// NITRO_PRESET=node-server here was wrong: it produces .output/server +
-// .output/public, but this SSR app never writes an index.html into
-// .output/public, so nothing was ever there to republish.
-env.NITRO_PRESET = 'vercel';
+const frozenInstallStatus = run('bun', ['install', '--frozen-lockfile'], {
+  cwd: workspace,
+  env: baseEnv,
+  allowFailure: true,
+});
+if (frozenInstallStatus !== 0) {
+  console.warn('[WARN] Entregas: bun.lock do pin não é reproduzível com Bun atual; usando instalação --no-save apenas em .work.');
+  run('bun', ['install', '--no-save'], { cwd: workspace, env: baseEnv });
+}
 
-run('bun', ['install'], { cwd: workspace, env });
-run('bun', ['run', 'build:merchant'], { cwd: workspace, env });
+for (const validator of [
+  'scripts/audit-superapp-static.mjs',
+  'scripts/verify-corridas-database-ownership.mjs',
+  'scripts/audit-entregas-merchant-payments.mjs',
+  'scripts/audit-payment-boundary.mjs',
+  'scripts/verify-backend-authorization-boundaries.mjs',
+  'scripts/verify-superapp-release-requirements.mjs',
+]) {
+  run(process.execPath, [resolve(root, validator)], { cwd: root, env: baseEnv });
+}
+
+run('bun', ['run', 'typecheck'], { cwd: workspace, env: baseEnv });
+
+const lintStatus = run('bun', ['run', 'lint'], {
+  cwd: workspace,
+  env: baseEnv,
+  allowFailure: true,
+});
+if (lintStatus !== 0) {
+  console.warn(`[WARN] Entregas: lint source-wide falhou com EXIT ${lintStatus}; continuando fixture sem mascarar o resultado.`);
+}
+
+run('bun', ['run', 'test'], { cwd: workspace, env: baseEnv });
+
+const customerEnv = {
+  ...baseEnv,
+  VITE_APOIS_PRODUCT_MODE: 'customer',
+  APOIS_MOBILE_BUILD: '1',
+};
+run('bun', ['run', 'build:customer'], { cwd: workspace, env: customerEnv });
+run(process.execPath, [resolve(root, 'scripts/audit-entregas-customer-bundle.mjs')], {
+  cwd: root,
+  env: customerEnv,
+});
+
+const merchantEnv = {
+  ...baseEnv,
+  VITE_APOIS_PRODUCT_MODE: 'merchant',
+  NITRO_PRESET: 'vercel',
+};
+run('bun', ['run', 'build:merchant'], { cwd: workspace, env: merchantEnv });
 
 const nestedOutput = resolve(workspace, '.vercel/output');
 if (!existsSync(resolve(nestedOutput, 'config.json'))) {
@@ -105,12 +148,11 @@ if (!existsSync(resolve(nestedOutput, 'config.json'))) {
   process.exit(1);
 }
 
-// Vercel's Build Output API only looks for .vercel/output at the project
-// root where the build command ran (/vercel/path0), not inside our nested
-// .work/entregas workspace. Copy it up so Vercel picks it up after this
-// script exits.
 const rootOutput = resolve(root, '.vercel/output');
 rmSync(rootOutput, { recursive: true, force: true });
 cpSync(nestedOutput, rootOutput, { recursive: true });
 
-console.log('[OK] Painel do estabelecimento pronto para Vercel em .vercel/output (Serverless Function).');
+if (lintStatus !== 0) {
+  console.warn(`[WARN] Fixture funcional/build concluída, porém o lint source-wide permanece FAIL (EXIT ${lintStatus}).`);
+}
+console.log('[OK] Fixture Cliente + bundle audit + gates + painel do estabelecimento concluídos na árvore Entregas transformada.');

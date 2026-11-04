@@ -46,20 +46,61 @@ if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?m
   console.log('[OK] release integrity: nenhum GitHub Action ativo');
 }
 
-requireAll('package.json', [
-  '"audit:play-store": "node scripts/audit-superapp-play-store.mjs"',
-  '"audit:release-integrity": "node scripts/audit-superapp-release-integrity.mjs"',
-  'npm run audit:play-store && npm run audit:release-integrity && npm run verify:rides-push-firebase',
-], 'pipeline executa gates Play Store e integridade antes dos builds');
+const packageJson = JSON.parse(read('package.json'));
+const releaseIntegrity = String(packageJson.scripts?.['audit:release-integrity'] ?? '');
+const superappBuild = String(packageJson.scripts?.['build:superapp'] ?? '');
+const releaseGateMarkers = [
+  'node scripts/audit-superapp-release-integrity.mjs',
+  'npm run verify:retired-provider-source',
+  'npm run verify:corridas-driver-eligibility',
+  'npm run verify:entregas-direct-order',
+  'npm run verify:legacy-provider-runtime',
+];
+const superappGateMarkers = [
+  'npm run audit:play-store',
+  'npm run audit:release-integrity',
+  'npm run verify:rides-push-firebase',
+];
+if (releaseGateMarkers.some((marker) => !releaseIntegrity.includes(marker)) ||
+    superappGateMarkers.some((marker) => !superappBuild.includes(marker))) {
+  console.error('[FAIL] pipeline não executa todos os gates de integridade antes dos builds');
+  failed = true;
+} else {
+  console.log('[OK] pipeline executa gates Play Store, providers aposentados e integridade antes dos builds');
+}
 
-requireAll('.apois/modules.json', [
-  'harden-entregas-superapp-account-security.mjs',
-  'harden-entregas-superapp-account-deletion.mjs',
-  'harden-entregas-superapp-address-ux.mjs',
-  'harden-entregas-superapp-customer-ux.mjs',
-  '"entregas": {',
-  '"install": ["bun", "install"]',
-], 'Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work');
+{
+  const manifestPath = resolve(root, '.apois/modules.json');
+  if (!existsSync(manifestPath)) {
+    console.error('[FAIL] Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work: arquivo ausente .apois/modules.json');
+    failed = true;
+  } else {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const entregas = manifest?.modules?.entregas;
+    const buildCommand = Array.isArray(entregas?.build) ? entregas.build.join(' ') : '';
+    const requiredMarkers = [
+      'harden-entregas-superapp-account-security.mjs',
+      'harden-entregas-superapp-account-deletion.mjs',
+      'harden-entregas-superapp-address-ux.mjs',
+      'harden-entregas-superapp-customer-ux.mjs',
+    ];
+    const installOk = Array.isArray(entregas?.install) &&
+      entregas.install.length === 2 &&
+      entregas.install[0] === 'bun' &&
+      entregas.install[1] === 'install';
+    const missing = requiredMarkers.filter((marker) => !buildCommand.includes(marker));
+    if (!installOk || missing.length) {
+      const details = [
+        ...(!installOk ? ['install Entregas deve ser [bun, install]'] : []),
+        ...missing,
+      ];
+      console.error('[FAIL] Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work: ' + details.join(' | '));
+      failed = true;
+    } else {
+      console.log('[OK] Entregas executa hardeners críticos e reconcilia dependências somente na cópia .work');
+    }
+  }
+}
 
 requireAll('codemagic.yaml', [
   'name: APOIS Superapp - Android Release',

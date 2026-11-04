@@ -153,10 +153,17 @@ for (const [path, label] of [
 }
 
 requireMarkers('.work/entregas/src/routes/perfil/pagamentos.tsx', [
-  'No momento, os pedidos são pagos somente por PIX.',
-  'O pedido só é confirmado depois que',
-], 'Pagamentos mantém PIX-only em linguagem simples');
-forbidMarkers('.work/entregas/src/routes/perfil/pagamentos.tsx', ['provedor de pagamentos integrado'], 'Pagamentos não exibe gateway');
+  'Pagamento direto ao estabelecimento',
+  'A APOIS não processa nem confirma eletronicamente o pagamento nesta fase.',
+  'No momento, o checkout registra pagamento direto ao estabelecimento.',
+], 'Pagamentos explica o fluxo direto sem confirmação eletrônica');
+forbidMarkers('.work/entregas/src/routes/perfil/pagamentos.tsx', [
+  'provedor de pagamentos integrado',
+  'Mercado Pago',
+  'PagBank',
+  'PIX',
+  'cartão',
+], 'Pagamentos não oferece gateway ou método eletrônico aposentado');
 
 requireMarkers('.work/entregas/src/components/CustomerDeliveryMap.tsx', ['Acompanhe seu entregador'], 'mapa mantém rastreamento');
 forbidMarkers('.work/entregas/src/components/CustomerDeliveryMap.tsx', ['confirmationPin', 'setConfirmationPin', 'KeyRound'], 'mapa não duplica PIN');

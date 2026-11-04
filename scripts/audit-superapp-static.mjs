@@ -6,317 +6,376 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 let failed = false;
 
-function read(path) {
-  return readFileSync(resolve(root, path), 'utf8');
-}
-
+function read(path) { return readFileSync(resolve(root, path), 'utf8'); }
 function requireText(path, markers, label) {
   const source = read(path);
   const missing = markers.filter((marker) => !source.includes(marker));
-  if (missing.length) {
-    console.error(`[FAIL] ${label}: ${missing.join(' | ')}`);
-    failed = true;
-    return;
-  }
-  console.log(`[OK] ${label}`);
+  if (missing.length) { console.error(`[FAIL] ${label}: ${missing.join(' | ')}`); failed = true; }
+  else console.log(`[OK] ${label}`);
 }
-
 function forbidText(path, markers, label) {
   const source = read(path);
   const found = markers.filter((marker) => source.includes(marker));
-  if (found.length) {
-    console.error(`[FAIL] ${label}: ${found.join(' | ')}`);
-    failed = true;
-    return;
-  }
-  console.log(`[OK] ${label}`);
+  if (found.length) { console.error(`[FAIL] ${label}: ${found.join(' | ')}`); failed = true; }
+  else console.log(`[OK] ${label}`);
 }
 
+const expectedPins = {
+  entregas: '0a1e0b294f75c97bce903200b57e7a6b482f381a',
+  corridas_passageiro: '7b047f75a1a919a5336c0df6e0d60b14b02f2618',
+  corridas_motorista_admin: '9fc171050d8b5703540c49d19a8f1e9f5162775f',
+};
 const lock = JSON.parse(read('.apois/source-lock.json'));
-const expectedPins = Object.fromEntries(
-  ['entregas', 'corridas_passageiro', 'corridas_motorista_admin']
-    .map((name) => [name, lock.sources?.[name]?.commit]),
-);
 for (const [name, commit] of Object.entries(expectedPins)) {
-  if (lock.sources?.[name]?.commit !== commit) {
-    console.error(`[FAIL] snapshot protegido ${name} mudou: ${lock.sources?.[name]?.commit ?? 'ausente'}`);
-    failed = true;
-  } else {
-    console.log(`[OK] snapshot protegido ${name}: ${commit}`);
-  }
+  const actual = lock.sources?.[name]?.commit;
+  if (actual !== commit) { console.error(`[FAIL] snapshot protegido ${name}: ${actual ?? 'ausente'} != ${commit}`); failed = true; }
+  else console.log(`[OK] snapshot protegido ${name}: ${commit}`);
 }
 
 const workflowsDir = resolve(root, '.github/workflows');
 if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
-  console.error('[FAIL] Superapp voltou a conter GitHub Actions; builds devem ocorrer somente no Codemagic');
+  console.error('[FAIL] Superapp voltou a conter GitHub Actions; release continua no Codemagic');
   failed = true;
-} else {
-  console.log('[OK] nenhum GitHub Action ativo no Superapp');
-}
+} else console.log('[OK] nenhum GitHub Action ativo no Superapp');
 
-const obsoleteFiles = [
-  'scripts/normalize-corridas-superapp-input.mjs',
-  'scripts/normalize-entregas-superapp-build.mjs',
-  'scripts/route-corridas-recovery-deeplink.mjs',
-  'scripts/harden-superapp-auth-deeplink-race.mjs',
-  'scripts/ensure-superapp-branding-resources.mjs',
-];
-for (const path of obsoleteFiles) {
-  if (existsSync(resolve(root, path))) {
-    console.error(`[FAIL] patcher obsoleto voltou ao repositório: ${path}`);
-    failed = true;
-  }
-}
-if (!obsoleteFiles.some((path) => existsSync(resolve(root, path)))) {
-  console.log('[OK] patchers obsoletos/self-modifying permanecem removidos');
-}
+requireText('package.json', [
+  '"audit:static": "node scripts/audit-superapp-static.mjs"',
+  '"audit:payment-boundary": "node scripts/audit-payment-boundary.mjs"',
+  '"verify:corridas-supabase-source": "node scripts/verify-corridas-supabase-source-of-truth.mjs"',
+  '"verify:corridas-auth": "node scripts/verify-corridas-auth-regressions.mjs"',
+  '"verify:corridas-db-ownership": "node scripts/verify-corridas-database-ownership.mjs"',
+  '"verify:release-requirements": "node scripts/verify-superapp-release-requirements.mjs"',
+  'node scripts/verify-final-finance-policy.mjs',
+], 'pipeline principal registra guards de identidade, ambiente e boundary financeiro');
 
-requireText(
-  'package.json',
-  [
-    '"audit:static": "node scripts/audit-superapp-static.mjs"',
-    'npm run audit:static && npm run',
-    'node scripts/verify-final-finance-policy.mjs',
-  ],
-  'pipeline executa auditoria estática e guarda financeira final antes da liberação',
-);
-forbidText(
-  'package.json',
-  ['normalize-corridas-superapp-input', 'normalize-entregas-superapp-build', 'route-corridas-recovery-deeplink', 'harden-superapp-auth-deeplink-race'],
-  'package principal não referencia patchers removidos',
-);
+requireText('.apois/modules.json', [
+  '"source": "sources/apois-corridas-passageiro"',
+  '"workspace": ".work/corridas"',
+  'harden-corridas-ride-lifecycle.mjs',
+  'verify-corridas-ride-lifecycle-regressions.mjs',
+  'harden-corridas-cancellation-policy.mjs',
+  'harden-corridas-superapp-storage.mjs',
+  'harden-superapp-module-mobile-ui.mjs corridas',
+  'APOIS_VISUAL_KIT_V1',
+  'APOIS_REFERENCE_HOME_V2',
+  'data-apois-reference-home-v2',
+  'bun run build:capacitor',
+  'harden-entregas-payment-provider-boundary.mjs',
+  'bun run build:customer',
+], 'módulos são reconstruídos dos pins e recebem hardeners finais antes do build');
+forbidText('.apois/modules.json', [
+  'ActiveRideMap.tsx', 'RidePixPaymentCard.tsx', 'ActiveJourneyScreen.tsx', 'aguardando_pagamento: 2',
+], 'pipeline Corridas não exige componentes ou estados ausentes no pin atual');
 
-requireText(
-  '.apois/modules.json',
-  ['"install": ["bun", "install", "--frozen-lockfile"]'],
-  'módulos usam os bun.lock protegidos sem atualizar dependências durante o build',
-);
+requireText('scripts/prepare-workspace.mjs', [
+  'rmSync(workspace, { recursive: true, force: true })',
+  'cpSync(source, workspace',
+  'request-ride',
+  'paymentService.getPaymentMethods()',
+], 'workspace continua descartável e solicitação passa pelo roteador request-ride');
 
-requireText(
-  'scripts/bootstrap-sources.sh',
-  ['git submodule sync --recursive', 'git submodule update --init --recursive', 'npm run verify:pins'],
-  'bootstrap inicializa os mesmos submódulos protegidos usados pelo build',
-);
-forbidText(
-  'scripts/bootstrap-sources.sh',
-  ['apps/corridas-passageiro', 'apps/corridas-motorista-admin', 'apps/entregas', 'git clone --depth 1'],
-  'bootstrap não cria cópias paralelas nem segue HEAD de branch',
-);
-requireText(
-  'scripts/source-status.sh',
-  ['sources/apois-corridas-passageiro', 'sources/apois-corridas-motorista-admin', 'sources/apois-entregas', 'npm run verify:pins'],
-  'status das fontes aponta para os snapshots realmente consumidos',
-);
-
-requireText(
+requireText('scripts/build-isolated-module.mjs', [
   'scripts/prepare-workspace.mjs',
-  [
-    '(method) => method.isActive && method.enabled',
-    'paymentMethodsSource.includes(\'method.code === "pix"\')',
-    'métodos ativos permanecem disponíveis para a política PIX + Dinheiro + Cartão direto',
-  ],
-  'Corridas preserva métodos ativos na cópia e rejeita regressão PIX-only',
-);
-requireText(
-  'scripts/harden-corridas-payment-methods.mjs',
-  [
-    'const isDirectToDriver = code === "cash" || code === "credit";',
-    'Pague diretamente ao motorista ao final da corrida.',
-    'Pague diretamente ao motorista com cartão de crédito.',
-    'PIX permanece digital; Dinheiro e Cartão de crédito ficam disponíveis',
-  ],
-  'Corridas mantém PIX eletrônico e Dinheiro/Cartão como recebimento direto ao motorista',
-);
-
-requireText(
-  'scripts/build-isolated-module.mjs',
-  [
-    "'apois-superapp-corridas-auth-v1'",
-    "'apois-superapp-entregas-auth-v1'",
-    "'apois-superapp:last-route:' + moduleName",
-    "'apois-superapp:corridas-recovery-url'",
-    "'apois-superapp:entregas-auth-url'",
-    "'/cadastro'",
-    "'/recuperar-senha'",
-    "new Set(['', '#', '#/', '#/inicio', '#/login'])",
-    'localStorage.removeItem(authStorageKey)',
-    'env.VITE_PUBLIC_APP_URL = publicAppUrl',
-    "window.location.replace(shellUrl)",
-    "appPlugin.addListener('backButton'",
-    "appPlugin.addListener('appStateChange'",
-    "scripts/normalize-entregas-adaptation-handoff.mjs",
-  ],
-  'bridge cobre sessão íntegra, rotas públicas, retomada, deep links, ambiente, Android Back e handoff determinístico de Entregas',
-);
-
-requireText(
-  'scripts/normalize-entregas-adaptation-handoff.mjs',
-  [
-    '? `#/pedido/${encodeURIComponent(orderId)}`',
-    '? `/pedido/${encodeURIComponent(orderId)}`',
-    'window.location.hash !== target',
-    'window.location.pathname !== target',
-    'const interimHash =',
-    'const originalParams =',
-    'handoff entre adaptador base e hardeners especializados concluído',
-  ],
-  'handoff de Entregas normaliza somente a saída intermediária antes dos hardeners especializados',
-);
-
-requireText(
-  'scripts/harden-entregas-superapp-auth-runtime.mjs',
-  [
-    'br.com.apois.app://auth/email-change',
-    '_app_package: "br.com.apois.app"',
-    'const isDeliveryPush =',
-    'if (!target) return;',
-    'Sair somente\\n  // de Entregas não pode cancelar a inscrição nativa usada por Corridas',
-    '<nav className="fixed bottom-0',
-    'min-h-[88px]',
-    'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
-    'overflow-y-auto px-4 pb-32 pt-5',
-    'overflow-y-auto px-4 pb-32 pt-2',
-    'overflow-y-auto p-4 pb-32',
-    'overflow-y-auto p-4 pb-32 pt-5',
-    'const paymentMethod = "pix";',
-    'return fallback;',
-    'if (!payment?.qrCodeText)',
-    'typeof payment.qrCodeImageUrl === "string" ? payment.qrCodeImageUrl : ""',
-    'Não foi possível confirmar este acesso. Solicite um novo link ou tente entrar novamente.',
-    'toast.error("Não foi possível atualizar sua senha. Tente novamente.")',
-  ],
-  'Entregas mantém auth/push isolados, token compartilhado, rodapé seguro, checkout PIX resiliente e erros públicos sanitizados',
-);
-
-requireText(
-  'scripts/harden-entregas-merchant-mercadopago-v2.mjs',
-  [
-    'merchant-payment-readiness',
-    'const pixFunction = "create-merchant-mercadopago-pix";',
-    'O PIX da venda é criado diretamente na sua conta Mercado Pago.',
-    'A APOIS não recebe o valor da venda e não cobra percentual por pedido.',
-  ],
-  'Entregas converte o checkout final para Mercado Pago direto do estabelecimento',
-);
-requireText(
-  'scripts/harden-entregas-delivery-readiness.mjs',
-  [
-    'get_delivery_checkout_readiness',
-    'deliveryPlatformAvailable',
-    'deliveryUnavailableMessage',
-    'checkout desabilita Entrega antes do pedido quando repasse direto do entregador ainda não está homologado',
-  ],
-  'Entregas bloqueia delivery enquanto payout direto do entregador não estiver homologado',
-);
-requireText(
-  'scripts/verify-final-finance-policy.mjs',
-  [
-    'Corridas voltou a PIX-only',
-    'create-merchant-mercadopago-pix',
-    'caminho legado OpenPix/Asaas permaneceu no checkout final',
-    'get_delivery_checkout_readiness',
-  ],
-  'guarda final rejeita regressões financeiras antes da liberação',
-);
-
-requireText(
+  'scripts/adapt-module-for-superapp.mjs',
   'scripts/harden-corridas-superapp-runtime.mjs',
-  [
-    'VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED',
-    'RIDE_STATUS_ORDER',
-    'lastAcceptedStatusRef',
-    'await loadRide(currentRideId)',
-    'compact?: boolean',
-    '<ActiveRideMap ride={ride} compact />',
-  ],
-  'Corridas mantém lifecycle, retomada, push gate e mapa endurecidos',
-);
-
-requireText(
-  'scripts/harden-corridas-superapp-push-isolation.mjs',
-  [
-    'isPushRideEvent',
-    'const hasDeliveryMarker =',
-    'if (hasDeliveryMarker) return;',
-    'if (!isPushRideEvent(data["event"]) && !hasRideId) return;',
-  ],
-  'listener próprio de Corridas não consome Push de Entregas no package unificado',
-);
-requireText(
   'scripts/fix-corridas-superapp-ui.mjs',
-  ["import './harden-corridas-superapp-push-isolation.mjs';"],
-  'isolamento do listener de Corridas é executado antes da compilação do módulo',
-);
+  'scripts/harden-corridas-payment-methods.mjs',
+  'scripts/harden-corridas-native-map.mjs',
+  "'apois-superapp-corridas-auth-v1'",
+  "'apois-superapp-entregas-auth-v1'",
+  "appPlugin.addListener('backButton'",
+  "appPlugin.addListener('appStateChange'",
+  'harden-entregas-supabase-runtime.mjs',
+  'harden-entregas-google-oauth-handoff.mjs',
+  "apois:entregas-google-callback",
+  "apois-superapp:entregas-google-url",
+  "ENTREGAS_CANONICAL_REF = 'ptgkwyyolrdgnqketkjj'",
+  'env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL',
+], 'build isolado prepara, adapta e integra sessão/back button/OAuth e fixa Supabase Entregas sem editar submódulo');
 
-requireText(
-  'scripts/inject-superapp-push-routing.mjs',
-  [
-    "moduleName: 'entregas'",
-    "corridasBase: '../corridas/index.html'",
-    'const rideEvents = new Set',
-    'if (delivery.isDelivery && ride.isRide) return null;',
-    'if (!destination) return;',
-  ],
-  'roteador global distingue Corridas/Entregas e encaminha notificações entre módulos',
-);
+requireText('scripts/harden-corridas-auth-profile-resolution.mjs', [
+  '.eq("auth_user_id", userId)',
+  '| "loading_profile"',
+  '| "profile_missing"',
+  'setAuthState("authenticated")',
+  'setAuthState("profile_missing")',
+  'profile?.id ?? null',
+], 'AuthProvider Corridas distingue Auth UUID do domain user e não autentica antes do profile');
 
-requireText(
-  'superapp/shell/build.mjs',
-  [
-    "resolve(root, '../branding/apois-launcher.png')",
-    "resolve(dist, 'assets/apois-brand.png')",
-    'arte oficial APOIS copiada para o shell',
-  ],
-  'shell inclui a arte oficial da APOIS e falha se ela estiver ausente',
-);
+requireText('scripts/harden-corridas-superapp-google-auth.mjs', [
+  "import './harden-corridas-auth-profile-resolution.mjs';",
+  'flowType: "pkce"',
+  'exchangeCodeForSession(code)',
+  'handledUrlRef',
+  'browserFinished',
+  'App.getLaunchUrl()',
+  'br.com.apois.app://auth/callback',
+  'br.com.apois.app://auth/corridas-google',
+  'JSON.stringify({ product: \\"corridas\\", createdAt: Date.now() })',
+  'browserFinished pode chegar',
+  'providerError',
+], 'Google OAuth Corridas usa PKCE, envelope persistente sem race de browserFinished, callback determinístico, dedupe e cleanup/cancelamento');
 
-requireText(
-  'scripts/install-superapp-launcher.mjs',
-  [
-    "{ dir: 'mipmap-mdpi', legacy: 48, foreground: 108 }",
-    "{ dir: 'mipmap-xxxhdpi', legacy: 192, foreground: 432 }",
-    "copyFileSync(legacyTmp, join(dir, 'ic_launcher.png'))",
-    "copyFileSync(foregroundTmp, join(dir, 'ic_launcher_foreground.png'))",
-  ],
-  'launcher gera raster oficial na dimensão Android correta por densidade',
-);
-forbidText(
-  'scripts/install-superapp-launcher.mjs',
-  ['copyFileSync(source, source)', 'copyFileSync(normalizedSource, source)'],
-  'build Android não altera a arte versionada',
-);
+requireText('scripts/harden-entregas-supabase-runtime.mjs', [
+  'ptgkwyyolrdgnqketkjj',
+  'import.meta.env["VITE_SUPABASE_URL"]',
+  'import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]',
+  "retiredRef = 'sbvhdgyuuperszlsllji'",
+], 'Entregas remove o Supabase aposentado hardcoded antes do build e exige o projeto de produção');
 
-requireText(
-  'superapp/shell/capacitor.config.ts',
-  ["appId: 'br.com.apois.app'", "style: 'LIGHT'", "backgroundColor: '#050505'", "overlaysWebView: false"],
-  'Capacitor usa package unificado e barras Android legíveis',
-);
+requireText('scripts/harden-entregas-google-oauth-handoff.mjs', [
+  'flowType: "pkce"',
+  'APOIS_GOOGLE_PENDING_KEY',
+  'APOIS_GOOGLE_FORWARD_KEY',
+  'consumeForwardedGoogleCallback',
+  'product: "entregas"',
+  'apois:entregas-google-callback',
+], 'Google OAuth Entregas usa PKCE, mantém callback no módulo dono e possui handoff persistente');
 
-requireText(
-  'codemagic.yaml',
-  [
-    'android-superapp-experimental:',
-    'APP_PACKAGE: "br.com.apois.app"',
-    'BUN_VERSION: "1.3.14"',
-    'bash -s "bun-v${BUN_VERSION}"',
-    'test "$(bun --version)" = "$BUN_VERSION"',
-    'EXPECTED_SIGNING_SHA1: "98:7C:6A:7A:BE:26:9C:1E:5A:01:B5:B7:98:A9:6D:56:66:D8:5E:69"',
-    'APOIS_STRICT_NATIVE_CONFIG: "1"',
-    'npm run verify:pins',
-    'APOIS-Superapp.apk',
-  ],
-  'Codemagic preserva toolchain, package, assinatura, pins e nome final esperados',
-);
-forbidText(
-  'codemagic.yaml',
-  ['cmp -s superapp/branding/apois-launcher.png superapp/shell/android'],
-  'Codemagic não pressupõe que PNG redimensionado seja byte-idêntico à arte fonte',
-);
+requireText('scripts/harden-corridas-superapp-runtime.mjs', [
+  'VITE_APOIS_SUPERAPP_RIDES_PUSH_ENABLED', 'RIDE_STATUS_ORDER', 'lastAcceptedStatusRef',
+  'await loadRide(currentRideId)', 'PassengerMap',
+], 'runtime Corridas mantém lifecycle, recuperação e mapa do pin real');
+forbidText('scripts/harden-corridas-superapp-runtime.mjs', [
+  'ActiveRideMap.tsx', 'RidePixPaymentCard.tsx', 'aguardando_pagamento',
+], 'runtime Corridas não ressuscita componentes/estados obsoletos');
 
-requireText(
-  '.env.example',
-  ['CORRIDAS_PUBLIC_APP_URL=', 'CORRIDAS_WEB_MAPS_API_KEY=', 'CORRIDAS_ANDROID_MAPS_API_KEY=', 'FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64='],
-  'ambiente documenta URL pública, Maps separado e Firebase unificado',
-);
+requireText('scripts/fix-corridas-superapp-ui.mjs', [
+  "import './harden-corridas-superapp-push-isolation.mjs';",
+  'src/components/BottomNavigation.tsx', 'src/routes/_authenticated.perfil.tsx',
+  'src/routes/_authenticated.tsx', 'hideBottomNavigation',
+], 'UI Corridas adapta navegação e perfil reais');
+
+requireText('scripts/build-isolated-module.mjs', [
+  'function peekPendingOAuthProduct()',
+  'function lastSelectedModule()',
+  "pendingProduct === 'corridas' || (!pendingProduct && lastSelectedModule() === 'corridas')",
+  "if (pendingProduct === 'entregas')",
+  "function storeCorridasGoogleCallback(rawUrl)",
+  "window.location.replace('../corridas/index.html#/login')",
+  "window.location.replace('../entregas/index.html')",
+], 'callback Google de Corridas permanece em Corridas mesmo após resume Android; callback de Entregas continua encaminhado');
+
+requireText('scripts/harden-corridas-native-map.mjs', [
+  'APOIS_NATIVE_MAP_FALLBACK_V3',
+  '[isStatic, nativeApiKey, reloadKey]',
+  'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
+  'Capacitor.isNativePlatform()',
+  'mapService.createMap',
+  'mapService.upsertDriverMarker',
+  'PolylineDecoder',
+  'PolylineDecoder deve ser importado exatamente uma vez',
+  'displayedRoutePoints',
+  'encodedPolyline não pôde ser ligado ao PassengerMap',
+  'if (encodedPolyline)',
+  'bottom: 240',
+  'const previousHtml = document.documentElement.style.backgroundColor',
+  'const changed: Array<{ element: HTMLElement',
+  'document.body.style.backgroundColor = "transparent"',
+  'strokeColor: "#E51B23"',
+  'APOIS_MAP_STYLE_LIGHT_NATIVE',
+  'styles: APOIS_MAP_STYLE_LIGHT_NATIVE',
+  'APOIS_MAP_STYLE_LIGHT_JS',
+  'label: { text: "A"',
+  'iconUrl: "assets/markers/apois-location.svg"',
+  'APOIS_PRECISE_LOCATION_V1',
+  'permissions: ["location", "coarseLocation"]',
+  'maximumAge: 0',
+  'referência a marker PNG inexistente permaneceu',
+], 'Corridas usa mapa nativo claro no Android e mantém fallback web');
+
+requireText('scripts/harden-superapp-module-mobile-ui.mjs', [
+  "await import('./harden-corridas-mobile-proportions.mjs');",
+], 'hardener móvel aplica proporções finais depois das superfícies visuais');
+
+requireText('scripts/harden-corridas-mobile-proportions.mjs', [
+  'APOIS_CORRIDAS_MOBILE_PROPORTIONS_V1',
+  'z-[140]',
+  'max-h-[78dvh]',
+  'max-h-[46dvh]',
+  'status !== "procurar_motorista" ? <RideStatusHeader',
+  'max-h-[52dvh]',
+  'pb-[max(64px,env(safe-area-inset-bottom))]',
+  'h-[100dvh] min-h-0 flex-col overflow-hidden',
+  'overscroll-contain',
+], 'Corridas compacta pagamento/Home/revisão e remove banner duplicado da busca de motorista');
+
+requireText('scripts/harden-corridas-kit-visual.mjs', [
+  'APOIS_VISUAL_KIT_V1', 'APOIS_REFERENCE_HOME_V2', 'data-apois-reference-home-v2',
+  'apois-kit-home-panel', '<HomeWorkShortcuts />', 'Solicitar corrida',
+  'apois-kit-search-results',
+  'text-[#111111]', 'caret-[#E51B23]', 'placeholder:text-[#9AA0A8]', 'max-h-[94dvh]', 'max-h-[38dvh]', 'h-10 w-10 rounded-full object-contain', 'Local de partida', 'Destino',
+  'bg-transparent text-[#111111]', 'absolute inset-0 z-0 bg-transparent',
+], 'kit visual oficial mantém mapa predominante, painel compacto e destino apenas no bottom sheet');
+
+requireText('scripts/build-isolated-module.mjs', [
+  "harden-apois-client-red-visual.mjs",
+  "harden-corridas-kit-visual.mjs",
+  'protectedMapRuntimeBeforeVisual',
+  'protectedCorridasMapRuntimeAfterVisual',
+  'migração visual preservou byte a byte Maps/GPS/Places',
+  'build final preservou byte a byte Maps/GPS/Places',
+], 'visual Corridas roda uma vez no pipeline isolado e protege Maps/GPS/Places');
+
+
+
+requireText('scripts/harden-corridas-pickup-address-display.mjs', [
+  '"google-maps-address"',
+  'action: "reverse_geocode"',
+  'pickupLabel ||',
+  'pickupShortLabel ||',
+  'Identificando seu endereço...',
+  'Toque para tentar identificar o endereço',
+  'Home ainda usa fallback genérico "Sua localização atual"',
+], 'Local de partida usa reverse geocoding real e não exibe fallback genérico');
+
+requireText('scripts/harden-apois-client-red-visual.mjs', [
+  'APOIS_CATEGORY_VEHICLE_SPRITE_V6',
+  'superapp/branding/categories/apois-vehicles.webp',
+  'vehicleSpriteDeclaredSize !== vehicleSpriteBytes.length',
+  'export const vehicleSprite = "data:image/webp;base64,',
+  'src/assets/categoryVehicleData.ts',
+  'import { vehicleSprite } from "@/assets/categoryVehicleData"',
+  'carros: "0%"',
+  'motos: "25%"',
+  'fretes: "50%"',
+  'guincho: "75%"',
+  'envios: "100%"',
+  'validated-sprite-v6',
+  'backgroundSize: "500% 100%"',
+  'backgroundPosition: spritePosition + " center"',
+  'w-[124px]',
+  'h-[84px]',
+], 'categorias Corridas usam sprite APOIS validado com Carro, Moto, Fretes, Guincho e Envios na ordem correta');
+forbidText('scripts/harden-apois-client-red-visual.mjs', [
+  'superapp/branding/categories/car-realistic.webp',
+  'superapp/branding/categories/moto-realistic.webp',
+  'superapp/branding/categories/freight-realistic.webp',
+  'superapp/branding/categories/tow-realistic.webp',
+  'superapp/branding/categories/delivery-realistic.webp',
+  'APOIS_CATEGORY_REALISTIC_ASSETS_V4',
+  'APOIS_CATEGORY_REALISTIC_V5_INLINE',
+], 'categorias Corridas não voltam a usar os cinco WebP truncados antigos');
+
+requireText('scripts/harden-corridas-payment-methods.mjs', [
+  "import './harden-corridas-payment-provider-boundary.mjs';",
+], 'nome legado do hardener delega para um único boundary financeiro');
+requireText('scripts/harden-corridas-payment-provider-boundary.mjs', [
+  'code === "cash" || code === "credit"',
+  'if (!isActive || !isDirectToDriver) return [];',
+  'Pague diretamente ao motorista em dinheiro ao final da corrida.',
+  'Pague diretamente ao motorista no cartão de crédito',
+], 'Corridas expõe apenas Dinheiro/Crédito direto ao motorista');
+
+requireText('scripts/harden-corridas-cancellation-policy.mjs', [
+  'canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)',
+  'motorista_chegou não pode oferecer cancelamento se o backend o recusa',
+  'em_viagem não pode permitir cancelamento',
+  'ensureCancellationFinancialState',
+], 'cancelamento Corridas segue exatamente os estados do backend e reconcilia taxa idempotentemente');
+requireText('scripts/harden-corridas-ride-lifecycle.mjs', [
+  'rollbackFailedDispatch',
+  'error_code: "dispatch_failed"',
+  'request_key: null',
+  'ride.final_price ?? ride.estimated_price',
+], 'lifecycle Corridas não deixa ride órfã de matching e não confia em final_price do motorista');
+
+requireText('scripts/harden-corridas-superapp-push-isolation.mjs', [
+  'isPushRideEvent', 'const hasDeliveryMarker =', 'if (hasDeliveryMarker) return;',
+], 'listener Corridas ignora Push de Entregas no package unificado');
+requireText('scripts/inject-superapp-push-routing.mjs', [
+  "moduleName: 'entregas'", "corridasBase: '../corridas/index.html'", 'const rideEvents = new Set', 'if (!destination) return;',
+], 'roteador global encaminha Push ao módulo correto');
+
+requireText('scripts/harden-entregas-superapp-auth-runtime.mjs', [
+  'br.com.apois.app://auth/email-change', '_app_package: "br.com.apois.app"', 'const isDeliveryPush =',
+], 'Entregas mantém auth/push isolados; boundary financeiro é aplicado depois');
+requireText('scripts/harden-entregas-payment-provider-boundary.mjs', [
+  'const paymentMethod = "cash";', 'paymentMethod: "cash"',
+  'const PAYMENT_METHODS = new Set(["cash"]);', 'SEM GATEWAY DA APOIS',
+  'process-superapp-refund', 'devolução automática por gateway não se aplica',
+], 'Entregas finaliza pedido direto sem gateway nem estorno eletrônico automático');
+
+requireText('scripts/neutralize-entregas-superapp-legacy.mjs', [
+  "await import('./harden-entregas-delivery-readiness.mjs');",
+  "await import('./harden-entregas-merchant-direct-finance.mjs');",
+], 'Entregas preserva logística e financeiro direto');
+forbidText('scripts/neutralize-entregas-superapp-legacy.mjs', [
+  "await import('./normalize-entregas-merchant-mp-handoff.mjs');",
+  "await import('./harden-entregas-merchant-mercadopago-v2.mjs');",
+], 'Entregas não reativa integração Mercado Pago no pipeline');
+
+requireText('supabase/corridas-forward-migrations/20260905070000_fix_passenger_identity_rls.sql', [
+  'users_auth_user_id_unique', 'u.auth_user_id = auth.uid()',
+  'drop policy if exists "users_select_own"', 'drop policy if exists "users_update_own"',
+  'drop policy if exists "user_roles_select_own"', 'drop policy if exists "passenger_wallets_select_own"',
+], 'migration forward-only corrige ownership AUTH ID -> DOMAIN USER ID');
+forbidText('supabase/corridas-forward-migrations/20260905070000_fix_passenger_identity_rls.sql', [
+  'EXCLUDED.id', 'USING (auth.uid() = passenger_id)', 'USING (auth.uid() = user_id)',
+], 'migration de ownership não usa comparações diretas incorretas nem EXCLUDED');
+requireText('supabase/corridas-forward-migrations/20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql', [
+  'cancellation_fees_one_per_ride_uidx', 'driver_reads_own_wallet',
+  'u.auth_user_id = auth.uid()',
+], 'migration forward-only protege idempotência da taxa e ownership da carteira');
+
+requireText('scripts/verify-superapp-release-requirements.mjs', [
+  "APOIS_STRICT_NATIVE_CONFIG === '1'", 'tbbzkrfupmqdywnzgnms', 'ptgkwyyolrdgnqketkjj',
+  'CORRIDAS_WEB_MAPS_API_KEY', 'CORRIDAS_ANDROID_MAPS_API_KEY',
+  '20260905131500_harden_driver_wallet_and_cancellation_idempotency.sql',
+], 'release estrito exige Supabase canônico de Corridas e Entregas, chaves Maps e migrations forward obrigatórias');
+requireText('scripts/verify-corridas-supabase-source-of-truth.mjs', [
+  'tbbzkrfupmqdywnzgnms', 'vqtucstyduxrqjgyigfk', 'zjphbuvcapwyuynadgdt', '.work/corridas',
+], 'gate Supabase valida projeto atual, preserva snapshot conhecido e rejeita projeto histórico no runtime/bundle');
+
+requireText('scripts/install-superapp-launcher.mjs', [
+  'apois-client-red-logo.b64',
+  '89504e470d0a1a0a',
+  '@mipmap/ic_launcher_foreground',
+  '@android:color/white',
+], 'launcher Cliente usa a mesma marca vermelha do shell e não o asset legado');
+
+requireText('superapp/shell/build.mjs', [
+  "resolve(root, '../branding/apois-client-red-logo.b64')", "resolve(dist, 'assets/apois-brand.png')",
+  'brandDataUri', 'data:image/png;base64,',
+], 'shell empacota e embute marca oficial');
+
+forbidText('superapp/shell/build.mjs', [
+  'apois-superapp-entregas-back-navigation',
+], 'shell não registra segundo handler Android Voltar em Entregas');
+requireText('superapp/shell/capacitor.config.ts', [
+  "appId: 'br.com.apois.app'", "backgroundColor: '#00000000'", 'overlaysWebView: false',
+], 'Capacitor usa package unificado e fundo correto');
+requireText('scripts/configure-superapp-android.mjs', [
+  'mapsMetaPattern',
+  'Google Maps Android key materializada no AndroidManifest.',
+  "com.google.android.geo.API_KEY",
+], 'Android sempre materializa a Maps key do release no manifest, mesmo se o metadata já existir');
+requireText('codemagic.yaml', [
+  'android-superapp-experimental:', 'APP_PACKAGE: "br.com.apois.app"',
+  'APOIS_STRICT_NATIVE_CONFIG: "1"', 'npm run verify:pins', 'APOIS-Superapp.apk',
+], 'Codemagic mantém package, modo estrito, pins e artefato Cliente');
+requireText('.env.example', [
+  'CORRIDAS_PUBLIC_APP_URL=', 'CORRIDAS_WEB_MAPS_API_KEY=', 'CORRIDAS_ANDROID_MAPS_API_KEY=',
+  'FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64=',
+], 'ambiente documenta URL pública, Maps e Firebase unificado');
 
 process.exit(failed ? 1 : 0);
+
+
+requireText('scripts/fix-corridas-superapp-ui.mjs', [
+  'APOIS_RESUME_AUTH_SNAPSHOT_V1',
+  'APOIS_RESUME_AUTH_GUARD_V1',
+  'persistedBootSession?.user ?? null',
+  'useState<Session | null>(() => persistedBootSession)',
+  'session?.user',
+], 'Corridas reidrata sessão local ao retomar sem exibir verificação em tela cheia');
+
+
+requireText('superapp/shell/index.html', [
+  'let shellAppUrlListenerHandle=null;',
+  'removeShellAppUrlListener();',
+  "window.addEventListener('pagehide',removeShellAppUrlListener",
+  "window.addEventListener('beforeunload',removeShellAppUrlListener",
+  "lastModule==='corridas'",
+  "callback OAuth genérico sem proprietário; não redirecionando para outro produto",
+], 'shell remove stale OAuth listener e preserva ownership Corridas no callback genérico');

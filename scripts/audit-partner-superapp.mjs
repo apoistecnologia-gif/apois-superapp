@@ -30,30 +30,25 @@ function forbidAll(path, markers, label) {
   } else console.log(`[OK] ${label}`);
 }
 
-requireAll('scripts/build-partner-modules.sh', [
+requireAll('scripts/build-partner-release.sh', [
   'bun install --frozen-lockfile',
   'APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"',
   'APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"',
   'APOIS_ENTREGAS_AUTH_SCHEME="br.com.apois.parceiro"',
   'VITE_APOIS_NATIVE_SCHEME="br.com.apois.parceiro"',
-  'harden-partner-mercadopago-callback.mjs',
-  'harden-motorista-mercadopago-disconnect.mjs',
+  'harden-motorista-provider-boundary.mjs',
+  'harden-motorista-finance-boundary.mjs',
   'harden-partner-motorista-push.mjs',
   'harden-partner-motorista-native-gps.mjs',
   'harden-partner-entregador-push.mjs',
   'harden-partner-entregador-map.mjs',
   'register_courier_push_device_v2',
-  '_app_package: "br.com.apois.parceiro"',
-  'appTarget: "partner"',
-  'PushNotifications.unregister()',
   'CORRIDAS_MAPS_KEY_VALUE="${CORRIDAS_WEB_MAPS_API_KEY:-}"',
   'export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_MAPS_KEY_VALUE"',
   'export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"',
   'export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"',
-  'Conectar Mercado Pago',
-  'Siga a rota até o ponto de embarque',
-  'Como foi o passageiro?',
-], 'build Parceiro preserva lockfiles, OAuth, Push cruzado, GPS, mapas, Mercado Pago e jornada');
+  "forbid_bundle 'Mercado Pago'",
+], 'build Parceiro preserva lockfiles, Push cruzado, GPS e mapas e bloqueia Mercado Pago');
 
 requireAll('scripts/configure-partner-android.mjs', [
   "ensurePermission('android.permission.ACCESS_FINE_LOCATION')",
@@ -91,12 +86,12 @@ forbidAll('scripts/install-partner-driver-location.mjs', [
 
 requireAll('superapp/partner-shell/capacitor.config.ts', [
   "appId: 'br.com.apois.parceiro'",
-  "style: 'LIGHT'",
-  "backgroundColor: '#050505'",
-], 'Host Android Parceiro usa package próprio e barra de status legível');
-forbidAll('superapp/partner-shell/capacitor.config.ts', [
   "style: 'DARK'",
-], 'Parceiro não usa ícones escuros sobre barra de status preta');
+  "backgroundColor: '#F7F7F8'",
+], 'Host Android Parceiro usa package próprio e barra de status clara legível');
+forbidAll('superapp/partner-shell/capacitor.config.ts', [
+  "style: 'LIGHT'",
+], 'Parceiro não usa ícones claros sobre barra de status clara');
 
 requireAll('scripts/harden-partner-android-security.mjs', [
   "['compileSdkVersion', 36]",
@@ -109,10 +104,6 @@ requireAll('scripts/harden-partner-android-security.mjs', [
   'const versionName = process.env.PARTNER_VERSION_NAME?.trim();',
   'PARTNER_VERSION_CODE e PARTNER_VERSION_NAME são obrigatórios no release.',
 ], 'Parceiro fixa API 36, versão e segurança Android');
-
-requireAll('scripts/harden-partner-mercadopago-callback.mjs', [
-  'appTarget: "partner"', 'legacyFilterPattern', 'android:scheme="br.com.apois.parceiro"',
-], 'Parceiro usa callback Mercado Pago próprio');
 
 requireAll('scripts/harden-partner-motorista-push.mjs', [
   'PARTNER_PENDING_PUSH_KEY', 'isDeliveryPush(data)', 'isRidePush(data)',
@@ -153,9 +144,9 @@ requireAll('scripts/harden-partner-entregador-journey.mjs', [
 
 requireAll('scripts/harden-partner-entregador-map.mjs', [
   "import './harden-partner-entregador-journey.mjs';",
-  'const APOIS_GOLD = "#F6BE1C";', 'VITE_GOOGLE_MAPS_API_KEY',
-  'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY', '"DEMO_MAP_ID"', 'strokeColor: APOIS_GOLD',
-], 'mapa Entregador tem jornada nativa, chave resiliente, fallback de Map ID e rota dourada');
+  'const APOIS_RED = "#E51B23";', 'VITE_GOOGLE_MAPS_API_KEY',
+  'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY', '"DEMO_MAP_ID"', 'strokeColor: APOIS_RED',
+], 'mapa Entregador tem jornada nativa, chave resiliente, fallback de Map ID e rota vermelha APOIS');
 
 requireAll('scripts/configure-partner-firebase.mjs', [
   'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64', 'PARTNER_FIREBASE_PROJECT_ID',
@@ -163,14 +154,15 @@ requireAll('scripts/configure-partner-firebase.mjs', [
 ], 'Firebase Parceiro exige package próprio e projeto comum do ecossistema');
 
 requireAll('scripts/install-partner-launcher.mjs', [
-  "import './harden-partner-mercadopago-callback.mjs';",
   "import './harden-partner-android-security.mjs';",
   "import './configure-partner-firebase.mjs';",
   "import './install-partner-driver-location.mjs';",
+  'apois-client-red-logo.b64',
+  '#F7F7F8',
   'registerPlugin(DriverLocationPlugin.class)',
   'android.permission.FOREGROUND_SERVICE_LOCATION',
   'Firebase do APOIS Parceiro não foi materializado.',
-], 'launcher valida OAuth, segurança, Firebase e serviço de localização do Motorista');
+], 'launcher valida segurança, nova marca vermelha, Firebase e serviço de localização do Motorista');
 
 requireAll('superapp/partner-shell/index.html', [
   'PARTNER_PENDING_PUSH_KEY', 'consumePendingPartnerPush', 'pushNotificationActionPerformed',
@@ -201,18 +193,18 @@ requireAll('.env.example', [
   'FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64=', 'PARTNER_APP_PACKAGE=br.com.apois.parceiro',
 ], 'ambiente documenta Firebase/package do Parceiro');
 
-requireAll('scripts/harden-motorista-field-mercadopago.mjs', [
+forbidAll('scripts/build-partner-release.sh', [
   'mercadopago-driver-status', 'mercadopago-oauth-start', 'Conectar Mercado Pago',
-], 'Motorista possui vínculo Mercado Pago direto');
-requireAll('scripts/build-motorista-module.mjs', [
+], 'Pipeline não inclui vínculo Mercado Pago');
+forbidAll('scripts/build-partner-release.sh', [
   "rawUrl.startsWith('br.com.apois.parceiro://auth/mercadopago')",
   "window.location.replace('#/motorista/assinatura'+suffix)",
-], 'Bridge Motorista aceita somente callback Mercado Pago do APK Parceiro e roteia para assinatura');
-forbidAll('scripts/build-motorista-module.mjs', [
+], 'Pipeline não inclui callback Mercado Pago do APK Parceiro');
+forbidAll('scripts/build-partner-release.sh', [
   "rawUrl.startsWith('br.com.apois.app://auth/mercadopago')",
-], 'Bridge Motorista não consome callback Mercado Pago do APK Cliente');
-requireAll('scripts/harden-motorista-mercadopago-disconnect.mjs', [
+], 'Pipeline não inclui callback Mercado Pago do APK Cliente');
+forbidAll('scripts/build-partner-release.sh', [
   'disconnect_my_mercadopago_driver', 'Desconectar Mercado Pago',
-], 'Motorista pode trocar conta Mercado Pago');
+], 'Pipeline não inclui desconexão Mercado Pago');
 
 process.exit(failed ? 1 : 0);

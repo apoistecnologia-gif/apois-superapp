@@ -61,9 +61,9 @@ forbidAll('scripts/harden-partner-motorista-direct-earnings.mjs', [
   "replaceAll('Solicitar saque', 'Solicitar saque')",
 ], 'hardener não preserva rótulo legado de saque');
 
-requireAll('scripts/build-partner-modules.sh', [
+requireAll('scripts/build-partner-release.sh', [
   'harden-partner-motorista-payment-policy.mjs',
-  "if grep -R -Fq 'Solicitar saque' dist/client; then",
+  "forbid_bundle 'Solicitar saque' dist/client",
 ], 'build mantém bloqueio de release se CTA legado de saque reaparecer');
 
 process.exit(failed ? 1 : 0);

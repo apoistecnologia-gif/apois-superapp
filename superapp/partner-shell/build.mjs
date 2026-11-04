@@ -5,8 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
-const branding = resolve(root, '../branding/apois-launcher.png');
-const driverLogoSource = resolve(root, '../../.work/partner-motorista/src/assets/apoisLogoData.ts');
+const branding = resolve(root, '../branding/apois-client-red-logo.b64');
 
 function readTextTree(directory) {
   let output = '';
@@ -21,6 +20,28 @@ function readTextTree(directory) {
     try { output += `\n${readFileSync(path, 'utf8')}`; } catch { /* ignora binários inesperados */ }
   }
   return output;
+}
+
+function sanitizeLegacyBrandInDist(directory) {
+  for (const entry of readdirSync(directory)) {
+    const path = resolve(directory, entry);
+    const stat = statSync(path);
+    if (stat.isDirectory()) {
+      sanitizeLegacyBrandInDist(path);
+      continue;
+    }
+    if (!/\.(?:html|js|css|json|txt)$/i.test(entry)) continue;
+    let source;
+    try { source = readFileSync(path, 'utf8'); } catch { continue; }
+    const next = source
+      .replaceAll('#F6BE1C', '#E51B23')
+      .replaceAll('#f6be1c', '#E51B23')
+      .replaceAll('#C88A08', '#C9141B')
+      .replaceAll('#c88a08', '#C9141B')
+      .replaceAll('rgba(246,190,28', 'rgba(229,27,35')
+      .replaceAll('rgba(200,138,8', 'rgba(201,20,27');
+    if (next !== source) writeFileSync(path, next, 'utf8');
+  }
 }
 
 function requireMarker(source, marker, label) {
@@ -43,21 +64,17 @@ rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 
 if (!existsSync(branding)) {
-  console.error(`[FAIL] branding APOIS ausente em ${branding}`);
+  console.error(`[FAIL] branding APOIS vermelho ausente em ${branding}`);
   process.exit(1);
 }
-
-let brandDataUrl = `data:image/png;base64,${readFileSync(branding).toString('base64')}`;
-if (existsSync(driverLogoSource)) {
-  const logoModule = readFileSync(driverLogoSource, 'utf8');
-  const match = logoModule.match(/APOIS_LOGO_DATA_URL\s*=\s*["']([^"']+)["']/);
-  if (match?.[1]?.startsWith('data:image/')) {
-    brandDataUrl = match[1];
-    console.log('[OK] seletor parceiro reutiliza a mesma logomarca oficial exibida no login do Motorista');
-  } else {
-    console.warn('[WARN] data URL da logomarca do Motorista não encontrada; usando launcher oficial como fallback');
-  }
+const brandBase64 = readFileSync(branding, 'utf8').trim();
+const brandBytes = Buffer.from(brandBase64, 'base64');
+if (brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
+  console.error('[FAIL] branding APOIS vermelho do Parceiro não é um PNG válido');
+  process.exit(1);
 }
+let brandDataUrl = `data:image/png;base64,${brandBase64}`;
+console.log('[OK] seletor parceiro usa a logomarca oficial vermelha da nova identidade');
 
 const templatePath = resolve(root, 'index.html');
 let shellHtml = readFileSync(templatePath, 'utf8');
@@ -69,7 +86,7 @@ shellHtml = shellHtml.replace('__APOIS_BRAND_DATA_URL__', brandDataUrl);
 writeFileSync(resolve(dist, 'index.html'), shellHtml, 'utf8');
 
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
-cpSync(branding, resolve(dist, 'assets/apois-brand.png'));
+writeFileSync(resolve(dist, 'assets/apois-brand.png'), brandBytes);
 
 const modules = [
   ['motorista', resolve(root, '../../.work/partner-motorista/dist/client')],
@@ -84,10 +101,20 @@ for (const [name, source] of modules) {
   const target = resolve(dist, 'modules', name);
   mkdirSync(target, { recursive: true });
   cpSync(source, target, { recursive: true });
-  console.log(`[OK] ${name} copiado para o APOIS Parceiro`);
+  sanitizeLegacyBrandInDist(target);
+  console.log(`[OK] ${name} copiado para o APOIS Parceiro e saneado contra tokens visuais legados`);
 }
 
 const driverBundle = readTextTree(resolve(dist, 'modules/motorista'));
+if (!driverBundle.toLowerCase().includes('#e51b23')) {
+  console.error('[FAIL] bundle Parceiro: Motorista não leva vermelho APOIS ao bundle final');
+  process.exit(1);
+}
+if (driverBundle.toLowerCase().includes('#f6be1c') || driverBundle.toLowerCase().includes('#c88a08')) {
+  console.error('[FAIL] bundle Parceiro: Motorista ainda contém dourado antigo da identidade anterior');
+  process.exit(1);
+}
+console.log('[OK] bundle Parceiro: Motorista usa identidade vermelho/branco sem dourado antigo');
 requireMarker(driverBundle, 'Ganhos', 'Motorista exibe área de Ganhos');
 requireMarker(driverBundle, 'Recebimento direto ao motorista', 'Motorista explica recebimento direto');
 requireMarker(driverBundle, '100% do valor da corrida', 'Motorista preserva valor integral da corrida');
@@ -110,6 +137,15 @@ forbidMarker(driverBundle, 'apois:splash:motorista', 'Motorista não mostra spla
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
 
 const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
+if (!courierBundle.toLowerCase().includes('#e51b23')) {
+  console.error('[FAIL] bundle Parceiro: Entregador não leva vermelho APOIS ao bundle final');
+  process.exit(1);
+}
+if (courierBundle.toLowerCase().includes('#f6be1c') || courierBundle.toLowerCase().includes('#c88a08')) {
+  console.error('[FAIL] bundle Parceiro: Entregador ainda contém dourado antigo da identidade anterior');
+  process.exit(1);
+}
+console.log('[OK] bundle Parceiro: Entregador usa identidade vermelho/branco sem dourado antigo');
 requireMarker(courierBundle, 'Entregas', 'Entregador usa nomenclatura correta de Entregas');
 requireMarker(courierBundle, 'Perfil indisponível durante a entrega', 'Entregador mantém foco na operação durante entrega ativa');
 requireMarker(courierBundle, 'CourierLocation', 'Entregador leva ponte para Foreground Service nativo ao bundle final');

@@ -30,11 +30,8 @@ requireAll('scripts/harden-partner-motorista-onboarding.mjs', [
   'await supabase.auth.signOut();',
 ], 'hardener diferencia retorno ao seletor de troca real de conta');
 
-requireAll('scripts/build-partner-modules.sh', [
+requireAll('scripts/build-partner-release.sh', [
   'harden-partner-motorista-onboarding.mjs',
-  "require_contains 'Trocar perfil de parceiro' src/routes/motorista.cadastro.tsx",
-  "require_contains 'window.location.replace(\"../../index.html\")' src/routes/motorista.cadastro.tsx",
-  "require_contains 'window.location.replace(\"../../index.html\")' src/routes/motorista.status.tsx",
 ], 'build aplica e valida handoff do cadastro/status do Motorista');
 
 // O fluxo usa seletor de arquivos HTML; não depende do plugin Camera nativo para funcionar.

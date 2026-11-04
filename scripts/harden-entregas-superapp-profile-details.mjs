@@ -45,10 +45,10 @@ function finish(state, label) {
   replaceRequired(
     state,
     'No momento, o checkout da APOIS ENTREGA aceita apenas PIX. A cobrança é criada pelo\n              provedor de pagamentos integrado e o pedido só avança após a confirmação do pagamento.',
-    'No momento, os pedidos são pagos somente por PIX. O pedido só é confirmado depois que\n              o pagamento for reconhecido.',
-    'Pagamentos: texto público sem detalhe técnico do provedor',
+    'No momento, o checkout registra pagamento direto ao estabelecimento. A APOIS não processa nem\n              confirma esse pagamento eletronicamente.',
+    'Pagamentos: texto público alinhado ao pagamento direto',
   );
-  finish(state, 'Entregas: Pagamentos mantém rodapé e texto simples para o cliente');
+  finish(state, 'Entregas: Pagamentos mantém rodapé e texto de pagamento direto');
 }
 
 {

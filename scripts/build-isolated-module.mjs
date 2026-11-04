@@ -8,6 +8,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(resolve(root, '.apois/modules.json'), 'utf8'));
 const name = process.argv[2];
 
+const ENTREGAS_CANONICAL_REF = 'ptgkwyyolrdgnqketkjj';
+const ENTREGAS_CANONICAL_URL = `https://${ENTREGAS_CANONICAL_REF}.supabase.co`;
+const ENTREGAS_CANONICAL_PUBLISHABLE_KEY = 'sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY';
+
 if (!name || !manifest.modules[name]) {
   console.error(`Uso: node scripts/build-isolated-module.mjs <${Object.keys(manifest.modules).join('|')}>`);
   process.exit(1);
@@ -58,7 +62,12 @@ function injectSuperappBridge(indexPath, moduleName) {
     : 'apois-superapp-entregas-auth-v1';
   const authDeepLinkKey = 'apois-superapp:last-auth-deeplink';
   const corridasRecoveryKey = 'apois-superapp:corridas-recovery-url';
+  const corridasGoogleForwardKey = 'apois-superapp:corridas-google-url';
   const entregasAuthForwardKey = 'apois-superapp:entregas-auth-url';
+  const oauthPendingKey = 'apois-superapp:pending-oauth-product';
+  const lastModuleKey = 'apois-superapp:last-module';
+  const entregasGoogleForwardKey = 'apois-superapp:entregas-google-url';
+  const oauthHandoffTtlMs = 120000;
   const appPlugin = window.Capacitor?.Plugins?.App;
   const browserPlugin = window.Capacitor?.Plugins?.Browser;
   if (moduleName === 'entregas') window.__APOIS_SUPERAPP_AUTH_BRIDGE__ = true;
@@ -142,13 +151,91 @@ function injectSuperappBridge(indexPath, moduleName) {
     return query ? '?' + query : '';
   }
 
+  function peekPendingOAuthProduct() {
+    try {
+      const stored = localStorage.getItem(oauthPendingKey);
+      if (!stored) return null;
+      const envelope = JSON.parse(stored);
+      const age = Date.now() - Number(envelope?.createdAt);
+      if (!['corridas', 'entregas'].includes(envelope?.product) || age < 0 || age > oauthHandoffTtlMs) {
+        localStorage.removeItem(oauthPendingKey);
+        return null;
+      }
+      return envelope.product;
+    } catch {
+      try { localStorage.removeItem(oauthPendingKey); } catch {}
+      return null;
+    }
+  }
+
+  function lastSelectedModule() {
+    try {
+      const value = localStorage.getItem(lastModuleKey);
+      return value === 'corridas' || value === 'entregas' ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function consumePendingOAuthProduct() {
+    try {
+      const stored = localStorage.getItem(oauthPendingKey);
+      if (!stored) return null;
+      const envelope = JSON.parse(stored);
+      const age = Date.now() - Number(envelope?.createdAt);
+      if (!['corridas', 'entregas'].includes(envelope?.product) || age < 0 || age > oauthHandoffTtlMs) {
+        localStorage.removeItem(oauthPendingKey);
+        return null;
+      }
+      localStorage.removeItem(oauthPendingKey);
+      return envelope.product;
+    } catch {
+      try { localStorage.removeItem(oauthPendingKey); } catch {}
+      return null;
+    }
+  }
+
+  function storeCorridasGoogleCallback(rawUrl) {
+    try {
+      localStorage.setItem(corridasGoogleForwardKey, JSON.stringify({ url: rawUrl, createdAt: Date.now() }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function storeEntregasGoogleCallback(rawUrl) {
+    try {
+      localStorage.setItem(entregasGoogleForwardKey, JSON.stringify({ url: rawUrl, createdAt: Date.now() }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function routeAuthDeepLink(rawUrl) {
     if (typeof rawUrl !== 'string' || !rawUrl.startsWith('br.com.apois.app://auth/')) return false;
     try {
       const { path, params } = parseAuthDeepLink(rawUrl);
 
       if (moduleName === 'corridas') {
-        if (path === 'reset' || path === 'callback' || path === 'email-change') {
+        // O callback genérico também é usado pelo Google de Corridas. Em alguns
+        // aparelhos Android o WebView pode ser retomado sem o envelope OAuth
+        // transitório, embora o módulo selecionado continue persistido. Nessa
+        // situação não encaminhe o callback de Corridas para Entregas: deixe o
+        // PassengerGoogleLoginButton trocar o PKCE no próprio cliente Corridas.
+        if (path === 'callback') {
+          const pendingProduct = peekPendingOAuthProduct();
+          if (pendingProduct === 'corridas' || (!pendingProduct && lastSelectedModule() === 'corridas')) {
+            return false;
+          }
+          if (pendingProduct === 'entregas') {
+            try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
+            window.location.replace('../entregas/index.html');
+            return true;
+          }
+        }
+        if (path === 'reset' || path === 'email-change') {
           try { sessionStorage.setItem(entregasAuthForwardKey, rawUrl); } catch {}
           window.location.replace('../entregas/index.html');
           return true;
@@ -168,6 +255,25 @@ function injectSuperappBridge(indexPath, moduleName) {
         try { sessionStorage.setItem(corridasRecoveryKey, rawUrl); } catch {}
         window.location.replace('../corridas/index.html');
         return true;
+      }
+      if (path === 'callback') {
+        const pendingProduct = peekPendingOAuthProduct();
+        if (pendingProduct === 'corridas') {
+          consumePendingOAuthProduct();
+          if (storeCorridasGoogleCallback(rawUrl)) {
+            void browserPlugin?.close?.().catch(() => undefined);
+            window.location.replace('../corridas/index.html#/login');
+            return true;
+          }
+        }
+        if (pendingProduct === 'entregas') {
+          consumePendingOAuthProduct();
+          if (storeEntregasGoogleCallback(rawUrl)) {
+            void browserPlugin?.close?.().catch(() => undefined);
+            window.dispatchEvent(new CustomEvent('apois:entregas-google-callback', { detail: { url: rawUrl } }));
+            return true;
+          }
+        }
       }
       if (path === 'email-change') {
         if (!params.has('next')) params.set('next', '/perfil/dados-pessoais');
@@ -189,10 +295,6 @@ function injectSuperappBridge(indexPath, moduleName) {
   }
 
   if (appPlugin) {
-    // Entregas registers its own callback listener so the one-time OAuth code
-    // is exchanged exactly once. Keep the bridge listener for cold launches.
-    // Keep the native listener alive while this module is the active WebView
-    // page. Entregas' button owns the callback; the bridge only owns Corridas.
     Promise.resolve(appPlugin.addListener('appUrlOpen', ({ url }) => {
       routeAuthDeepLink(url);
     })).catch(() => undefined);
@@ -231,20 +333,99 @@ function injectSuperappBridge(indexPath, moduleName) {
   console.log(`[OK] ${moduleName}: bridge do Superapp injetado`);
 }
 
+let protectedCorridasMapRuntimeAfterVisual = null;
+
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), name]);
-run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
 if (name === 'corridas') {
+  // The pinned Corridas snapshot contains a protected historical .env. Never
+  // let Vite load it: release configuration must come only from the explicit
+  // CORRIDAS_* environment mapped below.
+  run(process.execPath, [resolve(root, 'scripts/sanitize-corridas-workspace-env.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/adapt-corridas-current.mjs')]);
+} else {
+  run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
+}
+if (name === 'corridas') {
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-backend-identity-boundary.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-cancellation-policy.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-ride-lifecycle.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-request-timeout.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-eligibility-no-gateway.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-oauth-callback-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-native-map.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-map-focus.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-client-live-ride-camera-v2.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-client-live-ride-camera-v2.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-address-display.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-destination-search-runtime.mjs')]);
+
+  const protectedMapRuntimePaths = [
+    '.work/corridas/src/components/map/PassengerMap.tsx',
+    '.work/corridas/src/services/google/google-maps-loader.ts',
+    '.work/corridas/src/hooks/use-location.tsx',
+    '.work/corridas/src/services/places/places-service.ts',
+  ];
+  const protectedMapRuntimeBeforeVisual = new Map(
+    protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
+  );
+
+  run(process.execPath, [resolve(root, 'scripts/harden-apois-client-red-visual.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-kit-visual.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-category-recovery.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-save-favorites-in-search.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-compact-home-favorites.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-destination-pickup-contrast.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-flow-ux.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-timeout-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-stops-confirm-display.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-stops-confirm-display.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-android-footer-safe-area.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-android-footer-safe-area.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/restore-corridas-wallet-screen.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-wallet-screen.mjs')]);
+  // O tema do Perfil ja esta no pipeline; aplicar somente os handlers seguros.
+  // Rodar o antigo script completo duas vezes duplica profileAvatarUrl.
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-actions.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-edit.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-signup-neutral-feedback.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-password-recovery.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-email-confirmation-return-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-profile-edit.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/restore-corridas-history-screen.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-history-screen.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-accept-pin-visibility.mjs')]);
+
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-driver-accept-pin-visibility.mjs')]);
+
+  for (const [path, before] of protectedMapRuntimeBeforeVisual) {
+    const after = readFileSync(resolve(root, path), 'utf8');
+    if (after !== before) {
+      console.error(`[FAIL] migração visual alterou runtime protegido do mapa: ${path}`);
+      process.exit(1);
+    }
+  }
+  protectedCorridasMapRuntimeAfterVisual = new Map(
+    protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
+  );
+  console.log('[OK] Corridas: migração visual preservou byte a byte Maps/GPS/Places');
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-dispatch-ux-v1.mjs')]);
 }
 if (name === 'entregas') {
-  // scripts/normalize-entregas-adaptation-handoff.mjs é executado pelo import no
-  // início de harden-entregas-superapp-auth-runtime.mjs, imediatamente após o
-  // adaptador base e antes dos hardeners especializados.
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-apois-entregas-email-auth-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-google-oauth-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/neutralize-entregas-superapp-legacy.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-auto-address-cep-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-entregas-auto-address-cep-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-personal-data-light-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-location-identified-state.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-checkout-coverage-diagnostic.mjs')]);
 }
 
 const config = manifest.modules[name];
@@ -283,8 +464,10 @@ if (name === 'corridas') {
 
   const androidMapsKey = process.env.CORRIDAS_ANDROID_MAPS_API_KEY?.trim();
   if (androidMapsKey) {
-    console.log('[OK] corridas: Google Maps Android key disponível para o shell nativo');
+    env.VITE_GOOGLE_MAPS_NATIVE_API_KEY = androidMapsKey;
+    console.log('[OK] corridas: Google Maps Android key disponível para o mapa nativo');
   } else {
+    delete env.VITE_GOOGLE_MAPS_NATIVE_API_KEY;
     console.warn('[WARN] corridas: CORRIDAS_ANDROID_MAPS_API_KEY ausente; mapa nativo será homologado após configuração');
   }
 
@@ -292,6 +475,21 @@ if (name === 'corridas') {
 }
 
 if (name === 'entregas') {
+  const requestedEntregasUrl = process.env.ENTREGAS_VITE_SUPABASE_URL?.trim().replace(/\/$/, '');
+  if (requestedEntregasUrl && requestedEntregasUrl !== ENTREGAS_CANONICAL_URL) {
+    console.error(`[FAIL] entregas: ENTREGAS_VITE_SUPABASE_URL deve apontar para ${ENTREGAS_CANONICAL_REF}; recebido ${requestedEntregasUrl}`);
+    process.exit(1);
+  }
+  const requestedEntregasKey = process.env.ENTREGAS_VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const entregasPublishableKey = requestedEntregasKey || ENTREGAS_CANONICAL_PUBLISHABLE_KEY;
+  if (!entregasPublishableKey.startsWith('sb_publishable_')) {
+    console.error('[FAIL] entregas: publishable key do projeto canônico é inválida');
+    process.exit(1);
+  }
+  env.VITE_SUPABASE_URL = ENTREGAS_CANONICAL_URL;
+  env.VITE_SUPABASE_PUBLISHABLE_KEY = entregasPublishableKey;
+  console.log(`[OK] entregas: Supabase canônico aplicado ao bundle (${ENTREGAS_CANONICAL_REF})`);
+
   env.VITE_APOIS_SUPERAPP_PUSH_ENABLED = process.env.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64?.trim()
     ? '1'
     : '0';
@@ -305,6 +503,17 @@ if (name === 'entregas') {
 for (const command of [config.install, config.build]) {
   const [bin, ...args] = command;
   run(bin, args, { cwd, env });
+}
+
+if (name === 'corridas' && protectedCorridasMapRuntimeAfterVisual) {
+  for (const [path, before] of protectedCorridasMapRuntimeAfterVisual) {
+    const after = readFileSync(resolve(root, path), 'utf8');
+    if (after !== before) {
+      console.error(`[FAIL] pipeline pós-visual alterou runtime protegido do mapa: ${path}`);
+      process.exit(1);
+    }
+  }
+  console.log('[OK] Corridas: build final preservou byte a byte Maps/GPS/Places');
 }
 
 if (config.render) {

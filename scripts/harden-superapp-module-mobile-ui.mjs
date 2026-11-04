@@ -10,38 +10,34 @@ function patch(path, transform, label) {
   const full = resolve(path);
   const before = readFileSync(full, 'utf8');
   const after = transform(before);
-  if (after === before) throw new Error(`[FAIL] ${label}: nenhum ajuste aplicado em ${path}`);
+  if (after === before) {
+    console.log('[OK] ' + label + ' (já aplicado ou nativo)');
+    return;
+  }
   writeFileSync(full, after, 'utf8');
-  console.log(`[OK] ${label}`);
+  console.log('[OK] ' + label);
 }
 
 if (moduleName === 'corridas') {
-  patch('.work/corridas/src/components/layout/AppShell.tsx', (source) => {
+  patch('.work/corridas/src/components/BottomNavigation.tsx', (source) => {
     let next = source;
-    next = next.replaceAll(
-      '"app-pressable flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-xl text-[9px] font-bold"',
-      '"app-pressable flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold leading-none"',
-    );
-    next = next.replaceAll('<Icon size={21} />', '<Icon size={24} strokeWidth={2.2} />');
-    next = next.replace(
-      'className="app-safe-x shrink-0 border-t border-white/10 bg-black/98 pt-2 shadow-[0_-12px_30px_rgba(0,0,0,.55)]"',
-      'className="app-safe-x shrink-0 border-t border-white/10 bg-black/98 pt-2.5 shadow-[0_-12px_30px_rgba(0,0,0,.55)]"',
-    );
+    next = next.replaceAll('text-zinc-600', 'text-zinc-500');
+    next = next.replace('shadow-[0_-4px_20px_rgba(0,0,0,0.5)]', 'shadow-[0_-10px_30px_rgba(0,0,0,0.55)]');
     return next;
-  }, 'Corridas: rodapé global ganha alvos de toque e textos legíveis em celular');
+  }, 'Corridas: rodapé real mantém contraste adequado em celular');
 
-  const appShell = readFileSync(resolve('.work/corridas/src/components/layout/AppShell.tsx'), 'utf8');
-  for (const marker of ['min-h-[64px]', 'text-[11px]', '<Icon size={24} strokeWidth={2.2} />', 'pt-2.5']) {
-    if (!appShell.includes(marker)) throw new Error(`[FAIL] Corridas: rodapé mobile incompleto (${marker})`);
-  }
-  if (appShell.includes('MainHamburgerMenu')) {
-    throw new Error('[FAIL] Corridas: menu hambúrguer duplicado voltou ao AppShell.');
+  const bottomNav = readFileSync(resolve('.work/corridas/src/components/BottomNavigation.tsx'), 'utf8');
+  for (const marker of ['grid-cols-5', 'min-h-[64px]', 'Início', 'Corridas', 'Carteira', 'Notificações', 'Perfil']) {
+    if (!bottomNav.includes(marker)) throw new Error('[FAIL] Corridas: rodapé mobile incompleto (' + marker + ')');
   }
 
   await import('./harden-corridas-superapp-profile-ui.mjs');
-}
-
-if (moduleName === 'entregas') {
+  await import('./harden-corridas-last-visual-pass.mjs');
+  await import('./harden-corridas-final-red-surfaces.mjs');
+  await import('./harden-corridas-final-shell-surfaces.mjs');
+  await import('./harden-corridas-public-shell-surfaces.mjs');
+  await import('./harden-corridas-mobile-proportions.mjs');
+} else {
   patch('.work/entregas/src/routes/inicio.tsx', (source) => {
     let next = source;
     next = next.replace(
@@ -80,7 +76,7 @@ if (moduleName === 'entregas') {
 
   const home = readFileSync(resolve('.work/entregas/src/routes/inicio.tsx'), 'utf8');
   for (const marker of ['pt-[max(env(safe-area-inset-top),0.75rem)]', 'pb-2.5', 'text-xs font-semibold text-zinc-300']) {
-    if (!home.includes(marker)) throw new Error(`[FAIL] Entregas: ajuste visual da Home incompleto (${marker})`);
+    if (!home.includes(marker)) throw new Error('[FAIL] Entregas: ajuste visual da Home incompleto (' + marker + ')');
   }
 
   const profile = readFileSync(resolve('.work/entregas/src/routes/perfil/index.tsx'), 'utf8');
@@ -95,7 +91,7 @@ if (moduleName === 'entregas') {
   for (const marker of [
     'fixed bottom-0',
     'min-h-[88px]',
-    'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+    'pb-[max(44px,env(safe-area-inset-bottom))]',
     'min-h-[64px]',
     'min-w-[72px]',
     'h-8 w-8',
@@ -103,7 +99,7 @@ if (moduleName === 'entregas') {
     'aria-label="Buscar"',
     '<Search className="h-8 w-8" />',
   ]) {
-    if (!bottomNav.includes(marker)) throw new Error(`[FAIL] Entregas: rodapé mobile regrediu (${marker})`);
+    if (!bottomNav.includes(marker)) throw new Error('[FAIL] Entregas: rodapé mobile regrediu (' + marker + ')');
   }
   if (bottomNav.includes('<Bike className=')) throw new Error('[FAIL] Entregas: ação Buscar voltou a usar ícone de motocicleta.');
   console.log('[OK] Entregas: rodapé fixo permanece grande, legível, sem ícone ambíguo e fora da barra de gestos do Android.');

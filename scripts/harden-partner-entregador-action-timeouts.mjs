@@ -9,7 +9,7 @@ let source = readFileSync(path, 'utf8');
 if (!source.includes('const COURIER_ACTION_TIMEOUT_MS = 20_000;')) {
   const anchor = 'function CourierApp() {';
   if (!source.includes(anchor)) throw new Error('Entregador Parceiro: CourierApp não encontrado.');
-  const helper = `const COURIER_ACTION_TIMEOUT_MS = 20_000;\n\nasync function courierActionWithTimeout<T>(operation: PromiseLike<T>, label: string): Promise<T> {\n  let timer: ReturnType<typeof setTimeout> | null = null;\n  try {\n    return await Promise.race([\n      Promise.resolve(operation),\n      new Promise<T>((_, reject) => {\n        timer = setTimeout(() => {\n          reject(new Error(\`Tempo esgotado ao \${label}. O app vai conferir o estado atual antes de permitir nova tentativa.\`));\n        }, COURIER_ACTION_TIMEOUT_MS);\n      }),\n    ]);\n  } finally {\n    if (timer) clearTimeout(timer);\n  }\n}\n\n${anchor}`;
+  const helper = `const COURIER_ACTION_TIMEOUT_MS = 20_000;\n\nasync function courierActionWithTimeout(operation: PromiseLike<any>, label: string): Promise<any> {\n  let timer: ReturnType<typeof setTimeout> | null = null;\n  try {\n    return await Promise.race([\n      Promise.resolve(operation),\n      new Promise<any>((_, reject) => {\n        timer = setTimeout(() => {\n          reject(new Error(\`Tempo esgotado ao \${label}. O app vai conferir o estado atual antes de permitir nova tentativa.\`));\n        }, COURIER_ACTION_TIMEOUT_MS);\n      }),\n    ]);\n  } finally {\n    if (timer) clearTimeout(timer);\n  }\n}\n\n${anchor}`;
   source = source.replace(anchor, helper);
 }
 
@@ -61,7 +61,7 @@ if (!source.includes('const supportJobId = activeJob.id;')) {
 
 for (const marker of [
   'const COURIER_ACTION_TIMEOUT_MS = 20_000;',
-  'async function courierActionWithTimeout<T>',
+  'async function courierActionWithTimeout(operation: PromiseLike<any>',
   'Tempo esgotado ao ${label}.',
   'const acceptedOfferId = offerId;',
   'const rejectedOfferId = offerId;',

@@ -53,7 +53,7 @@ for (const [name, script] of [['build:superapp', buildSuperapp], ['build:partner
   if (!script.includes('npm run verify:pins')) fail(`${name} não verifica snapshots protegidos antes do build`);
 }
 if (buildSuperapp.includes('build:motorista')) fail('build:superapp voltou a incluir Motorista');
-if (!buildPartner.includes('build-partner-modules.sh')) fail('build:partner não usa empacotamento unificado Motorista + Entregador');
+if (!buildPartner.includes('build-partner-release.sh')) fail('build:partner não usa o empacotamento release unificado Motorista + Entregador');
 if (process.platform === 'win32' && !buildPartner.includes('scripts/run-bash.mjs')) fail('build:partner não usa runner compatível com Windows para o Bash');
 if (!failed) ok('builds Cliente e Parceiro mantêm gates e separação de responsabilidades');
 
@@ -90,30 +90,39 @@ requireAll('superapp/shell/build.mjs', [
   "import '../../scripts/harden-superapp-shell-mobile-ui.mjs';",
   "['corridas', resolve(root, '../../.work/corridas/dist')]",
   "['entregas', resolve(root, '../../.work/entregas/.output/public')]",
-], 'shell Cliente aplica identidade/mobile e inclui somente Passageiro + Cliente Entregas');
+  "../branding/apois-client-red-logo.b64",
+], 'shell Cliente aplica identidade/mobile, usa marca exclusiva e inclui somente Passageiro + Cliente Entregas');
 forbidAll('superapp/shell/build.mjs', ['partner-motorista', 'partner-entregador', "['motorista'", "['entregador'"], 'shell Cliente não copia módulos de parceiro');
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   "import './harden-superapp-shell-iconography.mjs';",
-  '--teal:#f2b414;',
-  'object-fit:contain;padding:6px',
-  '@media(max-height:720px)',
-], 'seletor Cliente usa cadeia final preto/dourado, logo contida e viewport pequena');
+  "'--red:#E51B23'",
+  "'--red-dark:#C9141B'",
+  "'@media(max-height:760px)'",
+  "'O seu caminho,'",
+  "'do seu jeito.'",
+  "'min-height:126px'",
+  "'aspect-ratio:1/1'",
+], 'seletor Cliente usa a nova identidade vermelho/branco, logo contida e viewport pequena');
 requireAll('scripts/harden-superapp-shell-iconography.mjs', [
   "import './harden-superapp-shell-copy.mjs';",
-  'carSvg', 'motoSvg', 'bagSvg', 'boxSvg',
-  'Carro • Moto • Envios',
-  '<strong>Apois, <span>vamos?</span></strong>',
-], 'copy e iconografia oficiais são aplicadas antes do mobile hardening');
+  "'<div class=\"visual\">'",
+  "'class=\"vehicle-photo\"'",
+  "'alt=\"Carro APOIS\"'",
+  "'alt=\"Moto de entregas APOIS\"'",
+  '/🚘|🚗|🏍️|🛍|🛵|📦/.test(source)',
+], 'copy e veículos reais adesivados APOIS são validados antes do mobile hardening');
 
 requireAll('scripts/harden-entregas-superapp-customer-ux.mjs', [
   "import './harden-entregas-superapp-brand-theme.mjs';",
-], 'Entregas aplica identidade preto/dourado antes da UX interna');
+], 'Entregas aplica a nova identidade do Cliente antes da UX interna');
 requireAll('scripts/harden-entregas-superapp-brand-theme.mjs', [
-  'APOIS_CUSTOMER_GOLD_V1',
-  '--primary: oklch(0.82 0.16 84)',
-  "replaceAll('#35A9C9', '#F6BE1C')",
-], 'Cliente Entregas converte tema e logomarca antiga para identidade APOIS');
+  'APOIS_CUSTOMER_RED_V2',
+  '--primary: oklch(0.59 0.24 27)',
+  "replaceAll('#35A9C9', '#E51B23')",
+  'APOIS_CUSTOMER_LOGIN_LIGHT_V3',
+  'data-apois-customer-login-red-v3',
+], 'Cliente Entregas converte tema e login para a nova identidade APOIS vermelha/clara');
 
 requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
   "import './harden-entregas-customer-auth-mobile-ui.mjs';",
@@ -140,22 +149,43 @@ requireAll('superapp/partner-shell/build.mjs', [
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:8px',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
-], 'seletor Parceiro está protegido para telas baixas/estreitas');
-requireAll('scripts/harden-partner-entregador-theme.mjs', [
-  'APOIS_PARTNER_COURIER_GOLD_V1',
-  '--primary: oklch(0.82 0.16 84)',
-  '#f6be1c',
-], 'Entregador preserva a mesma identidade preto/dourado do ecossistema APOIS');
+  'object-fit:contain',
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
+], 'seletor Parceiro aprovado está protegido para telas baixas/estreitas');
+requireAll('scripts/harden-partner-red-visual.mjs', [
+  'APOIS_PARTNER_COURIER_RED_VISUAL_V1',
+  'APOIS_PARTNER_RED_VISUAL_V1',
+  '#E51B23',
+], 'APOIS Parceiro aplica identidade vermelho/branco em Motorista e Entregador');
 
 const workflowsDir = resolve('.github/workflows');
-if (existsSync(workflowsDir) && readdirSync(workflowsDir).some((name) => /\.ya?ml$/i.test(name))) {
-  fail('GitHub Actions reapareceu; release oficial deve continuar no Codemagic');
+if (existsSync(workflowsDir)) {
+  const workflows = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name));
+  const allowedTestWorkflows = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml', 'apois-partner-preflight.yml']);
+  const unexpected = workflows.filter((name) => !allowedTestWorkflows.has(name));
+  if (unexpected.length) {
+    fail(`GitHub Actions de release/CI não autorizados reapareceram: ${unexpected.join(', ')}`);
+  } else {
+    const partnerWorkflow = workflows.includes('apois-partner-android.yml')
+      ? read('.github/workflows/apois-partner-android.yml')
+      : '';
+    if (partnerWorkflow && !partnerWorkflow.includes('APOIS-Parceiro-TESTE.apk')) {
+      fail('workflow GitHub do Parceiro deve permanecer explicitamente de teste');
+    } else {
+      const clientWorkflow = workflows.includes('apois-client-android.yml')
+        ? read('.github/workflows/apois-client-android.yml')
+        : '';
+      if (clientWorkflow && !clientWorkflow.includes('APOIS-Cliente-TESTE.apk')) {
+        fail('workflow GitHub do Cliente deve permanecer explicitamente de teste');
+      } else {
+        ok('GitHub Actions contém apenas probe e APKs de teste Cliente/Parceiro; release oficial continua no Codemagic');
+      }
+    }
+  }
 } else ok('não há GitHub Actions concorrendo com o caminho oficial de release');
 
 if (!failed) {
-  console.log('[OK] Final integration v22: auditoria estática integrada concluída; código está liberado para a etapa externa de compilação/homologação no Codemagic.');
+  console.log('[OK] Final integration v22: auditoria estática integrada concluída; código está liberado para a etapa externa de compilação/homologação no Codemagic ou APK de teste no GitHub Actions.');
 }
 process.exit(failed ? 1 : 0);

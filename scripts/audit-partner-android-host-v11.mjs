@@ -54,16 +54,16 @@ forbidAll('scripts/configure-partner-android.mjs', [
 ], 'Host Parceiro não recria callback Mercado Pago legado do app cliente');
 
 requireAll('scripts/install-partner-splash.mjs', [
+  "const LIGHT_BG = '#F7F7F8';",
   '<shape android:shape="rectangle">',
-  '<solid android:color="#050505" />',
   '@mipmap/ic_launcher',
   'windowSplashScreenBackground',
   'windowSplashScreenAnimatedIcon',
-  "finalSplash.includes('android:drawable=\"#050505\"')",
-], 'Splash usa drawable XML válido e identidade APOIS');
+  "sanitize-partner-launcher-resources.mjs",
+], 'Splash usa fundo claro e marca vermelha oficial do APOIS');
 forbidAll('scripts/install-partner-splash.mjs', [
-  '<item android:drawable="#050505" />',
-], 'Splash não usa literal de cor inválido no atributo drawable');
+  '#050505',
+], 'Splash não reintroduz o fundo preto da identidade antiga');
 
 requireAll('scripts/harden-partner-location-notification-routing.mjs', [
   "{ file: 'DriverLocationService.java', module: 'motorista' }",
@@ -88,11 +88,13 @@ requireAll('scripts/install-partner-launcher.mjs', [
   "import './harden-partner-location-startup-ack.mjs';",
   "import './harden-partner-location-notification-routing.mjs';",
   "await import('./verify-partner-native-plugins.mjs');",
+  'apois-client-red-logo.b64',
+  '#F7F7F8',
   'br.com.apois.parceiro://module/motorista',
   'br.com.apois.parceiro://module/entregador',
   'driver_running',
   'courier_running',
-], 'Launcher encadeia segurança, Firebase, GPS, ACK real, roteamento e verificação nativa na ordem final');
+], 'Launcher encadeia nova marca vermelha, segurança, Firebase, GPS, ACK real, roteamento e verificação nativa');
 
 requireAll('superapp/partner-shell/package.json', [
   '"@capacitor/android": "8.5.0"',

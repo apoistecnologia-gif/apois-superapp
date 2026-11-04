@@ -1,36 +1,58 @@
-import './harden-corridas-superapp-legal-profile-ui.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const path = resolve('.work/corridas/src/components/profile/PassengerProfileCenter.tsx');
+const path = resolve('.work/corridas/src/routes/_authenticated.perfil.tsx');
 let source = readFileSync(path, 'utf8');
 
+// Migração estritamente visual: preserva dados, ações, rotas e autenticação,
+// mas impede que o Perfil volte ao tema preto/amarelo depois do hardener mobile.
 source = source
-  .replace('  CreditCard,\n', '')
-  .replace('  WalletCards,\n', '')
-  .replaceAll('className="app-pressable flex h-10 w-10 items-center justify-center rounded-2xl', 'className="app-pressable flex h-11 w-11 items-center justify-center rounded-2xl')
-  .replaceAll('className="app-pressable flex h-9 w-9 items-center justify-center rounded-xl', 'className="app-pressable flex h-11 w-11 items-center justify-center rounded-xl')
-  .replace('className="mt-1 truncate text-[11px] text-zinc-500"', 'className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-500"')
-  .replaceAll('max-h-[92dvh] w-[calc(100vw-24px)]', 'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))] w-[calc(100vw-24px)]');
+  .replace(
+    '  const currentProfile = normalizeProfile(profile, user?.email);',
+    '  const currentProfile = normalizeProfile(profile, user?.email);\n  const profileAvatarUrl = currentProfile.avatarUrl ?? readNonEmptyString(user?.user_metadata?.avatar_url) ?? readNonEmptyString(user?.user_metadata?.picture);',
+  )
+  .replace(
+    '<AvatarImage src={currentProfile.avatarUrl} />',
+    '<AvatarImage src={profileAvatarUrl} />',
+  )
+  .replace('className="flex flex-col min-h-screen bg-black text-white pb-24"', 'className="flex min-h-screen flex-col bg-[#F7F7F8] pb-24 text-[#111111]"')
+  .replace('className="flex min-h-0 flex-1 flex-col bg-black text-white"', 'className="flex min-h-0 flex-1 flex-col bg-[#F7F7F8] text-[#111111]"')
+  .replace('className="p-6 pt-12 flex flex-col items-center border-b border-gray-900"', 'className="flex flex-col items-center border-b border-[#E2E4E8] bg-white px-6 pb-6 pt-[max(env(safe-area-inset-top),1.25rem)]"')
+  .replace('border-2 border-yellow-500 p-1', 'border-2 border-[#E51B23] p-1')
+  .replace('bg-gray-800 text-yellow-500 text-3xl font-bold', 'bg-[#FFF1F2] text-[#E51B23] text-3xl font-bold')
+  .replace('className="text-gray-400 text-sm"', 'className="text-sm text-[#666B73]"')
+  .replace('className="flex items-center gap-4 mt-4 bg-[#121212] px-4 py-2 rounded-full"', 'className="mt-4 flex items-center gap-4 rounded-full border border-[#E2E4E8] bg-white px-4 py-2 shadow-sm"')
+  .replace('className="flex items-center gap-1 text-yellow-500"', 'className="flex items-center gap-1 text-[#E51B23]"')
+  .replaceAll('className="text-sm font-bold text-white"', 'className="text-sm font-bold text-[#111111]"')
+  .replace('className="w-px h-4 bg-gray-800"', 'className="h-4 w-px bg-[#E2E4E8]"')
+  .replaceAll('bg-[#121212]', 'bg-white')
+  .replaceAll('hover:bg-[#1a1a1a]', 'hover:bg-[#FFF7F7]')
+  .replaceAll('text-yellow-500', 'text-[#E51B23]')
+  .replaceAll('group-hover:text-yellow-500', 'group-hover:text-[#C9141B]')
+  .replaceAll('text-gray-700', 'text-[#8A9098]')
+  .replaceAll('text-gray-500', 'text-[#666B73]')
+  .replaceAll('rounded-xl', 'rounded-2xl')
+  .replace('className="w-full flex items-center justify-between p-4', 'className="w-full min-h-[68px] flex items-center justify-between p-4')
+  .replace('className="text-xs font-bold text-gray-500 px-2 pt-4 pb-2 uppercase tracking-wider"', 'className="px-2 pb-2 pt-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#666B73]"')
+  .replace('className="text-xs font-bold text-gray-500 px-2 pt-6 pb-2 uppercase tracking-wider"', 'className="px-2 pb-2 pt-6 text-[11px] font-black uppercase tracking-[0.16em] text-[#666B73]"')
+  .replace('className="text-center text-gray-600 text-xs mt-8"', 'className="mt-8 text-center text-xs text-[#8A9098]"');
 
-for (const forbidden of [
-  'title="Carteira e pagamentos"',
-  'title="Central de notificações"',
-  'title="Termos e privacidade"',
-  'MainHamburgerMenu',
-]) {
-  if (source.includes(forbidden)) throw new Error(`[FAIL] Passageiro: navegação duplicada/ambígua permaneceu no Perfil (${forbidden})`);
+if (!source.includes('profileAvatarUrl') || !source.includes('user?.user_metadata?.picture')) {
+  throw new Error('[FAIL] Corridas: Perfil perdeu fallback da foto do usuário autenticado');
 }
-for (const marker of [
-  'title="Termos de Uso"',
-  'title="Política de Privacidade"',
-  'Suporte e informações',
-  'h-11 w-11',
-  'line-clamp-2 text-[11px] leading-4',
-  'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))]',
-]) {
-  if (!source.includes(marker)) throw new Error(`[FAIL] Passageiro: hardening visual do Perfil incompleto (${marker})`);
+if (!source.includes('min-h-[68px]')) throw new Error('[FAIL] Corridas: Perfil sem alvos de toque adequados');
+if (!source.includes('env(safe-area-inset-top)')) throw new Error('[FAIL] Corridas: Perfil sem safe area superior');
+if (
+  !source.includes('bg-[#F7F7F8]') ||
+  !source.includes('text-[#111111]') ||
+  !source.includes('border-[#E51B23]')
+) {
+  throw new Error('[FAIL] Corridas: Perfil não recebeu a identidade vermelho/branco');
 }
+if (source.includes('PassengerProfileCenter')) throw new Error('[FAIL] Corridas: Perfil obsoleto reapareceu');
 
 writeFileSync(path, source, 'utf8');
-console.log('[OK] Passageiro: Perfil sem atalhos duplicados, documentos legais acessíveis, botões tocáveis e diálogos adaptados à viewport móvel.');
+console.log('[OK] Corridas: Perfil usa identidade APOIS vermelho/branco sem alterar comportamento.');
+
+await import('./harden-corridas-profile-actions.mjs');
+await import('./harden-corridas-password-recovery.mjs');

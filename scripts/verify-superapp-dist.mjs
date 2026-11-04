@@ -1,346 +1,191 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dist = resolve(root, 'superapp/shell/dist');
 let failed = false;
-
-function fail(message) {
-  console.error(`[FAIL] ${message}`);
-  failed = true;
-}
+function fail(message) { console.error(`[FAIL] ${message}`); failed = true; }
 function ok(message) { console.log(`[OK] ${message}`); }
-function requireFile(path) {
-  const full = resolve(root, path);
-  if (!existsSync(full)) { fail(`arquivo obrigatório ausente: ${path}`); return null; }
-  return readFileSync(full, 'utf8');
+function requireFile(path) { const full=resolve(root,path); if(!existsSync(full)){fail(`arquivo obrigatório ausente: ${path}`);return null;} return readFileSync(full,'utf8'); }
+function requireMarkers(path,markers,label){const source=requireFile(path);if(!source)return;const missing=markers.filter(m=>!source.includes(m));if(missing.length)fail(`${label}: ${missing.join(' | ')}`);else ok(label);}
+function forbidMarkers(path,markers,label){const source=requireFile(path);if(!source)return;const found=markers.filter(m=>source.includes(m));if(found.length)fail(`${label}: ${found.join(' | ')}`);else ok(label);}
+function treeContains(dir,marker,extensions=/\.(?:html|css|js|mjs|json|svg)$/i){const fullDir=resolve(root,dir);if(!existsSync(fullDir))return false;const stack=[fullDir];while(stack.length){const current=stack.pop();for(const entry of readdirSync(current)){const path=resolve(current,entry);const stat=statSync(path);if(stat.isDirectory()){stack.push(path);continue;}if(!extensions.test(entry))continue;try{if(readFileSync(path,'utf8').includes(marker))return true;}catch{}}}return false;}
+
+for(const path of ['superapp/shell/dist/index.html','superapp/shell/dist/assets/apois-brand.png','superapp/shell/dist/modules/corridas/index.html','superapp/shell/dist/modules/entregas/index.html']){if(existsSync(resolve(root,path)))ok(path);else fail(`ausente: ${path}`);}
+requireMarkers('superapp/shell/index.html',['./assets/apois-brand.png',"return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';","path==='corridas-reset'","path==='email-change'"],'shell fonte mantém marca, sessão por módulo e deep links atuais');
+forbidMarkers('superapp/shell/index.html',['<div class="logo-mark">A</div>'],'shell não contém branding provisório');
+const shell=requireFile('superapp/shell/dist/index.html');if(shell){if(/\b(?:src|href)=["']\/(?!\/)/.test(shell))fail('shell final contém asset absoluto incompatível com WebView local');else ok('shell final usa recursos relativos');if(!shell.includes('data-apois-superapp-push-routing'))fail('shell final não recebeu roteamento global de Push');else ok('shell final contém roteamento global de Push');}
+
+requireMarkers('.work/corridas/src/integrations/supabase/client.ts',['storageKey: "apois-superapp-corridas-auth-v1"'],'Corridas usa namespace de sessão próprio');
+requireMarkers('.work/corridas/src/hooks/use-auth.tsx',['APOIS_RESUME_AUTH_SNAPSHOT_V1','apois-superapp-corridas-auth-v1','persistedBootSession?.user ?? null','useState<Session | null>(() => persistedBootSession)'],'retomada Corridas reidrata sessão persistida sem tela cheia');
+requireMarkers('.work/corridas/src/components/auth/AuthGuard.tsx',['APOIS_RESUME_AUTH_GUARD_V1','session?.user'],'AuthGuard Corridas preserva a tela ao voltar do segundo plano');
+requireMarkers('.work/corridas/src/routes/_public.login.tsx',['PassengerGoogleLoginButton','<PassengerGoogleLoginButton />','to="/recuperar-senha"'],'Corridas login oferece Google, senha e recuperação');
+const googleAuth=requireFile('.work/corridas/src/components/auth/PassengerGoogleLoginButton.tsx');
+if(googleAuth){
+  const baseMarkers=['br.com.apois.app://auth/corridas-google','signInWithOAuth','provider: "google"'];
+  const missing=baseMarkers.filter(marker=>!googleAuth.includes(marker));
+  const hasBrowserOpen=googleAuth.includes('Browser.open') || (googleAuth.includes('browserPlugin()') && googleAuth.includes('browser.open({ url: data.url })'));
+  if(missing.length || !hasBrowserOpen) fail(`Google OAuth Corridas usa callback nativo do Superapp: ${[...missing,...(!hasBrowserOpen?['Browser.open/native Browser bridge']:[])].join(' | ')}`);
+  else ok('Google OAuth Corridas usa callback nativo do Superapp');
 }
-function requireMarkers(path, markers, label) {
-  const source = requireFile(path);
-  if (!source) return;
-  const missing = markers.filter((marker) => !source.includes(marker));
-  if (missing.length) fail(`${label}: ${missing.join(' | ')}`);
-  else ok(label);
-}
-function forbidMarkers(path, markers, label) {
-  const source = requireFile(path);
-  if (!source) return;
-  const found = markers.filter((marker) => source.includes(marker));
-  if (found.length) fail(`${label}: ${found.join(' | ')}`);
-  else ok(label);
-}
+requireMarkers('.work/corridas/src/hooks/rides/use-ride-request.tsx',['functions.invoke("request-ride"'],'Corridas cria solicitação pelo roteador financeiro do Superapp');
+requireMarkers('.work/corridas/src/hooks/rides/use-ride-request.tsx',[
+  'APOIS_REQUEST_RIDE_TIMEOUT_V1',
+  'REQUEST_RIDE_TIMEOUT_MS = 20_000',
+  'Promise.race([',
+  'invokeRequestRideWithTimeout(payload)',
+  'request_timeout',
+],'Corridas não deixa solicitação de corrida carregando indefinidamente');
+requireMarkers('.work/corridas/src/services/payments/payment-service.ts',['const isDirectToDriver = code === "cash" || code === "credit";','Pague diretamente ao motorista em dinheiro ao final da corrida.','Pague diretamente ao motorista no cartão de crédito'],'Corridas preserva somente Dinheiro/Cartão direto ao motorista');
+requireMarkers('.work/corridas/src/components/BottomNavigation.tsx',['grid-cols-5','min-h-[64px]','pb-[max(44px,env(safe-area-inset-bottom))]','Início','Corridas','Carteira','Notificações','Perfil'],'Corridas mantém rodapé acima da barra de navegação Android, legível e com cinco destinos');
+requireMarkers('.work/corridas/src/routes/_authenticated.tsx',['hideBottomNavigation','pathname === "/buscar-destino"','pathname.startsWith("/corrida/")'],'Corridas não sobrepõe rodapé nas jornadas fullscreen');
+requireMarkers('.work/corridas/src/styles.css',['APOIS_VISUAL_KIT_V1','APOIS_REFERENCE_HOME_V2','.apois-kit-home','.apois-kit-search-screen'],'Corridas recebeu o kit visual durável');
+requireMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['PassengerMap','data-apois-reference-home-v2','apois-kit-home','Local de partida','Destino','max-h-[46dvh]', 'h-10 w-10 rounded-full object-contain','bg-transparent','<CategorySelector />','Solicitar corrida'],'Home Corridas usa mapa predominante, destino só no painel inferior e visual APOIS V2 aprovado');
+forbidMarkers('.work/corridas/src/routes/_authenticated.inicio.tsx',['Para onde vamos?'],'Home Corridas não duplica campo de destino no topo');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
+  'apois-kit-search-screen',
+  'suggestions.map',
+  'whitespace-normal break-words',
+  'text-[#111111]',
+  'caret-[#E51B23]',
+  'placeholder:text-[#9AA0A8]',
+],'Busca Corridas mantém sugestões visíveis e texto digitado legível sobre fundo branco');
+requireMarkers('.work/corridas/src/components/ui/bottom-sheet/BottomSheet.tsx',['max-h-[94dvh]','z-[120]','z-[110]','max(52px, env(safe-area-inset-bottom))','overscroll-contain'],'BottomSheet Corridas fica acima do rodapé e da barra Android, respeitando teclado/safe area');
+requireMarkers('.work/corridas/src/components/payments/PaymentMethodSelector.tsx',[
+  'z-[140]',
+  'max-h-[78dvh]',
+  'overflow-y-auto overscroll-contain',
+  'touch-pan-y',
+],'Forma de pagamento fica acima do rodapé e possui rolagem própria');
+requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',[
+  'status !== "procurar_motorista" ? <RideStatusHeader',
+  'max-h-[52dvh]',
+  'overscroll-contain',
+],'Busca de motorista não duplica banner piscante e preserva mapa proporcional');
+requireMarkers('.work/corridas/src/routes/_authenticated.revisar-solicitacao.tsx',[
+  'h-[100dvh] min-h-0 flex-col overflow-hidden',
+  'overscroll-contain px-4 py-4',
+  'pb-[max(64px,env(safe-area-inset-bottom))]',
+  'h-14 w-full rounded-2xl',
+],'Revisão de corrida mantém CTA acima da navegação Android e reduz rolagem excessiva');
+requireMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
+  'APOIS_CATEGORY_VEHICLE_SPRITE_V6',
+  'import { vehicleSprite } from "@/assets/categoryVehicleData"',
+  'carros: "0%"',
+  'motos: "25%"',
+  'fretes: "50%"',
+  'guincho: "75%"',
+  'envios: "100%"',
+  'validated-sprite-v6',
+  'backgroundSize: "500% 100%"',
+  'PRICING_CONFIG.LABELS[cat.key]',
+  'w-[124px]',
+  'h-[84px]',
+  'border-[#E51B23]',
+],'Categorias Corridas usam o sprite APOIS validado com cinco veículos corretos');
+forbidMarkers('.work/corridas/src/components/pricing/CategorySelector.tsx',[
+  'images.pexels.com',
+  'pic.52112.com',
+  'fahrschule-arnold.info',
+  'findamover.com.au',
+  'jige-international.com',
+  'deliverybikeparts.co.za',
+],'Categorias Corridas não dependem de imagens externas/hotlink');
+requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
+  'APOIS_NATIVE_MAP_FALLBACK_V3',
+  '[isStatic, nativeApiKey, reloadKey]',
+  'VITE_GOOGLE_MAPS_NATIVE_API_KEY',
+  'Capacitor.isNativePlatform()',
+  'mapService.createMap',
+  'mapService.upsertDriverMarker',
+  'PolylineDecoder',
+  'displayedRoutePoints',
+  'if (encodedPolyline)',
+  'bottom: 240',
+  'const previousHtml = document.documentElement.style.backgroundColor',
+  'const changed: Array<{ element: HTMLElement',
+  'document.body.style.backgroundColor = "transparent"',
+  'bg-transparent',
+],'PassengerMap usa Google Maps nativo no Android com fallback JS');
+const passengerMapSource = requireFile('.work/corridas/src/components/map/PassengerMap.tsx') ?? '';
+if (!/const PassengerMap:[\s\S]*?\{[\s\S]*?encodedPolyline,\s*driverLocation,/.test(passengerMapSource)) {
+  fail('PassengerMap recebe encodedPolyline no destructuring');
+} else ok('PassengerMap recebe encodedPolyline no destructuring');
+const polylineImport = 'import { PolylineDecoder } from "@/services/routes/polyline-decoder";';
+if ((passengerMapSource.split(polylineImport).length - 1) !== 1) {
+  fail('PassengerMap não pode duplicar PolylineDecoder');
+} else ok('PassengerMap contém exatamente um import de PolylineDecoder');
 
-const requiredFiles = [
-  'superapp/shell/dist/index.html',
-  'superapp/shell/dist/assets/apois-brand.png',
-  'superapp/shell/dist/modules/corridas/index.html',
-  'superapp/shell/dist/modules/corridas/assets/ride-categories/carros.svg',
-  'superapp/shell/dist/modules/corridas/assets/ride-categories/motos.svg',
-  'superapp/shell/dist/modules/corridas/assets/ride-categories/fretes.svg',
-  'superapp/shell/dist/modules/corridas/assets/ride-categories/guincho.svg',
-  'superapp/shell/dist/modules/corridas/assets/ride-categories/envios.svg',
-  'superapp/shell/dist/modules/entregas/index.html',
-];
-for (const path of requiredFiles) {
-  if (existsSync(resolve(root, path))) ok(path);
-  else fail(`ausente: ${path}`);
-}
+requireMarkers('.work/corridas/src/services/maps/map-service.ts',['APOIS_MAP_STYLE_LIGHT_NATIVE','styles: APOIS_MAP_STYLE_LIGHT_NATIVE','strokeColor: "#E51B23"','iconUrl: "assets/markers/apois-location.svg"','upsertDriverMarker(','removeDriverMarker('],'Mapa nativo do passageiro usa estilo claro APOIS, rota vermelha e marcador do passageiro/motorista');
+requireMarkers('.work/corridas/src/services/routes/route-config.ts',['TOP: 72','RIGHT: 28','BOTTOM: 220','LEFT: 28'],'Câmera da rota preserva mais área útil do mapa com painel compacto');
+forbidMarkers('.work/corridas/src/services/maps/map-service.ts',['assets/markers/pickup.png','assets/markers/destination.png'],'Mapa nativo não depende de marker PNG inexistente');
+requireMarkers('.work/corridas/src/services/places/places-service.ts',[
+  'supabase.functions',
+  'invoke("google-maps-address"',
+  'action: "autocomplete"',
+  'action: "place_details"',
+  'places_timeout',
+],'Busca de destino Corridas usa Edge Function autenticada e não pode ficar carregando indefinidamente');
+requireMarkers('.work/corridas/src/hooks/use-destination-search.tsx',[
+  'requestSequence',
+  'placesService.cancelPendingSearch()',
+  'PLACES_CONFIG.DEBOUNCE_MS',
+  'setIsLoading(false)',
+],'Digitação de destino cancela buscas antigas e limpa loading corretamente');
+requireMarkers('.work/corridas/src/routes/_authenticated.buscar-destino.tsx',[
+  'data-apois-stable-destination-sheet',
+  'h-[78dvh]',
+  'query.trim().length < 3',
+],'Busca de destino mantém painel estável com teclado aberto');
 
-requireMarkers(
-  'superapp/shell/index.html',
-  [
-    './assets/apois-brand.png',
-    "PUBLIC_ROUTE_FRAGMENTS=['/login','/register','/cadastro','/recuperar-senha','/redefinir-senha','/auth/callback']",
-    "return hasPersistedSession(moduleName)?base+'#/inicio':base+'#/login';",
-    'localStorage.removeItem(key)',
-    "path==='corridas-reset'",
-    "path==='email-change'",
-    "#/auth/callback${suffix()}",
-  ],
-  'shell fonte usa marca oficial, entrada determinística e deep links atuais',
-);
-forbidMarkers(
-  'superapp/shell/index.html',
-  ['<div class="logo-mark">A</div>', './modules/entregas/index.html#/perfil/dados-pessoais'],
-  'shell não contém branding provisório nem callback de e-mail que pula troca de sessão',
-);
+requireMarkers('.work/corridas/src/hooks/use-location.tsx',[
+  'APOIS_PRECISE_LOCATION_V1',
+  'permissions: ["location", "coarseLocation"]',
+  'enableHighAccuracy: true',
+  'maximumAge: 0',
+  'Geolocation.watchPosition(',
+],'localização Corridas solicita permissão precisa e acompanha GPS em alta precisão');
+requireMarkers('.work/corridas/src/components/map/PassengerMap.tsx',[
+  'APOIS_MAP_STYLE_LIGHT_JS',
+  'label: { text: "A"',
+  'strokeColor: "#E51B23"',
+],'Mapa JS usa identidade clara APOIS, marcador A e rota vermelha');
 
-const shell = requireFile('superapp/shell/dist/index.html');
-if (shell) {
-  if (/\b(?:src|href)=["']\/(?!\/)/.test(shell)) fail('shell final contém asset/rota absoluta incompatível com WebView local');
-  else ok('shell final usa recursos relativos');
-  if (!shell.includes('data-apois-superapp-push-routing')) fail('shell final não recebeu roteamento global de Push');
-  else ok('shell final contém roteamento global de Push');
-}
 
-requireMarkers(
-  '.work/corridas/src/integrations/supabase/client.ts',
-  ['storageKey: "apois-superapp-corridas-auth-v1"'],
-  'Corridas usa namespace de sessão próprio',
-);
-requireMarkers(
-  '.work/corridas/src/hooks/use-payment-methods.tsx',
-  ['(method) => method.isActive && method.enabled'],
-  'Corridas mantém os meios ativos para a política financeira final',
-);
-forbidMarkers(
-  '.work/corridas/src/hooks/use-payment-methods.tsx',
-  ['method.code === "pix"'],
-  'Corridas não regrediu para filtro PIX-only',
-);
-requireMarkers(
-  '.work/corridas/src/services/payments/payment-service.ts',
-  [
-    'const isDirectToDriver = code === "cash" || code === "credit";',
-    'Pague diretamente ao motorista ao final da corrida.',
-    'Pague diretamente ao motorista com cartão de crédito.',
-  ],
-  'Corridas preserva PIX digital e Dinheiro/Cartão direto ao motorista',
-);
-requireMarkers(
-  '.work/corridas/src/routes/_authenticated.inicio.tsx',
-  [
-    '"./assets/ride-categories/carros.svg"',
-    '"./assets/ride-categories/motos.svg"',
-    '"./assets/ride-categories/fretes.svg"',
-    '"./assets/ride-categories/guincho.svg"',
-    '"./assets/ride-categories/envios.svg"',
-    'absolute inset-x-0 bottom-0 z-30 max-h-[54dvh]',
-  ],
-  'Home Corridas usa categorias relativas e não reserva rodapé duplicado',
-);
-forbidMarkers(
-  '.work/corridas/src/routes/_authenticated.inicio.tsx',
-  ['"/assets/ride-categories/', 'const navItems = [', '{navItems.map('],
-  'Home Corridas não contém assets absolutos nem segundo rodapé',
-);
-requireMarkers(
-  '.work/corridas/src/components/layout/AppShell.tsx',
-  [
-    'aria-label="Navegação inferior"',
-    'const showBottomNavigation',
-    '!superappJourneyRoutesWithoutBottomNav.includes(pathname)',
-    '!pathname.startsWith("/corrida/")',
-    'min-h-[64px]',
-    '<Icon size={24} strokeWidth={2.2} />',
-    '{ label: "Carteira", icon: WalletCards, to: "/carteira" }',
-    '{ label: "Notificações", icon: Bell, to: "/notificacoes" }',
-  ],
-  'rodapé global de Corridas permanece legível nas telas normais',
-);
-forbidMarkers(
-  '.work/corridas/src/components/layout/AppShell.tsx',
-  ['MainHamburgerMenu'],
-  'Corridas não recompila menu hambúrguer duplicado',
-);
-requireMarkers(
-  '.work/corridas/src/components/profile/PassengerProfileCenter.tsx',
-  ['title="Termos de Uso"', 'title="Política de Privacidade"', 'Suporte e informações'],
-  'Perfil Passageiro mantém suporte e documentos legais acessíveis',
-);
-forbidMarkers(
-  '.work/corridas/src/components/profile/PassengerProfileCenter.tsx',
-  ['title="Carteira e pagamentos"', 'title="Central de notificações"', 'title="Termos e privacidade"'],
-  'Perfil Passageiro não duplica o rodapé nem agrupa documentos de forma ambígua',
-);
-requireMarkers(
-  '.work/corridas/src/lib/auth/native-password-recovery.ts',
-  [
-    'br.com.apois.app://auth/corridas-reset',
-    'apois-superapp:corridas-recovery-url',
-    'window.sessionStorage.removeItem(FORWARDED_RECOVERY_KEY)',
-  ],
-  'recuperação de senha Corridas usa package unificado e consumo único',
-);
-forbidMarkers(
-  '.work/corridas/src/lib/auth/native-password-recovery.ts',
-  ['apoispassageiro://auth/redefinir-senha'],
-  'recuperação Corridas não contém esquema antigo',
-);
-requireMarkers(
-  '.work/corridas/src/hooks/rides/use-active-ride.tsx',
-  ['RIDE_STATUS_ORDER', 'lastAcceptedStatusRef', 'await loadRide(currentRideId)'],
-  'Corridas preserva lifecycle monotônico e retomada terminal',
-);
-requireMarkers(
-  '.work/corridas/src/components/map/ActiveRideMap.tsx',
-  ['compact?: boolean', '? { top: 24, right: 24, bottom: 24, left: 24 }'],
-  'mapa ativo Corridas possui enquadramento compacto',
-);
-requireMarkers(
-  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
-  ['Pagamento por Pix', 'Assim que o pagamento for confirmado, a busca do motorista começa automaticamente.'],
-  'Pix de Corridas usa texto adequado ao cliente',
-);
-forbidMarkers(
-  '.work/corridas/src/components/payments/RidePixPaymentCard.tsx',
-  ['Asaas confirmar o pagamento ao backend', 'Valor calculado e persistido pelo backend'],
-  'Pix de Corridas não expõe texto técnico',
-);
+requireMarkers('.work/corridas/src/hooks/rides/use-active-ride.tsx',['RIDE_STATUS_ORDER','lastAcceptedStatusRef','await loadRide(currentRideId)'],'Corridas preserva lifecycle monotônico e retomada terminal');
+requireMarkers('.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',['PassengerMap','["motorista_a_caminho", "motorista_chegou"].includes(status)'],'Corrida ativa usa PassengerMap real e mantém PIN até o embarque');
+requireMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['postgres_changes','canCancel: ["procurar_motorista", "motorista_a_caminho"].includes(status)'],'Corridas mantém Realtime e bloqueia cancelamento após chegada/início da viagem');
+forbidMarkers('.work/corridas/src/services/rides/active-ride-service.ts',['canCancel: ["procurar_motorista", "motorista_a_caminho", "motorista_chegou", "em_viagem"]'],'Corridas não permite cancelamento em viagem');
 
-const publicBase = process.env.CORRIDAS_PUBLIC_APP_URL?.trim();
-if (publicBase) {
-  const normalized = publicBase.replace(/\/#\/?$/, '').replace(/\/+$/, '');
-  requireMarkers(
-    '.work/corridas/src/routes/_authenticated.corrida.$rideId.tsx',
-    [`const configuredBase = ${JSON.stringify(normalized)};`],
-    'compartilhamento de Corridas usa URL pública configurada',
-  );
-}
+const visualBundleMarkers=['apois-kit-home','apois-kit-search-screen','apois-kit-home-panel'];
+const missingVisualBundleMarkers=visualBundleMarkers.filter(marker=>!treeContains('superapp/shell/dist/modules/corridas',marker));
+if(missingVisualBundleMarkers.length)fail(`bundle Corridas final não contém identificadores do kit visual: ${missingVisualBundleMarkers.join(' | ')}`);else ok('bundle Corridas final contém identificadores do APOIS_VISUAL_KIT_V1');
+if(!treeContains('superapp/shell/dist/modules/corridas','apois-kit-search-screen'))fail('bundle Corridas final não contém a busca visual nova');else ok('bundle Corridas final contém a busca visual nova');
+function treeCountFiles(dir,pattern){const fullDir=resolve(root,dir);if(!existsSync(fullDir))return 0;let count=0;const stack=[fullDir];while(stack.length){const current=stack.pop();for(const entry of readdirSync(current)){const path=resolve(current,entry);const stat=statSync(path);if(stat.isDirectory()){stack.push(path);continue;}if(pattern.test(entry))count++;}}return count;}
+const realisticVehicleAssets=treeCountFiles('superapp/shell/dist/modules/corridas',/\.webp$/i);
+if(!treeContains('superapp/shell/dist/modules/corridas','data:image/webp;base64,'))fail('bundle Corridas final não contém sprite local das categorias');else ok('bundle Corridas final contém sprite local validado das categorias');
+if(treeContains('superapp/shell/dist/modules/corridas','pic.52112.com/180806/JPG-180806_120/vGHP86zk7D_small.jpg'))fail('bundle Corridas final ainda depende da imagem externa antiga de Carro');else ok('bundle Corridas final não depende de imagem externa antiga de Carro');
+if(!treeContains('superapp/shell/dist/modules/corridas','Continuar com Google'))fail('bundle Corridas final perdeu o botão Google');else ok('bundle Corridas final contém login com Google');
+if(!treeContains('superapp/shell/dist/modules/corridas','corridas-google'))fail('bundle Corridas final perdeu callback Google do Superapp');else ok('bundle Corridas final contém callback Google nativo');
 
-requireMarkers(
-  '.work/entregas/src/integrations/supabase/client.ts',
-  ['storageKey: "apois-superapp-entregas-auth-v1"'],
-  'Entregas usa namespace de sessão próprio',
-);
-requireMarkers(
-  '.work/entregas/src/components/AuthSessionIsolation.tsx',
-  ['window.location.hash.startsWith("#/")', 'window.location.replace(`#${getProductLandingRoute(product)}`)'],
-  'isolamento de sessão Entregas entende Hash History',
-);
-requireMarkers(
-  '.work/entregas/src/components/GoogleLoginButton.tsx',
-  [
-    'function getNativeAuthCallback()',
-    'VITE_APOIS_NATIVE_SCHEME',
-    '__APOIS_SUPERAPP_AUTH_BRIDGE__',
-    'window.location.replace(`#${home}`)',
-  ],
-  'Google OAuth de Entregas retorna ao Superapp sem listener duplicado',
-);
-requireMarkers(
-  '.work/entregas/src/routes/register.tsx',
-  ['emailRedirectTo: "br.com.apois.app://auth/callback"'],
-  'cadastro Entregas confirma e-mail no callback unificado',
-);
-requireMarkers(
-  '.work/entregas/src/routes/login.tsx',
-  ['redirectTo: "br.com.apois.app://auth/reset"'],
-  'reset Entregas usa deep link unificado',
-);
-requireMarkers(
-  '.work/entregas/src/routes/perfil/dados-pessoais.tsx',
-  ['emailRedirectTo: "br.com.apois.app://auth/email-change"'],
-  'troca de e-mail Entregas usa deep link unificado',
-);
-requireMarkers(
-  '.work/entregas/src/lib/customer-push.ts',
-  [
-    'register_superapp_customer_push_device',
-    'remove_superapp_customer_push_devices',
-    '_app_package: "br.com.apois.app"',
-    'const isDeliveryPush =',
-    'if (!target) return;',
-  ],
-  'Push Entregas filtra produto e usa RPCs do package unificado',
-);
-forbidMarkers(
-  '.work/entregas/src/lib/customer-push.ts',
-  ['PushNotifications.unregister()'],
-  'logout Entregas não invalida token FCM compartilhado',
-);
-requireMarkers(
-  '.work/entregas/src/routes/checkout.tsx',
-  ['const paymentMethod = "pix";'],
-  'checkout Entregas permanece PIX-only',
-);
-requireMarkers(
-  '.work/entregas/src/components/AppBottomNav.tsx',
-  [
-    '<nav className="fixed bottom-0',
-    'min-h-[88px]',
-    'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
-    'h-8 w-8',
-    'aria-label="Buscar"',
-    '<Search className="h-8 w-8" />',
-  ],
-  'rodapé Entregas é fixo, legível, explícito e respeita safe area',
-);
-forbidMarkers(
-  '.work/entregas/src/components/AppBottomNav.tsx',
-  ['<Bike className='],
-  'ação central Buscar não usa ícone ambíguo de motocicleta',
-);
-for (const [path, marker, label] of [
-  ['.work/entregas/src/routes/inicio.tsx', 'overflow-y-auto px-4 pb-32 pt-5', 'Home Entregas'],
-  ['.work/entregas/src/routes/buscar.tsx', 'overflow-y-auto px-4 pb-32 pt-2', 'Busca Entregas'],
-  ['.work/entregas/src/routes/pedidos.tsx', 'overflow-y-auto p-4 pb-32', 'Pedidos Entregas'],
-  ['.work/entregas/src/routes/perfil/index.tsx', 'overflow-y-auto p-4 pb-32 pt-5', 'Perfil Entregas'],
-  ['.work/entregas/src/routes/enderecos.tsx', '<AppBottomNav activeTab="perfil" />', 'Endereços Entregas'],
-  ['.work/entregas/src/routes/estabelecimento.$merchantId.tsx', '<AppBottomNav activeTab="inicio" />', 'Estabelecimento Entregas'],
-  ['.work/entregas/src/routes/perfil/pagamentos.tsx', '<AppBottomNav activeTab="perfil" />', 'Pagamentos Entregas'],
-  ['.work/entregas/src/routes/perfil/notificacoes.tsx', '<AppBottomNav activeTab="perfil" />', 'Preferências Entregas'],
-  ['.work/entregas/src/routes/perfil/legal.tsx', '<AppBottomNav activeTab="perfil" />', 'Legal Entregas'],
-  ['.work/entregas/src/routes/perfil/ajuda.tsx', '<AppBottomNav activeTab="perfil" />', 'Ajuda Entregas'],
-]) requireMarkers(path, [marker], `${label} mantém navegação/área inferior esperada`);
-requireMarkers(
-  '.work/entregas/src/routes/perfil/pagamentos.tsx',
-  ['Forma disponível', 'O Pix é apresentado automaticamente'],
-  'Pagamentos Entregas mostra somente o meio realmente disponível',
-);
-forbidMarkers(
-  '.work/entregas/src/routes/perfil/pagamentos.tsx',
-  ['Cartões salvos', 'Cartão de Crédito/Débito'],
-  'Pagamentos Entregas não exibe opção indisponível',
-);
-requireMarkers(
-  '.work/entregas/src/routes/sacola.tsx',
-  ['min-h-dvh', 'grid h-10 w-10 place-items-center rounded-xl bg-zinc-800'],
-  'Sacola Entregas usa viewport dinâmica e controles de quantidade tocáveis',
-);
-requireMarkers(
-  '.work/entregas/src/components/CustomerDeliveryMap.tsx',
-  ['center={', 'zoom={14}', 'h-[clamp(15rem,34dvh,20rem)]'],
-  'mapa do pedido acompanha entregador e adapta altura ao celular',
-);
-forbidMarkers(
-  '.work/entregas/src/components/CustomerDeliveryMap.tsx',
-  ['defaultCenter=', 'defaultZoom='],
-  'mapa do pedido não mantém câmera presa na posição inicial',
-);
-
-const viewportFiles = [
-  '.work/entregas/src/routes/inicio.tsx',
-  '.work/entregas/src/routes/pedidos.tsx',
-  '.work/entregas/src/routes/favoritos.tsx',
-  '.work/entregas/src/routes/buscar.tsx',
-  '.work/entregas/src/routes/perfil/index.tsx',
-  '.work/entregas/src/routes/perfil/ajuda.tsx',
-  '.work/entregas/src/routes/pedido/$orderId/index.tsx',
-];
-for (const path of viewportFiles) forbidMarkers(path, ['h-screen', 'min-h-screen'], `${path} usa viewport dinâmica`);
-
-requireMarkers(
-  '.work/entregas/src/lib/lovable-error-reporting.ts',
-  ['[APOIS Superapp] erro capturado pelo boundary'],
-  'telemetria antiga de editor foi neutralizada no Superapp',
-);
-forbidMarkers(
-  '.work/entregas/src/lib/lovable-error-reporting.ts',
-  ['__lovableEvents', '__lovableReportRuntimeError'],
-  'bundle Entregas não contém hooks Lovable de editor',
-);
-
-for (const path of [
-  'superapp/shell/dist/modules/corridas/index.html',
-  'superapp/shell/dist/modules/entregas/index.html',
-]) {
-  const html = requireFile(path);
-  if (!html) continue;
-  if (/\b(?:src|href)=["']\/(?!\/)/.test(html)) fail(`${path} contém src/href absoluto`);
-  else ok(`${path} usa src/href compatíveis com módulo aninhado`);
-  if (!html.includes('data-apois-superapp-bridge')) fail(`${path} não contém bridge do Superapp`);
-  else ok(`${path} contém bridge do Superapp`);
-  if (!html.includes('data-apois-superapp-push-routing')) fail(`${path} não contém roteamento global de Push`);
-  else ok(`${path} contém roteamento global de Push`);
-}
-
-requireMarkers(
-  'superapp/shell/capacitor.config.ts',
-  ["appId: 'br.com.apois.app'", "style: 'LIGHT'", "backgroundColor: '#050505'", 'overlaysWebView: false'],
-  'Capacitor final preserva package e barras Android',
-);
-
-process.exit(failed ? 1 : 0);
+forbidMarkers('.apois/modules.json',['ActiveRideMap.tsx','RidePixPaymentCard.tsx','ActiveJourneyScreen.tsx','aguardando_pagamento: 2'],'pipeline Corridas não depende de componentes/estados ausentes no pin atual');
+forbidMarkers('scripts/fix-corridas-superapp-ui.mjs',['src/components/layout/AppShell.tsx','PassengerProfileCenter.tsx','native-password-recovery.ts'],'adaptador UI Corridas aponta somente para arquivos do pin atual');
+requireMarkers('.work/entregas/src/integrations/supabase/client.ts',['storageKey: "apois-superapp-entregas-auth-v1"','flowType: "pkce"'],'Entregas usa namespace de sessão próprio e Google OAuth PKCE');
+requireMarkers('.work/entregas/src/components/AuthSessionIsolation.tsx',['window.location.hash.startsWith("#/")'],'isolamento de sessão Entregas entende Hash History');
+requireMarkers('.work/entregas/src/components/GoogleLoginButton.tsx',['function getNativeAuthCallback()','VITE_APOIS_NATIVE_SCHEME','__APOIS_SUPERAPP_AUTH_BRIDGE__','APOIS_GOOGLE_PENDING_KEY','APOIS_GOOGLE_FORWARD_KEY','consumeForwardedGoogleCallback','apois:entregas-google-callback'],'Google OAuth Entregas retorna pelo package unificado e consome callback no módulo correto');
+requireMarkers('.work/entregas/src/routes/register.tsx',['emailRedirectTo: "br.com.apois.app://auth/callback"'],'cadastro Entregas usa callback unificado');
+requireMarkers('.work/entregas/src/routes/login.tsx',['redirectTo: "br.com.apois.app://auth/reset"','data-apois-customer-login-red-v3','src={apoisClientBrand}','bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF8F8_58%,#FFF1F2_100%)]','<GoogleLoginButton />'],'Login Entregas mantém reset/Google e usa visual claro APOIS vermelho/branco');
+requireMarkers('.work/entregas/src/lib/customer-push.ts',['register_superapp_customer_push_device','_app_package: "br.com.apois.app"','const isDeliveryPush =','if (!target) return;'],'Push Entregas filtra produto e registra package correto');
+forbidMarkers('.work/entregas/src/lib/customer-push.ts',['PushNotifications.unregister()'],'logout Entregas não invalida token FCM compartilhado');
+requireMarkers('.work/entregas/src/routes/checkout.tsx',['const paymentMethod = "cash";','paymentMethod: "cash"','if (paymentMethod !== "cash")'],'checkout Entregas permanece cash-only e fail-closed');
+requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['fixed bottom-0','min-h-[88px]','aria-label="Buscar"','<Search className="h-8 w-8" />'],'rodapé Entregas é fixo, legível e explícito');
+requireMarkers('.work/entregas/src/components/AppBottomNav.tsx',['pb-[max(44px,env(safe-area-inset-bottom))]'],'rodapé Entregas preserva fallback físico para barra Android');
+requireMarkers('.work/entregas/src/components/ui/dialog.tsx',['z-[120]','z-[121]'],'Dialog Entregas fica acima do rodapé fixo');
+requireMarkers('.work/entregas/src/components/ui/alert-dialog.tsx',['z-[120]','z-[121]'],'AlertDialog Entregas fica acima do rodapé fixo');
+requireMarkers('.work/entregas/src/components/ui/sheet.tsx',['z-[120]','z-[121]'],'Sheet Entregas fica acima do rodapé fixo');
+requireMarkers('.work/entregas/src/components/ProductCustomizationSheet.tsx',['h-[90dvh]','pb-[max(52px,env(safe-area-inset-bottom))]'],'personalização de produto respeita viewport e barra Android');
+requireMarkers('.work/entregas/src/routes/sacola.tsx',['pb-[max(52px,env(safe-area-inset-bottom))]'],'sacola Entregas mantém CTA acima da barra Android');
+requireMarkers('.work/entregas/src/routes/pedido/confirmado.tsx',['pb-[max(52px,env(safe-area-inset-bottom))]'],'confirmação de pedido respeita barra Android');
+requireMarkers('.work/entregas/src/routes/pedido/$orderId/avaliar.tsx',['pb-[max(52px,env(safe-area-inset-bottom))]'],'avaliação do pedido respeita barra Android');
+if(failed)process.exit(1);console.log('[OK] Superapp dist reconciliado: Corridas atual + Entregas + shell validados.');

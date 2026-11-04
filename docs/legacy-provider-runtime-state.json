@@ -1,0 +1,217 @@
+{
+  "observedAt": "2026-10-03",
+  "policy": "Legacy electronic payment providers are retired. Runtime verification against the current production projects must prove legacy endpoints fail closed before release.",
+  "liveProjects": {
+    "corridas": "tbbzkrfupmqdywnzgnms",
+    "entregas": "ptgkwyyolrdgnqketkjj"
+  },
+  "observation": {
+    "corridas": "Current production Edge Function inventory contains Safe2Pay/current ride functions only; the legacy Asaas/PagBank/Mercado Pago functions previously inventoried are no longer deployed.",
+    "entregas": "Current production legacy provider slugs remain deployed only as fail-closed compatibility stubs. Their live source returns HTTP 410 with code PAYMENT_PROVIDER_RETIRED before provider mutation."
+  },
+  "endpoints": [
+    {
+      "project": "entregas",
+      "function": "create-pix-charge",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "openpix-webhook",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-webhook",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "process-refund",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-credential-diagnostic",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "apois-refund-homol-8-7c2f",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "sync-payment-status",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "apois-pix-auto-homol-8f4c3e9a",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-subscription",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-subscription-selftest",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-subscription-e2e-test",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-subscription-stage-probe",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-monthly-pix-probe",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-monthly-webhook-selftest",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "asaas-merchant-account",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "create-asaas-pix-charge",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "asaas-webhook",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "asaas-payout",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "confirm-asaas-sandbox-payment",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "openpix-sandbox-selftest",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "openpix-payout",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-mercadopago-oauth",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-mercadopago-callback",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "create-merchant-mercadopago-pix",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-mercadopago-webhook",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "merchant-payment-readiness",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "process-superapp-refund",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "temp-mp-token-key-check",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    },
+    {
+      "project": "entregas",
+      "function": "mercadopago-payout",
+      "classification": "SAFE_DISABLED",
+      "releaseBlocking": false,
+      "evidence": "Live production function inspected on 2026-10-03: fail-closed stub returns HTTP 410 PAYMENT_PROVIDER_RETIRED; no provider mutation path is executed."
+    }
+  ]
+}

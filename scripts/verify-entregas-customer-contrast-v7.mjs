@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+const root=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||'.work/entregas');
+const read=p=>readFileSync(resolve(root,p),'utf8');
+const css=read('src/system-theme.css');
+const home=read('src/routes/inicio.tsx');
+const nav=read('src/components/AppBottomNav.tsx');
+const wrapper=read('src/routes/__root.tsx');
+assert.ok(wrapper.includes('product === "customer" ? "light apois-system-theme apois-entregas-customer-light-v4"'),'Tema claro somente no cliente');
+assert.ok(wrapper.includes(' : "dark apois-system-theme"'),'Parceiros permanecem em dark');
+assert.ok(css.includes('/* APOIS_ENTREGAS_CUSTOMER_CONTRAST_V7 */'),'Contraste V7 ausente');
+assert.equal(css.split('/* APOIS_ENTREGAS_CUSTOMER_CONTRAST_V7 */').length-1,1,'CSS duplicado');
+for(const color of ['#E51B23','#F7F7F8','#161B25','#FFFFFF'])assert.ok(css.includes(color),'Falta cor '+color);
+assert.ok(css.includes('html.apois-entregas-customer-light-v4 [data-apois-entregas-home-v5="true"]'),'Regras sem escopo no cliente');
+for(const marker of ['data-apois-entregas-home-v5','fetchMerchants(','fetchMerchantCategories()','navigate({ to: "/enderecos" })','<AppBottomNav activeTab="inicio"'])assert.ok(home.includes(marker),'Home perdeu recurso '+marker);
+for(const marker of ['data-apois-entregas-customer-nav-v5','aria-label="Buscar"','"/inicio"','"/pedidos"','"/favoritos"','"/perfil"'])assert.ok(nav.includes(marker),'Rodape perdeu funcionalidade '+marker);
+console.log('[OK] Entregas cliente: cores branco/vermelho/preto e contraste; ações preservadas; telas parceiro não alteradas.');

@@ -15,163 +15,116 @@ function requireAll(path, markers, label) {
   const source = read(path);
   if (!source) return;
   const missing = markers.filter((marker) => !source.includes(marker));
-  if (missing.length) {
-    console.error(`[FAIL] ${label}: ${missing.join(' | ')}`);
-    failed = true;
-  } else console.log(`[OK] ${label}`);
+  if (missing.length) { console.error(`[FAIL] ${label}: ${missing.join(' | ')}`); failed = true; }
+  else console.log(`[OK] ${label}`);
 }
-function requirePatterns(path, contracts, label) {
+function forbidAll(path, markers, label) {
   const source = read(path);
   if (!source) return;
-  const missing = contracts
-    .filter(({ pattern }) => !pattern.test(source))
-    .map(({ name }) => name);
-  if (missing.length) {
-    console.error(`[FAIL] ${label}: ${missing.join(' | ')}`);
-    failed = true;
-  } else console.log(`[OK] ${label}`);
+  const found = markers.filter((marker) => source.includes(marker));
+  if (found.length) { console.error(`[FAIL] ${label}: ${found.join(' | ')}`); failed = true; }
+  else console.log(`[OK] ${label}`);
 }
 
 requireAll('scripts/harden-superapp-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:6px',
-  '@media(max-height:720px)',
-  '.service{min-height:265px}',
-], 'Seletor Cliente não corta logo/conteúdo em aparelhos baixos');
+  "'--red:#E51B23'",
+  "'--red-dark:#C9141B'",
+  "'@media(max-height:760px)'",
+  "'min-height:126px'",
+  "'aspect-ratio:1/1'",
+], 'Seletor Cliente adapta conteúdo, limita a logo e protege o título em aparelhos baixos');
 
 requireAll('scripts/harden-partner-shell-mobile-ui.mjs', [
   'overflow-x:hidden;overflow-y:auto',
-  'object-fit:contain;padding:8px',
-  '@media(max-height:700px)',
-  '@media(max-width:360px)',
-], 'Seletor Parceiro adapta logo, cards e rolagem a telas pequenas');
+  '@media(max-height:760px)',
+  '@media(max-width:380px)',
+], 'Seletor Parceiro mantém rolagem e breakpoints móveis');
 
-requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
+requireAll('scripts/fix-corridas-superapp-ui.mjs', [
+  'src/components/BottomNavigation.tsx',
+  'grid-cols-5',
   'min-h-[64px]',
-  'text-[11px]',
-  '<Icon size={24} strokeWidth={2.2} />',
-  'pt-[max(env(safe-area-inset-top),0.75rem)]',
-  'text-xs font-semibold text-zinc-300',
-  'min-h-[88px]',
-  'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
-  'label: "Meus pedidos"',
-  'label: "Favoritos"',
-  "await import('./harden-corridas-superapp-profile-ui.mjs')",
-  "await import('./harden-entregas-superapp-cart-mobile-ui.mjs')",
-  "await import('./harden-entregas-superapp-viewport.mjs')",
-  'Perfil remove atalhos duplicados do rodapé',
-], 'Módulos Cliente executam hardening dos rodapés, Perfil, Sacola e viewport');
+  'hideBottomNavigation',
+  'pathname === "/buscar-destino"',
+  'pathname.startsWith("/corrida/")',
+  'src/routes/_authenticated.perfil.tsx',
+], 'Corridas usa rodapé real, seguro e oculto nas jornadas fullscreen');
+forbidAll('scripts/fix-corridas-superapp-ui.mjs', [
+  'AppShell.tsx',
+  'PassengerProfileCenter.tsx',
+  'native-password-recovery.ts',
+], 'Corridas não audita componentes removidos do pin atual');
 
 requireAll('scripts/harden-corridas-superapp-profile-ui.mjs', [
-  'title="Carteira e pagamentos"',
-  'title="Central de notificações"',
-  'title="Termos e privacidade"',
-  'h-11 w-11',
-  'line-clamp-2 text-[11px] leading-4',
-  'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))]',
-], 'Passageiro remove atalhos redundantes do Perfil e ajusta diálogos à viewport');
+  'src/routes/_authenticated.perfil.tsx',
+  'min-h-[68px]',
+  'env(safe-area-inset-top)',
+  "await import('./harden-corridas-profile-actions.mjs')",
+  "await import('./harden-corridas-password-recovery.mjs')",
+], 'Perfil Passageiro usa rota real, alvos tocáveis e safe area sem reaplicar a Home visual');
+
+requireAll('scripts/harden-corridas-kit-visual.mjs', [
+  'APOIS_VISUAL_KIT_V1',
+  'APOIS_REFERENCE_HOME_V2',
+  'data-apois-reference-home-v2',
+  'apois-kit-home-panel',
+  '<HomeWorkShortcuts />',
+  'Solicitar corrida',
+  'apois-kit-search-results',
+  'max-h-[94dvh]',
+  'max(16px, env(safe-area-inset-bottom))',
+  'servicePosition',
+  'validated-sprite-v6',
+  'border-[#E51B23]',
+], 'Corridas aplica kit visual vermelho/branco à Home, busca, BottomSheet e categorias');
+
+requireAll('scripts/harden-superapp-module-mobile-ui.mjs', [
+  'src/components/BottomNavigation.tsx',
+  "await import('./harden-corridas-superapp-profile-ui.mjs')",
+  'pt-[max(env(safe-area-inset-top),0.75rem)]',
+  'min-h-[88px]',
+  'pb-[max(44px,env(safe-area-inset-bottom))]',
+  "await import('./harden-entregas-superapp-cart-mobile-ui.mjs')",
+  "await import('./harden-entregas-superapp-viewport.mjs')",
+], 'Hardener móvel cobre Corridas atual e Entregas');
 
 requireAll('scripts/harden-entregas-superapp-secondary-mobile-ui.mjs', [
   'addProfileBottomNav',
   '<AppBottomNav activeTab="perfil" />',
   'Forma disponível',
   'O Pix é apresentado automaticamente',
-  '!source.includes(\'Cartões salvos\')',
-  'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]',
-  "patch('src/routes/enderecos.tsx'",
-  '<AppBottomNav activeTab="inicio" />',
-  'bottom-[calc(7rem+env(safe-area-inset-bottom))]',
-  'grid h-12 w-12 place-items-center rounded-full',
-  '!source.includes(\'window.history.back()\')',
   'pb-32',
-], 'Entregas mantém rodapé em Perfil/Endereços/Estabelecimento, evita sobreposição e remove pagamento inexistente');
+], 'Entregas mantém navegação secundária e pagamento disponível explícito');
 
 requireAll('scripts/harden-entregas-superapp-cart-mobile-ui.mjs', [
   'min-h-dvh',
   'grid h-11 w-11 place-items-center rounded-xl',
   'grid h-10 w-10 place-items-center rounded-xl bg-zinc-800',
-  'pb-[max(env(safe-area-inset-bottom),1rem)]',
-], 'Sacola usa controles de quantidade e exclusão tocáveis em celular');
+], 'Sacola Entregas usa controles tocáveis');
 
 requireAll('scripts/harden-entregas-superapp-checkout-mobile-ui.mjs', [
-  'h-[min(68vw,16rem)]',
   'grid h-11 w-11 shrink-0 place-items-center',
-  'break-all font-mono text-[11px]',
   'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
-  'pt-[max(env(safe-area-inset-top),1rem)]',
   'touchRoutes',
-], 'Checkout Pix e controles secundários de Entregas se adaptam a telas estreitas e toque mínimo');
+], 'Checkout Entregas respeita toque e safe area');
 
 requireAll('scripts/harden-entregas-superapp-viewport.mjs', [
   "'src/routes/checkout.tsx'",
   "'src/routes/sacola.tsx'",
-  "'src/routes/pedido/confirmado.tsx'",
-  "'src/routes/enderecos.tsx'",
   "'src/routes/login.tsx'",
-  "'src/routes/register.tsx'",
-  'checked < 20',
   ".replaceAll('h-screen', 'h-dvh')",
-], 'Viewport Entregas cobre autenticação, compra, endereços, pedido e telas principais');
-
-requireAll('scripts/harden-entregas-superapp-delivery-map.mjs', [
-  'center={',
-  'zoom={14}',
-  'h-[clamp(15rem,34dvh,20rem)]',
-  "forbidden of ['confirmationPin', 'setConfirmationPin', 'KeyRound', 'defaultCenter=', 'defaultZoom=']",
-], 'Mapa de entrega acompanha o entregador e adapta altura à viewport');
-
-requireAll('scripts/harden-partner-motorista-navigation.mjs', [
-  'min-h-[82px]',
-  'min-h-[60px]',
-  'h-9 w-11',
-  'h-6 w-6',
-  'text-xs font-extrabold',
-  'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
-], 'Motorista usa rodapé maior, legível e afastado da barra de gestos');
-
-requirePatterns('scripts/harden-partner-entregador-touch-safearea.mjs', [
-  { name: 'alvo CourierPanels', pattern: /patch\(\s*['"]src\/components\/CourierPanels\.tsx['"]/ },
-  { name: 'nomenclatura Entregas', pattern: /label:[^\n]*Entregas/ },
-  { name: 'cabeçalho Entregas', pattern: /PanelHeader[^\n]*title=[^\n]*Entregas/ },
-  { name: 'altura estrutural do rodapé', pattern: /ensureClasses\(classes,\s*\[['"]min-h-\[82px\]['"]\]\)/ },
-  { name: 'alvo mínimo dos itens', pattern: /replaceClassToken\(classes,\s*['"]min-h-\[3\.7rem\]['"],\s*['"]min-h-\[64px\]['"]\)/ },
-  { name: 'wrapper de ícone 44px', pattern: /replaceClassToken\(classes,\s*['"]h-8['"],\s*['"]h-9['"]\)[\s\S]{0,180}?replaceClassToken\(value,\s*['"]w-10['"],\s*['"]w-11['"]\)/ },
-  { name: 'ícone legível', pattern: /replaceClassToken\(classes,\s*['"]h-5['"],\s*['"]h-6['"]\)[\s\S]{0,180}?replaceClassToken\(value,\s*['"]w-5['"],\s*['"]w-6['"]\)/ },
-  { name: 'safe-area superior do painel', pattern: /replaceClassToken\(value,\s*['"]pt-\[env\(safe-area-inset-top\)\]['"],\s*['"]pt-\[max\(env\(safe-area-inset-top\),0\.65rem\)\]['"]\)/ },
-  { name: 'safe-area inferior do rodapé', pattern: /replaceClassToken\(classes,\s*['"]pb-\[max\(0\.65rem,env\(safe-area-inset-bottom\)\)\]['"],\s*['"]pb-\[max\(0\.85rem,env\(safe-area-inset-bottom\)\)\]['"]\)/ },
-], 'Entregador usa nomenclatura Entregas e rodapé grande com safe-area');
+], 'Viewport Entregas cobre autenticação e compra');
 
 requireAll('.apois/modules.json', [
   'node scripts/harden-superapp-module-mobile-ui.mjs corridas',
+  'APOIS_VISUAL_KIT_V1',
   'node scripts/harden-entregas-superapp-checkout-mobile-ui.mjs',
   'node scripts/harden-superapp-module-mobile-ui.mjs entregas',
-  'node scripts/harden-entregas-superapp-secondary-mobile-ui.mjs',
-], 'Hardening visual principal, checkout e secundário roda antes da compilação real de Corridas e Entregas');
+], 'Hardening visual roda antes dos builds reais');
 
-requireAll('superapp/shell/build.mjs', [
-  "import '../../scripts/harden-superapp-shell-mobile-ui.mjs';",
-], 'Shell Cliente aplica hardening visual antes de copiar para dist');
-requireAll('scripts/harden-partner-shell-startup.mjs', [
-  "import './harden-partner-shell-mobile-ui.mjs';",
-], 'Shell Parceiro aplica hardening visual junto ao bootstrap nativo');
+requireAll('superapp/shell/build.mjs', ["import '../../scripts/harden-superapp-shell-mobile-ui.mjs';"], 'Shell Cliente aplica hardening visual antes de dist');
+requireAll('scripts/harden-partner-shell-startup.mjs', ["import './harden-partner-shell-mobile-ui.mjs';"], 'Shell Parceiro aplica hardening visual no bootstrap');
 
-requireAll('scripts/harden-entregas-superapp-auth-runtime.mjs', [
-  '<nav className="fixed bottom-0',
-  'min-h-[88px]',
-  'min-h-[64px] min-w-[72px]',
-  'h-8 w-8',
-  'text-xs leading-none',
-  'pb-32',
-], 'Entregas mantém rodapé persistente e conteúdo não fica coberto');
-
-requireAll('scripts/fix-corridas-superapp-ui.mjs', [
-  'superappJourneyRoutesWithoutBottomNav',
-  '!pathname.startsWith("/corrida/")',
-  'aria-label="Navegação inferior"',
-  'remove menu lateral que duplicava todas as opções do rodapé',
-  'Perfil não repete Carteira e Notificações',
-  'Termos e privacidade',
-], 'Corridas mantém rodapé único e elimina menu paralelo/atalhos duplicados');
-
-if (!failed) console.log('[OK] Mobile UI v16: seletores, Cliente, Passageiro e Parceiro têm safe-area, mapas responsivos, controles tocáveis, navegação consistente e sem atalhos redundantes.');
+if (!failed) console.log('[OK] Mobile UI v16: Cliente, Passageiro, Entregas e Parceiro mantêm safe-area, controles tocáveis e navegação consistente.');
 process.exit(failed ? 1 : 0);

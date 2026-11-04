@@ -38,7 +38,7 @@ function forbidAll(path, markers, label) {
 requireAll('superapp/shell/capacitor.config.ts', [
   "appId: 'br.com.apois.app'",
   "appName: 'APOIS Cliente'",
-  "backgroundColor: '#050505'",
+  "backgroundColor: '#FFFFFF'",
   "overlaysWebView: false",
 ], 'Capacitor mantém package, label e barras do Superapp Cliente');
 
@@ -58,11 +58,15 @@ requireAll('scripts/harden-superapp-android-security.mjs', [
 
 requireAll('scripts/install-superapp-launcher.mjs', [
   "import './harden-superapp-android-security.mjs';",
+  'apois-client-red-logo.b64',
+  '89504e470d0a1a0a',
+  '@mipmap/ic_launcher_foreground',
+  '@android:color/white',
   'ic_launcher_foreground.png',
   'ic_launcher_round.png',
   'android:allowBackup="false"',
   'android:usesCleartextTraffic="false"',
-], 'launcher/adaptive icon executa após hardening Android');
+], 'launcher/splash Cliente usam a nova marca vermelha após hardening Android');
 
 requireAll('codemagic.yaml', [
   'android-superapp-experimental:',

@@ -24,7 +24,7 @@ patch('src/components/ApoisDriverBottomNav.tsx', (source) => {
   );
 
   next = next
-    .replace('paddingBottom: "max(env(safe-area-inset-bottom), 7px)"', 'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"')
+    .replace('paddingBottom: "max(env(safe-area-inset-bottom), 7px)"', 'paddingBottom: "max(env(safe-area-inset-bottom), 44px)"')
     .replace('className="mx-auto grid min-h-[70px] w-full max-w-md grid-cols-5 gap-1"', 'className="mx-auto grid min-h-[82px] w-full max-w-md grid-cols-5 gap-1"')
     .replace(
       'group relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-0.5 text-zinc-400',
@@ -45,7 +45,7 @@ patch('src/components/ApoisDriverBottomNav.tsx', (source) => {
   }
   for (const marker of [
     'to: "/motorista/ganhos", label: "Ganhos"',
-    'paddingBottom: "max(env(safe-area-inset-bottom), 10px)"',
+    'paddingBottom: "max(env(safe-area-inset-bottom), 44px)"',
     'min-h-[82px]',
     'min-h-[60px]',
     'h-9 w-11',
@@ -96,5 +96,30 @@ patch('src/components/DriverSideMenu.tsx', (source) => {
   }
   return next;
 }, 'motorista: menu lateral remove carteira duplicada e usa Ganhos');
+
+
+patch('src/routes/motorista.carteira.tsx', (_source) => {
+  return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+export const Route = createFileRoute("/motorista/carteira")({
+  component: LegacyWalletRedirect,
+  head: () => ({ meta: [{ title: "Ganhos — APOIS Motorista" }] }),
+});
+
+function LegacyWalletRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    void navigate({ to: "/motorista/ganhos", replace: true });
+  }, [navigate]);
+
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#050607] px-6 text-center text-sm font-semibold text-zinc-400">
+      Abrindo seus ganhos...
+    </div>
+  );
+}
+`;
+}, 'motorista: rota legada Carteira vira redirecionamento compatível para Ganhos');
 
 console.log(`[OK] navegação financeira e ergonomia mobile do Motorista endurecidas em ${workspace}`);

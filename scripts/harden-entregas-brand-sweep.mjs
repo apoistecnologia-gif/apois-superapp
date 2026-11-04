@@ -5,6 +5,11 @@ const root = process.cwd();
 const workspace = process.env.APOIS_ENTREGAS_WORKSPACE || '.work/entregas';
 const srcRoot = resolve(root, workspace, 'src');
 const publicRoot = resolve(root, workspace, 'public');
+const isCustomerWorkspace = workspace === '.work/entregas';
+const brandPrimary = '#E51B23';
+const brandSecondary = '#C9141B';
+const brandPrimaryRgb = '229,27,35';
+const brandSecondaryRgb = '201,20,27';
 
 if (!existsSync(srcRoot)) throw new Error(`Brand sweep: workspace ausente ${srcRoot}`);
 
@@ -39,18 +44,18 @@ for (const path of sourceFiles) {
 
   // Estes valores eram a identidade antiga da marca. Estados funcionais
   // continuam podendo usar classes semânticas Tailwind (green/red/amber).
-  for (const value of legacyGreenHex) after = after.replaceAll(value, '#F6BE1C');
-  for (const value of legacyPurpleHex) after = after.replaceAll(value, '#C88A08');
-  for (const value of legacyTealHex) after = after.replaceAll(value, '#F6BE1C');
+  for (const value of legacyGreenHex) after = after.replaceAll(value, brandPrimary);
+  for (const value of legacyPurpleHex) after = after.replaceAll(value, brandSecondary);
+  for (const value of legacyTealHex) after = after.replaceAll(value, brandPrimary);
   after = after
-    .replaceAll('rgba(57,181,74,', 'rgba(246,190,28,')
-    .replaceAll('rgba(57, 181, 74,', 'rgba(246, 190, 28,')
-    .replaceAll('rgba(106,27,154,', 'rgba(200,138,8,')
-    .replaceAll('rgba(106, 27, 154,', 'rgba(200, 138, 8,')
-    .replaceAll('rgba(53,169,201,', 'rgba(246,190,28,')
-    .replaceAll('rgba(31,120,148,', 'rgba(200,138,8,')
-    .replace('const BRAND_GREEN = "#F6BE1C";\nconst APOIS_GOLD = "#F6BE1C";', 'const APOIS_GOLD = "#F6BE1C";')
-    .replace('const BRAND_GREEN = "#F6BE1C";\n', '');
+    .replaceAll('rgba(57,181,74,', `rgba(${brandPrimaryRgb},`)
+    .replaceAll('rgba(57, 181, 74,', `rgba(${brandPrimaryRgb.replaceAll(',', ', ')},`)
+    .replaceAll('rgba(106,27,154,', `rgba(${brandSecondaryRgb},`)
+    .replaceAll('rgba(106, 27, 154,', `rgba(${brandSecondaryRgb.replaceAll(',', ', ')},`)
+    .replaceAll('rgba(53,169,201,', `rgba(${brandPrimaryRgb},`)
+    .replaceAll('rgba(31,120,148,', `rgba(${brandSecondaryRgb},`)
+    .replace(`const BRAND_GREEN = "${brandPrimary}";\nconst APOIS_GOLD = "#F6BE1C";`, 'const APOIS_GOLD = "#F6BE1C";')
+    .replace(`const BRAND_GREEN = "${brandPrimary}";\n`, '');
 
   if (after !== before) {
     writeFileSync(path, after, 'utf8');
@@ -59,19 +64,19 @@ for (const path of sourceFiles) {
 }
 
 // Logos são identidade, não estado operacional. Neles toda a paleta antiga é
-// convertida para a dupla dourada oficial.
+// convertida para a dupla vermelha oficial.
 for (const path of logoFiles) {
   const before = readFileSync(path, 'utf8');
   let after = before
-    .replaceAll('#39B54A', '#F6BE1C')
-    .replaceAll('#39b54a', '#F6BE1C')
-    .replaceAll('#6A1B9A', '#C88A08')
-    .replaceAll('#6a1b9a', '#C88A08')
-    .replaceAll('#35A9C9', '#F6BE1C')
-    .replaceAll('#35a9c9', '#F6BE1C')
-    .replaceAll('#1F7894', '#C88A08')
-    .replaceAll('#1f7894', '#C88A08')
-    .replaceAll('azul petróleo', 'dourado');
+    .replaceAll('#39B54A', brandPrimary)
+    .replaceAll('#39b54a', brandPrimary)
+    .replaceAll('#6A1B9A', brandSecondary)
+    .replaceAll('#6a1b9a', brandSecondary)
+    .replaceAll('#35A9C9', brandPrimary)
+    .replaceAll('#35a9c9', brandPrimary)
+    .replaceAll('#1F7894', brandSecondary)
+    .replaceAll('#1f7894', brandSecondary)
+    .replaceAll('azul petróleo', 'vermelho APOIS');
   if (after !== before) {
     writeFileSync(path, after, 'utf8');
     changedFiles += 1;
@@ -103,4 +108,4 @@ if (leftovers.length) {
   throw new Error(`Brand sweep: identidade antiga ainda presente:\n${leftovers.slice(0, 80).join('\n')}`);
 }
 
-console.log(`[OK] Brand sweep ${workspace}: ${changedFiles} arquivo(s) normalizado(s); verde/roxo/ciano de marca removidos. Estados semânticos continuam livres para green/red/amber.`);
+console.log(`[OK] Brand sweep ${workspace}: ${changedFiles} arquivo(s) normalizado(s); marca=APOIS vermelho. Estados semânticos continuam livres para green/red/amber.`);

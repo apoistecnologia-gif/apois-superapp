@@ -1,19 +1,19 @@
 {
-  "updated_at": "2026-08-25",
+  "updated_at": "2026-10-27",
   "policy": "pinned read-only source snapshots; integration changes belong only in apois-superapp",
   "sources": {
     "entregas": {
-      "repository": "franciel046631/apois-entregas",
-      "branch": "main",
-      "commit": "0a1e0b294f75c97bce903200b57e7a6b482f381a"
+      "repository": "apoistecnologia-gif/apois-entregas",
+      "branch": "fix/courier-dispatch-readiness-20261027",
+      "commit": "2f4606e0fb52dffb49f2e6aebbe921ce687ab625"
     },
     "corridas_passageiro": {
-      "repository": "franciel046631/say-hello-buddy-23-84b5dcbf",
+      "repository": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
       "branch": "feat/apois-passageiro-completo",
       "commit": "7b047f75a1a919a5336c0df6e0d60b14b02f2618"
     },
     "corridas_motorista_admin": {
-      "repository": "franciel046631/movvi-go-connect",
+      "repository": "apoistecnologia-gif/movvi-go-connect",
       "branch": "fix/apois-corridas-consolidacao",
       "commit": "9fc171050d8b5703540c49d19a8f1e9f5162775f"
     }
