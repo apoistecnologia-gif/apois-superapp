@@ -102,6 +102,9 @@ docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/driver-rpc-privileges-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/driver-rpc-privileges-assertions-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/ride-acceptance-assertions-v1.sql
+# Run two genuinely concurrent SQL sessions against one cash ride. The losing
+# driver must block on a PG row lock and then fail without partial mutations.
+bash scripts/qa/test-ride-acceptance-race-v1.sh "$name"
 # Seventh disposable database: actual staged trigger for opportunistic
 # offers to already busy drivers. Rehearse GPS range/time/eligibility filters.
 docker exec "$name" createdb -U postgres ride_busy_candidates_qa
