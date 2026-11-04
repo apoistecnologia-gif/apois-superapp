@@ -147,7 +147,7 @@ if(process.argv.includes("--dist")){
   ],"Driver membership page preserves the legacy contract-specific amount");
 
   const driverBroadcastPatched=read(".work/partner-motorista/src/hooks/useDriverBroadcast.ts");
-  all(driverBroadcastPatched,["APOIS_DRIVER_PRESENCE_ACK_V1",'throw new Error(String(error.message || "presence_update_failed"))','new CustomEvent("apois:driver-presence-rejected"'], "Motorista server presence ACK must surface RPC failure");
+  all(driverBroadcastPatched,["APOIS_DRIVER_PRESENCE_ACK_V1",'if (desiredOnline && !presenceConfirmed) throw new Error("presence_rejected_by_server")','new CustomEvent("apois:driver-presence-rejected"'], "Motorista server presence ACK must surface RPC failure");
   const driverAppPatched=read(".work/partner-motorista/src/routes/motorista.app.tsx");
   const driverLoginFocus=read(".work/partner-motorista/src/routes/motorista.login.tsx");
   const driverCssFocus=read(".work/partner-motorista/src/styles.css");
