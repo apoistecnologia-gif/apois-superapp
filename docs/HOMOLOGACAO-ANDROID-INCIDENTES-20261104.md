@@ -88,3 +88,19 @@ Registrar sequencialmente conforme o proprietário enviar novos prints; uma corr
 **Estado:** os links existentes em Configurações preservam as rotas, e os controles de push, GPS, logout e salvar continuam conectados aos handlers originais. Algumas preferências locais (alertas de corrida, som, vibração e app de navegação) estão persistidas no `driverPrefs`, mas o uso operacional dessas preferências fora da tela de Configurações **não foi confirmado**. Não declarar esses recursos E2E aprovados; verificar em aparelho e nos consumidores de eventos antes de modificar notificações.
 
 **Gate de regressão:** `scripts/verify-partner-motorista-settings-ui-v4.mjs` verifica contraste, fullscreen, links, handlers, ordem de confirmação/exclusão, ausência de `window.confirm`/`prompt` e da Edge Function legada. Preflight WEB-only GitHub #41912156364 = 3/3 SUCCESS. Não gerou APK desta revisão; tela física ainda não validada.
+
+## 010 — Passageiro — autocomplete de destino em branco
+
+**Evidência física:** captura do APOIS Cliente mostra a busca de destino com o texto `River shopping`, sem sugestões e ainda com os atalhos de favoritos visíveis. O endereço de partida estava identificado. Não confundir com erro do GPS nem com falha de aceite de corrida.
+
+**Defeitos confirmados em código:** a Edge Function de autocomplete é chamada por `placesService`, mas o hook mapeia falhas para estados `network_error`, `rate_limited` e `configuration_missing` que a rota `buscar-destino` não renderizava, causando painel em branco. A classe de serviço mantinha respostas vazias em cache por cinco minutos, dificultando recuperação. **Hipótese adicional ainda não confirmada no Android:** entrada via IME/composição nativa pode não manter o `query` React sincronizado, já que a captura mostra favoritos mesmo com texto digitado.
+
+**Evidência do backend:** Supabase Corridas `tbbzkrfupmqdywnzgnms` usa `google-maps-address` em produção (versão 18). Logs de 04/11 incluem POST 500 no fallback Photon reverse e outros POST 200, sem informação sobre número de sugestões; isso **não prova** que a busca por River Shopping tenha retornado resultados. A função de fallback tem fragilidade transitória de conexão. Nunca afirmar que o serviço externo já foi restabelecido.
+
+**Mudanças versionadas:**
+- `scripts/fix-corridas-passenger-destination-suggestions-v2.mjs`: estados de debounce/erro/limite/configuração explícitos; botão de tentar novamente e escolha do mapa no vazio/erro; sincronização adicional de `onInput`/`onCompositionEnd`, preservando onChange, seleção, favoritos e mapa.
+- `scripts/harden-corridas-destination-search-runtime.mjs`: resultados vazios não ficam em cache por cinco minutos; repetições consultam novamente o provedor existente, sem API paga nova.
+- `supabase/functions/google-maps-address/index.ts`: fallback Photon de **autocomplete** ganha uma tentativa adicional somente em erro de transporte/5xx, com timeout, sem repetir 403/429 nem vazar destino em logs. **Somente versionado, não implantado em produção**.
+- `scripts/verify-corridas-passenger-destination-suggestions-v2.mjs` e `scripts/qa/test-photon-autocomplete-retry-v1.mjs`: regressões de UI e simulação isolada de 200, 500, ECONNREFUSED, 400, 403 e 429.
+
+**Critério de aceite pendente:** novo APK do Cliente com branch corrigida; busca real por endereço e estabelecimento em Petrolina com sugestões acionáveis; nome e coordenadas preservados até solicitar corrida; falhas de provedor com erro legível + retry e mapa; sem atalhos de favoritos cobrindo resultados. Testar no dispositivo físico. Não houve deploy, migração, mudança de preço ou alteração de dados pessoais.
