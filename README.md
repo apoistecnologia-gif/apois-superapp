@@ -77,30 +77,6 @@ br.com.apois.parceiro://...
 
 Os shells distribuem callbacks para o módulo correto e evitam que um callback ou Push da outra função rompa uma jornada ativa.
 
-## Mensalidades comerciais atuais — 04/11/2026
-
-Os valores por perfil passam a ser:
-
-| Perfil | Preço por mês |
-| --- | ---: |
-| Motorista APOIS Corridas | **R$ 59,90** |
-| Estabelecimento APOIS Entregas | **R$ 69,90** |
-| Entregador APOIS Entregas | **R$ 49,90** |
-
-Fonte versionada: `config/apois-monthly-pricing.json` (valores em centavos).
-Esta decisão **não ativa um provedor eletrônico** nem autoriza assinaturas com
-status fictício. A transição do motorista para 5990 centavos está preparada em
-`supabase/corridas-forward-migrations/20261104120000_driver_membership_monthly_5990_not_deployed.sql`,
-que interrompe a aplicação se houver registros históricos de R$49,90 a reconciliar.
-
-O cadastro de mensalidade do entregador está em
-`supabase/entregas-forward-migrations/20261104121000_courier_monthly_4990_contract_not_deployed.sql`.
-O status `active` e cobranças `received` **continuam proibidos** enquanto
-não houver conciliação comprovada pelo provedor e teste do bloqueio das
-operações de entregas. As duas migrações permanecem **somente preparadas**;
-os bancos oficiais não foram alterados. O código legado e o histórico documental
-abaixo refletem etapas anteriores e não substituem esta política aprovada.
-
 ## Política financeira final
 
 ### Corridas
