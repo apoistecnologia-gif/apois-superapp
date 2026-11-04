@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 command -v docker >/dev/null || { echo '[FAIL] Docker required for isolated PostgreSQL fixture'; exit 1; }
 node scripts/qa/verify-corridas-public-rpc-acl-v1.mjs
+node scripts/qa/verify-driver-monthly-release-hold-v1.mjs
 node scripts/qa/verify-forward-schema-preflights-v1.mjs
 node scripts/qa/verify-corridas-sensitive-rpc-acl-v1.mjs
 name="apois-cash-pg-qa-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
@@ -30,6 +31,26 @@ test "$ready" = true || { echo '[FAIL] Disposable PostgreSQL did not finish init
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-assertions-v1.sql
+# SAFETY GATE: run the full, UNMODIFIED staged Corridas operational migration
+# in its own empty disposable DB and REQUIRE its deliberate SQLSTATE 55000
+# BEFORE it can touch any production-equivalent function. This protects against
+# accidentally deploying a monthly-fee bypass as a successful migration.
+docker exec "$name" createdb -U postgres driver_billing_release_hold_qa
+if billing_gate_log=$(docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -U postgres -d driver_billing_release_hold_qa < supabase/corridas-forward-migrations/20260905162500_remove_retired_driver_subscription_gates.sql 2>&1); then
+ echo '[FAIL] Corridas operational migration unexpectedly succeeded without paid monthly membership'
+ exit 1
+fi
+if ! printf '%s\n' "$billing_gate_log" | grep -Fq 'APOIS_DRIVER_MEMBERSHIP_RELEASE_BLOCKED' ||
+   ! printf '%s\n' "$billing_gate_log" | grep -Fq '55000'; then
+ echo '[FAIL] Corridas operational migration failed for a different reason instead of monthly billing HOLD'
+ printf '%s\n' "$billing_gate_log" >&2
+ exit 1
+fi
+if ! docker exec "$name" psql -X -q -t -A -v ON_ERROR_STOP=1 -U postgres -d driver_billing_release_hold_qa -c "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('apois_rpc_private','private') AND p.proname IN ('driver_set_presence','driver_finish_ride')" | grep -qx '0'; then
+ echo '[FAIL] Corridas membership release HOLD allowed operational RPC writes'
+ exit 1
+fi
+echo '[PASS] Full staged Corridas migration fails SQLSTATE 55000 before replacing any driver RPC without verified paid monthly membership'
 # Separate disposable database using production-derived cash admission and legacy
 # merchant-subscription functions. Confirm general rollout is still BLOCKED.
 docker exec "$name" createdb -U postgres entregas_payment_admission_qa

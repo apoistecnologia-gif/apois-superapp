@@ -5,6 +5,25 @@
 -- suspension/block, KYC when entering operation, online state and fresh GPS.
 -- subscription_status remains historical data only and MUST NOT gate rides.
 
+-- SAFETY HOLD / NOT A DEPLOYABLE BILLING MIGRATION:
+-- APOIS Corridas requires R$49.90 monthly from every operational driver.
+-- The versioned routines below intentionally exercise nonbilling safeguards
+-- in isolated PostgreSQL QA, BUT they remove the old subscription_status check
+-- and do NOT yet replace it with verified payment evidence.
+-- Production currently has driver_memberships / driver_membership_charges but
+-- no active subscription ingestion/provider or confirmed monthly payments.
+-- Never apply this combined migration before an approved provider, paid
+-- receipt verification, expiry/reversal handling, and paid-membership gates
+-- are implemented and independently regression-tested.
+-- After those conditions are met, replace THIS HOLD in an explicit, reviewed
+-- PR and retest with a full-schema staging database. No temporary bypass.
+DO $apois_driver_monthly_billing_release_hold$
+BEGIN
+  RAISE EXCEPTION 'APOIS_DRIVER_MEMBERSHIP_RELEASE_BLOCKED: 4990 cents monthly paid evidence and active membership enforcement are not homologated'
+    USING ERRCODE='55000';
+END;
+$apois_driver_monthly_billing_release_hold$;
+
 create or replace function apois_rpc_private.driver_set_presence(
   _online boolean,
   _lat numeric DEFAULT NULL::numeric,
