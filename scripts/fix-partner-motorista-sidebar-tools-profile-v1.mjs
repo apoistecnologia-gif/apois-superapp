@@ -40,13 +40,24 @@ const start = app.indexOf("function IdleBottomPanel(");
 const end = app.indexOf("function StatMini(", start);
 if (start < 0 || end <= start) throw Error("[FAIL] Motorista idle panel boundaries changed");
 let idle = app.slice(start, end);
-const firstButton = /        <button type="button" onClick=\{onOpenStatusCheck\}[\s\S]*?Teste de Status · 6 verificações[\s\S]*?<\/button>\s*/g;
-const secondButton = /        <button type="button" onClick=\{onOpenCalls\}[\s\S]*?Solicitações disponíveis[\s\S]*?<\/button>\s*/g;
-for (const [re,label] of [[firstButton,"diagnostic CTA"],[secondButton,"calls CTA"]]) {
-  const matches = [...idle.matchAll(re)];
-  if (matches.length !== 1 || matches[0][0].length > 550) throw Error("[FAIL] Motorista idle " + label + " changed");
-  idle = idle.replace(re,"");
+// Locate the original click handler rather than depending on generated CSS or line breaks.
+function removeIdleToolButton(handler, expectedLabel) {
+  const anchor = "onClick={" + handler + "}";
+  const matches = idle.split(anchor).length - 1;
+  if (matches !== 1) throw Error("[FAIL] Motorista idle " + handler + " handler occurrences " + matches);
+  const at = idle.indexOf(anchor);
+  const buttonStart = idle.lastIndexOf("<button", at);
+  const buttonEnd = idle.indexOf("</button>", at);
+  if(buttonStart < 0 || buttonEnd < at || buttonEnd - buttonStart > 1200) {
+    throw Error("[FAIL] Motorista idle " + handler + " button boundaries");
+  }
+  const block = idle.slice(buttonStart,buttonEnd + "</button>".length);
+  if(!block.includes(expectedLabel)) throw Error("[FAIL] Motorista idle " + handler + " label changed");
+  idle = idle.slice(0,buttonStart) + idle.slice(buttonEnd + "</button>".length);
 }
+removeIdleToolButton("onOpenStatusCheck","Teste de Status");
+removeIdleToolButton("onOpenCalls","Solicitações disponíveis");
+
 idle = replaceOnce(idle, "  canUseTestLocation, onUseTestLocation, onOpenStatusCheck, onOpenCalls,",
   "  canUseTestLocation, onUseTestLocation,", "idle props");
 idle = replaceOnce(idle, "  onOpenStatusCheck: () => void;\n  onOpenCalls: () => void;\n", "", "idle prop types");
