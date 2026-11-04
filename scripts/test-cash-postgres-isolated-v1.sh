@@ -141,6 +141,14 @@ docker exec "$name" createdb -U postgres entregas_subscription_acl_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-merchant-subscription-acl-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < supabase/entregas-forward-migrations/20261104044500_restrict_merchant_subscription_financial_table_acl.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-merchant-subscription-acl-assertions-v1.sql
+# Critical Entregas financial/admin RPCs: anonymous EXECUTE is unnecessary.
+# Apply the exact staged ACL on dummy functions with the real signatures.
+# No payouts, no financial data and no Supabase production connection.
+node scripts/qa/verify-entregas-admin-finance-rpc-acl-v1.mjs
+docker exec "$name" createdb -U postgres entregas_admin_finance_acl_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_admin_finance_acl_qa < scripts/qa/entregas-admin-finance-acl-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_admin_finance_acl_qa < supabase/entregas-forward-migrations/20261104060000_restrict_critical_admin_finance_rpc_acl_NOT_DEPLOYED.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_admin_finance_acl_qa < scripts/qa/entregas-admin-finance-acl-assertions-v1.sql
 # Additional fully isolated database for elevated public RPC ACL hardening:
 # no real users, no finance, no JWT and no production SQL writes.
 docker exec "$name" createdb -U postgres corridas_sensitive_acl_qa
