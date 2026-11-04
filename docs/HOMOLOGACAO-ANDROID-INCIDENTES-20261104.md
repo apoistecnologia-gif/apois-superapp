@@ -44,3 +44,17 @@ Registrar sequencialmente conforme o proprietário enviar novos prints; uma corr
 **Implementação preparada somente em branch:** \`scripts/templates/PassengerAccountDeletion.tsx\` contém ação visível "Excluir minha conta", diálogo de confirmação com digitação exata \`EXCLUIR\`, resumo da retenção legal, tratamento de corrida ativa, loading, erros e encerramento da sessão somente depois de \`{"ok":true}\`. \`scripts/harden-corridas-profile-account-deletion.mjs\` injeta o componente no Perfil gerado e protege \`use-auth.tsx\` com \`.is("deleted_at", null)\`. Pipeline \`scripts/build-isolated-module.mjs\` e gate \`scripts/verify-corridas-profile-edit.mjs\` integram a alteração sem tocar \`sources/\` e sem migrations. O Supabase de produção, usuários, dados e APK instalado permanecem **intactos**.
 
 **Status:** implementado no GitHub; **não há teste físico autenticado nem exclusão real executada**. Exigir build/QA verde e teste de UI sem acionar a confirmação de exclusão de uma conta real. Para teste de integração destrutiva, usar somente conta descartável e ambiente controlado/autorizado. Não declarar a eliminação física de dados concluída por esta única RPC.
+
+## 004 — Motorista — ferramentas operacionais no menu lateral
+
+**Evidência do teste físico:** os botões "Teste de Status · 6 verificações" e "Solicitações disponíveis" apareciam como ações provisórias sobre o painel do mapa, acima de "Ficar offline".
+
+**Correção versionada:** scripts/fix-partner-motorista-sidebar-tools-profile-v1.mjs remove somente os dois botões de IdleBottomPanel. Seus acionamentos originais passam ao DriverSideMenu, com o mesmo estado dos modais ApoisStatusCheck e ApoisAvailableCalls e navegação de retorno a partir de telas internas. O botão de ficar online/offline, o GPS, as estatísticas, as RPCs de consulta/aceite e os eventos push permanecem inalterados.
+
+## 005 — Motorista — cartão do perfil com foto, cadastro e estrelas
+
+**Evidência do teste físico:** cabeçalho do menu mostrava um cartão preto, avatar com inicial e e-mail quebrado.
+
+**Correção versionada:** cartão claro com nome, foto assinada do fluxo existente, status real do cadastro e estrelas provenientes de drivers.rating e drivers.total_ratings. Fallback de selfie somente quando foto_url está vazio, e ícone neutro quando nenhuma foto puder ser carregada. Sem avaliações, estrelas vazias e texto "Sem avaliações". O clique continua abrindo o perfil. O tipo DriverProfileRow foi ampliado para ler campos existentes sem alterar a base ou a RPC.
+
+**Validação:** preflight web/typecheck e teste de regressão específicos exigidos pelo build Partner. Sem atualização em produção ou novo APK, ainda não validado em aparelho físico.
