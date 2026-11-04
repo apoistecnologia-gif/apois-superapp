@@ -124,7 +124,7 @@ class PlacesService {
         const firstKey = this.cache.keys().next().value;
         if (firstKey) this.cache.delete(firstKey);
       }
-      this.cache.set(cacheKey, { data: suggestions, timestamp: Date.now() });
+      // Never cache empty provider responses: they may reflect transient outage or billing restrictions.\n      if (suggestions.length > 0) this.cache.set(cacheKey, { data: suggestions, timestamp: Date.now() });
       return suggestions;
     } catch (error: unknown) {
       if ((error as PlacesError)?.code === "places_cancelled") throw error;
