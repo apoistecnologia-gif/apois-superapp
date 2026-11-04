@@ -228,5 +228,7 @@ if(process.argv.includes("--dist")){
 const { spawnSync } = await import('node:child_process');
 const guardResult = spawnSync(process.execPath, ['scripts/test-driver-registration-guard-review-v1.mjs'], { stdio: 'inherit' });
 check(!guardResult.error && guardResult.status === 0, 'Driver registration review-only guard contract');
+const redispatchResult = spawnSync(process.execPath, ['scripts/qa/verify-corridas-redispatch-contract-v1.mjs'], { stdio: 'inherit' });
+check(!redispatchResult.error && redispatchResult.status === 0, 'Corridas ride offer rejection/cancel redispatch dependencies staged (not deployed)');
 if(failures)process.exit(1);
 console.log("[OK] APOIS Partner web preflight: all scoped static and integration assertions passed.");
