@@ -2,8 +2,11 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
+import { verifyClientBundleAssets } from './qa/verify-client-static-assets-v1.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+verifyClientBundleAssets(resolve(root, 'superapp/shell/dist'));
+
 let failed = false;
 function fail(message) { console.error(`[FAIL] ${message}`); failed = true; }
 function ok(message) { console.log(`[OK] ${message}`); }

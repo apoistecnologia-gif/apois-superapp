@@ -50,7 +50,7 @@ function filesWithCss(dir){
  }
  walk(dir);return out;
 }
-export function verifyPartnerBundleAssets(bundleRoot){
+export function verifyMobileBundleAssets(bundleRoot, entries, label){
  const root=resolve(bundleRoot),errors=[];let inspected=0;
  function check(owner,ref){
   try{
@@ -61,19 +61,22 @@ export function verifyPartnerBundleAssets(bundleRoot){
    }
   }catch(e){errors.push(owner+': '+e.message);}
  }
- for(const path of entrypoints){
+ for(const path of entries){
   const entry=resolve(root,path);
-  if(!existsSync(entry)){errors.push('Missing Partner entrypoint: '+path);continue;}
+  if(!existsSync(entry)){errors.push('Missing '+label+' entrypoint: '+path);continue;}
   for(const ref of htmlRefs(readFileSync(entry,'utf8')))check(path,ref);
  }
  if(existsSync(root))for(const file of filesWithCss(root)){
   const owner=relative(root,file);
   for(const ref of cssRefs(readFileSync(file,'utf8')))check(owner,ref);
  }
- if(errors.length)throw Error('[FAIL] APK Partner has '+errors.length+' missing/broken local assets:\n'+errors.slice(0,30).join('\n'));
- if(!inspected)throw Error('[FAIL] APK Partner did not verify any local script/style/asset reference');
- console.log('[PASS] Partner bundle: '+entrypoints.length+' entrypoints, '+inspected+' linked local assets verified');
- return {entries:entrypoints.length,assetsChecked:inspected};
+ if(errors.length)throw Error('[FAIL] APK '+label+' has '+errors.length+' missing/broken local assets:\n'+errors.slice(0,30).join('\n'));
+ if(!inspected)throw Error('[FAIL] APK '+label+' did not verify any local script/style/asset reference');
+ console.log('[PASS] '+label+' bundle: '+entries.length+' entrypoints, '+inspected+' linked local assets verified');
+ return {entries:entries.length,assetsChecked:inspected};
+}
+export function verifyPartnerBundleAssets(bundleRoot){
+ return verifyMobileBundleAssets(bundleRoot,entrypoints,'Partner');
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  verifyPartnerBundleAssets(process.argv[2]||'superapp/partner-shell/dist');
