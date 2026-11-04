@@ -216,3 +216,30 @@ BEGIN
  RAISE NOTICE '[PASS] QA cash trigger integration: cancelled/pending->cancelled, zero fees, no gateway records';
 END;
 $qa$;
+
+-- Demonstrate the production function's broken NULL comparison before
+-- applying the staged fix. With no QA slug, an unrelated Pix order is blocked.
+UPDATE public.merchants SET slug=NULL
+WHERE id='afafafaf-afaf-4afa-8afa-afafafafafaf';
+DO $qa$
+DECLARE blocked boolean:=false; err text;
+BEGIN
+ BEGIN
+  INSERT INTO public.orders(id,order_number,merchant_id,customer_user_id,status,
+   payment_method,payment_status,subtotal,total,delivery_address,request_key)
+  VALUES('34343434-3434-4343-8343-343434343436',3003,
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+   'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+   'confirmed','pix','pending',20,20,'{}'::jsonb,gen_random_uuid());
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS err=MESSAGE_TEXT;
+  IF err <> 'QA merchant rejects real payment methods or paid status' THEN RAISE; END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Fixture failed to reproduce missing QA merchant Pix outage'; END IF;
+ RAISE NOTICE '[PASS] Reproduced production QA guard: missing test slug blocks unrelated Pix';
+END;
+$qa$;
+UPDATE public.merchants
+SET slug='apois-teste-entregas-homologacao-20261029'
+WHERE id='afafafaf-afaf-4afa-8afa-afafafafafaf';

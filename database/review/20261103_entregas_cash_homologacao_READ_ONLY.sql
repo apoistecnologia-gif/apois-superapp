@@ -98,4 +98,13 @@ SELECT gate, required, passed, detail FROM (
     ('public.create_order_for_checkout_intent_v2(uuid,uuid,jsonb,text,jsonb,uuid,uuid,text,text,text)'::text)
    ) x(signature)
  ),false), 'Edge uses service_role to create orders; direct anon/authenticated RPC callers denied'
+ UNION ALL
+ SELECT 'qa_guard_missing_test_merchant_does_not_block_other_orders',true,
+  COALESCE(
+   pg_get_functiondef(to_regprocedure('private.apois_qa_no_real_payment()'))
+    ILIKE '%NEW.merchant_id IS DISTINCT FROM v_id%'
+   AND pg_get_functiondef(to_regprocedure('private.apois_qa_no_real_payment()'))
+    ILIKE '%v_id IS NULL%',
+  false),
+  'A removed/renamed QA merchant must not block ordinary Pix order creation'
 ) gates ORDER BY gate;

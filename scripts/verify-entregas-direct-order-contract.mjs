@@ -19,6 +19,14 @@ for (const marker of [
   'FINANCIAL_CONTRACT_MISMATCH',
 ]) if (!edge.includes(marker)) fail(`create-order perdeu contrato: ${marker}`);
 
+const qaNullGuard = read('supabase/entregas-forward-migrations/20261104012000_qa_missing_merchant_guard.sql');
+for (const marker of [
+  'IF v_id IS NULL OR NEW.merchant_id IS DISTINCT FROM v_id THEN',
+  "NEW.payment_status NOT IN ('pending','cancelled')",
+  'private.apois_test_cash_authorized(NEW.merchant_id,NEW.customer_user_id)',
+  'QA order marker missing',
+]) if (!qaNullGuard.includes(marker)) fail(`QA guard null-safe policy missing: ${marker}`);
+
 const checkoutAclMigration = read('supabase/entregas-forward-migrations/20261104011000_checkout_rpc_service_role_only.sql');
 for (const signature of [
   'public.create_order_atomic(uuid,uuid,jsonb,text,jsonb,uuid,text)',
