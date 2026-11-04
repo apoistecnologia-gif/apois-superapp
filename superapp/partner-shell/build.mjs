@@ -1,4 +1,5 @@
 import '../../scripts/harden-partner-shell-startup.mjs';
+import { verifyPartnerBundleAssets } from '../../scripts/qa/verify-partner-static-assets-v1.mjs';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -199,4 +200,5 @@ if (!(launchIndex >= 0 && pendingIndex > launchIndex && lockIndex > pendingIndex
   process.exit(1);
 }
 
+verifyPartnerBundleAssets(dist);
 console.log('[OK] APOIS Parceiro gerado e validado: finanças, UI operacional, GPS/background, sessão WebView/FGS, callbacks/Push, saídas secundárias, back guards e trava cruzada protegidos.');

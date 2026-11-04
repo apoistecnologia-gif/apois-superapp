@@ -6,6 +6,7 @@ command -v docker >/dev/null || { echo '[FAIL] Docker required for isolated Post
 node scripts/qa/verify-corridas-public-rpc-acl-v1.mjs
 node scripts/qa/verify-driver-monthly-release-hold-v1.mjs
 node scripts/qa/verify-forward-schema-preflights-v1.mjs
+node scripts/qa/test-partner-static-assets-v1.mjs
 node scripts/qa/verify-corridas-monthly-table-acl-v1.mjs
 node scripts/qa/verify-corridas-wallet-cancellation-acl-v1.mjs
 node scripts/qa/verify-corridas-payment-settlement-acl-v1.mjs
