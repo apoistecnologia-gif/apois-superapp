@@ -24,6 +24,20 @@ for(const s of [
 ])assert.ok(hook.includes(s),'Pickup failure handling regression '+s);
 assert.ok(!home.includes('Toque para tentar identificar o endereço'),'Misleading pickup CTA must be removed');
 assert.ok(!hook.includes('setPickupLabel(null)'),'Do not remove previously known address label during a temporary outage');
+// The real 1.0.11-qa.1001 APK locked runningCell BEFORE jitter check.
+// If user movement was <85m, refreshAddress returned before try/finally and
+// the entire pickup retry was permanently stuck. Lock must be last.
+assert.ok(hook.includes('APOIS_PICKUP_NO_EARLY_RUNNING_LOCK_V2'),'GPS retry lock regression guard missing');
+const jitter=hook.indexOf('if (Math.hypot(north, east) < 85) return;');
+const busy=hook.indexOf('geocodeBusyRef.current = true;');
+const lock=hook.indexOf('runningCell.current = true;');
+const retryTry=hook.indexOf('    try {',lock);
+const release=hook.indexOf('runningCell.current = false;',retryTry);
+assert.ok(jitter>=0 && busy>jitter && lock>busy && retryTry>lock && release>retryTry,
+  'Pickup lock must be acquired only after jitter exit and released in finally');
+assert.ok(!/\breturn\b/.test(hook.slice(lock,retryTry)),
+  'Never return after claiming lock but before finally cleanup');
+
 assert.ok(!home.includes('address || "Sua localização atual"'),'Never report an unverified address');
 const origin=home.indexOf('data-apois-pickup-retry-v1');
 const branch=home.lastIndexOf('onClick={() => { refreshLocation(); void refreshAddress(); }}',origin);

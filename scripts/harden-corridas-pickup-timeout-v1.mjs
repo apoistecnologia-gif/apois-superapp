@@ -21,10 +21,16 @@ s=s.replace(start,`  const refreshAddress = useCallback(async () => {
       return;
     }
     if (runningCell.current) return;
-    runningCell.current = true;
 `);
 const oldGuard='    if (!location || !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude)) return;';
 s=s.replace(oldGuard,'');
+const busyAnchor = '    geocodeBusyRef.current = true;';
+if (!s.includes(busyAnchor)) throw Error('[FAIL] Pickup retry lock: geocode busy anchor absent');
+if (s.includes('    runningCell.current = true;')) throw Error('[FAIL] Pickup retry lock still acquired before geocode jitter guards');
+// APOIS_PICKUP_NO_EARLY_RUNNING_LOCK_V2: set running only after early returns of the active GPS jitter check.
+// Any return before try/finally would otherwise freeze every subsequent tap.
+s = s.replace(busyAnchor, busyAnchor + '\n    // APOIS_PICKUP_NO_EARLY_RUNNING_LOCK_V2: lock only after jitter guard\n    runningCell.current = true;');
+
 const oldInvoke=`      const { data: reverse, error: reverseError } = await supabase.functions.invoke(
         "google-maps-address",
         {
@@ -67,5 +73,9 @@ s=s.replace(oldEffect,`  useEffect(() => {
     lastAttemptCell.current = key;
     void refreshAddress();
   }, [location?.latitude, location?.longitude, refreshAddress]);`);
+if (!s.includes("APOIS_PICKUP_NO_EARLY_RUNNING_LOCK_V2") ||
+    s.indexOf('geocodeBusyRef.current = true;') >= s.indexOf('runningCell.current = true;')) {
+  throw Error('[FAIL] Pickup lock must be acquired after 85m GPS jitter short-circuit');
+}
 writeFileSync(hookFile,s,'utf8');
 console.log('[OK] Corridas: geocoding timeout 12s, GPS sem loops e falha permite nova tentativa.');
