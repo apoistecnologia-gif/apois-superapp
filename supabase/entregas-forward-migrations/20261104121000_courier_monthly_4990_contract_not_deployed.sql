@@ -28,6 +28,8 @@ CREATE TABLE public.courier_monthly_memberships (
  current_period_end timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now(),
+ -- Deliberately deny all fake activation until audited provider webhooks exist.
+ CONSTRAINT courier_monthly_activation_not_homologated CHECK(status<>'active'),
  CONSTRAINT courier_monthly_active_period_check CHECK(
    status<>'active' OR (current_period_start IS NOT NULL
     AND current_period_end IS NOT NULL AND current_period_end>current_period_start)
@@ -45,6 +47,8 @@ CREATE TABLE public.courier_monthly_charges (
  paid_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now(),
+ -- Never mark a real monthly payment received before verified gateway E2E.
+ CONSTRAINT courier_monthly_receipt_not_homologated CHECK(status<>'received'),
  CONSTRAINT courier_monthly_received_requires_receipt_check CHECK (
    status <> 'received' OR (
      provider IS NOT NULL AND btrim(provider) <> ''
