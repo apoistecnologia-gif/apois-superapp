@@ -119,6 +119,26 @@ begin
   order by r.created_at desc
   limit 1;
 
+  -- APOIS_CASH_REJECT_NO_GATEWAY_REFUND_V1: a cash order never enters
+  -- an electronic refund path. Check even on an idempotent terminal retry:
+  -- otherwise a late/incorrect gateway or refund row would be hidden.
+  -- The owner/merchant authorization above always runs first.
+  if v_order.payment_method = 'cash' then
+    if exists (select 1 from public.payments p where p.order_id = _order_id) then
+      raise exception 'cash_gateway_payment_record_requires_manual_reconciliation' using errcode='55000';
+    end if;
+    if exists (select 1 from public.refunds r where r.order_id = _order_id) then
+      raise exception 'cash_refund_record_requires_manual_reconciliation' using errcode='55000';
+    end if;
+    if v_order.status in ('cancelled','refunded') then
+      if v_order.payment_status is distinct from 'cancelled' then
+        raise exception 'cash_payment_state_requires_manual_reconciliation' using errcode='55000';
+      end if;
+    elsif v_order.payment_status is distinct from 'pending' then
+      raise exception 'cash_payment_state_requires_manual_reconciliation' using errcode='55000';
+    end if;
+  end if;
+
   if v_order.status in ('cancelled','refunded') then
     return jsonb_build_object(
       'order_id', v_order.id,
@@ -132,18 +152,6 @@ begin
     'confirmed','accepted','preparing','ready','searching_driver','driver_assigned','driver_arriving_store'
   ) then
     raise exception 'order can no longer be rejected';
-  end if;
-
-  -- APOIS_CASH_REJECT_NO_GATEWAY_REFUND_V1: cash must never silently enter
-  -- the electronic refund path. Fail before modifying jobs, offers or orders.
-  -- Any pre-existing payment row for cash requires independent reconciliation.
-  if v_order.payment_method = 'cash' then
-    if v_order.payment_status is distinct from 'pending' then
-      raise exception 'cash_payment_state_requires_manual_reconciliation' using errcode='55000';
-    end if;
-    if exists (select 1 from public.payments p where p.order_id = _order_id) then
-      raise exception 'cash_gateway_payment_record_requires_manual_reconciliation' using errcode='55000';
-    end if;
   end if;
 
   select * into v_job

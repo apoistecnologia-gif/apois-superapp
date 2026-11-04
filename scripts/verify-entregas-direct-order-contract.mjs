@@ -92,6 +92,10 @@ if (!migration.includes("'refund_pending', coalesce(v_refund.status in ('pending
 const authIndex = migration.indexOf('merchant access required');
 const retryIndex = migration.indexOf("and v_order.status = 'cancelled'");
 const terminalIndex = migration.indexOf("if v_order.status in ('cancelled','refunded') then");
+const cashSafetyIndex = migration.indexOf('APOIS_CASH_REJECT_NO_GATEWAY_REFUND_V1');
+if (cashSafetyIndex<0 || cashSafetyIndex>terminalIndex) {
+ fail('Cash reconciliation guard must run before the terminal retry response');
+}
 const financialStart = migration.indexOf("select * into v_job");
 if (authIndex<0 || retryIndex<=authIndex || terminalIndex<=retryIndex ||
  financialStart<=terminalIndex) {
@@ -110,6 +114,9 @@ if (guardStart < 0 || firstJobMutation < 0 || guardStart > firstJobMutation) {
     "if v_order.payment_method = 'cash' then",
     "v_order.payment_status is distinct from 'pending'",
     "from public.payments p where p.order_id = _order_id",
+    "from public.refunds r where r.order_id = _order_id",
+    "cash_refund_record_requires_manual_reconciliation",
+    "if v_order.status in ('cancelled','refunded') then",
     "cash_payment_state_requires_manual_reconciliation",
     "cash_gateway_payment_record_requires_manual_reconciliation",
   ]) if (!cashGuard.includes(required)) fail('merchant cash guard missing: ' + required);
