@@ -9,6 +9,7 @@ node scripts/qa/verify-forward-schema-preflights-v1.mjs
 node scripts/qa/test-partner-static-assets-v1.mjs
 node scripts/qa/test-client-static-assets-v1.mjs
 node scripts/qa/test-js-module-asset-integrity-v1.mjs
+node scripts/qa/test-android-apk-web-assets-gate-v1.mjs
 node scripts/qa/test-codemagic-android-version-v1.mjs
 node scripts/qa/test-android-apk-badging-v1.mjs
 node scripts/qa/test-client-qa-signing-fail-closed-v1.mjs

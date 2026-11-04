@@ -287,6 +287,15 @@ jobs:
           test -n "$AAPT" || { echo "::error::aapt missing; cannot verify Parceiro APK package/version"; exit 1; }
           "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$((28 + GITHUB_RUN_NUMBER))" "1.0.28-qa.${GITHUB_RUN_NUMBER}"
           echo "[OK] Parceiro APK package/version verified against QA configuration"
+          # Verify the ACTUAL APK ZIP payload, not only intermediate web/dist.
+          TEMP_APK_ASSETS="$(mktemp -d)"
+          trap 'rm -rf "$TEMP_APK_ASSETS"' EXIT
+          unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
+          test -s "$TEMP_APK_ASSETS/assets/public/index.html"
+          node scripts/qa/verify-partner-static-assets-v1.mjs "$TEMP_APK_ASSETS/assets/public"
+          echo "[OK] Parceiro APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
+          rm -rf "$TEMP_APK_ASSETS"
+          trap - EXIT
           cp "$APK" build/APOIS-Parceiro-TESTE.apk
           test -s build/APOIS-Parceiro-TESTE.apk
           echo "[OK] APK de teste gerado"
