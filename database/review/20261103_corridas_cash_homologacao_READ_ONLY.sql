@@ -177,4 +177,21 @@ SELECT gate,required,passed,detail FROM (
    WHERE n.nspname='public' AND c.relname IN
     ('driver_wallets','driver_wallet_transactions','cancellation_fees')),
   'Wallet/fee financial tables: own-SELECT only; no anonymous access or TRUNCATE'
+ UNION ALL SELECT 'payment_payout_settlement_tables_least_privilege',true,
+ (SELECT count(*)=6 AND bool_and(
+   c.relrowsecurity
+   AND NOT has_table_privilege('anon',c.oid,'SELECT')
+   AND NOT has_table_privilege('anon',c.oid,'TRUNCATE')
+   AND NOT has_table_privilege('authenticated',c.oid,'TRUNCATE')
+   AND NOT has_table_privilege('authenticated',c.oid,'INSERT')
+   AND NOT has_table_privilege('authenticated',c.oid,'UPDATE')
+   AND NOT has_table_privilege('authenticated',c.oid,'DELETE')
+   AND has_table_privilege('authenticated',c.oid,'SELECT')
+      = (c.relname <> 'payment_webhook_receipts')
+   AND has_table_privilege('service_role',c.oid,'UPDATE')
+ ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+ WHERE n.nspname='public' AND c.relname IN (
+ 'driver_payout_destinations','passenger_wallets','payment_methods',
+ 'payment_webhook_receipts','ride_pix_payments','ride_settlements')),
+ 'Payout, wallets, methods, webhook receipts, Pix and settlement are least-privilege'
 ) gate_results ORDER BY gate;
