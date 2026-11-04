@@ -83,7 +83,7 @@ SELECT public.merchant_reject_order('11111111-1111-4111-8111-111111111111','cash
 -- On a client retry, the same merchant must receive the terminal state
 -- without creating a new refund, event, history row or cancellation.
 DO $test$
-DECLARE response jsonb; history_count integer; refund_count integer;
+DECLARE response jsonb; history_count integer;
 BEGIN
  SELECT public.merchant_reject_order(
    '11111111-1111-4111-8111-111111111111',
@@ -97,11 +97,11 @@ BEGIN
  SELECT count(*) INTO history_count FROM public.order_status_history
  WHERE order_id='11111111-1111-4111-8111-111111111111'
    AND status='cancelled';
- SELECT count(*) INTO refund_count FROM public.refunds
- WHERE order_id='11111111-1111-4111-8111-111111111111';
- IF history_count<>1 OR refund_count<>0 THEN
-   RAISE EXCEPTION 'Cash retry repeated financial/history side effects';
+ IF history_count<>1 THEN
+   RAISE EXCEPTION 'Cash retry repeated status history';
  END IF;
+ -- Refund table is intentionally NOT readable by authenticated. A second
+ -- check occurs below, as the synthetic fixture owner after COMMIT.
  RAISE NOTICE '[PASS] Cash cancellation retry is authorized, idempotent, false refund flag, no new history/refund';
 END;
 $test$;
@@ -223,6 +223,11 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.orders WHERE id='11111111-1111-4111-8111-111111111111'
    AND status='cancelled' AND payment_status='cancelled') THEN
    RAISE EXCEPTION 'ordinary cash cancellation did not persist';
+ END IF;
+ IF (SELECT count(*) FROM public.order_status_history
+       WHERE order_id='11111111-1111-4111-8111-111111111111'
+         AND status='cancelled') <> 1 THEN
+   RAISE EXCEPTION 'Cash retry created extra cancellation history';
  END IF;
  IF EXISTS(SELECT 1 FROM public.refunds WHERE order_id='11111111-1111-4111-8111-111111111111') THEN
    RAISE EXCEPTION 'cash cancellation fabricated refund';
