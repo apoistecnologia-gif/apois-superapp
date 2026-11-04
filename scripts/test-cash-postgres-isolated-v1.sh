@@ -10,6 +10,7 @@ node scripts/qa/verify-corridas-monthly-table-acl-v1.mjs
 node scripts/qa/verify-corridas-wallet-cancellation-acl-v1.mjs
 node scripts/qa/verify-corridas-payment-settlement-acl-v1.mjs
 node scripts/qa/verify-entregas-subscription-table-acl-v1.mjs
+node scripts/qa/verify-entregas-finance-truncate-acl-v1.mjs
 node scripts/qa/verify-corridas-sensitive-rpc-acl-v1.mjs
 name="apois-cash-pg-qa-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
 cleanup(){ docker rm -f "$name" >/dev/null 2>&1 || true; }
@@ -146,6 +147,10 @@ docker exec "$name" createdb -U postgres entregas_subscription_acl_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-merchant-subscription-acl-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < supabase/entregas-forward-migrations/20261104044500_restrict_merchant_subscription_financial_table_acl.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-merchant-subscription-acl-assertions-v1.sql
+# Close RLS-unprotected TRUNCATE without changing other Entregas client grants.
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-finance-truncate-acl-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < supabase/entregas-forward-migrations/20261104062000_restrict_entregas_financial_truncate_acl_NOT_DEPLOYED.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-finance-truncate-acl-assertions-v1.sql
 # Critical Entregas financial/admin RPCs: anonymous EXECUTE is unnecessary.
 # Apply the exact staged ACL on dummy functions with the real signatures.
 # No payouts, no financial data and no Supabase production connection.

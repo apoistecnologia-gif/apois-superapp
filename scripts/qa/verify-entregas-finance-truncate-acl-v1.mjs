@@ -1,0 +1,11 @@
+import {readFileSync} from "node:fs";
+const p="supabase/entregas-forward-migrations/20261104062000_restrict_entregas_financial_truncate_acl_NOT_DEPLOYED.sql";
+const m=readFileSync(p,"utf8");
+const names=["courier_settlement_deliveries","courier_settlements","payment_events","payment_transactions","payments","payout_accounts","payouts","refunds","wallet_transactions","wallets"];
+if(!m.includes("REVOKE TRUNCATE ON TABLE")||!m.includes("FROM PUBLIC, anon, authenticated;")||!m.includes("GRANT TRUNCATE ON TABLE")||!m.includes("TO service_role;")) throw Error("TRUNCATE-only financial migration lost required grants");
+for(const t of names)if(!m.includes("public."+t))throw Error("Missing Entregas financial table: "+t);
+if(/REVOKE\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)/i.test(m)||/GRANT\s+(?:ALL|INSERT|UPDATE|DELETE)/i.test(m))throw Error("TRUNCATE-only migration changed other CRUD privileges");
+const runner=readFileSync("scripts/test-cash-postgres-isolated-v1.sh","utf8");
+for(const path of ["scripts/qa/entregas-finance-truncate-acl-fixture-v1.sql",p,"scripts/qa/entregas-finance-truncate-acl-assertions-v1.sql"])if(!runner.includes("< "+path))throw Error("Entregas PG17 TRUNCATE regression not wired: "+path);
+if(!readFileSync("database/review/20261103_entregas_cash_homologacao_READ_ONLY.sql","utf8").includes("entregas_finance_truncate_restricted"))throw Error("Read-only release gate absent");
+console.log("[PASS] Entregas finance TRUNCATE-only staged guard and PostgreSQL tests");

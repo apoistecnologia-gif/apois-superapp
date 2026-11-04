@@ -130,4 +130,12 @@ SELECT gate, required, passed, detail FROM (
   ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
    WHERE n.nspname='public' AND c.relname IN ('merchant_subscriptions','merchant_subscription_payments','merchant_subscription_events')),
   'Merchant subscription, payments and events stay own/admin SELECT while anon/members cannot truncate or alter billing'
+ UNION ALL SELECT 'entregas_finance_truncate_restricted',true,
+ (SELECT count(*)=10 AND bool_and(
+  c.relrowsecurity AND NOT has_table_privilege('anon',c.oid,'TRUNCATE')
+  AND NOT has_table_privilege('authenticated',c.oid,'TRUNCATE')
+  AND has_table_privilege('service_role',c.oid,'TRUNCATE')
+ ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+ WHERE n.nspname='public' AND c.relname IN ('courier_settlement_deliveries','courier_settlements','payment_events','payment_transactions','payments','payout_accounts','payouts','refunds','wallet_transactions','wallets')),
+ 'RLS financial tables deny TRUNCATE to client roles and retain service maintenance'
 ) gates ORDER BY gate;
