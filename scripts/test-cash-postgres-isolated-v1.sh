@@ -74,6 +74,14 @@ docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/driver-rpc-privileges-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/driver-rpc-privileges-assertions-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_acceptance_qa < scripts/qa/ride-acceptance-assertions-v1.sql
+# Seventh disposable database: actual staged trigger for opportunistic
+# offers to already busy drivers. Rehearse GPS range/time/eligibility filters.
+docker exec "$name" createdb -U postgres ride_busy_candidates_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_busy_candidates_qa < scripts/qa/driver-presence-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_busy_candidates_qa < scripts/qa/ride-acceptance-fixture-v1.sql
+node scripts/qa/extract-corridas-busy-candidates-sql-v1.mjs | docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_busy_candidates_qa
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_busy_candidates_qa -c 'CREATE TRIGGER qa_busy_candidates BEFORE UPDATE OF candidate_driver_ids ON public.rides FOR EACH ROW EXECUTE FUNCTION public.append_nearby_busy_driver_candidates()'
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d ride_busy_candidates_qa < scripts/qa/corridas-busy-driver-candidates-v1.sql
 # Fifth fully isolated PostgreSQL database: cash ride completion + queued-ride
 # promotion/release. Same migration SQL, synthetic identities and no money.
 docker exec "$name" createdb -U postgres ride_finish_qa

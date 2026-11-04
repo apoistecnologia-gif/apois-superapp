@@ -36,5 +36,13 @@ if (sql.includes("if new.status is not distinct from old.status or new.status no
  throw new Error("Same-status operational driver change bypass is back");
 }
 console.log("[PASS] Corridas staged driver-reassignment guard and KYC revocation are pinned");
+for(const mark of [
+ "d.current_lat between -34 and 6",
+ "d.current_lng between -74 and -32",
+ "d.last_location_at<=now()+interval '30 seconds'",
+ "new.origin_lat not between -34 and 6",
+ "new.origin_lng not between -74 and -32",
+]) if(!sql.includes(mark)) throw new Error("Busy-driver offer boundary regression: "+mark);
+console.log("[PASS] Corridas busy-driver offers require bounded coordinates and fresh GPS");
 
 console.log("[PASS] Corridas public wrapper revocations tracked in unapplied migration and PG fixture");

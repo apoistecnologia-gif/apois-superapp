@@ -108,4 +108,14 @@ SELECT gate,required,passed,detail FROM (
    AND definition ILIKE '%set is_online=false,updated_at=now()%'
    AND definition ILIKE '%tracking_active_ride%'),
   'Cached online driver whose KYC is revoked must be turned offline without dropping active-trip GPS tracking'
+ UNION ALL
+ SELECT 'busy_driver_offers_require_bounded_fresh_gps',true,
+ EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='public' AND p.proname='append_nearby_busy_driver_candidates'
+   AND pg_get_functiondef(p.oid) ILIKE '%d.current_lat between -34 and 6%'
+   AND pg_get_functiondef(p.oid) ILIKE '%d.current_lng between -74 and -32%'
+   AND pg_get_functiondef(p.oid) ILIKE '%d.last_location_at<=now()+interval ''30 seconds''%'
+   AND pg_get_functiondef(p.oid) ILIKE '%new.origin_lat not between -34 and 6%'
+   AND pg_get_functiondef(p.oid) ILIKE '%new.origin_lng not between -74 and -32%'
+ ), 'Already busy drivers must not receive additional offers based on future GPS or wrapped coordinates'
 ) gate_results ORDER BY gate;

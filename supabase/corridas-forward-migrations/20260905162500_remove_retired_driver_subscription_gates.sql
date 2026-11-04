@@ -311,7 +311,10 @@ set search_path = public
 as $function$
 declare v_radius_km numeric:=5; v_extra uuid[]:='{}'::uuid[];
 begin
-  if new.status<>'procurar_motorista' or new.driver_id is not null or new.origin_lat is null or new.origin_lng is null then return new; end if;
+  if new.status<>'procurar_motorista' or new.driver_id is not null
+     or new.origin_lat is null or new.origin_lng is null
+     or new.origin_lat not between -34 and 6
+     or new.origin_lng not between -74 and -32 then return new; end if;
   begin
     select coalesce((value #>> '{}')::numeric,5) into v_radius_km from public.app_settings where key='ride.next_offer_max_distance_km';
   exception when others then v_radius_km:=5;
@@ -327,8 +330,11 @@ begin
       and d.blocked_at is null
       and private.driver_kyc_is_ready(d.id)
       and d.category=new.category
-      and d.current_lat is not null and d.current_lng is not null
-      and d.last_location_at is not null and d.last_location_at>=now()-interval '120 seconds'
+      and d.current_lat between -34 and 6
+      and d.current_lng between -74 and -32
+      and d.last_location_at is not null
+      and d.last_location_at>=now()-interval '120 seconds'
+      and d.last_location_at<=now()+interval '30 seconds'
       and not (d.user_id=any(coalesce(new.rejected_driver_ids,'{}'::uuid[])))
       and exists(select 1 from public.rides current_ride where current_ride.driver_id=d.id and current_ride.status='em_viagem')
       and not exists(select 1 from public.rides queued_ride where queued_ride.driver_id=d.id and queued_ride.status='procurar_motorista' and queued_ride.queued_after_ride_id is not null)
