@@ -28,3 +28,19 @@
 
 ## Escopo preservado
 Nenhum usuário, pagamento, pedido, banco de produção, servidor, submódulo `sources/`, `.apois/source-lock.json`, assinatura APK, publicação, merge ou instalação física foi alterado nesta auditoria. Somente scripts de QA, workflows manuais e documentação. O APK já instalado **não** precisa ser substituído por causa dessas verificações; as melhorias protegem os próximos builds. Os problemas que o usuário relatar serão registrados com tela, ação, resultado observado, resultado esperado, diagnóstico e teste de regressão correspondente.
+
+---
+
+## Bug C-01 — Endereço de partida não identificado no APK (04/11/2026)
+
+**Relato físico:** na Home Corridas do APK Cliente `br.com.apois.app` versionCode 1001, o mapa e indicador GPS aparecem, mas a origem exibe `Toque para tentar identificar o endereço` em lugar da rua. O usuário enviará incidentes um a um; não reproduzir coordenadas pessoais nem capturas no código.
+
+**Evidência de servidor (somente leitura):** em 04/11/2026 às 16:22:07 UTC houve `POST /functions/v1/google-maps-address` **HTTP 500** vindo de Android WebView. Log da versão de produção **18** apontou `ECONNREFUSED` ao conectar com o provedor Photon na ação reverse geocode. A versão de produção foi recuperada via Supabase sem alteração. Não confundir falha do geocoder com GPS desligado: o mapa pode posicionar o usuário mesmo quando a conversão coordenadas→texto falha. O código versionado antigo não correspondia à versão ativa (Nominatim vs Photon), exigindo reconciliação segura.
+
+**Patches em branch, ainda não instalados/deployados:** `1b2817e4` e `4443ccca` alteram mensagem de falha e diagnóstico HTTP; `2e9c21ac` insere CTA de tentar novamente na **Home realmente gerada** pelo `harden-corridas-kit-visual.mjs` (a transformação visual substituía a Home anterior); `11353645` corrige o gate para comparar JSX de destino realmente compilado. O botão de origem atual já fazia `refreshLocation(); void refreshAddress();`, e não deve ser confundido com o botão de destino.
+
+**Tratamento do serviço remoto preparado, sem deploy:** `66e82b08` sincroniza o source versionado com Edge v18 e acrescenta APENAS **uma** repetição no Photon em caso de falha transitória de conexão/5xx, com timeout de 4s por tentativa e retorno HTTP 503 sem expor coordenadas nos logs quando esgotado; jamais repetir respostas 403/429, nem ativar API Google extra paga. Teste sintético `scripts/qa/test-photon-reverse-retry-v1.mjs` acompanha; mantém `verify_jwt=true`, quota, Google primário, autocomplete e place_details sem alterações de contrato.
+
+**Risco residual:** Photon público é servidor de demonstração sem garantia de uptime; o retry pode contornar instabilidade breve, mas **não garante que endereço apareça se o serviço continuar indisponível**. Não substituir automaticamente pelo Nominatim público: a política OSMF exige restrições de frequência e proíbe usá-lo como serviço geral de rastreamento veicular. A solução definitiva de produção requer um provedor de geocodificação autorizado e confiável, sem habilitar novo faturamento sem aprovação. O app físico instalado não mudou nesta análise. Nenhum Supabase deploy/DDL, pagamento, API nova, source-lock ou APK foram modificados.
+
+**Critérios para fechar o bug:** CI 3/3 no HEAD exato; Edge atualizado somente após controle de publicação; teste físico de tentativa→endereço real para posição com rua conhecida; cenário de erro remoto (ação de tentar novamente preservada, mensagem correta); 429 sem retry automático; manutenção de ponto GPS, destino e categorias. Somente depois marcar `RESOLVIDO`.
