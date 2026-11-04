@@ -291,3 +291,29 @@ Outra função acionada em cada inserção de pedido, `public.enforce_merchant_s
 Preflight read-only executado nos **dois** projetos: Corridas mantém **5/10 gates obrigatórios FAIL**, Entregas registra **9/12 FAIL** (3 aprovados, um gate informativo), num total de **14 impedimentos** aos critérios atuais de lançamento amplo. Os novos gates são `merchant_subscription_rejects_unapproved_and_inactive` e `checkout_rpcs_service_role_only`, ambos ainda FAIL em produção, pois a implementação está **somente no repositório**. Para produção ainda faltam decidir e implementar fonte de entitlement da mensalidade independente do Mercado Pago, opção comercial de cash para merchants comuns e migrações/RLS em staging, além dos testes físicos Android.
 
 **Reversibilidade:** commits, scripts e migrações novas permanecem isolados nesta branch e podem ser revisados/revertidos antes da aplicação. A migração de ACL pode romper um cliente legado que invoque RPC diretamente; confirmar os clientes Android/Web realmente implantados antes de aplicá-la fora de staging. Submódulos e workflows protegidos devem continuar intactos. Não usar testes isolados como aprovação para implantação de produção ou APK.
+
+---
+
+## Complemento QA de cancelamento cash e ausência de estabelecimento de teste (03–04/11/2026)
+
+### ENT-CASH-RECON-02 — cancelamento já concluído não pode ocultar registros financeiros posteriores
+
+Na migração forward-only `20260905113000_allow_direct_cash_order_operations.sql`, a resposta terminal idempotente acontecia **antes** da guarda de reconciliação. Se aparecesse um registro incorreto em `payments` ou `refunds` vinculado a um pedido cash já cancelado, o retorno da função mascarava a inconsistência. O commit `93570b763f04ae08440dbaa2d2dbd977bfa3bcac` antecipou as checagens de pagamentos e reembolsos, aplicando-as também às chamadas repetidas; um estado terminal diferente de `payment_status='cancelled'` exige igualmente investigação. O caminho do Pix permanece inalterado. O teste `scripts/qa/entregas-cash-terminal-reconciliation-v1.sql` injeta somente registros sintéticos, exige erro SQLSTATE `55000` e comprova que um segundo cancelamento íntegro retorna o mesmo resultado sem reembolso.
+
+**Evidência:** [GitHub Actions 41751405271](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41751405271), **3/3 jobs WEB SUCCESS**, incluindo PostgreSQL descartável.
+
+### ENT-QA-TRIGGER-02 — reproduzir as proteções de dinheiro da produção
+
+`scripts/qa/entregas-cash-qa-triggers-v1.sql` instala em PostgreSQL descartável cópias da lógica efetivamente consultada via `pg_get_functiondef` de `private.apois_test_cash_order_guard`, `private.apois_qa_no_real_payment` e `private.apois_mark_cash_test_order`. Testa autorização de cliente, bloqueio de `paid` e de conversão Pix, marcação do pedido como teste, campos `merchant_net/courier_earnings/platform_fee=0`, preparo, cancelamento e retry sem pagamentos ou reembolsos eletrônicos. O commit `dd355391edec46f3f642c145705f9efd72f3970b` acrescenta um `delivery_job` em oferta, uma oferta de entregador aceita, cancelamento pelo estabelecimento autorizado, proibição a outro tenant, encerramento do job e oferta, e exatamente um evento `merchant_cancelled` após o retry.
+
+**Evidência da versão inicial dos gatilhos:** [GitHub Actions 41751652084](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41751652084), **3/3 SUCCESS**. A versão com oferta de entregador está em [41752274863](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41752274863).
+
+### ENT-QA-NULL-01 — ausência da conta especial de testes não pode derrubar Pix comum
+
+A função ativa `private.apois_qa_no_real_payment` usa `IF NEW.merchant_id <> v_id THEN RETURN NEW`; se `v_id` for NULL porque o estabelecimento QA foi removido ou renomeado, a condição resulta em `NULL`, não `true`, e um INSERT de Pix de outro estabelecimento pode ser bloqueado pela proteção da conta de teste. O commit `3334c96d920433dd5f27dc80f59ddd794661514e` cria migração forward-only `20261104012000_qa_missing_merchant_guard.sql`, substituindo por `IF v_id IS NULL OR NEW.merchant_id IS DISTINCT FROM v_id THEN RETURN NEW`, sem afrouxar as demais condições de cash. A nova bateria primeiro reproduz o erro antigo com `slug` sintético ausente, depois aplica a função proposta e confirma que Pix comum é aceito mesmo sem a conta QA; restaura a referência e confirma o bloqueio de cash `paid` fabricado.
+
+**Evidência:** [GitHub Actions 41752050309](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41752050309), **3/3 SUCCESS**. O read-only gate `qa_guard_missing_test_merchant_does_not_block_other_orders` segue vermelho no banco oficial porque a migração está somente no GitHub.
+
+### Estado de produção e autorização
+
+Em preflights SQL de **somente leitura**, Corridas permanece com 5 gates obrigatórios pendentes e Entregas com 10, total **15 gates** para os critérios atuais de lançamento amplo. O gate existente de `cash_cancellation_without_gateway_refund` agora exige também guardas de pagamentos e reembolsos no retry terminal; não é um gate extra. **Nenhuma migração foi aplicada em Supabase produção.** Não foram alterados código de submódulos `sources/`, workflows CI ou source-lock, e nenhum APK foi gerado. A simulação de banco descartável não substitui staging de esquema integral, JWT real ou testes físicos de Android.

@@ -33,6 +33,14 @@ SELECT gate, required, passed, detail FROM (
        ILIKE '%v_order.status = ''cancelled''%'
      AND pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)'))
        ILIKE '%coalesce(v_refund.status in (''pending'',''processing''), false)%'
+     AND pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)'))
+       ILIKE '%cash_gateway_payment_record_requires_manual_reconciliation%'
+     AND pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)'))
+       ILIKE '%cash_refund_record_requires_manual_reconciliation%'
+     AND (
+       strpos(pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)')),
+              'APOIS_CASH_REJECT_NO_GATEWAY_REFUND_V1') > 0
+     )
    ,false),
    'Merchant may reject cash/pending and safely retry cancelled cash with refund_pending=false'
  UNION ALL
