@@ -127,6 +127,9 @@ node "$ROOT/scripts/fix-partner-input-contrast-v1.mjs" motorista
 node "$ROOT/scripts/verify-partner-motorista-ride-comfort-v1.mjs"
 # Surface Supabase presence rejection instead of leaving a phantom ONLINE UI.
 node "$ROOT/scripts/harden-partner-driver-presence-ack-v1.mjs"
+# Preserve original 6-check diagnostic and available-call RPC logic, while moving their entry points into the SideMenu.
+node "$ROOT/scripts/fix-partner-motorista-sidebar-tools-profile-v1.mjs"
+node "$ROOT/scripts/verify-partner-motorista-sidebar-tools-profile-v1.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
