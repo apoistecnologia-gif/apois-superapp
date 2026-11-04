@@ -31,3 +31,22 @@ for(const [project,projectId,required] of [
  }
  console.log(`[PASS] ${project.toUpperCase()} catalog preflight is metadata-only and tracks staged migration dependencies`);
 }
+
+// Read-only release diagnostic for driver monthly billing; no direct DB access
+// in CI. The live version must be invoked only with SELECT on Corridas.
+{
+ const path="database/review/20261104_corridas_driver_monthly_billing_READ_ONLY.sql";
+ const src=readFileSync(path,"utf8");
+ const sql=src.replace(/--[^\n]*/g,"").replace(/\/\*[\s\S]*?\*\//g,"");
+ if(!src.includes("tbbzkrfupmqdywnzgnms"))throw Error("Monthly billing diagnostic bound to wrong project");
+ for(const mark of [
+   "finance.driver_monthly_fee_cents",
+   "driver_memberships_monthly_fee_cents_check",
+   "driver_membership_charges_amount_cents_check",
+   "driver_subscription_allows_rides(text)",
+   "operational_ride_calls_reference_membership_evidence"
+ ]) if(!src.includes(mark))throw Error("Missing driver billing invariant: "+mark);
+ if(/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|GRANT|REVOKE|CALL|DO|COPY|PERFORM)\b/i.test(sql))
+  throw Error("Monthly billing diagnostic contains mutating SQL");
+ console.log("[PASS] Driver monthly R$49.90 evidence diagnostic is SELECT-only and tracks payment enforcement");
+}
