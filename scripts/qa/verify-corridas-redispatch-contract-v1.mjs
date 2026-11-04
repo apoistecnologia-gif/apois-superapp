@@ -25,6 +25,8 @@ for (const [name, src, rpc] of [
     "Authorization: " + String.fromCharCode(96) + "Bearer " + String.fromCharCode(36) + "{token}" + String.fromCharCode(96),
     "functions/v1/dispatch-ride", 'redispatch: "deferred"', rpc
   ]) assert.ok(src.includes(token), name + " perdeu: " + token);
+  assert.ok(src.includes('[APOIS redispatch] network unavailable'), name + " deve tratar falha de rede depois de RPC confirmada");
+  assert.ok(src.includes("return { ok: false, status: 0 };"), name + " deve sinalizar redispatch adiado em falha de rede");
   assert.ok(!src.includes("admin.auth.admin.deleteUser"), "Exclusão de conta não pertence a redispatch");
 }
 assert.ok(cancel.includes('status !== "procurar_motorista"'), "Cancelamento precisa proteger estados terminais");
