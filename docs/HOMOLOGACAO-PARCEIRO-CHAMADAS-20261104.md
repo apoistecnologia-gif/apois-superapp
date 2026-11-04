@@ -25,3 +25,18 @@ As Edge Functions de fonte protegida em `sources/apois-corridas-motorista-admin`
 
 ## Estado de build / entrega
 Última comprovação anterior em `bba1ccd9`: preflight **3/3 SUCCESS** (WEB-only e typechecks), sem APK. O código novo da cadeia de redispatch demanda novo CI no HEAD exato. Não foi iniciada compilação Android nem publicado APK nesta auditoria: a conexão GitHub disponível permite leitura/commits e consulta de runs, mas não oferece iniciar `workflow_dispatch` nem obter uma versão nova assinada de forma direta; também não há acesso ao Codemagic para acionar build. Não inventar arquivo ou link.
+
+
+## Atualização — tentativa efetiva de APK e proteção da presença (04/11/2026)
+
+**Preflight confirmado:** job 41887655601, commit `0fdc50a4`, 3/3 etapas WEB-only aprovadas. Este resultado não representa APK nem E2E Android.
+
+**Compilação Android efetivamente acionada uma vez:** workflow `APOIS Parceiro Android APK`, execução `41889663287`, commit `07a4ad7`. Falhou em `Validate required GitHub secrets`, antes de Gradle/Java/assinatura, porque os dois secrets originais não existem no ambiente GitHub Actions: `APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64` e `APOIS_PARTNER_QA_CERT_SHA256`. Os demais secrets obrigatórios desse passo estavam presentes. Nenhum APK/artifact foi criado nessa execução. A alteração temporária que autorizou este disparo foi desfeita; o workflow volta a exigir `workflow_dispatch` manual, mantendo todos os gates de segurança.
+
+**Bloqueio de assinatura:** o APK Parceiro QA precisa da chave privada original para instalar por cima do aplicativo anterior. Um hash SHA-256 ou APK antigo permite **verificar** a identidade, mas não substitui a chave privada. Não gerar debug keystore aleatório, nem remover verificação de assinatura. O ZIP local `movvi-admin(7).zip` e o tree GitHub atual não exibem arquivos de keystore reconhecíveis por nome (isso não prova que a chave não exista em outro local). O usuário deve recuperar a chave original de forma segura e cadastrar os secrets no GitHub Actions diretamente, nunca em código, commit ou chat.
+
+**Falha operacional extra identificada:** `useDriverBroadcast.ts` chamava `driver_set_presence`, registrava a falha da RPC em console mas não comunicava ao componente. Assim o motorista podia ficar marcado como ONLINE na interface sem estar online no banco; não receberia chamadas. Correção `scripts/harden-partner-driver-presence-ack-v1.mjs` preparada para o workspace Motorista: falha de RPC produz evento local apenas para lifecycle atual, encerra GPS e retorna a tela para offline com texto explicativo. `scripts/audit-partner-preflight-v1.mjs` agora confere o contrato após build. **Ainda não validado em dispositivo físico.**
+
+**Correção adicional na cadeia de redispatch:** recusa/cancelamento enviam resposta de redispatch adiado após erro de rede posterior à RPC já confirmada, para não induzir repetição de mutação. Reforçado por `scripts/qa/verify-corridas-redispatch-contract-v1.mjs`. Código staged, sem deploy.
+
+**Próximo gate real:** preflight verde no HEAD com proteção de presença + assinatura original recuperada + APK assinado com certificado pinado + integração autenticação/chamada em aparelhos. Até então, C-001/C-002/C-003 e redispatch são pendências de homologação; não declarar release completa.
