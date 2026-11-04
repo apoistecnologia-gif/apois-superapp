@@ -80,6 +80,32 @@ $test$;
 -- Valid cash/pending cancellation without payment record.
 SELECT public.merchant_reject_order('11111111-1111-4111-8111-111111111111','cash test cancellation');
 
+-- On a client retry, the same merchant must receive the terminal state
+-- without creating a new refund, event, history row or cancellation.
+DO $test$
+DECLARE response jsonb; history_count integer; refund_count integer;
+BEGIN
+ SELECT public.merchant_reject_order(
+   '11111111-1111-4111-8111-111111111111',
+   'cash test cancellation retry'
+ ) INTO response;
+ IF response->>'status' <> 'cancelled'
+    OR response->>'order_id' <> '11111111-1111-4111-8111-111111111111'
+    OR response->>'refund_id' IS NOT NULL
+    OR response->'refund_pending' IS DISTINCT FROM 'false'::jsonb
+ THEN RAISE EXCEPTION 'Cash cancel retry is not idempotent: %', response; END IF;
+ SELECT count(*) INTO history_count FROM public.order_status_history
+ WHERE order_id='11111111-1111-4111-8111-111111111111'
+   AND status='cancelled';
+ SELECT count(*) INTO refund_count FROM public.refunds
+ WHERE order_id='11111111-1111-4111-8111-111111111111';
+ IF history_count<>1 OR refund_count<>0 THEN
+   RAISE EXCEPTION 'Cash retry repeated financial/history side effects';
+ END IF;
+ RAISE NOTICE '[PASS] Cash cancellation retry is authorized, idempotent, false refund flag, no new history/refund';
+END;
+$test$;
+
 -- Cash with an inconsistent payment record must fail before job/offer/refund mutations.
 DO $test$
 DECLARE rejected boolean := false;

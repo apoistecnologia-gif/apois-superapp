@@ -103,6 +103,11 @@ begin
      and not (
        v_order.payment_status in ('paid','refunded')
        or (v_order.payment_method = 'cash' and v_order.payment_status = 'pending')
+       -- Terminal cash cancellation is idempotent for the same merchant.
+       -- This does NOT authorize a new cash cancellation in a bad payment state.
+       or (v_order.payment_method = 'cash'
+           and v_order.status = 'cancelled'
+           and v_order.payment_status = 'cancelled')
      ) then
     raise exception 'merchant cannot reject order with unavailable payment state';
   end if;
@@ -119,7 +124,7 @@ begin
       'order_id', v_order.id,
       'status', v_order.status,
       'refund_id', v_refund.id,
-      'refund_pending', v_refund.status in ('pending','processing')
+      'refund_pending', coalesce(v_refund.status in ('pending','processing'), false)
     );
   end if;
 
