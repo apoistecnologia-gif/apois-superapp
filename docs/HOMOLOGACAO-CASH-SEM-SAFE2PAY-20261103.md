@@ -219,7 +219,7 @@ Consulta **somente de leitura** aos projetos oficiais, após CI 41740590888:
   - Pedido `pix/pending` NÃO pode entrar em preparo; a tentativa deve ser recusada sem mutação do estado.
   - Pedido `pix/paid` pode avançar em preparo, preservando o comportamento eletrônico legado.
   - Pedido `cash/pending` em preparo pode ser cancelado pela função real proposta `merchant_reject_order`, sem criar registro de `refund` eletrônico e mantendo `payment_status='cancelled'`.
-- CI [41744829063](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41744829063): estágio isolado PostgreSQL **PASS**, builds WEB Cliente e Estabelecimento aprovados; o resultado final da auditoria visual deve ser confirmado no link ao encerrar.
+- CI [41744829063](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41744829063): **3/3 jobs WEB SUCCESS**, com PostgreSQL 17 descartável, builds WEB e auditoria visual aprovados. O log comprova 12 contratos de colunas, restrições de status/métodos, preparo cash/pending permitido, preparo Pix/pending negado, preparo Pix/paid permitido e cancelamento cash sem gateway/refund.
 
 ### Diferenciar teste de implantação
 
