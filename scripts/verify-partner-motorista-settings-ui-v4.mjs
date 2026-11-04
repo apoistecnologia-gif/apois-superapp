@@ -59,7 +59,7 @@ assert.ok(css.includes("APOIS_MOTORISTA_MENU_OVERLAY_V4"),"Side menu scoped CSS 
 assert.ok(side.includes('data-apois-driver-menu-fullscreen-v4'),"Side menu must obscure map on mobile");
 assert.ok(side.includes('!w-[100vw] !max-w-none'),"Sidebar must fill mobile width");
 assert.ok(side.includes("data-apois-driver-sidebar-tools-v1"),"Driver menu retained diagnostics and calls");
-assert.ok(side.includes('to="/motorista/app"'),"Map remains accessible");
+assert.ok(side.includes('to: "/motorista/app"'),"Map remains accessible");
 assert.ok(side.includes('onClick={() => openOperationalTool("calls")}'),"Available calls still accessible");
 assert.ok(side.includes('onClick={() => openOperationalTool("status")}'),"Diagnostics still accessible");
 assert.ok(!css.includes("pointer-events:none !important;"),"UI must remain clickable");
