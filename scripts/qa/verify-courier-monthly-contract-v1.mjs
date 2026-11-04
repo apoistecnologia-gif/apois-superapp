@@ -7,6 +7,8 @@ for(const mark of [
  "monthly_fee_cents=4990",
  "amount_cents=4990",
  "status <> 'received'",
+ "courier_monthly_activation_not_homologated",
+ "courier_monthly_receipt_not_homologated",
  "ENABLE ROW LEVEL SECURITY",
  "FROM PUBLIC,anon,authenticated;",
  "TO service_role;"
