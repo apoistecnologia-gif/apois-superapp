@@ -373,3 +373,28 @@ A auditoria comparou o corpo real de `public.append_nearby_busy_driver_candidate
 No retrato atual do preflight read-only, **Corridas: 9/14 gates obrigatórios FAIL; Entregas: 10/13 FAIL; total: 19 gates de lançamento pendentes**. A contagem aumentou porque novos requisitos de segurança foram identificados, não porque o código em produção mudou. Foi confirmado que **não há branches de Supabase em nenhum dos dois projetos** na consulta `list_branches`. Criar staging pode gerar custos e requer autorização explícita, antes de aplicar qualquer migração. Os testes isolados continuam sem esquema integral, JWT real, produção, dinheiro ou APK Android.
 
 **Arquivos restritos preservados:** `sources/`, source-lock, workflows; nenhuma mudança de contrato financeiro, autenticação, permissão de produção ou dados reais.
+
+---
+
+### COR-PRESENCE-INELIGIBILITY-20261104 — Revogação administrativa também deve limpar presença online
+
+**Problema adicional encontrado na migração staged:** a lógica anterior limpava o `is_online` antigo somente quando o KYC era revogado. Motoristas suspensos, bloqueados ou não aprovados com `is_online=true` persistido tentavam enviar um heartbeat e recebiam uma exceção antes do `UPDATE`; a sessão antiga não era removida. A aceitação de corridas ainda tem proteções adicionais, mas o estado de disponibilidade permaneceria inconsistente.
+
+**Correção implementada:** `20260905162500_remove_retired_driver_subscription_gates.sql` agora limpa o cache online para **qualquer** motivo que faça `v_operationally_eligible=false` (KYC, suspensão, bloqueio ou desaprovação) quando não há corrida ativa. Isso funciona sem novo GPS. Caso haja corrida `em_viagem`, a localização ainda pode ser transmitida, porém a disponibilidade permanece `false`. Novas tentativas de ativação continuam recebendo os erros existentes correspondentes. `scripts/qa/driver-presence-ineligibility-revocation-v1.sql` executa o SQL staged real em PostgreSQL 17 sintético e cobre suspensão, bloqueio, desaprovação, persistência após COMMIT e GPS durante viagem suspensa.
+
+**Evidência:** [GitHub Actions 41760373823](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41760373823), **3/3 jobs WEB SUCCESS**, inclusive os testes de regressão em PostgreSQL 17. Não implantado em produção.
+
+### DB-CATALOG-20261104 — Verificação gratuita de pré-requisitos do esquema oficial
+
+Foram criados dois inventários executáveis **somente de leitura**:
+
+- `database/review/20261104_entregas_forward_schema_compatibility_READ_ONLY.sql` — **68/68** verificações passaram no Supabase oficial de Entregas `ptgkwyyolrdgnqketkjj`.
+- `database/review/20261104_corridas_forward_schema_compatibility_READ_ONLY.sql` — **52/52** verificações passaram no Supabase oficial de Corridas `tbbzkrfupmqdywnzgnms`.
+
+Os scripts verificam **metadados de catálogo**, não dados pessoais ou financeiros: tipos das colunas principais das migrações forward-only, funções necessárias, gatilhos ativos, os papéis de acesso e as tabelas com RLS esperadas (Entregas). Os resultados foram obtidos por `SELECT` exclusivamente. Um guard `scripts/qa/verify-forward-schema-preflights-v1.mjs`, conectado ao executor PostgreSQL descartável, rejeita substituições por DDL/DML nos arquivos de pré-flight.
+
+**Distinção importante:** `120/120` significa que os objetos **necessários identificados** existem com os tipos esperados. **Não significa**: cópia completa do esquema, compatibilidade de todos os constraints/triggers, aceitação de uma migração por `CREATE OR REPLACE`, deploy validado, JWT real, aplicação em produção, nem comprovação de cobrança de mensalidades. Também não garante que as políticas RLS pós-migração funcionem em todas as combinações de atores e estados.
+
+A sessão local disponível nesta revisão dispõe de `git`/`node`, mas **não** possui `docker`, `psql`, `pg_dump` ou CLI Supabase. Por isso, a execução SQL isolada continua sendo feita no GitHub Actions, com Docker PostgreSQL 17, e não foi criado nenhum projeto ou branch Supabase de custo adicional. Não foi realizado clone integral sem PII dos bancos. Uma futura homologação integral deve partir do esquema oficial versionado/backup **somente estrutural** em ambiente descartável, sem copiar clientes, corridas, pedidos, dados pessoais ou credenciais para o repositório. A implantação real permanece bloqueada até aprovação específica.
+
+**Não modificado:** banco de produção, `sources/`, source-lock, workflows CI, cobrança de mensalidades, provedores externos ou APKs.
