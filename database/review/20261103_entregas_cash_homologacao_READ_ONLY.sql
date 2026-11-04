@@ -115,4 +115,19 @@ SELECT gate, required, passed, detail FROM (
     ILIKE '%v_id IS NULL%',
   false),
   'A removed/renamed QA merchant must not block ordinary Pix order creation'
+ UNION ALL
+ SELECT 'merchant_billing_tables_least_privilege',true,
+  (SELECT count(*)=3 AND bool_and(
+    c.relrowsecurity
+    AND has_table_privilege('authenticated',c.oid,'SELECT')
+    AND NOT has_table_privilege('authenticated',c.oid,'TRUNCATE')
+    AND NOT has_table_privilege('authenticated',c.oid,'UPDATE')
+    AND NOT has_table_privilege('authenticated',c.oid,'INSERT')
+    AND NOT has_table_privilege('authenticated',c.oid,'DELETE')
+    AND NOT has_table_privilege('anon',c.oid,'SELECT')
+    AND NOT has_table_privilege('anon',c.oid,'TRUNCATE')
+    AND has_table_privilege('service_role',c.oid,'UPDATE')
+  ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname IN ('merchant_subscriptions','merchant_subscription_payments','merchant_subscription_events')),
+  'Merchant subscription, payments and events stay own/admin SELECT while anon/members cannot truncate or alter billing'
 ) gates ORDER BY gate;

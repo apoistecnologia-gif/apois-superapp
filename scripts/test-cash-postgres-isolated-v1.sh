@@ -7,6 +7,7 @@ node scripts/qa/verify-corridas-public-rpc-acl-v1.mjs
 node scripts/qa/verify-driver-monthly-release-hold-v1.mjs
 node scripts/qa/verify-forward-schema-preflights-v1.mjs
 node scripts/qa/verify-corridas-monthly-table-acl-v1.mjs
+node scripts/qa/verify-entregas-subscription-table-acl-v1.mjs
 node scripts/qa/verify-corridas-sensitive-rpc-acl-v1.mjs
 name="apois-cash-pg-qa-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
 cleanup(){ docker rm -f "$name" >/dev/null 2>&1 || true; }
@@ -126,6 +127,12 @@ docker exec "$name" createdb -U postgres corridas_membership_acl_qa
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d corridas_membership_acl_qa < scripts/qa/corridas-driver-monthly-table-acl-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d corridas_membership_acl_qa < supabase/corridas-forward-migrations/20261104043000_restrict_driver_membership_financial_table_acl.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d corridas_membership_acl_qa < scripts/qa/corridas-driver-monthly-table-acl-assertions-v1.sql
+# Entregas: standalone monthly merchant subscription/events security check
+# against disposable PG17 with production-derived own/admin SELECT policies.
+docker exec "$name" createdb -U postgres entregas_subscription_acl_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-merchant-subscription-acl-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < supabase/entregas-forward-migrations/20261104044500_restrict_merchant_subscription_financial_table_acl.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_subscription_acl_qa < scripts/qa/entregas-merchant-subscription-acl-assertions-v1.sql
 # Additional fully isolated database for elevated public RPC ACL hardening:
 # no real users, no finance, no JWT and no production SQL writes.
 docker exec "$name" createdb -U postgres corridas_sensitive_acl_qa
