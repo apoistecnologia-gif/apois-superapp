@@ -69,6 +69,28 @@ jobs:
           test "${CORRIDAS_ANDROID_MAPS_API_KEY: -6}" = "av01xU" || { echo "::error::CORRIDAS_ANDROID_MAPS_API_KEY não corresponde à chave Android homologada"; exit 1; }
           echo "[OK] Secrets mínimos presentes e chaves Maps conferidas pelos sufixos esperados"
 
+      # Protect users and runner time: fail BEFORE costly builds when the
+      # original QA identity is unavailable. An APK cannot be updated with
+      # a new/random key, even if its Gradle compilation succeeds.
+      # Chave QA criptografada antes de entrar no cache do Actions.
+      # O token privado existente protege a chave, sem conceder novas permissões.
+      - name: Restore encrypted QA signing from Actions cache
+        id: qa_signing_restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .qa-signing/android-debug-keystore.enc
+          key: apois-client-qa-encrypted-signing-v1
+
+      - name: Require original Cliente QA signing BEFORE module compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${QA_DEBUG_KEYSTORE_BASE64:-}" ] && [ ! -s .qa-signing/android-debug-keystore.enc ]; then
+            echo "::error::Original Client QA signing identity missing. Restore protected APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 or original encrypted cache before compiling."
+            exit 1
+          fi
+          echo "[OK] Original QA keystore candidate available; pinned certificate still checked after restore"
+
       - name: Checkout protected APOIS sources
         shell: bash
         run: |
@@ -221,15 +243,6 @@ jobs:
           grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
           echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
 
-      # Chave QA criptografada antes de entrar no cache do Actions.
-      # O token privado existente protege a chave, sem conceder novas permissões.
-      - name: Restore encrypted QA signing from Actions cache
-        id: qa_signing_restore
-        uses: actions/cache/restore@v4
-        with:
-          path: .qa-signing/android-debug-keystore.enc
-          key: apois-client-qa-encrypted-signing-v1
-
       - name: Restore persistent QA Android debug signing
         shell: bash
         env:
@@ -247,11 +260,8 @@ jobs:
             openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$ENCRYPTED" -out "$KEYSTORE" -pass env:GH_TOKEN
             echo "[OK] Reused encrypted QA signing identity"
           else
-            test -n "${GH_TOKEN:-}" || { echo "::error::QA signing storage unavailable"; exit 1; }
-            echo "[INFO] Creating one dedicated QA signing identity"
-            keytool -genkeypair -noprompt -keystore "$KEYSTORE" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=Android Debug,O=APOIS QA,C=BR" >/dev/null
-            openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in "$KEYSTORE" -out "$ENCRYPTED" -pass env:GH_TOKEN
-            echo "[OK] QA private key encrypted for reuse"
+            echo "::error::Original Client QA signing key unavailable; no secret or encrypted cache. Never create another key."
+            exit 1
           fi
           test -s "$KEYSTORE"
           keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
@@ -260,13 +270,6 @@ jobs:
           REQUIRED_FINGERPRINT="97eaf64ee20ef16b2765a6dff5e96a25dbad4da12ccb6e5c2cd48d4c9c2f61f4"
           test "$ACTUAL_FINGERPRINT" = "$REQUIRED_FINGERPRINT" || { echo "::error::QA certificate changed or cache lost; do not rotate signature automatically"; exit 1; }
           echo "[OK] Reusable QA signing identity verified"
-
-      - name: Save encrypted QA signing in Actions cache
-        if: steps.qa_signing_restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: .qa-signing/android-debug-keystore.enc
-          key: apois-client-qa-encrypted-signing-v1
 
       - name: Stamp monotonic QA Android version
         shell: bash
