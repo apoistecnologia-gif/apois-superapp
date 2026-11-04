@@ -56,6 +56,43 @@ BEGIN
 END;
 $t$;
 
+-- Payment acceptance must agree with busy-driver offer expansion.
+-- Direct cash and direct card-to-driver are allowed; Pix and disabled
+-- gateway flows must not create offers that driver_accept_ride would reject.
+INSERT INTO public.rides(id,status,category,origin_lat,origin_lng,
+ payment_method,service_details,candidate_driver_ids,offered_driver_ids)
+VALUES
+('30000000-0000-4000-8000-000000000918',
+ 'procurar_motorista','car',-9.40,-40.50,'pix','{}'::jsonb,'{}'::uuid[],'{}'::uuid[]),
+('30000000-0000-4000-8000-000000000919',
+ 'procurar_motorista','car',-9.40,-40.50,'cash',
+ '{"payment_flow":"safe2pay_marketplace"}'::jsonb,'{}'::uuid[],'{}'::uuid[]),
+('30000000-0000-4000-8000-000000000920',
+ 'procurar_motorista','car',-9.40,-40.50,'credit','{}'::jsonb,
+ '{}'::uuid[],'{}'::uuid[]);
+UPDATE public.rides SET candidate_driver_ids='{}'::uuid[]
+WHERE id IN(
+ '30000000-0000-4000-8000-000000000918',
+ '30000000-0000-4000-8000-000000000919',
+ '30000000-0000-4000-8000-000000000920');
+DO $t$
+DECLARE n integer;
+BEGIN
+ SELECT count(*) INTO n FROM public.rides
+ WHERE id IN(
+  '30000000-0000-4000-8000-000000000918',
+  '30000000-0000-4000-8000-000000000919')
+ AND cardinality(offered_driver_ids)>0;
+ IF n<>0 THEN RAISE EXCEPTION 'Unsupported electronic offer was advertised'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.rides
+  WHERE id='30000000-0000-4000-8000-000000000920'
+  AND '10000000-0000-4000-8000-000000000007'=ANY(offered_driver_ids)) THEN
+  RAISE EXCEPTION 'Direct card-to-driver offer was incorrectly suppressed';
+ END IF;
+ RAISE NOTICE '[PASS] Busy-driver offers reject Pix/retired gateway but preserve direct card';
+END;
+$t$;
+
 -- Cached online flag with future GPS must never be eligible even if the
 -- driver/ride latitude and longitude are close.
 UPDATE public.drivers SET last_location_at=now()+interval '10 minutes'

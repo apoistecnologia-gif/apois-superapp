@@ -43,6 +43,9 @@ for(const mark of [
  "new.origin_lat not between -34 and 6",
  "new.origin_lng not between -74 and -32",
  "new.request_expires_at<=now()",
+ "lower(btrim(coalesce(new.payment_method,''))) not in",
+ "'mercadopago_marketplace','asaas','pagbank','openpix'",
+ "'cash','dinheiro','money','credit','credit_card','cartao_credito'",
 ]) if(!sql.includes(mark)) throw new Error("Busy-driver offer boundary regression: "+mark);
 console.log("[PASS] Corridas busy-driver offers require bounded coordinates and fresh GPS");
 

@@ -319,6 +319,16 @@ begin
      -- acceptance itself denies request_expires_at <= now().
      or (new.request_expires_at is not null
          and new.request_expires_at<=now()) then return new; end if;
+
+  -- The outer driver_accept_ride RPC rejects these payment modes/flows.
+  -- Do not advertise an offer to an already busy driver that the canonical
+  -- acceptance path would reject for disabled electronic providers.
+  if lower(btrim(coalesce(new.payment_method,''))) not in
+     ('cash','dinheiro','money','credit','credit_card','cartao_credito')
+     or lower(btrim(coalesce(new.service_details->>'payment_flow',''))) like 'safe2pay%'
+     or lower(btrim(coalesce(new.service_details->>'payment_flow',''))) in
+        ('mercadopago_marketplace','asaas','pagbank','openpix')
+  then return new; end if;
   begin
     select coalesce((value #>> '{}')::numeric,5) into v_radius_km from public.app_settings where key='ride.next_offer_max_distance_km';
   exception when others then v_radius_km:=5;

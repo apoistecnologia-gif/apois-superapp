@@ -119,4 +119,13 @@ SELECT gate,required,passed,detail FROM (
    AND pg_get_functiondef(p.oid) ILIKE '%new.origin_lng not between -74 and -32%'
    AND pg_get_functiondef(p.oid) ILIKE '%new.request_expires_at<=now()%'
  ), 'Already busy drivers must not receive additional offers based on future GPS or wrapped coordinates'
+ UNION ALL
+ SELECT 'busy_driver_offers_reject_retired_payments',true,
+ EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='public' AND p.proname='append_nearby_busy_driver_candidates'
+   AND pg_get_functiondef(p.oid) ILIKE '%lower(btrim(coalesce(new.payment_method%not in%'
+   AND pg_get_functiondef(p.oid) ILIKE '%safe2pay%'
+   AND pg_get_functiondef(p.oid) ILIKE '%mercadopago_marketplace%'
+   AND pg_get_functiondef(p.oid) ILIKE '%credit_card%'
+ ), 'Busy-driver offers must follow current cash/card-direct acceptance restrictions, not retired electronic gateways'
 ) gate_results ORDER BY gate;
