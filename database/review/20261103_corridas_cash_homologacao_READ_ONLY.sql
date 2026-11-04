@@ -104,7 +104,8 @@ SELECT gate,required,passed,detail FROM (
    AND proname='driver_set_presence'
    AND definition ILIKE '%v_kyc_ready := coalesce(private.driver_kyc_is_ready%'
    AND definition ILIKE '%and v_kyc_ready%'
-   AND definition ILIKE '%if not coalesce(v_driver.is_online,false) then%'
+   AND definition ILIKE '%and coalesce(v_driver.is_online,false)%'
+   AND definition ILIKE '%set is_online=false,updated_at=now()%'
    AND definition ILIKE '%tracking_active_ride%'),
   'Cached online driver whose KYC is revoked must be turned offline without dropping active-trip GPS tracking'
 ) gate_results ORDER BY gate;

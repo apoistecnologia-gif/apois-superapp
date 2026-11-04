@@ -24,7 +24,9 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001'
 DO $qa$
 DECLARE reply jsonb; denied boolean:=false; err text;
 BEGIN
- SELECT public.driver_set_presence(true,-9.4,-40.5,90,6) INTO reply;
+ -- Revocation must be fail-safe even if permissions/GPS fix vanished.
+ -- No heartbeat coordinates are needed to clear an already online state.
+ SELECT public.driver_set_presence(true,NULL,NULL,NULL,NULL) INTO reply;
  IF reply->>'is_online'<>'false'
   OR reply->>'operationally_eligible'<>'false'
   OR reply->>'tracking_active_ride'<>'false' THEN

@@ -50,21 +50,34 @@ begin
     and v_driver.blocked_at is null
     and v_kyc_ready;
 
+  -- When KYC is revoked while already online, immediately take the driver
+  -- offline even if a subsequent heartbeat has no GPS fix. Do not throw an
+  -- exception here: it would roll the state change back.
+  -- This is only for drivers with NO active trip; an active trip continues to
+  -- accept location updates below, but never remains available for new rides.
+  if coalesce(_online,false)
+     and not v_kyc_ready
+     and coalesce(v_driver.is_online,false)
+     and not v_active_in_trip then
+    update public.drivers
+    set is_online=false,updated_at=now()
+    where id=v_driver.id
+    returning * into v_driver;
+    return to_jsonb(v_driver) || jsonb_build_object(
+      'tracking_active_ride',false,
+      'operationally_eligible',false
+    );
+  end if;
+
   if coalesce(_online,false) then
     if not v_operationally_eligible and not v_active_in_trip then
       if v_driver.approval_status <> 'aprovado' then raise exception 'driver_not_approved'; end if;
       if v_driver.suspended_at is not null then raise exception 'driver_suspended'; end if;
       if v_driver.blocked_at is not null then raise exception 'driver_blocked'; end if;
       if not v_kyc_ready then
-        -- New online requests still fail explicitly, but an existing stale
-        -- online session must be allowed to refresh once so the atomic
-        -- UPDATE below switches it offline (no exception/rollback).
-        if not coalesce(v_driver.is_online,false) then
-          raise exception 'driver_kyc_incomplete' using errcode='42501';
-        end if;
-      else
-        raise exception 'driver_not_eligible';
+        raise exception 'driver_kyc_incomplete' using errcode='42501';
       end if;
+      raise exception 'driver_not_eligible';
     end if;
 
     if _lat is null or _lng is null
