@@ -173,7 +173,11 @@ function replaceRequired(source, search, replacement, label) {
         <div className="rounded-[20px] border border-[#E2E4E8] bg-white px-3">
           <button type="button" onClick={() => { refreshLocation(); void refreshAddress(); }} className="flex min-h-[54px] w-full items-center gap-3 border-b border-[#ECEEF1] text-left">
             <span className="relative grid h-8 w-8 place-items-center"><span className="h-3.5 w-3.5 rounded-full border-[4px] border-[#2563EB] bg-white" /></span>
-            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Local de partida</span><span className="block truncate text-[15px] font-extrabold text-[#111111]">{currentAddressText}</span></span>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#7A8088]">Local de partida</span><span className="block truncate text-[15px] font-extrabold text-[#111111]">{currentAddressText}</span>
+              {addressStatus === "error" && (
+                <span data-apois-pickup-retry-v1="true" className="mt-0.5 block text-xs font-semibold text-[#586272]">Toque para tentar novamente</span>
+              )}
+            </span>
             <ChevronRight size={20} className="text-[#777D85]" />
           </button>
           <button type="button" onClick={() => navigate({ to: "/buscar-destino", search: { stop: false } })} className="flex min-h-[54px] w-full items-center gap-3 text-left">

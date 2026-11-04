@@ -9,7 +9,7 @@ for(const s of [
  'Endereço indisponível',
  'data-apois-pickup-retry-v1',
  'Toque para tentar novamente',
- 'if (addressStatus === "error") { void refreshAddress(); return; }',
+ 'onClick={() => { refreshLocation(); void refreshAddress(); }}',
  'navigate({ to: "/buscar-destino", search: { stop: false } });'
 ])assert.ok(home.includes(s),'Pickup retry visual/behavior regression '+s);
 for(const s of [
@@ -26,6 +26,8 @@ assert.ok(!home.includes('Toque para tentar identificar o endereço'),'Misleadin
 assert.ok(!hook.includes('setPickupLabel(null)'),'Do not remove previously known address label during a temporary outage');
 assert.ok(!home.includes('address || "Sua localização atual"'),'Never report an unverified address');
 const origin=home.indexOf('data-apois-pickup-retry-v1');
-const branch=home.lastIndexOf('if (addressStatus === "error")',origin);
-assert.ok(branch>=0&&origin-branch<1500,'The origin row must retry the address without navigating to destination');
+const branch=home.lastIndexOf('onClick={() => { refreshLocation(); void refreshAddress(); }}',origin);
+assert.ok(branch>=0&&origin-branch<1500,'The origin row must refresh GPS + geocoding');
+const destination=home.indexOf('>Destino</span>',origin);
+assert.ok(destination>origin&&home.slice(origin,destination).includes('navigate({ to: "/buscar-destino"'),'Destination must keep its own navigation handler');
 console.log('[PASS] Pickup failure: origin row retries reverse geocode; short actionable label; no stale address; HTTP 429/5xx distinguished');
