@@ -135,6 +135,7 @@ if(process.argv.includes("--dist")){
   const courierPatched=read(".work/partner-entregador/src/routes/courier.tsx");
   const mapPatched=read(".work/partner-entregador/src/components/CourierRouteMap.tsx");
   const driverPatched=read(".work/partner-motorista/src/routes/motorista.perfil.tsx");
+  all(read(".work/partner-entregador/src/components/CourierPanels.tsx"),["data-apois-courier-new-membership-rate-v1","R$ 49,90","não gera pagamento"],"Courier commercial rate remains informational until real billing integration");
   const driverMonthlyFee=read(".work/partner-motorista/src/lib/payments/types.ts");
   const driverMembershipPage=read(".work/partner-motorista/src/routes/motorista.assinatura.tsx");
   all(driverMonthlyFee,["APOIS_MONTHLY_FEE_BRL = 59.9"],"New Driver fee 59.90 applied to disposable workspace");

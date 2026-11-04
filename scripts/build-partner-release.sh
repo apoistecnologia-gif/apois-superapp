@@ -251,6 +251,8 @@ node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" entregador
 # Visual scanning indicator on online idle waiting screen; no effect on dispatch.
 node "$ROOT/scripts/fix-partner-courier-search-scan-v1.mjs"
 node "$ROOT/scripts/fix-partner-input-contrast-v1.mjs" entregador
+node "$ROOT/scripts/fix-partner-courier-membership-disclosure-v1.mjs"
+node "$ROOT/scripts/qa/test-partner-courier-membership-disclosure-v1.mjs"
 node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" entregador
 node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" entregador
 require_contains 'APOIS_COURIER_PROFILE_EDIT_V1' "$ENTREGADOR/src/components/CourierPanels.tsx" 'Perfil e contatos do entregador editáveis'
