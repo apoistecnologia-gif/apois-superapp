@@ -28,6 +28,10 @@ test "$ready" = true || { echo '[FAIL] Disposable PostgreSQL did not finish init
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-fixture-v1.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/entregas-forward-migrations/20260905113000_allow_direct_cash_order_operations.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/cash-postgres-assertions-v1.sql
+# Separate disposable database using production-derived cash admission and legacy
+# merchant-subscription functions. Confirm general rollout is still BLOCKED.
+docker exec "$name" createdb -U postgres entregas_payment_admission_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < scripts/qa/entregas-payment-admission-qa-v1.sql
 # Read-only verified production trigger is rehearsed after standard cash tests.
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/entregas-payment-stage-trigger-qa-v1.sql
 # Independent empty database for the Motorista approved-status protection.

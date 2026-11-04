@@ -58,4 +58,21 @@ SELECT gate, required, passed, detail FROM (
        AND NOT has_function_privilege('anon',p.oid,'EXECUTE')
        AND has_function_privilege('authenticated',p.oid,'EXECUTE')),
    'Cash cancellation SECURITY DEFINER RPC denies anon; staged migration revokes PUBLIC/anon while preserving authenticated'
+ UNION ALL
+ SELECT 'general_cash_checkout_for_regular_merchants',true,
+  EXISTS(
+   SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='public' AND p.proname='enforce_supported_order_payment_method'
+     AND pg_get_functiondef(p.oid) ILIKE '%NEW.payment_method=''cash''%'
+     AND pg_get_functiondef(p.oid) ILIKE '%NEW.payment_status=''pending''%'
+     AND pg_get_functiondef(p.oid) NOT ILIKE '%private.apois_test_cash_authorized%'
+  ), 'Full rollout: cash/pending must not require APOIS TESTE merchant/customer authorization'
+ UNION ALL
+ SELECT 'merchant_subscription_independent_of_retired_gateway',true,
+  EXISTS(
+   SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='public' AND p.proname='merchant_subscription_in_good_standing'
+     AND pg_get_functiondef(p.oid) NOT ILIKE '%mercado_pago_environment%'
+     AND pg_get_functiondef(p.oid) NOT ILIKE '%last_payment_status%'
+  ), 'Full rollout: approved merchant subscriptions must not depend only on Mercado Pago legacy environment/status'
 ) gates ORDER BY gate;
