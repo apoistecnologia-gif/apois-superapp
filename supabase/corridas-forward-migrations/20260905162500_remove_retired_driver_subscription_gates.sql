@@ -21,6 +21,7 @@ declare
   v_profile_id uuid;
   v_driver public.drivers%rowtype;
   v_active_in_trip boolean := false;
+  v_kyc_ready boolean := false;
   v_operationally_eligible boolean := false;
 begin
   if auth.uid() is null then raise exception 'unauthorized' using errcode='42501'; end if;
@@ -39,23 +40,31 @@ begin
     where r.driver_id = v_driver.id and r.status = 'em_viagem'
   ) into v_active_in_trip;
 
+  v_kyc_ready := coalesce(private.driver_kyc_is_ready(v_driver.id),false);
+  -- KYC is part of eligibility on EVERY presence refresh, not only the
+  -- offline-to-online transition. A revoked/expired KYC cannot leave a
+  -- previously-online driver advertised as available.
   v_operationally_eligible :=
     v_driver.approval_status = 'aprovado'
     and v_driver.suspended_at is null
-    and v_driver.blocked_at is null;
+    and v_driver.blocked_at is null
+    and v_kyc_ready;
 
   if coalesce(_online,false) then
     if not v_operationally_eligible and not v_active_in_trip then
       if v_driver.approval_status <> 'aprovado' then raise exception 'driver_not_approved'; end if;
       if v_driver.suspended_at is not null then raise exception 'driver_suspended'; end if;
       if v_driver.blocked_at is not null then raise exception 'driver_blocked'; end if;
-      raise exception 'driver_not_eligible';
-    end if;
-
-    if v_operationally_eligible
-       and not coalesce(v_driver.is_online,false)
-       and not private.driver_kyc_is_ready(v_driver.id) then
-      raise exception 'driver_kyc_incomplete' using errcode='42501';
+      if not v_kyc_ready then
+        -- New online requests still fail explicitly, but an existing stale
+        -- online session must be allowed to refresh once so the atomic
+        -- UPDATE below switches it offline (no exception/rollback).
+        if not coalesce(v_driver.is_online,false) then
+          raise exception 'driver_kyc_incomplete' using errcode='42501';
+        end if;
+      else
+        raise exception 'driver_not_eligible';
+      end if;
     end if;
 
     if _lat is null or _lng is null

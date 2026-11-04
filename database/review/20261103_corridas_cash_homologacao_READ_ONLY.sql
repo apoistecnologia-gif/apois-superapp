@@ -98,4 +98,13 @@ SELECT gate,required,passed,detail FROM (
       AND NOT t.tgisinternal
       AND pg_get_triggerdef(t.oid) ILIKE '%UPDATE OF status, driver_id%'
   ), 'Driver change with unchanged operational status must still run block/approval/KYC/online validation'
+ UNION ALL
+ SELECT 'driver_presence_rechecks_revoked_kyc',true,
+  EXISTS(SELECT 1 FROM funcs WHERE schema_name='apois_rpc_private'
+   AND proname='driver_set_presence'
+   AND definition ILIKE '%v_kyc_ready := coalesce(private.driver_kyc_is_ready%'
+   AND definition ILIKE '%and v_kyc_ready%'
+   AND definition ILIKE '%if not coalesce(v_driver.is_online,false) then%'
+   AND definition ILIKE '%tracking_active_ride%'),
+  'Cached online driver whose KYC is revoked must be turned offline without dropping active-trip GPS tracking'
 ) gate_results ORDER BY gate;

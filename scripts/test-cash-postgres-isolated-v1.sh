@@ -62,6 +62,8 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operatio
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-rpc-privileges-assertions-v1.sql
 docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa -c   'CREATE TRIGGER qa_enforce_driver_stage BEFORE UPDATE OF status, driver_id ON public.rides FOR EACH ROW EXECUTE FUNCTION private.enforce_driver_operational_stage_transition()'
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-assertions-v1.sql
+# Post-approval KYC revocation: clear cached online state, keep active GPS tracking.
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_operations_qa < scripts/qa/driver-presence-kyc-revocation-v1.sql
 # Fourth isolated QA database: execute both actual staged acceptance RPCs
 # to prove Safe2Pay is disabled and legitimate direct cash still works.
 docker exec "$name" createdb -U postgres ride_acceptance_qa
