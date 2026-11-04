@@ -53,5 +53,5 @@ for(const [project,projectId,required] of [
  const statements=sql.replace(/'(?:''|[^'])*'/g,"''");
  if(/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|GRANT|REVOKE|CALL|DO|COPY|PERFORM|EXECUTE)\b/i.test(statements))
   throw Error("Monthly billing diagnostic contains mutating SQL");
- console.log("[PASS] Driver monthly R$49.90 evidence diagnostic is SELECT-only and tracks payment enforcement");
+ console.log("[PASS] Driver monthly R$59.90 evidence diagnostic is SELECT-only and tracks payment enforcement");
 }
