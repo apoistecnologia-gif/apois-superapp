@@ -398,3 +398,35 @@ Os scripts verificam **metadados de catálogo**, não dados pessoais ou financei
 A sessão local disponível nesta revisão dispõe de `git`/`node`, mas **não** possui `docker`, `psql`, `pg_dump` ou CLI Supabase. Por isso, a execução SQL isolada continua sendo feita no GitHub Actions, com Docker PostgreSQL 17, e não foi criado nenhum projeto ou branch Supabase de custo adicional. Não foi realizado clone integral sem PII dos bancos. Uma futura homologação integral deve partir do esquema oficial versionado/backup **somente estrutural** em ambiente descartável, sem copiar clientes, corridas, pedidos, dados pessoais ou credenciais para o repositório. A implantação real permanece bloqueada até aprovação específica.
 
 **Não modificado:** banco de produção, `sources/`, source-lock, workflows CI, cobrança de mensalidades, provedores externos ou APKs.
+
+---
+
+### COR-SEC-03 — ACL administrativa e Pix legado (04/11/2026 UTC)
+
+O diagnóstico `get_advisors(type=security)` do Supabase Corridas identificou `anon_security_definer_function_executable` em diversos RPCs. Parte dos alertas corresponde a funções-gatilho ou verificações internas legítimas; **não é correto** declarar que toda função sinalizada possui exploração demonstrada. Foram isoladas seis funções `public` que tinham `has_function_privilege('anon',oid,'EXECUTE')=true` e cujo fluxo real foi inspecionado via `pg_get_functiondef` (SELECT de catálogo):
+
+- `public.admin_get_dashboard_metrics()`
+- `public.admin_get_finance_summary(timestamptz,timestamptz)`
+- `public.admin_provision_staff(uuid,public.app_role,text)`
+- `public.admin_set_driver_approval(uuid,text,text)`
+- `public.admin_set_driver_suspension(uuid,boolean,text)`
+- `public.activate_prepaid_pix_ride(uuid,text)`
+
+As cinco funções administrativas delegam a `apois_rpc_private`, cujos corpos existentes exigem `auth.uid()` e `private.has_permission()`. A ativação de Pix legado exige `auth.role()='service_role'`. Assim, os controles internos continuam relevantes: a presença de `EXECUTE` para `anon` era exposição desnecessária de superfície de API, **não evidência de que anônimos já conseguiam alterar dados**.
+
+**Migração staged:** `supabase/corridas-forward-migrations/20261104031000_restrict_sensitive_admin_and_pix_public_rpc_acl.sql` revoga `PUBLIC,anon` das cinco funções administrativas, preservando EXECUTE explícito somente para `authenticated,service_role`; na ativação Pix legada revoga `PUBLIC,anon,authenticated` e concede apenas a `service_role`. Não altera função, transação, usuário, senha, configuração financeira, valor ou autorização de acesso dos administradores autenticados.
+
+**Testes sintéticos:** `scripts/qa/corridas-sensitive-rpc-acl-fixture-v1.sql` cria assinaturas equivalentes (corpos deliberadamente artificiais), reproduz `PUBLIC EXECUTE` padrão; a migração REAL é executada e `scripts/qa/corridas-sensitive-rpc-acl-assertions-v1.sql` comprova ACL por função e papel, recusa de execução anônima e manutenção do acesso de `authenticated` e `service_role`. Este teste **não substitui** execução no esquema integral, autenticação JWT nem chamadas administrativas reais. A checagem estática `scripts/qa/verify-corridas-sensitive-rpc-acl-v1.mjs` mantém o contrato no CI. O preflight de catálogo Corridas passou **58/58** dependências, incluindo estas seis novas assinaturas.
+
+**Evidências:** [GitHub Actions 41762630268](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41762630268), **3/3 jobs WEB SUCCESS**, incluindo PostgreSQL 17 isolado e builds WEB. O preflight de liberação Corridas passou a ter **15 gates obrigatórios**, dos quais **10 FAIL na produção** (um novo gate obrigatório `sensitive_admin_and_pix_rpc_acl_restricted` ainda aguarda aplicação da migração). Entregas mantém **10/13 FAIL**: total atual **20 gates obrigatórios FAIL**. A alteração não foi aplicada em produção.
+
+Referência de remediação do próprio Supabase Security Advisor:
+https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable
+
+### BILLING-BLOCKERS — Assinaturas mensais não podem ser liberadas com provider aposentado
+
+**Fato confirmado via catálogo de Entregas:** `public.merchant_subscriptions` possui a restrição `merchant_subscriptions_provider_check: CHECK (provider = 'mercadopago')`. Isso significa que registrar uma assinatura com outro provider, qualquer que seja ele, falharia antes da integração, mesmo se a API e o pagamento já estivessem prontos. O provedor futuro de cobrança recorrente ainda precisa ser escolhido e integrado; **não foi autorizado criar contrato, creditar assinaturas fictícias ou remover essa restrição sem o fluxo financeiro correspondente**. A exigência comercial do estabelecimento continua **R$ 69,90/mês**.
+
+**Fato confirmado em Corridas:** `private.driver_subscription_allows_rides(text)` atual verifica apenas se o status textual é `active`, `ativa` ou `teste`; ele não verifica comprovante de pagamento nesta função. A migração staged `20260905162500_remove_retired_driver_subscription_gates.sql` remove essa dependência legada das operações, mas **não implementa um novo comprovador de mensalidade independente**. Portanto, **esta migração não deve ser implantada em produção como desbloqueio comercial de motoristas**. Antes do deploy, é obrigatória uma decisão aprovada sobre provider, evidência de pagamento, prazo de vigência, exceções de teste, expiração, cobrança R$ 49,90/mês e fail-closed. Preservar esta regra é obrigação de lançamento, não opcional.
+
+**Nenhuma alteração feita:** constrangimentos de provider em produção, flags financeiras, registros de assinatura, pagamentos, submódulos, workflows, branch main, bancos de produção ou APKs. Os testes atuais permanecem úteis para validar a proteção operacional, mas **não** homologam cobrança mensal nem autorizam publicação.
