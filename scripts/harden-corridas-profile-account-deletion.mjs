@@ -7,6 +7,7 @@ import { dirname, resolve } from "node:path";
 const work = resolve(process.env.APOIS_CORRIDAS_WORKSPACE || ".work/corridas");
 const routePath = resolve(work, "src/routes/_authenticated.perfil.tsx");
 const targetPath = resolve(work, "src/components/profile/PassengerAccountDeletion.tsx");
+const authPath = resolve(work, "src/hooks/use-auth.tsx");
 const templatePath = resolve("scripts/templates/PassengerAccountDeletion.tsx");
 let route = readFileSync(routePath, "utf8");
 
@@ -57,6 +58,19 @@ for (const token of [
 if (/delete-my-account|auth\.admin\.deleteUser|service_role/.test(component)) {
   throw Error("[FAIL] Exclusão Corridas: chamada destrutiva legada ou chave privilegiada no cliente");
 }
+
+// Não reabrir uma conta já marcada como excluída, mesmo que o Supabase Auth
+// ainda possua sessão durante o processamento administrativo da solicitação.
+let auth = readFileSync(authPath, "utf8");
+const oldProfileLookup = '.eq("auth_user_id", userId)\n        .maybeSingle();';
+const activeOnlyLookup = '.eq("auth_user_id", userId)\n        .is("deleted_at", null)\n        .maybeSingle();';
+if (!auth.includes(activeOnlyLookup)) {
+  const matches = auth.split(oldProfileLookup).length - 1;
+  if (matches !== 1) throw Error("[FAIL] Exclusão Corridas: não foi possível proteger leitura de perfil excluído (" + matches + ")");
+  auth = auth.replace(oldProfileLookup, activeOnlyLookup);
+}
+if (!auth.includes(activeOnlyLookup)) throw Error("[FAIL] Exclusão Corridas: perfil excluído ainda aceita sessão");
+writeFileSync(authPath, auth, "utf8");
 
 mkdirSync(dirname(targetPath), { recursive: true });
 copyFileSync(templatePath, targetPath);
