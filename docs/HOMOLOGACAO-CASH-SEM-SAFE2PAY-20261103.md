@@ -469,3 +469,24 @@ A leitura real, estritamente somente SQL `SELECT`, encontrou `public.driver_memb
 **Gates read-only:** foram adicionados `driver_monthly_tables_least_privilege` e `merchant_billing_tables_least_privilege` aos preflights oficiais. Com as migrações ainda não aplicadas, ambos devem continuar FAIL. Leitura mais recente dos preflights: **Corridas 11/16 gates obrigatórios FAIL; Entregas 11/14 FAIL**, **22 gates pendentes** no total. A elevação do número de gates representa a descoberta de duas novas exigências, não regressões de produção.
 
 **Mantido:** preço mensal dos motoristas R$49,90; preço dos estabelecimentos R$69,90; regra de assinatura obrigatória; constraint histórica dos provedores; ausência de pagamentos inventados; migração operacional Corridas com HOLD incondicional; sem alterações em bancos produtivos, interfaces, submódulos, workflows ou APKs. Ainda será preciso validar ACLs e acessos reais com API/JWT e esquema completo em homologação antes de implantar.
+
+
+---
+
+## Continuação autônoma — 04/11/2026: reversão do desvio de mensalidade e regressão
+
+**HEAD de referência lido antes das alterações:** `821b8f89802a22e1c98eefa28078eb2b8fbbd82a`, sete commits além de `c405e8e0990268872033949e2ed531ab3fc1863a`. Os sete commits introduziam motorista **R$59,90** e uma estrutura adicional de cobrança de entregadores, incompatíveis com a autorização atual de **R$49,90/mês para motoristas** e **R$69,90/mês para estabelecimentos**, sem criação de novos recursos pagos.
+
+**Correção e integridade:**
+- `e52e83c7d9237994bf65586ad019b87348fada3a`: reversão não destrutiva dos sete commits, preservando histórico e restaurando exatamente a árvore de arquivos de `c405e8e`. Nenhum force-push, merge, source-lock ou submódulo modificado.
+- `c380264704b484f55593a9e56584c64e7c3f0109`: adicionado guard de regressão de R$49,90 em `scripts/qa/verify-driver-monthly-release-hold-v1.mjs`.
+- `25599df0980d4e732ab0bb1edf750d24f3199da8`: guard ajustado para comparar o marcador exato de bloqueio financeiro. Comparação com `c405e8e` mostrou somente esse arquivo de QA diferente após a reversão.
+
+**Confirmação SQL em produção SOMENTE-LEITURA, 04/11/2026:**
+- Supabase Corridas `tbbzkrfupmqdywnzgnms`: `finance.driver_monthly_fee_cents=4990`; duas constraints financeiras correspondem a **4990**; **0** linhas de memberships e **0** de charges no instante da leitura.
+- Supabase Entregas `ptgkwyyolrdgnqketkjj`: `merchant_monthly_amount_cents=6990`; as tabelas de nova mensalidade de entregador não existem.
+- Preflights de liberação oficiais executados integralmente como `SELECT` sem mutação: **Corridas 5/16 obrigatórios PASS e 11/16 FAIL**; **Entregas 3/14 PASS e 11/14 FAIL**; portanto **22 gates obrigatórios pendentes**. Gates falhos não foram ocultados ou marcados como aprovados.
+
+**Validação:** [GitHub Actions 41801092863](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41801092863) — **3/3 jobs WEB SUCCESS** após o guard, incluindo PostgreSQL 17 descartável, builds web de cliente, estabelecimento, parceiro, verificação das restrições de cobrança e renderização pública isolada. Log registra `[PASS] Corridas driver fee is pinned at R$49.90; no new paid membership unlock`, `[PASS] Full staged Corridas migration fails SQLSTATE 55000` e `[PASS] Billing data unchanged and R$49.90 constraint preserved`.
+
+**Restrições e pendências preservadas:** nenhum pagamento real, Pix, saldo, cobrança, pedido, corrida ou aprovação criado/alterado em produção; nenhuma migração/Edge aplicada, deploy produtivo, APK/AAB, PR merge, nova infra paga ou alteração a `sources/`/source-lock. CI verde não equivale a E2E real Android ou schema integral Supabase. A homologação de liberação permanece **BLOQUEADA** até staging compatível, autenticação/RLS testadas integralmente, mensalidades verificadas por provedor aprovado, testes de dinheiro com contas QA autorizadas, 13 fotos, GPS, push, PIN, navegação e dispositivo físico.
