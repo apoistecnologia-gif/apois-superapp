@@ -15,6 +15,8 @@ for(const marker of [
   '"network_error", "rate_limited", "configuration_missing"',
   'error?.message',
   'onClick={retry}',
+  'onInput={(e) => { if (e.currentTarget.value !== query) setQuery(e.currentTarget.value); }}',
+  'onCompositionEnd={(e) => { if (e.currentTarget.value !== query) setQuery(e.currentTarget.value); }}',
   'aria-label', // from existing input and favorites
   'onClick={() => handleSelectSuggestion(suggestion)}',
   'handleFinalSelection(details)',
