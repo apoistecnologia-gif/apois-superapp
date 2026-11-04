@@ -138,4 +138,18 @@ SELECT gate, required, passed, detail FROM (
  ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
  WHERE n.nspname='public' AND c.relname IN ('courier_settlement_deliveries','courier_settlements','payment_events','payment_transactions','payments','payout_accounts','payouts','refunds','wallet_transactions','wallets')),
  'RLS financial tables deny TRUNCATE to client roles and retain service maintenance'
+ UNION ALL SELECT 'entregas_finance_crud_least_privilege',true,
+ (SELECT count(*)=10 AND bool_and(
+   c.relrowsecurity
+   AND NOT has_table_privilege('anon',c.oid,'SELECT')
+   AND NOT has_table_privilege('anon',c.oid,'TRUNCATE')
+   AND NOT has_table_privilege('authenticated',c.oid,'TRUNCATE')
+   AND NOT has_table_privilege('authenticated',c.oid,'DELETE')
+   AND has_table_privilege('authenticated',c.oid,'SELECT')
+   AND has_table_privilege('authenticated',c.oid,'INSERT')=(c.relname='payout_accounts')
+   AND has_table_privilege('authenticated',c.oid,'UPDATE')=(c.relname='payout_accounts')
+   AND has_table_privilege('service_role',c.oid,'UPDATE')
+ ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+ WHERE n.nspname='public' AND c.relname IN ('courier_settlement_deliveries','courier_settlements','payment_events','payment_transactions','payments','payouts','refunds','wallet_transactions','wallets','payout_accounts')),
+ 'Financial table grants must follow RLS operations: 9 read-only and owner payout_accounts writable'
 ) gates ORDER BY gate;
