@@ -58,3 +58,33 @@ Registrar sequencialmente conforme o proprietário enviar novos prints; uma corr
 **Correção versionada:** cartão claro com nome, foto assinada do fluxo existente, status real do cadastro e estrelas provenientes de drivers.rating e drivers.total_ratings. Fallback de selfie somente quando foto_url está vazio, e ícone neutro quando nenhuma foto puder ser carregada. Sem avaliações, estrelas vazias e texto "Sem avaliações". O clique continua abrindo o perfil. O tipo DriverProfileRow foi ampliado para ler campos existentes sem alterar a base ou a RPC.
 
 **Validação:** preflight web/typecheck e teste de regressão específicos exigidos pelo build Partner. Sem atualização em produção ou novo APK, ainda não validado em aparelho físico.
+
+## 006 — Motorista — menu não cobre o mapa
+
+**Relato físico:** menu sanduíche ocupa 90% da largura, deixando o mapa e botão operacional visíveis atrás do menu; destaque laranja no item Início destoa da marca.
+
+**Causa confirmada:** DriverSideMenu define `w-[90vw] max-w-sm`; botão de mapa original continua corretamente na camada inferior. A identidade visual migrada mantém ícone ativo com gradiente.
+
+**Correção versionada:** `scripts/fix-partner-motorista-menu-overlay-v4.mjs`: Drawer Radix ocupa a largura completa em celular, com fundo branco opaco e ícones neutros/vermelhos. Mantém focus trap, rolagem, rotas, close e callback da corrida. Não remove botão de online/offline do mapa: ele não deve aparecer através do Drawer.
+
+## 007 — Motorista — contraste e sobreposição da barra de status
+
+**Relato físico:** telas Configurações, Notificações, Aplicativo, Privacidade e Suporte possuem nomes quase brancos sobre cartões brancos; cabeçalho fica atrás da barra Android; hero de Configurações mantém fundo escuro e título escuro.
+
+**Causa confirmada:** `harden-partner-red-visual.mjs` transforma fundos escuros em branco, mas algumas classes `text-zinc-100` de SettingsRow sobrevivem, assim como hero `bg-gradient-to-br` escuro. O cabeçalho usa apenas `env(safe-area-inset-top)` que pode ser zero no WebView.
+
+**Correção versionada:** `scripts/fix-partner-motorista-settings-contrast-v4.mjs`: contraste de labels, títulos, seletores, hero branco e cabeçalho com margem segura mínima. Mantém persistência local de preferências, botões de GPS/push, links e salvamento. Escopo exclusivo do Motorista e variantes driver dos componentes compartilhados.
+
+## 008 — Motorista — ação Excluir conta redireciona ao login
+
+**Relato físico:** ao tocar Excluir conta, usuário relata navegação direta à tela de login em vez de confirmação visível.
+
+**Causa no código:** rota de Configurações depende de `window.confirm` + `window.prompt` do WebView e invoca a Edge Function histórica `delete-my-account`; esta função **não consta entre as publicadas** no Supabase Corridas `tbbzkrfupmqdywnzgnms`. Existe `public.request_own_account_deletion()` autorizada para `authenticated`, que requer autenticação e rejeita corrida ativa.
+
+**Correção versionada:** `scripts/fix-partner-motorista-account-deletion-dialog-v4.mjs`: botão apenas abre modal React, com texto de retenção, cancelar e input controlado; só após digitar `EXCLUIR` invoca RPC autenticada. Navegação para login somente depois de `data.ok === true`, sem logout por falha. Nenhuma exclusão real executada na auditoria. Não houve teste destrutivo de integração.
+
+## 009 — Outras opções que parecem não responder
+
+**Estado:** os links existentes em Configurações preservam as rotas, e os controles de push, GPS, logout e salvar continuam conectados aos handlers originais. Algumas preferências locais (alertas de corrida, som, vibração e app de navegação) estão persistidas no `driverPrefs`, mas o uso operacional dessas preferências fora da tela de Configurações **não foi confirmado**. Não declarar esses recursos E2E aprovados; verificar em aparelho e nos consumidores de eventos antes de modificar notificações.
+
+**Gate de regressão:** `scripts/verify-partner-motorista-settings-ui-v4.mjs` verifica contraste, fullscreen, links, handlers, ordem de confirmação/exclusão, ausência de `window.confirm`/`prompt` e da Edge Function legada. Preflight WEB-only GitHub #41912156364 = 3/3 SUCCESS. Não gerou APK desta revisão; tela física ainda não validada.
