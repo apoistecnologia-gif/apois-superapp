@@ -15,10 +15,13 @@ function once(src, oldText, newText, label) {
 }
 
 if (!hook.includes("APOIS_DRIVER_PRESENCE_ACK_V1")) {
+  // A rotina anterior ja transforma a RPC em booleano (true/false) para preservar
+  // a trava operacional do shell. Nao remover esse contrato.
   hook = once(hook,
-    '    console.warn("[APOIS MOTORISTA] presença não atualizada:", error.message);\n  }',
-    '    console.warn("[APOIS MOTORISTA] presença não atualizada:", error.message);\n    throw new Error(String(error.message || "presence_update_failed"));\n  }',
-    "propagate failed presence RPC");
+    '        await setPresence(desiredOnline, desiredPosition);',
+    '        const presenceConfirmed = await setPresence(desiredOnline, desiredPosition);\n' +
+    '        if (desiredOnline && !presenceConfirmed) throw new Error("presence_rejected_by_server");',
+    "honor existing boolean RPC result");
   const end = '      });\n  };\n\n  useEffect(() => {\n    positionRef.current = position;';
   const after = [
     '      }).catch((error) => {',
