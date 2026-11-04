@@ -1,0 +1,300 @@
+name: APOIS Parceiro Android QA - instalacao limpa
+# test workflow: GitHub Actions debug APK — courier home structurally non-overlapping inline availability
+# QA motorista V4: signup email confirmation + uppercase personal fields + typed birth mask
+# V4 QA gate: correct normalized uppercase submission in generated React form
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/entregas-homologacao-ajustes-20261030
+      - feat/apois-cliente-red-visual-20261003
+      - fix/apois-partner-courier-gps-logo-push-20261027
+      - fix/apois-android-github-homolog-20261029
+    paths:
+      - '.github/workflows/apois-partner-android-clean-install.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-partner-apk:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.event.head_commit.message == 'APOIS_PARTNER_CLEAN_INSTALL_QA_20261104')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BUN_VERSION: "1.3.14"
+      PARTNER_APP_PACKAGE: "br.com.apois.parceiro"
+      PARTNER_APP_LABEL: "APOIS Parceiro"
+      PARTNER_VERSION_CODE: "28"
+      PARTNER_VERSION_NAME: "1.0.27"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64 }}
+
+    steps:
+      - name: Checkout APOIS Superapp
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Validate required GitHub secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64
+          do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::GitHub secret ausente: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::Cadastre os secrets acima em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "[OK] Secrets mínimos presentes"
+
+      - name: Checkout protected APOIS sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -d sources/apois-corridas-motorista-admin
+          test -d sources/apois-entregas
+          test -d sources/apois-corridas-passageiro
+          echo "[OK] Fontes protegidas carregadas"
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Validate Android SDK on runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_SDK_ROOT:-}"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager -perm -111 | sort -V | tail -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --list >/dev/null
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "[OK] Android SDK disponível no runner: $SDKMANAGER"
+
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.bun/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
+          java -version
+
+      - name: Verify source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run verify:pins
+
+      - name: Validate updated APOIS Parceiro map before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-apois-unified-maps.mjs
+          node --check scripts/harden-motorista-map-branding.mjs
+          node --check scripts/harden-partner-motorista-visual-v18.mjs
+          node --check scripts/harden-partner-driver-profile-logout-v3.mjs
+          node --check scripts/harden-partner-motorista-pin-ride-v4.mjs
+          node --check scripts/harden-partner-motorista-google-roadmap-v5.mjs
+          node --check scripts/harden-partner-motorista-arrival-voice-v5.mjs
+          node --check scripts/harden-partner-driver-trip-ux-v6.mjs
+          node --check scripts/harden-partner-driver-passenger-name-v6.mjs
+          grep -Fq 'data-apois-trip-top-v6' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'rounded-\[22px\]' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'data-apois-trip-bottom-v6' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'Ver perfil do passageiro' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'onClick=' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'driverAppPatched=read' scripts/audit-partner-preflight-v1.mjs
+          grep -Fq 'PIN V4 always visible' scripts/audit-partner-preflight-v1.mjs
+          grep -Fq 'Profile V3 logout handler boundary' scripts/harden-partner-driver-profile-logout-v3.mjs
+          grep -Fq 'replaceLogoutFunction' scripts/harden-partner-driver-profile-logout-v3.mjs
+          grep -Fq 'nav[aria-label="Navegação principal do motorista"]' scripts/harden-partner-driver-profile-logout-v3.mjs
+          grep -Fq 'signOutDriverOnThisDevice' scripts/harden-partner-driver-profile-logout-v3.mjs
+          node --check scripts/test-partner-map-visual.mjs
+          node scripts/test-partner-map-visual.mjs
+          node scripts/audit-partner-motorista-brand-v4.mjs
+          echo "[OK] Mapa claro, marcador centralizado e contraste verificados"
+
+      - name: Build Motorista + Entregador modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run build:partner
+          # Gate QA: não publicar um APK antigo que omita o cadastro com 13 fotos e o fluxo de pendências.
+          node --check scripts/fix-partner-driver-signup-form-v4.mjs
+          node --check scripts/fix-partner-driver-auth-resume-v5.mjs
+          grep -Fq 'APOIS_DRIVER_AUTH_RESUME_V5' .work/partner-motorista/src/lib/driverRegistration.mobile.ts
+          node --check scripts/fix-partner-driver-registration-preflight-v6.mjs
+          grep -Fq 'APOIS_DRIVER_REGISTRATION_PREFLIGHT_V6' .work/partner-motorista/src/lib/driverRegistration.mobile.ts
+          grep -Fq 'mobility_user_id' .work/partner-motorista/src/lib/driverRegistration.mobile.ts
+          grep -Fq 'driver_get_profile' .work/partner-motorista/src/lib/driverRegistration.mobile.ts
+          grep -Fq 'Cadastro sem confirmação de persistência' .work/partner-motorista/src/lib/driverRegistration.mobile.ts
+          node scripts/verify-apois-13-photo-driver-pendencies-v1.mjs
+          node --check scripts/fix-partner-motorista-recovery-v1.mjs
+          node --check scripts/fix-partner-motorista-recovery-relay-v2.mjs
+          grep -Fq 'APOIS_DRIVER_RECOVERY_PENDING_RELAY_V2' .work/partner-motorista/src/lib/auth/driverPasswordRecovery.ts
+          grep -Fq 'window.sessionStorage.removeItem(PARTNER_FORWARDED_RECOVERY_KEY)' .work/partner-motorista/src/lib/auth/driverPasswordRecovery.ts
+          node scripts/test-partner-driver-recovery-relay-v2.mjs
+          node --check scripts/fix-partner-motorista-recovery-otp-v5.mjs
+          grep -Fq 'APOIS_DRIVER_RECOVERY_EMAIL_OTP_V5' .work/partner-motorista/src/routes/motorista.recuperar-senha.tsx
+          grep -Fq 'data-apois-driver-recovery-otp-input-v5' .work/partner-motorista/src/routes/motorista.recuperar-senha.tsx
+          grep -Fq 'type: "recovery"' .work/partner-motorista/src/routes/motorista.recuperar-senha.tsx
+          grep -Fq 'APOIS_DRIVER_RECOVERY_INLINE_CONTRAST_V3' .work/partner-motorista/src/apois-ui-hardening-round3.css
+          grep -R -Fq 'data-apois-driver-recovery-otp-input-v5' superapp/partner-shell/dist/modules/motorista
+          if grep -R -Fq 'data-apois-driver-recovery-paste-v4' superapp/partner-shell/dist/modules/motorista; then echo '[FAIL] Legacy copy-link recovery remains'; exit 1; fi
+          grep -Fq 'data-apois-driver-recovery-email-v1' .work/partner-motorista/src/routes/motorista.recuperar-senha.tsx
+          grep -Fq 'APOIS_MOTORISTA_RECOVERY_HARDEN_V1' .work/partner-motorista/src/apois-ui-hardening-round3.css
+          grep -Fq 'recovery callback may be pending' .work/partner-motorista/src/routes/__root.tsx
+          grep -Fq 'to: "/motorista/login", replace: true' .work/partner-motorista/src/routes/motorista.redefinir-senha.tsx
+          grep -R -Fq 'data-apois-driver-recovery-email-v1' superapp/partner-shell/dist/modules/motorista
+          grep -Fq 'APOIS_DRIVER_SIGNUP_FORM_V4' .work/partner-motorista/src/routes/motorista.cadastro.tsx
+          grep -Fq 'parseDriverBirthDateBR' .work/partner-motorista/src/routes/motorista.cadastro.tsx
+          grep -Fq 'onInputCapture={uppercaseDriverField}' .work/partner-motorista/src/routes/motorista.cadastro.tsx
+          grep -Fq 'apois-driver-await-email-v4' .work/partner-motorista/src/routes/motorista.login.tsx
+          grep -R -Fq 'DD/MM/AAAA' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Verifique seu e-mail' superapp/partner-shell/dist/modules/motorista
+          grep -Fq 'data-apois-driver-history-contrast-v2' .work/partner-motorista/src/routes/motorista.corridas.tsx
+          grep -Fq 'APOIS_MOTORISTA_MENU_LATERAL_V2' .work/partner-motorista/src/components/MovviHeader.tsx
+          grep -Fq 'const showNav = false' .work/partner-motorista/src/components/ApoisDriverBottomNav.tsx
+          grep -Fq 'data-apois-courier-search-scan-v1' .work/partner-entregador/src/components/CourierPremiumViews.tsx
+          grep -Fq 'APOIS_COURIER_SEARCH_SCAN_V1' .work/partner-entregador/src/system-theme.css
+          grep -Fq 'APOIS_ANDROID_DRIVER_PHOTO_CAPTURE_V2' .work/partner-motorista/src/components/DriverDocumentField.tsx
+          grep -Fq 'APOIS_ANDROID_IMAGE_FALLBACK_V2' .work/partner-motorista/src/lib/imageCompress.ts
+          grep -Fq 'APOIS_NATIVE_DRIVER_PHOTO_PICKER_V3' .work/partner-motorista/src/components/DriverDocumentField.tsx
+          grep -Fq 'CameraResultType.Base64' .work/partner-motorista/src/lib/driverNativePhotoPicker.ts
+          grep -R -Fq 'getPhoto' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'data-apois-driver-photo-field-v2' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Preparando arquivo...' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'data-apois-driver-corrections-v1' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Faróis acesos' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq '#E51B23' superapp/partner-shell/dist/modules/entregador
+          grep -R -Fq 'data-apois-partner-auth-v18' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'data-apois-partner-auth-v17' superapp/partner-shell/dist/modules/entregador
+          if find superapp/partner-shell/dist/modules/motorista superapp/partner-shell/dist/modules/entregador -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | xargs -0 grep -Fqi '#F6BE1C'; then
+            echo "::error::Identidade dourada antiga permaneceu em arquivo executável/visual do bundle Parceiro"
+            exit 1
+          fi
+          echo "[OK] Módulos Parceiro compilados com identidade nova"
+
+      - name: Validate full partner preflight on APK bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-partner-preflight-v1.mjs --dist
+          grep -Fq 'data-apois-driver-profile-v3' scripts/audit-partner-preflight-v1.mjs
+          node scripts/test-partner-shell-navigation-v2.mjs --dist
+          echo "[OK] Auditoria integrada e navegacao entre modulos validadas"
+
+      - name: Create Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          cd superapp/partner-shell
+          bun install
+          rm -rf android
+          bunx cap add android
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+          bunx cap sync android
+          # Native Camera is required: never deliver a WebView-only photo chooser again.
+          test -s android/app/src/main/assets/capacitor.plugins.json
+          grep -Fq 'CameraPlugin' android/app/src/main/assets/capacitor.plugins.json
+          cd ../..
+          node scripts/configure-partner-android.mjs
+          node scripts/install-partner-launcher.mjs
+          node scripts/install-partner-splash.mjs
+          MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
+          grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
+          grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
+          test -s superapp/partner-shell/android/app/google-services.json
+          echo "[OK] Projeto Android Parceiro criado"
+
+      - name: Prepare clean-install-only temporary debug identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "[OK] Clean-install-only QA APK. Runner creates its own temporary Android debug signing identity."
+          echo "::warning::This APK cannot be installed as an in-place update over an existing differently signed br.com.apois.parceiro package."
+          test ! -f "$HOME/.android/debug.keystore"
+
+      - name: Stamp monotonic Partner QA Android version
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLE_FILE="superapp/partner-shell/android/app/build.gradle"
+          VERSION_CODE="$((28 + GITHUB_RUN_NUMBER))"
+          VERSION_NAME="1.0.28-qa.${GITHUB_RUN_NUMBER}"
+          sed -i -E "s/(versionCode[[:space:]]+)[0-9]+/\\1${VERSION_CODE}/" "$GRADLE_FILE"
+          sed -i -E "s/(versionName[[:space:]]+)\"[^\"]*\"/\\1\"${VERSION_NAME}\"/" "$GRADLE_FILE"
+          grep -Fq "versionCode ${VERSION_CODE}" "$GRADLE_FILE"
+          grep -Fq "versionName \"${VERSION_NAME}\"" "$GRADLE_FILE"
+          echo "[OK] Partner QA Android versionCode=${VERSION_CODE} monotonic"
+
+      - name: Build installable debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd superapp/partner-shell/android
+          chmod +x gradlew
+          ./gradlew clean assembleDebug --no-daemon --stacktrace
+          cd ../../..
+          mkdir -p build
+          APK="$(find superapp/partner-shell/android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner -perm -111 | sort -V | tail -n 1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK" >/dev/null
+          APK_CERT="$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+          if [ "${#APK_CERT}" -ne 64 ]; then
+            echo "::error::New-install QA APK missing valid SHA-256 signing certificate"
+            exit 1
+          fi
+          echo "[OK] Temporary debug signer verified for clean install (not in-place update)"
+          AAPT="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name aapt -perm -111 | sort -V | tail -n 1)"
+          test -n "$AAPT" || { echo "::error::aapt missing; cannot verify Parceiro APK package/version"; exit 1; }
+          "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$((28 + GITHUB_RUN_NUMBER))" "1.0.28-qa.${GITHUB_RUN_NUMBER}"
+          echo "[OK] Parceiro APK package/version verified against QA configuration"
+          # Verify the ACTUAL APK ZIP payload, not only intermediate web/dist.
+          TEMP_APK_ASSETS="$(mktemp -d)"
+          trap 'rm -rf "$TEMP_APK_ASSETS"' EXIT
+          unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
+          test -s "$TEMP_APK_ASSETS/assets/public/index.html"
+          node scripts/qa/verify-partner-static-assets-v1.mjs "$TEMP_APK_ASSETS/assets/public"
+          echo "[OK] Parceiro APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
+          rm -rf "$TEMP_APK_ASSETS"
+          trap - EXIT
+          cp "$APK" build/APOIS-Parceiro-TESTE.apk
+          test -s build/APOIS-Parceiro-TESTE.apk
+          echo "[OK] APK de teste gerado"
+
+      - name: Upload APOIS Parceiro APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Parceiro-QA-INSTALACAO-LIMPA
+          path: build/APOIS-Parceiro-TESTE.apk
+          if-no-files-found: error
+          retention-days: 7
