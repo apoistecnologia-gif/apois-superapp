@@ -361,6 +361,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-client-live-ride-camera-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-address-display.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-destination-search-runtime.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-photon-autocomplete-retry-v1.mjs')]);
 
   const protectedMapRuntimePaths = [
     '.work/corridas/src/components/map/PassengerMap.tsx',
