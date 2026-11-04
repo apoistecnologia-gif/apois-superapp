@@ -17,6 +17,7 @@ for(const marker of [
   'setEditingField("phone")',
   'setEditingField("email")',
   'onSaved={refreshSession}',
+  'onSwitchField={setEditingField}',
   '<PassengerProfileEditor',
   'signOut',
 ])assert.ok(ui.includes(marker),'Perfil perdeu ação: '+marker);
@@ -37,6 +38,17 @@ for(const marker of [
   'disabled={busy || Boolean(success)}',
   'aria-modal="true"',
   'max(28px,env(safe-area-inset-bottom))',
+  'onSwitchField: (nextField: PassengerProfileField) => void;',
+  'onSwitchField("phone")',
+  'onSwitchField("email")',
+  'aria-label="Dados de contato"',
+  'profile?.phone?.trim() || "Não informado"',
+  'currentEmail || "Não informado"',
+  'name.trim().replace(/\\s+/g, " ")',
+  'city.trim().replace(/\\s+/g, " ")',
+  'phone.replace(/\\D/g, "")',
+  '!/^\\d{10,13}$/.test(cleanPhone)',
+  '!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(cleanEmail)',
 ])assert.ok(editor.includes(marker),'Editor sem segurança/funcionalidade: '+marker);
 
 for(const forbidden of [
@@ -52,4 +64,4 @@ assert.ok(migrations.includes('using (auth_user_id = auth.uid())')&&migrations.i
   'Migração não restringe atualizações ao próprio usuário');
 assert.ok(auth.includes('refreshSession: () => Promise<void>'),'Contexto de autenticação não atualiza perfil');
 assert.ok(auth.includes('const fetchProfile = useCallback'), 'AuthProvider não consulta a atualização');
-console.log('[OK] APOIS Perfil: Nome/Cidade, Telefone e E-mail editáveis; RLS de domínio respeitada, email via Supabase Auth, sem mutações privilegiadas.');
+console.log('[OK] APOIS Perfil: dados de contato visíveis no editor de Nome/Cidade, troca separada e validadores de nome/telefone/e-mail corretos; sem mutações privilegiadas.');
