@@ -41,8 +41,8 @@ for(const marker of [
   'this.lastRequestId',
   'places_cancelled',
 ])assert.ok(service.includes(marker),"Places remote call or cache safety missing: "+marker);
-assert.ok(!service.includes("this.cache.set(cacheKey, { data: suggestions, timestamp: Date.now() });\n      return"),
-  "Empty results must not remain cached for 5 minutes");
+assert.ok(!/^\s{6}this\.cache\.set\(cacheKey,/m.test(service),
+  "Empty results must not be cached unconditionally for 5 minutes");
 assert.ok(!ui.includes('onClick={() => setQuery(query)}'),"Retry cannot only replace identical input text");
 const emptyIndex=ui.indexOf('data-apois-places-empty-v2');
 const errorIndex=ui.indexOf('data-apois-places-error-v2');
