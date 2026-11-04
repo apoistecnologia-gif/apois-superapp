@@ -1,5 +1,5 @@
 // APOIS_CLIENT_PROFILE_EDIT_V1
-// Abre edicao para Nome/Cidade, Telefone e E-mail sem tocar na autenticacao
+// Reune Nome/Cidade, Telefone e E-mail no cadastro, mantendo alteracoes sensiveis separadas, sem tocar na autenticacao
 // nem permitir atualizar colunas protegidas, permissao/RLS ou contas alheias.
 // Aplicar apos o hardener visual e as acoes do perfil. Idempotente.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -51,7 +51,7 @@ if(!source.includes('APOIS_CLIENT_PROFILE_EDIT_V1')) {
   );
   source = replaceOnce(
     source, '        <div className="p-6 mt-4">',
-    '        <PassengerProfileEditor\n          field={editingField}\n          profile={profile}\n          authUserId={user?.id ?? null}\n          currentEmail={user?.email ?? ""}\n          onClose={() => setEditingField(null)}\n          onSaved={refreshSession}\n        />\n        <div className="p-6 mt-4">',
+    '        <PassengerProfileEditor\n          field={editingField}\n          profile={profile}\n          authUserId={user?.id ?? null}\n          currentEmail={user?.email ?? ""}\n          onClose={() => setEditingField(null)}\n          onSaved={refreshSession}\n          onSwitchField={setEditingField}\n        />\n        <div className="p-6 mt-4">',
     'dialog de editar no perfil',
   );
 }
@@ -62,6 +62,7 @@ for (const token of [
   'setEditingField("email")',
   '<PassengerProfileEditor',
   'onSaved={refreshSession}',
+  'onSwitchField={setEditingField}',
 ]) if(!source.includes(token)) throw Error('[FAIL] Perfil editavel: faltando '+token);
 
 const component=String.raw`import { AlertCircle, CheckCircle2, Loader2, Mail, MapPin, Phone, UserRound, X } from "lucide-react";
@@ -80,10 +81,11 @@ interface ProfileEditorProps {
   currentEmail: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
+  onSwitchField: (nextField: PassengerProfileField) => void;
 }
 
 export function PassengerProfileEditor({
-  field, profile, authUserId, currentEmail, onClose, onSaved,
+  field, profile, authUserId, currentEmail, onClose, onSaved, onSwitchField,
 }: ProfileEditorProps) {
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
@@ -116,20 +118,20 @@ export function PassengerProfileEditor({
       setError("Não foi possível identificar sua conta. Entre novamente ou tente mais tarde.");
       return;
     }
-    const cleanName = name.trim().replace(/s+/g, " ");
-    const cleanCity = city.trim().replace(/s+/g, " ");
-    const cleanPhone = phone.replace(/D/g, "");
+    const cleanName = name.trim().replace(/\s+/g, " ");
+    const cleanCity = city.trim().replace(/\s+/g, " ");
+    const cleanPhone = phone.replace(/\D/g, "");
     const cleanEmail = email.trim().toLowerCase();
 
     if (field === "name" && (cleanName.length < 2 || cleanName.length > 100 || cleanCity.length > 100)) {
       setError("Informe um nome de 2 a 100 caracteres e uma cidade de até 100 caracteres.");
       return;
     }
-    if (field === "phone" && !/^d{10,13}$/.test(cleanPhone)) {
+    if (field === "phone" && !/^\d{10,13}$/.test(cleanPhone)) {
       setError("Informe o telefone com DDD (10 a 13 números).");
       return;
     }
-    if (isEmail && !/^[^s@]+@[^s@]+.[^s@]+$/.test(cleanEmail)) {
+    if (isEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setError("Informe um endereço de e-mail válido.");
       return;
     }
@@ -205,6 +207,31 @@ export function PassengerProfileEditor({
                   value={city} onChange={(event) => setCity(event.target.value)} disabled={busy || Boolean(success)}
                   className="w-full rounded-2xl border border-[#DCE0E5] bg-white px-4 py-3 text-[16px] text-[#111827] outline-none focus:border-[#E51B23]" />
               </label>
+              <section aria-label="Dados de contato" className="space-y-3 rounded-2xl border border-[#E5E7EB] bg-[#FAFAFB] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-sm font-bold"><Phone size={17} /> Telefone</p>
+                    <p className="mt-1 break-words text-sm text-[#4B5563]">{profile?.phone?.trim() || "Não informado"}</p>
+                  </div>
+                  <button type="button" onClick={() => onSwitchField("phone")} disabled={busy || Boolean(success)}
+                    className="min-h-11 shrink-0 rounded-xl border border-[#E51B23] px-3 text-sm font-bold text-[#C9141B] disabled:opacity-50">
+                    Alterar
+                  </button>
+                </div>
+                <div className="border-t border-[#E5E7EB] pt-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-sm font-bold"><Mail size={17} /> E-mail</p>
+                      <p className="mt-1 break-all text-sm text-[#4B5563]">{currentEmail || "Não informado"}</p>
+                    </div>
+                    <button type="button" onClick={() => onSwitchField("email")} disabled={busy || Boolean(success)}
+                      className="min-h-11 shrink-0 rounded-xl border border-[#E51B23] px-3 text-sm font-bold text-[#C9141B] disabled:opacity-50">
+                      Alterar
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-[#6B7280]">A alteração do e-mail pode exigir confirmação por segurança.</p>
+                </div>
+              </section>
             </>
           ) : field === "phone" ? (
             <label className="block">
