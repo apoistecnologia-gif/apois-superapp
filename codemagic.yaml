@@ -29,6 +29,11 @@ workflows:
           test "$(bun --version)" = "$BUN_VERSION"
           bun --version
           java -version
+      - name: Stamp increasing Android Cliente version
+        script: |
+          set -euo pipefail
+          node scripts/qa/stamp-codemagic-android-version-v1.mjs client
+          echo "[OK] Android client version derived from PROJECT_BUILD_NUMBER and exported to subsequent build steps"
       - name: Initialize protected source snapshots
         script: |
           set -euo pipefail
@@ -200,6 +205,11 @@ workflows:
           export PATH="$BUN_INSTALL/bin:$PATH"
           test "$(bun --version)" = "$BUN_VERSION"
           java -version
+      - name: Stamp increasing Android Parceiro version
+        script: |
+          set -euo pipefail
+          node scripts/qa/stamp-codemagic-android-version-v1.mjs partner
+          echo "[OK] Android partner version derived from PROJECT_BUILD_NUMBER and exported to subsequent build steps"
       - name: Initialize protected partner sources
         script: |
           set -euo pipefail
