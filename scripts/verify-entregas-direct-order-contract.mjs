@@ -19,6 +19,23 @@ for (const marker of [
   'FINANCIAL_CONTRACT_MISMATCH',
 ]) if (!edge.includes(marker)) fail(`create-order perdeu contrato: ${marker}`);
 
+const checkoutAclMigration = read('supabase/entregas-forward-migrations/20261104011000_checkout_rpc_service_role_only.sql');
+for (const signature of [
+  'public.create_order_atomic(uuid,uuid,jsonb,text,jsonb,uuid,text)',
+  'public.create_order_atomic_v2(uuid,uuid,jsonb,text,jsonb,uuid,text,text,text)',
+  'public.create_order_for_checkout_intent_v2(uuid,uuid,jsonb,text,jsonb,uuid,uuid,text,text,text)',
+]) {
+ if (!checkoutAclMigration.includes(`REVOKE EXECUTE ON FUNCTION ${signature}\n FROM PUBLIC, anon, authenticated;`)) {
+  fail(`RPC sem revogação completa PUBLIC/anon/authenticated: ${signature}`);
+ }
+ if (!checkoutAclMigration.includes(`GRANT EXECUTE ON FUNCTION ${signature}\n TO service_role;`)) {
+  fail(`Backend service-role perdeu acesso RPC: ${signature}`);
+ }
+}
+if (!edge.includes('adminClient.rpc("create_order_for_checkout_intent_v2", {')) {
+ fail('Edge create-order deixou de usar client service_role para checkout atômico');
+}
+
 for (const marker of [
   'normalized.includes("payment method is not enabled in production")',
   'code: "PAYMENT_METHOD_NOT_CONFIGURED"',

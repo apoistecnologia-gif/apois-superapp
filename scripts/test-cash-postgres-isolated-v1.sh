@@ -35,6 +35,10 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_paymen
 # Verify the unapplied fix inside the sixth synthetic database.
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < supabase/entregas-forward-migrations/20261104010000_guard_merchant_subscription_fail_closed.sql
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < scripts/qa/entregas-subscription-approved-assertions-v1.sql
+# Backend-only RPCs: recover the missing PUBLIC revoke in synthetic PG17.
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < scripts/qa/entregas-checkout-rpc-acl-qa-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < supabase/entregas-forward-migrations/20261104011000_checkout_rpc_service_role_only.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d entregas_payment_admission_qa < scripts/qa/entregas-checkout-rpc-acl-assertions-v1.sql
 # Read-only verified production trigger is rehearsed after standard cash tests.
 docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scripts/qa/entregas-payment-stage-trigger-qa-v1.sql
 # Independent empty database for the Motorista approved-status protection.

@@ -84,4 +84,18 @@ SELECT gate, required, passed, detail FROM (
         NOT ILIKE '%WHEN NOT EXISTS (%'
      AND NOT has_function_privilege('anon','public.merchant_subscription_in_good_standing(uuid)','EXECUTE')
    ,false), 'Merchant monthly guard refuses missing, pending/inactive merchants and denies anonymous SECURITY DEFINER execution'
+ UNION ALL
+ SELECT 'checkout_rpcs_service_role_only',true,
+ COALESCE((
+   SELECT bool_and(
+     to_regprocedure(x.signature) IS NOT NULL
+     AND NOT coalesce(has_function_privilege('anon',to_regprocedure(x.signature),'EXECUTE'),true)
+     AND NOT coalesce(has_function_privilege('authenticated',to_regprocedure(x.signature),'EXECUTE'),true)
+     AND coalesce(has_function_privilege('service_role',to_regprocedure(x.signature),'EXECUTE'),false)
+   ) FROM (VALUES
+    ('public.create_order_atomic(uuid,uuid,jsonb,text,jsonb,uuid,text)'::text),
+    ('public.create_order_atomic_v2(uuid,uuid,jsonb,text,jsonb,uuid,text,text,text)'::text),
+    ('public.create_order_for_checkout_intent_v2(uuid,uuid,jsonb,text,jsonb,uuid,uuid,text,text,text)'::text)
+   ) x(signature)
+ ),false), 'Edge uses service_role to create orders; direct anon/authenticated RPC callers denied'
 ) gates ORDER BY gate;
