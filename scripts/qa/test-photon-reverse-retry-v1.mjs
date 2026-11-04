@@ -1,0 +1,37 @@
+// Read-only synthetic reverse geocoder regression. Tests actual helper code
+// copied from Supabase production v18, without network, GPS or backend calls.
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const src=readFileSync('supabase/functions/google-maps-address/index.ts','utf8');
+const before='async function fetchPhotonReverseJson(url: URL) {';
+const after='\nasync function nominatimReverse(lat: number, lng: number) {';
+const start=src.indexOf(before),end=src.indexOf(after,start);
+assert.ok(start>=0&&end>start,'Staged bounded retry helper missing');
+assert.ok(src.includes('APOIS_PHOTON_REVERSE_TRANSIENT_RETRY_V1'));
+assert.ok(src.includes('return json({ error: "Serviço de endereços temporariamente indisponível. Tente novamente." }, 503)'));
+assert.ok(src.includes('consume_google_maps_lookup_quota'));
+assert.ok(src.includes('action === "place_details"')&&src.includes('action === "autocomplete"'));
+const helper=src.slice(start,end).replace('url: URL','url');
+const compile=(fakeFetch)=>new Function('fetch','photonHeaders','return '+helper+';')(fakeFetch,{Accept:'application/json'});
+const url=new URL('https://photon.komoot.io/reverse?lat=0&lon=0');
+let calls=0;
+const recovers=compile(async ()=>{calls++;if(calls===1)throw Error('ECONNREFUSED');return {ok:true,status:200,json:async()=>({features:[]})};});
+assert.deepEqual(await recovers(url),{features:[]});
+assert.equal(calls,2,'One retry should recover transient transport refusal');
+calls=0;
+const broken=compile(async()=>{calls++;throw Error('ECONNREFUSED');});
+await assert.rejects(broken(url),/Photon reverse transport unavailable/);
+assert.equal(calls,2,'Permanent connection refusal must stop after one retry');
+calls=0;
+const throttled=compile(async()=>{calls++;return {ok:false,status:429};});
+await assert.rejects(throttled(url),/Photon access temporarily restricted/);
+assert.equal(calls,1,'Do not retry provider 429');
+calls=0;
+const forbidden=compile(async()=>{calls++;return {ok:false,status:403};});
+await assert.rejects(forbidden(url),/Photon access temporarily restricted/);
+assert.equal(calls,1,'Do not retry provider 403');
+calls=0;
+const serverError=compile(async()=>{calls++;return {ok:false,status:503};});
+await assert.rejects(serverError(url),/Photon reverse temporarily unavailable/);
+assert.equal(calls,2,'One retry for transient 5xx, never unlimited');
+console.log('[PASS] Reverse geocoder survives one ECONNREFUSED; permanent failure returns 503; no retry on rate/permission error');

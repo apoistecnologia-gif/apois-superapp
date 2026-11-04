@@ -13,6 +13,7 @@ node scripts/qa/test-android-apk-web-assets-gate-v1.mjs
 node scripts/qa/test-codemagic-android-version-v1.mjs
 node scripts/qa/test-android-apk-badging-v1.mjs
 node scripts/qa/test-client-qa-signing-fail-closed-v1.mjs
+node scripts/qa/test-photon-reverse-retry-v1.mjs
 node scripts/qa/test-partner-qa-debug-signing-v1.mjs
 node scripts/qa/verify-corridas-monthly-table-acl-v1.mjs
 node scripts/qa/verify-corridas-wallet-cancellation-acl-v1.mjs

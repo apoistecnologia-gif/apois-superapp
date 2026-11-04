@@ -82,58 +82,96 @@ function toGoogleLikeComponents(address: Record<string, unknown>) {
   return components;
 }
 
-const nominatimHeaders = {
-  Accept: "application/json",
-  "User-Agent": "APOIS-Entregas/1.0 (address lookup; apoisbrasil.com.br)",
-};
+const photonHeaders = { Accept: "application/json" };
 
-async function nominatimReverse(lat: number, lng: number) {
-  const url = new URL("https://nominatim.openstreetmap.org/reverse");
-  url.searchParams.set("lat", String(lat));
-  url.searchParams.set("lon", String(lng));
-  url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("addressdetails", "1");
-  url.searchParams.set("accept-language", "pt-BR,pt");
-  url.searchParams.set("zoom", "18");
-  const response = await fetch(url, { headers: nominatimHeaders });
-  if (!response.ok) throw new Error(`Reverse geocoding fallback HTTP ${response.status}`);
-  const payload = await response.json();
-  const address = (payload?.address ?? {}) as Record<string, unknown>;
-  const components = toGoogleLikeComponents(address);
-  return components.length ? [{ address_components: components }] : [];
+// Retry ONCE only for transient transport/5xx errors from the existing
+// Photon endpoint. Never use paid Google APIs as additional fallback, and
+// never retry 429/403 (provider rate/permission limit).
+// APOIS_PHOTON_REVERSE_TRANSIENT_RETRY_V1
+async function fetchPhotonReverseJson(url: URL) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    try {
+      const response = await fetch(url, { headers: photonHeaders, signal: controller.signal });
+      if (response.status === 429 || response.status === 403) {
+        throw new Error("Photon access temporarily restricted");
+      }
+      if (!response.ok && response.status < 500) {
+        throw new Error("Photon reverse refused request");
+      }
+      if (response.ok) return await response.json();
+    } catch (error) {
+      if (error instanceof Error && /Photon (access temporarily restricted|reverse refused request)/.test(error.message)) {
+        throw error;
+      }
+      if (attempt === 1) throw new Error("Photon reverse transport unavailable");
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error("Photon reverse temporarily unavailable");
 }
 
-async function nominatimSearch(input: string) {
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", input);
-  url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("addressdetails", "1");
-  url.searchParams.set("countrycodes", "br");
-  url.searchParams.set("accept-language", "pt-BR,pt");
-  url.searchParams.set("limit", "6");
-  const response = await fetch(url, { headers: nominatimHeaders });
+async function nominatimReverse(lat: number, lng: number) {
+  const url = new URL("https://photon.komoot.io/reverse");
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lng));
+  const payload = await fetchPhotonReverseJson(url);
+  const feature = Array.isArray(payload?.features) ? payload.features[0] : null;
+  if (!feature) return [];
+  const p = (feature.properties ?? {}) as Record<string, unknown>;
+  const address = {
+    road: p.street,
+    house_number: p.housenumber,
+    neighbourhood: p.district ?? p.locality,
+    city: p.city ?? p.town ?? p.village,
+    county: p.county,
+    state: p.state,
+    postcode: p.postcode,
+    country: p.country,
+    country_code: p.countrycode,
+  };
+  const components = toGoogleLikeComponents(address);
+  return [{
+    formatted_address: [p.name, p.street, p.city ?? p.town ?? p.village, p.state, p.country].filter(Boolean).join(", "),
+    address_components: components,
+  }];
+}
+
+async function nominatimSearch(input: string, lat?: number, lng?: number) {
+  const url = new URL("https://photon.komoot.io/api/");
+  const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
+  url.searchParams.set(
+    "q",
+    hasLocation ? input : `${input}, Petrolina, Pernambuco, Brasil`,
+  );
+  url.searchParams.set("limit", "8");
+  url.searchParams.set("countrycode", "BR");
+  if (hasLocation) {
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lng));
+    url.searchParams.set("zoom", "13");
+    url.searchParams.set("location_bias_scale", "0.05");
+  }
+  const response = await fetch(url, { headers: photonHeaders });
   if (!response.ok) throw new Error(`Address search fallback HTTP ${response.status}`);
   const payload = await response.json();
-  if (!Array.isArray(payload)) return [];
-  return payload
-    .map((item: any) => {
-      const lat = Number(item?.lat);
-      const lng = Number(item?.lon);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-      const description = String(item?.display_name ?? "").trim();
-      if (!description) return null;
-      const mainText = String(item?.name ?? item?.address?.road ?? item?.address?.amenity ?? description.split(",")[0] ?? description).trim();
-      const secondary = description.startsWith(mainText) ? description.slice(mainText.length).replace(/^,\s*/, "") : description;
-      return {
-        place_id: `nominatim:${lat},${lng}`,
-        description,
-        structured_formatting: {
-          main_text: mainText,
-          secondary_text: secondary || null,
-        },
-      };
-    })
-    .filter(Boolean);
+  const features = Array.isArray(payload?.features) ? payload.features : [];
+  return features.map((feature: any) => {
+    const lng = Number(feature?.geometry?.coordinates?.[0]);
+    const lat = Number(feature?.geometry?.coordinates?.[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const p = (feature?.properties ?? {}) as Record<string, unknown>;
+    const mainText = String(p.name ?? p.street ?? p.city ?? input).trim();
+    const secondary = [p.street !== mainText ? p.street : null, p.city ?? p.town ?? p.village, p.state, p.country].filter(Boolean).join(", ");
+    return {
+      place_id: `nominatim:${lat},${lng}`,
+      description: [mainText, secondary].filter(Boolean).join(", "),
+      structured_formatting: { main_text: mainText, secondary_text: secondary || null },
+    };
+  }).filter(Boolean);
 }
 
 function parseNominatimPlaceId(placeId: string) {
@@ -176,20 +214,37 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const fallbackResults = await nominatimReverse(lat, lng);
-      return json({ results: fallbackResults, provider: "nominatim" });
+      try {
+        const fallbackResults = await nominatimReverse(lat, lng);
+        return json({ results: fallbackResults, provider: "nominatim" });
+      } catch {
+        // Avoid leaking the passenger's precise lat/lng inside an exception URL.
+        console.error("Photon reverse geocoder unavailable after bounded retry");
+        return json({ error: "Serviço de endereços temporariamente indisponível. Tente novamente." }, 503);
+      }
     }
 
     if (action === "autocomplete") {
       const input = String(body?.input ?? "").trim();
       if (input.length < 3) return json({ predictions: [] });
 
+      const localityHint = String(body?.localityHint ?? "").trim();
+      const lat = Number(body?.lat);
+      const lng = Number(body?.lng);
+      const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
+      const localizedInput = localityHint ? `${input}, ${localityHint}` : input;
+
       if (apiKey) {
         try {
           const url = new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json");
-          url.searchParams.set("input", input);
+          url.searchParams.set("input", localizedInput);
           url.searchParams.set("components", "country:br");
           url.searchParams.set("language", "pt-BR");
+          if (hasLocation) {
+            url.searchParams.set("location", `${lat},${lng}`);
+            url.searchParams.set("radius", "50000");
+            url.searchParams.set("strictbounds", "true");
+          }
           url.searchParams.set("key", apiKey);
           const payload = await googleJson(url);
           if ((payload.predictions ?? []).length > 0) return json({ predictions: payload.predictions, provider: "google" });
@@ -198,7 +253,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const predictions = await nominatimSearch(input);
+      const predictions = await nominatimSearch(localizedInput, lat, lng);
       return json({ predictions, provider: "nominatim" });
     }
 
