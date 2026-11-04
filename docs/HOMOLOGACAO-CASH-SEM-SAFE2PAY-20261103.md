@@ -341,3 +341,35 @@ Em preflights SQL de **somente leitura**, Corridas permanece com 5 gates obrigat
 O preflight somente leitura de Corridas ganhou dois gates obrigatórios `driver_stage_reassignment_preserves_eligibility_checks` e `driver_presence_rechecks_revoked_kyc`. Ambos permanecem em **FAIL no banco oficial**, porque as correções estão exclusivamente na migração do GitHub. Resultado agregado: **sete gates Corridas FAIL** (de 12 obrigatórios), somados aos dez gates Entregas FAIL (de 13), total **17 gates de lançamento pendentes**, sem alteração nos bancos. O aumento do número de gates reflete cenários adicionais descobertos, **não** regressões introduzidas em produção. O driver já aprovado e com KYC regular pode continuar online; autenticação, suspensão, bloqueio, status de corridas e pagamento cash não foram removidos.
 
 Não foram alterados `sources/`, source-lock ou workflows. Nenhum APK, cobrança ou migração de produção foi executado. A etapa seguinte continua sendo testar as migrações no esquema real em staging, sob autorização de custo, antes do Android físico.
+
+---
+
+## Corridas — expansão de ofertas para motoristas ocupados: GPS, expiração e meio de pagamento (03/11/2026, horário de Recife)
+
+A auditoria comparou o corpo real de `public.append_nearby_busy_driver_candidates()` e o trigger `rides_append_nearby_busy_candidates BEFORE UPDATE OF candidate_driver_ids` do Supabase Corridas (consultas estritamente **read-only**) com a migração forward-only do Superapp. A função original filtra `last_location_at>=now()-120 seconds`, mas **não exige limite superior de GPS** e verifica apenas `current_lat/current_lng IS NOT NULL`. Também pode acrescentar motoristas em solicitações de corrida expiradas e ofertas de pagamento eletrônico que a função `apois_rpc_private.driver_accept_ride` rejeita. No PostgreSQL, coordenadas numéricas fora da faixa podem representar posições trigonometricamente equivalentes (por exemplo, latitude `350.6` e `-9.4`).
+
+### COR-OFFER-01 — GPS futuro e coordenadas inválidas
+
+- **Antes (código confirmado em produção):** faltavam `d.last_location_at<=now()+interval '30 seconds'`, limites de latitude/longitude tanto do motorista quanto da origem, e validação no próprio gatilho que expande motoristas ocupados.
+- **Correção:** `supabase/corridas-forward-migrations/20260905162500_remove_retired_driver_subscription_gates.sql` exige GPS do motorista dentro de `[-34,6]` e `[-74,-32]`, origem dentro da mesma faixa e relógio GPS entre `now()-120s` e `now()+30s`; preserva os demais filtros de KYC, aprovação, bloqueio, suspensão, categoria, corrida `em_viagem`, distância máxima e fila já reservada.
+- **Teste:** sétima base PostgreSQL 17 isolada, `ride_busy_candidates_qa`. `scripts/qa/extract-corridas-busy-candidates-sql-v1.mjs` extrai a função **real do arquivo staged**, executada como trigger `BEFORE UPDATE OF candidate_driver_ids`, e `scripts/qa/corridas-busy-driver-candidates-v1.sql` verifica motorista ocupado válido, GPS no futuro (rejeitado), desvio legítimo de 20s (aceito), latitude/longitude envoltas em 360° (rejeitadas), origem fora de limites, GPS vencido, KYC revogado, suspensão, bloqueio, categoria incompatível, rejeição explícita e reserva de próxima corrida. [CI 41758214988](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41758214988): **3/3 jobs WEB aprovados**.
+
+### COR-OFFER-02 — janela da corrida encerrada
+
+- **Antes:** o gatilho podia acrescentar candidatos mesmo com `request_expires_at<=now()`, enquanto `driver_accept_ride` recusaria a aceitação.
+- **Correção:** o filtro retorna `NEW` sem acrescentar ofertas quando a janela está vencida; preserva `request_expires_at IS NULL`, que continua sendo admitido pelo contrato de aceitação.
+- **Teste:** pedido sintético expirado, driver ocupado válido, nenhum novo `offered_driver_id`; pedidos válidos continuam aceitos. [CI 41758504161](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41758504161): **3/3 jobs WEB aprovados**.
+
+### COR-OFFER-03 — ofertas incompatíveis com pagamento configurado
+
+- **Antes:** a expansão de ofertas não verificava `payment_method` nem `service_details->>'payment_flow'`, embora a função de aceitação de corrida rejeite Pix e gateways aposentados. Consulta **agregada e sem PII** ao Supabase Corridas mostrou registros `credit`/fluxo vazio, `cash`/fluxo vazio e `pix`/fluxo `mercadopago_marketplace`.
+- **Correção:** o gatilho permite apenas os mesmos meios diretos que `driver_accept_ride` permite nesta fase: `cash`, `dinheiro`, `money`, `credit`, `credit_card`, `cartao_credito`. Bloqueia `safe2pay%`, `mercadopago_marketplace`, `asaas`, `pagbank` e `openpix`. Isso evita oferecer corridas impossíveis de aceitar **sem bloquear pagamentos em cartão diretamente ao motorista**.
+- **Teste:** na base PostgreSQL 17 sintética, Pix e cash com fluxo Safe2Pay não são oferecidos; cartão direto é oferecido normalmente. A bateria completa iniciou em [CI 41758801080](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41758801080); PostgreSQL passou e a execução WEB final deve ser conferida antes de liberação.
+
+### Proteção de regressão, release e dependências
+
+`scripts/qa/verify-corridas-public-rpc-acl-v1.mjs` e o extrator SQL verificam estaticamente limites GPS, tempo, expiração, KYC e as regras de pagamento. `database/review/20261103_corridas_cash_homologacao_READ_ONLY.sql` ganhou dois gates obrigatórios: `busy_driver_offers_require_bounded_fresh_gps` e `busy_driver_offers_reject_retired_payments`. **Nenhuma migração foi aplicada em produção.**
+
+No retrato atual do preflight read-only, **Corridas: 9/14 gates obrigatórios FAIL; Entregas: 10/13 FAIL; total: 19 gates de lançamento pendentes**. A contagem aumentou porque novos requisitos de segurança foram identificados, não porque o código em produção mudou. Foi confirmado que **não há branches de Supabase em nenhum dos dois projetos** na consulta `list_branches`. Criar staging pode gerar custos e requer autorização explícita, antes de aplicar qualquer migração. Os testes isolados continuam sem esquema integral, JWT real, produção, dinheiro ou APK Android.
+
+**Arquivos restritos preservados:** `sources/`, source-lock, workflows; nenhuma mudança de contrato financeiro, autenticação, permissão de produção ou dados reais.
