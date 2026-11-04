@@ -130,6 +130,53 @@ END;
 $test$;
 COMMIT;
 
+-- Contracts verified against information_schema (production read-only, 2026-11-03).
+DO $test$
+DECLARE relname text; colname text; expected text; got text; required boolean;
+BEGIN
+ FOR relname,colname,expected IN SELECT * FROM (VALUES
+ ('orders','id','uuid'),('orders','order_number','int8'),
+ ('orders','request_key','uuid'),('orders','payment_method','text'),
+ ('orders','payment_status','text'),('order_items','quantity','int4'),
+ ('order_status_history','id','uuid'),('delivery_events','id','uuid'),
+ ('admin_audit_logs','id','uuid'),('delivery_jobs','merchant_id','uuid'),
+ ('delivery_offers','courier_id','uuid'),('payments','idempotency_key','text')
+ ) AS c(rel,col,udt) LOOP
+  SELECT typ.typname,att.attnotnull INTO got,required
+  FROM pg_attribute att JOIN pg_class cls ON cls.oid=att.attrelid
+  JOIN pg_namespace n ON n.oid=cls.relnamespace
+  JOIN pg_type typ ON typ.oid=att.atttypid
+  WHERE n.nspname='public' AND cls.relname=relname
+   AND att.attname=colname AND att.attnum>0 AND NOT att.attisdropped;
+  IF got IS DISTINCT FROM expected OR required IS DISTINCT FROM true THEN
+   RAISE EXCEPTION 'Fixture drift %.% type %, required % (expected %)',relname,colname,got,required,expected;
+  END IF;
+ END LOOP;
+ RAISE NOTICE '[PASS] 12 critical PostgreSQL column contracts use production types and NOT NULL';
+END;
+$test$;
+DO $test$
+DECLARE denied boolean;
+BEGIN
+ denied:=false;
+ BEGIN
+  UPDATE public.orders SET payment_status='processing' WHERE id='22222222-2222-4222-8222-222222222222';
+ EXCEPTION WHEN SQLSTATE '23514' THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Order payment status constraint missing'; END IF;
+ denied:=false;
+ BEGIN
+  UPDATE public.orders SET payment_method='unknown' WHERE id='22222222-2222-4222-8222-222222222222';
+ EXCEPTION WHEN SQLSTATE '23514' THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Order payment method constraint missing'; END IF;
+ denied:=false;
+ BEGIN
+  UPDATE public.delivery_jobs SET status='unknown' WHERE id='88888888-8888-4888-8888-888888888833';
+ EXCEPTION WHEN SQLSTATE '23514' THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Delivery job status constraint missing'; END IF;
+ RAISE NOTICE '[PASS] Production-like constraints prevent unsupported payment and delivery states';
+END;
+$test$;
+
 -- Production migration should not grant anonymous EXECUTE to a SECURITY DEFINER RPC.
 DO $test$
 BEGIN
