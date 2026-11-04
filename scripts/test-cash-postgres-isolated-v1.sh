@@ -43,6 +43,12 @@ docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < scri
 # in its own empty disposable DB and REQUIRE its deliberate SQLSTATE 55000
 # BEFORE it can touch any production-equivalent function. This protects against
 # accidentally deploying a monthly-fee bypass as a successful migration.
+# New R$59.90 contract only for future signups, no repricing existing R$49.90 contracts.
+# Full staged SQL executed only against disposable PostgreSQL 17.
+docker exec "$name" createdb -U postgres driver_new_price_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_new_price_qa < scripts/qa/corridas-driver-new-price-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_new_price_qa < supabase/corridas-forward-migrations/20261104121500_driver_5990_new_memberships_preserve_legacy_STAGE_ONLY.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_new_price_qa < scripts/qa/corridas-driver-new-price-assertions-v1.sql
 docker exec "$name" createdb -U postgres driver_billing_release_hold_qa
 if billing_gate_log=$(docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -U postgres -d driver_billing_release_hold_qa < supabase/corridas-forward-migrations/20260905162500_remove_retired_driver_subscription_gates.sql 2>&1); then
  echo '[FAIL] Corridas operational migration unexpectedly succeeded without paid monthly membership'
