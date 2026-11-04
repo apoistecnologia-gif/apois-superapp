@@ -46,7 +46,7 @@ for (const token of [
 const component = readFileSync(templatePath, "utf8");
 for (const token of [
   "APOIS_CLIENT_ACCOUNT_DELETION_V1",
-  'requestDeletion("request_own_account_deletion")',
+  'deletionClient.rpc("request_own_account_deletion")',
   'confirmation.trim() !== "EXCLUIR"',
   'data?.ok !== true',
   'rpcError.code === "55000"',
