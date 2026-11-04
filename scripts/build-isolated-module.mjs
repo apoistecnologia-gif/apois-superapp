@@ -392,6 +392,7 @@ if (name === 'corridas') {
   // Rodar o antigo script completo duas vezes duplica profileAvatarUrl.
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-actions.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-edit.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-profile-account-deletion.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-signup-neutral-feedback.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-password-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-email-confirmation-return-v1.mjs')]);
