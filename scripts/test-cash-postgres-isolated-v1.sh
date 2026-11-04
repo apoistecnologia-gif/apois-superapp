@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 command -v docker >/dev/null || { echo '[FAIL] Docker required for isolated PostgreSQL fixture'; exit 1; }
 node scripts/qa/verify-corridas-public-rpc-acl-v1.mjs
+node scripts/qa/verify-forward-schema-preflights-v1.mjs
 name="apois-cash-pg-qa-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
 cleanup(){ docker rm -f "$name" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
