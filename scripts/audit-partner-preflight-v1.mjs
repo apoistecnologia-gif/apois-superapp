@@ -135,6 +135,16 @@ if(process.argv.includes("--dist")){
   const courierPatched=read(".work/partner-entregador/src/routes/courier.tsx");
   const mapPatched=read(".work/partner-entregador/src/components/CourierRouteMap.tsx");
   const driverPatched=read(".work/partner-motorista/src/routes/motorista.perfil.tsx");
+  const driverMonthlyFee=read(".work/partner-motorista/src/lib/payments/types.ts");
+  const driverMembershipPage=read(".work/partner-motorista/src/routes/motorista.assinatura.tsx");
+  all(driverMonthlyFee,["APOIS_MONTHLY_FEE_BRL = 59.9"],"New Driver fee 59.90 applied to disposable workspace");
+  all(driverMembershipPage,[
+    "APOIS_DRIVER_NEW_MONTHLY_FEE_5990_V1",
+    '.from("driver_memberships")',
+    "contractMonthlyFee === null",
+    "Pagamento eletrônico temporariamente indisponível"
+  ],"Driver membership page preserves the legacy contract-specific amount");
+
   const driverAppPatched=read(".work/partner-motorista/src/routes/motorista.app.tsx");
   const driverLoginFocus=read(".work/partner-motorista/src/routes/motorista.login.tsx");
   const driverCssFocus=read(".work/partner-motorista/src/styles.css");
