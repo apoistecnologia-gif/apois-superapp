@@ -75,4 +75,13 @@ SELECT gate, required, passed, detail FROM (
      AND pg_get_functiondef(p.oid) NOT ILIKE '%mercado_pago_environment%'
      AND pg_get_functiondef(p.oid) NOT ILIKE '%last_payment_status%'
   ), 'Full rollout: approved merchant subscriptions must not depend only on Mercado Pago legacy environment/status'
+ UNION ALL
+ SELECT 'merchant_subscription_rejects_unapproved_and_inactive',true,
+   COALESCE(
+     pg_get_functiondef(to_regprocedure('public.merchant_subscription_in_good_standing(uuid)'))
+        ILIKE '%SELECT EXISTS (%'
+     AND pg_get_functiondef(to_regprocedure('public.merchant_subscription_in_good_standing(uuid)'))
+        NOT ILIKE '%WHEN NOT EXISTS (%'
+     AND NOT has_function_privilege('anon','public.merchant_subscription_in_good_standing(uuid)','EXECUTE')
+   ,false), 'Merchant monthly guard refuses missing, pending/inactive merchants and denies anonymous SECURITY DEFINER execution'
 ) gates ORDER BY gate;

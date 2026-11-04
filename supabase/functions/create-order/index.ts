@@ -82,6 +82,15 @@ function mapOrderError(message: string) {
   if (normalized.includes("merchant is inactive") || normalized.includes("merchant not found") || normalized.includes("active customer account required")) {
     return { status: 409, code: "MERCHANT_UNAVAILABLE", error: "O estabelecimento ou sua conta não está disponível para este pedido." };
   }
+  // Production cash admission and monthly eligibility errors are actionable
+  // business rejections, not transient server failures; never encourage retries.
+  if (normalized.includes("payment method is not enabled in production")) {
+    return { status: 409, code: "PAYMENT_METHOD_NOT_CONFIGURED", error: "Esta forma de pagamento ainda não está disponível para este estabelecimento." };
+  }
+  if (normalized.includes("merchant subscription inactive")) {
+    // Do not reveal a merchant's billing details to customers.
+    return { status: 409, code: "MERCHANT_UNAVAILABLE", error: "Este estabelecimento está temporariamente indisponível para novos pedidos." };
+  }
   if (normalized.includes("delivery address unavailable")) return { status: 409, code: "DELIVERY_ADDRESS_UNAVAILABLE", error: "Este endereço está fora da área de entrega disponível." };
   if (normalized.includes("courier marketplace payout not live") || normalized.includes("delivery is unavailable")) {
     return { status: 409, code: "DELIVERY_UNAVAILABLE", error: "Este estabelecimento não está aceitando entregas no momento." };

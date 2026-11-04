@@ -19,6 +19,23 @@ for (const marker of [
   'FINANCIAL_CONTRACT_MISMATCH',
 ]) if (!edge.includes(marker)) fail(`create-order perdeu contrato: ${marker}`);
 
+for (const marker of [
+  'normalized.includes("payment method is not enabled in production")',
+  'code: "PAYMENT_METHOD_NOT_CONFIGURED"',
+  'normalized.includes("merchant subscription inactive")',
+  'code: "MERCHANT_UNAVAILABLE"',
+]) if (!edge.includes(marker)) fail(`create-order perdeu mapeamento de indisponibilidade: ${marker}`);
+
+const approvedMigration = read('supabase/entregas-forward-migrations/20261104010000_guard_merchant_subscription_fail_closed.sql');
+for (const marker of [
+  "m.approval_status='approved' AND m.is_active=true",
+  'CREATE OR REPLACE FUNCTION public.merchant_subscription_in_good_standing',
+  'REVOKE EXECUTE ON FUNCTION public.merchant_subscription_in_good_standing(uuid) FROM PUBLIC, anon;',
+  "ms.current_period_end>now()",
+  "COALESCE(ms.last_payment_status,'')='approved'",
+]) if (!approvedMigration.includes(marker)) fail(`migration merchant subscription fail-closed incompleta: ${marker}`);
+if (/WHEN NOT EXISTS\s*\(/i.test(approvedMigration)) fail('migration de assinatura reintroduziu fail-open');
+
 for (const forbidden of [
   'create-pix-charge',
   'create-merchant-mercadopago-pix',
