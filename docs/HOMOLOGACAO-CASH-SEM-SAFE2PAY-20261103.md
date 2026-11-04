@@ -364,7 +364,7 @@ A auditoria comparou o corpo real de `public.append_nearby_busy_driver_candidate
 
 - **Antes:** a expansão de ofertas não verificava `payment_method` nem `service_details->>'payment_flow'`, embora a função de aceitação de corrida rejeite Pix e gateways aposentados. Consulta **agregada e sem PII** ao Supabase Corridas mostrou registros `credit`/fluxo vazio, `cash`/fluxo vazio e `pix`/fluxo `mercadopago_marketplace`.
 - **Correção:** o gatilho permite apenas os mesmos meios diretos que `driver_accept_ride` permite nesta fase: `cash`, `dinheiro`, `money`, `credit`, `credit_card`, `cartao_credito`. Bloqueia `safe2pay%`, `mercadopago_marketplace`, `asaas`, `pagbank` e `openpix`. Isso evita oferecer corridas impossíveis de aceitar **sem bloquear pagamentos em cartão diretamente ao motorista**.
-- **Teste:** na base PostgreSQL 17 sintética, Pix e cash com fluxo Safe2Pay não são oferecidos; cartão direto é oferecido normalmente. A bateria completa iniciou em [CI 41758801080](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41758801080); PostgreSQL passou e a execução WEB final deve ser conferida antes de liberação.
+- **Teste:** na base PostgreSQL 17 sintética, Pix e cash com fluxo Safe2Pay não são oferecidos; cartão direto é oferecido normalmente. [CI 41758801080](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41758801080): **3/3 jobs WEB SUCCESS** — PostgreSQL 17 sintético, builds Cliente/Estabelecimento, renderização anônima e verificação de contratos aprovados. Logs confirmam explicitamente bloqueio de Pix/provedor aposentado e aceitação de cartão direto, GPS futuro, coordenadas envoltas, ofertas vencidas e preservação da corrida cash.
 
 ### Proteção de regressão, release e dependências
 
