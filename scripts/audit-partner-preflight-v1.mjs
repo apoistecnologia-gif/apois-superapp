@@ -146,6 +146,8 @@ if(process.argv.includes("--dist")){
     "Pagamento eletrônico temporariamente indisponível"
   ],"Driver membership page preserves the legacy contract-specific amount");
 
+  const driverBroadcastPatched=read(".work/partner-motorista/src/hooks/useDriverBroadcast.ts");
+  all(driverBroadcastPatched,["APOIS_DRIVER_PRESENCE_ACK_V1",'throw new Error(String(error.message || "presence_update_failed"))','new CustomEvent("apois:driver-presence-rejected"'], "Motorista server presence ACK must surface RPC failure");
   const driverAppPatched=read(".work/partner-motorista/src/routes/motorista.app.tsx");
   const driverLoginFocus=read(".work/partner-motorista/src/routes/motorista.login.tsx");
   const driverCssFocus=read(".work/partner-motorista/src/styles.css");
@@ -212,6 +214,8 @@ if(process.argv.includes("--dist")){
   ],"Motorista rejects 0km false routes, clears stale steps and confirms motion before arrival");
 
   all(driverAppPatched,["data-apois-trip-top-v6","data-apois-trip-bottom-v6","onShowRoute","onRecenter","m.fitBounds"],"Motorista V6 keeps route overview and compact light panels");
+  all(driverAppPatched,["APOIS_DRIVER_PRESENCE_ACK_V1",'window.addEventListener("apois:driver-presence-rejected", handlePresenceRejection)',"setDesiredOnline(false);","stopDriverWatch();"],"Motorista cannot remain phantom ONLINE after RPC rejection");
+
   all(driverAppPatched,["APOIS_ASSIGNED_PASSENGER_V6","apois_driver_assigned_passenger"],"Passenger name lookup is confined to assigned ride and protected RPC");
   all(read(".work/partner-motorista/src/components/DriverVoiceToggle.tsx"),["Voz ligada","Voz desligada","setVoiceEnabled(next)"],"Driver can explicitly toggle persistent turn-by-turn voice");
   all(read(".work/partner-motorista/src/styles.css"),["APOIS_DRIVER_TRIP_V6"],"Driver V6 readable passenger and trip palette");
