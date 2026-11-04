@@ -283,6 +283,10 @@ jobs:
             exit 1
           fi
           echo "[OK] Partner APK signature matches protected original QA certificate"
+          AAPT="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name aapt -perm -111 | sort -V | tail -n 1)"
+          test -n "$AAPT" || { echo "::error::aapt missing; cannot verify Parceiro APK package/version"; exit 1; }
+          "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$((28 + GITHUB_RUN_NUMBER))" "1.0.28-qa.${GITHUB_RUN_NUMBER}"
+          echo "[OK] Parceiro APK package/version verified against QA configuration"
           cp "$APK" build/APOIS-Parceiro-TESTE.apk
           test -s build/APOIS-Parceiro-TESTE.apk
           echo "[OK] APK de teste gerado"
