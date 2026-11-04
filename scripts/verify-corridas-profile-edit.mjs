@@ -84,6 +84,7 @@ assert.ok(migrations.includes('grant update (name, phone, avatar_url, city) on p
   'Migração não permite campos propostos');
 assert.ok(migrations.includes('using (auth_user_id = auth.uid())')&&migrations.includes('with check (auth_user_id = auth.uid())'),
   'Migração não restringe atualizações ao próprio usuário');
+assert.ok(auth.includes('.is("deleted_at", null)'), 'Perfis excluídos não podem reentrar no aplicativo Corridas');
 assert.ok(auth.includes('refreshSession: () => Promise<void>'),'Contexto de autenticação não atualiza perfil');
 assert.ok(auth.includes('const fetchProfile = useCallback'), 'AuthProvider não consulta a atualização');
 console.log('[OK] APOIS Perfil: contatos e edição preservados; exclusão confirmada por RPC própria sem chamada destrutiva no build.');
