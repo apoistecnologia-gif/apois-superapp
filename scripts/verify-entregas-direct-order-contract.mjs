@@ -47,6 +47,23 @@ for (const marker of [
   'current_user_is_merchant_member',
 ]) if (!migration.includes(marker)) fail(`migration cash/pending incompleta: ${marker}`);
 
+// A retried cash cancellation must be idempotent and must return a JSON
+// boolean, not null. This guard executes after merchant ownership is checked.
+if (!/or\s*\(v_order\.payment_method\s*=\s*'cash'\s+and v_order\.status\s*=\s*'cancelled'\s+and v_order\.payment_status\s*=\s*'cancelled'\)/i.test(migration)) {
+ fail('merchant cash cancel retry eligibility was removed');
+}
+if (!migration.includes("'refund_pending', coalesce(v_refund.status in ('pending','processing'), false)")) {
+ fail('cash cancellation retry may expose refund_pending=null');
+}
+const authIndex = migration.indexOf('merchant access required');
+const retryIndex = migration.indexOf("and v_order.status = 'cancelled'");
+const terminalIndex = migration.indexOf("if v_order.status in ('cancelled','refunded') then");
+const financialStart = migration.indexOf("select * into v_job");
+if (authIndex<0 || retryIndex<=authIndex || terminalIndex<=retryIndex ||
+ financialStart<=terminalIndex) {
+ fail('cash cancellation retry bypasses merchant permission or happens after mutating jobs');
+}
+
 // A cash order must not fall into the existing electronic refund path, even if
 // a legacy payment row or inconsistent payment_status exists.
 const guardStart = migration.indexOf('APOIS_CASH_REJECT_NO_GATEWAY_REFUND_V1');

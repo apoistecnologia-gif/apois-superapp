@@ -26,9 +26,15 @@ SELECT gate, required, passed, detail FROM (
      AND qual ILIKE '%cash%'), 'Merchant can view cash order history under ownership checks'
  UNION ALL
  SELECT 'cash_cancellation_without_gateway_refund',true,
-   COALESCE(pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)')) ILIKE
-     '%v_order.payment_method = ''cash''%',false),
-   'Merchant may reject own cash/pending order without electronic refund'
+   COALESCE(
+     pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)'))
+       ILIKE '%v_order.payment_method = ''cash''%'
+     AND pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)'))
+       ILIKE '%v_order.status = ''cancelled''%'
+     AND pg_get_functiondef(to_regprocedure('public.merchant_reject_order(uuid,text)'))
+       ILIKE '%coalesce(v_refund.status in (''pending'',''processing''), false)%'
+   ,false),
+   'Merchant may reject cash/pending and safely retry cancelled cash with refund_pending=false'
  UNION ALL
  SELECT 'courier_manual_payout_mode',true,
    EXISTS(SELECT 1 FROM public.platform_settings
