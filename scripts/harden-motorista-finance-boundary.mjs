@@ -5,6 +5,10 @@ const root = process.cwd();
 const workspace = process.env.APOIS_MOTORISTA_WORKSPACE || '.work/motorista';
 const path = resolve(root, workspace, 'src/routes/motorista.assinatura.tsx');
 const before = readFileSync(path, 'utf8');
+const pricing = JSON.parse(readFileSync(resolve(root, 'config/apois-monthly-pricing.json'), 'utf8'));
+const driverMonthlyCents = pricing.driver_monthly_cents;
+if (pricing.currency !== 'BRL' || driverMonthlyCents !== 5990) throw new Error('[FAIL] Motorista mensalidade não é R$ 59,90');
+
 
 for (const marker of [
   'createFileRoute("/motorista/assinatura")',
@@ -23,7 +27,7 @@ import { AlertTriangle, CheckCircle2, Crown, LifeBuoy, RefreshCw, ShieldCheck, S
 import { SettingsPageShell } from "@/components/settings";
 import { DSButton, DSCard, Loading } from "@/design-system";
 import { supabase } from "@/integrations/supabase/client";
-import { APOIS_MONTHLY_FEE_BRL } from "@/lib/payments/types";
+const DRIVER_MONTHLY_FEE_BRL = ${driverMonthlyCents / 100};
 import { formatCurrency } from "@/lib/finance/financeSettings";
 import { MovviLogo } from "@/components/MovviLogo";
 
@@ -157,7 +161,7 @@ function DriverSubscriptionPage() {
           <div className="border-y border-white/6 bg-black/25 px-4 py-4 sm:px-5">
             <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
               <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">Mensalidade</span>
-              <div className="text-right"><span className="text-[clamp(24px,8.5vw,30px)] font-black tracking-[-0.04em] text-[#F6BE1C]">{formatCurrency(APOIS_MONTHLY_FEE_BRL)}</span><span className="ml-1 text-xs font-semibold text-zinc-500">/ mês</span></div>
+              <div className="text-right"><span className="text-[clamp(24px,8.5vw,30px)] font-black tracking-[-0.04em] text-[#F6BE1C]">{formatCurrency(DRIVER_MONTHLY_FEE_BRL)}</span><span className="ml-1 text-xs font-semibold text-zinc-500">/ mês</span></div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 p-4 max-[339px]:grid-cols-1">

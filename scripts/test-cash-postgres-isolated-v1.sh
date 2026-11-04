@@ -5,6 +5,8 @@ cd "$(dirname "$0")/.."
 command -v docker >/dev/null || { echo '[FAIL] Docker required for isolated PostgreSQL fixture'; exit 1; }
 node scripts/qa/verify-corridas-public-rpc-acl-v1.mjs
 node scripts/qa/verify-driver-monthly-release-hold-v1.mjs
+node scripts/qa/verify-monthly-price-contract-v1.mjs
+node scripts/qa/verify-courier-monthly-contract-v1.mjs
 node scripts/qa/verify-forward-schema-preflights-v1.mjs
 node scripts/qa/verify-corridas-monthly-table-acl-v1.mjs
 node scripts/qa/verify-entregas-subscription-table-acl-v1.mjs
@@ -53,6 +55,28 @@ if ! docker exec "$name" psql -X -q -t -A -v ON_ERROR_STOP=1 -U postgres -d driv
  exit 1
 fi
 echo '[PASS] Full staged Corridas migration fails SQLSTATE 55000 before replacing any driver RPC without verified paid monthly membership'
+# New approved commercial price: ensure legacy R$49.90 receipts cannot be
+# silently altered and fresh driver membership/charge is R$59.90.
+docker exec "$name" createdb -U postgres driver_price_5990_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_price_5990_qa < scripts/qa/corridas-driver-fee-5990-fixture-v1.sql
+if historic_price_log=$(docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -U postgres -d driver_price_5990_qa < supabase/corridas-forward-migrations/20261104120000_driver_membership_monthly_5990_not_deployed.sql 2>&1); then
+ echo '[FAIL] Historic R$49.90 driver charges were silently repriced'; exit 1
+fi
+if ! printf '%s\n' "$historic_price_log" | grep -Fq 'HISTORIC_DRIVER_FEE_REQUIRES_RECONCILIATION' ||
+   ! printf '%s\n' "$historic_price_log" | grep -Fq '55000'; then
+ echo '[FAIL] Staged driver pricing failed for reason other than historic guard'
+ printf '%s\n' "$historic_price_log" >&2; exit 1
+fi
+docker exec "$name" psql -X -q -t -A -v ON_ERROR_STOP=1 -U postgres -d driver_price_5990_qa -c "SELECT value#>>'{}' FROM public.app_settings WHERE key='finance.driver_monthly_fee_cents'" | grep -qx '4990' || { echo '[FAIL] Historic fee rollback altered setting'; exit 1; }
+docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_price_5990_qa -c 'TRUNCATE public.driver_membership_charges,public.driver_memberships'
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_price_5990_qa < supabase/corridas-forward-migrations/20261104120000_driver_membership_monthly_5990_not_deployed.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d driver_price_5990_qa < scripts/qa/corridas-driver-fee-5990-assertions-v1.sql
+# Entregas courier billing is schema-only: R$49.90 and service-only mutation.
+# No gateway, courier charge, operator authorization, or active status invented.
+docker exec "$name" createdb -U postgres courier_price_4990_qa
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d courier_price_4990_qa < scripts/qa/entregas-courier-monthly-4990-fixture-v1.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d courier_price_4990_qa < supabase/entregas-forward-migrations/20261104121000_courier_monthly_4990_contract_not_deployed.sql
+docker exec -i "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d courier_price_4990_qa < scripts/qa/entregas-courier-monthly-4990-assertions-v1.sql
 # Separate disposable database using production-derived cash admission and legacy
 # merchant-subscription functions. Confirm general rollout is still BLOCKED.
 docker exec "$name" createdb -U postgres entregas_payment_admission_qa
