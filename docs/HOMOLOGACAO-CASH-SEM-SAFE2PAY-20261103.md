@@ -446,3 +446,26 @@ A leitura real, estritamente somente SQL `SELECT`, encontrou `public.driver_memb
 **Diagnóstico read-only versionado:** `database/review/20261104_corridas_driver_monthly_billing_READ_ONLY.sql`, executado no projeto Corridas oficial, registrou **4 dos 6 gates obrigatórios cumpridos** (preço, restrições de 4990 centavos nas duas tabelas, RLS) e **2 dos 6 pendentes** (helpers/RPCs sem evidência obrigatória de pagamento). Os dois indicadores informativos de memberships e cobranças confirmadas são falsos, pois as tabelas estão vazias. Esse diagnóstico não comprova pagamentos nem serve como autorização para produção.
 
 **Contrato imutável de negócio:** mensalidade motorista **R$49,90**; mensalidade estabelecimento **R$69,90**. A restrição do provedor de estabelecimentos continua inalterada. Os gates de deploy permanecem bloqueados, e os aplicativos Android ainda não estão homologados.
+
+---
+
+### FIN-ACL-20261104 — privilégio TRUNCATE indevido em tabelas de mensalidade
+
+**Achado real, somente leitura, Supabases oficiais:** a revisão de `pg_class`, `pg_policies`, `has_table_privilege` e do catálogo confirmou **cinco** tabelas financeiras em dois bancos com RLS ativo, políticas SELECT apenas para usuário/estabelecimento próprio ou administrador e, ao mesmo tempo, privilégios `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` concedidos amplamente a `anon` e `authenticated`. São:
+
+- Corridas: `public.driver_memberships`, `public.driver_membership_charges`.
+- Entregas: `public.merchant_subscriptions`, `public.merchant_subscription_payments`, `public.merchant_subscription_events`.
+
+**Risco:** RLS cobre DML por linha, mas não substitui os privilégios de tabela nem protege `TRUNCATE`; não foi executada nenhuma tentativa de `TRUNCATE` ou alteração na produção, nem foi demonstrado acesso arbitrário via REST. Trata-se de concessão excessiva comprovada no catálogo. A orientação oficial do Supabase enfatiza que grants e políticas RLS precisam ser configurados separadamente: https://supabase.com/docs/guides/database/postgres/row-level-security .
+
+**Correções preparadas, sem deploy:**
+1. `supabase/corridas-forward-migrations/20261104043000_restrict_driver_membership_financial_table_acl.sql` revoga privilégios amplos das duas tabelas para `PUBLIC/anon/authenticated`, concede apenas `SELECT` a `authenticated` e retém permissões completas para `service_role`.
+2. `supabase/entregas-forward-migrations/20261104044500_restrict_merchant_subscription_financial_table_acl.sql` aplica o mesmo padrão às três tabelas de assinaturas, pagamentos e eventos. Todas as políticas RLS SELECT anteriores permanecem intactas, inclusive visualização de todas as assinaturas por administradores autenticados autorizados.
+
+**Testes executados em PostgreSQL 17 descartável:** os scripts `scripts/qa/corridas-driver-monthly-table-acl-fixture-v1.sql`, `scripts/qa/corridas-driver-monthly-table-acl-assertions-v1.sql`, `scripts/qa/entregas-merchant-subscription-acl-fixture-v1.sql` e `scripts/qa/entregas-merchant-subscription-acl-assertions-v1.sql` reproduzem grants excessivos e políticas RLS de leitura em identidades sintéticas, aplicam os arquivos SQL de migração reais, negam acesso anônimo, `TRUNCATE` e `UPDATE` autenticados, preservam leitura do próprio motorista/estabelecimento, e preservam leitura de dois estabelecimentos por administrador autenticado. A existência de políticas no esquema simplificado não é equivalente a homologação integral do Supabase Auth ou REST.
+
+**Evidências CI:** [41765399833](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41765399833) — Corridas 3/3 jobs WEB SUCCESS. [41765926316](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/41765926316) — Entregas PostgreSQL sintético PASS; conferir encerramento dos demais jobs WEB antes do release. Verificadores estáticos `scripts/qa/verify-corridas-monthly-table-acl-v1.mjs` e `scripts/qa/verify-entregas-subscription-table-acl-v1.mjs` foram ligados ao runner descartável.
+
+**Gates read-only:** foram adicionados `driver_monthly_tables_least_privilege` e `merchant_billing_tables_least_privilege` aos preflights oficiais. Com as migrações ainda não aplicadas, ambos devem continuar FAIL. Leitura mais recente dos preflights: **Corridas 11/16 gates obrigatórios FAIL; Entregas 11/14 FAIL**, **22 gates pendentes** no total. A elevação do número de gates representa a descoberta de duas novas exigências, não regressões de produção.
+
+**Mantido:** preço mensal dos motoristas R$49,90; preço dos estabelecimentos R$69,90; regra de assinatura obrigatória; constraint histórica dos provedores; ausência de pagamentos inventados; migração operacional Corridas com HOLD incondicional; sem alterações em bancos produtivos, interfaces, submódulos, workflows ou APKs. Ainda será preciso validar ACLs e acessos reais com API/JWT e esquema completo em homologação antes de implantar.
