@@ -116,12 +116,20 @@ amount numeric NOT NULL CHECK(amount>=0),currency text NOT NULL DEFAULT 'BRL'
  CHECK(currency~'^[A-Z]{3}
 -- Contract subset aligned to production column metadata; other triggers/FKs omitted.
 CREATE TABLE public.refunds(
-id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-payment_id uuid NOT NULL,order_id uuid NOT NULL,amount numeric NOT NULL CHECK(amount>0),
-reason text NOT NULL CHECK(btrim(reason)<>''),status text NOT NULL DEFAULT 'pending'
- CHECK(status IN ('pending','processing','completed','failed','cancelled')),
-requested_by uuid,created_at timestamptz NOT NULL DEFAULT now(),
-updated_at timestamptz NOT NULL DEFAULT now());
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ payment_id uuid NOT NULL,
+ order_id uuid NOT NULL,
+ amount numeric NOT NULL,
+ reason text NOT NULL,
+ status text NOT NULL DEFAULT 'pending',
+ requested_by uuid,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.refunds
+ ADD CONSTRAINT refunds_amount_check CHECK(amount>0),
+ ADD CONSTRAINT refunds_reason_check CHECK(btrim(reason)<>''),
+ ADD CONSTRAINT refunds_status_check CHECK(status IN ('pending','processing','completed','failed','cancelled'));
 -- Contract subset aligned to production column metadata; other triggers/FKs omitted.
 CREATE TABLE public.delivery_jobs(
 id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid NOT NULL,
