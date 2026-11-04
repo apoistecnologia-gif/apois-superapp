@@ -14,7 +14,7 @@ const runner=readFileSync("scripts/test-cash-postgres-isolated-v1.sh","utf8");
 if(!runner.includes("driver_billing_release_hold_qa")||!runner.includes("APOIS_DRIVER_MEMBERSHIP_RELEASE_BLOCKED"))throw Error("Disposable PostgreSQL failure-mode test was removed");
 // Independent business-rule guard: do not silently change the approved
 // driver fee during cash-only QA or mistake a pricing draft for approval.
-if (!/APOIS_DRIVER_MEMBERSHIP_RELEASE_BLOCKED:\\s*4990 cents monthly paid evidence/.test(block)) {
+if (!block.includes("APOIS_DRIVER_MEMBERSHIP_RELEASE_BLOCKED: 4990 cents monthly paid evidence")) {
  throw Error("Corridas monthly release HOLD must require the authorized R$49.90");
 }
 const diagnostic=readFileSync("database/review/20261104_corridas_driver_monthly_billing_READ_ONLY.sql","utf8");
