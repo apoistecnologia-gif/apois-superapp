@@ -47,7 +47,11 @@ for(const [project,projectId,required] of [
    "operational_ride_calls_reference_membership_evidence",
    "monthly_billing_tables_least_privilege"
  ]) if(!src.includes(mark))throw Error("Missing driver billing invariant: "+mark);
- if(/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|GRANT|REVOKE|CALL|DO|COPY|PERFORM)\b/i.test(sql))
+ // SQL privilege names inside quoted pg_catalog arguments (such as
+ // has_table_privilege(...,'TRUNCATE')) are data, not TRUNCATE statements.
+ // Strip SQL string literals for the statement guard; never allow EXECUTE.
+ const statements=sql.replace(/'(?:''|[^'])*'/g,"''");
+ if(/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|GRANT|REVOKE|CALL|DO|COPY|PERFORM|EXECUTE)\b/i.test(statements))
   throw Error("Monthly billing diagnostic contains mutating SQL");
  console.log("[PASS] Driver monthly R$49.90 evidence diagnostic is SELECT-only and tracks payment enforcement");
 }
