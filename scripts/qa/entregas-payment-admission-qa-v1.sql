@@ -2,9 +2,15 @@
 -- PostgreSQL 17 disposable database. All identities/orders are synthetic.
 -- Does NOT enable general cash checkout or bypass subscription payment in production.
 \set ON_ERROR_STOP on
-CREATE ROLE anon;
-CREATE ROLE authenticated;
-CREATE ROLE service_role;
+-- Roles are PostgreSQL-cluster global: the earlier cash DB already created them.
+-- Allow this fixture to execute standalone without duplicate-role failures.
+DO $qa_roles$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role; END IF;
+END;
+$qa_roles$;
 CREATE SCHEMA private;
 CREATE TABLE public.merchants(
  id uuid PRIMARY KEY,
