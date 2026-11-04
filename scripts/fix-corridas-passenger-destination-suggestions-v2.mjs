@@ -24,6 +24,15 @@ replaceOnce('                  {status === "loading" && (',
 );
 replaceOnce('Buscando endereços...</p>','Buscando sugestões de endereço...</p>',"search feedback copy");
 
+// Android WebView IME/composition fallback. Do not blur here: blurring before tapping
+// a prediction could discard the user's selection. Existing onChange stays intact.
+replaceOnce(
+  'onChange={(e) => setQuery(e.target.value)}',
+  'onChange={(e) => setQuery(e.target.value)}\n                  onInput={(e) => { if (e.currentTarget.value !== query) setQuery(e.currentTarget.value); }}\n                  onCompositionEnd={(e) => { if (e.currentTarget.value !== query) setQuery(e.currentTarget.value); }}',
+  "native keyboard input/composition sync"
+);
+
+
 const oldEmpty = [
 '                  {status === "empty" && (',
 '                    <div className="flex flex-col items-center py-10 gap-2">',
