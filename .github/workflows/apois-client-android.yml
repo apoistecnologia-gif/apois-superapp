@@ -21,7 +21,11 @@ permissions:
 jobs:
   build-client-apk:
     # Disparo único autorizado para os APKs físicos desta homologação.
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name == 'fix/entregas-homologacao-ajustes-20261030' && github.event.head_commit.message == 'qa(android): build Cliente cumulativo para teste de chamada')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+       github.ref_name == 'fix/entregas-homologacao-ajustes-20261030' &&
+       github.event.head_commit.message == 'qa-build-cliente-cumulativo')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
