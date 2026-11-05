@@ -146,6 +146,7 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           npm run verify:pins
+          node scripts/qa/verify-apois-client-qa-signing-policy-v1.mjs
           node scripts/test-apois-unified-maps.mjs
           node --check scripts/test-apois-maps-loader-callback.mjs
           node scripts/test-apois-maps-loader-callback.mjs
@@ -370,6 +371,7 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           node --check scripts/harden-corridas-case-center-v1.mjs
           node --check scripts/qa/verify-corridas-case-center-safearea-v2.mjs
+          node scripts/qa/verify-apois-client-qa-signing-policy-v1.mjs
           npm run verify:pins
           npm run build:corridas
           (cd .work/corridas && bun run typecheck)
