@@ -412,6 +412,15 @@ try {
           await checkReadableInputColors(page,name+" register "+width);
           await checkFormContrast(page,name+" register "+width);
           await checkHeadingIntersections(page,name+" register "+width);
+          // APOIS_CLIENT_PUBLIC_SCROLL_RESET_V1: the 320px login scrolls to reach
+          // registration. Hash navigation MUST reset that scroll before fields are painted
+          // beneath the fixed service-switch button. Check the actual browser position.
+          if (target === 'cliente' && name === 'corridas-login' && width === 320) {
+            item.registrationScrollY = await page.evaluate(() => window.scrollY);
+            await page.screenshot({path:resolve(output, 'corridas-login-register-pre-clearance-320.png'),fullPage:true});
+            assert.ok(item.registrationScrollY < 2,
+              'Corridas cadastro 320 must start at the top after scrolling login CTA: scrollY='+item.registrationScrollY);
+          }
           if(target==="cliente"&&name!=="seletor") item.registrationSwitchClearance=await checkSwitcherClearance(page,name+" register "+width);
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,name+': registration overflows '+width+'px');
           if(name==='motorista-login'){
