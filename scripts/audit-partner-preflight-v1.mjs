@@ -210,8 +210,10 @@ if(process.argv.includes("--dist")){
     "evidence.travelledKm >= 0.12",
     "evidence.nearFixes >= 2",
     "now - evidence.firstAt >= 20000",
-    "setLegKm(null); setEtaSeconds(null);",
+    "APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1",
   ],"Motorista rejects 0km false routes, clears stale steps and confirms motion before arrival");
+  check(/setLegKm\(null\);\s*setEtaSeconds\(null\);/.test(driverAppPatched),
+    "Motorista does not invent failed-route distance or ETA; whitespace is irrelevant");
 
   all(driverAppPatched,["data-apois-trip-top-v6","data-apois-trip-bottom-v6","onShowRoute","onRecenter","m.fitBounds"],"Motorista V6 keeps route overview and compact light panels");
   all(driverAppPatched,["APOIS_DRIVER_PRESENCE_ACK_V1",'window.addEventListener("apois:driver-presence-rejected", handlePresenceRejection)',"setDesiredOnline(false);","stopDriverWatch();"],"Motorista cannot remain phantom ONLINE after RPC rejection");
