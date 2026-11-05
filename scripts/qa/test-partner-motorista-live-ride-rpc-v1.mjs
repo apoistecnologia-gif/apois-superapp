@@ -9,7 +9,8 @@ const app = readFileSync(resolve(root, "src/routes/motorista.app.tsx"), "utf8");
 for (const required of [
   "APOIS_DRIVER_LIVE_RIDE_RPC_V1",
   'return callRpc("driver_reject_ride", { _ride_id: data.rideId });',
-  'return callRpc("driver_cancel_ride", { _ride_id: data.rideId, _reason: reason });',
+  'return callRpc("driver_cancel_ride", { _ride_id: data.rideId, _reason: serverReason });',
+  'const isNoShow = /n[aã]o (apareceu|compareceu)/i.test(reason);',
   'callDriverRedispatchFunction("driver-finish-redispatch"',
   'callRpc("driver_start_ride"',
   'callRpc("driver_accept_ride"',
@@ -27,4 +28,10 @@ assert.ok(
 );
 assert.ok(rejectHandler.includes('toast.error("Não foi possível recusar a corrida"'), "Error visible to driver");
 assert.ok(rejectHandler.includes("resyncDriverRides()"), "Reconcile an uncertain server state");
-console.log("[PASS] Installed Corridas ride RPC names and reject confirmation state.");
+const normalizeNoShow=(reason)=>/n[aã]o (apareceu|compareceu)/i.test(reason)
+  ? reason.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")
+  : reason;
+assert.equal(normalizeNoShow("Passageiro não apareceu"),"Passageiro nao apareceu");
+assert.equal(normalizeNoShow("Passageiro não compareceu"),"Passageiro nao compareceu");
+assert.equal(normalizeNoShow("Problema mecânico"),"Problema mecânico");
+console.log("[PASS] Corridas RPC, no-show pt-BR normalization and reject confirmation.");
