@@ -43,6 +43,6 @@ one(`  useEffect(() => {
     if (voiceAlertEnabled) void speak("Nova corrida", { interrupt: true });
     return () => { stopRideRingtone(); };
   }, [ride.id, soundEnabled, voiceAlertEnabled]);`,"ringtone effect");
-for(const check of ["ridePrefs.ride_alerts && ridePrefs.vibration","if (soundEnabled) startRideRingtone();","loadDriverPrefs(userId)"])if(!s.includes(check))throw Error("[FAIL] prefs marker "+check);
+for(const check of ["ridePrefsRef.current.ride_alerts && ridePrefsRef.current.vibration","if (soundEnabled) startRideRingtone();","loadDriverPrefs(userId)"])if(!s.includes(check))throw Error("[FAIL] prefs marker "+check);
 writeFileSync(file,s,"utf8");
 console.log("[OK] Motorista offer sound/vibration respects persisted settings; incoming offers still displayed.");
