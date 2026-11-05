@@ -143,7 +143,7 @@ const moduleBridgeScript = `
     var route = (window.location.hash || '').split('?')[0];
     if (route === lastPublicNavigation) return;
     lastPublicNavigation = route;
-    if (!/^#\/(?:cadastro|recuperar-senha)(?:\/|$)/.test(route)) return;
+    if (route !== '#/cadastro' && route !== '#/cadastro/' && route !== '#/recuperar-senha' && route !== '#/recuperar-senha/') return;
     window.scrollTo(0, 0);
     window.requestAnimationFrame(function () {
       window.scrollTo(0, 0);
