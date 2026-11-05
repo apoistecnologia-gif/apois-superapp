@@ -11,7 +11,7 @@ const checks=read("src/components/ApoisStatusCheck.tsx");
 const count=(s,t)=>s.split(t).length-1;
 const homeStart=route.indexOf('data-apois-courier-map-home');
 const profileStart=route.indexOf('if (profileOpen) {');
-const mainStart=route.indexOf('<main',homeStart);
+const mainStart=route.lastIndexOf('<main',homeStart);
 assert.ok(profileStart>=0 && mainStart>profileStart, "Courier route home/profile boundaries");
 
 // Home must have ONE polished entry and no dangling QA buttons.
