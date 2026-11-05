@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motorista");
+const app=readFileSync(resolve(root,"src/routes/motorista.app.tsx"),"utf8");
+const profile=readFileSync(resolve(root,"src/routes/motorista.perfil.tsx"),"utf8");
+const subscription=readFileSync(resolve(root,"src/routes/motorista.assinatura.tsx"),"utf8");
+assert.ok(app.includes("Consultar mensalidade"),"Should not imply operational payment");
+assert.ok(!app.includes(">Pagar mensalidade"),"Unavailable checkout label removed");
+assert.ok(profile.includes("Contrato, vencimento e formas de pagamento disponíveis"),"Profile truthful copy");
+assert.ok(subscription.includes("Pagamento eletrônico temporariamente indisponível"),"Existing payment restriction preserved");
+assert.ok(app.includes('navigate({ to: "/motorista/assinatura" })'),"Subscription navigation preserved");
+console.log("[PASS] Financial UI no longer promises disabled checkout; subscription consultation preserved.");
