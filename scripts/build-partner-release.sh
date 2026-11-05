@@ -148,6 +148,9 @@ node "$ROOT/scripts/fix-partner-motorista-live-ride-rpc-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-motorista-live-ride-rpc-v1.mjs"
 # UI: distinguish unavailable chat/security features from working controls.
 node "$ROOT/scripts/fix-partner-motorista-fake-actions-v1.mjs"
+# KY-01: additional UI-level gate; the authoritative server Stage2 remains separate.
+node "$ROOT/scripts/fix-partner-admin-driver-approval-inspection-v1.mjs"
+node "$ROOT/scripts/qa/test-partner-admin-driver-approval-inspection-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-motorista-fake-actions-v1.mjs"
 node "$ROOT/scripts/verify-partner-motorista-drawer-profile-v5.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
