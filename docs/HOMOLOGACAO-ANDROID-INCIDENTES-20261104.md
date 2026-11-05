@@ -104,3 +104,15 @@ Registrar sequencialmente conforme o proprietário enviar novos prints; uma corr
 - `scripts/verify-corridas-passenger-destination-suggestions-v2.mjs` e `scripts/qa/test-photon-autocomplete-retry-v1.mjs`: regressões de UI e simulação isolada de 200, 500, ECONNREFUSED, 400, 403 e 429.
 
 **Critério de aceite pendente:** novo APK do Cliente com branch corrigida; busca real por endereço e estabelecimento em Petrolina com sugestões acionáveis; nome e coordenadas preservados até solicitar corrida; falhas de provedor com erro legível + retry e mapa; sem atalhos de favoritos cobrindo resultados. Testar no dispositivo físico. Não houve deploy, migração, mudança de preço ou alteração de dados pessoais.
+
+## 011 — Cliente Entregas — dados de homologação na vitrine
+
+**Captura do aparelho:** endereço TESTE — Centro de Itainópolis (não entregar) aparece como entrega padrão, e APOIS TESTE Entregas aparece como estabelecimento público.
+
+**Causa demonstrada:** no Supabase Entregas de produção, três endereços marcados TESTE/não entregar estavam configurados como padrão em respectivas contas. O catálogo tinha registros ativos/aprovados com slugs explícitos QA/homologação e integração. A Home exibiu todos porque o catálogo filtrava somente o status ativo e a cidade, e o endereço padrão não era verificado. O script de checkout inseria mensagem técnica de teste na validação de cobertura. Açaí no Grau usa um slug de integração e não tem documento ou telefone registrados; isso NÃO é comprovação de disponibilidade comercial.
+
+**Implementação:** scripts/restore-entregas-customer-production-data-v1.mjs acrescenta política tipada versionada em scripts/qa/entregas-customer-public-visibility-v1.ts. Na cópia de build exclusiva do Cliente, omite os três slugs conhecidos de homologação/integração do catálogo, buscas e detalhe; evita o uso de endereços TESTE na Home, Busca, seleção e Checkout; solicita confirmação explícita de endereço real por /enderecos, preservando GPS/CEP e a RPC original. Checkout bloqueia carrinho legado com merchant QA e mensagem real. Scripts de cobertura e autoendereço foram conciliados sem retirar a revalidação do servidor ou o fluxo de primeira utilização.
+
+**Regressão:** scripts/qa/test-entregas-customer-real-catalog-v1.test.ts testa slugs QA, endereços, dados válidos, marketplace, checkout, PIX, seleção e favoritos/abas preservados. CI #41940000554: Cliente web e Estabelecimento web passaram. Teste físico autenticado, pedido real e renderização final ainda requerem homologação após gerar o próximo APK.
+
+**Sem operações destrutivas:** nenhum UPDATE ou DELETE na base, nenhuma migração, nenhum deploy, nenhuma exclusão de histórico/pedidos/produtos. As fixtures históricas continuam na base; apenas a vitrine Cliente as omite no próximo build. Pendência separada: cidade de estabelecimento real com texto corrompido (ItainÃ³polis), que pode afetar a correspondência de municípios; não modificar banco sem autorização.
