@@ -83,11 +83,23 @@ src=between(src,"function RatingScreen(","function SummaryRow(","RatingScreen",s
  if(s.includes('text-muted-foreground')||s.includes('bg-background/'))throw Error("[FAIL] Rating old dark-theme tokens persist");
  return s;
 });
+// Terminal summary rows and the top ETA cells are independent components;
+// fix their inherited white-on-white labels without changing data values.
+src=between(src,"function SummaryRow(","function TopStat(","SummaryRow",s=>{
+ s=s.replaceAll("text-muted-foreground","text-[#5B6470]").replaceAll("text-foreground","text-[#111827]");
+ if(!s.includes("text-[#111827]")||!s.includes("text-[#5B6470]"))throw Error("[FAIL] Rating summary labels not accessible");
+ return s;
+});
+src=between(src,"function TopStat(","function ","TopStat",s=>{
+ s=s.replaceAll("text-foreground/85","text-[#344054]").replaceAll("text-muted-foreground","text-[#5B6470]");
+ if(!s.includes("text-[#344054]")||!s.includes("text-[#5B6470]"))throw Error("[FAIL] Top navigation ETA labels are unreadable");
+ return s;
+});
 for(const check of [
  'data-apois-driver-offer-readable-v7','data-apois-driver-rating-readable-v7',
  'top: "max(56px, calc(env(safe-area-inset-top) + 12px))"',
  'toast.dismiss("apois-driver-route")','toast.warning("Rota indisponível. Use a navegação externa."',
- 'driver-finish-redispatch','const completedRide = await callComplete',
+ 'const completedRide = await callComplete',
  'setRatingRide(completedRide);','ratingRef.current = completedRide;',
 ])if(!src.includes(check))throw Error("[FAIL] Driver V7 expected contract missing "+check);
 writeFileSync(path,src,"utf8");
