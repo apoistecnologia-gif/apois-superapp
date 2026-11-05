@@ -15,6 +15,10 @@ on:
       - fix/passageiro-ocorrencias-safearea-20261105
     paths:
       - '.github/workflows/apois-client-android.yml'
+      - 'scripts/build-isolated-module.mjs'
+      - 'scripts/harden-corridas-case-center-v1.mjs'
+      - 'scripts/fix-corridas-android-destination-ime-recent-v3.mjs'
+      - 'scripts/qa/verify-corridas-android-ime-recent-v3.mjs'
 
 permissions:
   contents: read
@@ -393,4 +397,5 @@ jobs:
           npm run build:corridas
           node scripts/qa/verify-corridas-case-center-safearea-v2.mjs
           node scripts/verify-corridas-passenger-destination-suggestions-v2.mjs
-          echo "[PASS] Cliente Corridas: protocolo/safe-area/autocomplete. No APK generated."
+          node scripts/qa/verify-corridas-android-ime-recent-v3.mjs
+          echo "[PASS] Cliente Corridas: protocolo/safe-area/IME-autocomplete/local recent. No APK generated."
