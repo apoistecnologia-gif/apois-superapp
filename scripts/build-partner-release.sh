@@ -155,6 +155,8 @@ node "$ROOT/scripts/fix-partner-motorista-fake-actions-v1.mjs"
 node "$ROOT/scripts/fix-partner-admin-driver-approval-inspection-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-admin-driver-approval-inspection-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-motorista-fake-actions-v1.mjs"
+node "$ROOT/scripts/fix-partner-motorista-profile-photo-boundary-v1.mjs"
+node "$ROOT/scripts/qa/test-partner-motorista-profile-photo-boundary-v1.mjs"
 node "$ROOT/scripts/verify-partner-motorista-drawer-profile-v5.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
