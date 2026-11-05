@@ -18,12 +18,11 @@ const helper=`  // APOIS_DRIVER_KYC_APPROVAL_UI_GUARD_V1 — defense in depth; s
     if (!Number.isInteger(year) || year < new Date().getFullYear() - 10 || year > new Date().getFullYear()) {
       throw new Error("Vistoria: ano de fabricação fora do limite de dez anos.");
     }
-    const { data: photos, error: photoError } = await (supabase as any)
-      .from("apois_vehicle_inspection_photos")
-      .select("slot,review_status,submitted_at")
-      .eq("driver_id",driver.id)
-      .order("submitted_at",{ascending:false});
-    if (photoError || !Array.isArray(photos)) throw new Error("Vistoria: fotos indisponíveis para conferência.");
+    // The inspection table has no staff SELECT RLS policy. Reuse the existing
+    // authenticated admin document server action (privileged and permission checked).
+    const signedGallery = await getDocs({ data: { driverId: driver.id } });
+    const photos = signedGallery?.inspection_photos;
+    if (!Array.isArray(photos)) throw new Error("Vistoria: fotos indisponíveis para conferência.");
     const slots = ["front","right","left","dashboard","front_seats","rear_seats","tire_fl","tire_fr","tire_rl","tire_rr","belt_front","belt_rear","headlights_on"];
     const latest = new Map<string,string>();
     for (const photo of photos) {
