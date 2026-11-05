@@ -7,12 +7,13 @@ const src=readFileSync(resolve(root,"src/routes/admin.motoristas.tsx"),"utf8");
 for(const key of [
   "APOIS_DRIVER_KYC_APPROVAL_UI_GUARD_V1",
   'if (status === "aprovado") await assertCarVehicleInspected(driver);',
-  'from("apois_vehicle_inspection_photos")',
+  'getDocs({ data: { driverId: driver.id } })',
   'year < new Date().getFullYear() - 10',
   'const latest = new Map<string,string>()',
   'latest.get(slot) !== "approved"',
   'await setAdminDriverApproval(driver.id, status, reason);'
 ])assert.ok(src.includes(key),"Admin guard missing: "+key);
+assert.ok(!src.includes('.from("apois_vehicle_inspection_photos")'),"No direct client read of privileged gallery");
 const slots=["front","right","left","dashboard","front_seats","rear_seats","tire_fl","tire_fr","tire_rl","tire_rr","belt_front","belt_rear","headlights_on"];
 function validPhotos(rows) {
  const latest = new Map();
