@@ -440,6 +440,9 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-personal-data-light-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-location-identified-state.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-checkout-coverage-diagnostic.mjs')]);
+  // Public Cliente Entregas must not expose active QA/integration fixtures as real catalog entries.
+  run(process.execPath, [resolve(root, 'scripts/restore-entregas-customer-production-data-v1.mjs')]);
+  run('bun', ['test', resolve(root, 'scripts/qa/test-entregas-customer-real-catalog-v1.test.ts')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-customer-delivery-tracking-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-customer-order-reviews-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/test-entregas-review-to-one-v1.mjs')]);
