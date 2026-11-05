@@ -305,12 +305,19 @@ jobs:
           trap - EXIT
           cp "$APK" build/APOIS-Parceiro-TESTE.apk
           test -s build/APOIS-Parceiro-TESTE.apk
+          sha256sum build/APOIS-Parceiro-TESTE.apk > build/APOIS-Parceiro-TESTE.sha256
+          test -s build/apois-partner-motorista-build-fingerprint.json
+          unzip -p "$APK" assets/public/diagnostics/motorista-fingerprint.json | cmp -s - build/apois-partner-motorista-build-fingerprint.json
+          echo "[OK] Motorista: SHA256 APK e manifesto embutido conferidos"
           echo "[OK] APK de teste gerado"
 
       - name: Upload APOIS Parceiro APK
         uses: actions/upload-artifact@v4
         with:
           name: APOIS-Parceiro-TESTE
-          path: build/APOIS-Parceiro-TESTE.apk
+          path: |
+            build/APOIS-Parceiro-TESTE.apk
+            build/APOIS-Parceiro-TESTE.sha256
+            build/apois-partner-motorista-build-fingerprint.json
           if-no-files-found: error
           retention-days: 7
