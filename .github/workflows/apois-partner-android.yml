@@ -19,7 +19,8 @@ permissions:
 
 jobs:
   build-partner-apk:
-    if: github.event_name == 'workflow_dispatch'
+    # Disparo único autorizado para os APKs físicos desta homologação.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name == 'fix/entregas-homologacao-ajustes-20261030' && github.event.head_commit.message == 'qa(android): build Parceiro cumulativo para teste de chamada')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -183,6 +184,12 @@ jobs:
           grep -Fq 'APOIS_MOTORISTA_MENU_LATERAL_V2' .work/partner-motorista/src/components/MovviHeader.tsx
           grep -Fq 'const showNav = false' .work/partner-motorista/src/components/ApoisDriverBottomNav.tsx
           grep -Fq 'data-apois-courier-search-scan-v1' .work/partner-entregador/src/components/CourierPremiumViews.tsx
+          grep -Fq 'data-apois-courier-calls-card-v2' .work/partner-entregador/src/routes/courier.tsx
+          grep -Fq 'data-apois-courier-profile-diagnostic-v2' .work/partner-entregador/src/components/CourierPanels.tsx
+          grep -Fq 'data-apois-driver-menu-fullscreen-v4' .work/partner-motorista/src/components/DriverSideMenu.tsx
+          grep -Fq 'data-apois-driver-settings-contrast-v4' .work/partner-motorista/src/routes/motorista.configuracoes.tsx
+          grep -Fq 'rpc("request_own_account_deletion")' .work/partner-motorista/src/routes/motorista.configuracoes.tsx
+          echo '[OK] APK Parceiro inclui correções acumuladas Entregador e Motorista'
           grep -Fq 'APOIS_COURIER_SEARCH_SCAN_V1' .work/partner-entregador/src/system-theme.css
           grep -Fq 'APOIS_ANDROID_DRIVER_PHOTO_CAPTURE_V2' .work/partner-motorista/src/components/DriverDocumentField.tsx
           grep -Fq 'APOIS_ANDROID_IMAGE_FALLBACK_V2' .work/partner-motorista/src/lib/imageCompress.ts
