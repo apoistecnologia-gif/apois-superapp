@@ -167,6 +167,8 @@ node "$ROOT/scripts/qa/test-partner-motorista-financial-cta-truth-v1.mjs"
 node "$ROOT/scripts/fix-partner-motorista-rating-singleflight-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-motorista-rating-singleflight-v1.mjs"
 node "$ROOT/scripts/verify-partner-motorista-drawer-profile-v5.mjs"
+# UI-01 screenshot regression: a fullscreen menu must not darken its own content.
+node "$ROOT/scripts/qa/test-partner-motorista-fullscreen-overlay-v6.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
@@ -379,5 +381,6 @@ test -s superapp/partner-shell/dist/modules/entregador/index.html
 grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
 # AF-03: produce reproducible source-to-bundle record without generating an APK here.
 node "$ROOT/scripts/qa/write-partner-driver-build-fingerprint-v1.mjs"
+node "$ROOT/scripts/qa/test-partner-motorista-fullscreen-overlay-v6.mjs" --dist
 
 echo '[OK] APOIS Parceiro release build concluído sem gateway eletrônico ativo.'
