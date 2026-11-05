@@ -27,7 +27,7 @@ assert.ok(
   "UI may only dismiss rejected ride after RPC confirmation"
 );
 assert.ok(rejectHandler.includes('toast.error("Não foi possível recusar a corrida"'), "Error visible to driver");
-assert.ok(rejectHandler.includes("resyncDriverRides()"), "Reconcile an uncertain server state");
+assert.ok(!rejectHandler.includes("void resyncDriverRides()"), "No out-of-scope resync callback");
 const normalizeNoShow=(reason)=>/n[aã]o (apareceu|compareceu)/i.test(reason)
   ? reason.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
   : reason;
