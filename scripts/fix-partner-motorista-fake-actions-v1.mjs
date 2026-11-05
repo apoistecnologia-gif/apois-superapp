@@ -6,14 +6,16 @@ const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE || ".work/partner-motor
 function change(path,transform){
   const current=readFileSync(resolve(root,path),"utf8");
   const next=transform(current);
-  if(next===current)throw Error("[FAIL] Driver UI stale action patch unchanged: "+path);
-  writeFileSync(resolve(root,path),next,"utf8");
+  if(next!==current)writeFileSync(resolve(root,path),next,"utf8");
 }
 change("src/routes/motorista.app.tsx",s=>{
   const old='label="Chat"\n              onClick={() => toast.info("Chat em breve")}';
   const occurrences=s.split(old).length-1;
-  if(occurrences!==2)throw Error("[FAIL] Expected exactly two fake chat controls: "+occurrences);
-  return s.replaceAll(old,'label="Chat indisponível"\n              disabled');
+  if(occurrences!==0 && occurrences!==2)throw Error("[FAIL] Unexpected fake chat controls: "+occurrences);
+  const cleaned=occurrences===2?s.replaceAll(old,'label="Chat indisponível"\n              disabled'):s;
+  // Upstream mobile-ui hardener removes these incomplete CircleAction buttons entirely.
+  if(cleaned.includes('toast.info("Chat em breve")'))throw Error("[FAIL] Fake chat action still executable");
+  return cleaned;
 });
 change("src/routes/motorista.configuracoes.tsx",s=>{
   const patterns=[
@@ -22,8 +24,7 @@ change("src/routes/motorista.configuracoes.tsx",s=>{
     /\n\s*<SettingsLinkRow icon=\{LockKeyhole\} title="Bloqueio por PIN" hint="Em breve" onClick=\{\(\) => toast\.message\("PIN em breve\."\)\} \/>/,
   ];
   for(const pat of patterns){
-    if(!pat.test(s))throw Error("[FAIL] Driver simulated security action drift: "+pat);
-    s=s.replace(pat,"");
+    if(pat.test(s))s=s.replace(pat,"");
   }
   // Remove imports that are now no longer used; strict TypeScript builds reject them.
   const importEnd=s.indexOf('} from "lucide-react";');
@@ -33,8 +34,7 @@ change("src/routes/motorista.configuracoes.tsx",s=>{
     if(!new RegExp("\\b"+icon+"\\b").test(afterImport)){
       const header=s.slice(0,importEnd);
       const expr=new RegExp("\\b"+icon+"\\s*,\\s*");
-      if(!expr.test(header))throw Error("[FAIL] Unused icon import not found: "+icon);
-      s=header.replace(expr,"")+s.slice(importEnd);
+      if(expr.test(header))s=header.replace(expr,"")+s.slice(importEnd);
     }
   }
   return s;
