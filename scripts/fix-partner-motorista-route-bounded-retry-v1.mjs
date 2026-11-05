@@ -68,6 +68,6 @@ one(`    return () => { cancelled = true; };
       if (lastRouteRequestKeyRef.current===routeRequestKey) lastRouteRequestKeyRef.current=null;
     };
   }, [active?.id, active?.status, Boolean(position), mapReadyNonce, routeRetryNonce, routeTick]);`,"stable dependencies");
-for(const marker of ["APOIS_DRIVER_ROUTE_BOUNDED_RETRY_V1","routeRetryCountRef.current<2","Boolean(position), mapReadyNonce, routeRetryNonce, routeTick","window.clearTimeout(retryTimer)","routeTick"])])if(!s.includes(marker))throw Error("[FAIL] Missing route recovery "+marker);
+for(const marker of ["APOIS_DRIVER_ROUTE_BOUNDED_RETRY_V1","routeRetryCountRef.current<2","Boolean(position), mapReadyNonce, routeRetryNonce, routeTick","window.clearTimeout(retryTimer)","routeTick"])if(!s.includes(marker))throw Error("[FAIL] Missing route recovery "+marker);
 writeFileSync(p,s,"utf8");
 console.log("[OK] Driver routes: GPS updates do not abort in-flight route; no infinite Maps retry loop; max 2 retries per phase.");
