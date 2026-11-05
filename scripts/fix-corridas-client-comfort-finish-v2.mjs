@@ -36,10 +36,17 @@ box=replaceOne(box,'<option key={value} value={value}>{text}</option>',
 box=replaceOne(box,'className="text-xs text-zinc-400"',
  'className="text-xs font-medium leading-5 text-[#4B5563]"',"footer note");
 review=review.slice(0,start)+box+review.slice(end+'</section>'.length);
-review=replaceOne(review,
- 'className="px-5 py-6 bg-white/95 backdrop-blur-xl border-t border-[#E2E4E8]"',
- 'className="sticky bottom-0 z-20 shrink-0 border-t border-[#E2E4E8] bg-white/95 px-5 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl"',
- "request CTA Android navigation clearance");
+// Match the footer by its existing submit callback, not a fragile CSS class order.
+const confirmAt=review.indexOf('onClick={() => void handleConfirm()}');
+if(confirmAt<0)throw Error("[FAIL] Request CTA missing");
+const footerStart=review.lastIndexOf('<div className="',confirmAt);
+const footerEnd=review.indexOf('">',footerStart)+2;
+if(footerStart<0||footerEnd<=footerStart||confirmAt-footerEnd>300)throw Error("[FAIL] Request footer structure changed");
+const previousFooter=review.slice(footerStart,footerEnd);
+if(!previousFooter.includes('border-t')||!previousFooter.includes('px-5'))throw Error("[FAIL] Request footer did not match original panel");
+review=review.slice(0,footerStart)+
+  '<div className="sticky bottom-0 z-20 shrink-0 border-t border-[#E2E4E8] bg-white/95 px-5 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl">'+
+  review.slice(footerEnd);
 for(const token of ['data-apois-comfort-readable-v2','selectedCategory?.code === "carros"','await confirmRide(comfort)','setComfort((previous)=>({...previous,[key]:event.target.value','air_conditioning','music','conversation'])
  if(!review.includes(token))throw Error("[FAIL] Original comfort functionality missing "+token);
 for(const token of ['screenState === "completed"','resetFinishedTripUi();','clearDestination();','clearStops();','clearRoute();','resetRequest();','<PassengerMap','<DriverCard ride={ride} />','onSuccess={() => {'])
