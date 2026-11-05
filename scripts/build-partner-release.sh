@@ -142,6 +142,9 @@ node "$ROOT/scripts/fix-partner-motorista-route-auth-v1.mjs"
 node "$ROOT/scripts/verify-partner-motorista-route-auth-v1.mjs"
 # Final scoped Motorista UI cleanup after historical red-theme hardeners; no RPC changes.
 node "$ROOT/scripts/fix-partner-motorista-drawer-profile-v5.mjs"
+# Installed Corridas RPC contract; keep offer visible until server acknowledges rejection.
+node "$ROOT/scripts/fix-partner-motorista-live-ride-rpc-v1.mjs"
+node "$ROOT/scripts/qa/test-partner-motorista-live-ride-rpc-v1.mjs"
 node "$ROOT/scripts/verify-partner-motorista-drawer-profile-v5.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
