@@ -49,6 +49,17 @@
 - Pendência independente: corrigir erros do TypeScript no job `Corridas Passenger Web QA`; não mascarar ou remover validação.
 
 
+
+### Homologação Cliente — falha da lista de destinos no Android (05/11/2026)
+- O responsável instalou o Cliente QA e enviou print: ao pesquisar por `River shopping`, a interface continuava na seção `Favoritos`, sem exibir sugestões.
+- Verificação somente leitura no Supabase Corridas `tbbzkrfupmqdywnzgnms`: função `google-maps-address` ativa; requisições de Android para o endpoint com HTTP 200 em 05/11 (15h33 horário Recife). HTTP 200 **não comprova conteúdo de sugestões**. Não houve alteração de Edge Functions nem do banco.
+- Causas prováveis no código: rotina IME V3 ignorava alteração do input quando `document.activeElement` divergisse em WebView; a área de resultados usava `AnimatePresence mode="wait"` e poderia manter histórico durante transições.
+- Patch corretivo na branch Cliente: `scripts/fix-corridas-android-destination-results-v4.mjs`, aplicado após V3 via `scripts/build-isolated-module.mjs`. Mantém polling enquanto input montado, independente de informações transitórias de foco, sincroniza eventos nativos e renderiza busca sem espera de animação; não muda backend, lógica de corridas, mapas, favoritos ou pagamentos.
+- QA: `scripts/qa/verify-corridas-android-destination-results-v4.mjs` executado e aprovado no GitHub; valida corpo real do reconciliador com valor `River shopping`, renderização imediata e preservação das chamadas Places.
+- GitHub Actions [#87](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/42086910696): job `build-client-apk` **SUCCESS**, assinatura QA pinada validada e arquivo `APOIS-Cliente-TESTE.apk` publicado (artifact ID `13444190824`). APK de 8.352.459 bytes, SHA-256 do **arquivo** `57f02f9bd17b1ad19aa1ed04a74a38370f6b137829f0019ccfa5387b0d6a6a0d`. Confirmado que o bundle Corridas dentro do APK contém `data-apois-destination-live-results-v4`.
+- Pendente: repetir manualmente no aparelho a busca e a seleção de local; **não declarar problema resolvido funcionalmente até o teste físico**. O job paralelo de TypeScript segue com falhas previamente existentes; não foram mascaradas.
+- O gatilho excepcional que gerou o APK #87 foi desativado; futuras compilações Cliente usam novamente `workflow_dispatch`. Nenhuma modificação em chaves de produção, Supabase ou submódulos.
+
 ## Política para próximos chats e engenheiros
 Começar lendo esta ADR e o workflow real na branch Cliente. Não voltar a exigir recuperação do keystore antigo como bloqueio obrigatório; o responsável aprovou reinstalação dos APKs de **testes**. Não autorizar merge, migração, chave de produção, divulgação de Secrets ou publicação sem autorização específica. Se o APK QA não for gerado, informar precisamente qual Secret, assinatura ou teste bloqueia a build.
 
