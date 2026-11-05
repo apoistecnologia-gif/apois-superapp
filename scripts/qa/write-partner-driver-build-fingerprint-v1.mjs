@@ -29,5 +29,10 @@ const body={
 mkdirSync(resolve(root,"build"),{recursive:true});
 const output=resolve(root,"build/apois-partner-motorista-build-fingerprint.json");
 writeFileSync(output,JSON.stringify(body,null,2)+"\n","utf8");
+const embedded=resolve(root,"superapp/partner-shell/dist/diagnostics/motorista-fingerprint.json");
+mkdirSync(resolve(root,"superapp/partner-shell/dist/diagnostics"),{recursive:true});
+writeFileSync(embedded,JSON.stringify(body,null,2)+"\n","utf8");
+// The fingerprint is non-secret and now ships inside the APK's public assets.
+
 console.log("[OK] Motorista build fingerprint: "+head+" | "+files.length+" assets | "+digest(readFileSync(output)).slice(0,16));
 // The signed APK is built by a later Android workflow; its own SHA256 must be recorded separately.
