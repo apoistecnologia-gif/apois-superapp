@@ -72,9 +72,10 @@ if(profileModal===oldModal)throw Error("[FAIL] Courier status modal still refers
 
 // Original profile branch returns early, so mount the same modal INSIDE it,
 // keeping the status test available and overlayed over the Profile screen.
-const routeProfileStart=route.indexOf("if (profileOpen) {");
-const profileNav=route.indexOf('<CourierBottomNav',routeProfileStart);
-const profileCall=route.indexOf('<CourierProfilePanel',routeProfileStart);
+// Anchor on the actual panel invocation. Earlier handlers can also check profileOpen.
+const profileCall=route.indexOf('<CourierProfilePanel');
+const routeProfileStart=route.lastIndexOf("if (profileOpen) {",profileCall);
+const profileNav=route.indexOf('<CourierBottomNav',profileCall);
 if(routeProfileStart<0||profileNav<profileCall||profileCall<routeProfileStart){
  throw Error("[FAIL] Courier profile route boundaries changed");
 }
