@@ -395,6 +395,7 @@ jobs:
           node --check scripts/qa/verify-corridas-case-center-safearea-v2.mjs
           npm run verify:pins
           npm run build:corridas
+          (cd .work/corridas && bun run typecheck)
           node scripts/qa/verify-corridas-case-center-safearea-v2.mjs
           node scripts/verify-corridas-passenger-destination-suggestions-v2.mjs
           node scripts/qa/verify-corridas-android-ime-recent-v3.mjs
