@@ -264,6 +264,9 @@ node "$ROOT/scripts/fix-partner-courier-membership-disclosure-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-courier-membership-disclosure-v1.mjs"
 node "$ROOT/scripts/harden-partner-available-calls-v1.mjs" entregador
 node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" entregador
+# Courier: keep same server-backed actions; move diagnostics under Perfil and complete available calls visual.
+node "$ROOT/scripts/fix-partner-courier-operational-actions-v2.mjs"
+node "$ROOT/scripts/verify-partner-courier-operational-actions-v2.mjs"
 require_contains 'APOIS_COURIER_PROFILE_EDIT_V1' "$ENTREGADOR/src/components/CourierPanels.tsx" 'Perfil e contatos do entregador editáveis'
 require_contains 'data-apois-courier-history-light-v1' "$ENTREGADOR/src/components/CourierPanels.tsx" 'Histórico de entregas em contraste claro'
 require_contains 'APOIS_COURIER_SIMPLE_FLOW_V1' "$ENTREGADOR/src/components/CourierPremiumViews.tsx" 'Entregador com coleta e PIN como únicas ações da entrega'
