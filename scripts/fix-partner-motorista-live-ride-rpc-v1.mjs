@@ -73,7 +73,8 @@ app = app.slice(0, start) + `  // APOIS_DRIVER_LIVE_RIDE_RPC_V1: keep the offer 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Tente novamente.";
       toast.error("Não foi possível recusar a corrida", { description: message });
-      void resyncDriverRides().catch(() => undefined);
+      // Existing polling/Realtime effect reconciles the offer state.
+      // Do not call resyncDriverRides: it is scoped to a separate effect.
     }
   }
 ` + app.slice(end);
