@@ -43,7 +43,11 @@
 - Alias: `androiddebugkey`; keystore exclusivo de testes, **não de produção**.
 - SHA-256 do certificado informado pelo responsável após `keytool -list -v`: `3F:7E:52:2F:8A:AC:C6:63:84:37:14:22:50:77:08:7C:5F:FD:6C:1C:81:A8:18:66:38:3E:F8:A1:2F:DE:46:09`.
 - Próxima ação: cadastrar o arquivo **em base64** no GitHub Actions Secret `APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64` e o hash público no Secret `APOIS_CLIENT_QA_CERT_SHA256`. Não revelar nem commitar o conteúdo do keystore.
-- Situação: impressão digital informada pelo responsável; validação automática da correspondência certificado/secret ainda pendente em execução do workflow.
+- Situação: **VALIDADA EM CI**. Os dois Secrets foram cadastrados pelo responsável; a execução GitHub Actions [#85](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/42082719912) restaurou a chave protegida, validou o SHA-256 pinado, compilou e publicou `APOIS-Cliente-TESTE.apk` como artefato `APOIS-Cliente-TESTE` (ID 13440833198). O job `build-client-apk` concluiu com SUCCESS. O workflow geral concluiu FAILURE porque o job paralelo de QA web falhou por erros TypeScript preexistentes; **não confundir com falha de assinatura ou de geração do APK**.
+- A execução foi disparada uma única vez por gatilho controlado; o gatilho temporário foi REMOVIDO da branch Cliente. Para builds futuros, usar `workflow_dispatch` e preservar os dois Secrets. Não criar nem trocar novas chaves QA.
+- APK gerado em 05/11/2026, SHA-256 do ARQUIVO (não certificado): `b6cb47310c63f11207ed4a212c767c48f44135db0ec17f8886536a91177318d3`.
+- Pendência independente: corrigir erros do TypeScript no job `Corridas Passenger Web QA`; não mascarar ou remover validação.
+
 
 ## Política para próximos chats e engenheiros
 Começar lendo esta ADR e o workflow real na branch Cliente. Não voltar a exigir recuperação do keystore antigo como bloqueio obrigatório; o responsável aprovou reinstalação dos APKs de **testes**. Não autorizar merge, migração, chave de produção, divulgação de Secrets ou publicação sem autorização específica. Se o APK QA não for gerado, informar precisamente qual Secret, assinatura ou teste bloqueia a build.
