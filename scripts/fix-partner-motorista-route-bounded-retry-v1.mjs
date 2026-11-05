@@ -46,6 +46,7 @@ one(`        resetSpokenCache();
         if (routeFailToastedRef.current === fitKey)`,"reset on success");
 one(`      .catch(() => {
         if (cancelled) return;
+        // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
         // APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1:`,
 `      .catch(() => {
         if (cancelled) return;
@@ -54,6 +55,7 @@ one(`      .catch(() => {
           const backoffMs=routeRetryCountRef.current===1?30000:90000;
           retryTimer=window.setTimeout(()=>setRouteRetryNonce(v=>v+1),backoffMs);
         }
+        // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
         // APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1:`,"bounded backoff on failure");
 one(`    return () => { cancelled = true; };
   }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]);`,
