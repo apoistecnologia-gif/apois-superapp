@@ -382,6 +382,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-passenger-destination-suggestions-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-android-destination-ime-recent-v3.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/qa/verify-corridas-android-ime-recent-v3.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-android-destination-results-v4.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/qa/verify-corridas-android-destination-results-v4.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-compact-home-favorites.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-destination-pickup-contrast.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
