@@ -15,7 +15,7 @@ const helper=`  // APOIS_DRIVER_KYC_APPROVAL_UI_GUARD_V1 — defense in depth; s
       throw new Error("Vistoria: não foi possível confirmar os dados do veículo no servidor.");
     }
     const year = Number(fresh.vehicle_year);
-    if (!Number.isInteger(year) || year < new Date().getFullYear() - 10 || year > new Date().getFullYear() + 1) {
+    if (!Number.isInteger(year) || year < new Date().getFullYear() - 10 || year > new Date().getFullYear()) {
       throw new Error("Vistoria: ano de fabricação fora do limite de dez anos.");
     }
     const { data: photos, error: photoError } = await (supabase as any)
