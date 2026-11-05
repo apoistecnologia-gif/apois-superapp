@@ -380,6 +380,8 @@ if (name === 'corridas') {
   // Client destination search: show provider/network errors and reattempt suggestions without changing maps or ride actions.
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-destination-suggestions-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-passenger-destination-suggestions-v2.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-android-destination-ime-recent-v3.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/qa/verify-corridas-android-ime-recent-v3.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-compact-home-favorites.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-destination-pickup-contrast.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
