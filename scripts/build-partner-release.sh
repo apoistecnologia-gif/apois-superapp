@@ -357,5 +357,7 @@ test -s superapp/partner-shell/dist/index.html
 test -s superapp/partner-shell/dist/modules/motorista/index.html
 test -s superapp/partner-shell/dist/modules/entregador/index.html
 grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
+# AF-03: produce reproducible source-to-bundle record without generating an APK here.
+node "$ROOT/scripts/qa/write-partner-driver-build-fingerprint-v1.mjs"
 
 echo '[OK] APOIS Parceiro release build concluído sem gateway eletrônico ativo.'
