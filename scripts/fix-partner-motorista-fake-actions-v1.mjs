@@ -25,6 +25,18 @@ change("src/routes/motorista.configuracoes.tsx",s=>{
     if(!pat.test(s))throw Error("[FAIL] Driver simulated security action drift: "+pat);
     s=s.replace(pat,"");
   }
+  // Remove imports that are now no longer used; strict TypeScript builds reject them.
+  const importEnd=s.indexOf('} from "lucide-react";');
+  if(importEnd<0)throw Error("[FAIL] Lucide icon import missing");
+  for(const icon of ["Shield","Fingerprint","LockKeyhole"]){
+    const afterImport=s.slice(importEnd+'} from "lucide-react";'.length);
+    if(!new RegExp("\\b"+icon+"\\b").test(afterImport)){
+      const header=s.slice(0,importEnd);
+      const expr=new RegExp("\\b"+icon+"\\s*,\\s*");
+      if(!expr.test(header))throw Error("[FAIL] Unused icon import not found: "+icon);
+      s=header.replace(expr,"")+s.slice(importEnd);
+    }
+  }
   return s;
 });
 console.log("[OK] Motorista: chat controls are visibly unavailable, security placeholders absent; real support, PIN do trajeto and sign-out preserved.");
