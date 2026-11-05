@@ -137,6 +137,9 @@ node "$ROOT/scripts/verify-partner-motorista-settings-ui-v4.mjs"
 # Readable ride offer, Android navigation status and completed rating. No lifecycle/provider rewrites.
 node "$ROOT/scripts/fix-partner-motorista-ride-visual-v7.mjs"
 node "$ROOT/scripts/verify-partner-motorista-ride-visual-v7.mjs"
+# Route Edge Function rejected real authenticated calls with HTTP 401 in physical QA; bounded token refresh only.
+node "$ROOT/scripts/fix-partner-motorista-route-auth-v1.mjs"
+node "$ROOT/scripts/verify-partner-motorista-route-auth-v1.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
