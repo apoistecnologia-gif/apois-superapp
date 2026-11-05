@@ -29,7 +29,7 @@ for(const value of ['air_conditioning','conversation','music','Sem preferência'
 assert.ok(!section.includes('text-white')&&!section.includes('text-zinc-300')&&!section.includes('bg-zinc-800'),
  "Comfort UI must not inherit unreadable dark theme");
 assert.ok(review.includes('await confirmRide(comfort)'),"Must pass original comfort data to request, not modify tariff");
-assert.ok(review.includes('pb-[max(2.5rem,env(safe-area-inset-bottom))]'),"Android nav clearance required");
+assert.ok(review.includes('pb-[max(64px,env(safe-area-inset-bottom))]'),"Android nav clearance required");
 const request=read("src/hooks/rides/use-ride-request.tsx");
 assert.ok(request.includes('supabase.functions.invoke("request-ride"'),"Original dispatch preserved");
 assert.ok(request.includes('ride_comfort_preferences: comfort'),"Original comfort payload preserved");
