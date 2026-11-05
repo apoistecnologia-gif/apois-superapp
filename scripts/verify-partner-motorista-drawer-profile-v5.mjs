@@ -8,7 +8,7 @@ const menu=read("src/components/DriverSideMenu.tsx"),sheet=read("src/components/
 const form=read("src/components/profile/ProfileForm.tsx"),profile=read("src/routes/motorista.perfil.tsx");
 const css=read("src/styles.css");
 for(const m of ['data-apois-driver-menu-fullscreen-v4','data-apois-driver-menu-fixed-v5','data-apois-driver-menu-header-v5',
- 'data-apois-driver-menu-scroll-v5','overlayClassName="!fixed !inset-0 !z-[220] !bg-[#111827]/70"','data-apois-driver-sidebar-profile-v3',
+ 'data-apois-driver-menu-scroll-v5','overlayClassName="!hidden"','data-apois-driver-sidebar-profile-v3',
  'data-apois-driver-sidebar-tools-v1','onClick={() => openOperationalTool("status")}','onClick={() => openOperationalTool("calls")}',
  'onOpenChange(false)','onLogout()','to="/motorista/perfil"']){
  assert.ok(menu.includes(m),"Driver menu content/callback regression "+m);
