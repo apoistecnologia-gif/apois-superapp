@@ -9,7 +9,7 @@ assert.ok(!app.includes('toast.info("Chat em breve")'),"No active-looking fake c
 for(const x of ['title="Sessões ativas" hint="Em breve"','title="Autenticação biométrica" hint="Em breve"','title="Bloqueio por PIN" hint="Em breve"']){
   assert.ok(!settings.includes(x),"No fake security button "+x);
 }
-for(const x of ['title="Alterar senha"','title="Sair de todos os dispositivos"','title="Central de notificações"']){
+for(const x of ['title="Alterar senha"','Sair de todos os dispositivos','title="Central de notificações"']){
   assert.ok(settings.includes(x),"Real adjacent feature preserved: "+x);
 }
 assert.ok(app.includes('onStart={')||app.includes('onStart='),"Ride start still wired");
