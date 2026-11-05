@@ -54,10 +54,11 @@ src=replaceOne(src,ratingState,ratingState+
 // gray blocks after APOIS migrated to a light surface. Use explicit colors
 // ONLY inside RatingScreen, not global CSS/route logic.
 src=between(src,"function RatingScreen(","function SummaryRow(","RatingScreen",s=>{
- const beginning='className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-300"';
- s=replaceOne(s,beginning,
- 'data-apois-driver-rating-readable-v7 className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 animate-in fade-in duration-300"',
- "rating backdrop");
+ // Prior mobile hardeners can modify overlay tone/animation. Match the RatingScreen backdrop structurally.
+ const overlay=s.match(/className="fixed inset-0[^"]*items-end justify-center[^"]*"/);
+ if(!overlay)throw Error("[FAIL] Driver V7 RatingScreen backdrop missing");
+ s=s.replace(overlay[0],
+ 'data-apois-driver-rating-readable-v7 className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 animate-in fade-in duration-300"');
  const panelMatch=s.match(/className="[^"]*max-h-\[calc\(100dvh-max\(env\(safe-area-inset-top\),12px\)\)\][^"]*ring-1 ring-border animate-sheet-in"/);
  if(!panelMatch)throw Error("[FAIL] Rating mobile modal width and safe-area anchor missing");
  s=s.replace(panelMatch[0],
