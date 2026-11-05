@@ -55,4 +55,37 @@ assert.ok(ride.includes('if (screenState !== "completed" || !ride?.id || ride.id
 assert.ok(ride.includes('const timeout = window.setTimeout(() => finishHomeActionRef.current(), 3200);'),
  "Completion briefly confirms then navigates");
 assert.ok(!ride.includes('functions.invoke("driver-ride-action"'),"Passenger must not finalize driver ride");
+// Exercise the actual compiled effect body with fake timers, no account/network.
+// A finished route must navigate, but active/cancelled routes must never auto-navigate.
+const hookStart=ride.indexOf('  useEffect(() => {\n    if (screenState !== "completed" || !ride?.id || ride.id !== rideId) return;');
+const hookEnd=ride.indexOf('  }, [screenState, ride?.id, rideId]);',hookStart);
+assert.ok(hookStart>0 && hookEnd>hookStart,"Completion hook boundaries changed");
+const snippet=ride.slice(hookStart,hookEnd+'  }, [screenState, ride?.id, rideId]);'.length);
+const runHook=new Function("useEffect","screenState","ride","rideId","window","finishHomeActionRef",snippet);
+function simulateTransition(state,rideRecord,paramRideId){
+  const timers=[],clears=[];let home=0,cleanup=null;
+  const fakeWindow={
+    setTimeout(fn,ms){timers.push({fn,ms});return timers.length;},
+    clearTimeout(id){clears.push(id);}
+  };
+  runHook((callback)=>{cleanup=callback();},state,rideRecord,paramRideId,fakeWindow,{current:()=>{home++;}});
+  return {timers,clears,get home(){return home;},dispose(){if(typeof cleanup==="function")cleanup();}};
+}
+for(const status of ["active","cancelled","loading","failed"]){
+  const result=simulateTransition(status,{id:"ride-1"},"ride-1");
+  assert.equal(result.timers.length,0,"No auto-return for "+status);
+  assert.equal(result.home,0,"Cannot leave active/cancelled ride");
+}
+const different=simulateTransition("completed",{id:"ride-2"},"ride-1");
+assert.equal(different.timers.length,0,"Cannot auto-return for a stale unrelated ride");
+const finished=simulateTransition("completed",{id:"ride-1"},"ride-1");
+assert.equal(finished.timers.length,1,"One server-confirmed terminal timer");
+assert.equal(finished.timers[0].ms,3200,"Allow passenger to see completion");
+assert.equal(finished.home,0,"No navigation before timeout");
+finished.timers[0].fn();
+assert.equal(finished.home,1,"Return home exactly after confirmation");
+finished.dispose();
+assert.deepEqual(finished.clears,[1],"Cancel scheduled timeout on unmount");
+console.log("[OK] Ride terminal effect: server confirmed only, stale ride rejected, active trip protected, cleanup verified.");
+
 console.log("[OK] Cliente Corridas: contrast, controls, original request/prefs, terminal summary, timed home return and live-ride lifecycle preserved.");
