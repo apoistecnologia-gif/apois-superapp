@@ -149,6 +149,8 @@ node "$ROOT/scripts/qa/test-partner-motorista-live-ride-rpc-v1.mjs"
 # RT-02: never draw a navigable road/ETA when route provider rejects.
 node "$ROOT/scripts/fix-partner-motorista-route-fail-closed-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-motorista-route-fail-closed-v1.mjs"
+node "$ROOT/scripts/fix-partner-motorista-route-bounded-retry-v1.mjs"
+node "$ROOT/scripts/qa/test-partner-motorista-route-bounded-retry-v1.mjs"
 # UI: distinguish unavailable chat/security features from working controls.
 node "$ROOT/scripts/fix-partner-motorista-fake-actions-v1.mjs"
 # KY-01: additional UI-level gate; the authoritative server Stage2 remains separate.
