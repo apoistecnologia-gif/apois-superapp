@@ -4,6 +4,7 @@ name: APOIS Parceiro Android APK
 # V4 QA gate: correct normalized uppercase submission in generated React form
 # Motorista correction branch: diagnostic Android QA build after route-fallback anchor fix.
 # QA build rerun: V5/V6-compatible bounded routing, 30s movement cadence, and syntax checks.
+# QA build revision: route success reset anchored to confirmed map focus after voice transforms.
 
 on:
   workflow_dispatch:
