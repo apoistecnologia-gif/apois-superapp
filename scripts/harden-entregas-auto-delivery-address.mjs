@@ -25,10 +25,13 @@ if(!form.includes('apois_auto_locate_new_address')){
   writeFileSync(formPath,form,'utf8');
 }
 if(!s.includes('APOIS_ENTREGAS_AUTO_ADDRESS_V1')){
-  const needle='      setDefaultAddress(addrData);';
+  // Real customer policy may have wrapped the default address to prevent QA deliveries.
+  const needle = s.includes('      setDefaultAddress(publicAddress);')
+    ? '      setDefaultAddress(publicAddress);'
+    : '      setDefaultAddress(addrData);';
   if(s.split(needle).length!==2)throw Error('[FAIL] Home Entregas: setDefaultAddress changed');
   const added=[
-    '      setDefaultAddress(addrData);',
+    needle,
     '      // APOIS_ENTREGAS_AUTO_ADDRESS_V1: nunca sobrepor enderecos existentes.',
     '      if (!addrData && sessionStorage.getItem("apois_delivery_auto_address_prompted_v1") !== "1") {',
     '        const { count, error: countError } = await supabase.from("customer_addresses")',
