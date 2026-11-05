@@ -203,7 +203,15 @@ jobs:
           grep -Fq 'APOIS_CUSTOMER_ORDER_REFRESH_V1' '.work/entregas/src/routes/pedido/$orderId/index.tsx'
           grep -Fq 'Entrega concluída!' '.work/entregas/src/routes/pedido/$orderId/index.tsx'
           grep -Fq 'APOIS_CUSTOMER_COURIER_POLL_V1' .work/entregas/src/components/CustomerDeliveryMap.tsx
-          grep -Fq 'TESTE APOIS' .work/entregas/src/routes/checkout.tsx
+          # A vitrine Cliente já não pode exibir os diagnósticos antigos "TESTE APOIS".
+          if grep -Fq 'TESTE APOIS - razão:' .work/entregas/src/routes/checkout.tsx; then
+            echo "::error::Diagnóstico de homologação vazou para o checkout do Cliente"
+            exit 1
+          fi
+          grep -Fq 'isCustomerHomologationMerchant' .work/entregas/src/routes/checkout.tsx
+          grep -Fq 'isCustomerHomologationAddress' .work/entregas/src/routes/checkout.tsx
+          grep -Fq 'data-apois-entregas-real-address-v1' .work/entregas/src/routes/buscar.tsx
+          echo '[OK] Dados de homologação ocultos no Cliente, seleção real de endereço e checkout preservados'
           grep -Fq 'APOIS_ENTREGAS_PERSONAL_DATA_LIGHT_V1' .work/entregas/src/routes/perfil/dados-pessoais.tsx
           grep -Fq '[&_.profile-input]:bg-white' .work/entregas/src/routes/perfil/dados-pessoais.tsx
           test -s .work/entregas/src/system-theme.css
