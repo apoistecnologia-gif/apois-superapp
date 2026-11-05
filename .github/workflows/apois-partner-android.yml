@@ -3,6 +3,7 @@ name: APOIS Parceiro Android APK
 # QA motorista V4: signup email confirmation + uppercase personal fields + typed birth mask
 # V4 QA gate: correct normalized uppercase submission in generated React form
 # Motorista correction branch: diagnostic Android QA build after route-fallback anchor fix.
+# QA build rerun: V5/V6-compatible bounded routing, 30s movement cadence, and syntax checks.
 
 on:
   workflow_dispatch:
