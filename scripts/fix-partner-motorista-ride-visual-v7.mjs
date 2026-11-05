@@ -97,9 +97,11 @@ src=between(src,"function TopStat(","function ","TopStat",s=>{
  const color=s.match(/highlight\s*\?\s*"[^"]+"\s*:\s*"[^"]+"/);
  if(!color)throw Error("[FAIL] TopStat highlight/normal value colors missing");
  s=s.replace(color[0], 'highlight ? "text-[#C81924]" : "text-[#344054]"');
- for(const muted of ["text-muted-foreground","text-zinc-400","text-[#666B73]"]){
-  s=s.replaceAll(muted,"text-[#5B6470]");
- }
+ // The original label span may have been recolored by any earlier theme script.
+ // Match the text node itself, never depend on a specific old palette class.
+ const labelTag=s.match(/className="[^"]*"\s*>\{label\}<\/div>/);
+ if(!labelTag)throw Error("[FAIL] TopStat label element not found");
+ s=s.replace(labelTag[0], 'className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5B6470]">{label}</div>');
  if(!s.includes("text-[#344054]")||!s.includes("text-[#5B6470]"))throw Error("[FAIL] Top navigation ETA labels are unreadable");
  return s;
 });
