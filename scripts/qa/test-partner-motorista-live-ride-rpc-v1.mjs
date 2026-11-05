@@ -9,7 +9,8 @@ const app = readFileSync(resolve(root, "src/routes/motorista.app.tsx"), "utf8");
 for (const required of [
   "APOIS_DRIVER_LIVE_RIDE_RPC_V1",
   'return callRpc("driver_reject_ride", { _ride_id: data.rideId });',
-  'return callRpc("driver_cancel_ride", { _ride_id: data.rideId, _reason: serverReason });',
+  'await callRpc<{status?: string}>("driver_cancel_ride", { _ride_id: data.rideId, _reason: serverReason });',
+  'if (ride?.status === "cancelada_motorista") notifyPassenger(data.rideId, "ride.cancelled");',
   'const isNoShow = /n[aã]o (apareceu|compareceu)/i.test(reason);',
   'callDriverRedispatchFunction("driver-finish-redispatch"',
   'callRpc("driver_start_ride"',
