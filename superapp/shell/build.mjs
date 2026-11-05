@@ -3,6 +3,7 @@ import '../../scripts/harden-superapp-shell-mobile-ui.mjs';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Script } from 'node:vm';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
@@ -199,6 +200,13 @@ const moduleBridgeScript = `
   }
 })();
 </script>`;
+
+// Validate the generated HTML bridge as JavaScript before packaging an APK.
+// An escaping error in this template would otherwise break the entire module.
+const bridgeSource = moduleBridgeScript.match(/^<script[^>]*>\\n([\\s\\S]*?)\\n<\\/script>$/)?.[1];
+if (!bridgeSource) throw Error('[FAIL] APOIS Cliente: missing bridge script payload');
+new Script(bridgeSource, {filename:'apois-client-service-switcher.js'});
+console.log('[OK] APOIS Cliente: injected service-switcher script is valid JavaScript');
 
 for (const moduleName of ['corridas', 'entregas']) {
   const moduleIndex = resolve(dist, `modules/${moduleName}/index.html`);
