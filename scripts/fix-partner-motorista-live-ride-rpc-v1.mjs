@@ -36,8 +36,12 @@ lifecycle = replaceOne(
     reason: reason || null,
   });`,
   `  if (reason.length < 3) throw new Error("Informe o motivo do cancelamento.");
-  // Preserve no-show/arrival/driver-ownership guards inside canonical server RPC.
-  return callRpc("driver_cancel_ride", { _ride_id: data.rideId, _reason: reason });`,
+  // FL-02: deployed RPC recognizes ASCII 'nao apareceu/compareceu' but not
+  // the correctly accented pt-BR reason. Normalize only the no-show category.
+  const isNoShow = /n[aã]o (apareceu|compareceu)/i.test(reason);
+  const serverReason = isNoShow ? reason.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") : reason;
+  // Preserve no-show wait-time, arrival and driver-ownership guards server-side.
+  return callRpc("driver_cancel_ride", { _ride_id: data.rideId, _reason: serverReason });`,
   "cancel uses published RPC"
 );
 for (const forbidden of ["driver-reject-redispatch", "driver-cancel-redispatch"]) {
