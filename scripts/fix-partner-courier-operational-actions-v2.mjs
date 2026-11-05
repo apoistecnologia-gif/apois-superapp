@@ -46,9 +46,13 @@ const callCard=[
 '        </button>'
 ].join("\n");
 route=route.slice(0,calls.start)+callCard+route.slice(calls.end);
-route=exact(route,'import { Loader2, RefreshCw, UserRound, XCircle } from "lucide-react";',
- 'import { ChevronRight, ClipboardList, Loader2, RefreshCw, UserRound, XCircle } from "lucide-react";',
- "courier icons");
+// Earlier native/visual hardeners may reorder or extend the Lucide imports.
+const lucidePattern = /^import\s*\{\s*([^}]*)\}\s*from\s*"lucide-react";/gm;
+const lucideMatches = [...route.matchAll(lucidePattern)];
+if(lucideMatches.length !== 1) throw Error("[FAIL] Courier icon import count="+lucideMatches.length);
+const currentIcons = lucideMatches[0][1].split(",").map((value)=>value.trim()).filter(Boolean);
+for(const icon of ["ChevronRight","ClipboardList"]) if(!currentIcons.includes(icon)) currentIcons.push(icon);
+route=route.replace(lucideMatches[0][0], 'import { '+currentIcons.join(", ")+' } from "lucide-react";');
 
 // Move the six-check diagnostic entry out of the home screen. Courier has
 // bottom navigation tabs, not a hamburger; Perfil is the appropriate location.
