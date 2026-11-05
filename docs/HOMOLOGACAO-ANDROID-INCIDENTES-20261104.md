@@ -116,3 +116,18 @@ Registrar sequencialmente conforme o proprietário enviar novos prints; uma corr
 **Regressão:** scripts/qa/test-entregas-customer-real-catalog-v1.test.ts testa slugs QA, endereços, dados válidos, marketplace, checkout, PIX, seleção e favoritos/abas preservados. CI #41940000554: Cliente web e Estabelecimento web passaram. Teste físico autenticado, pedido real e renderização final ainda requerem homologação após gerar o próximo APK.
 
 **Sem operações destrutivas:** nenhum UPDATE ou DELETE na base, nenhuma migração, nenhum deploy, nenhuma exclusão de histórico/pedidos/produtos. As fixtures históricas continuam na base; apenas a vitrine Cliente as omite no próximo build. Pendência separada: cidade de estabelecimento real com texto corrompido (ItainÃ³polis), que pode afetar a correspondência de municípios; não modificar banco sem autorização.
+
+## 012 — Entregador — botões de homologação na tela inicial
+
+**Evidência física:** captura do APK Parceiro na aba Início/Entregador, com mapa e controle ONLINE, mostrava dois botões avulsos finos: Solicitações disponíveis e Teste de Status · 6 verificações. O usuário solicitou substituir o aspecto provisório, sem quebrar a lógica.
+
+**Causa localizada:** os scripts harden-partner-available-calls-v1.mjs e harden-partner-operational-status-v1.mjs anexavam botões simples diretamente depois de CourierStatusCard, sem integração visual à página.
+
+**Correção versionada:** scripts/fix-partner-courier-operational-actions-v2.mjs, executado ao final da montagem do Entregador, após os dois scripts originais:
+- Substitui o botão de Solicitações disponíveis por um cartão acionável branco/vermelho, com ícone, indicação de finalidade, destino acessível e o mesmo setter de ApoisAvailableCalls. Mantém todos os RPCs e as regras do aceite e atualização.
+- Retira o botão de seis verificações da tela do mapa e apresenta Diagnóstico do aplicativo em Perfil, pois o Entregador usa navegação inferior e não menu sanduíche. Mantém o mesmo ApoisStatusCheck, o mesmo courierId, as seis verificações, e limpa a janela modal ao sair de Perfil.
+- Preserva ONLINE/OFFLINE, GPS, push, conclusão, cancelamento e os eventos de atualização e tratamento do financeiro.
+- scripts/verify-partner-courier-operational-actions-v2.mjs valida as entradas, o posicionamento do modal, os handlers, o perfil e os contratos dos RPCs, proibindo regressão para consulta direta insegura de delivery_jobs.
+
+**Verificação:** script de patch executou com mensagem OK no CI #41944472977; teste dedicado, build e typecheck integrados passaram na etapa de compilação antes do render anônimo. O job visual independente do Cliente registrou falha distinta, no login de Corridas na largura 320px, por sobreposição de seletor de serviços. Verificação visual e Android do Entregador ainda não realizada. Nenhum novo APK, deploy, UPDATE/DELETE de Supabase, segredo ou alteração em pagamentos.
+
