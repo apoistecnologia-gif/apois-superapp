@@ -18,8 +18,12 @@ if (!corridasUrl || !corridasKey) {
   console.error('[FAIL] motorista: variáveis CORRIDAS_VITE_SUPABASE_* ausentes');
   process.exit(1);
 }
-if (!corridasUrl.includes('vqtucstyduxrqjgyigfk.supabase.co')) {
-  console.error('[FAIL] motorista: Supabase informado não é o projeto Corridas canônico');
+// APOIS_DRIVER_CANONICAL_BACKEND_V1: all current Motorista build paths target Corridas production.
+// Do not allow the pinned historical snapshot to silently select a retired project.
+let host;
+try { host = new URL(corridasUrl).hostname; } catch { host = null; }
+if (host !== 'tbbzkrfupmqdywnzgnms.supabase.co' || !corridasUrl.startsWith('https://')) {
+  console.error('[FAIL] motorista: projeto Corridas não-canônico; esperado tbbzkrfupmqdywnzgnms');
   process.exit(1);
 }
 
