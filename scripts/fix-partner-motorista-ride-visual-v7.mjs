@@ -48,7 +48,7 @@ src=replaceOne(src,
  "short route warning");
 const ratingState='  const [ratingRide, setRatingRide] = useState<RideRow | null>(null);';
 src=replaceOne(src,ratingState,ratingState+
- '\n  // APOIS_DRIVER_RIDE_VISUAL_V7: route warnings cannot cover completion/rating.\n  useEffect(() => { if (ratingRide) toast.dismiss("apois-driver-route"); }, [ratingRide?.id]);',
+ '\n  // APOIS_DRIVER_RIDE_VISUAL_V7: route warnings cannot cover completion/rating.\n  useEffect(() => { if (ratingRide) toast.dismiss(); }, [ratingRide?.id]);',
  "dismiss obsolete route notification on completed ride");
 // Complete view: dark-design token names were rendered as near-white text on
 // gray blocks after APOIS migrated to a light surface. Use explicit colors
@@ -108,7 +108,7 @@ src=between(src,"function TopStat(","function ","TopStat",s=>{
 for(const check of [
  'data-apois-driver-offer-readable-v7','data-apois-driver-rating-readable-v7',
  'top: "max(56px, calc(env(safe-area-inset-top) + 12px))"',
- 'toast.dismiss("apois-driver-route")','toast.warning("Rota indisponível. Use a navegação externa."',
+ 'if (ratingRide) toast.dismiss();','toast.warning("Rota indisponível. Use a navegação externa."',
  'const completedRide = await callComplete',
  'setRatingRide(completedRide);','ratingRef.current = completedRide;',
 ])if(!src.includes(check))throw Error("[FAIL] Driver V7 expected contract missing "+check);
