@@ -7,7 +7,7 @@ const save=(p,s)=>writeFileSync(resolve(root,p),s,"utf8");
 function one(s,a,b,label){let n=s.split(a).length-1;if(n!==1)throw Error("[FAIL] Driver V5 "+label+" count="+n);return s.replace(a,b)}
 {
 const p="src/components/ui/sheet.tsx";let s=get(p);
-s=one(s,'  SheetContentProps {}','  SheetContentProps { overlayClassName?: string }',"scoped Sheet overlay prop");
+s=one(s,'  VariantProps<typeof sheetVariants> {}','  VariantProps<typeof sheetVariants> { overlayClassName?: string }',"scoped Sheet overlay prop");
 s=one(s,'({ side = "right", className, children, ...props }, ref) => (','({ side = "right", className, children, overlayClassName, ...props }, ref) => (',"Sheet props");
 s=one(s,'    <SheetOverlay />\n    <SheetPrimitive.Content','    <SheetOverlay className={overlayClassName} />\n    <SheetPrimitive.Content',"specific overlay");
 save(p,s);
