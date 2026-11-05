@@ -9,6 +9,13 @@ one('  const [mapReadyNonce, setMapReadyNonce] = useState(0);',
 `  const [mapReadyNonce, setMapReadyNonce] = useState(0);
   // APOIS_DRIVER_ROUTE_BOUNDED_RETRY_V1: maximum 2 extra calls per ride phase.
   const [routeRetryNonce,setRouteRetryNonce] = useState(0);
+  const [routeTick,setRouteTick] = useState(0);
+  // Recheck current GPS only on a 30s navigation cadence, not on every GPS callback.
+  useEffect(()=>{
+    if (!active) return;
+    const timer=window.setInterval(()=>setRouteTick(v=>v+1),30000);
+    return ()=>window.clearInterval(timer);
+  },[active?.id,active?.status]);
   const routeRetryCountRef=useRef(0);
   const routeRetryScopeRef=useRef<string|null>(null);
   useEffect(()=>{
@@ -24,12 +31,8 @@ one(`    if (!active) {
       routeRetryCountRef.current=0;
       routeRetryScopeRef.current=null;
       setPolyline([]);`,"reset on no ride");
-one(`    const routeRequestKey = fitKey;`,
-`    if (routeRetryScopeRef.current!==fitKey) {
-      routeRetryScopeRef.current=fitKey;
-      routeRetryCountRef.current=0;
-    }
-    const routeRequestKey = fitKey + ":" + routeRetryNonce;`,"retry request identity");
+one('    const routeRequestKey = `${fitKey}:${pos.lat.toFixed(3)}:${pos.lng.toFixed(3)}`;',
+'    if (routeRetryScopeRef.current!==fitKey) {\n      routeRetryScopeRef.current=fitKey;\n      routeRetryCountRef.current=0;\n    }\n    const routeRequestKey = `${fitKey}:${pos.lat.toFixed(3)}:${pos.lng.toFixed(3)}:${routeRetryNonce}`;',"retry request identity");
 one(`    lastRouteRequestKeyRef.current = routeRequestKey;
     if (lastFitKeyRef.current !== fitKey) setPolyline([]);
     let cancelled = false;`,
@@ -55,6 +58,12 @@ one(`      .catch(() => {
         }
         // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.
         // APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1:`,"bounded backoff on failure");
+one(`        lastRouteRequestKeyRef.current = null;
+        // APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1:`,
+`        // Retry only by the bounded retry nonce or after actual relocation.
+        lastRouteRequestKeyRef.current = routeRequestKey;
+        // APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1:`,"fail state remains locked without new GPS cell");
+
 one(`    return () => { cancelled = true; };
   }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]);`,
 `    return () => {
@@ -62,7 +71,7 @@ one(`    return () => { cancelled = true; };
       if (retryTimer!==null) window.clearTimeout(retryTimer);
       if (lastRouteRequestKeyRef.current===routeRequestKey) lastRouteRequestKeyRef.current=null;
     };
-  }, [active?.id, active?.status, Boolean(position), mapReadyNonce, routeRetryNonce]);`,"stable dependencies");
-for(const marker of ["APOIS_DRIVER_ROUTE_BOUNDED_RETRY_V1","routeRetryCountRef.current<2","Boolean(position), mapReadyNonce, routeRetryNonce","window.clearTimeout(retryTimer)"])if(!s.includes(marker))throw Error("[FAIL] Missing route recovery "+marker);
+  }, [active?.id, active?.status, Boolean(position), mapReadyNonce, routeRetryNonce, routeTick]);`,"stable dependencies");
+for(const marker of ["APOIS_DRIVER_ROUTE_BOUNDED_RETRY_V1","routeRetryCountRef.current<2","Boolean(position), mapReadyNonce, routeRetryNonce, routeTick","window.clearTimeout(retryTimer)","routeTick"])])if(!s.includes(marker))throw Error("[FAIL] Missing route recovery "+marker);
 writeFileSync(p,s,"utf8");
 console.log("[OK] Driver routes: GPS updates do not abort in-flight route; no infinite Maps retry loop; max 2 retries per phase.");
