@@ -133,6 +133,24 @@ const moduleBridgeScript = `
     });
   }
 
+  // APOIS_CLIENT_PUBLIC_SCROLL_RESET_V1: a 320px login needs vertical scrolling to
+  // reach "Criar conta". TanStack hash navigation can preserve that offset into
+  // cadastro, bringing a form input underneath the fixed 44x44 service switcher.
+  // Reset scroll only when entering a DIFFERENT public form route, never while
+  // typing, editing, scrolling or receiving a ride.
+  var lastPublicNavigation = null;
+  function keepPublicFormAtTop() {
+    var route = (window.location.hash || '').split('?')[0];
+    if (route === lastPublicNavigation) return;
+    lastPublicNavigation = route;
+    if (!/^#\/(?:cadastro|recuperar-senha)(?:\/|$)/.test(route)) return;
+    window.scrollTo(0, 0);
+    window.requestAnimationFrame(function () {
+      window.scrollTo(0, 0);
+      window.requestAnimationFrame(function () { window.scrollTo(0, 0); });
+    });
+  }
+
   // Corridas: se a foto externa do Google falhar, nunca mostrar o texto quebrado
   // "Foto". Trocamos por uma inicial legível do passageiro.
   function repairBrokenPassengerAvatar(root) {
@@ -157,11 +175,14 @@ const moduleBridgeScript = `
     mountSwitcher();
     syncSwitcherVisibility();
     keepPublicBackLinkCompact();
+    keepPublicFormAtTop();
+    window.addEventListener('hashchange', keepPublicFormAtTop);
     repairBrokenPassengerAvatar(document);
     var observer = new MutationObserver(function (mutations) {
       mountSwitcher();
       syncSwitcherVisibility();
       keepPublicBackLinkCompact();
+      keepPublicFormAtTop();
       mutations.forEach(function (mutation) {
         mutation.addedNodes.forEach(function (node) {
           if (node && node.nodeType === 1) repairBrokenPassengerAvatar(node);
