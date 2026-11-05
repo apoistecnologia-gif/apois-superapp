@@ -35,6 +35,7 @@ jobs:
       APP_VERSION_CODE: "12"
       APP_VERSION_NAME: "1.0.11"
       QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
+      QA_CERT_EXPECTED_SHA256: ${{ secrets.APOIS_CLIENT_QA_CERT_SHA256 }}
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -60,7 +61,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY CORRIDAS_ANDROID_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY
+          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY CORRIDAS_ANDROID_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY QA_DEBUG_KEYSTORE_BASE64 QA_CERT_EXPECTED_SHA256
           do
             if [ -z "${!key:-}" ]; then
               echo "::error::GitHub secret ausente: $key"
@@ -74,27 +75,15 @@ jobs:
           test "${CORRIDAS_ANDROID_MAPS_API_KEY: -6}" = "av01xU" || { echo "::error::CORRIDAS_ANDROID_MAPS_API_KEY não corresponde à chave Android homologada"; exit 1; }
           echo "[OK] Secrets mínimos presentes e chaves Maps conferidas pelos sufixos esperados"
 
-      # Protect users and runner time: fail BEFORE costly builds when the
-      # original QA identity is unavailable. An APK cannot be updated with
-      # a new/random key, even if its Gradle compilation succeeds.
-      # Chave QA criptografada antes de entrar no cache do Actions.
-      # O token privado existente protege a chave, sem conceder novas permissões.
-      - name: Restore encrypted QA signing from Actions cache
-        id: qa_signing_restore
-        uses: actions/cache/restore@v4
-        with:
-          path: .qa-signing/android-debug-keystore.enc
-          key: apois-client-qa-encrypted-signing-v1
-
-      - name: Require original Cliente QA signing BEFORE module compilation
+      # Owner authorized ONE new, fixed QA keystore, not an unpredictable per-build key.
+      # Do not rely on the lost 2026-10 key or ephemeral GitHub cache.
+      - name: Require durable Cliente QA identity before build
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${QA_DEBUG_KEYSTORE_BASE64:-}" ] && [ ! -s .qa-signing/android-debug-keystore.enc ]; then
-            echo "::error::Original Client QA signing identity missing. Restore protected APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 or original encrypted cache before compiling."
-            exit 1
-          fi
-          echo "[OK] Original QA keystore candidate available; pinned certificate still checked after restore"
+          test -n "${QA_DEBUG_KEYSTORE_BASE64:-}" || { echo "::error::Set APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 GitHub Secret once."; exit 1; }
+          test -n "${QA_CERT_EXPECTED_SHA256:-}" || { echo "::error::Set APOIS_CLIENT_QA_CERT_SHA256 to the corresponding public certificate hash."; exit 1; }
+          echo "[OK] Cliente QA signing configured; no auto-generation of test signing keys"
 
       - name: Checkout protected APOIS sources
         shell: bash
@@ -112,6 +101,22 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+
+      - name: Restore and validate pinned Cliente QA signing identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.android"
+          KEYSTORE="$HOME/.android/debug.keystore"
+          printf '%s' "$QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          test -s "$KEYSTORE" || { echo "::error::Cliente QA keystore secret decoded to an empty file"; exit 1; }
+          keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
+          ACTUAL_FINGERPRINT="$(keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          REQUIRED_FINGERPRINT="$(printf '%s' "$QA_CERT_EXPECTED_SHA256" | tr -cd '[:xdigit:]' | tr '[:upper:]' '[:lower:]')"
+          test "${#REQUIRED_FINGERPRINT}" -eq 64 || { echo "::error::Cliente QA SHA-256 must contain 64 hexadecimal digits"; exit 1; }
+          test "$ACTUAL_FINGERPRINT" = "$REQUIRED_FINGERPRINT" || { echo "::error::Cliente QA keystore certificate mismatch; aborting before APK build"; exit 1; }
+          echo "[OK] Original configured QA keystore reused; certificate matches; release signing untouched"
 
       - name: Validate Android SDK on runner
         shell: bash
@@ -255,34 +260,6 @@ jobs:
           MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
           echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
-
-      - name: Restore persistent QA Android debug signing
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.android" .qa-signing
-          KEYSTORE="$HOME/.android/debug.keystore"
-          ENCRYPTED=".qa-signing/android-debug-keystore.enc"
-          if [ -n "${QA_DEBUG_KEYSTORE_BASE64:-}" ]; then
-            printf '%s' "$QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
-            echo "[OK] QA signing restored from protected GitHub Actions secret"
-          elif [ -s "$ENCRYPTED" ]; then
-            test -n "${GH_TOKEN:-}" || { echo "::error::QA encrypted key requires token"; exit 1; }
-            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$ENCRYPTED" -out "$KEYSTORE" -pass env:GH_TOKEN
-            echo "[OK] Reused encrypted QA signing identity"
-          else
-            echo "::error::Original Client QA signing key unavailable; no secret or encrypted cache. Never create another key."
-            exit 1
-          fi
-          test -s "$KEYSTORE"
-          keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
-          keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | grep 'SHA256:' | head -n 1
-          ACTUAL_FINGERPRINT="$(keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-          REQUIRED_FINGERPRINT="97eaf64ee20ef16b2765a6dff5e96a25dbad4da12ccb6e5c2cd48d4c9c2f61f4"
-          test "$ACTUAL_FINGERPRINT" = "$REQUIRED_FINGERPRINT" || { echo "::error::QA certificate changed or cache lost; do not rotate signature automatically"; exit 1; }
-          echo "[OK] Reusable QA signing identity verified"
 
       - name: Stamp monotonic QA Android version
         shell: bash
