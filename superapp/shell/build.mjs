@@ -203,7 +203,8 @@ const moduleBridgeScript = `
 
 // Validate the generated HTML bridge as JavaScript before packaging an APK.
 // An escaping error in this template would otherwise break the entire module.
-const bridgeStart = moduleBridgeScript.indexOf(String.fromCharCode(10)) + 1;
+const bridgeStartTag = moduleBridgeScript.indexOf('<script');
+const bridgeStart = moduleBridgeScript.indexOf(String.fromCharCode(10), bridgeStartTag) + 1;
 const bridgeEnd = moduleBridgeScript.lastIndexOf(String.fromCharCode(10) + '</script>');
 const bridgeSource = bridgeStart > 0 && bridgeEnd > bridgeStart
   ? moduleBridgeScript.slice(bridgeStart, bridgeEnd) : null;
