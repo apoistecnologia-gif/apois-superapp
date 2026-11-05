@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motorista");
+const s=readFileSync(resolve(root,"src/components/DriverSideMenu.tsx"),"utf8");
+assert.ok(s.includes("APOIS_DRIVER_PROFILE_PHOTO_ONLY_V1"),"Avatar policy marker");
+assert.ok(s.includes("await loadOwnProfilePhotoUrl()"),"Menu shares profile photo resolver");
+assert.ok(s.includes("await refreshProfilePhotoUrl(storedPhoto)"),"Stored profile path refresh remains");
+assert.ok(!s.includes("photo_url ?? profileResult.profile.selfie_url"),"Verification selfie must not become avatar");
+assert.ok(s.includes("if (!cancelled) setPhotoUrl"),"Unmount guard preserved");
+console.log("[PASS] Menu avatar always uses profile-photo storage and does not reuse KYC selfie.");
