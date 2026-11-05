@@ -16,7 +16,7 @@ const stats=between("function TopStat(","function ");
 assert.ok(offer.includes("data-apois-driver-offer-readable-v7"),"Offer visual marker");
 assert.ok(offer.includes('top-[max(56px,env(safe-area-inset-top))]'),"Offer must not overlap Android status bar");
 assert.ok(offer.includes('maxHeight: "100%"') && offer.includes("min-h-0"),"Offer remains scrollable within safe viewport");
-for(const marker of ["onClick={onAccept}","onClick={onReject}","{ride.estimated_price","{countdown}","<InfoCard","<AddressRow","paymentLabelFor(ride.payment_method)"])
+for(const marker of ["onClick={onAccept}","onClick={onReject}","{ride.estimated_price","<CountdownRing seconds={countdown}","<InfoCard","<AddressRow","paymentLabelFor(ride.payment_method)"])
  assert.ok(offer.includes(marker),"Offer callbacks/data must remain: "+marker);
 assert.ok(offer.includes("border-[#E2E4E8] bg-white"),"Offer footer uses readable white surface");
 assert.ok(rating.includes("data-apois-driver-rating-readable-v7"),"Completed rating screen marker");
