@@ -33,16 +33,18 @@ one('  ride, passenger, countdown, driverPos, onAccept, onReject, onOpenProfile,
 '  ride, passenger, countdown, soundEnabled, voiceAlertEnabled, driverPos, onAccept, onReject, onOpenProfile,',"offer signature");
 one('  ride: RideRow; passenger: Passenger | null; countdown: number;',
 '  ride: RideRow; passenger: Passenger | null; countdown: number;\n  soundEnabled: boolean; voiceAlertEnabled: boolean;',"offer types");
-one(`  useEffect(() => {
-    startRideRingtone();
-    void speak("Nova corrida", { interrupt: true });
-    return () => { stopRideRingtone(); };
-  }, []);`,
-`  useEffect(() => {
-    if (soundEnabled) startRideRingtone();
-    if (voiceAlertEnabled) void speak("Nova corrida", { interrupt: true });
-    return () => { stopRideRingtone(); };
-  }, [ride.id, soundEnabled, voiceAlertEnabled]);`,"ringtone effect");
+// Preserve the contextual pickup speech installed by the earlier voice-dedup hardener.
+const offerStart=s.indexOf("function IncomingOffer(");
+const offerEnd=s.indexOf("function InfoCard(",offerStart);
+if(offerStart<0||offerEnd<offerStart)throw Error("[FAIL] IncomingOffer scope missing");
+let offer=s.slice(offerStart,offerEnd);
+function changeOffer(old,next,label){const n=offer.split(old).length-1;if(n!==1)throw Error("[FAIL] IncomingOffer "+label+"="+n);offer=offer.replace(old,next);}
+changeOffer("    startRideRingtone();","    if (soundEnabled) startRideRingtone();","conditional ringtone");
+changeOffer('    void speak(offerVoice, { dedupKey: `${ride.id}:new-offer`, interrupt: true });',
+            '    if (voiceAlertEnabled) void speak(offerVoice, { dedupKey: `${ride.id}:new-offer`, interrupt: true });',
+            "conditional contextual voice");
+changeOffer("  }, [ride.id]);","  }, [ride.id, soundEnabled, voiceAlertEnabled]);","current prefs effect dependencies");
+s=s.slice(0,offerStart)+offer+s.slice(offerEnd);
 for(const check of ["ridePrefsRef.current.ride_alerts && ridePrefsRef.current.vibration","if (soundEnabled) startRideRingtone();","loadDriverPrefs(userId)"])if(!s.includes(check))throw Error("[FAIL] prefs marker "+check);
 writeFileSync(file,s,"utf8");
 console.log("[OK] Motorista offer sound/vibration respects persisted settings; incoming offers still displayed.");
