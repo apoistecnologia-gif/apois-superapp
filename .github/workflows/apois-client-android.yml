@@ -25,7 +25,7 @@ permissions:
 
 jobs:
   build-client-apk:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/fix/passageiro-ocorrencias-safearea-20261105' && github.event.head_commit.message == 'ci(apois): one-time Cliente QA APK validation 2026-11-05')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
