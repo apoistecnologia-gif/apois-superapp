@@ -8,13 +8,16 @@ if(s.includes("APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1"))throw Error("[FAIL] Route fai
 const original=`        const fallback = [pos, dest];
         setPolyline(fallback);
         setRouteSteps([]);
+        setRouteStepsPhase(null);
         const km = haversineKm(pos, dest);
-        setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));
+        // Straight-line distance is not a verified road route.
+        setLegKm(null); setEtaSeconds(null);
         focusRoute(fallback);`;
 const replacement=`        // APOIS_DRIVER_ROUTE_FAIL_CLOSED_V1: road geometry and ETA are unknown.
         // Keep both markers visible, but never portray an air-line as a drivable road.
         setPolyline([]);
         setRouteSteps([]);
+        setRouteStepsPhase(null);
         setLegKm(null);
         setEtaSeconds(null);
         focusRoute([]);`;
