@@ -92,7 +92,14 @@ src=between(src,"function SummaryRow(","function TopStat(","SummaryRow",s=>{
  return s;
 });
 src=between(src,"function TopStat(","function ","TopStat",s=>{
- s=s.replaceAll("text-foreground/85","text-[#344054]").replaceAll("text-muted-foreground","text-[#5B6470]");
+ // Earlier visual hardeners may have replaced the old token with text-white/90.
+ // The statistics header is always on white in the final partner layout.
+ const color=s.match(/highlight\s*\?\s*"[^"]+"\s*:\s*"[^"]+"/);
+ if(!color)throw Error("[FAIL] TopStat highlight/normal value colors missing");
+ s=s.replace(color[0], 'highlight ? "text-[#C81924]" : "text-[#344054]"');
+ for(const muted of ["text-muted-foreground","text-zinc-400","text-[#666B73]"]){
+  s=s.replaceAll(muted,"text-[#5B6470]");
+ }
  if(!s.includes("text-[#344054]")||!s.includes("text-[#5B6470]"))throw Error("[FAIL] Top navigation ETA labels are unreadable");
  return s;
 });
