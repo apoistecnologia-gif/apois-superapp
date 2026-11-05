@@ -37,7 +37,7 @@ for(const comp of [summary,stats])assert.ok(comp.includes("text-[#5B6470]"),"Sum
 assert.ok(summary.includes("text-[#111827]"),"Rating summary amounts must be legible");
 assert.ok(stats.includes("text-[#344054]"),"ETA statistics values must be legible");
 assert.ok(route.includes('toast.warning("Rota indisponível. Use a navegação externa.", { id: "apois-driver-route", duration: 3000 });'),"Keep brief, deduped route warning");
-assert.ok(route.includes('toast.dismiss("apois-driver-route")'),"Clear stale route notification during rating");
+assert.ok(route.includes('if (ratingRide) toast.dismiss();'),"Clear old navigation notifications only when rating opens");
 assert.ok(!route.includes('toast.message("Não foi possível traçar a rota agora. Use navegação externa.");'),"No old oversized route toast");
 assert.ok(route.includes('max(56px, calc(env(safe-area-inset-top) + 12px))'),"Top route status must clear Android status bar");
 for(const marker of [
