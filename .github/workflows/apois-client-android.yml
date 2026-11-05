@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   build-client-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/fix/passageiro-ocorrencias-safearea-20261105')
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -348,3 +348,49 @@ jobs:
           path: build/APOIS-Cliente-TESTE.apk
           if-no-files-found: error
           retention-days: 7
+
+  validate-passenger-ui:
+    name: Corridas Passenger Web QA (no APK signing)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/fix/passageiro-ocorrencias-safearea-20261105'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      CORRIDAS_ANDROID_MAPS_API_KEY: ""
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - name: Load pinned Corridas source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${APOIS_REPO_TOKEN:-}"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Compile Corridas and check protocol/search UX
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          node --check scripts/harden-corridas-case-center-v1.mjs
+          node --check scripts/qa/verify-corridas-case-center-safearea-v2.mjs
+          npm run verify:pins
+          npm run build:corridas
+          node scripts/qa/verify-corridas-case-center-safearea-v2.mjs
+          node scripts/verify-corridas-passenger-destination-suggestions-v2.mjs
+          echo "[PASS] Cliente Corridas: protocolo/safe-area/autocomplete. No APK generated."
