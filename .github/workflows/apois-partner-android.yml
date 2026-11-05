@@ -9,6 +9,7 @@ name: APOIS Parceiro Android APK
 # Driver QA run: real emergency/security settings route and removed simulated actions.
 # QA build: contextual offer voice preserved and gated by local alert preferences.
 # QA rerun: integrated preflight checks semantic failed-route cleanup across line breaks.
+# Motorista UI QA: no dimming backdrop over fullscreen drawer (field screenshot November 5).
 
 on:
   workflow_dispatch:
