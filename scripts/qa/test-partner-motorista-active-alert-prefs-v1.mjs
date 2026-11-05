@@ -6,7 +6,8 @@ const s=readFileSync(p,"utf8");
 for (const required of [
 "APOIS_DRIVER_PREFS_ACTIVE_V1",
 "loadDriverPrefs(userId)",
-"ridePrefs.ride_alerts && ridePrefs.vibration && navigator.vibrate",
+"ridePrefsRef.current=ridePrefs;",
+"ridePrefsRef.current.ride_alerts && ridePrefsRef.current.vibration && navigator.vibrate",
 "soundEnabled={ridePrefs.ride_alerts && ridePrefs.sound}",
 "voiceAlertEnabled={ridePrefs.ride_alerts}",
 "if (soundEnabled) startRideRingtone();",
