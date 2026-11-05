@@ -46,8 +46,8 @@ save("src/lib/customer-public-visibility.ts",policy);
  s=replaceOnce(s,'      if (addrData) {\n        const mers = await fetchMerchants((addrData as any).city, (addrData as any).state);',
   '      if (publicAddress) {\n        const mers = await fetchMerchants((publicAddress as any).city, (publicAddress as any).state);',
   "home fetch only with real address");
- s=replaceOnce(s,'                "Informe seu endereço"\n              )}',
-  '                needsRealAddress ? "Selecione um endereço real" : "Informe seu endereço"\n              )}',
+ s=replaceOnce(s,'                "Definir endereço de entrega"\n              )}',
+  '                needsRealAddress ? "Selecione um endereço real" : "Definir endereço de entrega"\n              )}',
   "home label");
  s=replaceOnce(s,'                  Informe um endereço de entrega para ver os estabelecimentos disponíveis na sua região.',
   '                  {needsRealAddress ? "O endereço anterior era de homologação. Escolha um endereço verdadeiro para consultar estabelecimentos." : "Informe um endereço de entrega para ver os estabelecimentos disponíveis na sua região."}',
