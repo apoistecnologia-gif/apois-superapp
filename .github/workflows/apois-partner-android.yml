@@ -8,6 +8,7 @@ name: APOIS Parceiro Android APK
 # QA rerun: mock chat already removed, KYC avatar after sidebar transform, financial copy idempotent.
 # Driver QA run: real emergency/security settings route and removed simulated actions.
 # QA build: contextual offer voice preserved and gated by local alert preferences.
+# QA rerun: integrated preflight checks semantic failed-route cleanup across line breaks.
 
 on:
   workflow_dispatch:
