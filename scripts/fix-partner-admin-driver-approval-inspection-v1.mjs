@@ -42,7 +42,7 @@ s=s.replace(call,'      if (status === "aprovado") await assertCarVehicleInspect
 const oldError='      setActionError("Não foi possível alterar a aprovação. Tente novamente.");';
 if(s.split(oldError).length!==2)throw Error("[FAIL] Admin approval error handling drift");
 s=s.replace(oldError,'      setActionError(error instanceof Error && error.message.startsWith("Vistoria:") ? error.message : "Não foi possível alterar a aprovação. Tente novamente.");');
-for(const key of ["apois_vehicle_inspection_photos","const latest = new Map","status === \"aprovado\"","assertCarVehicleInspected(driver)"]){
+for(const key of ["getDocs({ data: { driverId: driver.id } })","const latest = new Map","status === \"aprovado\"","assertCarVehicleInspected(driver)"]){
  if(!s.includes(key))throw Error("[FAIL] Admin inspection guard: "+key);
 }
 writeFileSync(file,s,"utf8");
