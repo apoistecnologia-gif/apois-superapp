@@ -203,7 +203,10 @@ const moduleBridgeScript = `
 
 // Validate the generated HTML bridge as JavaScript before packaging an APK.
 // An escaping error in this template would otherwise break the entire module.
-const bridgeSource = moduleBridgeScript.match(/^<script[^>]*>\\n([\\s\\S]*?)\\n<\\/script>$/)?.[1];
+const bridgeStart = moduleBridgeScript.indexOf(String.fromCharCode(10)) + 1;
+const bridgeEnd = moduleBridgeScript.lastIndexOf(String.fromCharCode(10) + '</script>');
+const bridgeSource = bridgeStart > 0 && bridgeEnd > bridgeStart
+  ? moduleBridgeScript.slice(bridgeStart, bridgeEnd) : null;
 if (!bridgeSource) throw Error('[FAIL] APOIS Cliente: missing bridge script payload');
 new Script(bridgeSource, {filename:'apois-client-service-switcher.js'});
 console.log('[OK] APOIS Cliente: injected service-switcher script is valid JavaScript');
