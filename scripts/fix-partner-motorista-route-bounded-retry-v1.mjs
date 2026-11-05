@@ -24,10 +24,8 @@ one(`    if (!active) {
       routeRetryCountRef.current=0;
       routeRetryScopeRef.current=null;
       setPolyline([]);`,"reset on no ride");
-one(`    const fitKey = \`\${active.id}-\${active.status}\`;
-    const routeRequestKey = fitKey;`,
-`    const fitKey = \`\${active.id}-\${active.status}\`;
-    if (routeRetryScopeRef.current!==fitKey) {
+one(`    const routeRequestKey = fitKey;`,
+`    if (routeRetryScopeRef.current!==fitKey) {
       routeRetryScopeRef.current=fitKey;
       routeRetryCountRef.current=0;
     }
