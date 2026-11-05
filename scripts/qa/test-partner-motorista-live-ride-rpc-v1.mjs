@@ -29,7 +29,7 @@ assert.ok(
 assert.ok(rejectHandler.includes('toast.error("Não foi possível recusar a corrida"'), "Error visible to driver");
 assert.ok(rejectHandler.includes("resyncDriverRides()"), "Reconcile an uncertain server state");
 const normalizeNoShow=(reason)=>/n[aã]o (apareceu|compareceu)/i.test(reason)
-  ? reason.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")
+  ? reason.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
   : reason;
 assert.equal(normalizeNoShow("Passageiro não apareceu"),"Passageiro nao apareceu");
 assert.equal(normalizeNoShow("Passageiro não compareceu"),"Passageiro nao compareceu");
