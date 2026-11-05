@@ -41,8 +41,17 @@ lifecycle = replaceOne(
   const isNoShow = /n[aã]o (apareceu|compareceu)/i.test(reason);
   const serverReason = isNoShow ? reason.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "") : reason;
   // Preserve no-show wait-time, arrival and driver-ownership guards server-side.
-  return callRpc("driver_cancel_ride", { _ride_id: data.rideId, _reason: serverReason });`,
+  const ride = await callRpc<{status?: string}>("driver_cancel_ride", { _ride_id: data.rideId, _reason: serverReason });
+  // The no-show branch is terminal and keeps driver ownership: send a best-effort passenger push.
+  // Redispatch instead returns procurar_motorista; it must not send "ride.cancelled".
+  if (ride?.status === "cancelada_motorista") notifyPassenger(data.rideId, "ride.cancelled");
+  return ride;`,
   "cancel uses published RPC"
+);
+lifecycle = replaceOne(lifecycle,
+  " * Cancelamento operacional passa pela Edge Function autenticada para que o\n * banco valide a ação com o JWT real do motorista e, quando a corrida volta a\n * procurar_motorista, o backend dispare redispatch imediatamente. Isso elimina\n * a dependência do app do passageiro estar aberto para a busca continuar.",
+  " * Cancelamento operacional usa a RPC autenticada do banco, com regras de\n * transição e no-show. O estado procurar_motorista fica disponível ao\n * despachante; a promoção imediata de outra oferta depende do backend.",
+  "truthful cancellation contract documentation"
 );
 for (const forbidden of ["driver-reject-redispatch", "driver-cancel-redispatch"]) {
   if (lifecycle.includes(forbidden)) throw Error("[FAIL] Unpublished Edge endpoint remains: " + forbidden);
