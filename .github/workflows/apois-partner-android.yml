@@ -7,6 +7,7 @@ name: APOIS Parceiro Android APK
 # QA build revision: route success reset anchored to confirmed map focus after voice transforms.
 # QA rerun: mock chat already removed, KYC avatar after sidebar transform, financial copy idempotent.
 # Driver QA run: real emergency/security settings route and removed simulated actions.
+# QA build: contextual offer voice preserved and gated by local alert preferences.
 
 on:
   workflow_dispatch:
