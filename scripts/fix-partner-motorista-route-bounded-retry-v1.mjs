@@ -40,11 +40,9 @@ one(`    lastRouteRequestKeyRef.current = routeRequestKey;
     if (lastFitKeyRef.current !== fitKey) setPolyline([]);
     let cancelled = false;
     let retryTimer: number | null=null;`,"timer lifetime");
-one(`        resetSpokenCache();
-        if (routeFailToastedRef.current === fitKey)`,
+one(`        focusRoute(points);`,
 `        routeRetryCountRef.current=0;
-        resetSpokenCache();
-        if (routeFailToastedRef.current === fitKey)`,"reset on success");
+        focusRoute(points);`,"reset on success");
 one(`      .catch(() => {
         if (cancelled) return;`,
 `      .catch(() => {
