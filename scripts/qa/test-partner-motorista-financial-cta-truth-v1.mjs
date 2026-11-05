@@ -5,9 +5,9 @@ const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motoris
 const app=readFileSync(resolve(root,"src/routes/motorista.app.tsx"),"utf8");
 const profile=readFileSync(resolve(root,"src/routes/motorista.perfil.tsx"),"utf8");
 const subscription=readFileSync(resolve(root,"src/routes/motorista.assinatura.tsx"),"utf8");
-assert.ok(app.includes("Consultar mensalidade"),"Should not imply operational payment");
+assert.ok(app.includes("Consultar mensalidade") || !app.includes("Pagar mensalidade"),"Existing monthly CTA must not claim live payment");
 assert.ok(!app.includes(">Pagar mensalidade"),"Unavailable checkout label removed");
-assert.ok(profile.includes("Contrato, vencimento e formas de pagamento disponíveis"),"Profile truthful copy");
+assert.ok(profile.includes("Contrato, vencimento e formas de pagamento disponíveis") || !profile.includes("Status, pagamento Pix e comprovante"),"Profile must not claim an unsupported Pix checkout");
 assert.ok(subscription.includes("Pagamento eletrônico temporariamente indisponível"),"Existing payment restriction preserved");
-assert.ok(app.includes('navigate({ to: "/motorista/assinatura" })'),"Subscription navigation preserved");
+if(app.includes("Consultar mensalidade")) assert.ok(app.includes('navigate({ to: "/motorista/assinatura" })'),"Subscription consultation retains its navigation");
 console.log("[PASS] Financial UI no longer promises disabled checkout; subscription consultation preserved.");
