@@ -11,7 +11,9 @@ for (const required of [
 "soundEnabled={ridePrefs.ride_alerts && ridePrefs.sound}",
 "voiceAlertEnabled={ridePrefs.ride_alerts}",
 "if (soundEnabled) startRideRingtone();",
-"if (voiceAlertEnabled) void speak(\"Nova corrida\"",
+"if (voiceAlertEnabled) void speak(offerVoice",
+"Nova corrida. Embarque em",
+"dedupKey: `${ride.id}:new-offer`",
 "return () => { stopRideRingtone(); };",
 ])assert.ok(s.includes(required),"Ride UX preference missing "+required);
 assert.ok(!s.includes('if (navigator.vibrate) navigator.vibrate('),"No unconditional vibration");
