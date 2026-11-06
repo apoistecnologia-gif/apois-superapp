@@ -210,7 +210,8 @@ if(process.argv.includes("--dist")){
     "evidence.travelledKm >= 0.12",
     "evidence.nearFixes >= 2",
     "now - evidence.firstAt >= 20000",
-    "setLegKm(null); setEtaSeconds(null);",
+    "setLegKm(null);",
+    "setEtaSeconds(null);",
   ],"Motorista rejects 0km false routes, clears stale steps and confirms motion before arrival");
 
   all(driverAppPatched,["data-apois-trip-top-v6","data-apois-trip-bottom-v6","onShowRoute","onRecenter","m.fitBounds"],"Motorista V6 keeps route overview and compact light panels");
@@ -222,7 +223,7 @@ if(process.argv.includes("--dist")){
   all(read(".work/partner-motorista/src/lib/driverLocalSignOut.ts"),['scope: "local"','window.location.replace','sb-'],"Motorista logout local with offline fallback");
   all(offersPatched,["APOIS_PARTNER_LOGO_DATA_URL","apois:courier-offer-accepted","AudioContext","stopAlert","pulseAlert"],"Built courier offer modal, ringtone and immediate route refresh");
   all(courierPatched,["window.addEventListener(\"apois:courier-offer-accepted\", refresh)","window.removeEventListener(\"apois:courier-offer-accepted\", refresh)"],"Courier updates active route on accepted offer");
-  all(waitingPatched,["Aguardando chamadas","Atualizar ofertas","Ganhos hoje","Entregas hoje","Tempo online","earnings_today","completed_deliveries","online_seconds_today"],"Compact courier waiting sheet retains metrics and refresh");
+  all(waitingPatched,["Aguardando chamadas","Atualizar ofertas","Ganhos hoje","Concluídas (total)","Tempo online","earnings_today","completed_deliveries","online_seconds_today"],"Compact courier waiting sheet retains metrics and refresh");
   check(courierPatched.includes("<CourierWaitingSheet"),"Courier home still displays compact metrics during idle online");
   check(existsSync("superapp/partner-shell/dist/index.html"),"Partner chooser included");
   check(existsSync("superapp/partner-shell/dist/modules/motorista/index.html"),"Driver module copied");
