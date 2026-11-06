@@ -36,3 +36,12 @@ Branch `fix/apois-corridas-e2e-homologacao-20261106` do `apoistecnologia-gif/apo
 
 ## Procedimento de homologação
 Instalar APK Parceiro de CI aprovado mais recente; testar 1) galeria nativa e mensagem real do upload; 2) reload da foto; 3) contagem versus Histórico; 4) cartão AVALIAÇÕES em tela 345 CSS px; 5) Ver perfil público.
+
+
+## APK QA final verificado nesta rodada
+- GitHub Actions: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/42308097575
+- Resultado: `success`; `APOIS-Parceiro-TESTE` gerado e assinado com a chave QA configurada.
+- Código compilado: `a189cabc4e612d43813b865d79953a601d4ebef7` (workflow executado na branch de homologação).
+- APK extraído do artefato e validado como arquivo ZIP/APK íntegro; 11.422.974 bytes.
+- SHA-256: `c2afef717cef56bafc4e2ae023dfbf5bb73a97a0c0392fe35e25c2db4a9e3d05`.
+- Não houve validação em dispositivo desta nova versão; testes de upload real, imagens no perfil, contagem por motorista e cartão AVALIAÇÕES continuam necessários.
