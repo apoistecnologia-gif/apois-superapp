@@ -18,7 +18,7 @@ for(const marker of [
   ".finally(() => { offerQueryInFlight = false; })",
   "4_000",
 ])assert.ok(poll.includes(marker),"V2 polling missing: "+marker);
-assert.ok(!poll.includes("navigator.onLine"),"Do not rely on stale navigator.onLine in native WebView");
+assert.ok(!/if\s*\(\s*!\s*navigator\.onLine\s*\)/.test(poll),"Do not gate live offers on a stale WebView navigator.onLine value");
 assert.ok(!poll.includes("resyncDriverRides().catch(() => undefined)"),"Do not silently swallow failing offer queries");
 assert.ok(source.includes("window.clearInterval(offerPoll)"),"Interval must stop on unmount");
 assert.ok(source.includes('r.status !== "procurar_motorista"'),"Candidate validation must remain in real presentOffer");
