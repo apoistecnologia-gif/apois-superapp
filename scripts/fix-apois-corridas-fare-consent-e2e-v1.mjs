@@ -30,12 +30,12 @@ edit("src/hooks/rides/use-ride-request.tsx",s=>{
     "  lastResponse: RideRequestResponse | null;\n  updatedFareCents?: number | null; // APOIS_FARE_CONSENT_HOOK_E2E_V1",
     "request interface");
   s=once(s,
-    "  confirmRide: () => Promise<RideRequestResponse | null>;",
-    "  confirmRide: (expectedPriceCents?: number) => Promise<RideRequestResponse | null>;",
+    "  confirmRide: (comfort?: RideComfortPreferences) => Promise<RideRequestResponse | null>;",
+    "  confirmRide: (comfort?: RideComfortPreferences, expectedPriceCents?: number) => Promise<RideRequestResponse | null>;",
     "context signature");
   s=once(s,
-    "  const confirmRide = useCallback(async (): Promise<RideRequestResponse | null> => {",
-    "  const confirmRide = useCallback(async (expectedPriceCents?: number): Promise<RideRequestResponse | null> => {",
+    "  const confirmRide = useCallback(async (comfort?: RideComfortPreferences): Promise<RideRequestResponse | null> => {",
+    "  const confirmRide = useCallback(async (comfort?: RideComfortPreferences, expectedPriceCents?: number): Promise<RideRequestResponse | null> => {",
     "callback signature");
   s=once(s,
     '        request_key: request.requestKey,',
@@ -75,8 +75,8 @@ edit("src/routes/_authenticated.revisar-solicitacao.tsx",s=>{
     '  // APOIS_FARE_CONSENT_REVIEW_E2E_V1: server price is visible before reconfirmation.\n  const displayFare = request.updatedFareCents != null ? request.updatedFareCents / 100 : checkout.finalTotal;\n  const canSubmit = checkout.readiness && walletState !== "blocked" && !isSubmitting;',
     "review fare");
   s=once(s,
-    '      const response = await confirmRide();',
-    '      const response = await confirmRide(request.updatedFareCents ?? Math.round(checkout.finalTotal * 100));',
+    '      const response = await confirmRide(comfort);',
+    '      const response = await confirmRide(comfort, request.updatedFareCents ?? Math.round(checkout.finalTotal * 100));',
     "quote submission");
   s=once(s,
     '  }, [confirmRide, isSubmitting, navigate, recoverActiveRide, walletState]);',
