@@ -42,8 +42,8 @@ let profile=readFileSync(profileFile,"utf8");
 if(!profile.includes("APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1")){
   const before="onUploaded={handlePhotoUploaded} size=";
   profile=one(profile,before,'nativeDriverPicker onUploaded={handlePhotoUploaded} size=',"only Motorista profile opts in");
-  profile=one(profile,'<ProfilePhotoUploader ',
-    '{/* APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1 */}\n                  <ProfilePhotoUploader ',
+  profile=one(profile,'function DriverProfilePage() {',
+    'function DriverProfilePage() {\n  // APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1',
     "driver opt-in marker");
   writeFileSync(profileFile,profile,"utf8");
 }
