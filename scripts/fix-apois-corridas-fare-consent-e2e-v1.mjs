@@ -78,7 +78,7 @@ edit("src/routes/_authenticated.revisar-solicitacao.tsx",s=>{
     '      const response = await confirmRide(comfort);',
     '      const response = await confirmRide(comfort, request.updatedFareCents ?? Math.round(checkout.finalTotal * 100));',
     "quote submission");
-  const depsRe=/  \\}, \\[confirmRide,([^\\]]+)\\]\\);/g;
+  const depsRe=/  \}, \[confirmRide,([^\]]+)\]\);/g;
   const found=[...s.matchAll(depsRe)];
   if(found.length!==1 || !found[0][1].includes("recoverActiveRide")) {
     throw Error("[FAIL] fare callback dependencies changed, occurrences="+found.length);
