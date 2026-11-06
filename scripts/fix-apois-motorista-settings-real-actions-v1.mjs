@@ -19,7 +19,7 @@ edit("src/routes/motorista.configuracoes.tsx",s=>{
   if(titleAt<0){
     if(s.includes('<option value="en">') || s.includes('<option value="es">'))
       throw Error("[FAIL] language options still selectable without title");
-    return s.replace('export function ', '// APOIS_DRIVER_REAL_SETTINGS_VIDEO_V1: no unsupported language selector.\nexport function ');
+    return '// APOIS_DRIVER_REAL_SETTINGS_VIDEO_V1: idioma unico do app, nao oferecer idiomas inativos.\n'+s;
   }
   const begin=s.lastIndexOf("<SettingsRow",titleAt);
   const closing=s.indexOf("/>",titleAt);
