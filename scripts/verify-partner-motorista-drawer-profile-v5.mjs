@@ -8,11 +8,18 @@ const menu=read("src/components/DriverSideMenu.tsx"),sheet=read("src/components/
 const form=read("src/components/profile/ProfileForm.tsx"),profile=read("src/routes/motorista.perfil.tsx");
 const css=read("src/styles.css");
 for(const m of ['data-apois-driver-menu-fullscreen-v4','data-apois-driver-menu-fixed-v5','data-apois-driver-menu-header-v5',
- 'data-apois-driver-menu-scroll-v5','overlayClassName="!fixed !inset-0 !z-[220] !bg-[#111827]/70"','data-apois-driver-sidebar-profile-v3',
+ 'data-apois-driver-menu-scroll-v5','overlayClassName="!fixed !inset-0 !z-[110] !bg-[#111827]/60 !hidden sm:!block"','data-apois-driver-sidebar-profile-v3',
  'data-apois-driver-sidebar-tools-v1','onClick={() => openOperationalTool("status")}','onClick={() => openOperationalTool("calls")}',
  'onOpenChange(false)','onLogout()','to="/motorista/perfil"']){
  assert.ok(menu.includes(m),"Driver menu content/callback regression "+m);
 }
+// Android menu must be above its backdrop; modal focus trap and routes remain untouched.
+assert.ok(menu.includes('!z-[240] !inset-y-0'),"Driver drawer must be in foreground without relying on CSS import order");
+const menuLayer=Number(menu.match(/!z-\[(\d+)\] !inset-y-0/)?.[1]);
+const overlayLayer=Number(menu.match(/overlayClassName="[^"]*!z-\[(\d+)\]/)?.[1]);
+assert.ok(Number.isFinite(menuLayer)&&Number.isFinite(overlayLayer)&&menuLayer>overlayLayer,
+ "Drawer content must outrank the Radix overlay");
+assert.ok(menu.includes('!hidden sm:!block'),"Full-screen menu must not dim itself on Android");
 assert.ok(sheet.includes("overlayClassName?: string")&&sheet.includes("<SheetOverlay className={overlayClassName} />"),
  "Sheet overlay must be configurable without changing other consumers");
 assert.ok(!sheet.includes("<SheetOverlay className=\"!fixed"),"No global Sheet overlay changes");
@@ -24,7 +31,7 @@ for(const m of ['data-apois-driver-profile-edit-v5={role === "driver" ? "true" :
 }
 assert.ok(profile.includes('onBackToHub={() => setMode("hub")}'),"Return to same profile hub state");
 assert.ok(!profile.includes('className="fixed left-3 z-40"'),"Overlapping floating Voltar must be removed");
-for(const m of ["/* APOIS_DRIVER_DRAWER_PROFILE_V5 */",'height:100dvh!important','z-index:230!important',
+for(const m of ["/* APOIS_DRIVER_DRAWER_PROFILE_V5 */",'height:100dvh!important','z-index:240!important',
  'overscroll-behavior:contain','padding-bottom:max(84px','[data-apois-driver-profile-edit-v5]',
  '-webkit-text-fill-color:#111827!important','input,textarea,select):disabled','opacity:1!important',
  '[data-apois-driver-menu-fixed-v5] .driver-menu-link p:first-child']){
