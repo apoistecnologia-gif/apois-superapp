@@ -94,10 +94,12 @@ patch("src/components/CourierPanels.tsx",s=>{
     summary
   ].join("\n");
   part=exact(part,summary,disclosure,"show ledger distinction before jobs");
-  part=exact(part,
-    '<p className="text-[9px] font-black uppercase text-zinc-600">Ganho</p>',
-    '<p className="text-[9px] font-black uppercase text-zinc-600">Estimativa</p>',
-    "job estimate label");
+  // Legacy courier themes may use a different class, or already display an estimate.
+  if(part.includes('>Ganho</p>')) {
+    part=part.replace('>Ganho</p>','>Estimativa</p>');
+  } else if(!part.includes('Estimativas nas entregas')) {
+    throw Error("[FAIL] courier earnings source disclosure lost");
+  }
   return out.slice(0,start)+part+out.slice(end);
 },"APOIS_COURIER_LEDGER_SEPARATION_VIDEO_V1");
 patch("src/routes/courier.tsx",s=>{
