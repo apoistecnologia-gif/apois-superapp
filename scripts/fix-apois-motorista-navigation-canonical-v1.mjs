@@ -132,7 +132,7 @@ patch("src/routes/motorista.perfil.tsx",s=>{
   ].join("\n");
   s=one(s,'  const requestRef = useRef(0);','  const requestRef = useRef(0);\n\n'+effect,"consume edit intent");
   // Se o hardener anterior ja consolidou documentos, nao remove nada.
-  const duplicateDocCount=(s.match(/to="\\/motorista\\/documentos"/g)||[]).length;
+  const duplicateDocCount=s.split('to="/motorista/documentos"').length-1;
   if(duplicateDocCount>1) {
     const start=s.indexOf('              <MenuRow icon={Car} label="Veículo e documentos"');
     const next=s.indexOf('              <Divider />',start);
