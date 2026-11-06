@@ -178,7 +178,7 @@ if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.ts
 cd "$MOTORISTA"
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha push cruzado ao shell'
 require_contains 'window.location.hash = "#/motorista/app"' src/lib/nativeBridge.ts 'Push do Motorista usa rota hash interna'
-require_contains 'APOIS_DRIVER_OFFER_POLL_V1' src/routes/motorista.app.tsx 'Motorista reconsulta ofertas sem depender do Firebase'
+require_contains 'APOIS_DRIVER_OFFER_RECOVERY_V2' src/routes/motorista.app.tsx 'Motorista recupera ofertas sem depender do Firebase nem do navigator.onLine'
 require_contains 'APOIS_DRIVER_REGISTRATION_EXIT_V3' src/routes/motorista.cadastro.tsx 'Motorista permite sair do cadastro e retornar ao login'
 require_contains 'Sair para o login' src/routes/motorista.cadastro.tsx 'Sucesso do cadastro não prende a sessão'
 require_contains 'Geolocation.watchPosition(' src/routes/motorista.app.tsx 'Motorista acompanha GPS nativo'
