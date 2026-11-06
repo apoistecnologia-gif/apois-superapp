@@ -431,6 +431,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-ride-comfort-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-client-comfort-finish-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-case-center-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/qa/verify-corridas-active-ride-case-cta-contrast-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/qa/verify-corridas-case-center-safearea-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-vehicle-incidents-v1.mjs'), 'corridas']);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-dispatch-ux-v1.mjs')]);
