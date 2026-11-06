@@ -32,7 +32,8 @@ assert.ok(profile.includes('label="Configurações" sub="Segurança, privacidade
 assert.ok(!profile.includes('label="Privacidade e segurança"'),"privacy cannot impersonate SOS");
 assert.ok(profile.includes('window.sessionStorage.removeItem("apois:motorista:profile:edit-intent")'),"edit intent must be one-shot");
 assert.ok(form.includes('Nova senha')&&form.includes('onSave'),"real password form stays active");
-for(const dest of ["app","corridas","carteira","notificacoes","perfil"])assert.ok(bottom.includes('to: "/motorista/'+dest+'"'),"bottom navigation must preserve "+dest);
+for(const dest of ["app","corridas","ganhos","notificacoes","perfil"])assert.ok(bottom.includes('to: "/motorista/'+dest+'"'),"bottom navigation must preserve "+dest);
+assert.ok(!bottom.includes('to: "/motorista/carteira", label: "Carteira"'),"retired wallet tab must not reappear");
 assert.ok(bottom.includes("DriverActiveRideRecovery"),"active ride recovery must remain");
 const candidates=[
  "components/DriverSideMenu.tsx","components/ApoisDriverBottomNav.tsx",
