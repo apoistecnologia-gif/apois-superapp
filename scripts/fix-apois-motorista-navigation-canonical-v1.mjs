@@ -36,10 +36,14 @@ patch("src/components/DriverSideMenu.tsx",s=>{
     ''
   ].join("\n");
   s=one(s,dup,"","profile already exists as clickable header");
-  s=one(s,'label: "Carteira",\n    description: "Saldo e movimentações"',
-    'label: "Carteira",\n    description: "Saldo Pix, movimentações e saques"',"wallet subtitle");
-  s=one(s,'label: "Financeiro",\n    description: "Ganhos e repasses"',
-    'label: "Ganhos",\n    description: "Ganhos por corrida e extrato financeiro"',"earnings subtitle");
+  // Existing menu hardeners may have already rewritten descriptions.
+  if(s.includes('label: "Carteira",\n    description: "Saldo e movimentações"')) {
+    s=one(s,'label: "Carteira",\n    description: "Saldo e movimentações"',
+      'label: "Carteira",\n    description: "Saldo e movimentações"',"wallet already meaningful");
+  }
+  if(s.includes('label: "Financeiro"')) {
+    s=one(s,'label: "Financeiro"','label: "Ganhos"',"earnings clear label");
+  }
   return one(s,"const NAV_LINKS = [",
     "// APOIS_MOTORISTA_NAVIGATION_CANONICAL_V1\nconst NAV_LINKS = [","side marker");
 },"APOIS_MOTORISTA_NAVIGATION_CANONICAL_V1");
