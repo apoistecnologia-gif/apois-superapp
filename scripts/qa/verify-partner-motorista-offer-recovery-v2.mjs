@@ -23,5 +23,5 @@ assert.ok(!poll.includes("resyncDriverRides().catch(() => undefined)"),"Do not s
 assert.ok(source.includes("window.clearInterval(offerPoll)"),"Interval must stop on unmount");
 assert.ok(source.includes('r.status !== "procurar_motorista"'),"Candidate validation must remain in real presentOffer");
 assert.ok(source.includes('acceptedDriverId || didReject || !isCandidate || expired'),"Reject expired/assigned/noncandidate rides before display");
-assert.ok(source.includes("driver_accept_ride"),"Original backend acceptance contract must remain callable");
+assert.ok(source.includes("callAccept({ data: { rideId: offer.id } })"),"Existing authenticated ride acceptance handler must remain unchanged");
 console.log("[PASS] Motorista V2 pending offers recover from Supabase independently of FCM/browser online flag, scoped to authenticated driver; lifecycle preserved.");
