@@ -36,7 +36,7 @@ change("src/components/ApoisStatusCheck.tsx",s=>{
     '      output[0]={label:"1. Internet",status:"unknown",detail:"Rede disponivel, servidor nao confirmado."};',
     "    }",
     ""
-  ].join("\\n");
+  ].join("\n");
   s=s.slice(0,lastResult)+logic+s.slice(lastResult);
  return s;
 },"APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1");
