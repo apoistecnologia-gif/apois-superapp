@@ -1,0 +1,21 @@
+// APOIS_DRIVER_NOTIFICATION_HUB_GATE_V1 — static contracts, no DB writes or app generation.
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motorista");
+const read=(name)=>readFileSync(resolve(root,name),"utf8");
+const config=read("src/routes/motorista.configuracoes.tsx");
+const page=read("src/routes/motorista.preferencias-notificacoes.tsx");
+const component=read("src/components/notifications/NotificationPreferencesPage.tsx");
+const prefs=read("src/lib/notifications/notificationPreferences.ts");
+assert.ok(config.includes("APOIS_DRIVER_NOTIFICATION_HUB_V1"),"notification hub patch missing");
+assert.ok(config.includes('title="Notificações push neste aparelho"'),"native device permission must remain");
+assert.ok(config.includes('onChange={(value) => value ? void handleEnablePush() : void handleDisablePush()}'),"native permission callbacks preserved");
+assert.equal((config.match(/to="\/motorista\/preferencias-notificacoes"/g)||[]).length,1,"single dedicated preferences destination");
+assert.equal((config.match(/to="\/motorista\/notificacoes"/g)||[]).length,1,"single notification inbox destination");
+for(const label of ['title="Alertas de corrida"','title="Som"','title="Vibração"'])assert.ok(!config.includes(label),"duplicate in main settings "+label);
+assert.ok(page.includes('NotificationPreferencesPage audience="driver"'),"dedicated page preserved");
+for(const field of ["ride_updates","ride_requests","payment_reminders","promotions","sound","vibration"])assert.ok(component.includes(field),"preference missing "+field);
+assert.ok(prefs.includes('from("user_notification_preferences")'),"notification category backend storage preserved");
+assert.ok(prefs.includes('writeLocal(authUserId'),"per-device sound/vibration preservation");
+console.log("[OK] Motorista: single notifications page and native push permission; no duplicate sound/vibration switches.");
