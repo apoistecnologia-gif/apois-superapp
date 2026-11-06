@@ -184,9 +184,13 @@ patch("src/routes/motorista.perfil.tsx",s=>{
   const lucideStart=s.indexOf("import {");
   const lucideStop=s.indexOf('from "lucide-react";');
   const header=s.slice(lucideStart,lucideStop);
-  const settingsCount=(header.match(/\\bSettings\\b/g)||[]).length;
+  const settingsCount=header.split("Settings,").length-1;
   if(settingsCount>1) {
-    s=s.replace('  Sparkles,\\n  Settings,\\n  Star,','  Sparkles,\\n  Star,');
+    const sparkles=s.indexOf("  Sparkles,");
+    const redundant=s.indexOf("  Settings,",sparkles);
+    if(sparkles<0 || redundant<0 || redundant-sparkles>70)
+      throw Error("[FAIL] duplicate Settings imports could not be safely located");
+    s=s.slice(0,redundant)+s.slice(redundant+"  Settings,".length);
   }
   return dropUnusedIconImports(s,["LifeBuoy","FileText"]);
 },"APOIS_MOTORISTA_PROFILE_CANONICAL_V1");
