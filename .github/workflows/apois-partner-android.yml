@@ -12,6 +12,7 @@ name: APOIS Parceiro Android APK
 # Motorista UI QA: no dimming backdrop over fullscreen drawer (field screenshot November 5).
 # QA Nov 6: rerun validated driver offer recovery V2 after correcting static test matching.
 # QA Nov 6: missed offer at 14:04 UTC despite driver online; independent authenticated watchdog added.
+# QA Nov 6: retry candidate watchdog after checked insertion anchor fix.
 
 on:
   workflow_dispatch:
