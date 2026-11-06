@@ -1,0 +1,20 @@
+// QA statico da auditoria de video 06/11. Nao gera APK nem altera banco.
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE || ".work/partner-motorista");
+const read=(p)=>readFileSync(resolve(root,p),"utf8");
+const status=read("src/components/ApoisStatusCheck.tsx");
+const calls=read("src/components/ApoisAvailableCalls.tsx");
+const profile=read("src/components/profile/DriverProfessionalProfile.tsx");
+assert.ok(status.includes("APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1"),"diagnostico verificado pelo backend");
+assert.ok(status.includes("authenticated || serverReady"),"internet: conexao comprovada");
+assert.ok(calls.includes("APOIS_DRIVER_CALLS_POLL_VIDEO_V1"),"poll nao depende do WebView");
+assert.ok(!calls.includes("if(navigator.onLine)void refresh()"),"false offline nao pode pausar polling");
+assert.ok(calls.includes("onAccepted()"),"aceite original permanece");
+assert.ok(calls.includes("apois_claim_available_ride_call"),"RPC de aceite preservada");
+assert.ok(profile.includes("APOIS_DRIVER_PUBLIC_PROFILE_CONTRAST_VIDEO_V1"),"contraste de perfil");
+assert.ok(profile.includes("text-[#111827]"),"titulo legivel em fundo claro");
+assert.ok(profile.includes("text-[#596474]"),"legendas legiveis");
+assert.ok(profile.includes("get_driver_public_profile"),"RPC publica continua com autorizacao");
+console.log("[OK] Motorista video 06/11: source gates; nenhum APK gerado.");
