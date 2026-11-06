@@ -429,6 +429,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-case-center-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-vehicle-incidents-v1.mjs'), 'corridas']);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-dispatch-ux-v1.mjs')]);
+  // Homologacao 06/11: corrigir somente Corridas apos os hardeners antigos.
+  run(process.execPath, [resolve(root, 'scripts/fix-apois-corridas-passenger-e2e-v1.mjs')]);
 }
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
