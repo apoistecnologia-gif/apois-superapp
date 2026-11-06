@@ -32,17 +32,14 @@ card=once(card,'{ride.destination_name}', '{ride.destination_name || "Destino da
 writeFileSync(timeline,card,"utf8");
 let ui=readFileSync(route,"utf8");
 if(!ui.includes("APOIS_CANCEL_VISIBLE_V1"))throw Error("[FAIL] Fixed cancellation action must remain present");
-const panel=/className="(max-h-\[60vh\][^"]*?)"/g;
-let m=[...ui.matchAll(panel)];if(m.length!==1)throw Error("[FAIL] Ride panel class changed: "+m.length);
-const before=m[0][0];
-if(!before.includes("overflow-y-auto")||!before.includes("pb-8"))throw Error("[FAIL] Ride panel original scroll/padding missing");
-const after=before.replace("pb-8","pb-[calc(164px+env(safe-area-inset-bottom))]");
-ui=once(ui,before,after,"ensure timeline/estimate scroll above fixed cancel");
+// Preserve the existing Mobile Proportions V1 transformation; its strict
+// source-class contract changes max-h-[60vh] to 52dvh and handles footer clearance.
+// This patch intentionally does NOT modify the ride panel class.
 for(const token of [
   "<RideStopsTimeline ride={ride} />",
   "CANCELAR CORRIDA",
   "APOIS_CANCEL_VISIBLE_V1",
   "ride.estimated_price",
 ])if(!ui.includes(token))throw Error("[FAIL] Ride summary contract lost: "+token);
-writeFileSync(route,ui,"utf8");
-console.log("[OK] Cliente: visible trip pickup/destination card with dark text and enough scroll clearance for fixed cancellation.");
+// Keep active-ride layout byte-for-byte unchanged so mobile proportions stays verified.
+console.log("[OK] Cliente: visible trip pickup/destination card with dark text and original mobile-safe scroll/cancel layout untouched.");
