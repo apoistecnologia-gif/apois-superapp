@@ -41,10 +41,10 @@ const profileFile=resolve(root,"src/routes/motorista.perfil.tsx");
 let profile=readFileSync(profileFile,"utf8");
 if(!profile.includes("APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1")){
   const before="onUploaded={handlePhotoUploaded} size=";
-  profile=one(profile,before,'/* APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1 */ nativeDriverPicker onUploaded={handlePhotoUploaded} size=',"only Motorista profile opts in");
-  // JSX prop cannot be a bare /* ... */ expression! use a normal JSX comment before component instead.
-  profile=profile.replace('/* APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1 */ nativeDriverPicker',
-    'nativeDriverPicker data-apois-driver-native-avatar-route-v1={true}');
+  profile=one(profile,before,'nativeDriverPicker onUploaded={handlePhotoUploaded} size=',"only Motorista profile opts in");
+  profile=one(profile,'<ProfilePhotoUploader ',
+    '{/* APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1 */}\n                  <ProfilePhotoUploader ',
+    "driver opt-in marker");
   writeFileSync(profileFile,profile,"utf8");
 }
 for(const required of [
@@ -53,5 +53,5 @@ for(const required of [
   'await handleFile(picked)',
   'nativeDriverPicker && isNativeDriverPhotoPicker()'
 ])if(!s.includes(required))throw Error("[FAIL] native driver avatar "+required);
-if(!profile.includes("data-apois-driver-native-avatar-route-v1={true}"))throw Error("[FAIL] driver avatar opt-in missing");
+if(!profile.includes("APOIS_DRIVER_PROFILE_NATIVE_AVATAR_ROUTE_V1") || !profile.includes("nativeDriverPicker onUploaded={handlePhotoUploaded}"))throw Error("[FAIL] driver avatar opt-in missing");
 console.log("[OK] Motorista profile uses native Android photo picker, old upload/RPC and browser input fallback preserved.");
