@@ -43,6 +43,25 @@ patch("src/components/CourierPremiumViews.tsx",s=>{
     "// APOIS_COURIER_ALL_TIME_DELIVERIES_VIDEO_V1\nexport function CourierWaitingSheet(");
   return s.slice(0,start)+sheet+s.slice(end);
 },"APOIS_COURIER_ALL_TIME_DELIVERIES_VIDEO_V1");
+// 2b) The PIX/withdrawal explanation must be readable in the light theme.
+// This changes contrast only; payouts remain disabled as before.
+patch("src/components/CourierPremiumViews.tsx",s=>{
+  const explanation="Nenhuma chave PIX ou valor de saque é solicitado nesta fase.";
+  const ix=s.indexOf(explanation);
+  if(ix<0 || s.indexOf(explanation,ix+1)>=0)throw Error("[FAIL] finance explanation missing or duplicate");
+  const start=s.lastIndexOf("<div className=",ix);
+  const end=s.indexOf(">",start)+1;
+  if(start<0||end<=start||ix-end>120)throw Error("[FAIL] finance message container changed");
+  const oldTag=s.slice(start,end);
+  if(!oldTag.includes("rounded-2xl")||!oldTag.includes("text-"))throw Error("[FAIL] finance box is not expected");
+  const newTag='<div data-apois-courier-finance-contrast-v1 className="mt-3 rounded-2xl border border-[#CBD5E1] !bg-[#F8FAFC] p-3 text-[11px] leading-5 !text-[#334155]">';
+  return s.slice(0,start)+newTag+s.slice(end);
+},"data-apois-courier-finance-contrast-v1");
+patch("src/system-theme.css",s=>{
+  return s+"\n/* APOIS_COURIER_PIX_NOTICE_CONTRAST_V1: readable notice under legacy theme overrides. */\n"+
+    '.apois-system-theme [data-apois-courier-finance-contrast-v1] { background:#F8FAFC!important; color:#334155!important; border-color:#CBD5E1!important; }\n';
+},"APOIS_COURIER_PIX_NOTICE_CONTRAST_V1");
+
 // 3) a job's estimated_earnings is NOT its wallet credit.
 // Show both without adding wallet balances or inventing a payment.
 patch("src/components/CourierPanels.tsx",s=>{
