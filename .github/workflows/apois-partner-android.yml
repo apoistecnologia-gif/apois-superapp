@@ -18,6 +18,7 @@ on:
       - 'scripts/verify-apois-motorista-*.mjs'
       - 'scripts/fix-apois-courier-*.mjs'
       - 'scripts/verify-apois-courier-*.mjs'
+      - 'scripts/audit-partner-preflight-v1.mjs'
 
 permissions:
   contents: read
