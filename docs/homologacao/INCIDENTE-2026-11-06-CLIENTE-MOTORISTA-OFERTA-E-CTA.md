@@ -33,3 +33,10 @@ Project ref `tbbzkrfupmqdywnzgnms`. A corrida `28fc6b2b-603a-46cf-884b-7c8be4a9f
 3. Restaurar `FIREBASE_SERVICE_ACCOUNT_B64` no ambiente Supabase Corridas **somente por canal seguro e com autorização operacional**, validar FCM com testes controlados e sem enviar notificação para usuários reais; o fallback não substitui push quando app fechado/background.
 4. Corrigir posteriormente as falhas antigas de TypeScript via escopo próprio; não suprimir gates.
 5. Não alterar dados de produção, secrets de produção nem realizar deploy sem autorização separada.
+
+## Resultado adicional após compilações de 06/11/2026
+- **Parceiro Android #118:** assinado e distribuído via GitHub artifact `13510434448`; SHA-256 **do arquivo APK** `283fd2d333f09fed7081d6dcdaa336041b4562588fe27518050c6fc08f6f1d62`. Novo JS `modules/motorista` contém consultas por `candidate_driver_ids`. Preservada assinatura QA. Necessária validação de toque/alerta na tela real.
+- **Cliente Android #93:** [execução](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/42235799031), job `build-client-apk` **SUCCESS** (assinatura QA e APK verificados), artifact `13512515910`. SHA-256 **do APK** `8b9cde0b76c6de786a9f17748a49bf8e1586a394d970420c3e0d13ade5ec614f`. Inspeção direta do APK confirmou que `Reportar problema com esta corrida` usa `bg-white text-sm font-extrabold text-[#991B1B]` e `onClick: setShowCaseCenter(true)`, preservando o cancelar. O gatilho excepcional usado apenas para gerar #93 foi removido.
+- O job paralelo `Corridas Passenger Web QA` da #93 mantém erros TS anteriores, sem ligação comprovada com o CTA. Não apresentar essa execução como CI global verde.
+- Pendência operacional: `FIREBASE_SERVICE_ACCOUNT_B64` ausente no ambiente da função Supabase `send-ride-push`; não pode ser resolvida via APK nem foi restaurada. Não declarar recebimento push como validado.
+- Nenhum dado, papel, motorista, corrida, pagamento ou função Edge de produção foi alterado. Próximo passo é homologação física com os dois APKs atualizados.
