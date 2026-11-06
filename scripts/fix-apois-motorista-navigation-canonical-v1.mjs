@@ -85,7 +85,7 @@ patch("src/routes/motorista.configuracoes.tsx",s=>{
   const securityClose=s.indexOf("</SettingsSection>",passwordIndex)+"</SettingsSection>".length;
   if(passwordIndex<0||securityStart<0||securityClose<=passwordIndex||
       !s.slice(securityStart,securityClose).includes("handleLogout"))
-    throw Error("[FAIL] Driver security section/password/logout contract changed");
+    throw Error("[FAIL] Driver security section/password/logout contract changed / observed: "+s.split("\n").filter(line => /Alterar senha|Segurança|handleLogout|SettingsSection|LogOut/.test(line)).slice(0,27).map(line => line.trim()).join(" | "));
   const securityText=s.slice(securityStart,securityClose);
   const canonicalSecurity=newSecurity.join("\n");
   if(!canonicalSecurity.includes("openPersonalDataEditor") ||
