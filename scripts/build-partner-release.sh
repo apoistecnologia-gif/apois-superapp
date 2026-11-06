@@ -147,6 +147,7 @@ node "$ROOT/scripts/verify-partner-motorista-drawer-profile-v5.mjs"
 node "$ROOT/scripts/fix-apois-corridas-driver-e2e-v1.mjs"
 node "$ROOT/scripts/fix-apois-motorista-full-video-v1.mjs"
 node "$ROOT/scripts/verify-apois-motorista-full-video-v1.mjs"
+node "$ROOT/scripts/fix-apois-motorista-navigation-canonical-v1.mjs"
 node "$ROOT/scripts/verify-apois-corridas-e2e-v1.mjs" motorista
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
