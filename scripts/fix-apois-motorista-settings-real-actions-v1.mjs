@@ -89,11 +89,21 @@ edit("src/routes/motorista.app.tsx",s=>{
     '            />'
   ].join("\n");
   const chatCount=s.split(oldChat).length-1;
-  if(chatCount!==2)throw Error("[FAIL] legacy placeholder chat count="+chatCount);
-  s=s.replaceAll(oldChat,newChat);
+  if(chatCount===2) {
+    s=s.replaceAll(oldChat,newChat);
+  } else if(chatCount===0 && !s.includes('toast.info("Chat em breve")')) {
+    // Outro hardener ja ocultou os botoes falsos; preservar a UI operacional.
+  } else {
+    throw Error("[FAIL] legacy placeholder chat count="+chatCount);
+  }
   const oldPickupLink=/href=\{\x60https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=\$\{ride\.origin_lat\},\$\{ride\.origin_lng\}&travelmode=driving\x60\}/;
-  if(!oldPickupLink.test(s))throw Error("[FAIL] pickup shortcut link changed");
-  s=s.replace(oldPickupLink,'href={driverExternalNavigationHref(preferredNavigationApp, ride.origin_lat, ride.origin_lng)}');
+  if(oldPickupLink.test(s)) {
+    s=s.replace(oldPickupLink,'href={driverExternalNavigationHref(preferredNavigationApp, ride.origin_lat, ride.origin_lng)}');
+  } else if(s.includes('href={navHref}')) {
+    // O mapa ja usa navHref calculado a partir da preferencia salva.
+  } else {
+    throw Error("[FAIL] pickup navigation link changed");
+  }
   return s;
 },"APOIS_DRIVER_PREFERRED_NAV_VIDEO_V1");
 console.log("[OK] Motorista: navigation preference applied; no inoperative chat buttons or fake language list.");
