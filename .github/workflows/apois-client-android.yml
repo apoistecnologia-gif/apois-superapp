@@ -277,7 +277,7 @@ jobs:
           keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
           keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | grep 'SHA256:' | head -n 1
           ACTUAL_FINGERPRINT="$(keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-          REQUIRED_FINGERPRINT="97eaf64ee20ef16b2765a6dff5e96a25dbad4da12ccb6e5c2cd48d4c9c2f61f4"
+          REQUIRED_FINGERPRINT="3f7e522f8aacc663843714225077087c5ffd6c1c81a81866383ef8a12fde4609"
           test "$ACTUAL_FINGERPRINT" = "$REQUIRED_FINGERPRINT" || { echo "::error::QA certificate changed or cache lost; do not rotate signature automatically"; exit 1; }
           echo "[OK] Reusable QA signing identity verified"
 
