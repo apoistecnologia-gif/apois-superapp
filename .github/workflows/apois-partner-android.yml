@@ -19,6 +19,7 @@ on:
       - 'scripts/verify-partner-motorista-drawer-profile-v5.mjs'
       - 'scripts/qa/driver-menu-profile-v5.css'
       - 'scripts/verify-apois-motorista-*.mjs'
+      - 'scripts/build-partner-release.sh'
       - 'scripts/fix-apois-courier-*.mjs'
       - 'scripts/verify-apois-courier-*.mjs'
       - 'scripts/audit-partner-preflight-v1.mjs'
