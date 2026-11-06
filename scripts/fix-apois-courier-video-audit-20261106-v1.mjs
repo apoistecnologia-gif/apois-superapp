@@ -55,7 +55,11 @@ patch("src/components/CourierPremiumViews.tsx",s=>{
   const oldTag=s.slice(start,end);
   if(!oldTag.includes("rounded-2xl")||!oldTag.includes("text-"))throw Error("[FAIL] finance box is not expected");
   const newTag='<div data-apois-courier-finance-contrast-v1 className="mt-3 rounded-2xl border border-[#CBD5E1] !bg-[#F8FAFC] p-3 text-[11px] leading-5 !text-[#334155]">';
-  return s.slice(0,start)+newTag+s.slice(end);
+  const updated=s.slice(0,start)+newTag+s.slice(end);
+  return exact(updated,
+    "Seus ganhos ficam registrados por entrega concluída.",
+    "As entregas concluídas aparecem no histórico; os créditos registrados ficam no histórico financeiro.",
+    "separate delivery from financial ledger disclosure");
 },"data-apois-courier-finance-contrast-v1");
 patch("src/system-theme.css",s=>{
   return s+"\n/* APOIS_COURIER_PIX_NOTICE_CONTRAST_V1: readable notice under legacy theme overrides. */\n"+
