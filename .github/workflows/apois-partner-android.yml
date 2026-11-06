@@ -16,6 +16,8 @@ on:
       - '.github/workflows/apois-partner-android.yml'
       - 'scripts/fix-apois-motorista-*.mjs'
       - 'scripts/verify-apois-motorista-*.mjs'
+      - 'scripts/fix-apois-courier-*.mjs'
+      - 'scripts/verify-apois-courier-*.mjs'
 
 permissions:
   contents: read
