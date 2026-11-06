@@ -154,6 +154,8 @@ node "$ROOT/scripts/fix-apois-motorista-settings-real-actions-v1.mjs"
 node "$ROOT/scripts/verify-apois-motorista-settings-real-actions-v1.mjs"
 node "$ROOT/scripts/fix-apois-motorista-profile-native-photo-v1.mjs"
 node "$ROOT/scripts/verify-apois-motorista-profile-native-photo-v1.mjs"
+node "$ROOT/scripts/fix-apois-motorista-canonical-header-name-v1.mjs"
+node "$ROOT/scripts/verify-apois-motorista-canonical-header-name-v1.mjs"
 node "$ROOT/scripts/verify-apois-motorista-navigation-canonical-v1.mjs"
 node "$ROOT/scripts/verify-apois-corridas-e2e-v1.mjs" motorista
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
