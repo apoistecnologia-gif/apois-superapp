@@ -25,6 +25,7 @@
 11. Configuração de navegação Waze/Google era armazenada, mas os botões “Navegar” abriam sempre Google. A escolha salva passa a determinar o link externo; mapa interno permanece disponível.
 12. Chat nas corridas era botão que só mostrava “Chat em breve”. Permanece visualmente desabilitado, sem enganar o usuário nem simular integração inexistente.
 13. Foto do Perfil abria seletor WebView, diferentemente do cadastro, que já tinha seletor nativo Android. O perfil do **motorista** passou a usar o helper nativo já existente, mantendo compactação/validação/upload/RPC e fallback WebView fora do Android.
+14. Cabeçalho interno usava nome do Google/Auth e podia divergir do cadastro de motorista. Nas rotas `/motorista/`, o componente do cabeçalho passa a consultar a RPC autenticada `driver_get_profile` para priorizar o nome operacional; outras modalidades não foram alteradas.
 
 ## Matriz das 21 rotas Motorista auditadas
 
@@ -64,6 +65,8 @@ As rotas da matriz foram localizadas no repositório pinado; busca estática nos
 - `scripts/verify-apois-motorista-settings-real-actions-v1.mjs`
 - `scripts/fix-apois-motorista-profile-native-photo-v1.mjs`
 - `scripts/verify-apois-motorista-profile-native-photo-v1.mjs`
+- `scripts/fix-apois-motorista-canonical-header-name-v1.mjs`
+- `scripts/verify-apois-motorista-canonical-header-name-v1.mjs`
 - `scripts/build-partner-release.sh` (apenas inclusão dos scripts no trecho Motorista)
 
 ## Evidências de validação obtidas
@@ -72,6 +75,7 @@ As rotas da matriz foram localizadas no repositório pinado; busca estática nos
 - Patch do menu, Configurações e Perfil executado em simulação de transformação sobre arquivos reais pinados: OK.
 - Patch de notificações + navegação externa + idioma testado sequencialmente em simulação de transformação: OK.
 - Patch do seletor nativo de foto testado em simulação de transformação: OK.
+- Patch de nome canônico no cabeçalho testado por transformação simulada em código pinado: OK. Verificação de regressão criada, ainda não executada no workspace completo.
 - Os scripts JavaScript novos passaram por checagem sintática local no ambiente de execução.
 - Gates estáticos estão versionados para execução na próxima preparação de fonte.
 
