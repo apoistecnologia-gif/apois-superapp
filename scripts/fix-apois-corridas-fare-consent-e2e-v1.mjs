@@ -78,10 +78,13 @@ edit("src/routes/_authenticated.revisar-solicitacao.tsx",s=>{
     '      const response = await confirmRide(comfort);',
     '      const response = await confirmRide(comfort, request.updatedFareCents ?? Math.round(checkout.finalTotal * 100));',
     "quote submission");
-  s=once(s,
-    '  }, [confirmRide, isSubmitting, navigate, recoverActiveRide, walletState]);',
-    '  }, [confirmRide, isSubmitting, navigate, recoverActiveRide, walletState, request.updatedFareCents, checkout.finalTotal]);',
-    "deps");
+  const depsRe=/  \\}, \\[confirmRide,([^\\]]+)\\]\\);/g;
+  const found=[...s.matchAll(depsRe)];
+  if(found.length!==1 || !found[0][1].includes("recoverActiveRide")) {
+    throw Error("[FAIL] fare callback dependencies changed, occurrences="+found.length);
+  }
+  const preserved=found[0][1].trimEnd();
+  s=s.replace(found[0][0],"  }, [confirmRide,"+preserved+", request.updatedFareCents, checkout.finalTotal]);");
   return s;
 },"APOIS_FARE_CONSENT_REVIEW_E2E_V1");
 console.log("[OK] fare consent: server price change requires second explicit tap.");
