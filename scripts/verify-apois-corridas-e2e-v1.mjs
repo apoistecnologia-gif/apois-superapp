@@ -21,7 +21,8 @@ if (role === "corridas") {
   ], ['ride.driver_rating?.toFixed(1) || "5.0"']);
   check("src/routes/_authenticated.corrida.$rideId.tsx", [
     "APOIS_PASSENGER_RATING_E2E_V1", 'rpc.rpc("rate_passenger_ride"',
-    "finishSkipped", 'aria-label="Avaliar motorista"'
+    "finishSkipped", 'aria-label="Avaliar motorista"',
+    "data-apois-passenger-layout-e2e-v1", "data-apois-direct-payment-e2e-v1"
   ]);
 } else {
   check("src/routes/motorista.app.tsx", [
