@@ -15,11 +15,13 @@ function one(s,from,to,label){
   return s.replace(from,to);
 }
 edit("src/routes/motorista.configuracoes.tsx",s=>{
-  const begin=s.indexOf('                <SettingsRow\n                  icon={Languages}\n                  title="Idioma"');
-  const end=s.indexOf('                <SettingsLinkRow icon={Trash2} title="Limpar cache do aplicativo"',begin);
-  if(begin<0||end<begin||end-begin>1900)throw Error("[FAIL] language control changed");
+  const titleAt=s.indexOf('title="Idioma"');
+  const begin=s.lastIndexOf("<SettingsRow",titleAt);
+  const closing=s.indexOf("\n                />",titleAt);
+  const end=closing>=0 ? closing+"\n                />".length : -1;
+  if(titleAt<0||begin<0||end<titleAt||end-begin>1900)throw Error("[FAIL] language control changed");
   const old=s.slice(begin,end);
-  if(!old.includes('value={prefs.language}')||!old.includes('option value="es"'))throw Error("[FAIL] language options changed");
+  if(!old.includes('value={prefs.language}')||!old.includes('<option value="es">'))throw Error("[FAIL] language options changed");
   // Textos reais nao sao traduzidos no aplicativo: nao anunciar tradutores inexistentes.
   const row=[
     '                {/* APOIS_DRIVER_REAL_SETTINGS_VIDEO_V1: not a fake language switch */}',
