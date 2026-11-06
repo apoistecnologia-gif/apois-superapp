@@ -431,6 +431,7 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-dispatch-ux-v1.mjs')]);
   // Homologacao 06/11: corrigir somente Corridas apos os hardeners antigos.
   run(process.execPath, [resolve(root, 'scripts/fix-apois-corridas-passenger-e2e-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-apois-corridas-fare-consent-e2e-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-corridas-e2e-v1.mjs'), 'corridas']);
 }
 if (name === 'entregas') {
