@@ -16,12 +16,19 @@ function one(s,from,to,label){
 }
 edit("src/routes/motorista.configuracoes.tsx",s=>{
   const titleAt=s.indexOf('title="Idioma"');
+  if(titleAt<0){
+    if(s.includes('<option value="en">') || s.includes('<option value="es">'))
+      throw Error("[FAIL] language options still selectable without title");
+    return s.replace('export function ', '// APOIS_DRIVER_REAL_SETTINGS_VIDEO_V1: no unsupported language selector.\nexport function ');
+  }
   const begin=s.lastIndexOf("<SettingsRow",titleAt);
-  const closing=s.indexOf("\n                />",titleAt);
-  const end=closing>=0 ? closing+"\n                />".length : -1;
-  if(titleAt<0||begin<0||end<titleAt||end-begin>1900)throw Error("[FAIL] language control changed");
+  const closing=s.indexOf("/>",titleAt);
+  const end=closing>=0 ? closing+2 : -1;
+  if(begin<0||end<titleAt||end-begin>2400)
+    throw Error("[FAIL] language control changed: "+JSON.stringify(s.slice(Math.max(0,titleAt-150),titleAt+780)));
   const old=s.slice(begin,end);
-  if(!old.includes('value={prefs.language}')||!old.includes('<option value="es">'))throw Error("[FAIL] language options changed");
+  if(!old.includes('value={prefs.language}')||!old.includes('<option value="es">'))
+    throw Error("[FAIL] language options changed: "+JSON.stringify(old.slice(0,750)));
   // Textos reais nao sao traduzidos no aplicativo: nao anunciar tradutores inexistentes.
   const row=[
     '                {/* APOIS_DRIVER_REAL_SETTINGS_VIDEO_V1: not a fake language switch */}',
