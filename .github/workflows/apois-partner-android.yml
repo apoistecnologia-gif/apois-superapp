@@ -16,6 +16,7 @@ name: APOIS Parceiro Android APK
 # QA Nov 6: V3 watchdog checked with focused regression scope.
 # QA 2026-11-06: native navigation voice, truthful TTS, map/keyboard, image fallback and early finish field corrections.
 # QA 2026-11-06: motorist V10 corrected polyline marker after first CI feedback.
+# QA 2026-11-06: V10 map JSX segment search changed to robust MovviMap boundary.
 
 on:
   workflow_dispatch:
