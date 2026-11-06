@@ -9,7 +9,7 @@ const logo=readFileSync(resolve(root,"src/components/MovviLogo.tsx"),"utf8");
 const android=readFileSync("scripts/configure-partner-android.mjs","utf8");
 const check=(file,marks,label)=>{for(const s of marks)assert.ok(file.includes(s),label+" missing "+s)};
 check(android,['public void prime(PluginCall call)','waitForVoice(call, 0)','response.put("spoken", true)','TextToSpeech.QUEUE_ADD','TextToSpeech.LANG_MISSING_DATA'],'Native Voice');
-check(nav,['APOIS_DRIVER_VOICE_RUNTIME_V9','NativeDriverVoice.prime()','state?.ready === true','answer?.spoken === true','pendingVoiceKeys.add(key)','spoken.add(key)','apois:driver-voice-unavailable','tickNavigation('],'Frontend voice');
+check(nav,['APOIS_DRIVER_VOICE_RUNTIME_V9','NativeDriverVoice.prime()','state?.ready===true','answer?.spoken===true','pendingVoiceKeys.add(key)','spoken.add(key)','apois:driver-voice-unavailable','tickNavigation('],'Frontend voice');
 assert.ok(nav.indexOf('spoken.add(key)')>nav.indexOf('answer?.spoken === true'),"Speech cannot be marked before native acknowledged playback queue");
 check(toggle,['data-apois-driver-voice-test-v9','Testar voz','primeVoice()','setVoiceEnabled(next)','if (!queued) toast.error'],'Voice UI');
 check(app,['APOIS_DRIVER_FIELD_VISUAL_V10','snaps={[42, 62, 84]} initial={42}','autoFocus={false}','Confirmar finalização antecipada','distanceToDestinationKm > 0.3','data-apois-driver-trip-top-v6'.replace('data-apois-driver-trip-top','data-apois-trip-top')],'Visual trip');
