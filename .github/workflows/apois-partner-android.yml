@@ -129,6 +129,8 @@ jobs:
           node --check scripts/harden-partner-driver-profile-logout-v3.mjs
           node --check scripts/harden-partner-motorista-pin-ride-v4.mjs
           node --check scripts/harden-partner-motorista-google-roadmap-v5.mjs
+          node --check scripts/fix-partner-motorista-offer-recovery-v2.mjs
+          node --check scripts/qa/verify-partner-motorista-offer-recovery-v2.mjs
           node --check scripts/harden-partner-motorista-arrival-voice-v5.mjs
           node --check scripts/harden-partner-driver-trip-ux-v6.mjs
           node --check scripts/harden-partner-driver-passenger-name-v6.mjs
