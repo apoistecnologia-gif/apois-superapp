@@ -63,6 +63,8 @@ const voicePluginJava = `package br.com.apois.parceiro;
 
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
+import android.os.Handler;
+import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 
 import com.getcapacitor.JSObject;
@@ -80,7 +82,7 @@ public class DriverVoicePlugin extends Plugin implements TextToSpeech.OnInitList
     private static final Locale PT_BR = new Locale("pt", "BR");
 
     private TextToSpeech tts;
-    private boolean ready = false;
+    private volatile boolean ready = false;
     private String activeEngine = "default";
 
     @Override
@@ -105,15 +107,65 @@ public class DriverVoicePlugin extends Plugin implements TextToSpeech.OnInitList
 
     @Override
     public void onInit(int status) {
-        ready = status == TextToSpeech.SUCCESS;
-        if (!ready || tts == null) return;
-        tts.setLanguage(PT_BR);
+        ready = status == TextToSpeech.SUCCESS && tts != null;
+        if (!ready) return;
+        int language = tts.setLanguage(PT_BR);
+        ready = language != TextToSpeech.LANG_NOT_SUPPORTED && language != TextToSpeech.LANG_MISSING_DATA;
+        if (!ready) return;
         tts.setSpeechRate(0.96f);
         tts.setPitch(1.0f);
         tts.setAudioAttributes(new AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
             .build());
+    }
+
+    // The React module calls DriverVoice.prime() on mount. Without this native
+    // method it falls back to the Android WebView speech API, which is not reliable.
+    private void waitForVoice(PluginCall call, int attempt) {
+        if (ready && tts != null) {
+            JSObject response = new JSObject();
+            response.put("ready", true);
+            response.put("engine", activeEngine);
+            response.put("language", "pt-BR");
+            call.resolve(response);
+            return;
+        }
+        if (attempt >= 6) {
+            JSObject response = new JSObject();
+            response.put("ready", false);
+            response.put("engine", activeEngine);
+            response.put("language", "pt-BR");
+            call.resolve(response);
+            return;
+        }
+        new Handler(Looper.getMainLooper()).postDelayed(
+            () -> waitForVoice(call, attempt + 1), 300L
+        );
+    }
+
+    @PluginMethod
+    public void prime(PluginCall call) {
+        if (tts == null) initTts();
+        waitForVoice(call, 0);
+    }
+
+    private void performSpeak(PluginCall call, String text, boolean interrupt) {
+        if (!ready || tts == null) {
+            call.reject("Voz pt-BR indisponível ou ainda inicializando. Confira o mecanismo de leitura do Android.");
+            return;
+        }
+        String utteranceId = "apois-" + UUID.randomUUID();
+        int mode = interrupt ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD;
+        int result = tts.speak(text, mode, null, utteranceId);
+        if (result == TextToSpeech.ERROR) {
+            call.reject("Falha ao iniciar fala");
+            return;
+        }
+        JSObject response = new JSObject();
+        response.put("engine", activeEngine);
+        response.put("spoken", true);
+        call.resolve(response);
     }
 
     @PluginMethod
@@ -123,19 +175,15 @@ public class DriverVoicePlugin extends Plugin implements TextToSpeech.OnInitList
             call.reject("Texto vazio");
             return;
         }
+        boolean interrupt = Boolean.TRUE.equals(call.getBoolean("interrupt", false));
         if (!ready || tts == null) {
-            call.reject("TTS ainda não está pronto");
+            if (tts == null) initTts();
+            new Handler(Looper.getMainLooper()).postDelayed(
+                () -> performSpeak(call, text, interrupt), 600L
+            );
             return;
         }
-        String utteranceId = "apois-" + UUID.randomUUID();
-        int result = tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
-        if (result == TextToSpeech.ERROR) {
-            call.reject("Falha ao iniciar fala");
-            return;
-        }
-        JSObject response = new JSObject();
-        response.put("engine", activeEngine);
-        call.resolve(response);
+        performSpeak(call, text, interrupt);
     }
 
     @PluginMethod
