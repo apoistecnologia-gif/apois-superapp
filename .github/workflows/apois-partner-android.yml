@@ -14,6 +14,7 @@ name: APOIS Parceiro Android APK
 # QA Nov 6: missed offer at 14:04 UTC despite driver online; independent authenticated watchdog added.
 # QA Nov 6: retry candidate watchdog after checked insertion anchor fix.
 # QA Nov 6: V3 watchdog checked with focused regression scope.
+# QA 2026-11-06: native navigation voice, truthful TTS, map/keyboard, image fallback and early finish field corrections.
 
 on:
   workflow_dispatch:
