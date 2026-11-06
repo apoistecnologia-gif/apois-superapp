@@ -174,6 +174,11 @@ node "$ROOT/scripts/qa/test-partner-motorista-fullscreen-overlay-v6.mjs"
 # Physical QA 2026-11-06: presence continued but offers were not polled after dispatch.
 node "$ROOT/scripts/fix-partner-motorista-offer-watchdog-v3.mjs"
 node "$ROOT/scripts/qa/verify-partner-motorista-offer-watchdog-v3.mjs"
+# Physical QA 06 Nov: voice speech, broken images, route map and unsafe finish UX.
+node "$ROOT/scripts/fix-partner-motorista-voice-runtime-v9.mjs"
+node "$ROOT/scripts/fix-partner-motorista-voice-test-ui-v9.mjs"
+node "$ROOT/scripts/fix-partner-motorista-map-visual-v10.mjs"
+node "$ROOT/scripts/qa/verify-partner-voice-map-visual-v11.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
