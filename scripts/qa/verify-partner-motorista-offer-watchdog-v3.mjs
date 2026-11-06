@@ -23,7 +23,10 @@ const required=[
  'APOIS_DRIVER_OFFER_RECOVERY_V2',
 ];
 for(const t of required)assert.ok(file.includes(t),"Missing guarded candidate polling contract: "+t);
-const section=file.slice(file.indexOf('APOIS_DRIVER_OFFER_WATCHDOG_V3'));
+const start=file.indexOf("  // Independently check offers while online.");
+const end=file.indexOf("  }, [online, userId, driverId]);",start);
+assert.ok(start>=0 && end>start,"V3 mounted watchdog effect must be present");
+const section=file.slice(start,end);
 assert.ok(!section.includes('update({ candidate_driver_ids'),"No mutation of dispatch candidates");
 assert.ok(!section.includes('driver_accept_ride'),"Poll must not accept rides");
 assert.ok(!section.includes('navigator.onLine'),"Poll must not rely on browser online flag");
