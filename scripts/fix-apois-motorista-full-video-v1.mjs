@@ -18,19 +18,26 @@ function single(s,old,next,label){
 }
 change("src/components/ApoisStatusCheck.tsx",s=>{
   // navigator.onLine pode reportar offline no Android com Supabase operante.
-  s=single(s,
-    "    setResults(output);setTested(true);setBusy(false);",
-    [
-     "    // APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1",
-     "    // O WebView pode informar offline mesmo com RPC e sessao validas.",
-     "    // Evite falso negativo usando evidencias reais desta rodada.",
-     "    if (authenticated || serverReady) {",
-     '      output[0]={label:"1. Internet",status:"ok",detail:"Rede confirmada por consulta autenticada ao servidor APOIS."};',
-     "    } else if (navigator.onLine) {",
-     '      output[0]={label:"1. Internet",status:"unknown",detail:"O aparelho detectou rede, mas a conexao com o servidor nao foi confirmada."};',
-     "    }",
-     "    setResults(output);setTested(true);setBusy(false);"
-    ].join("\n"),"internet diagnostic");
+  // Localizar a atualizacao final, mesmo apos hardeners alterarem formatacao.
+  const lastResult=s.lastIndexOf("setResults(");
+  if(lastResult<0 || !s.includes("authenticated") || !s.includes("serverReady") ||
+     !s.includes("const output:Result[]=[]")) {
+    throw Error("[FAIL] internet diagnostic: output/auth/server contract changed");
+  }
+  const snippet=s.slice(lastResult, lastResult+160);
+  if(!snippet.includes("setTested(true)") || !snippet.includes("setBusy(false)")) {
+    throw Error("[FAIL] internet diagnostic: final results lifecycle changed");
+  }
+  const logic=[
+    "    // APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1",
+    "    if (authenticated || serverReady) {",
+    '      output[0]={label:"1. Internet",status:"ok",detail:"Rede confirmada pelo servidor APOIS."};',
+    "    } else if (navigator.onLine) {",
+    '      output[0]={label:"1. Internet",status:"unknown",detail:"Rede disponivel, servidor nao confirmado."};',
+    "    }",
+    ""
+  ].join("\\n");
+  s=s.slice(0,lastResult)+logic+s.slice(lastResult);
  return s;
 },"APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1");
 change("src/components/ApoisAvailableCalls.tsx",s=>{
