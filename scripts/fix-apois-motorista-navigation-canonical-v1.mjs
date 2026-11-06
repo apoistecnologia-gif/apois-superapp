@@ -162,9 +162,23 @@ patch("src/routes/motorista.perfil.tsx",s=>{
     '              <Divider />',
     '              <MenuRow icon={ShieldCheck} label="Privacidade e segurança" sub="Dados, permissões e conta" to="/motorista/privacidade" />'
   ].join("\n");
-  s=one(s,preferences,
-    '              <MenuRow icon={Settings} label="Configurações" sub="Segurança, privacidade, notificações e suporte" to="/motorista/configuracoes" />',
-    "avoid misleading privacy/security label");
+  const settingsRow='              <MenuRow icon={Settings} label="Configurações" sub="Segurança, privacidade, notificações e suporte" to="/motorista/configuracoes" />';
+  if(s.includes(preferences)) {
+    s=one(s,preferences,settingsRow,"canonical profile settings");
+  } else if(!s.includes(settingsRow)) {
+    const legacy=s.indexOf('label="Privacidade e segurança"');
+    if(legacy>=0){
+      const start=s.lastIndexOf("<MenuRow",legacy),end=s.indexOf("/>",legacy)+2;
+      if(start<0||end<=legacy||end-start>420)throw Error("[FAIL] legacy privacy settings row changed");
+      s=s.slice(0,start)+settingsRow+s.slice(end);
+    } else {
+      const match=s.indexOf('to="/motorista/privacidade"');
+      if(match<0)throw Error("[FAIL] profile cannot locate settings/privacidade destination");
+      const start=s.lastIndexOf("<MenuRow",match),end=s.indexOf("/>",match)+2;
+      if(start<0||end<=match||end-start>420)throw Error("[FAIL] profile privacy link block changed");
+      s=s.slice(0,start)+settingsRow+s.slice(end);
+    }
+  }
   return dropUnusedIconImports(s,["LifeBuoy","FileText"]);
 },"APOIS_MOTORISTA_PROFILE_CANONICAL_V1");
 console.log("[OK] Motorista: single settings, distinct SOS and password, no duplicate profile/document/support entries.");
