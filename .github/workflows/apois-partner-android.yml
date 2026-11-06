@@ -15,6 +15,7 @@ on:
     paths:
       - '.github/workflows/apois-partner-android.yml'
       - 'scripts/fix-apois-motorista-*.mjs'
+      - 'scripts/verify-apois-motorista-*.mjs'
 
 permissions:
   contents: read
