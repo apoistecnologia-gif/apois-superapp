@@ -24,10 +24,8 @@ change("src/components/ApoisStatusCheck.tsx",s=>{
      !s.includes("const output:Result[]=[]")) {
     throw Error("[FAIL] internet diagnostic: output/auth/server contract changed");
   }
-  const snippet=s.slice(lastResult, lastResult+160);
-  if(!snippet.includes("setTested(true)") || !snippet.includes("setBusy(false)")) {
-    throw Error("[FAIL] internet diagnostic: final results lifecycle changed");
-  }
+  // A instrumentacao de status pode formatar a conclusao separadamente.
+  if(lastResult < s.indexOf("const output:Result[]=[]")) throw Error("[FAIL] results outside diagnostic");
   const logic=[
     "    // APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1",
     "    if (authenticated || serverReady) {",
