@@ -73,9 +73,16 @@ patch("src/routes/motorista.perfil.tsx",s=>{
  s=once(s,'<StatCard label="Corridas" value={String(completed)} />',
    '<StatCard label="Corridas" value={completed == null ? "—" : String(completed)} />',
    "metric count unavailable");
- s=once(s,'<Label className="break-words text-center">{label}</Label>',
-   '<Label className="block max-w-full whitespace-nowrap text-center !text-[clamp(10px,2.7vw,12px)] leading-4 tracking-tight">{label}</Label>',
-   "responsive metric label");
+ const statStart=s.indexOf("function StatCard("), statEnd=s.indexOf("function MenuRow(",statStart);
+ if(statStart<0||statEnd<=statStart) throw Error("[FAIL] metric boundaries changed");
+ let stat=s.slice(statStart,statEnd);
+ const labelEnd=stat.indexOf('">{label}</Label>');
+ const labelStart=stat.lastIndexOf('<Label className="',labelEnd);
+ if(labelEnd<0||labelStart<0||labelEnd-labelStart>260) throw Error("[FAIL] stat label changed: "+stat.slice(0,650));
+ const oldLabel=stat.slice(labelStart,labelEnd+'">{label}</Label>'.length);
+ const styledLabel=oldLabel.replace('<Label className="','<Label className="max-w-full whitespace-nowrap text-center !text-[clamp(10px,2.7vw,12px)] leading-4 tracking-tight ');
+ stat=stat.replace(oldLabel,styledLabel);
+ s=s.slice(0,statStart)+stat+s.slice(statEnd);
  return s;
 },"APOIS_DRIVER_REAL_RIDE_COUNT_V2");
 console.log("[OK] Motorista profile: safe upload diagnostics, actual completed rides and one-line metric labels.");
