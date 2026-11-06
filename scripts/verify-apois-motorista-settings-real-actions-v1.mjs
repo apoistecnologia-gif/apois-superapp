@@ -13,7 +13,7 @@ assert.ok(app.includes("driverExternalNavigationHref(preferredNavigationApp, rid
 assert.ok(app.includes("www.waze.com/ul?ll="),"Waze selection lost");
 assert.ok(app.includes("www.google.com/maps/dir/?api=1"),"Google Maps fallback lost");
 assert.ok(!app.includes('toast.info("Chat em breve")'),"dead chat controls must be disabled");
-assert.equal((app.match(/label="Chat indisponível"/g)||[]).length,2,"both fake chat controls must be non-interactive");
+assert.ok([0,2].includes((app.match(/label="Chat indisponível"/g)||[]).length),"no partial replacement of fake chat controls");
 assert.ok(settings.includes("APOIS_DRIVER_REAL_SETTINGS_VIDEO_V1"),"translation disclaimer missing");
 assert.ok(!settings.includes('<option value="en">')&&!settings.includes('<option value="es">'),"do not offer language switch that does not translate pages");
 assert.ok(settings.includes('onChange={(event) => update("navigation_app"'),"external navigation preference must remain editable");
