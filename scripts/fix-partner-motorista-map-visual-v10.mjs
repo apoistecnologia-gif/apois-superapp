@@ -18,8 +18,8 @@ const pinBefore=src.slice(0,pinInput),pinAfter=src.slice(pinInput);
 if(!pinAfter.slice(0,500).includes("autoFocus"))throw Error("[FAIL] PIN autofocus changed");
 src=pinBefore+pinAfter.replace('                    autoFocus\n','                    autoFocus={false}\n');
 // Map polyline: reduce the road paint that obscures lane-level street labels.
-const mapStart=src.indexOf('          {polyline.length > 0 && (');
-const mapEnd=src.indexOf('         </MovviMap>',mapStart);
+const mapStart=src.indexOf('<MovviMap center=');
+const mapEnd=src.indexOf('</MovviMap>',mapStart);
 if(mapStart<0||mapEnd<mapStart)throw Error("[FAIL] Map polyline bounds not found");
 let paint=src.slice(mapStart,mapEnd);
 const weights=paint.match(/strokeWeight:\s*\d+/g)||[];
