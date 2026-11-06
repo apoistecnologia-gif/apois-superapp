@@ -52,10 +52,9 @@ const effect = [
 '  }, [online, userId, driverId]);',
 '',
 ].join("\n");
-const anchors = ["  }, [userId, driverId, loadTodayStats, featureFlags]);", "  // carrega dados do passageiro"];
-const anchor = anchors.find(text => src.split(text).length-1 === 1);
-if(!anchor)throw Error("[FAIL] Driver V3: cannot locate one safe top-level hook insertion point");
-once(anchor, anchor+"\n"+effect, "watchdog insertion");
+const anchor = "  async function handleReject() {";
+if(src.split(anchor).length-1!==1)throw Error("[FAIL] Driver V3: reject handler changed; hook insertion requires review");
+once(anchor, effect+anchor, "watchdog before reject handler");
 for(const t of ["APOIS_DRIVER_OFFER_WATCHDOG_V3",'offerPresenterRef.current = presentOffer','offerPresenterRef.current = null','window.setInterval(() => { void check(); }, 3500)','window.clearInterval(watchdog)','setIncoming(r);','contains("candidate_driver_ids", [userId])'])if(!src.includes(t))throw Error("[FAIL] Driver watchdog marker missing "+t);
 writeFileSync(file,src,"utf8");
 console.log("[OK] APOIS Motorista: independent 3.5s candidate polling with strict original offer presenter and cancellation on unmount.");
