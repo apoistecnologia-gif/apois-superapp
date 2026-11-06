@@ -21,7 +21,7 @@ for(const marker of [
 "<RideStopsTimeline ride={ride} />",
 "CANCELAR CORRIDA",
 "APOIS_CANCEL_VISIBLE_V1",
-"pb-[calc(164px+env(safe-area-inset-bottom))]",
+"max-h-[60vh]",
 "ride.estimated_price",
 "ride.payment_method",
 ])assert.ok(route.includes(marker),"Active ride rendering/scroll action lost: "+marker);
