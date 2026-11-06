@@ -1,0 +1,21 @@
+// APOIS_DRIVER_SETTINGS_REAL_ACTIONS_GATE_V1 — static, no app compilation.
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motorista");
+const read=(path)=>readFileSync(resolve(root,path),"utf8");
+const app=read("src/routes/motorista.app.tsx");
+const settings=read("src/routes/motorista.configuracoes.tsx");
+assert.ok(app.includes("APOIS_DRIVER_PREFERRED_NAV_VIDEO_V1"),"navigation preference handler missing");
+assert.ok(app.includes('loadDriverPrefs(data.user.id)'),"must load prefs for authenticated driver");
+assert.ok(app.includes("driverExternalNavigationHref(preferredNavigationApp, ride.origin_lat, ride.origin_lng)"));
+assert.ok(app.includes("driverExternalNavigationHref(preferredNavigationApp, ride.destination_lat, ride.destination_lng)"));
+assert.ok(app.includes("www.waze.com/ul?ll="),"Waze selection lost");
+assert.ok(app.includes("www.google.com/maps/dir/?api=1"),"Google Maps fallback lost");
+assert.ok(!app.includes('toast.info("Chat em breve")'),"dead chat controls must be disabled");
+assert.equal((app.match(/label="Chat indisponível"/g)||[]).length,2,"both fake chat controls must be non-interactive");
+assert.ok(settings.includes("APOIS_DRIVER_REAL_SETTINGS_VIDEO_V1"),"translation disclaimer missing");
+assert.ok(!settings.includes('<option value="en">')&&!settings.includes('<option value="es">'),"do not offer language switch that does not translate pages");
+assert.ok(settings.includes('onChange={(event) => update("navigation_app"'),"external navigation preference must remain editable");
+assert.ok(settings.includes('onClick={() => void handleSave()}'),"save settings flow preserved");
+console.log("[OK] Motorista: Waze/Google preference, no mock chat or unsupported language switch.");
