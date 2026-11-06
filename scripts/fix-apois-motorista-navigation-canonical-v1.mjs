@@ -80,12 +80,15 @@ patch("src/routes/motorista.configuracoes.tsx",s=>{
     '                <SettingsLinkRow icon={LogOut} title={signingOut ? "Encerrando sessões..." : "Sair de todos os dispositivos"} destructive onClick={() => void handleLogout("global")} />',
     '              </SettingsSection>'
   ].join("\n");
-  const passwordIndex=s.indexOf('title="Alterar senha"');
-  const securityStart=s.lastIndexOf("<SettingsSection",passwordIndex);
-  const securityClose=s.indexOf("</SettingsSection>",passwordIndex)+"</SettingsSection>".length;
-  if(passwordIndex<0||securityStart<0||securityClose<=passwordIndex||
-      !s.slice(securityStart,securityClose).includes("handleLogout"))
-    throw Error("[FAIL] Driver security section/password/logout contract changed / observed: "+s.split("\n").filter(line => /Alterar senha|Segurança|handleLogout|SettingsSection|LogOut/.test(line)).slice(0,27).map(line => line.trim()).join(" | "));
+  // O pipeline anterior já trocou "Alterar senha" por "Segurança e emergência".
+  // Preservar o fluxo SOS existente e oferecer o editor real de senha.
+  const securityTitleIndex=s.indexOf('<SettingsSection icon={ShieldCheck} title="Segurança">');
+  const securityStart=s.lastIndexOf("<SettingsSection",securityTitleIndex);
+  const securityClose=s.indexOf("</SettingsSection>",securityTitleIndex)+"</SettingsSection>".length;
+  if(securityTitleIndex<0||securityStart<0||securityClose<=securityTitleIndex ||
+      !s.slice(securityStart,securityClose).includes("handleLogout") ||
+      !s.slice(securityStart,securityClose).includes('to="/motorista/seguranca"'))
+    throw Error("[FAIL] Driver security section / logout / SOS contract changed");
   const securityText=s.slice(securityStart,securityClose);
   const canonicalSecurity=newSecurity.join("\n");
   if(!canonicalSecurity.includes("openPersonalDataEditor") ||
