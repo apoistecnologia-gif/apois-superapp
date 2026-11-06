@@ -8,7 +8,7 @@ const status=read("src/components/ApoisStatusCheck.tsx");
 const calls=read("src/components/ApoisAvailableCalls.tsx");
 const profile=read("src/components/profile/DriverProfessionalProfile.tsx");
 assert.ok(status.includes("APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1"),"diagnostico verificado pelo backend");
-assert.ok(status.includes("authenticated || serverReady"),"internet: conexao comprovada");
+assert.ok(status.includes('output.some((result:Result)') && status.includes('result.status === "ok"'),"internet: server evidence");
 assert.ok(calls.includes("APOIS_DRIVER_CALLS_POLL_VIDEO_V1"),"poll nao depende do WebView");
 assert.ok(!calls.includes("if(navigator.onLine)void refresh()"),"false offline nao pode pausar polling");
 assert.ok(calls.includes("onAccepted()"),"aceite original permanece");
