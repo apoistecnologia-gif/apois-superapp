@@ -14,8 +14,10 @@ if (role === "corridas") {
   check("src/routes/_authenticated.revisar-solicitacao.tsx", [
     "data-apois-review-e2e-v1", "data-apois-review-footer-e2e-v1",
     'paddingBottom: "max(76px, env(safe-area-inset-bottom))"',
-    "{formatCurrency(checkout.finalTotal)}", "onClick={() => void handleConfirm()}"
+    "{formatCurrency(displayFare)}", "onClick={() => void handleConfirm()}"
   ]);
+  check("src/hooks/rides/use-ride-request.tsx", ["APOIS_FARE_CONSENT_HOOK_E2E_V1", "updatedFareCents", "expected_price_cents"]);
+  check("src/types/rides/ride-request.ts", ["APOIS_FARE_CONSENT_PAYLOAD_E2E_V1"]);
   check("src/components/rides/active/DriverCard.tsx", [
     "APOIS_DRIVER_AVATAR_E2E_V1", "onError={() => setPhotoFailed(true)}", ': "Novo"'
   ], ['ride.driver_rating?.toFixed(1) || "5.0"']);
