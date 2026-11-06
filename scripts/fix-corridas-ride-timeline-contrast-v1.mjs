@@ -10,8 +10,8 @@ function once(a,b,label){const n=src.split(a).length-1;if(n!==1)throw Error("[FA
 if(src.includes("APOIS_RIDE_TIMELINE_CONTRAST_V1"))throw Error("[FAIL] patch already installed");
 once('<div className="bg-zinc-900/30 rounded-2xl p-4 border border-white/5 space-y-4">',
   '<div data-apois-ride-timeline-contrast-v1 className="rounded-2xl border border-[#E8CED2] bg-white p-4 text-[#111827] shadow-sm space-y-4">',"visible timeline surface");
-once('bg-zinc-800 my-1','bg-[#D1D5DB] my-1',"route connector first");
-once('bg-zinc-800 my-1','bg-[#D1D5DB] my-1',"route connector repeated");
+if(src.split("bg-zinc-800 my-1").length-1!==2)throw Error("[FAIL] Ride timeline route connector count changed");
+src=src.replaceAll("bg-zinc-800 my-1","bg-[#D1D5DB] my-1");
 once('border border-zinc-600 bg-zinc-900','border border-[#9CA3AF] bg-white',"intermediate stop marker");
 once('text-zinc-600 mb-0.5','text-[#586272] mb-0.5',"pickup label");
 once('text-zinc-600 mb-0.5','text-[#586272] mb-0.5',"destination label");
