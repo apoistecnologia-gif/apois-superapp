@@ -432,6 +432,7 @@ if (name === 'corridas') {
   // Homologacao 06/11: corrigir somente Corridas apos os hardeners antigos.
   run(process.execPath, [resolve(root, 'scripts/fix-apois-corridas-passenger-e2e-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-apois-corridas-fare-consent-e2e-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/qa/test-apois-corridas-fare-consent-e2e-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-corridas-e2e-v1.mjs'), 'corridas']);
 }
 if (name === 'entregas') {
