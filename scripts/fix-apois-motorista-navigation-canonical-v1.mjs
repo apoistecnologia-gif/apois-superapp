@@ -114,6 +114,8 @@ patch("src/routes/motorista.configuracoes.tsx",s=>{
      !s.slice(supportStart,supportClose).includes('/motorista/suporte'))
     throw Error("[FAIL] Driver support section/link contract changed");
   s=s.slice(0,supportStart)+newSupport+s.slice(supportClose);
+  const lucideHeader=s.slice(0,s.indexOf('from "lucide-react";'));
+  if(!lucideHeader.includes("KeyRound")) s=s.replace("Bell, Info,", "Bell, KeyRound, Info,");
   return dropUnusedIconImports(s,["Fingerprint","LockKeyhole","Smartphone"]);
 },"APOIS_MOTORISTA_SETTINGS_CANONICAL_V1");
 
@@ -178,6 +180,13 @@ patch("src/routes/motorista.perfil.tsx",s=>{
       if(start<0||end<=match||end-start>420)throw Error("[FAIL] profile privacy link block changed");
       s=s.slice(0,start)+settingsRow+s.slice(end);
     }
+  }
+  const lucideStart=s.indexOf("import {");
+  const lucideStop=s.indexOf('from "lucide-react";');
+  const header=s.slice(lucideStart,lucideStop);
+  const settingsCount=(header.match(/\\bSettings\\b/g)||[]).length;
+  if(settingsCount>1) {
+    s=s.replace('  Sparkles,\\n  Settings,\\n  Star,','  Sparkles,\\n  Star,');
   }
   return dropUnusedIconImports(s,["LifeBuoy","FileText"]);
 },"APOIS_MOTORISTA_PROFILE_CANONICAL_V1");
