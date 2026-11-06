@@ -25,7 +25,10 @@ if(source.includes("APOIS_DRIVER_NOTIFICATION_HUB_V1")) {
     '              </SettingsSection>',
     ''
   ].join("\n");
-  const nextSource=source.slice(0,start)+merged+source.slice(next);
+  let nextSource=source.slice(0,start)+merged+source.slice(next);
+  if((nextSource.match(/\bVibrate\b/g)||[]).length===1 && (nextSource.match(/\bVolume2\b/g)||[]).length===1) {
+    nextSource=nextSource.replace("Vibrate, Volume2, ","");
+  }
   writeFileSync(file,nextSource,"utf8");
   console.log("[OK] Driver notifications central is unique; native push toggle retained.");
 }
