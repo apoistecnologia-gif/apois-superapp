@@ -15,6 +15,7 @@ name: APOIS Parceiro Android APK
 # QA Nov 6: retry candidate watchdog after checked insertion anchor fix.
 # QA Nov 6: V3 watchdog checked with focused regression scope.
 # QA 2026-11-06: native navigation voice, truthful TTS, map/keyboard, image fallback and early finish field corrections.
+# QA 2026-11-06: motorist V10 corrected polyline marker after first CI feedback.
 
 on:
   workflow_dispatch:
