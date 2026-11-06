@@ -131,25 +131,32 @@ patch("src/routes/motorista.perfil.tsx",s=>{
     '  }, []);'
   ].join("\n");
   s=one(s,'  const requestRef = useRef(0);','  const requestRef = useRef(0);\n\n'+effect,"consume edit intent");
-  const start=s.indexOf('              <MenuRow icon={Car} label="Veículo e documentos"');
-  const next=s.indexOf('              <Divider />',start);
-  const docStart=s.indexOf('              <MenuRow\n                icon={FileText}\n                label="Documentos"',next);
-  const docEnd=s.indexOf('              />',docStart);
-  if(start<0||next<start||docStart<next||docEnd<docStart||docEnd-start>1400)
-    throw Error("[FAIL] driver profile document duplicate structure changed");
-  const old=s.slice(start,docEnd+'              />'.length);
-  if(!old.includes('to="/motorista/documentos"')||!old.includes('StatusPill')||
-     !old.includes('label="Documentos"'))throw Error("[FAIL] document merge guard");
-  const merged=[
-    '              <MenuRow',
-    '                icon={Car}',
-    '                label="Veículo e documentos"',
-    '                sub={vehicleModel ? vehicleModel + " · " + maskPlate(driver?.vehicle_plate) + " · CNH, CRLV e fotos" : "Veículo, CNH, CRLV, selfie e fotos"}',
-    '                to="/motorista/documentos"',
-    '                trailing={<StatusPill status={documentsApproved ? "accepted" : documentsRejected ? "cancelled" : "searching"} label={documentsApproved ? "Aprovados" : documentsRejected ? "Reenvio" : "Pendentes"} pulse={false} />}',
-    '              />'
-  ].join("\n");
-  s=one(s,old,merged,"unify vehicle/documents");
+  // Se o hardener anterior ja consolidou documentos, nao remove nada.
+  const duplicateDocCount=(s.match(/to="\\/motorista\\/documentos"/g)||[]).length;
+  if(duplicateDocCount>1) {
+    const start=s.indexOf('              <MenuRow icon={Car} label="Veículo e documentos"');
+    const next=s.indexOf('              <Divider />',start);
+    const docStart=s.indexOf('              <MenuRow\n                icon={FileText}\n                label="Documentos"',next);
+    const docEnd=s.indexOf('              />',docStart);
+    if(start<0||next<start||docStart<next||docEnd<docStart||docEnd-start>1400)
+      throw Error("[FAIL] driver profile document duplicate structure changed");
+    const old=s.slice(start,docEnd+'              />'.length);
+    if(!old.includes('to="/motorista/documentos"')||!old.includes('StatusPill')||
+       !old.includes('label="Documentos"'))throw Error("[FAIL] document merge guard");
+    const merged=[
+      '              <MenuRow',
+      '                icon={Car}',
+      '                label="Veículo e documentos"',
+      '                sub={vehicleModel ? vehicleModel + " · " + maskPlate(driver?.vehicle_plate) + " · CNH, CRLV e fotos" : "Veículo, CNH, CRLV, selfie e fotos"}',
+      '                to="/motorista/documentos"',
+      '                trailing={<StatusPill status={documentsApproved ? "accepted" : documentsRejected ? "cancelled" : "searching"} label={documentsApproved ? "Aprovados" : documentsRejected ? "Reenvio" : "Pendentes"} pulse={false} />}',
+      '              />'
+    ].join("\n");
+    s=one(s,old,merged,"unify vehicle/documents");
+  
+  } else if(duplicateDocCount!==1) {
+    throw Error("[FAIL] Driver profile lost document route");
+  }
   const preferences=[
     '              <MenuRow icon={LifeBuoy} label="Suporte" sub="Central de ajuda e contato" to="/motorista/suporte" />',
     '              <Divider />',
