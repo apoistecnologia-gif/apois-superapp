@@ -42,7 +42,8 @@ patch("src/routes/_authenticated.corrida.$rideId.tsx", (source) => {
   const depAnchor = '}, [screenState, ride?.id, rideId]);';
   const uiAnchor = '<p className="mt-3 text-xs font-semibold text-[#5B6470]">Voltando automaticamente ao início...</p>';
   for (const a of [importAnchor,hookAnchor,timerAnchor,depAnchor,uiAnchor]) if (!source.includes(a)) throw Error("[FAIL] completed rating anchor changed: "+a);
-  let s = source.replace(importAnchor, importAnchor+'\nimport { supabase } from "@/integrations/supabase/client";');
+  let s = source;
+  if (!s.includes('import { supabase } from "@/integrations/supabase/client";')) s = s.replace(importAnchor, importAnchor+'\nimport { supabase } from "@/integrations/supabase/client";');
   const hooks = [
     '  // APOIS_PASSENGER_RATING_E2E_V1: somente RPC autenticada, sem nota ficticia.',
     '  const [finishStars, setFinishStars] = useState(5);',
