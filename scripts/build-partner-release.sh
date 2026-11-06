@@ -171,6 +171,9 @@ node "$ROOT/scripts/qa/test-partner-motorista-rating-singleflight-v1.mjs"
 node "$ROOT/scripts/verify-partner-motorista-drawer-profile-v5.mjs"
 # UI-01 screenshot regression: a fullscreen menu must not darken its own content.
 node "$ROOT/scripts/qa/test-partner-motorista-fullscreen-overlay-v6.mjs"
+# Physical QA 2026-11-06: presence continued but offers were not polled after dispatch.
+node "$ROOT/scripts/fix-partner-motorista-offer-watchdog-v3.mjs"
+node "$ROOT/scripts/qa/verify-partner-motorista-offer-watchdog-v3.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
