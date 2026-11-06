@@ -377,6 +377,26 @@ Deno.serve(async (req: Request) => {
     const metrics = await routeMetrics(body.origin, body.destination, intermediates);
     const details = body?.service_details && typeof body.service_details === "object" && !Array.isArray(body.service_details) ? body.service_details : {};
     const estimatedPrice = await loadFare(admin, categoryRow.id, category, metrics.distanceKm, metrics.durationMin, details);
+    // APOIS_FARE_CONSENT_E2E_V1: client may provide the displayed estimate.
+    // If the authoritative fare changed, never insert a ride at a silently
+    // higher or different price. Existing older clients without a quoted
+    // estimate retain their historical behavior until a coordinated rollout.
+    if (body?.expected_price_cents !== undefined && body?.expected_price_cents !== null) {
+      const expectedCents = Number(body.expected_price_cents);
+      if (!Number.isSafeInteger(expectedCents) || expectedCents <= 0) {
+        return json({ ok: false, error_code: "invalid_expected_price", message: "Estimativa inválida. Atualize a cotação." }, 422);
+      }
+      const officialCents = Math.round(estimatedPrice * 100);
+      if (officialCents !== expectedCents) {
+        return json({
+          ok: false,
+          error_code: "price_changed",
+          estimated_price: estimatedPrice,
+          message: "O valor da corrida foi atualizado. Confira a nova estimativa e confirme novamente.",
+        });
+      }
+    }
+
 
     const { data: ride, error: insertError } = await admin.from("rides").insert({
       passenger_id: userRow.id,
