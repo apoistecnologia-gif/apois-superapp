@@ -90,7 +90,7 @@ patch("src/routes/motorista.configuracoes.tsx",s=>{
       !s.slice(securityStart,securityClose).includes('to="/motorista/seguranca"'))
     throw Error("[FAIL] Driver security section / logout / SOS contract changed");
   const securityText=s.slice(securityStart,securityClose);
-  const canonicalSecurity=newSecurity.join("\n");
+  const canonicalSecurity=newSecurity;
   if(!canonicalSecurity.includes("openPersonalDataEditor") ||
      !canonicalSecurity.includes('to="/motorista/seguranca"'))
      throw Error("[FAIL] canonical password/SOS route");
@@ -113,7 +113,7 @@ patch("src/routes/motorista.configuracoes.tsx",s=>{
   if(supportIndex<0||supportStart<0||supportClose<=supportIndex||
      !s.slice(supportStart,supportClose).includes('/motorista/suporte'))
     throw Error("[FAIL] Driver support section/link contract changed");
-  s=s.slice(0,supportStart)+newSupport.join("\n")+s.slice(supportClose);
+  s=s.slice(0,supportStart)+newSupport+s.slice(supportClose);
   return dropUnusedIconImports(s,["Fingerprint","LockKeyhole","Smartphone"]);
 },"APOIS_MOTORISTA_SETTINGS_CANONICAL_V1");
 
