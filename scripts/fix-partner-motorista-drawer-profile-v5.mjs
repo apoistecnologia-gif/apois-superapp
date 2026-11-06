@@ -17,7 +17,8 @@ const p="src/components/DriverSideMenu.tsx";let s=get(p);
 for(const marker of ['data-apois-driver-menu-fullscreen-v4','data-apois-driver-sidebar-tools-v1','onClick={() => openOperationalTool("status")}','onClick={() => openOperationalTool("calls")}','data-apois-driver-sidebar-profile-v3'])
  if(!s.includes(marker))throw Error("[FAIL] Missing pre-existing menu behavior "+marker);
 s=one(s,'        side="left"\n        data-apois-driver-menu-fullscreen-v4',
- '        side="left"\n        overlayClassName="!fixed !inset-0 !z-[220] !bg-[#111827]/70"\n        data-apois-driver-menu-fullscreen-v4 data-apois-driver-menu-fixed-v5',"full backdrop");
+ '        side="left"\n        overlayClassName="!fixed !inset-0 !z-[110] !bg-[#111827]/60 !hidden sm:!block"\n        data-apois-driver-menu-fullscreen-v4 data-apois-driver-menu-fixed-v5',"full backdrop");
+s=one(s,'!z-[180] !inset-y-0','!z-[240] !inset-y-0',"raise drawer over backdrop independently of CSS");
 s=one(s,'<SheetHeader className="','<SheetHeader data-apois-driver-menu-header-v5 className="',"header marker");
 s=one(s,'<div className="space-y-5 px-4 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-5">',
  '<div data-apois-driver-menu-scroll-v5 className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pt-5 pb-[max(84px,calc(env(safe-area-inset-bottom)+24px))]">',"drawer own scroll");
