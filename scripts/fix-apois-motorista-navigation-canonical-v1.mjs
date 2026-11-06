@@ -80,7 +80,18 @@ patch("src/routes/motorista.configuracoes.tsx",s=>{
     '                <SettingsLinkRow icon={LogOut} title={signingOut ? "Encerrando sessões..." : "Sair de todos os dispositivos"} destructive onClick={() => void handleLogout("global")} />',
     '              </SettingsSection>'
   ].join("\n");
-  s=one(s,oldSecurity,newSecurity,"replace false password navigation and inert buttons");
+  const passwordIndex=s.indexOf('title="Alterar senha"');
+  const securityStart=s.lastIndexOf("<SettingsSection",passwordIndex);
+  const securityClose=s.indexOf("</SettingsSection>",passwordIndex)+"</SettingsSection>".length;
+  if(passwordIndex<0||securityStart<0||securityClose<=passwordIndex||
+      !s.slice(securityStart,securityClose).includes("handleLogout"))
+    throw Error("[FAIL] Driver security section/password/logout contract changed");
+  const securityText=s.slice(securityStart,securityClose);
+  const canonicalSecurity=newSecurity.join("\n");
+  if(!canonicalSecurity.includes("openPersonalDataEditor") ||
+     !canonicalSecurity.includes('to="/motorista/seguranca"'))
+     throw Error("[FAIL] canonical password/SOS route");
+  s=s.slice(0,securityStart)+canonicalSecurity+s.slice(securityClose);
   const oldSupport=[
     '              <SettingsSection icon={LifeBuoy} title="Suporte">',
     '                <SettingsLinkRow icon={LifeBuoy} title="Central de ajuda" to="/motorista/suporte" />',
@@ -93,7 +104,13 @@ patch("src/routes/motorista.configuracoes.tsx",s=>{
     '                <SettingsLinkRow icon={LifeBuoy} title="Central de ajuda e atendimento" hint="Perguntas frequentes, chamados e contato" to="/motorista/suporte" />',
     '              </SettingsSection>'
   ].join("\n");
-  s=one(s,oldSupport,newSupport,"support duplicate links");
+  const supportIndex=s.indexOf('title="Suporte"');
+  const supportStart=s.lastIndexOf("<SettingsSection",supportIndex);
+  const supportClose=s.indexOf("</SettingsSection>",supportIndex)+"</SettingsSection>".length;
+  if(supportIndex<0||supportStart<0||supportClose<=supportIndex||
+     !s.slice(supportStart,supportClose).includes('/motorista/suporte'))
+    throw Error("[FAIL] Driver support section/link contract changed");
+  s=s.slice(0,supportStart)+newSupport.join("\n")+s.slice(supportClose);
   return dropUnusedIconImports(s,["Fingerprint","LockKeyhole","Smartphone"]);
 },"APOIS_MOTORISTA_SETTINGS_CANONICAL_V1");
 
