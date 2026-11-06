@@ -13,7 +13,7 @@ once('<div className="bg-zinc-900/30 rounded-2xl p-4 border border-white/5 space
 if(src.split("bg-zinc-800 my-1").length-1!==2)throw Error("[FAIL] Ride timeline route connector count changed");
 src=src.replaceAll("bg-zinc-800 my-1","bg-[#D1D5DB] my-1");
 once('border border-zinc-600 bg-zinc-900','border border-[#9CA3AF] bg-white',"intermediate stop marker");
-if(src.split("text-zinc-600 mb-0.5").length-1!==2)throw Error("[FAIL] Ride timeline labels changed");
+if(src.split("text-zinc-600 mb-0.5").length-1!==3)throw Error("[FAIL] Ride timeline labels changed");
 src=src.replaceAll("text-zinc-600 mb-0.5","text-[#586272] mb-0.5");
 if(src.split("text-zinc-300 truncate").length-1!==3)throw Error("[FAIL] Ride timeline titles changed");
 src=src.replaceAll("text-zinc-300 truncate","text-[#111827] truncate");
