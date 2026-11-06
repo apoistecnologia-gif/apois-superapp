@@ -14,6 +14,7 @@ on:
       - fix/apois-corridas-e2e-homologacao-20261106
     paths:
       - '.github/workflows/apois-partner-android.yml'
+      - 'scripts/fix-apois-motorista-*.mjs'
 
 permissions:
   contents: read
