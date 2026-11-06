@@ -11,7 +11,12 @@ function edit(file, transform, marker) {
 }
 function once(source, from, to, label) {
   const count=source.split(from).length-1;
-  if(count!==1)throw Error("[FAIL] "+label+": expected 1, got "+count);
+  if(count!==1){
+    const details=label.includes("signature") || label.includes("callback")
+      ? source.split("\n").filter(line => line.includes("confirmRide")).slice(0,8).map(line => line.trim()).join(" | ")
+      : "";
+    throw Error("[FAIL] "+label+": expected 1, got "+count+(details ? " / actual: "+details : ""));
+  }
   return source.replace(from,to);
 }
 edit("src/types/rides/ride-request.ts",s=>once(s,
