@@ -14,8 +14,8 @@ patch("src/routes/_authenticated.revisar-solicitacao.tsx", (source) => {
   const rootTag = s.match(/<div className="[^"]*(?:min-h-screen|h-\[100dvh\]|min-h-\[100dvh\])[^"]*">/);
   const scrollTag = s.match(/<div className="[^"]*flex-1[^"]*overflow-y-auto[^"]*">/);
   if (!rootTag || !scrollTag) throw Error("[FAIL] review root/scroll changed");
-  s = s.replace(rootTag[0], rootTag[0].replace("<div ", '<div data-apois-review-e2e-v1 style={{ height: "100dvh", minHeight: 0, overflow: "hidden" }} ').replace('className="', 'className="min-h-0 '));
-  s = s.replace(scrollTag[0], scrollTag[0].replace('className="', 'className="min-h-0 overscroll-contain '));
+  s = s.replace(rootTag[0], rootTag[0].replace("<div ", '<div data-apois-review-e2e-v1 style={{ height: "100dvh", minHeight: 0, overflow: "hidden" }} '));
+  s = s.replace(scrollTag[0], scrollTag[0].replace("<div ", '<div data-apois-review-scroll-e2e-v1 '));
   const action = s.indexOf("onClick={() => void handleConfirm()}");
   const start = s.lastIndexOf('<div className="', action);
   const end = s.indexOf(">", start) + 1;
