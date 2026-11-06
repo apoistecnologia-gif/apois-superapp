@@ -84,7 +84,8 @@ const dialog=[
 '        </div>',
 '      )}',
 ].join("\n");
-overlay=overlay.slice(0,last)+dialog+"\n"+overlay.slice(last);
+const afterFooter = last + '      </div>\n'.length;
+overlay=overlay.slice(0,afterFooter)+dialog+"\n"+overlay.slice(afterFooter);
 src=src.slice(0,compStart)+overlay;
 const call='          onRecenter={recenter}\n          onComplete={async () => {';
 if(src.split(call).length!==2)throw Error("[FAIL] Active navigation callback");
