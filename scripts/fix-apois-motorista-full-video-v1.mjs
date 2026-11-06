@@ -28,7 +28,7 @@ change("src/components/ApoisStatusCheck.tsx",s=>{
   if(lastResult < s.indexOf("const output:Result[]=[]")) throw Error("[FAIL] results outside diagnostic");
   const logic=[
     "    // APOIS_DRIVER_TRUE_CONNECTIVITY_VIDEO_V1",
-    "    if (authenticated || serverReady) {",
+    '    if (output.some((result:Result) => (result.label === "3. Conta autenticada" || result.label === "6. Servidor de chamadas") && result.status === "ok")) {',
     '      output[0]={label:"1. Internet",status:"ok",detail:"Rede confirmada pelo servidor APOIS."};',
     "    } else if (navigator.onLine) {",
     '      output[0]={label:"1. Internet",status:"unknown",detail:"Rede disponivel, servidor nao confirmado."};',
