@@ -83,4 +83,24 @@ patch("src/routes/_authenticated.corrida.$rideId.tsx", (source) => {
   ].join("\n");
   return s.replace(uiAnchor,ui);
 }, "APOIS_PASSENGER_RATING_E2E_V1");
+
+patch("src/routes/_authenticated.corrida.$rideId.tsx", (source) => {
+  if (source.includes("data-apois-passenger-layout-e2e-v1")) return source;
+  let s = source;
+  // O botao de cancelamento/ocorrencia e fixo; o painel precisa de rolagem segura.
+  const sheet = s.match(/<motion\.div[\s\S]{0,220}?className="[^"]*max-h-\[60vh\][^"]*"/);
+  if (!sheet) throw Error("[FAIL] corrida: active sheet changed");
+  s=s.replace(sheet[0],sheet[0].replace("<motion.div",
+    '<motion.div data-apois-passenger-layout-e2e-v1 style={{ paddingBottom: "max(164px, env(safe-area-inset-bottom))" }}'));
+  const completePadding='pb-[max(3.5rem,env(safe-area-inset-bottom))]';
+  if(!s.includes(completePadding))throw Error("[FAIL] completion safe area changed");
+  s=s.replace(completePadding,'pb-[max(84px,env(safe-area-inset-bottom))]');
+  const summary='<p className="max-w-[300px] text-sm font-medium leading-6 text-[#4B5563]">Sua corrida foi finalizada. Obrigado por viajar com a APOIS.</p>';
+  if(!s.includes(summary))throw Error("[FAIL] completed summary changed");
+  const direct='<p data-apois-direct-payment-e2e-v1 className="max-w-[310px] text-xs leading-5 text-[#4B5563]">' +
+    '{["cash","credit","credit_card","debit","debit_card"].includes(String(ride.payment_method)) ? "Pagamento feito diretamente ao motorista, em dinheiro ou na maquininha. A APOIS nao recebe esse valor." : "Confira a forma de pagamento no historico da corrida."}' +
+    '</p>';
+  return s.replace(summary,summary+'\n'+direct);
+}, "data-apois-passenger-layout-e2e-v1");
+
 console.log("[OK] Passageiro: valor sempre visivel, safe area, foto/nota reais e avaliacao pos-corrida.");
