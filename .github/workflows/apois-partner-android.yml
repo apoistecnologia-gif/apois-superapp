@@ -15,6 +15,9 @@ on:
     paths:
       - '.github/workflows/apois-partner-android.yml'
       - 'scripts/fix-apois-motorista-*.mjs'
+      - 'scripts/fix-partner-motorista-drawer-profile-v5.mjs'
+      - 'scripts/verify-partner-motorista-drawer-profile-v5.mjs'
+      - 'scripts/qa/driver-menu-profile-v5.css'
       - 'scripts/verify-apois-motorista-*.mjs'
       - 'scripts/fix-apois-courier-*.mjs'
       - 'scripts/verify-apois-courier-*.mjs'
