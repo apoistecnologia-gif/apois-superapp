@@ -388,6 +388,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-destination-pickup-contrast.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-category-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-flow-ux.mjs')]);
+  // Physical Cliente QA: route summary on white theme must show pickup and destination.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-ride-timeline-contrast-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-pickup-timeout-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-pickup-retry-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-stops-confirm-display.mjs')]);
