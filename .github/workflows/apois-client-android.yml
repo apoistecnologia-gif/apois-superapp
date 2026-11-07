@@ -203,6 +203,9 @@ jobs:
           npm run build:entregas
           # QA V8: a tela de enderecos realmente compilada deve manter GPS/CEP, CTA legivel e rolagem segura.
           node scripts/verify-entregas-customer-address-visual-v8.mjs
+          node --check scripts/harden-entregas-customer-address-uf-v9.mjs
+          grep -Fq "APOIS_ENTREGAS_UF_FORM_V9" .work/entregas/src/lib/brazil-uf.ts
+          grep -Fq "state: normalizeBrazilUF(formData.state)" .work/entregas/src/routes/enderecos/novo.tsx
           grep -Fq "APOIS_ENTREGAS_CUSTOMER_ADDRESS_VISUAL_V8" .work/entregas/src/system-theme.css
           grep -Fq "data-apois-address-create-v8" .work/entregas/src/routes/enderecos/novo.tsx
           grep -Fq 'APOIS_CUSTOMER_ORDER_REFRESH_V1' '.work/entregas/src/routes/pedido/$orderId/index.tsx'
