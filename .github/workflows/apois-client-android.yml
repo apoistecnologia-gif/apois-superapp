@@ -30,6 +30,7 @@ jobs:
       APP_VERSION_CODE: "12"
       APP_VERSION_NAME: "1.0.11"
       QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
+      QA_CERT_EXPECTED_SHA256: ${{ secrets.APOIS_CLIENT_QA_CERT_SHA256 }}
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -279,7 +280,8 @@ jobs:
           keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
           keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | grep 'SHA256:' | head -n 1
           ACTUAL_FINGERPRINT="$(keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-          REQUIRED_FINGERPRINT="97eaf64ee20ef16b2765a6dff5e96a25dbad4da12ccb6e5c2cd48d4c9c2f61f4"
+          REQUIRED_FINGERPRINT="$(printf '%s' "${QA_CERT_EXPECTED_SHA256:-}" | tr -cd '[:xdigit:]' | tr '[:upper:]' '[:lower:]')"
+          test "${#REQUIRED_FINGERPRINT}" -eq 64 || { echo "::error::Cliente QA certificado SHA-256 configurado invalido ou ausente"; exit 1; }
           test "$ACTUAL_FINGERPRINT" = "$REQUIRED_FINGERPRINT" || { echo "::error::QA certificate changed or cache lost; do not rotate signature automatically"; exit 1; }
           echo "[OK] Reusable QA signing identity verified"
 
