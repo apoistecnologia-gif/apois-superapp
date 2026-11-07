@@ -99,3 +99,11 @@ test('ViaCEP: older completion does not clear current loading indicator', async 
   answer(0, 'Rua antiga'); await old; assert.equal(c.loading, true);
   answer(1, 'Rua atual'); await current; assert.equal(c.loading, false);
 });
+test('ViaCEP: clearing or invalidating CEP during lookup never leaves loading stuck', async () => {
+  for (const postal_code of ['', '123']) {
+    const { c, answer } = cepHarness();
+    const pending = c.lookup(); c.formData = { ...c.formData, postal_code };
+    await c.lookup(); answer(0, 'Rua antiga'); await pending;
+    assert.equal(c.loading, false); assert.equal(c.formData.street, '');
+  }
+});

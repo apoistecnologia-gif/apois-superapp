@@ -32,6 +32,10 @@ patch(form, '      const data = await response.json();', '      const data = awa
 // The complete builder adds CEP validation, a loading flag and a visible lookup CTA.
 // Keep those controls while letting a newer CEP supersede the pending request.
 if (readFileSync(resolve(root, form), 'utf8').includes('APOIS_ENTREGAS_CEP_LOOKUP_V1')) {
+  patch(form,
+    '    if(cep.length>0&&cep.length!==8){toast.error("O CEP precisa ter 8 números.");return;}',
+    '    if(cep.length>0&&cep.length!==8){setIsLookingUpCEP(false);toast.error("O CEP precisa ter 8 números.");return;}');
+  patch(form, '    if (cep.length !== 8) return;', '    if (cep.length !== 8) { setIsLookingUpCEP(false); return; }');
   patch(form, '    if(isLookingUpCEP)return;', '    // APOIS_CEP_LATEST_REQUEST_V11: latest request controls the lookup state.');
   patch(form, '    }finally{setIsLookingUpCEP(false);}', '    }finally{if(requestId === cepRequestRef.current)setIsLookingUpCEP(false);}');
   patch(form, '      console.error("CEP fetch error:", error);', '      if(requestId !== cepRequestRef.current)return;\n      console.error("CEP fetch error:", error);');
