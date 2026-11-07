@@ -58,3 +58,33 @@ test('edit: re-entering the same street retains GPS', () => {
   const h = harness(); h.change({ target: { name: 'street', value: 'Rua de teste' } });
   assert.equal(h.state.latitude, -9.4);
 });
+
+const submit = extract(edit, '  const handleSubmit =', '\n\n  if (isLoading)');
+function submitHarness(state) {
+  const c = vm.createContext({
+    formData: { label: 'Casa', street: 'Rua de teste', number: '123', complement: '', neighborhood: 'Centro', city: 'Cidade de teste', state, postal_code: '56300-000', latitude: -9.4, longitude: -40.5 },
+    addressId: 'synthetic-address', setIsSaving() {},
+    toast: { error: message => c.error = message, success() {} },
+    navigate: async () => {}, console: { error() {} },
+    supabase: { from: table => ({ update: payload => ({ eq: async (field, id) => { c.saved = { table, payload, field, id }; return { error: null }; } }) }) },
+  });
+  vm.runInContext(stripTypeScriptTypes(helper + '\n' + submit) + '\nthis.submit = handleSubmit;', c);
+  return c;
+}
+test('edit submission: all 27 full state names persist as canonical UF', async () => {
+  const states = [['Acre','AC'],['Alagoas','AL'],['Amapá','AP'],['Amazonas','AM'],['Bahia','BA'],['Ceará','CE'],['Distrito Federal','DF'],['Espírito Santo','ES'],['Goiás','GO'],['Maranhão','MA'],['Mato Grosso','MT'],['Mato Grosso do Sul','MS'],['Minas Gerais','MG'],['Pará','PA'],['Paraíba','PB'],['Paraná','PR'],['Pernambuco','PE'],['Piauí','PI'],['Rio de Janeiro','RJ'],['Rio Grande do Norte','RN'],['Rio Grande do Sul','RS'],['Rondônia','RO'],['Roraima','RR'],['Santa Catarina','SC'],['São Paulo','SP'],['Sergipe','SE'],['Tocantins','TO']];
+  for (const [state, uf] of states) {
+    const c = submitHarness(state); await c.submit({ preventDefault() {} });
+    assert.equal(c.saved?.payload.state, uf, state);
+    assert.equal(c.saved.payload.postal_code, '56300000');
+    assert.equal(c.saved.payload.latitude, -9.4);
+  }
+});
+test('edit submission: invalid two-letter state never reaches update', async () => {
+  const c = submitHarness('XX'); await c.submit({ preventDefault() {} });
+  assert.equal(c.saved, undefined); assert.ok(c.error);
+});
+test('edit submission: missing point never reaches update', async () => {
+  const c = submitHarness('PE'); c.formData.latitude = null;
+  await c.submit({ preventDefault() {} }); assert.equal(c.saved, undefined); assert.ok(c.error);
+});

@@ -1,5 +1,19 @@
 # Auditoria APOIS — checkpoint verificável de 07/11/2026
 
+## Atualização desta continuação
+
+Correção adicional V11 aplicada ao builder: respostas antigas de autocomplete e ViaCEP são descartadas; a rua editada manualmente durante a consulta é preservada. Uma nova seleção de ponto invalida consulta CEP pendente. Antes da alteração, os seis testes de concorrência falhavam; depois, os seis passaram.
+
+A suíte de edição foi ampliada com execução do handleSubmit real em isolamento: os 27 nomes de estados geram payload com UF canônica, CEP numérico e GPS preservado. UF XX e latitude ausente bloqueiam o update. Nenhuma escrita real foi feita: o destino do update foi um objeto de teste.
+
+Resultado atual: **31 testes de lógica aprovados** (18 de lista/edição/envio, 7 de criação e 6 de concorrência). Build integral, renderização, persistência e Android físico permanecem NÃO EXECUTADOS. Os números 22 e 15 nas seções históricas abaixo descrevem o checkpoint anterior.
+
+EM-005 agora tem concorrência ViaCEP reproduzida e corrigida no builder; a combinação de campos antigos com resposta parcial do geocodificador continua pendente. EM-006 tem três cenários reproduzidos e corrigidos. O número de chamadas por tecla não foi alterado e não há alegação de redução de quota.
+
+Leitura adicional do snapshot: sacola, favoritos, CartContext e fingerprint do checkout. Há saneamento de estabelecimento único, proteção de hidratação antes de persistir e callback estável para limpar sacola; não alterados. Os testes de tela, recuperação de favoritos e fluxo de compra não foram executados. O snapshot bruto ainda força Pix na sacola, mas os patches do builder alteram política de pagamento; isso não é classificado como defeito no APK sem examinar o resultado integral do build.
+
+Novos arquivos: scripts/harden-entregas-address-async-v11.mjs e scripts/qa/test-entregas-address-async-v3.mjs. O manifest executa V11 após V10 e inclui a terceira suíte. Não houve deploy, merge, troca de assinatura, escrita no banco ou movimento financeiro.
+
 ## 1. Resultado executivo e alcance
 
 Auditoria integral **não concluída**. Arquitetura de integração identificada e investigação funcional de endereços do Cliente Entregas iniciada. Nenhum aplicativo está integralmente homologado por esta sessão. Os 22 testes aprovados são testes de lógica isolada extraída de handlers reais; não são E2E, testes Android, nem prova de persistência em produção.
