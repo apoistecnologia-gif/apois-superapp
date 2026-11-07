@@ -420,6 +420,10 @@ Deno.serve(async (req: Request) => {
       status: ride.status,
       candidates: ids.length,
       estimated_price: estimatedPrice,
+      // C-001: os caminhos de reutilização já devolviam esta chave; a criação não.
+      // Mantida a mesma forma para que Cliente, Motorista e Admin leiam o valor
+      // oficial sem depender de um segundo round-trip de Realtime.
+      fare_amount_cents: Math.round(estimatedPrice * 100),
       payment_status: "pending",
     });
   } catch (error) {
