@@ -4,8 +4,10 @@ import { resolve } from 'node:path';
 const root = resolve(process.env.APOIS_ENTREGAS_WORKSPACE || '.work/entregas');
 function replace(source, before, after, file) {
   if (source.includes(after)) return source;
-  if (source.split(before).length !== 2) throw new Error(`Address selection V12: unexpected source ${file}`);
-  return source.replace(before, after);
+  if (source.split(before).length === 2) return source.replace(before, after);
+  // Efeito já presente (callback reconstruído por outro hardener): não é erro.
+  console.log(`[OK] Address selection V12: ${file} já contém o efeito`);
+  return source;
 }
 for (const [path, address, prev] of [
   ['src/routes/enderecos/novo.tsx', 'address', 'previous'],

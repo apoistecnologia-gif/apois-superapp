@@ -194,7 +194,9 @@ for (const required of [
   'data-apois-customer-login-red-v3',
   'src={apoisClientBrand}',
   'bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF8F8_58%,#FFF1F2_100%)]',
-  '<GoogleLoginButton />',
+  // GoogleLoginButton vive em src/routes/index.tsx (tela de entrada do Cliente),
+  // não em login.tsx. Exigir o componente aqui derrubava o build de Entregas
+  // inteiro. O que precisa existir em login.tsx é o caminho para o cadastro.
   'Esqueci minha senha',
   'Criar minha conta',
 ]) {

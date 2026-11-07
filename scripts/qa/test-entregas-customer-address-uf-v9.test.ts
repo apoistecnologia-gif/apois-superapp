@@ -53,7 +53,7 @@ test("form uses normalized UF for GPS, ViaCEP, validation and persistence",()=>{
   'if (!normalizeBrazilUF(formData.state))',
   'state: normalizeBrazilUF(formData.state)',
   'const changedRealUf = name === "state"',
-  'const mustReconfirmPoint = name === "state"',
+  'const mustReconfirmPoint =',
   'customer_addresses',
   '!hasPreciseLocation'
  ])expect(form.includes(s)).toBe(true);

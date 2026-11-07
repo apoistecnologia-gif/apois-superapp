@@ -43,11 +43,25 @@ replaceRequired(
   'Entregas: perfil não expõe erro técnico do Supabase ao cliente',
 );
 
+// O snapshot protegido evoluiu de `deactivate_own_account` para
+// `request_own_account_deletion` (LGPD: solicitação registrada no backend em vez
+// de apenas desativar). A versão atual já remove o Push antes de encerrar a
+// sessão e sanitiza o erro — nesse caso não há o que reescrever.
+{
+  const current = readFileSync(
+    resolve('.work/entregas/src/routes/perfil/dados-pessoais.tsx'),
+    'utf8',
+  );
+  if (current.includes('request_own_account_deletion') && current.includes('removeCustomerPushRegistration(true)')) {
+    console.log('[OK] Entregas: exclusão de conta já remove Push antes da sessão (snapshot atual)');
+  } else {
 replaceRequired(
   '.work/entregas/src/routes/perfil/dados-pessoais.tsx',
   `      const { error } = await (supabase.rpc as any)("deactivate_own_account");\n      if (error) throw error;\n      await supabase.auth.signOut();\n      navigate({ to: "/login" });\n    } catch (error: any) {\n      toast.error(error?.message || "Não foi possível desativar sua conta.");\n      setDeactivating(false);\n    }`,
   `      await removeCustomerPushRegistration(true);\n      const { error } = await (supabase.rpc as any)("deactivate_own_account");\n      if (error) throw error;\n      const { error: signOutError } = await supabase.auth.signOut();\n      if (signOutError) throw signOutError;\n      navigate({ to: "/login" });\n    } catch (error) {\n      console.error("Erro ao desativar conta:", error);\n      toast.error("Não foi possível desativar sua conta com segurança. Tente novamente.");\n      setDeactivating(false);\n    }`,
   'Entregas: desativação remove Push antes de encerrar a sessão e sanitiza falhas',
 );
+  }
+}
 
 console.log('[OK] Entregas: segurança de conta/logout endurecida para o Superapp.');

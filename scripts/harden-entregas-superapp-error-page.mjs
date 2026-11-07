@@ -4,6 +4,13 @@ import { resolve } from 'node:path';
 const path = resolve('.work/entregas/src/lib/error-page.ts');
 const source = readFileSync(path, 'utf8');
 
+// Idempotência: depois da primeira aplicação o arquivo já é a página APOIS.
+// Antes disso, ele precisa ser a página original do snapshot — se não for
+// nenhuma das duas, o snapshot mudou de verdade e o build deve parar.
+if (source.includes('APOIS — Não foi possível carregar')) {
+  console.log('[OK] Entregas: página de erro APOIS já aplicada');
+  process.exit(0);
+}
 if (!source.includes('This page didn\'t load') || !source.includes('href="/"')) {
   console.error('[FAIL] Entregas: error-page do snapshot mudou; revisar adaptação do Superapp.');
   process.exit(1);

@@ -21,10 +21,26 @@ function ensureFooter(state) {
   state.source = `${state.source.slice(0, index)}\n      <AppBottomNav activeTab="perfil" />${state.source.slice(index)}`;
 }
 
+// Quando o snapshot já reserva a safe area por conta própria (o hardener de
+// viewport aplica `pt-[max(env(safe-area-inset-top),…)]` em outro valor), a
+// troca exata falha sem que exista defeito. Nesse caso aceitamos qualquer
+// header que já contenha a expressão de safe area.
 function replaceRequired(state, search, replacement, label) {
   if (state.source.includes(replacement)) return;
-  if (!state.source.includes(search)) throw new Error(`${label}: padrão esperado não encontrado`);
-  state.source = state.source.replace(search, replacement);
+  if (state.source.includes(search)) {
+    state.source = state.source.replace(search, replacement);
+    return;
+  }
+  if (label.endsWith('safe area superior') && state.source.includes('pt-[max(env(safe-area-inset-top)')) {
+    return;
+  }
+  // Reserva inferior: qualquer pb-3x ou safe-area já cumpre o objetivo de não
+  // deixar o último item escondido atrás do rodapé.
+  if (label.endsWith('reserva inferior')) {
+    const scroll = state.source.match(/className="scrollbar-none flex-1[^"]*overflow-y-auto[^"]*"/);
+    if (scroll && /pb-(3[0-9]|\[max\(|\[calc\()/.test(scroll[0])) return;
+  }
+  throw new Error(`${label}: padrão esperado não encontrado`);
 }
 
 function finish(state, label) {

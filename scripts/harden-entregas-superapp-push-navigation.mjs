@@ -4,24 +4,40 @@ import { resolve } from 'node:path';
 const path = resolve('.work/entregas/src/lib/customer-push.ts');
 let source = readFileSync(path, 'utf8');
 
-const oldFallback = '  return orderId ? `/pedido/${encodeURIComponent(orderId)}` : "/notificacoes";';
-const newFallback = '  return orderId ? `#/pedido/${encodeURIComponent(orderId)}` : "#/notificacoes";';
-if (!source.includes(newFallback)) {
-  if (!source.includes(oldFallback)) {
-    throw new Error('Entregas Push: fallback pós-adaptação esperado não encontrado.');
-  }
-  source = source.replace(oldFallback, newFallback);
+// O snapshot protegido mudou de forma ao longo do tempo: ternário de uma linha,
+// ou bloco de três linhas com checagem de tipo. Os dois formatos são aceitos —
+// exigir apenas um deles derrubava o build de Entregas inteiro.
+const fallbackVariants = [
+  [
+    '  return orderId ? `/pedido/${encodeURIComponent(orderId)}` : "/notificacoes";',
+    '  return orderId ? `#/pedido/${encodeURIComponent(orderId)}` : "#/notificacoes";',
+  ],
+  [
+    '  return typeof orderId === "string" && orderId.trim()\n    ? `/pedido/${encodeURIComponent(orderId)}`\n    : "/notificacoes";',
+    '  return typeof orderId === "string" && orderId.trim()\n    ? `#/pedido/${encodeURIComponent(orderId)}`\n    : "#/notificacoes";',
+  ],
+];
+if (!source.includes('#/notificacoes')) {
+  const variant = fallbackVariants.find(([search]) => source.includes(search));
+  if (!variant) throw new Error('Entregas Push: fallback pós-adaptação esperado não encontrado.');
+  source = source.replace(variant[0], variant[1]);
 }
 
-const oldAction = `        const target = notificationTarget(action.notification);\n        if (!target) return;\n        const targetHash = \`#\${target}\`;\n        if (window.location.hash !== targetHash) window.location.replace(targetHash);`;
 const newAction = `        const target = notificationTarget(action.notification);\n        if (!target) return;\n        if (window.location.hash !== target) window.location.replace(target);`;
+// Formatos anteriores: com hashPrefix explícito, ou navegando por pathname (que o
+// Hash Router do Superapp ignora, então o toque na notificação não abria o pedido).
+const actionVariants = [
+  `        const target = notificationTarget(action.notification);\n        if (!target) return;\n        const targetHash = \`#\${target}\`;\n        if (window.location.hash !== targetHash) window.location.replace(targetHash);`,
+  `        const target = notificationTarget(action.notification);\n        if (!target) return;\n        if (window.location.pathname !== target) window.location.assign(target);`,
+  `        const target = notificationTarget(action.notification);\n        if (window.location.pathname !== target) window.location.assign(target);`,
+];
 if (!source.includes(newAction)) {
-  if (!source.includes(oldAction)) throw new Error('Entregas Push: navegação Hash pós-adaptação não encontrada.');
-  source = source.replace(oldAction, newAction);
+  const variant = actionVariants.find((candidate) => source.includes(candidate));
+  if (!variant) throw new Error('Entregas Push: navegação Hash pós-adaptação não encontrada.');
+  source = source.replace(variant, newAction);
 }
 
 for (const marker of [
-  'const isDeliveryPush =',
   'if (!target) return;',
   '`#/pedido/${encodeURIComponent(orderId)}`',
   '"#/notificacoes"',

@@ -13,10 +13,16 @@ function patch(path, transform, label) {
   console.log(`[OK] ${label}`);
 }
 
-function replaceRequired(source, search, replacement, label) {
+function replaceRequired(source, search, replacement, label, options = {}) {
   if (source.includes(replacement)) return source;
-  if (!source.includes(search)) throw new Error(`${label}: padrão esperado não encontrado`);
-  return source.replace(search, replacement);
+  if (source.includes(search)) return source.replace(search, replacement);
+  // O snapshot protegido evolui; quando o efeito desejado já existe de outra
+  // forma, o build não pode cair. Sem `marker`, o padrão continua obrigatório.
+  if (options.marker && source.includes(options.marker)) {
+    console.log(`[OK] ${label} (já presente no snapshot)`);
+    return source;
+  }
+  throw new Error(`${label}: padrão esperado não encontrado`);
 }
 
 patch('.work/entregas/src/routes/enderecos/novo.tsx', (source) => {
@@ -35,6 +41,7 @@ patch('.work/entregas/src/routes/enderecos/editar/$addressId.tsx', (source) => {
     '  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {\n    const { name, value } = e.target;\n    setFormData((prev) => ({\n      ...prev,\n      [name]: value,\n      ...(locationFields.has(name) ? { latitude: null, longitude: null } : {}),\n    }));\n  };',
     '  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {\n    const { name, value } = e.target;\n    setFormData((prev) => {\n      const previousValue = String(prev[name as keyof typeof prev] ?? "").trim();\n      const isCompletingMissingField = locationFields.has(name) && previousValue.length === 0;\n      const mustReconfirmPoint = locationFields.has(name) && !isCompletingMissingField;\n      return {\n        ...prev,\n        [name]: value,\n        ...(mustReconfirmPoint ? { latitude: null, longitude: null } : {}),\n      };\n    });\n  };',
     'Edição preserva coordenadas ao completar campo que o GPS não identificou',
+    { marker: 'isCompletingMissingField' },
   );
   source = replaceRequired(
     source,
@@ -46,6 +53,10 @@ patch('.work/entregas/src/routes/enderecos/editar/$addressId.tsx', (source) => {
 }, 'Entregas: edição de endereço preserva GPS e usa mensagem segura');
 
 patch('.work/entregas/src/routes/enderecos.tsx', (source) => {
+  // O snapshot fixado já reserva a safe area por conta própria (o hardener de
+  // viewport aplica pt-[max(env(safe-area-inset-top),0.85rem)]). Só aplicamos a
+  // reserva quando o header ainda usa pt-8 fixo, que fica sob a barra de status.
+  if (source.includes('pt-[max(env(safe-area-inset-top)')) return source;
   return replaceRequired(
     source,
     'className="sticky top-0 z-50 flex items-center justify-center border-b border-zinc-900 bg-black/90 px-4 pb-4 pt-8 backdrop-blur-lg"',
@@ -63,6 +74,14 @@ patch('.work/entregas/src/components/CustomerLocationAddressSelector.tsx', (sour
     'import { useCallback, useEffect, useRef, useState } from "react";',
   );
 
+  // O snapshot fixado já traz a localização nativa via plugin Geolocation,
+  // possivelmente embrulhada em useCallback. Nesse caso não há nada a substituir.
+  if (source.includes('Geolocation.checkPermissions()') && source.includes('Geolocation.getCurrentPosition(')) {
+    if (source.includes('navigator.geolocation')) {
+      throw new Error('Localização: navigator.geolocation legado ainda presente');
+    }
+    return source;
+  }
   const startMarker = '  const locate = async () => {';
   const endMarker = '\n\n  useEffect(() => {';
   const start = source.indexOf(startMarker);
@@ -130,6 +149,13 @@ patch('.work/entregas/src/components/GoogleMapsAddressSelector.tsx', (source) =>
     '      const data = await invokeMaps({ action: "place_details", placeId: suggestion.place_id });',
   );
 
+  // Snapshot fixado já usa o plugin nativo de localização neste componente.
+  if (source.includes('Geolocation.checkPermissions()') && source.includes('Geolocation.getCurrentPosition(')) {
+    if (source.includes('navigator.geolocation')) {
+      throw new Error('Mapa de edição: navigator.geolocation legado ainda presente');
+    }
+    return source;
+  }
   const startMarker = '  const handleGetCurrentLocation = () => {';
   const endMarker = '\n\n  const handleSearch = async';
   const start = source.indexOf(startMarker);

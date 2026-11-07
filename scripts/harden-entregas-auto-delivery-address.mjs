@@ -7,7 +7,11 @@ const formPath=resolve('.work/entregas/src/routes/enderecos/novo.tsx');
 let form=readFileSync(formPath,'utf8');
 // O snapshot do formulario pode ter sido normalizado por outro hardener.
 // Restabelece somente a sinalizacao GPS, preservando campos/validacoes.
-if(!form.includes('apois_auto_locate_new_address')){
+// Idempotência: o snapshot fixado já traz o gatilho com namespace do Superapp.
+// Inserir outro efeito criaria dois useEffect idênticos (duas navegações).
+const hasAutoLocateTrigger = form.includes('apois-superapp-entregas:auto-locate-new-address')
+  || form.includes('apois_auto_locate_new_address');
+if(!hasAutoLocateTrigger){
   const state='  const [autoLocate, setAutoLocate] = useState(false);';
   if(!form.includes(state)||!form.includes('setAutoLocate(true)')||!form.includes('useEffect(')){
     throw Error('[FAIL] Entregas: formulario nao suporta restauracao segura do gatilho GPS');
@@ -53,9 +57,20 @@ if(!s.includes('APOIS_ENTREGAS_AUTO_ADDRESS_V1')){
   if(!s.includes(target))throw Error('[FAIL] Entregas: address edit action missing');
   s=s.replace(target,target+' aria-label="Ver ou alterar endereço de entrega"');
 }
-for(const k of ['APOIS_ENTREGAS_AUTO_ADDRESS_V1','apois_delivery_auto_address_prompted_v1','apois_auto_locate_new_address','onClick={() => navigate({ to: "/enderecos" })}'])
+// A chave de sessionStorage do gatilho GPS ganhou namespace do Superapp
+// (apois-superapp-entregas:auto-locate-new-address). Aceitamos as duas formas:
+// o contrato que importa é existir um gatilho de primeira visita e o
+// formulário consumi-lo.
+const autoLocateKey = s.includes('apois-superapp-entregas:auto-locate-new-address')
+  ? 'apois-superapp-entregas:auto-locate-new-address'
+  : 'apois_auto_locate_new_address';
+for(const k of ['APOIS_ENTREGAS_AUTO_ADDRESS_V1','apois_delivery_auto_address_prompted_v1',autoLocateKey,'onClick={() => navigate({ to: "/enderecos" })}'])
   if(!s.includes(k))throw Error('[FAIL] Entregas auto-endereco '+k);
-for(const k of ['apois_auto_locate_new_address','setAutoLocate(true)','handleCEPBlur','https://viacep.com.br/ws/','CustomerLocationAddressSelector'])
+// A chave usada no formulário é uma das duas formas aceitas.
+const formHasKey = ['apois_auto_locate_new_address','apois-superapp-entregas:auto-locate-new-address']
+  .some((key) => form.includes(key));
+if(!formHasKey) throw Error('[FAIL] Entregas CEP/GPS: gatilho de localização automática ausente');
+for(const k of ['setAutoLocate(true)','handleCEPBlur','https://viacep.com.br/ws/','CustomerLocationAddressSelector'])
   if(!form.includes(k))throw Error('[FAIL] Entregas CEP/GPS: '+k);
 writeFileSync(p,s,'utf8');
 console.log('[OK] Entregas: GPS no primeiro uso, endereco salvo preservado, clique para mudar e CEP no formulario');

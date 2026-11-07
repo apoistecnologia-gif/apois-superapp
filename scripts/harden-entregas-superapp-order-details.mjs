@@ -45,9 +45,15 @@ if (!source.includes('<AppBottomNav activeTab="pedidos" />')) {
   source = `${source.slice(0, insertAt)}\n      <AppBottomNav activeTab="pedidos" />${source.slice(insertAt)}`;
 }
 
+// O container já evoluiu de h-screen para h-dvh (viewport dinâmico do Android),
+// que é o comportamento correto. Aceitamos os dois formatos em vez de reprovar.
+const container = source.includes('relative flex h-dvh w-full flex-col overflow-hidden')
+  ? 'relative flex h-dvh w-full flex-col overflow-hidden'
+  : 'relative flex h-screen w-full flex-col overflow-hidden';
+
 for (const marker of [
   'import { AppBottomNav } from "@/components/AppBottomNav";',
-  'relative flex h-screen w-full flex-col overflow-hidden',
+  container,
   'overflow-y-auto p-4 pb-32',
   '<AppBottomNav activeTab="pedidos" />',
   'Não foi possível cancelar este pedido. Tente novamente.',

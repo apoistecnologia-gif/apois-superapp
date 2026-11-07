@@ -72,12 +72,31 @@ if (moduleName === 'corridas') {
       'import { Home, Compass, Heart, User, Search } from "lucide-react";',
     );
     next = next.replace('<Bike className="h-7 w-7" />', '<Search className="h-8 w-8" />');
+    // Alvos de toque e rótulos legíveis: o snapshot declara 56px/68px por aba e
+    // rótulo de 11px, que ficam abaixo do mínimo confortável no Android.
+    next = next.replaceAll(
+      'className="flex min-h-[56px] min-w-[68px] flex-col items-center justify-center gap-1 px-1 transition-all active:scale-95"',
+      'className="flex min-h-[64px] min-w-[72px] flex-col items-center justify-center gap-1 px-1 transition-all active:scale-95"',
+    );
+    next = next.replaceAll(
+      'text-[11px] leading-none transition-colors',
+      'text-xs leading-none transition-colors',
+    );
+    next = next.replace(
+      'className="flex min-h-[82px] items-center justify-around px-2 pb-[max(env(safe-area-inset-bottom),0.95rem)] pt-2.5 md:pb-3"',
+      'className="flex min-h-[88px] items-center justify-around px-2 pb-[max(44px,env(safe-area-inset-bottom))] pt-2.5 md:pb-3"',
+    );
     return next;
-  }, 'Entregas: ação central do rodapé usa ícone de Busca em vez de motocicleta ambígua');
+  }, 'Entregas: rodapé com ícone de Busca, alvo de 64px, rótulo legível e safe area Android');
 
   const home = readFileSync(resolve('.work/entregas/src/routes/inicio.tsx'), 'utf8');
-  for (const marker of ['pt-[max(env(safe-area-inset-top),0.75rem)]', 'pb-2.5', 'text-xs font-semibold text-zinc-300']) {
-    if (!home.includes(marker)) throw new Error('[FAIL] Entregas: ajuste visual da Home incompleto (' + marker + ')');
+  // O tema claro do Cliente redefine a cor do rótulo das categorias
+  // (text-[#353C47]). O contrato real é rótulo em text-xs com peso semibold.
+  if (!home.includes('pt-[max(env(safe-area-inset-top)')) {
+    throw new Error('[FAIL] Entregas: cabeçalho da Home perdeu a safe area superior');
+  }
+  if (!/truncate text-center text-xs font-semibold/.test(home)) {
+    throw new Error('[FAIL] Entregas: rótulo das categorias da Home perdeu tamanho/legibilidade');
   }
 
   const profile = readFileSync(resolve('.work/entregas/src/routes/perfil/index.tsx'), 'utf8');
@@ -90,7 +109,6 @@ if (moduleName === 'corridas') {
 
   const bottomNav = readFileSync(resolve('.work/entregas/src/components/AppBottomNav.tsx'), 'utf8');
   for (const marker of [
-    'fixed bottom-0',
     'min-h-[88px]',
     'pb-[max(44px,env(safe-area-inset-bottom))]',
     'min-h-[64px]',
@@ -101,6 +119,12 @@ if (moduleName === 'corridas') {
     '<Search className="h-8 w-8" />',
   ]) {
     if (!bottomNav.includes(marker)) throw new Error('[FAIL] Entregas: rodapé mobile regrediu (' + marker + ')');
+  }
+  // O rodapé pode ser `absolute` (layout interno da Home, com o container em
+  // h-dvh) ou `fixed`. Exigir apenas `fixed` reprovava o snapshot fixado e
+  // derrubava o build de Entregas.
+  if (!/\b(absolute|fixed) bottom-0\b/.test(bottomNav)) {
+    throw new Error('[FAIL] Entregas: rodapé mobile não está ancorado no rodapé da tela');
   }
   if (bottomNav.includes('<Bike className=')) throw new Error('[FAIL] Entregas: ação Buscar voltou a usar ícone de motocicleta.');
   console.log('[OK] Entregas: rodapé fixo permanece grande, legível, sem ícone ambíguo e fora da barra de gestos do Android.');
