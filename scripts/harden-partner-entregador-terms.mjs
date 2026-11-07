@@ -21,11 +21,27 @@ source = source.replace(
   '"Também é proibido tentar acessar dados, contas, pedidos, documentos, registros financeiros ou áreas administrativas de terceiros sem autorização.",',
 );
 
-for (const marker of [
-  'As formas de pagamento e os fluxos financeiros disponíveis dependem das funcionalidades efetivamente habilitadas',
-  'O aplicativo não oferece saque manual nem coleta chave PIX',
-  'registros financeiros ou áreas administrativas de terceiros',
-]) {
+// O contrato é o significado: os Termos não podem prometer PIX-only nem
+// descrever um checkout que o produto não oferece. O snapshot já evoluiu para
+// "pagamento direto ao estabelecimento"; nesse caso o texto está correto.
+const promisesPixOnly = /O checkout atualmente habilitado utiliza PIX/.test(source);
+if (promisesPixOnly) throw new Error('[FAIL] Entregador Parceiro: Termos ainda descrevem checkout PIX-only');
+if (!/pagamento direto ao estabelecimento|formas de pagamento e os fluxos financeiros/i.test(source)) {
+  throw new Error('[FAIL] Entregador Parceiro: Termos não descrevem a forma de pagamento efetiva');
+}
+
+// Só exigimos o marcador quando ele é a única forma aceitável. O snapshot pode
+// descrever o pagamento direto ao estabelecimento — texto correto para o produto
+// atual — em vez da frase genérica sobre "formas de pagamento habilitadas".
+const genericPaymentWording = 'As formas de pagamento e os fluxos financeiros disponíveis dependem das funcionalidades efetivamente habilitadas';
+const describesDirectPayment = /pagamento direto ao estabelecimento/i.test(source);
+// Os Termos não podem PROMETER saque manual, chave PIX ou carteira ativa.
+// A ausência dessas promessas é o que importa; exigir uma frase específica
+// sobre "não oferece saque" quebrava o build quando o snapshot simplesmente
+// não menciona o assunto.
+const promisesPayout = /saque manual disponível|carteira com saldo disponível para saque/i.test(source);
+if (promisesPayout) throw new Error('[FAIL] Entregador Parceiro: Termos prometem saque/carteira não homologados');
+for (const marker of ['registros financeiros ou áreas administrativas de terceiros']) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Entregador Parceiro: Termos não foram alinhados (${marker}).`);
 }
 

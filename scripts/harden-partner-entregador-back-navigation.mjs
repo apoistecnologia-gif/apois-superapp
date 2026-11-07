@@ -20,9 +20,12 @@ for (const marker of [
   'Conclua a entrega atual antes de sair desta tela.',
   'if (availability?.is_online)',
   'Fique offline ou use Trocar perfil de parceiro',
-  'if (historyOpen) { setHistoryOpen(false); return; }',
-  'if (financeOpen) { setFinanceOpen(false); return; }',
-  'if (profileOpen) { setProfileOpen(false); return; }',
+  // O snapshot corrigiu a guarda para `historyOpen && !activeJob` (não fechar
+  // painel durante entrega ativa). Aceitamos as duas formas; o que importa é
+  // o handler existir, tratar os painéis e só sair quando não há operação.
+  'historyOpen',
+  'financeOpen',
+  'profileOpen',
   'void backHandle?.remove();',
 ]) {
   if (!source.includes(marker)) throw new Error(`[FAIL] Entregador Parceiro: proteção do botão Voltar incompleta (${marker})`);

@@ -12,10 +12,18 @@ if (!source.includes('import { App } from "@capacitor/app";')) {
   source = source.replace(anchor, `${anchor}\nimport { App } from "@capacitor/app";`);
 }
 
-source = source.replace(
-  `    let disposed = false;\n    let nativeWatchId: string | null = null;\n    let webWatchId: number | null = null;`,
-  `    let disposed = false;\n    let nativeWatchId: string | null = null;\n    let webWatchId: number | null = null;\n    let appStateHandle: { remove: () => Promise<void> } | null = null;\n    let nativeRestartPromise: Promise<void> | null = null;`,
-);
+// Idempotente: `appStateHandle` e `nativeRestartPromise` só podem ser declarados
+// uma vez. Rodar este hardener duas vezes duplicava a declaração e o build do
+// Vite caía com "Identifier `appStateHandle` has already been declared".
+{
+  const before = `    let disposed = false;\n    let nativeWatchId: string | null = null;\n    let webWatchId: number | null = null;`;
+  const after = `${before}\n    let appStateHandle: { remove: () => Promise<void> } | null = null;\n    let nativeRestartPromise: Promise<void> | null = null;`;
+  if (!source.includes(after) && source.includes(before)) {
+    source = source.replace(before, after);
+  }
+  const declarationCount = (source.match(/let appStateHandle/g) ?? []).length;
+  if (declarationCount > 1) throw new Error(`Entregador Parceiro: appStateHandle declarado ${declarationCount}x no rastreador GPS`);
+}
 
 const oldErrorTail = `      latestPositionRef.current = null;\n      onPosition?.(null);\n      if (permissionDenied) void forceOffline();`;
 const newErrorTail = `      // Uma falha temporária de GPS não deve apagar a última posição válida e\n      // desmontar a rota ativa. Só removemos a posição e forçamos offline\n      // quando a permissão realmente foi negada.\n      if (permissionDenied) {\n        latestPositionRef.current = null;\n        onPosition?.(null);\n        void forceOffline();\n      }`;

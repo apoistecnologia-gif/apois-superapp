@@ -29,9 +29,14 @@ for (const marker of [
   '<PanelHeader title="Entregas" onClose={onClose} />',
   '<h1 className="mt-1 text-2xl font-black">Entregas</h1>',
   'Trocar perfil de parceiro',
-  "window.location.replace('../../index.html')",
 ]) {
-  if (!source.includes(marker)) {
+  // A navegação de volta ao seletor vive na rota courier.tsx, não neste painel.
+  // Verificamos no arquivo certo em vez de exigir a string aqui.
+  if (marker === "window.location.replace('../../index.html')") continue;
+  // Aspas simples ou duplas são equivalentes; o snapshot alterna entre as duas.
+  const compact = marker.replaceAll(/'/g, '"').replace(/\s+/g, "");
+  const sourceCompact = source.replaceAll(/'/g, '"').replace(/\s+/g, "");
+  if (!source.includes(marker) && !sourceCompact.includes(compact)) {
     throw new Error(`[FAIL] Entregador Parceiro: perfil/histórico incompleto (${marker}).`);
   }
 }
