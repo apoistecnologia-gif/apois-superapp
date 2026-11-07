@@ -21,7 +21,7 @@ required(form,[
   "customer_addresses",
   "handleCEPBlur",
   "CustomerLocationAddressSelector",
-  "apois_checkout_address_changed",
+  "apois-superapp-entregas:checkout-address-changed",
 ],"create address");
 required(selector,[
   'data-apois-address-selector-v8="true"',
