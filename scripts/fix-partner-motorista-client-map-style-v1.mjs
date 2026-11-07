@@ -27,6 +27,14 @@ exact(
  'const bgColor = useMemo(() => isDriverRole ? getMapBackgroundForTheme("light") : getMapBackgroundForTheme(theme), [isDriverRole,theme]);',
  'restore client land tone'
 );
+// O Motorista deve abrir sempre com o mesmo tema claro do mapa do Cliente,
+// inclusive em outras telas que reutilizam MovviMap sem themeOverride.
+// Nao altera o modo de navegacao, GPS, camera nem a forma de desenhar rotas.
+exact(
+ 'const theme: "light" | "dark" = themeOverride ?? (isDriverRole ? "dark" : resolved);',
+ 'const theme: "light" | "dark" = themeOverride ?? (isDriverRole ? "light" : resolved);',
+ "motorista defaults to same daytime theme as customer"
+);
 const marker='// APOIS_MOTORISTA_CLIENT_MAP_STYLE_V1';
 if(!source.includes(marker))source=source.replace(
  'const styles = useMemo(() => isDriverRole ? getMapStyleForTheme("light") : getMapStyleForTheme(theme), [isDriverRole,theme]);',
