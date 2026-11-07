@@ -23,6 +23,7 @@ function harness(initial = {}) {
   const context = vm.createContext({
     state: { number: '', complement: '', street: 'Rua de teste', neighborhood: 'Centro', city: 'Petrolina', state: 'PE', postal_code: '56300000', latitude: -9.4, longitude: -40.5, ...initial },
     confirmedUfRef: { current: 'PE' },
+    missingLocationFieldsRef: { current: new Set() },
   });
   context.setFormData = update => { context.state = update(context.state); };
   vm.runInContext(code, context);

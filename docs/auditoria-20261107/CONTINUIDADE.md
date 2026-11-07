@@ -1,5 +1,15 @@
 # Auditoria APOIS — checkpoint verificável de 07/11/2026
 
+## Correção V13 — completar dados ausentes sem apagar o GPS
+
+Defeito adicional reproduzido: com GPS confirmado e campos vazios, a regra isCompletingMissingField considerava somente o valor da renderização anterior. Após o primeiro caractere, rua/bairro/cidade/CEP passavam a ser tratados como alteração de endereço identificado e perdiam as coordenadas no segundo caractere. A edição também perdia o ponto ao completar UF vazia.
+
+A correção mantém em missingLocationFieldsRef quais campos vieram vazios da seleção atual ou do endereço carregado. Preenchê-los com múltiplos caracteres preserva o ponto. Selecionar outro endereço reinicia essa referência. Alterar rua/cidade que já vieram preenchidas continua invalidando o ponto; nenhuma coordenada é criada por digitação.
+
+Nova suíte executa callback de seleção e handleChange reais em isolamento. Antes: 14 casos, 5 aprovados e 9 falhas. Depois: 14/14 aprovados. Regressão conjunta: **51 testes de lógica aprovados**, zero falhas. Esse total inclui os 37 casos anteriores e não inclui a suíte separada de documentos do Admin. Sintaxe do novo hardener verificada. Sem build integral, gravação real de endereço, teste Android físico ou homologação visual atual.
+
+Arquivos: scripts/harden-entregas-address-missing-fields-v13.mjs; scripts/qa/test-entregas-address-missing-fields-v5.mjs; três harnesses anteriores ganharam a nova referência de estado com inicialização vazia. O manifest aplica V13 após V12 e executa a quinta suíte. Fontes dos submódulos, banco, autenticação, regras financeiras e componentes do estabelecimento não alterados.
+
 ## Acesso aos painéis atuais — continuação
 
 A tentativa de abrir o preview de Corridas no navegador retornou a tela de login da Vercel, confirmando a proteção antes do login APOIS. O usuário selecionou Google pelo formulário seguro. Após a identificação segura, o Google exibiu “Something went wrong — Sorry, something went wrong there. Try again.” Não houve autenticação concluída, inspeção de senha, repetição da tentativa, troca automática de método ou mudança na proteção. A validação visual atual continua bloqueada. Nenhum parâmetro OAuth foi salvo neste documento.

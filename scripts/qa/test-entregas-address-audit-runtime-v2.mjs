@@ -29,6 +29,7 @@ const change = extract(edit, '  const handleChange =', '\n\n  const handleSubmit
 const helper = read('lib/brazil-uf.ts').replace('export function', 'function');
 function harness() {
   const context = vm.createContext({
+    missingLocationFieldsRef: { current: new Set() },
     state: { street: 'Rua de teste', number: '', complement: '', neighborhood: 'Centro', city: 'Petrolina', state: 'PE', postal_code: '56300000', latitude: -9.4, longitude: -40.5 },
   });
   context.setFormData = update => context.state = update(context.state);
