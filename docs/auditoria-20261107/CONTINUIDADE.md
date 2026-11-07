@@ -1,5 +1,13 @@
 # Auditoria APOIS — checkpoint verificável de 07/11/2026
 
+## Acesso aos painéis atuais — continuação
+
+A tentativa de abrir o preview de Corridas no navegador retornou a tela de login da Vercel, confirmando a proteção antes do login APOIS. O usuário selecionou Google pelo formulário seguro. Após a identificação segura, o Google exibiu “Something went wrong — Sorry, something went wrong there. Try again.” Não houve autenticação concluída, inspeção de senha, repetição da tentativa, troca automática de método ou mudança na proteção. A validação visual atual continua bloqueada. Nenhum parâmetro OAuth foi salvo neste documento.
+
+A leitura de build events do deployment dpl_3JUKVk37MSuzy7rVMsew8Xp2fckT retornou 404 mesmo com o teamId explícito. Isso não contradiz o READY consultado nos metadados: logs indisponíveis pela ferramenta não são falha de build comprovada. CLI Vercel não está instalada no ambiente.
+
+Trabalho independente executado: inspeção de scripts/build-admin-vercel-preview.sh e api/admin/driver-documents.js; execução da suíte existente scripts/test-admin-preview-private-documents-v1.mjs, aprovada. Ela usa fetch totalmente simulado e credenciais sintéticas e não acessa banco ou documentos reais. Exercita rejeições 405/503/401/400/403, ausência de assinatura antes da autorização, resposta com URLs temporárias e cabeçalhos privados sem cache, além de não expor os tokens sintéticos na resposta. Não equivale à validação do endpoint implantado nem à aprovação integral de segurança. Nenhuma alteração funcional nova nesta continuação.
+
 ## Retificação de versões publicadas — consulta direta aos aliases Vercel
 
 O mapa atual está em VERCEL-ATUAIS.md. A tela examinada no alias apois-entregas-visual-preview.vercel.app era do commit **877b5adeb0496a37188d55a6aff8213d63cf5e5b**, não ccd30fc03. A associação anterior foi feita com o último deploy do projeto, mas o alias permanece em outro deploy. As referências abaixo a ccd30fc03 como versão da tela efetivamente aberta ficam invalidadas; o achado visual continua restrito à tela antiga. O fonte de login obtido do SHA ccd30fc03 não comprova a causa da tela antiga.
