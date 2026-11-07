@@ -49,7 +49,7 @@ test("form uses normalized UF for GPS, ViaCEP, validation and persistence",()=>{
  for(const s of [
   'state: normalizeBrazilUF(address.state),',
   'confirmedUfRef.current = normalizeBrazilUF(address.state)',
-  'state: normalizeBrazilUF(data.uf) || previous.state',
+  'state: previous.state === requestedFields.state ? normalizeBrazilUF(data.uf) || previous.state : previous.state',
   'if (!normalizeBrazilUF(formData.state))',
   'state: normalizeBrazilUF(formData.state)',
   'const changedRealUf = name === "state"',

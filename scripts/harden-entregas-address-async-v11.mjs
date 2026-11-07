@@ -26,12 +26,25 @@ const form = 'src/routes/enderecos/novo.tsx';
 patch(form, '  const confirmedUfRef = useRef("");',
   '  const cepRequestRef = useRef(0); // APOIS_ADDRESS_ASYNC_V11\n  const confirmedUfRef = useRef("");');
 patch(form,
-  '    const cep = formData.postal_code.replace(/\\D/g, "");\n    if (cep.length !== 8) return;\n    try {',
-  '    const requestId = ++cepRequestRef.current;\n    const requestedFields = { ...formData };\n    const cep = formData.postal_code.replace(/\\D/g, "");\n    if (cep.length !== 8) return;\n    try {');
+  '  const handleCEPBlur = async () => {',
+  '  const handleCEPBlur = async () => {\n    const requestId = ++cepRequestRef.current;\n    const requestedFields = { ...formData };');
+patch(form, '      const data = await response.json();', '      const data = await response.json();\n      if(requestId !== cepRequestRef.current)return;');
+// The complete builder adds CEP validation, a loading flag and a visible lookup CTA.
+// Keep those controls while letting a newer CEP supersede the pending request.
+if (readFileSync(resolve(root, form), 'utf8').includes('APOIS_ENTREGAS_CEP_LOOKUP_V1')) {
+  patch(form, '    if(isLookingUpCEP)return;', '    // APOIS_CEP_LATEST_REQUEST_V11: latest request controls the lookup state.');
+  patch(form, '    }finally{setIsLookingUpCEP(false);}', '    }finally{if(requestId === cepRequestRef.current)setIsLookingUpCEP(false);}');
+  patch(form, '      console.error("CEP fetch error:", error);', '      if(requestId !== cepRequestRef.current)return;\n      console.error("CEP fetch error:", error);');
+}
 patch(form,
   '      if (!data.erro) {\n        setFormData((previous) => ({\n          ...previous,\n          street: data.logradouro || previous.street,\n          neighborhood: data.bairro || previous.neighborhood,\n          city: data.localidade || previous.city,\n          state: normalizeBrazilUF(data.uf) || previous.state,\n        }));\n      }',
   '      if (!data.erro && requestId === cepRequestRef.current) {\n        setFormData((previous) => {\n          if (requestId !== cepRequestRef.current || previous.postal_code.replace(/\\D/g, "") !== cep) return previous;\n          return {\n            ...previous,\n            street: previous.street === requestedFields.street ? data.logradouro || previous.street : previous.street,\n            neighborhood: previous.neighborhood === requestedFields.neighborhood ? data.bairro || previous.neighborhood : previous.neighborhood,\n            city: previous.city === requestedFields.city ? data.localidade || previous.city : previous.city,\n            state: previous.state === requestedFields.state ? normalizeBrazilUF(data.uf) || previous.state : previous.state,\n          };\n        });\n      }');
 patch(form,
   '            onAddressSelected={(address) => {\n              confirmedUfRef.current = normalizeBrazilUF(address.state);',
   '            onAddressSelected={(address) => {\n              ++cepRequestRef.current; // A newer selected point supersedes any pending CEP lookup.\n              confirmedUfRef.current = normalizeBrazilUF(address.state);');
+if (readFileSync(resolve(root, form), 'utf8').includes('APOIS_ENTREGAS_CEP_LOOKUP_V1')) {
+  patch(form,
+    '              ++cepRequestRef.current; // A newer selected point supersedes any pending CEP lookup.',
+    '              ++cepRequestRef.current; // A newer selected point supersedes any pending CEP lookup.\n              setIsLookingUpCEP(false);');
+}
 console.log('[OK] Customer address async V11: stale autocomplete/CEP responses ignored; user edits retained.');

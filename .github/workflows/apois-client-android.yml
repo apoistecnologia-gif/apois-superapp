@@ -3,6 +3,7 @@ name: APOIS Cliente Android APK
 # diagnóstico de cobertura da loja fictícia — 30/10/2026
 # valida execução do patch no builder Android — 30/10/2026
 # QA 31/10: PIN após retirada, validação de marcador no workspace e assinatura QA imutável
+# Audit 07/11: validate V10-V13 with the complete CEP loading/validation pipeline.
 
 on:
   workflow_dispatch:

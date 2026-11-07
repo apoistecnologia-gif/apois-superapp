@@ -61,6 +61,8 @@ function cepHarness() {
   const requests = [];
   const c = vm.createContext({
     cepRequestRef: { current: 0 },
+    isLookingUpCEP: false, setIsLookingUpCEP: value => c.loading = value,
+    toast: { error: message => c.error = message },
     formData: { postal_code: '11111111', street: '', neighborhood: '', city: '', state: '' },
     setFormData: update => c.formData = update(c.formData),
     fetch: () => { const d = deferred(); requests.push(d); return d.promise; },
@@ -89,4 +91,11 @@ test('ViaCEP: typed street while waiting is preserved', async () => {
   answer(0, 'Rua do CEP'); await pending;
   assert.equal(c.formData.street, 'Rua digitada');
   assert.equal(c.formData.state, 'PE');
+});
+test('ViaCEP: older completion does not clear current loading indicator', async () => {
+  const { c, answer } = cepHarness();
+  const old = c.lookup(); c.formData = { ...c.formData, postal_code: '22222222' };
+  const current = c.lookup();
+  answer(0, 'Rua antiga'); await old; assert.equal(c.loading, true);
+  answer(1, 'Rua atual'); await current; assert.equal(c.loading, false);
 });

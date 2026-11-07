@@ -22,6 +22,7 @@ for (const [name,path,param,end] of [
   const selected = s.slice(a + 'onAddressSelected={'.length,b) + '\n}';
   function harness(address = {}) {
     const c = vm.createContext({
+      setIsLookingUpCEP() {},
       state: { label:'Casa',street:'',number:'',complement:'',neighborhood:'',city:'',state:'',postal_code:'',latitude:null,longitude:null },
       confirmedUfRef:{current:''}, cepRequestRef:{current:0}, missingLocationFieldsRef:{current:new Set()},
     });

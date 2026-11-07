@@ -16,6 +16,7 @@ for (const [name, path, parameter] of [
   const callback = source.slice(a + 'onAddressSelected={'.length, b) + '\n}';
   function harness() {
     const c = vm.createContext({
+      setIsLookingUpCEP() {},
     missingLocationFieldsRef: { current: new Set() },
       state: { label: 'Casa', street: 'Rua antiga', neighborhood: 'Bairro antigo', city: 'Cidade antiga', state: 'PE', postal_code: '11111111', number: '123', complement: 'Apto 2', latitude: -9.4, longitude: -40.5 },
       confirmedUfRef: { current: 'PE' }, cepRequestRef: { current: 0 },
