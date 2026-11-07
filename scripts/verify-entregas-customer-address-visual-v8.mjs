@@ -43,4 +43,8 @@ assert.equal((form.match(/data-apois-address-create-v8/g)||[]).length,1,"do not 
 assert.equal((form.match(/data-apois-address-cep-row-v8/g)||[]).length,1,"do not duplicate CEP grid");
 assert.equal((theme.match(/\/\* APOIS_ENTREGAS_CUSTOMER_ADDRESS_VISUAL_V8 \*\//g)||[]).length,1,"do not duplicate CSS");
 assert.ok(!theme.includes("html.dark [data-apois-address-create-v8]"),"never affect courier/merchant/admin");
+assert.ok(form.includes('className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4"'),"inner form scroll must respect keyboard");
+assert.ok(theme.includes("[data-apois-address-create-v8]:has(input:focus) [data-apois-address-footer-v8]{display:none!important;}"),"keyboard must not be obstructed by sticky save CTA");
+assert.ok(theme.includes("[data-apois-address-footer-v8] button{width:100%!important;height:50px!important;"),"save action must have accessible hit target");
+assert.ok(theme.includes("[data-apois-address-fields-v8] > div:first-child > div > button[class*=\'bg-primary\']{background:#E51B23!important;border-color:#E51B23!important;color:#fff!important;"),"selected address must have readable white label");
 console.log("[PASS] Customer Entregas address V8 visual scope, keyboard, GPS, CEP, mandatory coordinates, saving and source isolation.");
