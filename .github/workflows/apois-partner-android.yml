@@ -131,6 +131,11 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/test-apois-unified-maps.mjs
+          # Confirm parity with the approved customer map before Android packaging.
+          node --check scripts/fix-partner-motorista-client-map-style-v1.mjs
+          node --check scripts/qa/verify-partner-voice-map-visual-v11.mjs
+          grep -Fq 'getMapStyleForTheme("light")' scripts/fix-partner-motorista-client-map-style-v1.mjs
+          grep -Fq 'assert.deepEqual(JSON.parse(paletteMatch[1]),APOIS_MAP_RULES' scripts/qa/verify-partner-voice-map-visual-v11.mjs
           node --check scripts/harden-motorista-map-branding.mjs
           node --check scripts/harden-partner-motorista-visual-v18.mjs
           node --check scripts/harden-partner-driver-profile-logout-v3.mjs
