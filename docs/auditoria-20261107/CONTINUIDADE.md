@@ -1,5 +1,13 @@
 # Auditoria APOIS — checkpoint verificável de 07/11/2026
 
+## Retificação de versões publicadas — consulta direta aos aliases Vercel
+
+O mapa atual está em VERCEL-ATUAIS.md. A tela examinada no alias apois-entregas-visual-preview.vercel.app era do commit **877b5adeb0496a37188d55a6aff8213d63cf5e5b**, não ccd30fc03. A associação anterior foi feita com o último deploy do projeto, mas o alias permanece em outro deploy. As referências abaixo a ccd30fc03 como versão da tela efetivamente aberta ficam invalidadas; o achado visual continua restrito à tela antiga. O fonte de login obtido do SHA ccd30fc03 não comprova a causa da tela antiga.
+
+O último preview de Corridas encontrado corresponde ao SHA f7728ae5 da branch audit/ecossistema-20261107; Entregas e Estabelecimento têm previews mais recentes que seus aliases curtos, no SHA ccd30fc03. Tentativas de leitura dos três previews pela conexão Vercel retornaram 403; metadados foram acessíveis. Sem CLI autenticada disponível nesta sessão e sem alteração de proteção.
+
+Correção de outra formulação anterior: os pushes dispararam previews automáticos na Vercel para Admin Corridas. Não houve deploy manual nem promoção em produção. Esses builds de Admin não equivalem ao build integral do Cliente ou à geração de APK.
+
 ## Atualização mais recente — seleção de endereço e evidência web
 
 V12 corrige mistura de campos de dois endereços: ao selecionar um ponto parcial, rua/bairro/cidade/UF/CEP/número ausentes ficam vazios para conferência, em vez de herdar valores da seleção anterior. Coordenadas ausentes, não numéricas ou fora dos limites deixam ambos os valores nulos. Apelido, complemento e referência manuais continuam preservados e precisam ser conferidos pelo cliente ao trocar de local. Não foi alterado o componente compartilhado com estabelecimento.
