@@ -71,7 +71,7 @@ form=replaceOnce(form,
    '      const changedRealUf = name === "state" && Boolean(confirmedUf && nextUf && confirmedUf !== nextUf);',
    '      const mustReconfirmPoint = name === "state"',
    '        ? changedRealUf',
-   '        : locationFields.has(name) && !isCompletingMissingField && previousValue !== value.trim();'
+   '        : name !== "number" && locationFields.has(name) && !isCompletingMissingField && previousValue !== value.trim();'
   ].join("\n"),
   "protect coordinates on equivalent UF edits");
 form=replaceOnce(form,
