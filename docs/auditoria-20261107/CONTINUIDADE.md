@@ -1,5 +1,19 @@
 # Auditoria APOIS — checkpoint verificável de 07/11/2026
 
+## Atualização mais recente — seleção de endereço e evidência web
+
+V12 corrige mistura de campos de dois endereços: ao selecionar um ponto parcial, rua/bairro/cidade/UF/CEP/número ausentes ficam vazios para conferência, em vez de herdar valores da seleção anterior. Coordenadas ausentes, não numéricas ou fora dos limites deixam ambos os valores nulos. Apelido, complemento e referência manuais continuam preservados e precisam ser conferidos pelo cliente ao trocar de local. Não foi alterado o componente compartilhado com estabelecimento.
+
+Reprodução nos callbacks reais em isolamento: seis casos novos, quatro falhavam antes; seis aprovados depois. Resultado atual: **37 testes de lógica aprovados**, incluindo os casos anteriores. V12 está depois de V11 no manifest. A asserção textual da suíte Bun UF V9 foi atualizada para exigir UF normalizada sem fallback para estado antigo; Bun não está disponível localmente e essa suíte específica não foi executada nesta continuação. Os 37 casos rodaram pelo Node, com a lógica dos handlers, sem escrita real.
+
+A conexão de navegador funcionou nesta continuação. https://apois-entregas-visual-preview.vercel.app renderizou login da Administração de Entregas, não Cliente. Deployment dpl_BYWSBwkQdNWc45DKNHSea3rdKXNF informa origem apoistecnologia-gif/apois-entregas, branch legal/novos-planos-assinatura-homolog-20261103, SHA ccd30fc03cc95119f702ceab27b85fd81e57c88d. Portanto, essa superfície não homologa as alterações desta PR nem o APK Cliente. Não classificamos o modo admin como erro de configuração sem confirmar a intenção desse projeto.
+
+Evidência visual incidental (fase administrativa ainda não iniciada): no desktop, h1 “Controle completo das entregas.” aparece quase invisível; cor computada rgb(24,33,48) sobre painel escuro. O fonte do SHA publicado usa text-white; há conflito efetivo de CSS, mas o seletor vencedor ainda não foi localizado. Não alterado nesta continuação. Em 360×800, não se observou transbordamento horizontal: largura de documento 345, viewport 360. Mostrar senha alternou password → text e foi restaurado. Recuperação sem e-mail exibiu aviso solicitando e-mail; nenhum e-mail ou login foi enviado. Controles medidos: mostrar senha 36×36; recuperação 132×20; entrar 305×48. Não declarar homologação completa da tela por esses recortes.
+
+Lovable Entregas consultado: latest_commit_sha 0a1e0b294f75c97bce903200b57e7a6b482f381a, anterior ao snapshot fixado no superapp e à PR. Não usar essa publicação como substituição silenciosa do Cliente atual.
+
+O bloqueio visual específico anterior por timeout foi superado para a superfície admin publicada. O Cliente da versão auditada continua sem teste de interface, persistência e aparelho. Nenhum build integral, APK novo, merge ou deploy executado.
+
 ## Atualização desta continuação
 
 Correção adicional V11 aplicada ao builder: respostas antigas de autocomplete e ViaCEP são descartadas; a rua editada manualmente durante a consulta é preservada. Uma nova seleção de ponto invalida consulta CEP pendente. Antes da alteração, os seis testes de concorrência falhavam; depois, os seis passaram.
