@@ -1,5 +1,29 @@
 # Auditoria APOIS — checkpoint verificável de 07/11/2026
 
+## Build Android Cliente #112 — concluído
+
+Workflow: https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/42407724208
+Commit compilado: 8517ade96303987f0a9cc3c617aff134b598b940, branch audit/ecossistema-20261107. Conclusão success; job 128508941699. A compilação dos módulos Corridas, Entregas e shell Cliente, geração Android, Gradle assembleDebug e upload do artefato foram executados de verdade.
+
+Validação no CI: 53 testes Node de endereços passaram; 4 testes Bun UF passaram; versão monotônica e pacote conferidos pelo aapt; certificado do APK comparado à configuração QA existente; assets do APK extraídos e grafo de HTML/CSS/JS verificado. Não foi criado nem trocado certificado.
+
+| Campo | Valor |
+|---|---|
+| Pacote | br.com.apois.app |
+| versionCode | 112 |
+| versionName | 1.0.11-qa.112 |
+| Certificado SHA-256 (público) | 3f7e522f8aacc663843714225077087c5ffd6c1c81a81866383ef8a12fde4609 |
+| Artefato GitHub | APOIS-Cliente-TESTE, ID 13588580927 |
+| ZIP do artefato SHA-256 | 49fb7ea69e9d2ea352968b5d4577e9f74ed5c67ebe08a210ef6a24ff6a84c03a |
+| APK interno SHA-256 | 6ec3f71a7a3626aa2dc33b1fc4ab4e3a39c6defd17ae5f344055a85639973bc8 |
+| APK interno tamanho | 8.354.189 bytes |
+
+O ZIP foi baixado e seu digest comparado ao GitHub. O arquivo APK interno foi materializado como APOIS-Cliente-QA112-8517ade9.apk. Confirmada presença de AndroidManifest.xml e entradas shell, Corridas e Entregas dentro do APK. Não confundir o hash do ZIP com o do APK. O artefato GitHub expira em 14/11/2026 às 16:48 (Brasília), segundo a API. Tentativa de guardar cópia permanente falhou por limite de armazenamento; não foram excluídos arquivos do usuário. Há cópia no workspace desta sessão.
+
+O run #110 falhou antes de gerar APK: V11 esperava o CEP bruto, sem a validação/loading adicionados por um hardener anterior. Corrigida a integração preservando indicador, CTA e validação, com controle da requisição mais recente e liberação do indicador após CEP apagado/incompleto. A asserção textual Bun de normalização ViaCEP foi atualizada para o contrato com proteção contra edição manual. O recorte local foi reconstruído incluindo o hardener CEP anterior; 53 testes aprovados. O run #111 compilou módulos e avançou ao Android; #112 é a versão final verificada desta continuação e inclui o último caso de cancelamento CEP.
+
+Isto comprova build e verificações de empacotamento, não aprovação funcional do ecossistema. OAuth, GPS físico, teclado Android, persistência real e testes cruzados permanecem pendentes. Seguir RETESTE-CLIENTE-ENDERECOS.md no aparelho; auditoria dos demais módulos ainda incompleta. Não houve merge ou promoção em produção; previews Vercel podem ser gerados automaticamente pelos commits.
+
 ## Correção V13 — completar dados ausentes sem apagar o GPS
 
 Defeito adicional reproduzido: com GPS confirmado e campos vazios, a regra isCompletingMissingField considerava somente o valor da renderização anterior. Após o primeiro caractere, rua/bairro/cidade/CEP passavam a ser tratados como alteração de endereço identificado e perdiam as coordenadas no segundo caractere. A edição também perdia o ponto ao completar UF vazia.
