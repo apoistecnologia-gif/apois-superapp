@@ -47,9 +47,9 @@ test("form uses normalized UF for GPS, ViaCEP, validation and persistence",()=>{
  const form=readFileSync(resolve(work,"src/routes/enderecos/novo.tsx"),"utf8");
  const selector=readFileSync(resolve(work,"src/components/CustomerLocationAddressSelector.tsx"),"utf8");
  for(const s of [
-  'state: normalizeBrazilUF(address.state) || previous.state',
+  'state: normalizeBrazilUF(address.state),',
   'confirmedUfRef.current = normalizeBrazilUF(address.state)',
-  'state: normalizeBrazilUF(data.uf) || previous.state',
+  'state: previous.state === requestedFields.state ? normalizeBrazilUF(data.uf) || previous.state : previous.state',
   'if (!normalizeBrazilUF(formData.state))',
   'state: normalizeBrazilUF(formData.state)',
   'const changedRealUf = name === "state"',

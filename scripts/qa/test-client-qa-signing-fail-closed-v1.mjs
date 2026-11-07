@@ -6,7 +6,9 @@ for(const marker of [
  'Require original Cliente QA signing BEFORE module compilation',
  'APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64',
  'Original Client QA signing identity missing.',
- '97eaf64ee20ef16b2765a6dff5e96a25dbad4da12ccb6e5c2cd48d4c9c2f61f4',
+ 'QA_CERT_EXPECTED_SHA256: ${{ secrets.APOIS_CLIENT_QA_CERT_SHA256 }}',
+ 'test "${#REQUIRED_FINGERPRINT}" -eq 64',
+ 'test "$ACTUAL_FINGERPRINT" = "$REQUIRED_FINGERPRINT"',
  'QA certificate changed or cache lost; do not rotate signature automatically',
  'apksigner',
  'verify-android-apk-badging-v1.mjs'
