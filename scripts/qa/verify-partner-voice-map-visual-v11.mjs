@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
+import { APOIS_MAP_RULES, APOIS_MAP_BACKGROUND } from "../apois-map-palette.mjs";
 const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motorista");
 const app=readFileSync(resolve(root,"src/routes/motorista.app.tsx"),"utf8");
 const nav=readFileSync(resolve(root,"src/lib/voiceNav.ts"),"utf8");
@@ -19,4 +20,21 @@ assert.ok(!app.includes('label="Distância" value={distanceLabel}'),"Predicted k
 assert.ok(!app.includes('label="Duração" value={durationLabel}'),"Predicted minutes mislabeled as measured");
 check(logo,['APOIS_LOGO_DATA_URL','onError={() => setLogoFailed(true)}','logoFailed ?'],'Logo fallback');
 assert.ok(app.includes('strokeWeight: 6')||app.includes('strokeWeight: 7'),"Route paint should not obscure streets");
+// A igualdade da paleta e validada por conteudo, nao apenas por substring.
+// O mapa nativo do Cliente e o web do Motorista vem de APOIS_MAP_RULES.
+const mapSource=readFileSync(resolve(root,"src/lib/googleMaps.ts"),"utf8");
+const mapComponent=readFileSync(resolve(root,"src/components/MovviMap.tsx"),"utf8");
+const paletteMatch=mapSource.match(/export const APOIS_LIGHT_MAP_STYLE: google\.maps\.MapTypeStyle\[\] = (\[[\s\S]*?\n\]);/);
+assert.ok(paletteMatch,"Motorista must contain the canonical light map palette");
+assert.deepEqual(JSON.parse(paletteMatch[1]),APOIS_MAP_RULES,"Driver map colors differ from native customer map colors");
+assert.ok(mapSource.includes(`return theme === "light" ? "${APOIS_MAP_BACKGROUND}" :`),"Driver background differs from client");
+check(mapComponent,[
+  'const theme: "light" | "dark" = themeOverride ?? (isDriverRole ? "light" : resolved);',
+  'isDriverRole ? getMapStyleForTheme("light") : getMapStyleForTheme(theme)',
+  'isDriverRole ? getMapBackgroundForTheme("light") : getMapBackgroundForTheme(theme)',
+  'mapRef.current.setOptions({ styles, backgroundColor: bgColor })',
+  'map.setOptions({ styles, backgroundColor: bgColor })',
+],"Shared light map theme");
+check(app,['themeOverride="light"'],"Driver home uses the light map");
+assert.ok(!mapComponent.includes('mapId:'),"Cloud Map ID would override local client map styles");
 console.log("[PASS] Motorista QA: native TTS prime/speech, visible test, photo fallback, compact map/PIN, completion confirmation and honest estimates, existing routes/ratings preserved.");
