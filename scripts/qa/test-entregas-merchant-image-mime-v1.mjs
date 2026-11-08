@@ -12,7 +12,7 @@ test("Produtos e logos rejeitam GIF/SVG, não repetem o hardener",()=>{
  mkdirSync(dirname(one),{recursive:true});mkdirSync(dirname(two),{recursive:true});
  try{
   writeFileSync(one,'  const uploadImage = async (file: File) => {\n    if (!file.type.startsWith("image/")) return toast.error("Selecione uma imagem válida.");\n  };');
-  writeFileSync(two,'  const uploadMerchantAsset = async (kind: "logo" | "cover", file: File) => {\n    if (!file.type.startsWith("image/")) {\n      toast.error("Selecione um arquivo de imagem válido.");\n      return;\n    }\n  };');
+  writeFileSync(two,'  const uploadMerchantAsset = async (kind: "logo" | "cover", file: File) => {\n    if (!file.type.startsWith("image/")) {\n      toast.error("Selecione um arquivo de imagem válido.");\n      return;\n    }\n  };\n  <input accept="image/*" />\n  <input accept="image/*" />');
   const run=()=>execFileSync(process.execPath,[hardener],{cwd:resolve("."),env:{...process.env,APOIS_ENTREGAS_WORKSPACE:temp}});
   run();const x=readFileSync(one,"utf8"),y=readFileSync(two,"utf8");
   for(const s of [x,y]){
@@ -20,6 +20,8 @@ test("Produtos e logos rejeitam GIF/SVG, não repetem o hardener",()=>{
     assert.match(s,/APOIS_MERCHANT_IMAGE_MIME_V1/);
     assert.doesNotMatch(s,/file\.type\.startsWith\("image\/"\)/);
   }
+  assert.equal((y.match(/accept="image\/jpeg,image\/png,image\/webp"/g)??[]).length,2);
+  assert.doesNotMatch(y,/accept="image\/\*"/);
   run();assert.equal(readFileSync(one,"utf8"),x);assert.equal(readFileSync(two,"utf8"),y);
  }finally{rmSync(temp,{recursive:true,force:true});}
 });
