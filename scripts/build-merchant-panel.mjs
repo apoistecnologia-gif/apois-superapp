@@ -99,6 +99,8 @@ for (const script of [
   'fix-entregas-merchant-hours-24h-v2.mjs',
   'fix-entregas-cart-price-refresh-v2.mjs',
   'fix-entregas-login-accessibility-v2.mjs',
+  'restore-entregas-auto-promotions-v3.mjs',
+  'connect-entregas-auto-promotions-v3.mjs',
   'fix-entregas-admin-orders-contrast-v1.mjs',
   'fix-entregas-admin-realtime-legibility-v1.mjs',
   'fix-entregas-admin-reviews-contrast-v1.mjs',
