@@ -21,9 +21,12 @@ const checks = [
   { route: "/motorista/documentos", kind: "authenticated" },
 ];
 
-const urlFor = (route) => mode === "hash"
-  ? origin.replace(/\/$/, "") + "/#" + route
-  : origin.replace(/\/$/, "") + route;
+const urlFor = (route) => {
+  const base = origin.replace(/\/$/, "");
+  return mode === "hash"
+    ? base + (base.endsWith(".html") ? "#" : "/#") + route
+    : base + route;
+};
 
 const browser = await chromium.launch({ headless: true });
 const output = [], hashes = new Map();
@@ -52,7 +55,11 @@ try {
       const exact = state.effectiveRoute === check.route ||
         state.effectiveRoute.replace(/\/$/, "") === check.route.replace(/\/$/, "");
       if (check.kind === "authenticated") {
-        result.status = exact ? "BLOCKED_AUTHENTICATED_TEST_REQUIRED" : "REDIRECTED_NOT_TESTED";
+        result.status = exact
+          ? "UNVERIFIED_PROTECTED_ROUTE_VISIBLE_NO_SESSION"
+          : state.effectiveRoute.includes("/login")
+            ? "REDIRECTED_LOGIN_NOT_TESTED"
+            : "REDIRECTED_OTHER_NOT_TESTED";
         // Não aprovar nem gerar screenshot nomeado da rota protegida sem sessão.
       } else {
         const valid = exact && state.text.length >= check.minChars &&
@@ -92,7 +99,8 @@ const summary = {
   publicPassed: output.filter(x=>x.status==="PASS_PUBLIC_RENDER").length,
   publicFailed: output.filter(x=>x.kind==="public"&&x.status!=="PASS_PUBLIC_RENDER").length,
   authenticatedNotTested: output.filter(x=>x.kind==="authenticated").length,
+  protectedRoutesNeedReview: output.filter(x=>x.status==="UNVERIFIED_PROTECTED_ROUTE_VISIBLE_NO_SESSION").length,
 };
 writeFileSync(outputDir + "/report.json", JSON.stringify({ summary, results: output }, null, 2));
 console.log(JSON.stringify({ summary, results: output }, null, 2));
-if (summary.publicFailed) process.exitCode = 1;
+if (summary.publicFailed || summary.protectedRoutesNeedReview) process.exitCode = 1;
