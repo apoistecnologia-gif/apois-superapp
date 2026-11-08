@@ -34,6 +34,10 @@ for (const script of [
   run(process.execPath, [resolve(root, `scripts/${script}`)], root, hardenerEnv);
 }
 
+// O bundle embutido é acessado por #/motorista/* dentro do shell.
+// O código-fonte standalone continua usando browser history.
+run(process.execPath, [resolve(root, 'scripts/harden-motorista-embedded-hash-router.mjs')], root, hardenerEnv);
+
 const env = {
   ...process.env,
   APOIS_MOTORISTA_WORKSPACE: '.work/motorista',
@@ -41,6 +45,10 @@ const env = {
   VITE_SUPABASE_PUBLISHABLE_KEY: corridasKey,
   VITE_ENABLE_NATIVE_PUSH: process.env.APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1' ? 'true' : 'false',
 };
+
+if (!readFileSync(resolve(workspace, 'src/mobile.tsx'), 'utf8').includes('history: createHashHistory()')) {
+  throw new Error('[FAIL] motorista embutido: hash history não aplicada antes do build');
+}
 
 run('bun', ['install'], workspace, env);
 run('bun', ['run', 'typecheck'], workspace, env);
