@@ -103,7 +103,7 @@ A ferramenta Vercel listou os projetos `apois-entregas-estabelecimento`, `apois-
 
 ### Outros bloqueios herdados do Relatório 01
 
-- INV-001: protocolo ausente na consulta paginada; INV-012: fallback de instalação `bun` e lint não bloqueante no builder de estabelecimento; INV-020: texto SQL com codificação incorreta; INV-010: pagamento Safe2Pay não homologado; INV-017: checagens de credenciais vazadas; INV-019: aliases não identificados.
+- INV-001: backend com ação `detail` aplicada em produção v12 e UI gerada, faltam build/E2E; INV-012: fallback de instalação `bun` e lint não bloqueante no builder; INV-020: literal da liquidação corrigido no banco após rollback, faltam E2E/histórico; INV-010: pagamento Safe2Pay não homologado; INV-017: checagens de credenciais vazadas; INV-019: aliases não identificados.
 - Manter revisão de funções `SECURITY DEFINER` restantes, incluindo RPCs de pedidos, carteira, payouts e filas, com classificação pelo uso antes de revogar privilégios; autenticação, cidade e RLS exigem testes adversariais.
 - Testes ainda **não executados nesta continuação**: `bun install`, typecheck, lint, unitários completos do workspace, build full/Android, E2E autenticado, pagamento real, varredura funcional de todos os 34 achados. Os testes de SQL sintético não autorizam conclusão da homologação de produção.
 - Não foi criada branch Supabase (cobrança adicional dependeria de autorização de custo); não foi feito merge na `main`; não foi requisitada movimentação financeira.
@@ -125,3 +125,17 @@ A Edge Function pinada `supabase/functions/dispatch-push-outbox/index.ts` usa `S
 Foi criada, testada com `BEGIN/ROLLBACK`, aplicada e verificada a migração `apois_inv018_restrict_service_only_dispatch_rpc_execute_20261108` para as seis funções: `claim_notification_push_batch(integer)`, `claim_notification_push_batch_v2(integer)`, `enqueue_notification(uuid,text,text,text,jsonb,text)`, `verify_push_dispatch_key(text)`, `verify_push_dispatch_runtime_key(text)` e `verify_payout_dispatch_runtime_key(text)`. Estado pós-aplicação: **6/6 anon=false; 6/6 authenticated=false; 6/6 service_role=true**. Contagem total de funções SECURITY DEFINER acessíveis por `anon`: **87** (113 na análise anterior).
 
 Nenhuma mensagem real foi enfileirada e nenhum push foi disparado nos testes de ACL. Teste do fluxo operacional end-to-end do push continua pendente. Commit dessa migração: `988069457f7b45eb417ef1811a5548fb959b17df`.
+
+### INV-020 — correção pontual do texto de liquidação em produção
+
+Fonte do problema: função `public.settle_delivered_order_financials(uuid)` apresentava literal com dupla codificação (`apÃƒÂ³s conclusÃƒÂ£o`). A migração versionada `supabase/entregas-forward-migrations/20261108_inv020_settlement_notification_mojibake_fix.sql`, commit `99c0389ed9b65cb71742873e7127abb989a3e090`, deriva o corpo **vivo** usando `pg_get_functiondef` e substitui apenas a mensagem por `Repasse do pedido liberado após conclusão`, abortando se a assinatura/texto esperado divergirem. Evita restaurar lógica antiga.
+
+Primeiro simulada dentro de `BEGIN/ROLLBACK`: novo literal presente, ACL protegida (anon=false/authenticated=false/service_role=true). Em seguida aplicada como `apois_inv020_settlement_notification_mojibake_fix_20261108`, verificada no banco: novo literal verdadeiro, texto antigo ausente, permissões da INV-009 preservadas. **Não houve movimentação financeira, execução de settlement nem alteração de histórico/valor.** E2E financeiro permanece pendente; demais funções com mojibake são outro inventário.
+
+### INV-001 — consulta direta ao chamado e segurança
+
+A função `customer-support` v11 ativa no Supabase Entregas foi lida e comparada **byte a byte** ao arquivo do snapshot Entregas pinado (`supabase/functions/customer-support/index.ts`), confirmando código idêntico antes de editar. A correção adicionou a ação `detail` ao endpoint: UUID validado, `authClient.auth.getUser(token)`, SELECT `.eq('id', ticketId)` e `.eq('requester_user_id', authData.user.id)` com RLS, retorno 404 quando não pertence ao usuário e filtro para não retornar `is_internal`. Ações `list`, `create` e `message` não foram removidas. `verify_jwt` foi preservado como `true`.
+
+A função foi implantada na produção existente (sem recurso pago adicional): versão **11→12**, status `ACTIVE` confirmado por releitura da Edge Function, marker `APOIS_SUPPORT_TICKET_DETAIL_V1` presente. Políticas RLS de `support_tickets` e `support_messages` revisadas: ambas ativas, SELECT autenticado condiciona ao solicitante e protege mensagens internas. Uma consulta somente leitura com role `authenticated` e **sem `auth.uid()`** retornou zero mensagens. Isso não substitui prova de acesso A/B com sessões reais.
+
+Foi criado `scripts/fix-entregas-support-ticket-detail-v1.mjs` (commit `77701885e1ee929ccb2116e4108b9b32abf5926f`) para alterar apenas `.work/entregas`, substituindo o download da lista de 50 pelo detalhe autorizado na rota canônica. Integrado aos builders em commits `3fbcacbfc109cabe2a6912c54b8f93bf6995dab4` e `6dcd146f9e72221b80d5214376bf3b5353f3229c`. Pontos de inserção do script foram encontrados uma única vez no snapshot pinado. **Não houve build cliente, deploy Vercel ou Android**; verificar 51+ chamados, acesso de usuário B ao protocolo A, anexos, replies e realtime após compilar.
