@@ -18,7 +18,7 @@ if (!corridasUrl || !corridasKey) {
   console.error('[FAIL] motorista: variáveis CORRIDAS_VITE_SUPABASE_* ausentes');
   process.exit(1);
 }
-if (!corridasUrl.includes('vqtucstyduxrqjgyigfk.supabase.co')) {
+if (corridasUrl.replace(/\/$/, '') !== 'https://tbbzkrfupmqdywnzgnms.supabase.co') {
   console.error('[FAIL] motorista: Supabase informado não é o projeto Corridas canônico');
   process.exit(1);
 }
@@ -30,6 +30,8 @@ if (!/^[a-z0-9]{20}\.supabase\.co$/.test(corridasProjectHost)) {
   throw new Error('[FAIL] motorista: URL Supabase inválida para storage da sessão');
 }
 const corridasAuthStorageKey = 'sb-' + corridasProjectHost.split('.')[0] + '-auth-token';
+// Validar identidade/escopo da chave sem aceitar .env.mobile protegido como fonte canônica.
+run(process.execPath, [resolve(root, 'scripts/verify-corridas-build-env.mjs')]);
 
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
 for (const script of [

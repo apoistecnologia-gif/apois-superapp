@@ -103,6 +103,7 @@ if [ -z "$CORRIDAS_URL_VALUE" ] || [ -z "$CORRIDAS_KEY_VALUE" ] || [ -z "$CORRID
   echo '[FAIL] Motorista: variáveis CORRIDAS_VITE_SUPABASE_URL, CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY e CORRIDAS_WEB_MAPS_API_KEY são obrigatórias.'
   exit 1
 fi
+node "$ROOT/scripts/verify-corridas-build-env.mjs"
 {
   printf 'VITE_SUPABASE_URL=%s\n' "$CORRIDAS_URL_VALUE"
   printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$CORRIDAS_KEY_VALUE"
@@ -110,35 +111,8 @@ fi
   printf 'VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY=%s\n' "$CORRIDAS_MAPS_KEY_VALUE"
 } > .env.mobile.local
 
-# Vite mescla variáveis do processo por cima dos arquivos .env. O PowerShell
-# externo pode manter VITE_* do módulo Entregador; essas variáveis não podem
-# contaminar o bundle Motorista, que deve usar exclusivamente o projeto Corridas.
-case "$CORRIDAS_URL_VALUE" in
-  *tbbzkrfupmqdywnzgnms.supabase.co) ;;
-  *)
-    echo '[FAIL] Motorista: CORRIDAS_VITE_SUPABASE_URL não aponta para o projeto Corridas esperado.'
-    exit 1
-    ;;
-esac
-
-# A publishable key informada deve ser a mesma chave válida do projeto Corridas
-# presente na fonte. Comparamos por fingerprint (sha256 dos primeiros bytes)
-# para nunca imprimir o valor: uma chave do projeto Entregas passaria pela
-# checagem de URL e geraria login 401 UNAUTHORIZED_INVALID_API_KEY em runtime.
-CORRIDAS_KEY_FROM_SOURCE="$(sed -n 's/^\s*VITE_SUPABASE_PUBLISHABLE_KEY\s*=\s*//p' \
-  "$ROOT/sources/apois-corridas-motorista-admin/.env.mobile" | head -n1 | tr -d '\r')"
-if [ -z "$CORRIDAS_KEY_FROM_SOURCE" ]; then
-  echo '[FAIL] Motorista: VITE_SUPABASE_PUBLISHABLE_KEY ausente em sources/apois-corridas-motorista-admin/.env.mobile'
-  exit 1
-fi
-if [ "$(printf '%s' "$CORRIDAS_KEY_VALUE" | sha256sum | cut -d' ' -f1)" != \
-     "$(printf '%s' "$CORRIDAS_KEY_FROM_SOURCE" | sha256sum | cut -d' ' -f1)" ]; then
-  echo '[FAIL] Motorista: CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY diverge da chave do projeto Corridas na fonte.'
-  echo '       Corrija o valor da variável no ambiente externo e execute o build novamente.'
-  exit 1
-fi
-echo '[OK] validação Parceiro: publishable key corresponde ao projeto Corridas'
-unset CORRIDAS_KEY_FROM_SOURCE
+# A referência e a chave vêm EXCLUSIVAMENTE do ambiente de release atual.
+# Nunca compare uma chave do projeto canônico com .env.mobile do snapshot legado.
 unset VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY SUPABASE_URL SUPABASE_PUBLISHABLE_KEY
 export VITE_APP_ROLE="motorista"
 export VITE_ENABLE_NATIVE_PUSH="true"
@@ -151,7 +125,15 @@ npm run build:motorista
 # Validação de isolamento: o bundle Motorista deve apontar para Corridas,
 # nunca para o projeto Entregas, mesmo que o processo externo tenha VITE_*
 # herdado de outro módulo.
-require_contains 'vqtucstyduxrqjgyigfk.supabase.co' dist/client 'bundle Motorista usa o Supabase Corridas'
+require_contains 'tbbzkrfupmqdywnzgnms.supabase.co' dist/client 'bundle Motorista usa o Supabase Corridas canônico'
+if grep -R -Fq 'vqtucstyduxrqjgyigfk.supabase.co' dist/client; then
+  echo '[FAIL] bundle Motorista ainda usa Supabase histórico'
+  exit 1
+fi
+if grep -R -Fq 'ptgkwyyolrdgnqketkjj.supabase.co' dist/client; then
+  echo '[FAIL] bundle Motorista referencia o Supabase Entregas'
+  exit 1
+fi
 if grep -R -Fq 'sbvhdgyuuperszlsllji.supabase.co' dist/client; then
   echo '[FAIL] bundle Motorista contaminado com o Supabase Entregas'
   exit 1
