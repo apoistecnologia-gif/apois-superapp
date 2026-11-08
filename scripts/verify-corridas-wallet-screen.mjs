@@ -20,7 +20,9 @@ for (const marker of [
   'useWallet()',
   'useAuth()',
   'usePaymentMethods()',
-  'paymentService.getCancellationFees(userId)',
+  'const domainUserId = profile?.id ?? null;',
+  'paymentService.getCancellationFees(domainUserId)',
+  'authState === "initializing" || authLoading ? "loading" : "failed"',
   'wallet.balance',
   'wallet.updatedAt',
   'wallet.blockedReason',
@@ -48,6 +50,9 @@ for (const banned of [
   'setSelectedMethod(', 'selectMethod(', 'setBalance(',
 ]) assert.ok(!wallet.includes(banned), 'Nova tela da Carteira tem mutacao financeira indevida: '+banned);
 assert.ok(!wallet.includes('function CarteiraPage() {\n  return <div'), 'Placeholder ainda existe');
+assert.ok(!wallet.includes("getCancellationFees(user?.id)") && !wallet.includes("getCancellationFees(userId)"),
+  "INV-021: taxa de dominio nao deve usar auth.users.id");
+
 assert.ok(wallet.includes('Nenhuma carteira foi localizada'), 'Estado sem carteira pode exibir saldo ficticio');
 assert.ok(wallet.includes('Não foi possível consultar o saldo'), 'Falha de consulta nao pode parecer saldo zero');
 assert.ok(wallet.includes('Nenhuma taxa pendente encontrada.'), 'Estado sem taxa ausente');
