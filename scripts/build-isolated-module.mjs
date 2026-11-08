@@ -453,6 +453,7 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-post-order-home-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-order-review-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-login-cta-contrast-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-admin-coverage-consistency-v2.mjs')]);
 }
 
 const config = manifest.modules[name];
