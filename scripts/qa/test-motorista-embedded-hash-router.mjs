@@ -72,5 +72,6 @@ test('Ambos os builds embutidos aplicam o hardener antes de compilar', () => {
   assert.ok(partner.indexOf(apply) < partner.indexOf('npm run build:motorista'));
   assert.ok(isolated.includes('harden-partner-motorista-mobile-base.mjs'), 'o RootShell SSR também precisa ser isolado');
   assert.ok(isolated.indexOf('harden-partner-motorista-mobile-base.mjs') < isolated.indexOf(apply));
-  assert.match(isolated, /const authStorageKey='sb-vqtucstyduxrqjgyigfk-auth-token'/, 'a ponte deve ler a chave padrão do Supabase Corridas');
+  assert.ok(isolated.includes("const authStorageKey='${corridasAuthStorageKey}';"), 'a ponte deve usar a chave derivada da URL do build');
+  assert.ok(isolated.includes('const corridasAuthStorageKey ='), 'a chave de storage deve derivar da URL, nunca ser fixa');
 });
