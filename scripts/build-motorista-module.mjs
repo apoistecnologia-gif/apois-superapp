@@ -23,6 +23,14 @@ if (!corridasUrl.includes('vqtucstyduxrqjgyigfk.supabase.co')) {
   process.exit(1);
 }
 
+// O storageKey padrão do supabase-js é sb-<project-ref>-auth-token.
+// Derivar da URL usada no build evita que a ponte leia sessões de outro projeto.
+const corridasProjectHost = new URL(corridasUrl).hostname;
+if (!/^[a-z0-9]{20}\.supabase\.co$/.test(corridasProjectHost)) {
+  throw new Error('[FAIL] motorista: URL Supabase inválida para storage da sessão');
+}
+const corridasAuthStorageKey = 'sb-' + corridasProjectHost.split('.')[0] + '-auth-token';
+
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
 for (const script of [
   'harden-motorista-auth.mjs',
@@ -34,6 +42,15 @@ for (const script of [
   run(process.execPath, [resolve(root, `scripts/${script}`)], root, hardenerEnv);
 }
 
+// Isola o documento SSR da rota raiz no build client-only: index.mobile.html
+// já fornece html/head/body/#root. Reutiliza o hardener validado no Parceiro.
+run(process.execPath, [resolve(root, 'scripts/harden-partner-motorista-mobile-base.mjs')], root, hardenerEnv);
+
+// O bundle embutido é acessado por #/motorista/* dentro do shell.
+// O código-fonte standalone continua usando browser history.
+run(process.execPath, [resolve(root, 'scripts/harden-motorista-embedded-hash-router.mjs')], root, hardenerEnv);
+run(process.execPath, [resolve(root, 'scripts/harden-motorista-feature-flags-rejection.mjs')], root, hardenerEnv);
+
 const env = {
   ...process.env,
   APOIS_MOTORISTA_WORKSPACE: '.work/motorista',
@@ -41,6 +58,13 @@ const env = {
   VITE_SUPABASE_PUBLISHABLE_KEY: corridasKey,
   VITE_ENABLE_NATIVE_PUSH: process.env.APOIS_SUPERAPP_RIDES_PUSH_ENABLED === '1' ? 'true' : 'false',
 };
+
+if (readFileSync(resolve(workspace, 'src/routes/__root.tsx'), 'utf8').includes('shellComponent: RootShell')) {
+  throw new Error('[FAIL] motorista embutido: documento SSR residual no build client-only');
+}
+if (!readFileSync(resolve(workspace, 'src/mobile.tsx'), 'utf8').includes('history: createHashHistory()')) {
+  throw new Error('[FAIL] motorista embutido: hash history não aplicada antes do build');
+}
 
 run('bun', ['install'], workspace, env);
 run('bun', ['run', 'typecheck'], workspace, env);
@@ -55,7 +79,7 @@ if (!html.includes('data-apois-superapp-bridge')) {
 (() => {
   const shellUrl='../../index.html';
   const routeStorageKey='apois-superapp:last-route:motorista';
-  const authStorageKey='apois-superapp-motorista-auth-v1';
+  // supabase-js persiste a sessão por padrão em sb-<project-ref>-auth-token.\n  const authStorageKey='${corridasAuthStorageKey}';
   const appPlugin=window.Capacitor?.Plugins?.App;
   function route(){return window.location.hash||'#/motorista/app';}
   function persist(){try{localStorage.setItem(routeStorageKey,route());}catch{}}

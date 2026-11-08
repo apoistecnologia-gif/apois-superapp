@@ -67,8 +67,11 @@ node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
+node "$ROOT/scripts/harden-motorista-embedded-hash-router.mjs"
+node "$ROOT/scripts/harden-motorista-feature-flags-rejection.mjs"
 
 cd "$MOTORISTA"
+require_contains 'history: createHashHistory()' src/mobile.tsx 'Motorista embutido segue as rotas hash do seletor Parceiro'
 require_contains 'appTarget: "partner"' src/components/payments/MercadoPagoSellerCard.tsx 'OAuth Mercado Pago usa callback exclusivo do APOIS Parceiro'
 require_contains 'Desconectar Mercado Pago' src/components/payments/MercadoPagoSellerCard.tsx 'desconexão segura do Mercado Pago presente'
 require_contains 'PARTNER_PENDING_PUSH_KEY' src/lib/nativeBridge.ts 'Motorista encaminha Push de outro módulo ao shell'
