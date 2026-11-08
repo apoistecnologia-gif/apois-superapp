@@ -28,11 +28,18 @@ writeFileSync(archive,[
 ].join("\n"),"utf8");
 const historyPath=resolve(root,"src/routes/_authenticated.corridas.tsx");
 let history=readFileSync(historyPath,"utf8");
-if(!history.includes("APOIS_CASES_ARCHIVE_V1")){
- history=history.replace('import { createFileRoute } from "@tanstack/react-router";',
- 'import { createFileRoute, Link } from "@tanstack/react-router";\n// APOIS_CASES_ARCHIVE_V1');
- history=history.replace('  return <div className="p-6 text-white">Suas Corridas</div>;',
- '  return <div className="space-y-4 p-6 text-white"><h1 className="text-xl font-bold">Suas Corridas</h1><Link to="/ocorrencias" className="block rounded-xl border border-[#E00029]/40 p-4 text-sm font-bold text-red-300">Central de Ocorrências · Meus protocolos</Link></div>;');
+const linkMarker="APOIS_CASES_ARCHIVE_V2";
+if(!history.includes(linkMarker)){
+ const importAnchor='import { createFileRoute } from "@tanstack/react-router";';
+ const navAnchor='        <nav aria-label="Filtrar histórico de corridas"';
+ if(history.split(importAnchor).length!==2||history.split(navAnchor).length!==2)
+   throw Error("[FAIL] Histórico restaurado mudou: atalho de ocorrências não foi instalado");
+ history=history.replace(importAnchor,'import { createFileRoute, Link } from "@tanstack/react-router";');
+ history=history.replace(navAnchor,
+  '        {/* '+linkMarker+' */}\n        <Link to="/ocorrencias" className="mb-4 block min-h-12 rounded-2xl border border-[#F2D1D3] bg-white px-4 py-3 text-sm font-extrabold text-[#B91C1C]">Central de Ocorrências · Meus protocolos</Link>\n'+navAnchor);
  writeFileSync(historyPath,history,"utf8");
 }
+const finalHistory=readFileSync(historyPath,"utf8");
+if(!finalHistory.includes(linkMarker)||!finalHistory.includes('<Link to="/ocorrencias"'))
+ throw Error("[FAIL] Atalho de ocorrências ausente no histórico final");
 console.log("[OK] Passenger: open ride-linked ticket, photos, protocol, timeline and follow-up.");
