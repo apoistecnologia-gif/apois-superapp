@@ -125,13 +125,25 @@ const baseEnv = {
   APOIS_MOBILE_BUILD: '0',
 };
 
+// INV-012: local QA can inspect a drifting pinned fixture; never promote it to a release.
+const fixtureOnly = process.env.APOIS_MERCHANT_QA_FIXTURE_ONLY === '1'
+  && !process.env.CI && !process.env.VERCEL && !process.env.VERCEL_ENV;
+run(process.execPath, [resolve(root, 'scripts/verify-entregas-bun-lock-v1.mjs'),
+  ...(fixtureOnly ? ['--qa-fixture-only'] : [])], { cwd: root, env: baseEnv });
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-lock-v1.test.mjs')], {
+  cwd: root, env: baseEnv,
+});
 const frozenInstallStatus = run('bun', ['install', '--frozen-lockfile'], {
   cwd: workspace,
   env: baseEnv,
   allowFailure: true,
 });
 if (frozenInstallStatus !== 0) {
-  console.warn('[WARN] Entregas: bun.lock do pin não é reproduzível com Bun atual; usando instalação --no-save apenas em .work.');
+  if (!fixtureOnly) {
+    console.error('[FAIL] INV-012: frozen lock install failed. Release aborted; no unpinned fallback.');
+    process.exit(frozenInstallStatus);
+  }
+  console.warn('[WARN] INV-012: explicit local QA fixture only; non-reproducible install is NOT production-approved.');
   run('bun', ['install', '--no-save'], { cwd: workspace, env: baseEnv });
 }
 
@@ -151,10 +163,10 @@ run('bun', ['run', 'typecheck'], { cwd: workspace, env: baseEnv });
 const lintStatus = run('bun', ['run', 'lint'], {
   cwd: workspace,
   env: baseEnv,
-  allowFailure: true,
+  allowFailure: fixtureOnly,
 });
 if (lintStatus !== 0) {
-  console.warn(`[WARN] Entregas: lint source-wide falhou com EXIT ${lintStatus}; continuando fixture sem mascarar o resultado.`);
+  console.warn(`[WARN] INV-012: lint falhou com EXIT ${lintStatus}; fixture LOCAL sem aprovação de release.`);
 }
 
 run('bun', ['run', 'test'], { cwd: workspace, env: baseEnv });
@@ -188,6 +200,6 @@ rmSync(rootOutput, { recursive: true, force: true });
 cpSync(nestedOutput, rootOutput, { recursive: true });
 
 if (lintStatus !== 0) {
-  console.warn(`[WARN] Fixture funcional/build concluída, porém o lint source-wide permanece FAIL (EXIT ${lintStatus}).`);
+  console.warn(`[WARN] Fixture LOCAL não homologada: lint source-wide FAIL (EXIT ${lintStatus}).`);
 }
 console.log('[OK] Fixture Cliente + bundle audit + gates + painel do estabelecimento concluídos na árvore Entregas transformada.');
