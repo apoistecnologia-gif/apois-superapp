@@ -55,11 +55,11 @@ patch("src/contexts/CartContext.tsx",one=>{
  '      let changed=false,unavailable=false;\n' +
  '      const refreshed=new Map(snapshot.map(item=>{\n' +
  '        const product=productsById.get(item.id);\n' +
- '        const invalidProduct=!product||product.is_available!==true||Number(product.price)<0;\n' +
+ '        const invalidProduct=!product||product.is_available!==true||!Number.isFinite(Number(product.price))||Number(product.price)<0;\n' +
  '        const newOptions=item.selectedOptions.map(opt=>{\n' +
  '          const live=optionsById.get(opt.optionId);\n' +
  '          const group=live?groupsById.get(live.option_group_id):null;\n' +
- '          if(!live||live.is_available!==true||!group||group.is_active!==true||group.product_id!==item.id)return null;\n' +
+ '          if(!live||live.is_available!==true||!Number.isFinite(Number(live.price_delta))||!group||group.is_active!==true||group.product_id!==item.id)return null;\n' +
  '          return {...opt,optionName:String(live.name),priceDelta:Number(live.price_delta),groupName:String(group.name)};\n' +
  '        });\n' +
  '        const invalidOptions=newOptions.some(opt=>opt===null);\n' +
@@ -68,12 +68,12 @@ patch("src/contexts/CartContext.tsx",one=>{
  '        const adjusted=newOptions.filter((opt):opt is CartSelectedOption=>opt!==null);\n' +
  '        const price=missing?item.price:base+adjusted.reduce((a,o)=>a+o.priceDelta,0);\n' +
  '        if(missing)unavailable=true;\n' +
- '        if(Math.abs(price-item.price)>0.001||item.isUnavailable!==missing)changed=true;\n' +
+ '        if(Math.abs(price-Number(item.price))>0.001||Boolean(item.isUnavailable)!==missing)changed=true;\n' +
  '        return [item.lineId,{...item,basePrice:base,price,isUnavailable:missing,\n' +
  '          menuCategoryId:product?.menu_category_id??item.menuCategoryId,\n' +
  '          name:product?.name??item.name,selectedOptions:missing?item.selectedOptions:adjusted}] as const;\n' +
  '      }));\n' +
- '      setItems(current=>current.map(item=>refreshed.get(item.lineId)??item));\n' +
+ '      setItems(current=>current.map(item=>{const next=refreshed.get(item.lineId);return next&&next.merchantId===item.merchantId?{...next,quantity:item.quantity}:item;}));\n' +
  '      if(unavailable)toast.error("Há itens indisponíveis ou personalizações alteradas. Remova esses itens da sacola.");\n' +
  '      else if(changed)toast.info("Sacola atualizada com preços e opções do catálogo. Confira o novo total.");\n' +
  '    }catch{if(sequence===catalogRequest.current)toast.error("Não foi possível revisar a sacola agora. Confira os valores ao finalizar.");}\n' +
