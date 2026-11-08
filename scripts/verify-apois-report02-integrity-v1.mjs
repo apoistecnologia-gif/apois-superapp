@@ -26,6 +26,20 @@ if(role==="entregas"){
  assert.equal(login.split('htmlFor="apois-login-password"').length-1,2,"Both login variants need associated password labels");
  const hours=file("src/lib/merchant-hours.ts");
  must(hours,["APOIS_MERCHANT_HOURS_24H_V2","interval.close === interval.open","Aberto 24 horas"],"hours");
+ const quotes=file("src/lib/apois-promotions.ts");
+ must(quotes,["estimateAutomaticPromotion","apois_available_merchant_promotions","remaining_uses","explicitCoupon"],"promotions");
+ const store=file("src/routes/estabelecimento.$merchantId.tsx");
+ must(store,["APOIS_AUTO_PROMOTIONS_CLIENT_V3","autoPromotions.filter(","menuCategoryId: product.menu_category_id","APOIS_MERCHANT_SERVER_STATUS_V3",'merchant_accepting_orders'],"store");
+ const checkout=file("src/routes/checkout.tsx");
+ must(checkout,["APOIS_AUTO_PROMOTIONS_CLIENT_V3","estimateAutomaticPromotion(","serverPriceReview","backendTotal>total+0.009","APOIS_CART_PERSISTED_REVALIDATION_V3","hasUnavailableItems"],"checkout");
+ assert.ok(checkout.indexOf("backendTotal>total+0.009")<checkout.indexOf("const pixFunction ="),"backend price must be accepted before PIX provider is called");
+ const bag=file("src/routes/sacola.tsx");
+ must(bag,["APOIS_CART_PERSISTED_REVALIDATION_V3","refreshCartCatalog()","item.isUnavailable"],"bag");
+ must(cart,["APOIS_CART_PERSISTED_REVALIDATION_V3",'from as any)("products")','"product_option_groups"','catalogRequest.current',"isUnavailable:missing"],"persisted cart");
+ must(hours,["APOIS_MERCHANT_SERVER_STATUS_V3","apois_visible_merchant_order_status"],"authoritative hours");
+ const home=file("src/routes/inicio.tsx");
+ must(home,["APOIS_MERCHANT_SERVER_STATUS_V3","fetchAuthoritativeMerchantStatuses","serverOpen===undefined"],"home");
+ must(search,["APOIS_MERCHANT_SERVER_STATUS_V3","fetchAuthoritativeMerchantStatuses","const merchantStatus=useCallback"],"search status");
 }else{
  const s=file("src/routes/admin.financeiro.tsx");
  must(s,["APOIS_ADMIN_FINANCE_CLOCK_REFRESH_V2","getAdminFinanceSummary(requestedRange.from, requestedRange.to)","Consulta atualizada:"],"finance");
