@@ -462,6 +462,8 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-hours-24h-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-cart-price-refresh-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-login-accessibility-v2.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/restore-entregas-auto-promotions-v3.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/connect-entregas-auto-promotions-v3.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 }
 
