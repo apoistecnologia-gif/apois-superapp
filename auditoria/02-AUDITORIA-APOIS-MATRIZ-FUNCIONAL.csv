@@ -1,0 +1,91 @@
+ID,Aplicativo,Modulo,Tela,Rota,Elemento,Comportamento esperado,Resultado observado,Status,Gravidade,Evidencia,Defeito,Correcao existente,Reteste necessario,Dependencia
+E-001,Entregas,Cliente,Landing,/,"renderiza conteudo",308 chars,APROVADO,,Playwright Fase 8/9,,,nao,
+E-002,Entregas,Cliente,Landing,/,"link Termos de Uso",alvo >=44px,65x16 -> 84x44,CORRIGIDO E VALIDADO,media,qa-visual/v-_-390.png,D-003,3898e9d3,nao,
+E-003,Entregas,Cliente,Landing,/,"link Privacidade",alvo >=44px,51x16 -> 125x44,CORRIGIDO E VALIDADO,media,qa-visual/v-_-390.png,D-003,3898e9d3,nao,
+E-004,Entregas,Cliente,Login,/login,"form 2 inputs",renderiza,167 chars 2 inputs,APROVADO,,Playwright Fase 8,,,nao,
+E-005,Entregas,Cliente,Registro,/register,"form 8 inputs",renderiza,272 chars 8 inputs,APROVADO,,Playwright Fase 8,,,nao,
+E-006,Entregas,Cliente,Registro,/register,"botao Voltar",alvo >=44px,36x36 -> 44x44,CORRIGIDO E VALIDADO,media,qa-visual/v-_register-390.png,D-003,3898e9d3,nao,
+E-007,Entregas,Cliente,Registro,/register,"mostrar senha",alvo >=44px,20x20 -> 44x44,CORRIGIDO E VALIDADO,media,hit-targets.mjs,D-003,3898e9d3,nao,
+E-008,Entregas,Cliente,Registro,/register,"checkbox termos",alvo >=44px,16x16 -> 44x44,CORRIGIDO E VALIDADO,media,checkbox-hit.mjs,D-003,3898e9d3,nao,
+E-009,Entregas,Cliente,Registro,/register,"link Entrar",alvo >=44px,42x44 -> 44x44,CORRIGIDO E VALIDADO,baixa,visual-audit.mjs,D-003,3898e9d3,nao,
+E-010,Entregas,Cliente,Termos,/termos,"texto legal",4753 chars,4753 chars,APROVADO,,Playwright Fase 8,,,nao,
+E-011,Entregas,Cliente,Privacidade,/privacidade,"texto legal",6646 chars,6646 chars,APROVADO,,Playwright Fase 8,,,nao,
+E-012,Entregas,Cliente,Inicio,/inicio,"exige sessao",redirect login,redirect ?redirect,APROVADO,,Playwright Fase 8,,,nao,
+E-013,Entregas,Cliente,Enderecos,/enderecos,"exige sessao",redirect login,redirect,APROVADO,,Playwright Fase 8,,,nao,
+E-014,Entregas,Cliente,Enderecos novo,/enderecos/novo,"exige sessao",redirect login,redirect,APROVADO,,Playwright Fase 8,,,nao,
+E-015,Entregas,Cliente,Enderecos editar,/enderecos/editar/$addressId,"exige sessao",redirect login,NAO TESTADO,,,Playwright nao cobriu,,,sessao
+E-016,Entregas,Cliente,Pedidos,/pedidos,"exige sessao",redirect login,redirect,APROVADO,,Playwright Fase 8,,,nao,
+E-017,Entregas,Cliente,Pedido detalhe,/pedido/$orderId,"carrega pedido",dados reais,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-018,Entregas,Cliente,Pedido avaliar,/pedido/$orderId/avaliar,"avaliar",salva nota,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-019,Entregas,Cliente,Pedido confirmado,/pedido/confirmado,"confirmacao",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-020,Entregas,Cliente,Sacola,/sacola,"carrinho",persiste,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-021,Entregas,Cliente,Checkout,/checkout,"criar pedido",pedido criado,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-022,Entregas,Cliente,Buscar,/buscar,"busca estabelecimento",resultados,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-023,Entregas,Cliente,Favoritos,/favoritos,"lista favoritos",renderiza,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-024,Entregas,Cliente,Notificacoes,/notificacoes,"lista",renderiza,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-025,Entregas,Cliente,Perfil,/perfil,"menu perfil",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-026,Entregas,Cliente,Perfil dados,/perfil/dados-pessoais,"editar dados",salva,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-027,Entregas,Cliente,Perfil pagamentos,/perfil/pagamentos,"metodos",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-028,Entregas,Cliente,Perfil ajuda,/perfil/ajuda,"abrir chamado",cria ticket,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-029,Entregas,Cliente,Perfil legal,/perfil/legal,"documentos",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-030,Entregas,Cliente,Perfil notificacoes,/perfil/notificacoes,"preferencias",salva,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-031,Entregas,Cliente,Estabelecimento,/estabelecimento/$merchantId,"cardapio",renderiza,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-032,Entregas,Cliente,Apois Plus,/apois-plus,"assinatura",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-033,Entregas,Cliente,Rota bloqueada,/courier,"redireciona",landing,308 chars,CORRIGIDO E VALIDADO,critica,hang3.mjs,D-001,d9202d74,sim
+E-034,Entregas,Cliente,Cold load bloqueado,/merchant,"redireciona",sem Invariant,0 chars -> landing,CORRIGIDO E VALIDADO,critica,hash-smoke.mjs,D-002,d9202d74,sim
+E-035,Entregas,Entregador,Login,/courier,"login entregador",243 chars,243 chars,APROVADO,,multi-mode.mjs,,,nao,
+E-036,Entregas,Entregador,Ofertas,/courier,"receber oferta",renderiza,NAO TESTADO,,,nao executado,,,aparelho+Supabase
+E-037,Entregas,Entregador,Coleta,/courier,"confirmar coleta",status muda,NAO TESTADO,,,nao executado,,,aparelho+Supabase
+E-038,Entregas,Entregador,PIN entrega,/courier,"validar PIN",entrega conclui,NAO TESTADO,,,nao executado,,,aparelho+Supabase
+E-039,Entregas,Entregador,Ganhos,/courier,"repasses",renderiza,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-040,Entregas,Estabelecimento,Login,/merchant,"login loja",175 chars,175 chars,APROVADO,,multi-mode.mjs,,,nao,
+E-041,Entregas,Estabelecimento,Produtos,/merchant,"CRUD produto",salva,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-042,Entregas,Estabelecimento,Categorias,/merchant,"CRUD categoria",salva,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-043,Entregas,Estabelecimento,Pedidos,/merchant,"aceitar pedido",status muda,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-044,Entregas,Estabelecimento,Preparacao,/merchant,"marcar pronto",status muda,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-045,Entregas,Estabelecimento,Cancelamento,/merchant,"recusar pedido",refund,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-046,Entregas,Estabelecimento,Financeiro,/merchant,"mensalidade",R$ 69,90,APROVADO (codigo),,harden-mercadopago-v2,,,nao,
+E-047,Entregas,Estabelecimento,Configuracoes,/configuracoes-estabelecimento,"horarios",salva,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-048,Entregas,Admin,Login,/admin,"login admin",177 chars,177 chars,APROVADO,,multi-mode.mjs,,,nao,
+E-049,Entregas,Admin,Pedidos,/admin,"painel pedidos",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-050,Entregas,Admin,Cobertura,/admin,"cidades",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-051,Entregas,Admin,Repasses,/admin,"settlements",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-052,Entregas,Admin,Documentos,/admin,"endpoint privado",403 sem auth,aprovado em teste,APROVADO,,test-admin-preview-private-documents-v1,,,nao,
+E-053,Corridas,Passageiro,Login,/login,"login",184 chars,184 chars,APROVADO,,corridas-smoke.mjs,,,nao,
+E-054,Corridas,Passageiro,Cadastro,/cadastro,"form 6 inputs",246 chars,246 chars,APROVADO,,corridas-smoke.mjs,,,nao,
+E-055,Corridas,Passageiro,Recuperar senha,/recuperar-senha,"form 1 input",140 chars,140 chars,APROVADO,,corridas-smoke.mjs,,,nao,
+E-056,Corridas,Passageiro,Redefinir senha,/redefinir-senha,"token reset",redirect login,sem token,APROVADO,,corridas-smoke.mjs,,,nao,
+E-057,Corridas,Passageiro,Inicio,/inicio,"mapa+origem",renderiza,redirect login,NAO TESTADO,,,aviso GoogleMapsLoader,sessao+Maps
+E-058,Corridas,Passageiro,Buscar destino,/buscar-destino,"Places",sugestoes,NAO TESTADO,,,nao executado,,,sessao+Maps
+E-059,Corridas,Passageiro,Revisar solicitacao,/revisar-solicitacao,"confirmar",cria corrida,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-060,Corridas,Passageiro,Acompanhar,/corrida/$rideId,"status realtime",atualiza,NAO TESTADO,,,nao executado,,,sessao+2 atores
+E-061,Corridas,Passageiro,Historico,/corridas,"lista",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-062,Corridas,Passageiro,Carteira,/carteira,"saldo",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-063,Corridas,Passageiro,Notificacoes,/notificacoes,"lista",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-064,Corridas,Passageiro,Perfil,/perfil,"menu",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-065,Corridas,Passageiro,Admin no build cliente,/admin,"404",Not Found,9 chars,APROVADO,,corridas-deep.mjs,,,nao,
+E-066,Corridas,Motorista,Login,/motorista/login,"login",276 chars,276 chars,APROVADO,,mot-batch.mjs,,,nao,
+E-067,Corridas,Motorista,Cadastro,/motorista/cadastro,"form",renderiza,0 chars vazio,REPROVADO,alta,mot-batch.mjs,D-004,,sim,
+E-068,Corridas,Motorista,Recuperar senha,/motorista/recuperar-senha,"form",201 chars,201 chars,APROVADO,,mot-batch.mjs,,,nao,
+E-069,Corridas,Motorista,App operacional,/motorista/app,"mapa+ofertas",renderiza,redirect login,APROVADO,,mot-batch.mjs,,,sessao+aparelho
+E-070,Corridas,Motorista,Historico,/motorista/corridas,"lista",563 chars,563 -> 0 instavel,REPROVADO,alta,mot-hist.mjs,D-005,,sim,
+E-071,Corridas,Motorista,Ganhos,/motorista/ganhos,"ganhos",renderiza,redirect login,APROVADO,,mot-batch.mjs,,,sessao
+E-072,Corridas,Motorista,Perfil,/motorista/perfil,"menu",renderiza,redirect login,APROVADO,,mot-batch.mjs,,,sessao
+E-073,Corridas,Motorista,Documentos,/motorista/documentos,"upload",salva,NAO TESTADO,,,nao executado,,,sessao+Storage
+E-074,Corridas,Motorista,Assinatura,/motorista/assinatura,"plano",renderiza,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-075,Corridas,Motorista,Carteira,/motorista/carteira,"saldo",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-076,Corridas,Motorista,Configuracoes,/motorista/configuracoes,"prefs",salva,NAO TESTADO,,,nao executado,,,sessao
+E-077,Corridas,Motorista,Seguranca,/motorista/seguranca,"senha",salva,NAO TESTADO,,,nao executado,,,sessao
+E-078,Corridas,Motorista,Notificacoes,/motorista/notificacoes,"lista",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-079,Corridas,Motorista,Suporte,/motorista/suporte,"ticket",cria,NAO TESTADO,,,nao executado,,,sessao+Supabase
+E-080,Corridas,Motorista,Regalias,/motorista/regalias,"beneficios",renderiza,NAO TESTADO,,,nao executado,,,sessao
+E-081,Corridas,Motorista,Status,/motorista/status,"online/offline",muda,NAO TESTADO,,,nao executado,,,aparelho+Supabase
+E-082,Corridas,Admin,Login,/admin/login,"login admin",redirect motorista,redirect,NAO TESTADO,,,nao executado,,,sessao admin
+E-083,Corridas,Admin,Dashboard,/admin/dashboard,"painel",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-084,Corridas,Admin,Motoristas,/admin/motoristas,"aprovacao",aprova,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-085,Corridas,Admin,Corridas,/admin/corridas,"lista",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-086,Corridas,Admin,Financeiro,/admin/financeiro,"relatorio",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-087,Corridas,Admin,Precos,/admin/precos,"tarifas",salva,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-088,Corridas,Admin,Seguranca,/admin/seguranca,"permissoes",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-089,Corridas,Admin,Relatorios,/admin/relatorios,"export",gera,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
+E-090,Corridas,Admin,Logs,/admin/logs,"auditoria",renderiza,NAO TESTADO,,,nao executado,,,sessao admin+Supabase
