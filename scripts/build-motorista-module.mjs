@@ -23,6 +23,14 @@ if (!corridasUrl.includes('vqtucstyduxrqjgyigfk.supabase.co')) {
   process.exit(1);
 }
 
+// O storageKey padrão do supabase-js é sb-<project-ref>-auth-token.
+// Derivar da URL usada no build evita que a ponte leia sessões de outro projeto.
+const corridasProjectHost = new URL(corridasUrl).hostname;
+if (!/^[a-z0-9]{20}\.supabase\.co$/.test(corridasProjectHost)) {
+  throw new Error('[FAIL] motorista: URL Supabase inválida para storage da sessão');
+}
+const corridasAuthStorageKey = 'sb-' + corridasProjectHost.split('.')[0] + '-auth-token';
+
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
 for (const script of [
   'harden-motorista-auth.mjs',
@@ -71,7 +79,7 @@ if (!html.includes('data-apois-superapp-bridge')) {
 (() => {
   const shellUrl='../../index.html';
   const routeStorageKey='apois-superapp:last-route:motorista';
-  // supabase-js persiste a sessão por padrão em sb-<project-ref>-auth-token.\n  const authStorageKey='sb-vqtucstyduxrqjgyigfk-auth-token';
+  // supabase-js persiste a sessão por padrão em sb-<project-ref>-auth-token.\n  const authStorageKey='${corridasAuthStorageKey}';
   const appPlugin=window.Capacitor?.Plugins?.App;
   function route(){return window.location.hash||'#/motorista/app';}
   function persist(){try{localStorage.setItem(routeStorageKey,route());}catch{}}
