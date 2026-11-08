@@ -20,15 +20,15 @@ patch("src/contexts/CartContext.tsx",one=>{
  one('  selectedOptions: CartSelectedOption[];\n};',
      '  selectedOptions: CartSelectedOption[];\n  isUnavailable?: boolean;\n};',"item availability");
  one('  clearCart: () => void;\n  totalItems: number;',
-     '  clearCart: () => void;\n  refreshCartCatalog: () => Promise<void>;\n  totalItems: number;',"provider api");
+     '  clearCart: () => void;\n  refreshCartCatalog: () => Promise<boolean>;\n  totalItems: number;',"provider api");
  one('  const [isHydrated, setIsHydrated] = useState(false);',
      '  const [isHydrated, setIsHydrated] = useState(false);\n  const catalogRequest=useRef(0);',"request state");
  one('...newItem, lineId, basePrice, price: finalUnitPrice,',
      '...newItem, isUnavailable: false, lineId, basePrice, price: finalUnitPrice,',"readd clears unavailable");
  one('  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);',
- '  const refreshCartCatalog=async ():Promise<void>=>{\n' +
+ '  const refreshCartCatalog=async ():Promise<boolean>=>{\n' +
  '    const snapshot=items.filter(item=>item.merchantId===merchant?.id);\n' +
- '    if(!isHydrated||!snapshot.length)return;\n' +
+ '    if(!isHydrated||!snapshot.length)return false;\n' +
  '    const sequence=++catalogRequest.current;\n' +
  '    const ids=[...new Set(snapshot.map(item=>item.id))];\n' +
  '    try{\n' +
@@ -48,7 +48,7 @@ patch("src/contexts/CartContext.tsx",one=>{
  '        if(result.error)throw result.error;\n' +
  '        groups=result.data||[];\n' +
  '      }\n' +
- '      if(sequence!==catalogRequest.current)return;\n' +
+ '      if(sequence!==catalogRequest.current)return false;\n' +
  '      const productsById=new Map<string,any>((products||[]).map((p:any)=>[p.id,p]));\n' +
  '      const optionsById=new Map<string,any>(options.map((p:any)=>[p.id,p]));\n' +
  '      const groupsById=new Map<string,any>(groups.map((p:any)=>[p.id,p]));\n' +
@@ -68,7 +68,7 @@ patch("src/contexts/CartContext.tsx",one=>{
  '        const adjusted=newOptions.filter((opt):opt is CartSelectedOption=>opt!==null);\n' +
  '        const price=missing?item.price:base+adjusted.reduce((a,o)=>a+o.priceDelta,0);\n' +
  '        if(missing)unavailable=true;\n' +
- '        if(Math.abs(price-Number(item.price))>0.001||Boolean(item.isUnavailable)!==missing)changed=true;\n' +
+ '        if(Math.abs(price-Number(item.price))>0.001||Boolean(item.isUnavailable)!==missing||(product?.menu_category_id??null)!==(item.menuCategoryId??null))changed=true;\n' +
  '        return [item.lineId,{...item,basePrice:base,price,isUnavailable:missing,\n' +
  '          menuCategoryId:product?.menu_category_id??item.menuCategoryId,\n' +
  '          name:product?.name??item.name,selectedOptions:missing?item.selectedOptions:adjusted}] as const;\n' +
@@ -76,7 +76,11 @@ patch("src/contexts/CartContext.tsx",one=>{
  '      setItems(current=>current.map(item=>{const next=refreshed.get(item.lineId);return next&&next.merchantId===item.merchantId?{...next,quantity:item.quantity}:item;}));\n' +
  '      if(unavailable)toast.error("Há itens indisponíveis ou personalizações alteradas. Remova esses itens da sacola.");\n' +
  '      else if(changed)toast.info("Sacola atualizada com preços e opções do catálogo. Confira o novo total.");\n' +
- '    }catch{if(sequence===catalogRequest.current)toast.error("Não foi possível revisar a sacola agora. Confira os valores ao finalizar.");}\n' +
+ '      return !unavailable&&!changed;\n' +
+ '    }catch{\n' +
+ '      if(sequence===catalogRequest.current)toast.error("Não foi possível validar a sacola. Tente novamente com conexão ativa.");\n' +
+ '      return false;\n' +
+ '    }\n' +
  '  };\n' +
  '  useEffect(()=>{if(isHydrated)void refreshCartCatalog();},[isHydrated]);\n\n' +
  '  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);',"refresh implementation");
@@ -96,10 +100,12 @@ patch("src/routes/sacola.tsx",one=>{
      '<h3 className="text-[15px] font-bold text-white">{item.name}</h3>\n                  {item.isUnavailable && <p role="alert" className="text-xs font-bold text-red-400">Item indisponível ou personalização inválida. Remova para continuar.</p>}',"item label");
 });
 patch("src/routes/checkout.tsx",one=>{
+ one('  const { items, merchant, totalPrice, clearCart, isHydrated } = useCart();',
+     '  const { items, merchant, totalPrice, clearCart, isHydrated, refreshCartCatalog } = useCart();',"checkout revalidator");
  one('  const subtotal = totalPrice;',
      '  // '+marker+'\n  const hasUnavailableItems=items.some(item=>item.isUnavailable);\n  const subtotal = totalPrice;',"state");
  one('      if (items.length === 0) throw new Error("Sua sacola está vazia.");',
-     '      if (items.length === 0) throw new Error("Sua sacola está vazia.");\n      if(hasUnavailableItems)throw new Error("Remova os itens indisponíveis antes de finalizar.");',"server boundary");
+     '      if (items.length === 0) throw new Error("Sua sacola está vazia.");\n      if(hasUnavailableItems)throw new Error("Remova os itens indisponíveis antes de finalizar.");\n      if(!(await refreshCartCatalog()))throw new Error("Não foi possível validar a sacola atual. Confira os itens e tente novamente.");',"server boundary");
  one('            isProcessing || minimumOrderMissing > 0 || deliveryQuoteLoading || !deliveryEligible',
      '            isProcessing || hasUnavailableItems || minimumOrderMissing > 0 || deliveryQuoteLoading || !deliveryEligible',"disable");
 });
