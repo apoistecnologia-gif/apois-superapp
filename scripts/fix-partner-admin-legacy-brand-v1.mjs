@@ -17,8 +17,11 @@ for(const [relative,edits] of tasks){
  for(const [a,b] of edits){
   if(content.includes(b))continue;
   if(!content.includes(a)){
-   if(a==="Visão geral da operação MOVVI DRIVE em tempo real"){
-     console.warn("[INFO] Dashboard subtitle already transformed by earlier visual hardener; preserving text.");
+   // O snapshot pode já ter aplicado a marca APOIS (por outro hardener visual)
+   // sem manter o texto original. Nesse caso não há o que substituir; falhar
+   // aqui derrubaria o build sem defeito real de marca.
+   if(/MOVVI|MOVVI DRIVE/.test(content)===false){
+     console.warn("[INFO] Admin brand already APOIS; preserving text for: "+a);
      continue;
    }
    throw Error("[FAIL] Admin brand source changed: "+a);

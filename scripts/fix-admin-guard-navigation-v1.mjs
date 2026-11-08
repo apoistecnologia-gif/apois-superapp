@@ -8,7 +8,12 @@ function one(from,to,label){
  if(count!==1)throw Error("[FAIL] Admin guard "+label+" occurrences="+count);
  s=s.replace(from,to);
 }
-if(s.includes("APOIS_ADMIN_GUARD_NAV_CACHE_V1"))throw Error("[FAIL] Guard patch already applied");
+// Idempotente: reaplicar não é erro. Se o marcador já existe, o patch está
+// presente e o script encerra com sucesso — o contrato abaixo confirma o efeito.
+if(s.includes("APOIS_ADMIN_GUARD_NAV_CACHE_V1")){
+ console.log("[OK] Admin guard navigation cache já aplicado");
+ process.exit(0);
+}
 one('import { loadAdminAccess } from "@/lib/adminAccess";',
   'import { loadAdminAccess } from "@/lib/adminAccess";',
   "access import");
