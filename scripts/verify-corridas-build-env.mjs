@@ -37,7 +37,8 @@ export function checkCorridasBuildEnv(url, key, legacyKey = "") {
   if (payload?.role !== "anon" || payload?.ref !== "tbbzkrfupmqdywnzgnms") {
     throw new Error("[FAIL] Corridas: chave JWT pertence a outro projeto ou papel não público");
   }
-  return { format: "anon-jwt", projectRef: payload.ref, keyProjectVerified: true };
+  // Um JWT lido via base64 NÃO teve assinatura verificada. Confirmar no servidor.
+  return { format: "anon-jwt", projectRef: payload.ref, keyProjectVerified: false };
 }
 
 function verifyCLI() {
