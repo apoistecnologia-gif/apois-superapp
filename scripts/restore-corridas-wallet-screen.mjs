@@ -35,8 +35,9 @@ const formatDate = (value: string): string | null => {
 type PendingFeesState = "loading" | "ready" | "failed";
 
 function CarteiraPage() {
-  const { user } = useAuth();
-  const userId = user?.id ?? null;
+  const { profile, authState, isLoading: authLoading } = useAuth();
+  // INV-021: cancellation_fees.passenger_id references public.users.id.
+  const domainUserId = profile?.id ?? null;
   const { wallet, state, isLoading, refresh } = useWallet();
   const { methods, selectedMethod, isLoading: methodsLoading } = usePaymentMethods();
   const [fees, setFees] = useState<CancellationFee[]>([]);
@@ -47,13 +48,13 @@ function CarteiraPage() {
   const loadFees = useCallback(async (): Promise<void> => {
     const requestId = ++feeRequest.current;
     setFees([]);
-    if (!userId) {
-      setFeesState("ready");
+    if (!domainUserId) {
+      setFeesState(authState === "initializing" || authLoading ? "loading" : "failed");
       return;
     }
     setFeesState("loading");
     try {
-      const pending = await paymentService.getCancellationFees(userId);
+      const pending = await paymentService.getCancellationFees(domainUserId);
       if (requestId !== feeRequest.current) return;
       setFees(pending);
       setFeesState("ready");
@@ -61,7 +62,7 @@ function CarteiraPage() {
       if (requestId !== feeRequest.current) return;
       setFeesState("failed");
     }
-  }, [userId]);
+  }, [domainUserId, authState, authLoading]);
 
   useEffect(() => {
     void loadFees();
@@ -210,8 +211,9 @@ if (!before.includes('APOIS_CLIENT_WALLET_SCREEN_V1')) {
 const updated = readFileSync(file, 'utf8');
 for (const marker of [
   'APOIS_CLIENT_WALLET_SCREEN_V1',
+  'const domainUserId = profile?.id ?? null;',
   'useWallet()',
-  'paymentService.getCancellationFees(userId)',
+  'paymentService.getCancellationFees(domainUserId)',
   'state === "blocked"',
   'state === "failed"',
   'state === "not_found"',
