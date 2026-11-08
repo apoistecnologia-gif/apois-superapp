@@ -32,7 +32,7 @@ patch("src/contexts/CartContext.tsx",one=>{
  '    const sequence=++catalogRequest.current;\n' +
  '    const ids=[...new Set(snapshot.map(item=>item.id))];\n' +
  '    try{\n' +
- '      const {data:products,error:productError}=await (supabase.from as any)("products").select("id,name,price,is_available,menu_category_id").in("id",ids);\n' +
+ '      const {data:products,error:productError}=await (supabase.from as any)("products").select("id,name,price,is_available,menu_category_id,merchant_id").in("id",ids);\n' +
  '      if(productError)throw productError;\n' +
  '      const optionIds=[...new Set(snapshot.flatMap(item=>item.selectedOptions.map(opt=>opt.optionId)))];\n' +
  '      let options:any[]=[];\n' +
@@ -55,7 +55,7 @@ patch("src/contexts/CartContext.tsx",one=>{
  '      let changed=false,unavailable=false;\n' +
  '      const refreshed=new Map(snapshot.map(item=>{\n' +
  '        const product=productsById.get(item.id);\n' +
- '        const invalidProduct=!product||product.is_available!==true||!Number.isFinite(Number(product.price))||Number(product.price)<0;\n' +
+ '        const invalidProduct=!product||product.merchant_id!==item.merchantId||product.is_available!==true||!Number.isFinite(Number(product.price))||Number(product.price)<0;\n' +
  '        const newOptions=item.selectedOptions.map(opt=>{\n' +
  '          const live=optionsById.get(opt.optionId);\n' +
  '          const group=live?groupsById.get(live.option_group_id):null;\n' +
