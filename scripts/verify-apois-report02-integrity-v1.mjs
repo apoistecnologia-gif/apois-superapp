@@ -39,9 +39,11 @@ if(role==="entregas"){
  const checkout=file("src/routes/checkout.tsx");
  must(checkout,["APOIS_AUTO_PROMOTIONS_CLIENT_V3","estimateAutomaticPromotion(","serverPriceReview","Math.abs(backendTotal-total)>0.009","APOIS_CART_PERSISTED_REVALIDATION_V3","hasUnavailableItems"],"checkout");
  assert.ok(checkout.indexOf("Math.abs(backendTotal-total)>0.009")<checkout.indexOf("const pixFunction ="),"backend price must be accepted before PIX provider is called");
+ must(checkout, ["await refreshCartCatalog()", "Não foi possível validar a sacola atual"], "cart fail-closed");
+ assert.ok(checkout.indexOf("await refreshCartCatalog()")<checkout.indexOf('supabase.functions.invoke(\n        "create-order"'),"catalog must be revalidated before order creation");
  const bag=file("src/routes/sacola.tsx");
  must(bag,["APOIS_CART_PERSISTED_REVALIDATION_V3","refreshCartCatalog()","item.isUnavailable"],"bag");
- must(cart,["APOIS_CART_PERSISTED_REVALIDATION_V3",'from as any)("products")','"product_option_groups"','catalogRequest.current',"isUnavailable:missing"],"persisted cart");
+ must(cart,["APOIS_CART_PERSISTED_REVALIDATION_V3",'from as any)("products")','"product_option_groups"','catalogRequest.current',"isUnavailable:missing","product.merchant_id!==item.merchantId","Promise<boolean>","return !unavailable&&!changed;","return false;"],"persisted cart");
  must(hours,["APOIS_MERCHANT_SERVER_STATUS_V3","apois_visible_merchant_order_status"],"authoritative hours");
  const home=file("src/routes/inicio.tsx");
  must(home,["APOIS_MERCHANT_SERVER_STATUS_V3","fetchAuthoritativeMerchantStatuses","serverOpen===undefined"],"home");
