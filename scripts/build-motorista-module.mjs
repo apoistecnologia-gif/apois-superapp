@@ -70,7 +70,7 @@ if (!html.includes('data-apois-superapp-bridge')) {
 (() => {
   const shellUrl='../../index.html';
   const routeStorageKey='apois-superapp:last-route:motorista';
-  const authStorageKey='apois-superapp-motorista-auth-v1';
+  // supabase-js persiste a sessão por padrão em sb-<project-ref>-auth-token.\n  const authStorageKey='sb-vqtucstyduxrqjgyigfk-auth-token';
   const appPlugin=window.Capacitor?.Plugins?.App;
   function route(){return window.location.hash||'#/motorista/app';}
   function persist(){try{localStorage.setItem(routeStorageKey,route());}catch{}}
