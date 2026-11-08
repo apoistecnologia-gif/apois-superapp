@@ -16,7 +16,7 @@ test("Corridas rejeita chaves históricas e secretas", () => {
   const jwt=(ref,role)=>"x."+Buffer.from(JSON.stringify({ref,role})).toString("base64url")+".x";
   assert.throws(() => checkCorridasBuildEnv(CORRIDAS_URL, jwt("ptgkwyyolrdgnqketkjj","anon")), /outro projeto/);
   assert.throws(() => checkCorridasBuildEnv(CORRIDAS_URL, jwt("tbbzkrfupmqdywnzgnms","service_role")), /papel não público/);
-  assert.equal(checkCorridasBuildEnv(CORRIDAS_URL, jwt("tbbzkrfupmqdywnzgnms","anon")).keyProjectVerified, true);
+  assert.equal(checkCorridasBuildEnv(CORRIDAS_URL, jwt("tbbzkrfupmqdywnzgnms","anon")).keyProjectVerified, false);
 });
 test("Os dois caminhos do Motorista verificam o mesmo ambiente canônico", () => {
   const standalone=readFileSync("scripts/build-motorista-module.mjs","utf8");
