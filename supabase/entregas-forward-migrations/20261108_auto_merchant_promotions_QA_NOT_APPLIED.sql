@@ -57,7 +57,11 @@ BEGIN
   LOOP
     IF v_promo.usage_limit IS NOT NULL THEN
       SELECT count(*) INTO v_consumed
-      FROM private.apois_promotion_redemptions r WHERE r.promotion_id=v_promo.id;
+      FROM private.apois_promotion_redemptions r
+      JOIN public.orders used_order ON used_order.id=r.order_id
+      WHERE r.promotion_id=v_promo.id
+        AND NOT (used_order.status='cancelled' AND
+                 used_order.payment_status IN ('pending','failed'));
       IF v_consumed >= v_promo.usage_limit THEN CONTINUE; END IF;
     END IF;
 
@@ -66,12 +70,9 @@ BEGIN
     FROM public.order_items oi
     LEFT JOIN public.products product ON product.id=oi.product_id
     WHERE oi.order_id=NEW.id
-      AND (
-        (v_promo.product_id IS NULL AND v_promo.menu_category_id IS NULL)
-        OR (v_promo.product_id IS NOT NULL AND oi.product_id=v_promo.product_id)
-        OR (v_promo.menu_category_id IS NOT NULL AND
-            product.menu_category_id=v_promo.menu_category_id)
-      );
+      AND (v_promo.product_id IS NULL OR oi.product_id=v_promo.product_id)
+      AND (v_promo.menu_category_id IS NULL OR
+           product.menu_category_id=v_promo.menu_category_id);
     IF v_eligible_subtotal <= 0 THEN CONTINUE; END IF;
 
     v_candidate:=case when v_promo.discount_type='percent'
@@ -120,7 +121,11 @@ AS $apois_public$
   SELECT p.id,p.name,p.description,p.discount_type,p.discount_value,
          p.minimum_order,p.product_id,p.menu_category_id,p.starts_at,p.ends_at,
          case when p.usage_limit is null then null
-              else p.usage_limit-(select count(*) from private.apois_promotion_redemptions r where r.promotion_id=p.id)
+              else p.usage_limit-(select count(*) from private.apois_promotion_redemptions r
+                  JOIN public.orders used_order ON used_order.id=r.order_id
+                  WHERE r.promotion_id=p.id
+                    AND NOT (used_order.status='cancelled' AND
+                             used_order.payment_status IN ('pending','failed')))
          end as remaining_uses
   FROM public.promotions p
   JOIN public.merchants m ON m.id=p.merchant_id
@@ -131,7 +136,11 @@ AS $apois_public$
     AND public.apois_qa_read_allowed(m.id)
     AND p.is_active=true AND p.starts_at<=now() AND p.ends_at>now()
     AND (p.usage_limit IS NULL OR
-      (SELECT count(*) FROM private.apois_promotion_redemptions r WHERE r.promotion_id=p.id)<p.usage_limit)
+      (SELECT count(*) FROM private.apois_promotion_redemptions r
+        JOIN public.orders used_order ON used_order.id=r.order_id
+        WHERE r.promotion_id=p.id
+          AND NOT (used_order.status='cancelled' AND
+                   used_order.payment_status IN ('pending','failed')))<p.usage_limit)
   ORDER BY p.id;
 $apois_public$;
 REVOKE EXECUTE ON FUNCTION public.apois_available_merchant_promotions(uuid) FROM PUBLIC,anon;
