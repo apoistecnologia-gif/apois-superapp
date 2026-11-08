@@ -5,9 +5,20 @@ import {readFileSync,existsSync,statSync,mkdirSync,writeFileSync} from "node:fs"
 import {createRequire} from "node:module";
 // APOIS_ADMIN_PREVIEW_RENDER_QA_V2 — anonymous/static, never uses production credentials.
 const root=resolve(".work/partner-motorista/dist/admin-preview"),out=resolve("qa-browser/admin-corridas");
-const require=createRequire(resolve(process.env.APOIS_PLAYWRIGHT_ROOT,"package.json"));
-const {chromium}=require("playwright");
-assert.ok(existsSync(resolve(root,"index.html")),"Compiled Admin Corridas preview absent");
+if(!existsSync(resolve(root,"index.html"))) {
+  throw Error("[BLOCKED] Admin Corridas: preview não compilado. Execute scripts/build-admin-vercel-preview.sh antes desta auditoria.");
+}
+const playwrightRoot = process.env.APOIS_PLAYWRIGHT_ROOT;
+if(!playwrightRoot) {
+  throw Error("[BLOCKED] Admin Corridas: APOIS_PLAYWRIGHT_ROOT ausente. Configure uma instalação isolada do Playwright para o teste visual.");
+}
+const require=createRequire(resolve(playwrightRoot,"package.json"));
+let chromium;
+try {
+  ({chromium}=require("playwright"));
+} catch {
+  throw Error("[BLOCKED] Admin Corridas: Playwright não disponível em APOIS_PLAYWRIGHT_ROOT; configure a dependência no ambiente de QA.");
+}
 mkdirSync(out,{recursive:true});
 const mime={".html":"text/html",".js":"text/javascript",".css":"text/css",".png":"image/png",".webp":"image/webp",".svg":"image/svg+xml",".woff2":"font/woff2"};
 const server=createServer((req,res)=>{
