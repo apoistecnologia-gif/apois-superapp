@@ -59,6 +59,6 @@ function verifyCLI() {
   }
   console.log("[OK] Corridas: URL canônica e credencial de navegador sem chave histórica/secreta");
 }
-if (process.argv[1] && import.meta.url === new URL("file://" + resolve(process.argv[1])).href) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   verifyCLI();
 }
