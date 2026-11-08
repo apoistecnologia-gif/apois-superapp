@@ -28,3 +28,17 @@ for (const item of cases) {
     throw new Error("[FAIL] Entregas: estrutura de upload divergente em " + item.path);
   }
 }
+
+// Também restringe o seletor de arquivos de logo e capa ao formato suportado.
+const merchantPath=resolve(work,"src/routes/merchant.tsx");
+const previous=readFileSync(merchantPath,"utf8");
+const broad=(previous.match(/accept="image\/\*"/g)||[]).length;
+const narrow=(previous.match(/accept="image\/jpeg,image\/png,image\/webp"/g)||[]).length;
+if(broad===2){
+  writeFileSync(merchantPath,previous.replaceAll('accept="image/*"','accept="image/jpeg,image/png,image/webp"'),"utf8");
+  console.log("[OK] Entregas: seletor logo/capa limitado aos formatos Storage");
+}else if(broad===0 && narrow>=2){
+  console.log("[OK] Entregas: seletores de logo/capa já alinhados");
+}else{
+  throw new Error("[FAIL] Entregas: seletores de logo/capa não reconhecidos");
+}
