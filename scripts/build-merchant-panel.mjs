@@ -112,6 +112,8 @@ for (const script of [
   run(process.execPath, args);
 }
 
+run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
+
 const baseEnv = {
   ...process.env,
   APOIS_MOBILE_BUILD: '0',
