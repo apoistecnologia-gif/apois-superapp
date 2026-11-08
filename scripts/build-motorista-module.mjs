@@ -55,6 +55,7 @@ run(process.execPath, [resolve(root, 'scripts/harden-motorista-feature-flags-rej
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-history-recovery.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-registration-insert-only.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-document-photo-types.mjs')], root, hardenerEnv);
+run(process.execPath, [resolve(root, 'scripts/fix-partner-admin-finance-refresh-v2.mjs')], root, hardenerEnv);
 
 const env = {
   ...process.env,
