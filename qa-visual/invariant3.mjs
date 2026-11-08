@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const errs = []; page.on('pageerror', e => errs.push(e.message));
+await page.goto('http://127.0.0.1:4173/#/', { waitUntil: 'networkidle' });
+await page.waitForTimeout(800);
+const before = await page.evaluate(() => ({ hash: location.hash, len: document.body.innerText.trim().length }));
+await page.evaluate(() => { location.hash = '#/courier'; });
+await page.waitForTimeout(1500);
+const after = await page.evaluate(() => ({ hash: location.hash, len: document.body.innerText.trim().length, text: document.body.innerText.trim().slice(0,80) }));
+await page.screenshot({ path: 'qa-visual/blocked-route-after-nav.png', fullPage: true });
+console.log(JSON.stringify({ before, after, errs }, null, 1));
+await browser.close();
