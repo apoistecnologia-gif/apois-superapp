@@ -22,7 +22,7 @@ for (const marker of [
   'usePaymentMethods()',
   'const domainUserId = profile?.id ?? null;',
   'paymentService.getCancellationFees(domainUserId)',
-  'authState === "initializing" || authLoading ? "loading" : "failed"',
+  'authState === "initializing" || authState === "loading_profile" || authLoading ? "loading" : "failed"',
   'wallet.balance',
   'wallet.updatedAt',
   'wallet.blockedReason',
