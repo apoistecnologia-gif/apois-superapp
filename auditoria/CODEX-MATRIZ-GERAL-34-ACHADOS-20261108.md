@@ -9,7 +9,7 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 
 | ID | Prioridade | Área | Estado | Síntese e aceite restante |
 |---|---|---|---|---|
-| INV-001 | P2 | Entregas | D | Atendimento localiza protocolo só entre 50 resultados; falta endpoint por ID/QA |
+| INV-001 | P2 | Entregas | B | Edge `customer-support` v12 publicada: ação `detail` por ID e dono, RLS e filtro de mensagens internas confirmados, `list/create/message` preservadas. Tela canônica patchada via builder; falta compilação, deploy web/mobile e E2E 51+ e IDOR. |
 | INV-002 | P1 | Corridas | B | Troca de protocolo protegida contra resposta antiga; E2E pendente |
 | INV-003 | P1 | Corridas | B | Rascunho/arquivos isolados por protocolo; E2E pendente |
 | INV-004 | P1 | Corridas | B | Upload reconciliado por arquivo; verificar Storage real |
@@ -28,7 +28,7 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 | INV-017 | P2 | Supabase | G | Proteção contra senhas vazadas depende de configuração/testes |
 | INV-018 | P2 | Supabase | C | Identificadas 113 funções `SECURITY DEFINER` inicialmente executáveis por `anon`. ACL de 20 RPCs administrativas `admin_*` e 6 RPCs internas de despacho de push/notificações/segredos corrigida e verificada em produção. Inicialmente 113 funções `SECURITY DEFINER` eram executáveis por `anon`; agora 87. Demais funções exigem triagem individual e testes. |
 | INV-019 | P1 | Vercel | E | Aliases/previews demandam identificação do commit em publicação |
-| INV-020 | P2 | Entregas financeiro | D | Texto mojibake da função SQL ainda não corrigido |
+| INV-020 | P2 | Entregas financeiro | B | Migração `apois_inv020_settlement_notification_mojibake_fix_20261108` aplicada após simulação rollback. Literal corrigido, ACL INV-009 preservada; não altera lançamento/valor, falta E2E e histórico. |
 | INV-021 | P1 | Corridas carteira | B | DOMAIN ID e hardener Auth ligados à montagem; teste real pendente |
 | INV-022 | P2 | Entregas busca | B | Lojas não dependem dos 40 produtos exibidos |
 | INV-023 | P2 | Entregas busca | B | Coordenada ausente não vira 0,0; zero explícito preservado |
@@ -46,12 +46,12 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 
 ## Total geral
 - A: 0 (nenhuma feature pronta apenas por presença de interface ou teste isolado).
-- B: 19 — correções implementadas e/ou aplicadas, sem homologação integral do produto.
+- B: 21 — correções implementadas e/ou aplicadas, sem homologação integral do produto.
 - C: 5 — medidas parciais, inclusive promoções mantidas desativadas.
-- D: 3 — defeitos confirmados ainda não resolvidos.
+- D: 1 — defeito confirmado ainda não resolvido (INV-012).
 - E: 5 — evidência/versão ainda a comprovar.
 - G: 2 — bloqueios externos ou de configuração.
-- Soma conferida: 0 + 19 + 5 + 3 + 5 + 2 = 34.
+- Soma conferida: 0 + 21 + 5 + 1 + 5 + 2 = 34.
 - Total: 34.
 
 **Estado de produção em 08/11/2026:** as migrações INV-009, INV-034, INV-024 e o reforço parcial INV-018 foram confirmadas aplicadas no Supabase Entregas (`ptgkwyyolrdgnqketkjj`). INV-009 deixou de ser bloqueio por ACL de execução direta; **INV-031 permanece NÃO APLICADA**. Não declarar produção homologada: restam E2E de pagamento, permissões e apps. Nenhum pagamento real foi efetuado nesta continuação.
@@ -65,6 +65,10 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 - **Implementado em GitHub, sem APK/deploy:** versão de promoções mais restrita (produto E categoria quando ambos definidos), limite de usos que desconsidera pedido cancelado sem pagamento, badge âmbar da marca, confirmação explícita de **qualquer** discrepância no total servidor versus tela antes de gerar PIX, verificador de integridade atualizado.
 - **Testado:** migração promocional compilada com `BEGIN/ROLLBACK`; função da migração clonada para `pg_temp` e exercitada em 9 pedidos e promoções sintéticos, com 9 asserções de desconto/total e 5 resgates únicos. Todas passaram, sem escrita persistente em pedidos reais. ACL INV-018 testada em `BEGIN/ROLLBACK` para cada lote (20 RPCs administrativas e 6 internas) e verificada após ambas as aplicações; sem manipular notificações ou pagamentos reais. Migração de promoções ainda ausente do catálogo de produção.
 - **Não realizado:** instalação de dependências, typecheck completo, lint, testes full, build completo, E2E autenticado de pagamentos, Android físico, implantação Vercel. `INV-028` não pode ser atribuída com segurança a commit: listagem de deploys Vercel retornou HTTP 403 para projetos relevantes; nenhuma alteração especulativa de contraste foi feita.
-- **Permanecem pendentes:** demais `SECURITY DEFINER` executáveis por anon, falhas `INV-001`, `INV-012`, `INV-020`, contrato Safe2Pay, validações de regressão de horários/sacola/cupons/carteira/login/cobertura e bloqueios do Relatório 01. O estágio `A` requer E2E e release validados.
+- **Permanecem pendentes:** demais `SECURITY DEFINER` executáveis por anon, falha `INV-012` e os E2E de `INV-001` e `INV-020`, contrato Safe2Pay, validações de regressão de horários/sacola/cupons/carteira/login/cobertura e bloqueios do Relatório 01. O estágio `A` requer E2E e release validados.
 
 **Complemento de segurança INV-018 (08/11/2026):** a Edge Function pinada `dispatch-push-outbox` utiliza `SUPABASE_SERVICE_ROLE_KEY` para `claim_notification_push_batch_v2` e `verify_push_dispatch_runtime_key`. As funções `claim_notification_push_batch`, `claim_notification_push_batch_v2`, `enqueue_notification`, `verify_push_dispatch_key`, `verify_push_dispatch_runtime_key` e `verify_payout_dispatch_runtime_key` passaram a exigir exclusivamente `service_role`. Contrato ACL testado em transação revertida e confirmado após migração. Permanecem 87 RPCs SECURITY DEFINER com EXECUTE de `anon`; isso é superfície pendente de classificação, não confirmação de exploração.
+
+**INV-001, backend publicado parcialmente:** Edge `customer-support` de produção (`ptgkwyyolrdgnqketkjj`) comparada byte a byte ao snapshot pinado: era idêntica antes da mudança (6.067 caracteres). Versão 11→12 (`verify_jwt=true`), action `detail` por UUID, filtro `requester_user_id = authData.user.id`, RLS ativo e mensagens internas excluídas; ações existentes preservadas. UI conectada aos dois builders por `fix-entregas-support-ticket-detail-v1.mjs`; não houve build/deploy do cliente. Faltam E2E com 51+ chamados, sessões de clientes A/B e anexos.
+
+**INV-020, produção corrigida:** migração `apois_inv020_settlement_notification_mojibake_fix_20261108` trocou exclusivamente o literal de notificação do settlement (derivado do corpo atual por `pg_get_functiondef`) após `BEGIN/ROLLBACK`. String final `Repasse do pedido liberado após conclusão` confirmada, ACL `anon=false,authenticated=false,service_role=true` preservada; nenhum lançamento realizado. Textos históricos e outras funções com mojibake não foram alterados.
