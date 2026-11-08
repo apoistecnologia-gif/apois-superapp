@@ -54,6 +54,7 @@ run(process.execPath, [resolve(root, 'scripts/harden-motorista-embedded-hash-rou
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-feature-flags-rejection.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-history-recovery.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-registration-insert-only.mjs')], root, hardenerEnv);
+run(process.execPath, [resolve(root, 'scripts/harden-motorista-document-photo-types.mjs')], root, hardenerEnv);
 
 const env = {
   ...process.env,
