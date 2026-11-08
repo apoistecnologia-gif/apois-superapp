@@ -52,6 +52,7 @@ run(process.execPath, [resolve(root, 'scripts/harden-partner-motorista-mobile-ba
 // O código-fonte standalone continua usando browser history.
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-embedded-hash-router.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-feature-flags-rejection.mjs')], root, hardenerEnv);
+run(process.execPath, [resolve(root, 'scripts/harden-motorista-history-recovery.mjs')], root, hardenerEnv);
 
 const env = {
   ...process.env,
