@@ -37,6 +37,10 @@ if(role==="partner"){
  assert.ok(driver.includes("ApoisCaseWorkroom"),"Driver must have response UI");
  assert.ok(admin.includes("ApoisCaseWorkroom"),"Admin must have case workspace");
  assert.ok(workroom.includes("apois_request_driver_statement"),"Staff must invite driver only after triage");
+ // INV-002/003/004/005/016: final transformed Workroom, not only generator.
+ for(const marker of ["APOIS_CASE_CONTEXT_SAFE_V2","APOIS_CASE_UPLOAD_IDEMPOTENCY_V2","detailSequence.current===sequence","draftsRef.current.set(previous","Anexo indisponível."])
+  assert.ok(workroom.includes(marker),"Workroom integrity marker missing: "+marker);
+ assert.ok(!workroom.includes("href={file.url??undefined}"),"Unavailable evidence cannot remain an inert anchor");
  assert.ok(workroom.includes("apois_case_reply")&&workroom.includes("apois_case_internal_note"),"Case response/private notes missing");
  assert.ok(workroom.includes('disabled={role==="staff"&&privateNote}'),"Internal notes must not upload party-visible files");
 }else{
@@ -48,6 +52,13 @@ if(role==="partner"){
  for(const marker of ["apois_open_ride_case","apois_case_reply","apois_case_register_evidence","apois-case-evidence","createSignedUrl","Meus protocolos"])
  assert.ok(cases.includes(marker),"Case center missing "+marker);
  assert.ok(archive.includes("ApoisCaseCenter"),"Case archive route missing");
+ const history=read("src/routes/_authenticated.corridas.tsx");
+ // INV-006/007: link is in the CURRENT restored history, not an obsolete placeholder.
+ assert.ok(history.includes("APOIS_CASES_ARCHIVE_V2")&&history.includes('<Link to="/ocorrencias"'),"Case archive link missing in history");
+ assert.equal(history.split('<Link to="/ocorrencias"').length-1,1,"Case archive link duplicated");
+ assert.ok(active.includes("bg-[#FFF1F2]")&&active.includes("text-[#991B1B]"),"Case-report text must contrast on light footer");
+ for(const marker of ["APOIS_CASE_CENTER_CONTEXT_SAFE_V2","APOIS_PASSENGER_EVIDENCE_IDEMPOTENT_V2","detailSequence.current===sequence","setNewCaseFiles"])
+  assert.ok(cases.includes(marker),"Passenger case integrity marker missing: "+marker);
  assert.ok(!cases.includes('from("passenger_support_tickets").insert('),"Ticket must be created through authenticated server RPC");
 }
 console.log("[OK] "+role+": private vehicle inspection, protocol case flow and owner-bound evidence guards verified.");
