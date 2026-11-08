@@ -76,9 +76,9 @@
 | INV-009 | Migração `apois_inv009_restrict_financial_settle_direct_execute_20261108` consta em `supabase_migrations.schema_migrations`; `settle_delivered_order_financials(uuid)` tem EXECUTE: anon=false, authenticated=false, service_role=true | Aplicada e ACL verificada; sem E2E do settlement |
 | INV-034 | Migração `apois_inv034_qa_order_guard_null_safe_20261108` consta no histórico; `apois_qa_never_real_payment` ativo e guard na função `private.apois_qa_no_real_payment`: `v_id IS NULL OR NEW.merchant_id IS DISTINCT FROM v_id` | Aplicada e guard/triggers lidos; sem testes adversariais completos |
 | INV-024 | Migração `apois_inv024_visible_merchants_open_status_20261108` consta no histórico; RPC `apois_visible_merchant_order_status(uuid[])` acessível aos autenticados, consulta `merchant_accepting_orders` | RPC aplicada; client integrado em builders; sem teste de fuso/24h/cidade inativa |
-| INV-018 | `apois_inv018_restrict_anon_admin_rpc_execute_20261108` aplicada nesta continuação, a partir de `20261108_inv018_restrict_anon_admin_rpc_execute.sql` | 20/20 funções privilegiadas `public.admin_*` bloqueadas para `anon`; 20/20 preservadas para `authenticated` e `service_role`. Permanecem outras RPCs expostas para análise |
+| INV-018 | Migrações `apois_inv018_restrict_anon_admin_rpc_execute_20261108` e `apois_inv018_restrict_service_only_dispatch_rpc_execute_20261108` aplicadas, ambas versionadas no repositório | 20 RPCs administrativas bloqueadas para `anon`, 20 mantidas para auth/service; 6 RPCs internas de push/segredos/enfileiramento bloqueadas para `anon` e `authenticated`, 6 mantidas para service_role. Outras RPCs permanecem em triagem. |
 
-A migração de ACL INV-018 foi primeiro testada com `BEGIN/ROLLBACK`; durante o teste todas as 20 funções perderam acesso anônimo. Após aplicação por ferramenta Supabase, nova consulta confirmou `anon=0/20`, `authenticated=20/20`, `service_role=20/20`. Os corpos das 20 funções já possuíam a validação `current_user_is_admin()`. **O alerta original de 113 funções `SECURITY DEFINER` acessíveis por `anon` não está totalmente encerrado**; uma parte é legítima RPC autenticada e outra exige revisão de ACL e de privilégio interno.
+A migração de ACL INV-018 foi primeiro testada com `BEGIN/ROLLBACK`; durante o teste todas as 20 funções perderam acesso anônimo. Após aplicação por ferramenta Supabase, nova consulta confirmou `anon=0/20`, `authenticated=20/20`, `service_role=20/20`. Os corpos das 20 funções já possuíam a validação `current_user_is_admin()`. **A contagem inicial de 113 funções `SECURITY DEFINER` acessíveis por `anon` caiu para 87 após as duas migrações INV-018; o alerta não está totalmente encerrado**; uma parte é legítima RPC autenticada e outra exige revisão de ACL e de privilégio interno.
 
 ### INV-031 — promoções sem cupom, somente preparadas
 
@@ -117,3 +117,11 @@ A ferramenta Vercel listou os projetos `apois-entregas-estabelecimento`, `apois-
 - `ca15221f5a017aa1dfc93038e56590c3bbb265a6` — manutenção de contraste da marca no badge de promoção.
 
 **Conclusão parcial:** foram feitos commits reais, migração de ACL real e testes SQL sintéticos com rollback. Nenhum item deve receber status `A` até completar regressões, build e E2E. O Relatório 03 ainda **não deve ser solicitado**.
+
+### Complemento: seis RPCs internas com ACL restrita a service_role
+
+A Edge Function pinada `supabase/functions/dispatch-push-outbox/index.ts` usa `SUPABASE_SERVICE_ROLE_KEY` ao chamar `claim_notification_push_batch_v2` e `verify_push_dispatch_runtime_key`. O retorno da função de claim inclui tokens de dispositivos e altera estados da fila. `enqueue_notification` não verifica a autorização do chamador. A exposição dessas funções a `anon` ou usuário comum é incompatível com privilégio mínimo.
+
+Foi criada, testada com `BEGIN/ROLLBACK`, aplicada e verificada a migração `apois_inv018_restrict_service_only_dispatch_rpc_execute_20261108` para as seis funções: `claim_notification_push_batch(integer)`, `claim_notification_push_batch_v2(integer)`, `enqueue_notification(uuid,text,text,text,jsonb,text)`, `verify_push_dispatch_key(text)`, `verify_push_dispatch_runtime_key(text)` e `verify_payout_dispatch_runtime_key(text)`. Estado pós-aplicação: **6/6 anon=false; 6/6 authenticated=false; 6/6 service_role=true**. Contagem total de funções SECURITY DEFINER acessíveis por `anon`: **87** (113 na análise anterior).
+
+Nenhuma mensagem real foi enfileirada e nenhum push foi disparado nos testes de ACL. Teste do fluxo operacional end-to-end do push continua pendente. Commit dessa migração: `988069457f7b45eb417ef1811a5548fb959b17df`.
