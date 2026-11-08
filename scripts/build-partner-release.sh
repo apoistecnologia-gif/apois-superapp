@@ -114,6 +114,7 @@ node "$ROOT/scripts/fix-partner-admin-vehicle-inspection-v1.mjs"
 node "$ROOT/scripts/fix-partner-admin-pendencies-preview-v1.mjs"
 node "$ROOT/scripts/fix-partner-support-case-workroom-v1.mjs"
 node "$ROOT/scripts/fix-partner-admin-finance-refresh-v2.mjs"
+node "$ROOT/scripts/verify-apois-report02-integrity-v1.mjs" finance
 node "$ROOT/scripts/fix-partner-driver-correction-center-v1.mjs"
 node "$ROOT/scripts/fix-partner-driver-corrections-red-v2.mjs"
 node "$ROOT/scripts/verify-apois-vehicle-incidents-v1.mjs" partner
