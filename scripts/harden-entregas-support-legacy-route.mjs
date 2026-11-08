@@ -6,7 +6,7 @@ const file = resolve(workspace, "src/routes/chamado-suporte.$ticketId.tsx");
 if (!existsSync(file)) throw new Error("[FAIL] APOIS Entregas: rota legada de suporte não encontrada");
 const old = readFileSync(file, "utf8");
 
-const updated = \`// APOIS_SUPPORT_LEGACY_REDIRECT_V1
+const updated = `// APOIS_SUPPORT_LEGACY_REDIRECT_V1
 // Mantém deep links antigos, mas impede duas implementações conflitantes
 // de conversa e anexo de suporte. A rota canônica valida sessão e acesso.
 import { createFileRoute, redirect } from "@tanstack/react-router";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/chamado-suporte/$ticketId")({
   component: () => null,
   head: () => ({ meta: [{ title: "Chamado de suporte | APOIS ENTREGA" }] }),
 });
-\`;
+`;
 
 if (old === updated) {
   console.log("[OK] Entregas: suporte legado já redireciona para a conversa canônica");
