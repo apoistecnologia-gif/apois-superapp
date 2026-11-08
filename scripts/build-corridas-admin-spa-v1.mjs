@@ -4,7 +4,10 @@ import {spawnSync} from "node:child_process";
 const root=process.cwd(),workspace=resolve(root,".work/partner-motorista");
 const read=p=>readFileSync(resolve(workspace,p),"utf8");
 const write=(p,text)=>writeFileSync(resolve(workspace,p),text,"utf8");
-if(!existsSync(resolve(workspace,"node_modules/vite/bin/vite.js")))throw Error("[FAIL] Admin preview: Vite not installed");
+if(!existsSync(resolve(workspace,"src/routes/admin.login.tsx")))
+  throw Error("[BLOCKED] Admin preview: workspace .work/partner-motorista ausente. Execute scripts/build-admin-vercel-preview.sh, que prepara o módulo.");
+if(!existsSync(resolve(workspace,"node_modules/vite/bin/vite.js")))
+  throw Error("[BLOCKED] Admin preview: Vite não instalado no workspace. Execute scripts/build-admin-vercel-preview.sh (npm run build:partner prepara dependências).");
 // Restore the original released desktop login and its real password-recovery routes.
 const authSnapshot=JSON.parse(readFileSync(resolve(root,"admin-preview/original-admin-auth-snapshot.json"),"utf8"));
 const authFiles=["src/routes/admin.login.tsx","src/routes/admin.recuperar-senha.tsx","src/routes/admin.redefinir-senha.tsx"];
