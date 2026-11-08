@@ -400,6 +400,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-signup-neutral-feedback.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-password-recovery.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-email-confirmation-return-v1.mjs')]);
+  // Profile identity hardener is required before wallet history and cancellation-fee consumers.
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-auth-profile-resolution.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-profile-edit.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-history-screen.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-history-screen.mjs')]);
