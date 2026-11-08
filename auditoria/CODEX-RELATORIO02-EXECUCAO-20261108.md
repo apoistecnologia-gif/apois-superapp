@@ -1,5 +1,8 @@
 # APOIS — Execução complementar do Relatório 02 (08/11/2026)
 
+> **ADENDO DE CONTINUIDADE — 08/11/2026 (situação posterior aos registros históricos abaixo).** O texto original documenta a execução anterior e não deve ser lido como estado atual do banco. Nesta continuação houve alterações autorizadas e aplicadas no Supabase, além de novos commits no GitHub. Nenhum APK, deploy Vercel, pagamento real ou merge foi executado.
+
+
 ## Contexto e proteção de escopo
 - Base de auditoria recebida: audit/ecossistema-20261107 @ c51ba5b4307822291c82d4d09f36f9812f937713 (snapshot de investigação, não a branch que recebeu nossas correções).
 - Branch realmente editada: apoistecnologia-gif/apois-superapp @ audit/continuacao-20261107; ponto anterior a esta fase a8e7c3e0ae01608d56a57fdcde192ef95a3bb56a.
@@ -57,3 +60,60 @@
 - Homologar fluxo Corridas (login Google/perfil, carteira com AUTH≠DOMAIN, taxas reais sintéticas e histórico) e Entregas (A/B zona, coordenadas, busca 41+, 24h/temporarily_closed, cupons, sacola reaberta).
 - Planejar staging dos dois SQL QA_NOT_APPLIED. Não aplicar a produção sem autorização específica e testes de rollback.
 - Registrar PR/commit, screenshots e matriz por ID antes de qualquer alegação de produção pronta.
+
+## Continuação efetiva — engenharia e segurança (08/11/2026)
+
+### Controle de versão e escopo
+
+- Repositório: `apoistecnologia-gif/apois-superapp`; branch exclusiva `audit/continuacao-20261107`; HEAD de entrada confirmado como `8a87a091ccc32b0f4368779426109e6a199c16e5`.
+- Pins preservados: Entregas `2f4606e0fb52dffb49f2e6aebbe921ce687ab625`; Passageiro `7b047f75a1a919a5336c0df6e0d60b14b02f2618`; Motorista/Admin `9fc171050d8b5703540c49d19a8f1e9f5162775f`. Nenhum repo pinado nem `main` alterado.
+- Builders de Entregas examinados: `scripts/build-isolated-module.mjs` e `scripts/build-merchant-panel.mjs` chamam geradores de promoções, horário autoritativo e sacola persistida na ordem exigida, seguidos do `verify-apois-report02-integrity-v1.mjs`. Trata-se de inspeção de integração, ainda não de compilação real.
+
+### Banco de produção — registros consultados e alterações efetivas
+
+| Achado | Evidência real | Estado |
+|---|---|---|
+| INV-009 | Migração `apois_inv009_restrict_financial_settle_direct_execute_20261108` consta em `supabase_migrations.schema_migrations`; `settle_delivered_order_financials(uuid)` tem EXECUTE: anon=false, authenticated=false, service_role=true | Aplicada e ACL verificada; sem E2E do settlement |
+| INV-034 | Migração `apois_inv034_qa_order_guard_null_safe_20261108` consta no histórico; `apois_qa_never_real_payment` ativo e guard na função `private.apois_qa_no_real_payment`: `v_id IS NULL OR NEW.merchant_id IS DISTINCT FROM v_id` | Aplicada e guard/triggers lidos; sem testes adversariais completos |
+| INV-024 | Migração `apois_inv024_visible_merchants_open_status_20261108` consta no histórico; RPC `apois_visible_merchant_order_status(uuid[])` acessível aos autenticados, consulta `merchant_accepting_orders` | RPC aplicada; client integrado em builders; sem teste de fuso/24h/cidade inativa |
+| INV-018 | `apois_inv018_restrict_anon_admin_rpc_execute_20261108` aplicada nesta continuação, a partir de `20261108_inv018_restrict_anon_admin_rpc_execute.sql` | 20/20 funções privilegiadas `public.admin_*` bloqueadas para `anon`; 20/20 preservadas para `authenticated` e `service_role`. Permanecem outras RPCs expostas para análise |
+
+A migração de ACL INV-018 foi primeiro testada com `BEGIN/ROLLBACK`; durante o teste todas as 20 funções perderam acesso anônimo. Após aplicação por ferramenta Supabase, nova consulta confirmou `anon=0/20`, `authenticated=20/20`, `service_role=20/20`. Os corpos das 20 funções já possuíam a validação `current_user_is_admin()`. **O alerta original de 113 funções `SECURITY DEFINER` acessíveis por `anon` não está totalmente encerrado**; uma parte é legítima RPC autenticada e outra exige revisão de ACL e de privilégio interno.
+
+### INV-031 — promoções sem cupom, somente preparadas
+
+Regra comercial preservada: promoção válida cadastrada pelo estabelecimento aparece automaticamente ao cliente, desconto aplicado ao pedido, sem exigir cupom, mas sem acumular com cupom explícito. Foram validadas a existência e conexão dos scripts `restore-entregas-auto-promotions-v3.mjs`, `connect-entregas-auto-promotions-v3.mjs` e da migração `20261108_auto_merchant_promotions_QA_NOT_APPLIED.sql`.
+
+Correções nesta continuação:
+- SQL de elegibilidade exige **produto E categoria**, quando ambos forem definidos (antes usava `OR`, divergente do helper do cliente);
+- limite de usos deixa de contabilizar pedido cancelado e ainda não pago, sem apagar registro histórico do resgate;
+- checkout solicita confirmação quando valor oficial do backend **difere para mais ou para menos** do estimado, antes da chamada ao provedor PIX, usando orderId e fingerprint idempotentes;
+- badge de oferta voltou à paleta âmbar APOIS, sem introduzir verde.
+- `verify-apois-report02-integrity-v1.mjs` atualizado para a nova proteção de preço.
+
+**Testes realmente efetuados:** compilação da migração SQL com `BEGIN/ROLLBACK`, sem manter RPC/trigger em produção; teste da função de desconto clonada a tabelas `pg_temp` dentro de `BEGIN/ROLLBACK`, com 9 pedidos sintéticos e asserções de total/desconto (percentual, valor fixo, produto/categoria incompatíveis, cupom pré-existente, uso limitado, liberação por cancelamento sem pagamento, mínimo por promoção, limite de total R$0,01 e repetição idempotente). Resultado: **9/9 cenários passaram**, com **5 resgates únicos**; os dados temporários e gatilhos temporários foram revertidos. Nenhum pedido, cobrança ou desconto real foi criado. Verificação pós-teste: `public.apois_available_merchant_promotions(uuid)` inexistente e `apois_automatic_promotion_checkout` inexistente no banco de produção. **INV-031 não está homologada nem habilitada**; testes de concorrência simultânea, checkout E2E, provider, autenticação e cancelamento depois de pagamento permanecem pendentes.
+
+### INV-033 — sacola e checkout
+
+`fix-entregas-persisted-cart-validation-v3.mjs` consulta catálogo, opções e grupos vigentes na restauração da sacola e bloqueia itens marcados indisponíveis. O código do checkout contém gate antes do PIX, aceitando total autoritativo apenas mediante conferência/consentimento em caso de divergência. **Não executar o verificador de integridade em isolamento como substituto de typecheck/build.** Ainda falta confirmar tratamento fail-closed de falha de rede durante revalidação, atualização quando o estabelecimento muda dados com app aberto e testes reais em telas.
+
+### INV-028 — Vercel
+
+A ferramenta Vercel listou os projetos `apois-entregas-estabelecimento`, `apois-estabelecimento-visual-preview` e `apois-entregas-visual-preview`. Porém, a consulta de deployments com escopo do projeto/equipe retornou **HTTP 403 (forbidden)**. Não foi possível atribuir a captura de texto pálido sobre fundo branco a uma URL/commit específica. **Não houve CSS alterado por presunção nem deploy.**
+
+### Outros bloqueios herdados do Relatório 01
+
+- INV-001: protocolo ausente na consulta paginada; INV-012: fallback de instalação `bun` e lint não bloqueante no builder de estabelecimento; INV-020: texto SQL com codificação incorreta; INV-010: pagamento Safe2Pay não homologado; INV-017: checagens de credenciais vazadas; INV-019: aliases não identificados.
+- Manter revisão de funções `SECURITY DEFINER` restantes, incluindo RPCs de pedidos, carteira, payouts e filas, com classificação pelo uso antes de revogar privilégios; autenticação, cidade e RLS exigem testes adversariais.
+- Testes ainda **não executados nesta continuação**: `bun install`, typecheck, lint, unitários completos do workspace, build full/Android, E2E autenticado, pagamento real, varredura funcional de todos os 34 achados. Os testes de SQL sintético não autorizam conclusão da homologação de produção.
+- Não foi criada branch Supabase (cobrança adicional dependeria de autorização de custo); não foi feito merge na `main`; não foi requisitada movimentação financeira.
+
+### Commits revisáveis desta continuação
+
+- `aa540aa0694c80276305b0c87c9197109d8886fc` — ACL das RPCs administrativas, migração aplicada após simulação.
+- `b422e380e5e7aa5102cd679656bac12419b44ceb` — elegibilidade e limite de promoções no SQL preparado.
+- `28c7282238f7a9294956124294424ed21b82554e` — confirmação de qualquer divergência de total servidor.
+- `5a065576317052c5cd3dfb6265f5caab9fe4e6e0` — verificador de integridade alinhado.
+- `ca15221f5a017aa1dfc93038e56590c3bbb265a6` — manutenção de contraste da marca no badge de promoção.
+
+**Conclusão parcial:** foram feitos commits reais, migração de ACL real e testes SQL sintéticos com rollback. Nenhum item deve receber status `A` até completar regressões, build e E2E. O Relatório 03 ainda **não deve ser solicitado**.
