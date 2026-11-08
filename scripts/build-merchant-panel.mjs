@@ -8,7 +8,7 @@ const workspace = resolve(root, '.work/entregas');
 function run(bin, args, options = {}) {
   const command = process.platform === 'win32' && bin === 'bun' ? 'bun.cmd' : bin;
   const cwd = options.cwd ?? root;
-  console.log(`[RUN] cwd=${cwd} :: ${command} ${args.join(' ')}`);
+  console.log(`[RUN] cwd=${cwd} :: ${command} (${args.length} argumentos; valores omitidos)`);
   const result = spawnSync(command, args, {
     cwd,
     env: options.env ?? process.env,
@@ -17,7 +17,7 @@ function run(bin, args, options = {}) {
   });
   if (result.error) throw result.error;
   const status = result.status ?? 1;
-  console.log(`[EXIT ${status}] ${command} ${args.join(' ')}`);
+  console.log(`[EXIT ${status}] ${command} (${args.length} argumentos; valores omitidos)`);
   if (status !== 0 && options.allowFailure !== true) process.exit(status);
   return status;
 }
@@ -33,15 +33,24 @@ if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
 
   console.log('[INFO] Inicializando submódulo de Entregas com token dedicado...');
   const authHeader = `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`;
+  // Git receives the Basic header through process environment, not argv or logs.
+  // Preserve any existing Git configuration injected by the build platform.
+  const existingCount = Number.parseInt(process.env.GIT_CONFIG_COUNT ?? '0', 10);
+  const configIndex = Number.isSafeInteger(existingCount) && existingCount >= 0 ? existingCount : 0;
   run('git', [
-    '-c',
-    `http.https://github.com/.extraheader=${authHeader}`,
     'submodule',
     'update',
     '--init',
     '--recursive',
     'sources/apois-entregas',
-  ]);
+  ], {
+    env: {
+      ...process.env,
+      GIT_CONFIG_COUNT: String(configIndex + 1),
+      [`GIT_CONFIG_KEY_${configIndex}`]: 'http.https://github.com/.extraheader',
+      [`GIT_CONFIG_VALUE_${configIndex}`]: authHeader,
+    },
+  });
 
   if (!existsSync(resolve(root, 'sources/apois-entregas/package.json'))) {
     console.error('[FAIL] Falha ao inicializar sources/apois-entregas mesmo com token configurado.');
