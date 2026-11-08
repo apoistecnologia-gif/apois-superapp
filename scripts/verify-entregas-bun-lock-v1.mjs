@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-function stripJsonTrailingCommas(input) {
+export function stripJsonTrailingCommas(input) {
   // Bun's text lock allows trailing commas. Preserve quoted strings verbatim.
   let output = "";
   let quoted = false;
