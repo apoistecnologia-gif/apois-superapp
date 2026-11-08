@@ -457,6 +457,7 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-search-results-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-coupon-metrics-v2.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-hours-24h-v2.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-cart-price-refresh-v2.mjs')]);
 }
 
 const config = manifest.modules[name];
