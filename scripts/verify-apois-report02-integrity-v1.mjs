@@ -20,6 +20,10 @@ if(role==="entregas"){
  const cart=file("src/contexts/CartContext.tsx");
  must(cart,["APOIS_CART_CURRENT_CATALOG_LINE_V2","toast.info(","selectedOptions, quantity: item.quantity + 1"],"cart");
  assert.ok(!cart.includes('item.lineId === lineId ? { ...item, quantity: item.quantity + 1 }'),"old stale merge still present");
+ const login=file("src/routes/login.tsx");
+ must(login,["APOIS_LOGIN_ACCESSIBILITY_V2",'htmlFor="apois-login-email"','htmlFor="apois-login-password"','name="email"','name="password"','grid h-11 w-11'],"login");
+ assert.equal(login.split('htmlFor="apois-login-email"').length-1,2,"Both login variants need associated email labels");
+ assert.equal(login.split('htmlFor="apois-login-password"').length-1,2,"Both login variants need associated password labels");
  const hours=file("src/lib/merchant-hours.ts");
  must(hours,["APOIS_MERCHANT_HOURS_24H_V2","interval.close === interval.open","Aberto 24 horas"],"hours");
 }else{
