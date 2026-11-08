@@ -73,6 +73,7 @@ if (!readFileSync(resolve(workspace, 'src/mobile.tsx'), 'utf8').includes('histor
 }
 
 run('bun', ['install'], workspace, env);
+run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'finance'], root, hardenerEnv);
 run('bun', ['run', 'typecheck'], workspace, env);
 run('bun', ['run', 'build:motorista'], workspace, env);
 run(process.execPath, [resolve(root, 'scripts/audit-motorista-release-surface.mjs')], root, env);
