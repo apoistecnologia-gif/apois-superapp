@@ -96,6 +96,7 @@ for (const script of [
   'fix-entregas-admin-coverage-consistency-v2.mjs',
   'fix-entregas-search-results-v2.mjs',
   'fix-entregas-coupon-metrics-v2.mjs',
+  'fix-entregas-merchant-hours-24h-v2.mjs',
   'fix-entregas-admin-orders-contrast-v1.mjs',
   'fix-entregas-admin-realtime-legibility-v1.mjs',
   'fix-entregas-admin-reviews-contrast-v1.mjs',
