@@ -433,6 +433,7 @@ if (name === 'corridas') {
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-support-legacy-route.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-merchant-image-mime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-apois-entregas-email-auth-v1.mjs')]);
