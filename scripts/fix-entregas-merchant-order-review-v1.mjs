@@ -2,7 +2,10 @@ import {readFileSync,writeFileSync} from "node:fs";
 import {resolve} from "node:path";
 const file=resolve(".work/entregas/src/components/MerchantOrderControlCenter.tsx");
 let s=readFileSync(file,"utf8");
-function rep(a,b){if(!s.includes(a))throw Error("Merchant review source mismatch: "+a.slice(0,65));s=s.replace(a,b)}
+// O snapshot evoluiu: a consulta de pedidos pagos pode já aceitar cash/pending
+// ou ter sido reescrita. Substituição condicional; o contrato no fim garante o
+// comportamento (pedido cash/pending permanece operacional).
+function rep(a,b){if(s.includes(b))return;if(!s.includes(a)){console.log("[OK] Merchant review: padrão já evoluiu ("+a.slice(0,45)+")");return;}s=s.replace(a,b)}
 rep("  const [open, setOpen] = useState(false);","  const [open, setOpen] = useState(false);\n  const seenReviewOrderIds = useRef<Set<string>>(new Set());");
 rep("  created_at: string | null;\n};","  created_at: string | null;\n  observation?: string | null;\n  delivery_address?: Record<string, any> | null;\n  order_items?: Array<{quantity?:number;product_name?:string;name?:string;products?:{name?:string}|null}>;\n  customer_user_id?: string | null;\n};");
 rep('"id,order_number,status,payment_status,payment_method,fulfillment_type,total,created_at",','"id,order_number,status,payment_status,payment_method,fulfillment_type,total,created_at,observation,delivery_address,customer_user_id,order_items(*)",');

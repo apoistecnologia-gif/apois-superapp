@@ -111,19 +111,24 @@ ok('Boundary financeiro final auditado: gateways antigos ficam fora dos fluxos a
 // Run the isolated callback simulations using the Bun already pinned by the WEB QA builder.
 // This WEB-only audit remains separate from the fail-closed Safe2Pay production gate.
 const { spawnSync } = await import('node:child_process');
-const cashCheck = spawnSync('bun', ['scripts/test-entregas-cash-create-order-isolated-v1.mjs'], { stdio: 'inherit' });
+// Windows: `bun` é um .cmd e spawnSync direto falha com ENOENT, o que fazia este
+// gate reprovar sem que o teste isolado tivesse qualquer problema. Usamos o
+// mesmo tratamento de build-product.mjs (shell no win32).
+const bunBin = process.platform === 'win32' ? 'bun.cmd' : 'bun';
+const bunOpts = { stdio: 'inherit', shell: process.platform === 'win32' };
+const cashCheck = spawnSync(bunBin, ['scripts/test-entregas-cash-create-order-isolated-v1.mjs'], bunOpts);
 if (cashCheck.error || cashCheck.status !== 0) {
   console.error('[FAIL] O teste isolado de pedido em dinheiro falhou; homologação CASH NÃO LIBERADA.');
   process.exit(1);
 }
 ok('Entregas: Edge real cash-only validada com mocks, sem API, pagamento ou banco real.');
-const replayCheck = spawnSync('bun', ['scripts/test-safe2pay-webhook-retry-v1.mjs'], { stdio: 'inherit' });
+const replayCheck = spawnSync(bunBin, ['scripts/test-safe2pay-webhook-retry-v1.mjs'], bunOpts);
 if (replayCheck.error || replayCheck.status !== 0) {
   console.error('[FAIL] Simulação isolada de reenvio Safe2Pay não passou.');
   process.exit(1);
 }
 ok('Safe2Pay: reenvio, zero registros e estornos simulados sem gravar em bancos reais.');
-const sandboxCheck = spawnSync('bun', ['scripts/test-safe2pay-environment-isolation-v1.mjs'], { stdio: 'inherit' });
+const sandboxCheck = spawnSync(bunBin, ['scripts/test-safe2pay-environment-isolation-v1.mjs'], bunOpts);
 if (sandboxCheck.error || sandboxCheck.status !== 0) {
   console.error('[FAIL] QA Safe2Pay sandbox isolation: a test configuration could reach live credentials.');
   process.exit(1);

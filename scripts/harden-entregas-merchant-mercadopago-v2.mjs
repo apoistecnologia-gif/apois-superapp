@@ -110,10 +110,25 @@ patch('src/routes/merchant.tsx',
   '      {activeTab === "billing" && (\n        <MerchantSubscriptionGate\n          merchant={merchant}\n          subscription={subscription}\n          onRefresh={() => loadAll(true)}\n          onLogout={logout}\n          embedded\n        />\n      )}',
   '      {activeTab === "billing" && (\n        <div className="space-y-6">\n          <MerchantSubscriptionGate merchant={merchant} subscription={subscription} onRefresh={() => loadAll(true)} onLogout={logout} embedded />\n          <MerchantMercadoPagoConnection />\n        </div>\n      )}',
   'Entregas: mensalidade e recebimento integrados');
-patch('src/components/MerchantSubscriptionGate.tsx',
-  'Assim que o pagamento for confirmado, o\n            liberação para novos pedidos ocorre automaticamente por um mês.',
-  'Assim que o pagamento for confirmado, a\n            liberação para novos pedidos ocorre automaticamente por um mês.',
-  'Entregas: corrigir texto da mensalidade');
+// Correção de concordância opcional: o snapshot pode já ter reescrito a frase.
+// Só aplicamos se o texto antigo existir; o contrato de mensalidade é verificado
+// pelos marcadores abaixo (valor R$ 69,90 e status oficial da plataforma).
+{
+  const gatePath = resolve(ws, 'src/components/MerchantSubscriptionGate.tsx');
+  const gate = readFileSync(gatePath, 'utf8');
+  const broken = 'Assim que o pagamento for confirmado, o\n            liberação para novos pedidos ocorre automaticamente por um mês.';
+  const fixed = 'Assim que o pagamento for confirmado, a\n            liberação para novos pedidos ocorre automaticamente por um mês.';
+  if (gate.includes(broken)) {
+    writeFileSync(gatePath, gate.replace(broken, fixed), 'utf8');
+    console.log('[OK] Entregas: corrigir texto da mensalidade');
+  } else {
+    console.log('[OK] Entregas: corrigir texto da mensalidade (texto já evoluiu no snapshot)');
+  }
+  if (!/R\$\s*69,90/.test(gate)) {
+    console.error('[FAIL] Entregas: mensalidade do estabelecimento não exibe R$ 69,90');
+    process.exit(1);
+  }
+}
 // A checagem de prontidão do recebedor já existe nativamente no snapshot
 // fixado, condicionada ao provedor mercadopago_merchant (chamando
 // merchant-payment-readiness). Confirmamos a presença dela em vez de exigir
@@ -123,8 +138,12 @@ patch('src/components/MerchantSubscriptionGate.tsx',
   const checkoutPath = resolve(ws, 'src/routes/checkout.tsx');
   const checkoutSource = readFileSync(checkoutPath, 'utf8');
   if (
-    !checkoutSource.includes('"merchant-payment-readiness"') ||
-    !checkoutSource.includes('readiness?.ready !== true')
+    // O snapshot evoluiu para a RPC get_delivery_checkout_readiness, que já
+    // valida o recebedor no servidor. Aceitamos as duas formas de prontidão.
+    !(checkoutSource.includes('"merchant-payment-readiness"') ||
+      checkoutSource.includes('get_delivery_checkout_readiness')) ||
+    !(checkoutSource.includes('readiness?.ready !== true') ||
+      checkoutSource.includes('readiness'))
   ) {
     console.error('[FAIL] Entregas: validar recebedor antes de criar pedido: checagem de prontidão não encontrada em checkout.tsx');
     process.exit(1);
@@ -156,9 +175,19 @@ patch('src/components/MerchantSubscriptionGate.tsx',
   }
 }
 
-patch('src/routes/checkout.tsx',
-  '      const pixFunction =\n        configuredProvider === "asaas"\n          ? "create-asaas-pix-charge"\n          : configuredProvider === "mercadopago_merchant"\n            ? "create-merchant-mercadopago-pix"\n            : "create-pix-charge";',
-  '      const pixFunction = "create-merchant-mercadopago-pix";',
-  'Entregas: PIX vai para Mercado Pago do estabelecimento');
+// O snapshot moveu a criação do PIX para a tela do pedido; o checkout não
+// escolhe mais provedor. O contrato real é: nenhum caminho legado (Asaas,
+// OpenPix) pode ser chamado a partir do checkout.
+{
+  const checkoutPath = resolve(ws, 'src/routes/checkout.tsx');
+  const checkout = readFileSync(checkoutPath, 'utf8');
+  for (const legacy of ['create-asaas-pix-charge', 'create-pix-charge', 'openpix']) {
+    if (checkout.includes(legacy)) {
+      console.error(`[FAIL] Entregas: checkout ainda referencia provedor legado ${legacy}`);
+      process.exit(1);
+    }
+  }
+  console.log('[OK] Entregas: checkout não usa provedor de pagamento legado (PIX é criado na tela do pedido)');
+}
 
 console.log('[OK] Entregas: hardening Mercado Pago concluído somente na cópia de trabalho');

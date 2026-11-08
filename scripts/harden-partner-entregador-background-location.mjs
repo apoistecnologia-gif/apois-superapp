@@ -60,18 +60,55 @@ const onlineAnchor = `        const { error: onlineError } = await rpc("set_cour
 const onlineReplacement = `        const { error: onlineError } = await rpc("set_courier_online", {\n          _is_online: true,\n        });\n        if (onlineError) throw onlineError;\n        if (isNativeCourierLocation()) {\n          let backgroundStarted = false;\n          try {\n            backgroundStarted = await startCourierNativeLocation();\n          } catch (backgroundError) {\n            if (import.meta.env.DEV) console.warn("courier foreground location bootstrap failed", backgroundError);\n          }\n          if (!backgroundStarted) {\n            await rpc("set_courier_online", { _is_online: false });\n            throw new Error("Não foi possível ativar a localização em segundo plano. Tente novamente antes de ficar online.");\n          }\n        }\n        setCurrentPosition(initialPosition);`;
 if (route.includes(onlineAnchor)) route = route.replace(onlineAnchor, onlineReplacement);
 
-route = route.replace(
-  `    await removeCourierPushRegistration();\n    await supabase.auth.signOut();`,
-  `    await stopCourierNativeLocation().catch(() => undefined);\n    await removeCourierPushRegistration();\n    await supabase.auth.signOut();`,
-);
-route = route.replace(
-  `        const { error } = await rpc("set_courier_online", { _is_online: false });\n        if (error) throw error;\n        setCurrentPosition(null);`,
-  `        const { error } = await rpc("set_courier_online", { _is_online: false });\n        if (error) throw error;\n        await stopCourierNativeLocation().catch(() => undefined);\n        setCurrentPosition(null);`,
-);
-route = route.replace(
-  `      await removeCourierPushRegistration().catch((pushError) => {`,
-  `      await stopCourierNativeLocation().catch(() => undefined);\n      await removeCourierPushRegistration().catch((pushError) => {`,
-);
+// Idempotente: o texto inserido contém o texto procurado, então um `replace`
+// cego prependia uma nova chamada a cada execução (2, 4, 6 cópias…). Só
+// aplicamos quando a chamada ainda não precede o alvo.
+function insertOnce(source, anchor, inserted, marker) {
+  if (source.includes(marker)) return source;
+  if (!source.includes(anchor)) return source;
+  return source.replace(anchor, inserted);
+}
+
+// Proximidade: a chamada de parada pode estar separada do alvo por linhas
+// inseridas por outros hardeners. Consideramos já aplicado se houver uma
+// chamada de stopCourierNativeLocation nos 500 caracteres anteriores ao alvo.
+function stopPrecedes(source, anchor) {
+  const at = source.indexOf(anchor);
+  if (at < 0) return false;
+  return source.slice(Math.max(0, at - 500), at).includes('stopCourierNativeLocation().catch');
+}
+
+{
+  const anchor = `    await removeCourierPushRegistration();\n    await supabase.auth.signOut();`;
+  if (!stopPrecedes(route, anchor)) {
+    route = insertOnce(
+      route,
+      anchor,
+      `    await stopCourierNativeLocation().catch(() => undefined);\n    await removeCourierPushRegistration();\n    await supabase.auth.signOut();`,
+      '\u0000never',
+    );
+  }
+}
+{
+  const anchor = `        const { error } = await rpc("set_courier_online", { _is_online: false });\n        if (error) throw error;\n        setCurrentPosition(null);`;
+  if (!stopPrecedes(route, anchor)) {
+    route = insertOnce(
+      route,
+      anchor,
+      `        const { error } = await rpc("set_courier_online", { _is_online: false });\n        if (error) throw error;\n        await stopCourierNativeLocation().catch(() => undefined);\n        setCurrentPosition(null);`,
+      '\u0000never',
+    );
+  }
+}
+{
+  const anchor = `      await removeCourierPushRegistration().catch((pushError) => {`;
+  if (!stopPrecedes(route, anchor)) {
+    route = route.replace(
+      anchor,
+      `      await stopCourierNativeLocation().catch(() => undefined);\n      await removeCourierPushRegistration().catch((pushError) => {`,
+    );
+  }
+}
 
 for (const marker of [
   'isNativeCourierLocation, startCourierNativeLocation, stopCourierNativeLocation',

@@ -43,14 +43,19 @@ const safeAssignments = `    const criticalOperationErrors = [availabilityRes.er
     if (!walletRes.error) setWallet(walletRes.data ?? null);`;
 if (source.includes(unsafeAssignments)) source = source.replace(unsafeAssignments, safeAssignments);
 
-source = source.replace(
-  `    setDeliveryHistory(historyRes.data ?? []);`,
-  `    if (historyRes.error) {
+// Idempotente: envolver `setDeliveryHistory` duas vezes aninhava blocos
+// `if/else` repetidos e o arquivo continuava sintaticamente válido, mas
+// crescia a cada execução. Só aplicamos quando o guarda ainda não existe.
+if (!source.includes('courier history refresh failed')) {
+  source = source.replace(
+    `    setDeliveryHistory(historyRes.data ?? []);`,
+    `    if (historyRes.error) {
       console.warn("courier history refresh failed", historyRes.error.message);
     } else {
       setDeliveryHistory(historyRes.data ?? []);
     }`,
-);
+  );
+}
 
 const statusCard = `        <CourierStatusCard
           online={online}

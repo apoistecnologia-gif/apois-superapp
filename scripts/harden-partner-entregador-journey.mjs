@@ -46,6 +46,9 @@ if (webBlockStart >= 0) {
     throw new Error('Entregador Parceiro: não foi possível isolar a leitura final de coords do bloco web original.');
   }
 
+  // Idempotente: se o bloco nativo já existe, não inserimos outro. Sem isto, o
+  // pipeline reaplicado prependia uma cópia do bloco a cada execução.
+  const alreadyPatched = source.includes('coords = nativePosition.coords;');
   const newBlock = `        let coords: {
           latitude: number;
           longitude: number;
@@ -89,7 +92,13 @@ ${webBlockAsElse}
           recordedAt: Date.now(),
         };`;
 
-  source = source.slice(0, webBlockStart) + newBlock + source.slice(webBlockEnd);
+  // Só reescreve o bloco quando o caminho nativo ainda não está presente.
+  // Reaplicar prependia uma cópia do bloco a cada execução do pipeline.
+  if (!alreadyPatched) {
+    source = source.slice(0, webBlockStart) + newBlock + source.slice(webBlockEnd);
+  } else {
+    console.log('[OK] Entregador Parceiro: bloco nativo de GPS já presente (jornada idempotente)');
+  }
 }
 
 const replacements = [

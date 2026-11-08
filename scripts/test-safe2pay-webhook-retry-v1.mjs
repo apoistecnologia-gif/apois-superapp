@@ -4,9 +4,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 const edge = readFileSync("supabase/functions/safe2pay-webhook/index.ts","utf8");
+// Normaliza CRLF: um checkout Windows converte a árvore de trabalho, e as
+// asserções abaixo usam indexOf com "\n". Sem isto o teste reprovava por fim de
+// linha, não por conteúdo — o SQL estava correto.
+const readSql = (path) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 const sql = {
-  rides: readFileSync("database/review/20261103_safe2pay_corridas_atomic_REVIEW_ONLY.sql","utf8"),
-  orders: readFileSync("database/review/20261103_safe2pay_entregas_atomic_REVIEW_ONLY.sql","utf8"),
+  rides: readSql("database/review/20261103_safe2pay_corridas_atomic_REVIEW_ONLY.sql"),
+  orders: readSql("database/review/20261103_safe2pay_entregas_atomic_REVIEW_ONLY.sql"),
 };
 let passed=0;
 async function check(label, fn) { await fn(); console.log("[OK] "+label); passed++; }
