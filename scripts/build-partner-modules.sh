@@ -68,6 +68,7 @@ node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 node "$ROOT/scripts/harden-motorista-embedded-hash-router.mjs"
+node "$ROOT/scripts/harden-motorista-feature-flags-rejection.mjs"
 
 cd "$MOTORISTA"
 require_contains 'history: createHashHistory()' src/mobile.tsx 'Motorista embutido segue as rotas hash do seletor Parceiro'
