@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync,existsSync} from "node:fs";
 import {resolve} from "node:path";
 const root=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||".work/entregas");
 const helperPath=resolve(root,"src/lib/apois-promotions.ts");
-const helper=String.raw\`import {supabase} from "@/integrations/supabase/client";
+const helper=String.raw`import {supabase} from "@/integrations/supabase/client";
 import type {CartItem} from "@/contexts/CartContext";
 
 export type ApoisPromotion = {
@@ -54,7 +54,7 @@ export function estimateAutomaticPromotion(
   }
   return best;
 }
-\`;
+`;
 if(existsSync(helperPath)){
  const s=readFileSync(helperPath,"utf8");
  if(s===helper){console.log("[OK] automatic promo helper already installed");}
