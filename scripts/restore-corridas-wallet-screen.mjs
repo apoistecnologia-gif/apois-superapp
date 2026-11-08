@@ -49,7 +49,7 @@ function CarteiraPage() {
     const requestId = ++feeRequest.current;
     setFees([]);
     if (!domainUserId) {
-      setFeesState(authState === "initializing" || authLoading ? "loading" : "failed");
+      setFeesState(authState === "initializing" || authState === "loading_profile" || authLoading ? "loading" : "failed");
       return;
     }
     setFeesState("loading");
