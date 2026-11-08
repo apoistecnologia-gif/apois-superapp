@@ -31,8 +31,8 @@ if(role==="entregas"){
  const store=file("src/routes/estabelecimento.$merchantId.tsx");
  must(store,["APOIS_AUTO_PROMOTIONS_CLIENT_V3","autoPromotions.filter(","menuCategoryId: product.menu_category_id","APOIS_MERCHANT_SERVER_STATUS_V3",'merchant_accepting_orders'],"store");
  const checkout=file("src/routes/checkout.tsx");
- must(checkout,["APOIS_AUTO_PROMOTIONS_CLIENT_V3","estimateAutomaticPromotion(","serverPriceReview","backendTotal>total+0.009","APOIS_CART_PERSISTED_REVALIDATION_V3","hasUnavailableItems"],"checkout");
- assert.ok(checkout.indexOf("backendTotal>total+0.009")<checkout.indexOf("const pixFunction ="),"backend price must be accepted before PIX provider is called");
+ must(checkout,["APOIS_AUTO_PROMOTIONS_CLIENT_V3","estimateAutomaticPromotion(","serverPriceReview","Math.abs(backendTotal-total)>0.009","APOIS_CART_PERSISTED_REVALIDATION_V3","hasUnavailableItems"],"checkout");
+ assert.ok(checkout.indexOf("Math.abs(backendTotal-total)>0.009")<checkout.indexOf("const pixFunction ="),"backend price must be accepted before PIX provider is called");
  const bag=file("src/routes/sacola.tsx");
  must(bag,["APOIS_CART_PERSISTED_REVALIDATION_V3","refreshCartCatalog()","item.isUnavailable"],"bag");
  must(cart,["APOIS_CART_PERSISTED_REVALIDATION_V3",'from as any)("products")','"product_option_groups"','catalogRequest.current',"isUnavailable:missing"],"persisted cart");
