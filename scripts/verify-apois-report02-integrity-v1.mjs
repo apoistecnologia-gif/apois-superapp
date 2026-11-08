@@ -24,6 +24,12 @@ if(role==="entregas"){
  must(login,["APOIS_LOGIN_ACCESSIBILITY_V2",'htmlFor="apois-login-email"','htmlFor="apois-login-password"','name="email"','name="password"','grid h-11 w-11'],"login");
  assert.equal(login.split('htmlFor="apois-login-email"').length-1,2,"Both login variants need associated email labels");
  assert.equal(login.split('htmlFor="apois-login-password"').length-1,2,"Both login variants need associated password labels");
+ const supportPage=file("src/routes/perfil/ajuda/chamado/$ticketId.tsx");
+ must(supportPage,["APOIS_SUPPORT_TICKET_DETAIL_V1",'body: { action: "detail", ticketId }',"data?.ticket?.id === ticketId"],"customer support detail page");
+ assert.ok(!supportPage.includes("tickets.find((item) => item.id === ticketId)"),"ticket detail must not scan a 50-item list");
+ const supportApi=file("supabase/functions/customer-support/index.ts");
+ must(supportApi,["APOIS_SUPPORT_TICKET_DETAIL_V1",'if (payload.action === "detail")','authClient.auth.getUser(token)','.eq("id", ticketId)','.eq("requester_user_id", authData.user.id)',"support_messages: (data.support_messages ?? []).filter((item) => !item.is_internal)"],"authorized support detail");
+ assert.ok(supportApi.indexOf('if (payload.action === "detail")')>supportApi.indexOf("authClient.auth.getUser(token)"),"detail must follow validated JWT");
  const hours=file("src/lib/merchant-hours.ts");
  must(hours,["APOIS_MERCHANT_HOURS_24H_V2","interval.close === interval.open","Aberto 24 horas"],"hours");
  const quotes=file("src/lib/apois-promotions.ts");
