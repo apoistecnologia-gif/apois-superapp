@@ -13,7 +13,7 @@ if(!src.includes("  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState
 src=src.replace("  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);","  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);\n  const [showCaseCenter,setShowCaseCenter]=useState(false);");
 const anchor='        {actionAvailability?.canCancel && (';
 if(!src.includes(anchor))throw Error("[FAIL] Ride case button anchor");
-src=src.replace(anchor,'        <button type="button" onClick={()=>setShowCaseCenter(true)} className="min-h-12 w-full rounded-xl border border-[#E00029]/45 bg-white/5 text-sm font-bold text-white">Reportar problema com esta corrida</button>\n'+anchor);
+src=src.replace(anchor,'        <button type="button" onClick={()=>setShowCaseCenter(true)} className="min-h-12 w-full rounded-xl border border-[#E00029]/45 bg-[#FFF1F2] text-sm font-bold text-[#991B1B]">Reportar problema com esta corrida</button>\n'+anchor);
 const modal='      <CancellationDialog\n';
 if(!src.includes(modal))throw Error("[FAIL] Case popup anchor");
 src=src.replace(modal,'      {showCaseCenter&&<div className="fixed inset-0 z-[999] overflow-y-auto bg-[#090B0E]"><ApoisCaseCenter initialRideId={ride.id} onClose={()=>setShowCaseCenter(false)}/></div>}\n'+modal);
