@@ -24,6 +24,10 @@ if(role==="entregas"){
  must(login,["APOIS_LOGIN_ACCESSIBILITY_V2",'htmlFor="apois-login-email"','htmlFor="apois-login-password"','name="email"','name="password"','grid h-11 w-11'],"login");
  assert.equal(login.split('htmlFor="apois-login-email"').length-1,2,"Both login variants need associated email labels");
  assert.equal(login.split('htmlFor="apois-login-password"').length-1,2,"Both login variants need associated password labels");
+ const orderHistory=file("src/routes/pedidos.tsx");
+ must(orderHistory,["APOIS_CUSTOMER_ORDERS_CURSOR_V1","ORDER_PAGE_SIZE+1","loadOlderOrders","cursorRef.current",".or(filter)","sortRecentOrders","Carregar pedidos anteriores","fetchOrders(false)"],"orders cursor pagination");
+ assert.ok(orderHistory.indexOf('order("id",{ascending:false})')>=0,"orders pagination needs deterministic tie-breaker");
+ assert.ok(!orderHistory.includes('orders.map((order) => (')||orderHistory.includes('Carregar pedidos anteriores'),"history must expose next-page navigation");
  const supportPage=file("src/routes/perfil/ajuda/chamado/$ticketId.tsx");
  must(supportPage,["APOIS_SUPPORT_TICKET_DETAIL_V1",'body: { action: "detail", ticketId }',"data?.ticket?.id === ticketId"],"customer support detail page");
  assert.ok(!supportPage.includes("tickets.find((item) => item.id === ticketId)"),"ticket detail must not scan a 50-item list");
