@@ -79,7 +79,7 @@ export function patchEditor(source){
     '{draft.price.trim() ? money(Number(draft.price) || 0) : "Preço não informado"}',
     "editor preview empty value");
   s=once(s,'                </label>\n              </section>\n\n              <section className="space-y-3',
-    '                </label>\n                <p className="text-sm leading-relaxed text-zinc-300">A imagem é gravada após o envio concluído, sem depender de Salvar dados do produto.</p>\n              </section>\n\n              <section className="space-y-3',
+    '                </label>\n                <p className="text-sm leading-relaxed text-zinc-300">A imagem é gravada após o envio concluído, sem depender de Salvar dados do produto. Salve antes alterações de nome, descrição ou preço que ainda estejam em edição.</p>\n              </section>\n\n              <section className="space-y-3',
     "image persistence explanation");
   s=once(s,'                <h3 className="font-black">Dados do produto</h3>',
     '                <h3 className="font-black">Dados do produto</h3>\n'+
