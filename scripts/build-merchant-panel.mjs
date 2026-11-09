@@ -134,6 +134,9 @@ run(process.execPath, [resolve(root, 'scripts/verify-entregas-bun-lock-v1.mjs'),
 run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-lock-v1.test.mjs')], {
   cwd: root, env: baseEnv,
 });
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-report02-transforms-v1.test.mjs')], {
+  cwd: root, env: baseEnv,
+});
 const frozenInstallStatus = run('bun', ['install', '--frozen-lockfile'], {
   cwd: workspace,
   env: baseEnv,
