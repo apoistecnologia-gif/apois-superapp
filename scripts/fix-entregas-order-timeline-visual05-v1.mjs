@@ -80,7 +80,7 @@ for (const marker of [
   '"Etapa concluída"', '"Etapa atual"', '"Etapa pendente"',
   'role="status"', 'aria-live="polite"',
   'order.status !== "delivered"',
-  'deliveryJob?.status === "arrived_destination"',
+  '["picked_up", "on_the_way", "arrived_destination"].includes(deliveryJob?.status ?? "")',
   'order.payment_status === "refunded"',
   'order.fulfillment_type === "pickup"',
   'customer_cancel_order',
