@@ -212,7 +212,11 @@ Deno.serve(async (req) => {
       if (!input.user_ids?.length || !input.title) {
         return json(req, { error: "admin_payload_incomplete" }, 422);
       }
-      finalUserIds = [...new Set(input.user_ids.filter(Boolean))].slice(0, 100);
+      // INV-043: não cortar a audiência silenciosamente.
+      if (!Array.isArray(input.user_ids) || input.user_ids.length > 100) {
+        return json(req, { error: "too_many_recipients", maximum: 100 }, 422);
+      }
+      finalUserIds = [...new Set(input.user_ids.filter((id): id is string => typeof id === "string" && id.length > 0))];
       finalTitle = input.title.slice(0, 100);
       finalBody = (input.body ?? "").slice(0, 500);
     } else {
@@ -251,10 +255,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: preferences } = await admin
+    const { data: preferences, error: preferencesError } = await admin
       .from("user_notification_preferences")
       .select("user_id,ride_updates,ride_requests")
       .in("user_id", finalUserIds);
+    if (preferencesError) throw new Error("notification_preferences_lookup_failed");
     const prefMap = new Map((preferences ?? []).map((preference) => [preference.user_id, preference]));
     const requestEvent = input.event === "driver.new_ride_request";
     const allowedUsers = finalUserIds.filter((userId) => {
@@ -262,11 +267,8 @@ Deno.serve(async (req) => {
       if (!preference) return true;
       return requestEvent ? preference.ride_requests !== false : preference.ride_updates !== false;
     });
-    if (!allowedUsers.length) {
-      return json(req, { ok: true, sent: 0, suppressed: finalUserIds.length }, 200);
-    }
-
-    // user_notification_tokens.user_id = auth.users.id (mesma identidade de rides.*_id)
+    // FKs de preferências, tokens e logs referenciam public.users(id).
+    // O AUTH ID autenticado e o ID do motorista não substituem DOMAIN USER ID.
     const { data: tokenRows, error: tokenError } = await admin
       .from("user_notification_tokens")
       .select("user_id,token")
@@ -274,17 +276,17 @@ Deno.serve(async (req) => {
       .eq("is_active", true)
       .eq("permission_status", "granted");
     if (tokenError) throw new Error(`notification_token_lookup_failed:${tokenError.message}`);
-    if (!tokenRows?.length) {
-      return json(req, { ok: true, sent: 0, no_tokens: allowedUsers.length }, 200);
-    }
-
-
-    const account = readServiceAccount();
-    const bearer = await accessToken(account);
+    // Sem dispositivos não há motivo para consultar Firebase.
+    const account = tokenRows?.length ? readServiceAccount() : null;
+    const bearer = account ? await accessToken(account) : null;
     let sent = 0;
-    const failures = new Set<string>();
+    let failedDevices = 0;
+    const outcomes = new Map<string, { sent: number; failed: number }>();
 
-    for (const row of tokenRows) {
+    for (const row of tokenRows ?? []) {
+      if (!account || !bearer) throw new Error("firebase_credentials_unavailable");
+      const outcome = outcomes.get(row.user_id) ?? { sent: 0, failed: 0 };
+      outcomes.set(row.user_id, outcome);
       const response = await fetch(
         `https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`,
         {
@@ -311,35 +313,59 @@ Deno.serve(async (req) => {
           }),
         },
       );
-      if (response.ok) sent += 1;
-      else {
-        failures.add(row.user_id);
-        // Token rejeitado pelo FCM (404/UNREGISTERED) -> desativar para não reenviar.
-        if (response.status === 404 || response.status === 400) {
-          await admin
-            .from("user_notification_tokens")
-            .update({ is_active: false })
-            .eq("token", row.token);
+      if (response.ok) {
+        sent += 1;
+        outcome.sent += 1;
+      } else {
+        failedDevices += 1;
+        outcome.failed += 1;
+        // O FCM devolve HTTP 400 também para payload inválido (google.rpc.BadRequest).
+        // Desativação somente com detalhe tipado FcmError.UNREGISTERED.
+        let failureBody: { error?: { details?: Array<Record<string, unknown>> } } | null = null;
+        try { failureBody = await response.json(); } catch { /* corpo não estruturado */ }
+        const unregistered = response.status === 404 &&
+          (failureBody?.error?.details ?? []).some((detail) =>
+            detail["@type"] === "type.googleapis.com/google.firebase.fcm.v1.FcmError" &&
+            detail.errorCode === "UNREGISTERED");
+        if (unregistered) {
+          const { error: deactivateError } = await admin.from("user_notification_tokens")
+            .update({ is_active: false }).eq("token", row.token);
+          if (deactivateError) console.error("[APOIS FCM] token_deactivation_failed");
         }
       }
     }
 
+    const suppressedIds = finalUserIds.filter((id) => !allowedUsers.includes(id));
+    const noTokenIds = allowedUsers.filter((id) => !outcomes.has(id));
+    const failedUsers = allowedUsers.filter((id) => {
+      const outcome = outcomes.get(id);
+      return !!outcome && outcome.sent === 0 && outcome.failed > 0;
+    });
+    const partialUsers = allowedUsers.filter((id) => {
+      const outcome = outcomes.get(id);
+      return !!outcome && outcome.sent > 0 && outcome.failed > 0;
+    });
     const { error: logError } = await admin.from("notification_logs").insert(
-      allowedUsers.map((userId) => ({
-        user_id: userId,
-        event: input.event,
-        channel: "fcm",
-        title: finalTitle,
-        body: finalBody || null,
-        data: { url: finalUrl || null },
-        ride_id: input.ride_id ?? null,
-        status: failures.has(userId) ? "failed" : "sent",
-      })),
+      finalUserIds.map((userId) => {
+        const outcome = outcomes.get(userId);
+        const status = suppressedIds.includes(userId) ? "suppressed"
+          : !outcome ? "no_token" : outcome.sent > 0 ? "sent" : "failed";
+        return {
+          user_id: userId, event: input.event, channel: "fcm", title: finalTitle,
+          body: finalBody || null, ride_id: input.ride_id ?? null, status,
+          data: { url: finalUrl || null, attempted: (outcome?.sent ?? 0) + (outcome?.failed ?? 0),
+            accepted: outcome?.sent ?? 0, failed: outcome?.failed ?? 0,
+            partial: partialUsers.includes(userId) },
+        };
+      }),
     );
-
     if (logError) console.error("[APOIS FCM] notification_log_failed", logError.message);
-
-    return json(req, { ok: failures.size === 0, sent, failed: failures.size }, 200);
+    return json(req, {
+      ok: failedDevices === 0, selected: finalUserIds.length, processed: finalUserIds.length,
+      attempted: tokenRows?.length ?? 0, sent, failed: failedDevices,
+      failed_users: failedUsers.length, partial_users: partialUsers.length,
+      no_tokens: noTokenIds.length, suppressed: suppressedIds.length,
+    }, 200);
   } catch (error) {
     console.error("[APOIS FCM]", error);
     return json(req, { error: "push_failed" }, 500);
