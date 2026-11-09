@@ -16,11 +16,13 @@ const paths = [
   'src/routes/sacola.tsx',
   'src/routes/checkout.tsx',
   'src/routes/pedidos.tsx',
+  'src/components/MerchantProductEditor.tsx',
 ];
 const scripts = [
   'scripts/fix-entregas-cart-price-refresh-v2.mjs',
   'scripts/fix-entregas-persisted-cart-validation-v3.mjs',
   'scripts/fix-entregas-customer-orders-pagination-v1.mjs',
+  'scripts/fix-entregas-merchant-product-image-reconciliation-v1.mjs',
 ];
 
 function runTransformer(script, workspace) {
@@ -53,6 +55,7 @@ test('pinned Entregas source accepts cart and history repair without source muta
     const sacola = readFileSync(resolve(workspace, paths[1]), 'utf8');
     const checkout = readFileSync(resolve(workspace, paths[2]), 'utf8');
     const pedidos = readFileSync(resolve(workspace, paths[3]), 'utf8');
+    const editor = readFileSync(resolve(workspace, paths[4]), 'utf8');
 
     assert.match(cart, /APOIS_CART_PERSISTED_REVALIDATION_V3/);
     assert.match(cart, /snapshot\.some\(item=>item\.merchantId!==merchant\.id\)/);
@@ -70,6 +73,12 @@ test('pinned Entregas source accepts cart and history repair without source muta
     assert.match(pedidos, /\.eq\("customer_user_id",user\.id\)/);
     assert.match(pedidos, /\.order\("id",\{ascending:false\}\)/);
     assert.match(pedidos, /\.or\(filter\)/);
+
+    assert.match(editor, /APOIS_MERCHANT_PRODUCT_IMAGE_RECONCILIATION_V1/);
+    assert.match(editor, /image\/jpeg/);
+    assert.match(editor, /\.select\("id, image_url"\)/);
+    assert.match(editor, /checked\.data\?\.image_url !== data\.publicUrl/);
+    assert.match(editor, /Never blindly delete this new file/);
 
     const copies = new Map(paths.map(relative => [
       relative, readFileSync(resolve(workspace, relative), 'utf8'),
