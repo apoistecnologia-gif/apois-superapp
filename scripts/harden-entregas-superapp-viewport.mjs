@@ -38,7 +38,7 @@ const files = [
 let touched = 0;
 let checked = 0;
 for (const relativePath of files) {
-  const path = resolve('.work/entregas', relativePath);
+  const path = resolve(process.env.APOIS_ENTREGAS_WORKSPACE || '.work/entregas', relativePath);
   if (!existsSync(path)) continue;
   checked += 1;
   const before = readFileSync(path, 'utf8');
