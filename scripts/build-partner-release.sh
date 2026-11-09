@@ -192,6 +192,10 @@ node --test "$ROOT/scripts/qa/test-partner-support-workroom-visual08-v1.test.mjs
 require_contains 'APOIS_CV08_CASE_WORKROOM_V1' "$MOTORISTA/src/components/ApoisCaseWorkroom.tsx" 'CV08 status/empty/error communication'
 require_contains 'caseStatusLabel(t.status)' "$MOTORISTA/src/components/ApoisCaseWorkroom.tsx" 'CV08 ticket status labels'
 require_contains 'ticketListLoaded&&!ticketListFailed' "$MOTORISTA/src/components/ApoisCaseWorkroom.tsx" 'CV08 error vs empty guard'
+# RV-09 / CV-027: focus management in existing V4 deletion modal only.
+node "$ROOT/scripts/fix-apois-account-deletion-visual09-v1.mjs" motorista
+require_contains 'APOIS_CV09_DRIVER_DELETION_DIALOG_V1' "$MOTORISTA/src/routes/motorista.configuracoes.tsx" 'CV09 Motorista dialog focus'
+require_contains 'APOIS_CV09_DELETION_FOCUS_V1' "$MOTORISTA/src/lib/useApoisDeletionDialogFocus.ts" 'CV09 shared focus guard'
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
