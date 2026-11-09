@@ -123,7 +123,8 @@ Deno.serve(async (req) => {
       return json(req, { ok: true, status: "expired", action: "expired", offered: 0 });
     }
 
-    if (mode === "redispatch" && rawRide.request_expires_at) {
+    // APOIS_REPORT07_DISPATCH_CAS_V1: protect active offers even after a lost initial response.
+    if (rawRide.request_expires_at) {
       const offerExpiresAt = new Date(rawRide.request_expires_at).getTime();
       const activeOfferIds = stringArray(rawRide.offered_driver_ids);
       if (Number.isFinite(offerExpiresAt) && offerExpiresAt > now && activeOfferIds.length > 0) {
@@ -233,6 +234,7 @@ Deno.serve(async (req) => {
       .eq("status", "procurar_motorista")
       .is("driver_id", null)
       .is("accepted_driver_id", null)
+      .eq("dispatch_attempts", Number(rawRide.dispatch_attempts ?? 0))
       .select("id,status,origin_name,destination_name")
       .maybeSingle();
 
