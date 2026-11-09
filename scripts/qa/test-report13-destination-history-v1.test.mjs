@@ -297,5 +297,9 @@ test("INV-066: existing recent service still deduplicates and caps twenty items"
   assert.equal(saved.length, 20);
   assert.equal(saved[0].placeId, "p:7");
   assert.equal(saved.filter((item) => item.placeId === "p:7").length, 1);
+  assert.equal(saved.some((item) => item.placeId === "p:19"), true);
+  addRecent.call({ getRecent: () => items }, sample({ placeId: "p:20", id: "newest" }));
+  assert.equal(saved.length, 20);
+  assert.equal(saved[0].placeId, "p:20");
   assert.equal(saved.some((item) => item.placeId === "p:19"), false);
 });
