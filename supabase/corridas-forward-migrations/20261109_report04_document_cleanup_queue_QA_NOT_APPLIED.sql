@@ -44,7 +44,8 @@ DECLARE
   v_queue_id uuid;
   v_complete boolean;
 BEGIN
-  IF current_user <> 'service_role' THEN
+  -- SECURITY DEFINER muda current_user para o owner da funcao; verificar o JWT da chamada.
+  IF coalesce(current_setting('request.jwt.claim.role',true),'') <> 'service_role' THEN
     RAISE EXCEPTION 'service_role_required' USING errcode='42501';
   END IF;
   IF _auth_id IS NULL OR _slot NOT IN
