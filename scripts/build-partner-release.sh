@@ -65,6 +65,7 @@ node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 node "$ROOT/scripts/harden-partner-motorista-payment-policy.mjs"
 # Relatorio 05: patch after native GPS utilities (imported by payment-policy).
 node "$ROOT/scripts/fix-report05-motorista-security-v1.mjs"
+node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push-runtime.mjs"
 node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
@@ -213,6 +214,8 @@ node "$ROOT/scripts/fix-partner-tanstack-error-boundary-v1.mjs"
 cd "$ROOT"
 node "$ROOT/scripts/fix-partner-driver-new-monthly-price-v1.mjs"
 node "$ROOT/scripts/qa/test-partner-driver-new-monthly-price-v1.mjs"
+# Recheck after later visual/hardener transforms before compiling.
+(cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
 bun run typecheck
 npm run build:motorista
