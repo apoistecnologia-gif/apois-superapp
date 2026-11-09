@@ -83,3 +83,27 @@ Prioridade de publicação futura: identificar exatamente a origem do login Esta
 - Preservados fluxo de avaliação, proteção de autoavaliação de homologação, oferta, PIN, mapas, GPS, política financeira, identidade visual e logomarca. Nada foi publicado.
 
 **Contagem visual atual: 15 registros CV-001–CV-015** (8 + 4 + 3), sem contar VIS-001 novamente (alias INV-047). **Classificação histórica técnica inalterada: 67; A 0 / B 46 / C 17 / D 0 / E 1 / G 3.** Não houve merge, deploy, APK, SQL ou pagamentos reais.
+
+
+## Achados visuais — rodada 04 (Cliente/Passageiro, VIS-017–019)
+
+**Relatório recebido:** `RELATORIO-VISUAL-04-APOIS-PASSAGEIRO-20261109(1).md`. Fontes verificadas na branch `audit/continuacao-20261107` e snapshot pinado `apoistecnologia-gif/say-hello-buddy-23-84b5dcbf@7b047f75a1a919a5336c0df6e0d60b14b02f2618`. A referência do relatório à branch `audit/ecossistema-20261107` não autorizou escrita nela.
+
+| CV | Origem | Prioridade | Tela | Evidência e intervenção | Estado / aceite |
+|---|---|---|---|---|---|
+| CV-016 | VIS-017 | P2 | Passageiro / busca destino | Botão X condicional tinha apenas `onClick={clearQuery}`. Overlay CV04 adiciona `aria-label="Limpar busca"`, `title`, `type=button`, área mínima 44×44px e foco visível; mantém callback/sugestões/input | **Implementado no gerador, não homologado no Android/TalkBack**; testar toque, composição, limpeza e sugestão posterior |
+| CV-017 | VIS-018 | P2 | Passageiro / revisão da solicitação | Render `key.replace` e `String(value)` podia exibir `true/false` e `[object Object]` em valores não triviais. Overlay CV04 usa apenas apresentação tipada: rótulos conhecidos do contrato de conforto, booleanos, arrays/objetos, fallback sem tradução comercial inventada e quebra de texto; `selectedCategory.details`, `confirmRide(comfort)`, total/payload permanecem intactos | **Parcial**: melhora genérica aplicada ao gerador e verificada em fixtures; dicionário de campos específicos de Fretes/Guincho/Envios **não fundamentado** porque `ServiceDetailsForm` do snapshot é placeholder e `RideCategory.details` é `any`, inicializado como `{}`. Não declarar categoria real validada |
+| CV-018 | VIS-019 | P2 (risco de UX) | Passageiro / resumo após conclusão | `fix-corridas-client-comfort-finish-v2.mjs` agenda `handleReturnHome` em **3200 ms** apenas para `completed` e ID correspondente | **Pendente de engenharia e homologação de leitura**, sem alteração no temporizador ou navegação; medir TalkBack, fontes ampliadas, recuperação de informações pelo histórico |
+
+### Evidências e proteção da rodada 04
+
+- Patcher visual: `scripts/fix-corridas-visual04-passenger-v1.mjs`, integrado **após** `fix-report09-pricing-checkout-v1.mjs` em `scripts/build-isolated-module.mjs`, apenas no workspace `.work/corridas`.
+- Testes versionados: `scripts/qa/test-corridas-visual04-passenger-v1.test.mjs`, com fixture, idempotência, source drift e controle de preservação do temporizador. Execução no checkout completo continua pendente.
+- Validações executadas em V8 com arquivos em memória: **8/8** sobre rotas reais pinadas (com `confirmRide(comfort)` simulado na camada visual), **17/17** abrangendo fixtures, rótulos/valores conhecidos e desconhecidos, booleanos, listas, objetos, estados vazios, callbacks, idempotência, source drift e verificação do timer; **6/6** checks após ajuste de quebra de texto na fixture. Estes grupos não equivalem a `node --test`, build, DOM, navegador ou aparelho.
+- Contratos verificados: `RideCategory.details` genericamente tipado no snapshot, `categoryService` retorna `details: {}`, `ServiceDetailsForm` não define campos reais de frete, guincho ou envios; `RideComfortPreferences` define `conversation`, `music`, `air_conditioning` com opções explícitas. O fallback **não inventa a tradução** de códigos desconhecidos nem mexe no envio.
+- Pendentes: montagem completa, typecheck, lint, screenshot de tela real, TalkBack, teclado, 320/360/390/412 px e paisagem, campos longos, dados reais por categoria, retorno à Home e acesso posterior ao histórico. INV-064–066 de seleção/confirmacão/persistência **não** são corrigidos por esses ajustes visuais.
+- Sem alterações de mapa/Places, Supabase, SQL, preço, pagamentos, login, ciclo da corrida, conclusão, contador de 3200 ms, notificações, fonte pinada ou dados de usuários.
+
+### Consolidação
+
+Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3). VIS-001 segue alias de INV-047, não contado; CV-006/VIS-007 continua fora da fila de defeitos ativos do código, com conferência física pendente. A matriz técnica mantém **67 achados; A 0 / B 46 / C 17 / D 0 / E 1 / G 3**, sem reclassificação. **Nenhum merge, deploy ou APK realizado**.
