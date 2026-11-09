@@ -65,6 +65,7 @@ $apois_report14_guard$;
 -- SECURITY DEFINER helpers which enforce auth.uid()/staff permission.
 -- Identity is the SNAPSHOT of drivers.user_id, not rides.driver_id at read time.
 CREATE TABLE public.apois_case_driver_participants (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id uuid NOT NULL REFERENCES public.passenger_support_tickets(id) ON DELETE CASCADE,
   driver_id uuid NOT NULL REFERENCES public.drivers(id),
   driver_user_id uuid NOT NULL REFERENCES public.users(id),
@@ -75,7 +76,6 @@ CREATE TABLE public.apois_case_driver_participants (
   revoked_at timestamptz,
   revoked_by_auth_id uuid,
   revoke_reason text,
-  PRIMARY KEY (ticket_id, driver_user_id),
   CONSTRAINT apois_case_driver_revocation_consistent CHECK (
     (revoked_at IS NULL AND revoked_by_auth_id IS NULL AND revoke_reason IS NULL)
     OR
@@ -83,13 +83,18 @@ CREATE TABLE public.apois_case_driver_participants (
      AND length(btrim(coalesce(revoke_reason,''))) BETWEEN 16 AND 500)
   )
 );
+-- Append-only grant history: revoked invitations remain auditable, and a
+-- later explicit re-grant inserts a new row rather than overwriting the old.
+CREATE UNIQUE INDEX apois_case_driver_participants_active_unique_idx
+  ON public.apois_case_driver_participants(ticket_id,driver_user_id)
+  WHERE revoked_at IS NULL;
 CREATE INDEX apois_case_driver_participants_active_lookup_idx
   ON public.apois_case_driver_participants(driver_user_id,ticket_id)
   WHERE revoked_at IS NULL;
 ALTER TABLE public.apois_case_driver_participants ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.apois_case_driver_participants FROM PUBLIC, anon, authenticated;
 COMMENT ON TABLE public.apois_case_driver_participants IS
-  'Report14: explicitly invited case drivers, immutable recipient at request; no automatic legacy backfill or current ride driver read grants.';
+  'Report14: explicit audited per-case driver invitations; revoked rows retained for review; no automatic legacy backfill or current ride driver read grants.';
 
 -- Keep former staff/passenger rights and exact 'none' semantics.
 -- Driver rights now require a staff-created participant and a statement request.
@@ -147,7 +152,7 @@ BEGIN
  FROM public.rides r
  JOIN public.drivers d ON d.id=r.driver_id
  WHERE r.id=v_case.ride_id
- FOR SHARE OF r;
+ FOR SHARE OF r,d;
  IF v_driver_id IS NULL OR v_driver_user_id IS NULL THEN
    RAISE EXCEPTION 'driver_not_assigned';
  END IF;
@@ -188,6 +193,7 @@ DECLARE
  v_case public.passenger_support_tickets%rowtype;
  v_user_id uuid;
  v_reason text := btrim(coalesce(_reason,''));
+ v_changed integer;
 BEGIN
  IF (SELECT auth.uid()) IS NULL OR NOT private.has_permission('support.read')
  THEN RAISE EXCEPTION 'forbidden'; END IF;
@@ -199,17 +205,15 @@ BEGIN
  IF NOT FOUND OR v_case.status NOT IN ('open','in_progress')
     OR v_case.ride_id IS NULL OR v_case.driver_response_requested_at IS NULL
  THEN RAISE EXCEPTION 'case_not_eligible'; END IF;
- SELECT d.user_id INTO v_user_id FROM public.drivers d WHERE d.id=_driver_id;
+ SELECT d.user_id INTO v_user_id FROM public.drivers d WHERE d.id=_driver_id FOR SHARE OF d;
  IF v_user_id IS NULL THEN RAISE EXCEPTION 'driver_not_found'; END IF;
 
  INSERT INTO public.apois_case_driver_participants
   (ticket_id,driver_id,driver_user_id,grant_kind,grant_reason,granted_by_auth_id)
  VALUES(_ticket_id,_driver_id,v_user_id,'staff_grant',v_reason,(SELECT auth.uid()))
- ON CONFLICT (ticket_id,driver_user_id) DO UPDATE
- SET driver_id=EXCLUDED.driver_id,
-     grant_kind='staff_grant',grant_reason=EXCLUDED.grant_reason,
-     granted_at=now(),granted_by_auth_id=(SELECT auth.uid()),
-     revoked_at=NULL,revoked_by_auth_id=NULL,revoke_reason=NULL;
+ ON CONFLICT (ticket_id,driver_user_id) WHERE revoked_at IS NULL DO NOTHING;
+ GET DIAGNOSTICS v_changed=ROW_COUNT;
+ IF v_changed <> 1 THEN RAISE EXCEPTION 'participant_already_active'; END IF;
 
  INSERT INTO public.apois_case_events
  (ticket_id,actor_user_id,actor_role,kind,message,visible_to_parties)
