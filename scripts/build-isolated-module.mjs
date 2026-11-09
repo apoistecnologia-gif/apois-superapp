@@ -440,6 +440,8 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-support-legacy-route.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-support-ticket-detail-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-merchant-image-mime.mjs')]);
+  // Report 1: replace fixed 100vh with dynamic mobile viewport before route transforms.
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-viewport.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-apois-entregas-email-auth-v1.mjs')]);
