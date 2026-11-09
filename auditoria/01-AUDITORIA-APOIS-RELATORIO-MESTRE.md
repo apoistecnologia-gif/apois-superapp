@@ -153,3 +153,7 @@ Nada foi declarado homologado sem execução.
 - O bloqueio 'Supabase sem conector' da seção 7 foi superado para inspeções e migrações controladas; não significa que existam contas sintéticas, aparelho físico ou autorização para cobranças reais.
 
 **Não encerrar a Fase 1:** ainda faltam D-004/D-005 em runtime, autenticação de todos os papéis, upload privado e imagens reais com contas de teste, GPS/push/teclado/rotação/safe area, Safe2Pay em simulação, types e baseline do banco com testes, além da validação do APK final. Nenhum reporte de conclusão pode usar somente teste de transformação ou SQL sintético.
+
+### Complemento — anexos de chamados (09/11/2026)
+
+- Foi confirmado por inspeção da tela Cliente/Admin e do banco real que `support-attachments` existia privado, porém sem políticas de objeto. Foi aplicada migração versionada `apois_report01_support_attachment_storage_20261109` com INSERT exclusivo do cliente dono do chamado aberto e SELECT restrito aos anexos registrados em mensagens visíveis ao cliente ou ao administrador. Simulação rollback e 8/8 testes de nomes de arquivo passaram; não há homologação com login real. O fluxo de limpeza de arquivos não associados e o uso de URLs assinadas no Android ainda exigem teste.
