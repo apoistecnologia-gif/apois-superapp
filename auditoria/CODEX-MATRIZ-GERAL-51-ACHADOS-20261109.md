@@ -245,3 +245,26 @@ Os **53 registros anteriores permanecem integralmente acima**, sem substituiçã
 **Evidência:** inventário Supabase e definições RPC efetivamente lidos (somente leitura); gerador do cliente exercitado duas vezes em fonte fixada, 9 testes sintéticos de motivo; helper de continuação Edge executado com fetch mockado (sucesso/503/offline) e 15 asserts isolados. Nenhuma função modificadora foi chamada. Testes Node versionados, Deno/typecheck, SQL staging, ambiente de homologação, Android, APK e produção **não executados**.
 
 **Restrição mantida:** não confundir código preparado com serviços implantados. Nenhum merge, nenhuma migração `QA_NOT_APPLIED`, nenhum disparo de corrida, SOS, push, pagamento ou modificação do snapshot. Homologação final somente mediante autorização expressa.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 08 (09/11/2026)
+
+Os **56 achados anteriores e seus registros permanecem integralmente preservados acima**, sem reclassificação ou reabertura da auditoria. O Relatório 08 (08/11/2026) inclui somente **INV-057**, relacionado ao aplicativo Passageiro.
+
+**Documento da execução:** `auditoria/CODEX-RELATORIO08-EXECUCAO-20261109.md`.  
+**Branch autorizada:** `audit/continuacao-20261107`.  
+**Snapshot fixado Passageiro:** `7b047f75a1a919a5336c0df6e0d60b14b02f2618`.
+
+| ID | Prioridade | Área | Estado | Correção e aceite restante |
+|---|---|---|---|---|
+| **INV-057** | **P1** | Corridas Passageiro / retorno à busca e troca de motorista | **B** | Criado `scripts/fix-report08-passenger-redispatch-v1.mjs`, conectado após o runtime hardener no build de Corridas. A validação passa a considerar `updated_at` com microssegundos, estado, `driver_id`, `accepted_at`, terminal e rideId, aceitando apenas novo ciclo legítimo A→busca sem motorista→B, inclusive quando evento intermediário da busca se perde. Eventos antigos, outro rideId, retorno após terminal/viagem iniciada e regressões indevidas permanecem bloqueados. Realtime ambíguo busca snapshot autenticado via `getRideById`, sem repetir o mesmo guard de evento. Teste Node versionado com fixture de fonte pinada; **não executado em checkout completo**. Fragmento real do hardener e gerador real exercitados em V8, idempotência confirmada, 20 cenários sintéticos PASS. Faltam typecheck, build, Realtime/polling real, E2E, rede variável, React e Android. |
+
+**Subtotal Relatório 08:** A 0 / B 1 / C 0 / D 0 / E 0 / G 0 = **1**.
+
+**Total consolidado 01–08:** A **0**, B **38**, C **15**, D **0**, E **1**, G **3** = **57 achados**.
+
+**Dependências:** INV-054 (G) e INV-055/056 (C) do Relatório 07 permanecem como antes: as operações de cancelamento, recusa e redistribuição não tiveram implantação completa comprovada. Não declarar E2E por teste de callback.
+
+**Restrições:** nenhum APK, homologação física, publicação, merge, chamada real de corrida, push, banco, migração `QA_NOT_APPLIED`, alterações comerciais ou edição dos snapshots. Somente o integrador Corridas e documentação foram alterados. Homologação final somente com autorização expressa do responsável.
