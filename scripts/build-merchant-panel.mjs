@@ -127,6 +127,13 @@ for (const script of [
   run(process.execPath, args);
 }
 
+// RV-07 / CV-024: only the final Merchant subscription gate's public fallback.
+// Existing gateway disabled, membership state, refresh and onLogout are unchanged.
+run(process.execPath, [resolve(root, 'scripts/fix-apois-financial-status-visual07-v1.mjs'), 'merchant']);
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-apois-financial-status-visual07-v1.test.mjs')]);
+if (!readFileSync(resolve(workspace, 'src/components/MerchantSubscriptionGate.tsx'), 'utf8').includes('APOIS_CV07_MERCHANT_STATUS_FALLBACK_V1')) {
+  throw new Error('[FAIL] CV07 Merchant monthly fallback missing');
+}
 run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 
 const baseEnv = {
