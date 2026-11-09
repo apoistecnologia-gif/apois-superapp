@@ -579,6 +579,11 @@ if (name === 'entregas') {
 for (const command of [config.install, config.build]) {
   const [bin, ...args] = command;
   run(bin, args, { cwd, env });
+  if (name === 'corridas' && command === config.install) {
+    run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-reverse-geocode-live-v1.test.mjs')], { cwd: root, env });
+    // Fail the passenger Android/web build on TypeScript regressions, not just on Vite bundling.
+    run('bun', ['run', 'typecheck'], { cwd, env });
+  }
 }
 
 if (name === 'corridas' && protectedCorridasMapRuntimeAfterVisual) {
