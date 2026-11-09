@@ -62,6 +62,7 @@ run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'entregas
 run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), 'entregas']);
 // Shared Cliente login/home imports require the official APOIS brand data module.
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-brand-assets.mjs')]);
+run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-viewport.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-address-ux.mjs')]);
