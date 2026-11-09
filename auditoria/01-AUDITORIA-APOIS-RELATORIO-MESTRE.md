@@ -133,3 +133,23 @@ Todo o material reutiliza evidências já produzidas nas Fases 1–11: relatóri
 - Duplicidades dentro de telas logadas não observáveis.
 
 Nada foi declarado homologado sem execução.
+
+## 10. Retificação e execução posterior da Fase 1 — 09/11/2026
+
+**Esta seção atualiza o diagnóstico de 08/11 sem apagar evidências históricas do commit 96732c55.** A situação antiga na seção 7 não deve ser interpretada como estado atual dos bancos conectados.
+
+### Armazenamento (APOIS-001/007 e documentos)
+- Em leitura direta do Supabase de Entregas ptgkwyyolrdgnqketkjj, foram encontrados os buckets avatars, product-images, merchant-assets, merchant-documents, courier-documents e support-attachments, todos já com MIME e limite de tamanho configurados. Portanto não falta criar esses buckets no banco atual. Faltavam políticas específicas de upload em merchant-assets e políticas de INSERT/SELECT nos buckets privados de documentos.
+- Corrigidas e aplicadas, depois de ensaios SQL BEGIN/ROLLBACK, as migrações: apois_report01_merchant_assets_manager_insert_20261109 (INSERT limitado à loja e logo/capa, 8/8 formatos sintéticos) e apois_report01_private_kyc_storage_policy_20261109 (4 políticas privadas por papel/titularidade, 12/12 formatos sintéticos). Políticas relidas após produção. Nenhuma alteração/exclusão de documento real foi feita.
+- O handler de logo/capa do estabelecimento agora tem gerador isolado fix-entregas-merchant-assets-v1.mjs, integrado nos dois builders, caminho versionado, MIME verificado e confirmação do URL no banco em resposta perdida; não apaga cegamente a imagem anterior. Teste de aplicação de geradores em arquivos pinados passou em memória, mas nenhum upload autenticado foi executado.
+
+### Motorista — histórico e cadastros
+- OBS-011: o histórico real pinado tinha limite de 50 corridas, sem paginação. Gerador fix-motorista-history-cursor-v1.mjs integrado ao build Motorista e Parceiro, com consulta paginada por (created_at,id) e identidade do motorista. Validação de transformação em memória em duas passadas, mais teste SQL temporário com 105/105 corridas acessíveis em três páginas, 0 duplicações, 0 acesso às 13 de outro motorista. Falta build e teste Android.
+- D-004 e D-005 continuam abertos à homologação: foi lido o código da tela de cadastro e histórico do pin, mas não houve reprodução em navegador/Android com sessão real. A paginação OBS-011 não deve ser confundida com a correção comprovada de tela branca ou tela que some.
+
+### Entradas, pagamento e release
+- O antigo supabase/functions/process-superapp-refund/index.ts do integrador foi inspecionado: atualmente responde via retiredProvider em modo RETIRED_FAIL_CLOSED; não executa mais o código financeiro histórico. Não reativar o endpoint sem revisão do novo fluxo Safe2Pay.
+- O PIN de Entregas tinha lock Bun sem duas dependências Capacitor para login Google. Foi criado reconciliador minimalista para a cópia .work, com integridades conferidas em cinco locks independentes, conectado a ambos os builders e com testes de fixture escritos. Simulação dos objetos originais confirmou 0 diferença após reparo, idempotência e proteção contra adulteração. Sem executar Bun frozen, esse item não está homologado.
+- O bloqueio 'Supabase sem conector' da seção 7 foi superado para inspeções e migrações controladas; não significa que existam contas sintéticas, aparelho físico ou autorização para cobranças reais.
+
+**Não encerrar a Fase 1:** ainda faltam D-004/D-005 em runtime, autenticação de todos os papéis, upload privado e imagens reais com contas de teste, GPS/push/teclado/rotação/safe area, Safe2Pay em simulação, types e baseline do banco com testes, além da validação do APK final. Nenhum reporte de conclusão pode usar somente teste de transformação ou SQL sintético.
