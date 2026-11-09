@@ -147,3 +147,99 @@ test("CV-027/028: fail-closed versioning, preserved source-lock and integration 
   assert.equal(lock.sources.corridas_passageiro.commit,"7b047f75a1a919a5336c0df6e0d60b14b02f2618");
   assert.equal(lock.sources.corridas_motorista_admin.commit,"9fc171050d8b5703540c49d19a8f1e9f5162775f");
 });
+
+
+test("CV-027: keyboard focus is contained and returns to its opener (mock DOM, not browser)", () => {
+  // Compile only the hook's TypeScript annotations away for a dependency-free DOM mock.
+  // This deliberately exercises the actual helper source, not a reimplemented algorithm.
+  let js = read("scripts/templates/useApoisDeletionDialogFocus.ts");
+  js = js.replace(/^import .+\n/, "")
+    .replace('export function useApoisDeletionDialogFocus(open: boolean) {',
+      'function useApoisDeletionDialogFocus(open) {')
+    .replace(/useRef<HTMLElement \| null>\(null\)/g, "useRef(null)")
+    .replace(/useRef<HTMLButtonElement \| null>\(null\)/g, "useRef(null)")
+    .replace(/const hidden: Array<\{[^}\n]+\}> = \[\];/g, "const hidden = [];")
+    .replace("let current: HTMLElement = dialog;", "let current = dialog;")
+    .replace("const parent: HTMLElement = current.parentElement;", "const parent = current.parentElement;")
+    .replace(/querySelectorAll<HTMLElement>\(/g, "querySelectorAll(")
+    .replace(/\(event: KeyboardEvent\)/g, "(event)")
+    .replace(/\(event: FocusEvent\)/g, "(event)");
+  class MockNode {
+    constructor(name) {
+      this.name = name;
+      this.children = [];
+      this.parentElement = null;
+      this.attrs = new Map();
+      this.disabled = false;
+      this.clickCount = 0;
+      this.isConnected = true;
+    }
+    add(node) { node.parentElement = this; this.children.push(node); return node; }
+    contains(node) { for(let n=node;n;n=n.parentElement) if(n===this) return true; return false; }
+    getAttribute(key) { return this.attrs.has(key) ? this.attrs.get(key) : null; }
+    setAttribute(key,value) { this.attrs.set(key,value); }
+    removeAttribute(key) { this.attrs.delete(key); }
+    hasAttribute(key) { return this.attrs.has(key); }
+    querySelectorAll() { return this.children; }
+    getClientRects() { return [1]; }
+    focus() { doc.activeElement=this; for(const listener of doc.listeners.focusin||[]) listener({target:this}); }
+    click() { this.clickCount++; }
+  }
+  const body = new MockNode("body");
+  const root = body.add(new MockNode("root"));
+  const background = root.add(new MockNode("background"));
+  const trigger = background.add(new MockNode("trigger"));
+  const overlay = root.add(new MockNode("overlay"));
+  const dialog = overlay.add(new MockNode("dialog"));
+  const cancel = dialog.add(new MockNode("cancel"));
+  const input = dialog.add(new MockNode("input"));
+  const confirm = dialog.add(new MockNode("confirm"));
+  const doc = {
+    body, activeElement: trigger, listeners:{},
+    addEventListener(type, callback) {
+      this.listeners[type] ??= [];
+      this.listeners[type].push(callback);
+    },
+    removeEventListener(type, callback) {
+      this.listeners[type] = this.listeners[type].filter(item=>item!==callback);
+    },
+  };
+  const refs = [{current:dialog},{current:cancel}];
+  let cleanup = null;
+  const hook = new Function("useEffect","useRef","document","HTMLElement","Node",
+    js + "\nreturn useApoisDeletionDialogFocus;")(
+      callback => { cleanup = callback(); },
+      () => refs.shift(),
+      doc, MockNode, MockNode,
+    );
+  hook(true);
+  assert.equal(doc.activeElement, cancel, "initial focus should be Cancel, not Delete");
+  assert.equal(background.hasAttribute("inert"), true);
+  assert.equal(background.getAttribute("aria-hidden"), "true");
+  const press = (key,shiftKey=false) => {
+    let prevented = false;
+    for(const handler of doc.listeners.keydown||[])
+      handler({ key, shiftKey, preventDefault(){ prevented=true; } });
+    return prevented;
+  };
+  doc.activeElement = confirm;
+  assert.equal(press("Tab"), true);
+  assert.equal(doc.activeElement, cancel, "Tab wraps from last to first");
+  doc.activeElement = cancel;
+  assert.equal(press("Tab", true), true);
+  assert.equal(doc.activeElement, confirm, "Shift+Tab wraps from first to last");
+  press("Escape");
+  assert.equal(cancel.clickCount, 1, "Escape delegates only to Cancel");
+  assert.equal(confirm.clickCount, 0);
+  doc.activeElement = trigger;
+  for(const handler of doc.listeners.focusin||[]) handler({target:trigger});
+  assert.equal(doc.activeElement, cancel, "background focus returns to dialog");
+  assert.equal(typeof cleanup, "function");
+  cleanup();
+  assert.equal(background.hasAttribute("inert"), false);
+  assert.equal(background.hasAttribute("aria-hidden"), false);
+  assert.equal(doc.activeElement, trigger, "focus returns to opener");
+  assert.deepEqual(doc.listeners.keydown, []);
+  assert.deepEqual(doc.listeners.focusin, []);
+  assert.ok(input, "input remains available in dialog");
+});
