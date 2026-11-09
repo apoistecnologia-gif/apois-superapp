@@ -73,6 +73,8 @@ Essas verificações são sintéticas/isoladas e **não comprovam renderização
 - `0e06cba9c8dd1a29929a2897d9bf59dd98c512dc` — inclusão da suíte Node de mocks.
 - `198f65566c37bacab65cee71f46d1916b88fbb8b` — trava de recálculo anterior após falha até novo sucesso.
 - `c9a1c3d9974e4ed4ca8a3400e3f05c14d38e7e86` — casos adicionais de rota e GPS na suíte.
+- `4031e0da8dad3a3159e0ab7ace8b84825b29fb4c` — guardas atualizadas via `useLayoutEffect` e latch de erro migrado para estado React, evitando mutação de referências durante a renderização.
+- `a6d62312001caf90bb03a85883c915bf98d7f734` — suíte de rota alinhada ao latch React; os sete cenários foram repetidos e aprovados no V8 isolado.
 
 Todos no repositório integrador; `main` e repositórios-fonte protegidos não foram modificados.
 
