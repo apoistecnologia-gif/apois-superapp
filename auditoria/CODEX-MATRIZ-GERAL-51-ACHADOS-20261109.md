@@ -328,3 +328,23 @@ Os **62 registros anteriores (Relatórios 01–10), suas notas, estados e evidê
 **Verificações reais:** interpretação do gerador com arquivo fixado de Motorista somente em memória, 12 comparações estruturais e 13 testes de comportamento isolado de `requestCode`, `verifyCode` e `onChange` com serviço/Auth simulados e endereços `example.invalid`. Não houve `node --test` no checkout, builder, React, Android, APK, envio de e-mail, alteração de senha, acesso a conta, deploy, migração ou SQL. Os testes sintéticos não comprovam a recuperação real no celular.
 
 **Pendências anteriores intactas:** INV-054 G, INV-055 C, INV-056 C e INV-061 C. Todas as migrações `QA_NOT_APPLIED` permanecem não aplicadas. Nenhum merge, nenhuma edição de fonte protegida, nenhuma mudança comercial, visual ou financeira. A homologação final continua bloqueada até a autorização expressa do responsável.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 12 (09/11/2026)
+
+Todos os **63 registros anteriores e suas evidências permaneceram integralmente preservados**. Esta fase acrescenta INV-064 e INV-065 a partir de `RELATORIO-12-APOIS-DESTINO-E-ESCOLHA-NO-MAPA-20261109(1).md`. Execução documentada em `auditoria/CODEX-RELATORIO12-EXECUCAO-20261109.md`. Branch autorizada `audit/continuacao-20261107`.
+
+| ID | Prioridade | Área | Estado | Correção versionada, evidências e limites |
+|---|---|---|---|---|
+| **INV-064** | **P2** | Corridas Passageiro / normalizador Places | **B** | `harden-corridas-destination-search-runtime.mjs` passou a exigir `lat/lng` numéricos, finitos e dentro de -90/+90 e -180/+180 antes de produzir `DestinationAddress`. `null`, vazio, string numérica e fora de faixa não passam; 0,0 numérico é legítimo. Mantém Edge autenticada, cancelamento, timeout e cache que não guarda respostas vazias. Guarda extraída do código gerado e testada com fixtures. Não se afirmou que o provedor real entrega esses dados; falta build, integração e testes reais. |
+| **INV-065** | **P1** | Corridas Passageiro / escolher destino ou parada no mapa | **B** | Novo gerador `fix-report12-destination-map-v1.mjs` adiciona observação de câmera estável na instância já existente de `PassengerMap` (Google Maps JS e Capacitor nativo); monta o mapa na escolha e impede auto-fit durante a seleção. O botão confirma coordenadas reais do pin, reutiliza `geocodingService.resolvePickupAddress`, valida endereço/posição antes de `handleFinalSelection`, `addToHistory` ou `saveAddress`; suporta destino, parada e favoritos sem falso sucesso. Fonte `map_selection` tipada, sem lugar Google fictício. Mapa movido, endereço não identificado e duplo clique falham sem seleção incorreta. **14 contratos de integração sintética e 21 verificações de callbacks/coordenadas passaram em V8;** suíte Node com nove testes preparada e conectada ao builder, não executada. Falta React/Google Maps/Android real, typecheck e E2E. |
+
+**Subtotal Relatório 12:** A 0 / B **2** / C 0 / D 0 / E 0 / G 0 = **2 novos registros**.
+
+**Total consolidado dos Relatórios 01–12: A 0 / B 45 / C 16 / D 0 / E 1 / G 3 = 65 achados.**
+
+**Integridade do pipeline:** o gerador INV-065 entra **depois** da verificação de pureza visual e do corretor de GPS, mas **antes** de capturar `protectedCorridasMapRuntimeAfterVisual`. Assim a verificação final continua comparando o runtime protegido contra sua baseline funcional correta. Nenhum guard foi removido nem relaxado; `main`, fontes pinadas e Entregas intactos. `INV-054 G`, `INV-055 C`, `INV-056 C` e `INV-061 C` mantidos como estavam.
+
+**Não realizados:** Node test completo, build Vite, typecheck, React, mapa efetivo, consulta paga, aplicativo Android, solicitação de corrida, migração, APK, merge ou deploy. Todos os `QA_NOT_APPLIED` seguem NÃO APLICADOS. Nenhum achado antigo foi reclassificado sem nova evidência. Homologação apenas após autorização expressa.
