@@ -63,6 +63,8 @@ node "$ROOT/scripts/harden-partner-motorista-rating-handoff.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 node "$ROOT/scripts/harden-partner-motorista-payment-policy.mjs"
+# Relatorio 05: patch after native GPS utilities (imported by payment-policy).
+node "$ROOT/scripts/fix-report05-motorista-security-v1.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push.mjs"
 node "$ROOT/scripts/harden-partner-motorista-push-runtime.mjs"
 node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
