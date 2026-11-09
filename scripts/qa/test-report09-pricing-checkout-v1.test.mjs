@@ -149,6 +149,37 @@ test("INV-058/059: A-B-A não fica em loading por cache de sucesso anterior", as
   assert.equal(h.state.estimates[0].estimatedPrice, 22);
 });
 
+test("INV-060: comparador real rejeita destino/parada antiga, falha e GPS relevante", () => {
+  const source = read("src/hooks/use-route.tsx");
+  const token = "  const routeIsCurrent = Boolean(";
+  const start = source.indexOf(token);
+  const end = source.indexOf(");\n", start);
+  assert.ok(start >= 0 && end > start);
+  const expression = source.slice(start + token.length, end);
+  const check = vm.runInNewContext(
+    "(route, location, destination, orderedStops, status, routeFailureRef) => Boolean(" +
+      expression + ")",
+  );
+  const route = {
+    origin: { lat: -9.39, lng: -40.50 },
+    destination: { lat: -9.40, lng: -40.51 },
+    intermediates: [{ lat: -9.41, lng: -40.52 }],
+  };
+  const location = { latitude: -9.39, longitude: -40.50 };
+  const destination = { latitude: -9.40, longitude: -40.51 };
+  const stops = [{ latitude: -9.41, longitude: -40.52 }];
+  const failed = { current: false };
+  assert.equal(check(route, location, destination, stops, "success", failed), true);
+  assert.equal(check(route, location, { ...destination, latitude: -9.50 }, stops, "debouncing", failed), false);
+  assert.equal(check(route, location, destination, [{ ...stops[0], longitude: -40.54 }], "loading", failed), false);
+  assert.equal(check(route, { ...location, latitude: -9.3901 }, destination, stops, "debouncing", failed), true);
+  assert.equal(check(route, { ...location, latitude: -9.392 }, destination, stops, "loading", failed), false);
+  failed.current = true;
+  assert.equal(check(route, location, destination, stops, "loading", failed), false);
+  failed.current = false;
+  assert.equal(check(route, location, destination, stops, "failed", failed), false);
+});
+
 test("INV-060: três camadas e confirmação aplicam gates explícitos", () => {
   const route = read("src/hooks/use-route.tsx");
   const checkout = read("src/hooks/use-checkout-preparation.tsx");
