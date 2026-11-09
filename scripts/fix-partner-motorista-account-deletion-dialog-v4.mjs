@@ -67,7 +67,7 @@ const modal=[
   "            <section role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"driver-delete-dialog-title\"",
   "              className=\"max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-t-[26px] border border-[#E5E7EB] bg-white px-5 pb-[max(26px,env(safe-area-inset-bottom))] pt-5 text-[#111827] shadow-2xl sm:rounded-[26px]\">",
   "              <h2 id=\"driver-delete-dialog-title\" className=\"text-[20px] font-black text-[#991B1B]\">Solicitar exclusão da conta</h2>",
-  "              <p className=\"mt-3 text-sm font-medium leading-6 text-[#374151]\">Esta ação impedirá o uso do perfil APOIS Motorista após a confirmação pelo servidor. Registros de corridas, pagamentos e documentos poderão ser retidos quando exigidos por lei ou necessários à segurança e ao exercício de direitos.</p>",
+  "              <p className=\"mt-3 text-sm font-medium leading-6 text-[#374151]\">Esta solicitação afeta sua conta APOIS Corridas, compartilhada pelos perfis Motorista e Passageiro. Após a confirmação pelo servidor, você deixará de acessar ambos os perfis de Corridas, mesmo que utilize apenas o Motorista. O servidor registra a solicitação de exclusão, sem apagar imediatamente todos os dados. Registros de corridas, pagamentos e documentos poderão ser retidos por obrigação legal, segurança ou exercício de direitos.</p>",
   "              <p className=\"mt-3 text-sm font-semibold text-[#111827]\">Para confirmar, digite EXCLUIR:</p>",
   "              <input type=\"text\" value={deletePhrase} disabled={deleting} autoCapitalize=\"characters\" autoComplete=\"off\" spellCheck={false}",
   "                onChange={(event) => setDeletePhrase(event.target.value)} placeholder=\"EXCLUIR\" aria-label=\"Digite EXCLUIR para confirmar\"",
@@ -94,6 +94,11 @@ const posSignout=src.indexOf('await supabase.auth.signOut({ scope: "local" });',
 if(posOpen<0||posRpc<posOpen||posSignout<posRpc)throw Error("[FAIL] delete RPC/signout order changed");
 for(const forbidden of ["window.confirm(", "window.prompt(", 'functions.invoke("delete-my-account"']) {
   if(src.includes(forbidden))throw Error("[FAIL] Legacy destructive delete path remains: "+forbidden);
+}
+if (!src.includes("APOIS Corridas, compartilhada pelos perfis Motorista e Passageiro") ||
+    !src.includes("deixará de acessar ambos os perfis de Corridas") ||
+    src.includes("Esta ação impedirá o uso do perfil APOIS Motorista após a confirmação")) {
+  throw Error("[FAIL] Delete V4 disclosure does not describe shared Corridas account");
 }
 if(!src.includes('onClick={() => void handleDeleteAccount()}') || !src.includes('aria-modal="true"') ||
    !src.includes('deletePhrase.trim() !== "EXCLUIR"'))throw Error("[FAIL] Delete dialog contract incomplete");
