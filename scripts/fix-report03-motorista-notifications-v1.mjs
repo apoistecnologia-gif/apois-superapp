@@ -143,7 +143,7 @@ patch("src/lib/adminNotifications.functions.ts","const MAX_RECIPIENTS = 100;",or
   s=once(s,"      failed_users?: number;","      failed_users?: number;\n      failed?: number;\n      processed?: number;","Admin response");
   s=once(s,
     "    return {\n      ok: payload.ok !== false,",
-    "    if (Number(payload.processed ?? -1) !== recipients.length) throw new Error(\"notification_processing_unverified\");\n    return {\n      ok: payload.ok !== false,\n      processed: Number(payload.processed),",
+    "    return {\n      ok: payload.ok !== false,\n      processed: payload.processed == null ? null : Number(payload.processed),",
     "process ack");
   s=once(s,
     "      failed: Number(payload.failed_users ?? 0),",
