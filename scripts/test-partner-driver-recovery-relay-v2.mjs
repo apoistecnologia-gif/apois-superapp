@@ -66,7 +66,13 @@ assert.ok(recoveryForm.includes("APOIS_DRIVER_RECOVERY_EMAIL_OTP_V5"),"Motorista
 assert.ok(recoveryForm.includes('supabase.auth.verifyOtp({'),"OTP verification must use Supabase Auth");
 assert.ok(recoveryForm.includes('type: "recovery"'),"OTP type must be recovery");
 assert.ok(recoveryForm.includes('token: sanitizedCode'),"Numeric user code must be verified");
-assert.ok(recoveryForm.includes('email: parsed.data.email.trim().toLowerCase()'),"OTP must be bound to the provided email");
+// V11 snapshots the validated recipient before async verification and checks
+// it still matches the successful code request. Do not demand the obsolete inline form.
+assert.ok(recoveryForm.includes('const verifyingEmail = parsed.data.email.trim().toLowerCase()') &&
+  recoveryForm.includes('email: verifyingEmail') &&
+  recoveryForm.includes('sentTo !== verifyingEmail') &&
+  recoveryForm.includes('isCurrentVerification()'),
+  "OTP must stay bound to the requested recipient across asynchronous verification");
 assert.ok(recoveryForm.includes('to: "/motorista/redefinir-senha", replace: true'),"OTP must navigate only on verified session");
 assert.ok(recoveryForm.includes('data-apois-driver-recovery-otp-input-v5'),"Numeric OTP form must be rendered");
 assert.ok(recoveryForm.includes('autoComplete="one-time-code"'),"Android numeric OTP autofill must be available");
