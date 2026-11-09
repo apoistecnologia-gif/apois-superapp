@@ -35,7 +35,8 @@ function harness(patched,rpc){
     .replace(/\(seconds:number\)/g,"(seconds)")
     .replace(/\(event:KeyboardEvent<HTMLDivElement>\)/g,"(event)")
     .replace(/\(c:any\)/g,"(c)")
-    .replaceAll("(supabase as any)","supabase");
+    .replaceAll("(supabase as any)","supabase")
+    .replaceAll("querySelectorAll<HTMLButtonElement>","querySelectorAll");
   const hooks=[],effects=[];
   const useState=(initial)=>{
     const index=hooks.length;
