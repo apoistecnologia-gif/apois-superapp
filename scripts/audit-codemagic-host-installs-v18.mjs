@@ -86,12 +86,19 @@ if (modulesRaw) {
     fail('Corridas deve continuar exigindo o lockfile protegido válido');
   } else ok('Corridas continua com --frozen-lockfile');
 
-  // O snapshot protegido de Entregas possui package.json mais novo que seu bun.lock:
-  // @capacitor/app e @capacitor/browser estão no package.json e não no lock versionado.
-  // Como a cópia .work é descartável, permitimos ao Bun reconciliar o lock somente nela.
-  if (entregasInstall !== JSON.stringify(['bun', 'install'])) {
-    fail('Entregas deve reconciliar o lockfile inconsistente somente na cópia .work');
-  } else ok('Entregas instala sem --frozen-lockfile apenas na cópia isolada .work');
+  // INV-012 reconcilia SOMENTE o lock de .work/entregas antes da instalação;
+  // a instalação agora usa --frozen-lockfile e rejeita drift de dependências.
+  const isolatedBuilder = read('scripts/build-isolated-module.mjs');
+  const reconcileMarker = 'reconcile-entregas-bun-lock-v1.mjs';
+  const verifyMarker = 'verify-entregas-bun-lock-v1.mjs';
+  const installMarker = 'const config = manifest.modules[name];';
+  if (entregasInstall !== JSON.stringify(['bun', 'install', '--frozen-lockfile'])) {
+    fail('Entregas deve instalar com --frozen-lockfile após reconciliação isolada');
+  } else if (!isolatedBuilder.includes(reconcileMarker) ||
+             !isolatedBuilder.includes(verifyMarker) ||
+             isolatedBuilder.indexOf(reconcileMarker) > isolatedBuilder.indexOf(installMarker)) {
+    fail('Entregas: reconciliação e verificação do lock precisam ocorrer antes da instalação');
+  } else ok('Entregas reconcilia/verifica lock somente em .work antes de instalar com --frozen-lockfile');
 
   if (motoristaInstall !== JSON.stringify(['bun', 'install', '--frozen-lockfile'])) {
     fail('Motorista deve continuar exigindo o lockfile protegido válido');
