@@ -45,7 +45,7 @@ DECLARE
   v_complete boolean;
 BEGIN
   -- SECURITY DEFINER muda current_user para o owner da funcao; verificar o JWT da chamada.
-  IF coalesce(current_setting('request.jwt.claim.role',true),'') <> 'service_role' THEN
+  IF (SELECT auth.jwt()->>'role') IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'service_role_required' USING errcode='42501';
   END IF;
   IF _auth_id IS NULL OR _slot NOT IN
@@ -92,8 +92,8 @@ BEGIN
   VALUES(_auth_id,d.id,_slot,_bucket,_path,v_state)
   ON CONFLICT(bucket_id,object_path) DO UPDATE
      SET last_checked_at=clock_timestamp(),status=excluded.status
-     WHERE public.apois_driver_document_cleanup_requests.owner_auth=excluded.owner_auth
-       AND public.apois_driver_document_cleanup_requests.driver_id=excluded.driver_id
+     WHERE owner_auth=excluded.owner_auth
+       AND driver_id=excluded.driver_id
   RETURNING id INTO v_queue_id;
   IF v_queue_id IS NULL THEN RAISE EXCEPTION 'reconcile_owner_mismatch'; END IF;
 
