@@ -56,8 +56,11 @@ function replaceOnce(s, before, after, label) {
   return s.replace(before, after);
 }
 if (original.includes(marker)) {
-  for (const check of [").catch((cause) => {", "[retryNonce]", "Tentar novamente"]) {
+  for (const check of [").catch((cause) => {", "Tentar novamente"]) {
     if (!original.includes(check)) throw Error("[FAIL] Histórico Motorista: patch parcial");
+  }
+  if (!original.includes("[retryNonce]") && !original.includes("[retryNonce, filter, customFrom, customTo]")) {
+    throw Error("[FAIL] Histórico Motorista: dependências do retry ausentes");
   }
   console.log("[OK] Histórico Motorista: recuperação de falhas já existente");
 } else {
