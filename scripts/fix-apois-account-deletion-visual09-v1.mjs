@@ -1,5 +1,5 @@
 // APOIS RV-09 / CV-027–028: presentation-only overlays in disposable workspaces.
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
