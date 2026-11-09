@@ -26,6 +26,13 @@ for (const item of changes) {
 
   if (original.includes(item.newer)) {
     // Idempotente. O hardener deve preservar as demais alterações.
+  } else if (
+    item.path === 'src/components/MerchantProductEditor.tsx'
+    && original.includes('APOIS_MERCHANT_PRODUCT_IMAGE_RECONCILIATION_V1')
+    && original.includes('"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"')
+    && original.includes('if (!extension) return toast.error("Envie uma imagem JPG, PNG ou WEBP.");')
+  ) {
+    // Downstream INV-015 handler has stronger MIME enforcement; preserve its patch.
   } else if (original.includes("APOIS_MERCHANT_IMAGE_MIME_V1")) {
     throw Error("[FAIL] Entregas: transformação MIME parcialmente alterada em " + item.path);
   } else if (original.split(item.old).length === 2) {
