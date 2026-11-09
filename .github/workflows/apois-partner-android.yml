@@ -23,6 +23,7 @@ on:
       - 'scripts/fix-report04-driver-center-v1.mjs'
       - 'scripts/harden-partner-motorista-native-utilities.mjs'
       - 'scripts/fix-report05-motorista-security-v1.mjs'
+      - 'scripts/fix-partner-courier-offer-focus-ts-v1.mjs'
 
 permissions:
   contents: read
