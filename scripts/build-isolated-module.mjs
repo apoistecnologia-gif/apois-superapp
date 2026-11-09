@@ -352,6 +352,8 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-request-timeout.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-eligibility-no-gateway.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
+  // Report 1: GPS address must use a deployed and quota-gated reverse-geocoding route.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-reverse-geocode-live-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-oauth-callback-handoff.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-payment-methods.mjs')]);
