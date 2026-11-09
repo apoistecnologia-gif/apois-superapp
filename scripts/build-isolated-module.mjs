@@ -439,6 +439,9 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-apois-vehicle-incidents-v1.mjs'), 'corridas']);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-dispatch-ux-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-auth-wallet-domain-v2.mjs')]);
+  // Relatório 09 / INV-058–060: geração de preço e coerência na confirmação.
+  run(process.execPath, [resolve(root, 'scripts/fix-report09-pricing-checkout-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report09-pricing-checkout-v1.test.mjs')]);
 }
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
