@@ -134,8 +134,8 @@ patch('supabase/functions/send-ride-push/index.ts', (source) => {
   if (next.includes(oldProfileAdminBlock)) next = next.replace(oldProfileAdminBlock, newProfileAdminBlock);
 
   next = next.replace(
-    '      if (input.user_ids.length > 100) return json(req, { error: "too_many_recipients", maximum: 100 }, 422);\n      finalUserIds = [...new Set(input.user_ids.filter(Boolean))];',
-    '      finalUserIds = await normalizeRecipientDomainIds(admin, input.user_ids);',
+    '      finalUserIds = [...new Set(input.user_ids.filter(Boolean))].slice(0, 100);',
+    '      if (input.user_ids.length > 100) return json(req, { error: "too_many_recipients", maximum: 100 }, 422);\n      finalUserIds = await normalizeRecipientDomainIds(admin, input.user_ids);',
   );
 
   const oldActorBlock = `      const ride = data as RideRow;\n      const isPassenger = callerId === ride.passenger_id;\n      const isDriver = callerId === ride.driver_id;\n      const allowedActor = rule.actor === "driver" ? isDriver : isPassenger || isDriver;`;
