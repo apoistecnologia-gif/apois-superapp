@@ -455,6 +455,16 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/fix-report09-pricing-checkout-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report09-pricing-checkout-v1.test.mjs')]);
   // CV-016/017: visual-only last-mile presentation on the transformed Corridas workspace.
+  // RV-09 / CV-027: Passenger deletion dialog already mounted by its existing hardener.
+  // Apply only the focus/isolation layer; never change the deletion RPC or auth.
+  run(process.execPath, [resolve(root, 'scripts/fix-apois-account-deletion-visual09-v1.mjs'), 'passageiro']);
+  for (const [relative, marker] of [
+    ['src/components/profile/PassengerAccountDeletion.tsx', 'APOIS_CV09_PASSENGER_DELETION_DIALOG_V1'],
+    ['src/lib/useApoisDeletionDialogFocus.ts', 'APOIS_CV09_DELETION_FOCUS_V1'],
+  ]) {
+    if (!readFileSync(resolve(root, '.work/corridas', relative), 'utf8').includes(marker))
+      throw new Error('[FAIL] CV09 Passenger deletion focus not mounted: ' + relative);
+  }
   // VIS-019 is documented for future authorized engineering review; the 3200ms timer is immutable here.
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-visual04-passenger-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-visual04-passenger-v1.test.mjs')]);
