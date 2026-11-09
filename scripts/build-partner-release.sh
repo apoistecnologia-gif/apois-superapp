@@ -306,6 +306,11 @@ node "$ROOT/scripts/verify-partner-available-calls-v1.mjs" entregador
 # Courier: keep same server-backed actions; move diagnostics under Perfil and complete available calls visual.
 node "$ROOT/scripts/fix-partner-courier-operational-actions-v2.mjs"
 node "$ROOT/scripts/verify-partner-courier-operational-actions-v2.mjs"
+# CV-009..012: late, source-locked visual-only corrections on the FINAL courier UI.
+node "$ROOT/scripts/fix-partner-courier-visual02-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-courier-visual02-v1.test.mjs"
+require_contains 'APOIS_CV02_COURIER_ACTIVE_V1' "$ENTREGADOR/src/components/CourierPremiumViews.tsx" 'Entregador retirada verbalizada e alvos acessiveis'
+require_contains 'data-apois-cv02-offer-dialog' "$ENTREGADOR/src/components/CourierOfferOverlay.tsx" 'Oferta semantica e altura limitada'
 require_contains 'APOIS_COURIER_PROFILE_EDIT_V1' "$ENTREGADOR/src/components/CourierPanels.tsx" 'Perfil e contatos do entregador editáveis'
 require_contains 'data-apois-courier-history-light-v1' "$ENTREGADOR/src/components/CourierPanels.tsx" 'Histórico de entregas em contraste claro'
 require_contains 'APOIS_COURIER_SIMPLE_FLOW_V1' "$ENTREGADOR/src/components/CourierPremiumViews.tsx" 'Entregador com coleta e PIN como únicas ações da entrega'
