@@ -42,10 +42,6 @@ export function applyGeneratedCorridasTypecheck(root=process.cwd()){
    ['user?.user_metadata?.avatar_url','user?.user_metadata?.["avatar_url"]',"metadata index signature avatar"],
    ['user?.user_metadata?.picture','user?.user_metadata?.["picture"]',"metadata index signature picture"],
  ]],
- ["routes/_authenticated.perfil.tsx",[
-   ['user?.user_metadata?.avatar_url','user?.user_metadata?.["avatar_url"]',"profile metadata avatar key"],
-   ['user?.user_metadata?.picture','user?.user_metadata?.["picture"]',"profile metadata picture key"],
- ]],
  ["services/geocoding/geocoding-service.ts",[
    ['if (Array.isArray(part["types"]) &&\n          types.some((type) => part["types"].includes(type))) {',
     'const partTypes = part["types"];\n        if (Array.isArray(partTypes) &&\n          types.some((type) => partTypes.includes(type))) {',
@@ -65,6 +61,22 @@ export function applyGeneratedCorridasTypecheck(root=process.cwd()){
  // The server can return expired; a string comparison must stay executable even
  // when the older generated ActiveRide input narrows that state prematurely.
  // This is a type-level compatibility adjustment, never a change of terminal behavior.
+ // Profile fallback may use . or ?. after user_metadata; require both keys
+ // and convert only their index-signature access (never the typed profile fields).
+ const profileRel="routes/_authenticated.perfil.tsx";
+ const profilePath=resolve(dir,profileRel);
+ const profileBefore=readFileSync(profilePath,"utf8");
+ let profileAfter=profileBefore;
+ if(!profileBefore.includes(MARK)){
+   let avatarCount=0, pictureCount=0;
+   profileAfter=profileBefore.replace(/user_metadata(\?\.|\.)(avatar_url|picture)\b/g,
+     (_,access,key)=>{
+       if(key==="avatar_url")avatarCount++; else pictureCount++;
+       return "user_metadata"+access+'["'+key+'"]';
+     });
+   if(avatarCount!==1 || pictureCount!==1)throw Error("[TS-GATE] profile metadata index signature drift "+avatarCount+"/"+pictureCount);
+   profileAfter="// "+MARK+"\n"+profileAfter;
+ }
  const hookRel="hooks/rides/use-active-ride.tsx";
  const hookPath=resolve(dir,hookRel);
  const hookBefore=readFileSync(hookPath,"utf8");
@@ -76,7 +88,12 @@ export function applyGeneratedCorridasTypecheck(root=process.cwd()){
        patched++;
        return "String("+name+".status) "+operator+" \"expired\"";
      });
-   if(patched<2 || patched>5)throw Error("[TS-GATE] unexpected server-expired comparisons="+patched);
+   // The terminal helper also receives legacy RideStatus typings. Compare the
+   // actual incoming string, retaining the server-confirmed expired branch.
+   const terminal="status === \"expired\" || status.startsWith(\"cancelada\")";
+   if(hookAfter.split(terminal).length!==2)throw Error("[TS-GATE] terminal guard drift");
+   hookAfter=hookAfter.replace(terminal,'String(status) === "expired" || status.startsWith("cancelada")');
+   if(patched<1 || patched>5)throw Error("[TS-GATE] unexpected server-expired comparisons="+patched);
    hookAfter="// "+MARK+"\n"+hookAfter;
  }
  const plans=specs.map(([rel,changes])=>{
@@ -86,6 +103,7 @@ export function applyGeneratedCorridasTypecheck(root=process.cwd()){
   if(applyText(after,changes,rel)!==after)throw Error("[TS-GATE] non-idempotent "+rel);
   return {rel,path,before,after};
  });
+ plans.push({rel:profileRel,path:profilePath,before:profileBefore,after:profileAfter});
  plans.push({rel:hookRel,path:hookPath,before:hookBefore,after:hookAfter});
  for(const p of plans)if(p.before!==p.after)writeFileSync(p.path,p.after,"utf8");
  return plans.map(p=>p.rel);
