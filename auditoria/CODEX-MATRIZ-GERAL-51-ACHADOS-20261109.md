@@ -204,3 +204,23 @@ A **matriz histórica de 48 itens foi preservada acima integralmente**. Acrescen
 **Verificação efetiva:** simulação de dois scripts sobre arquivos TSX reais do snapshot, 39/39 verificações sintéticas de helper/classificador/compartilhamento, gerador idempotente; **não foi executado** build, typecheck completo, captura de tela, chamada SOS, ligação ou compartilhamento externo. Supabase Corridas consultado somente para leitura do contrato do RPC, sem migração. A expressão `QA_NOT_APPLIED` preserva bloqueio de produção.
 
 **Continuidade:** sem testes físicos até o usuário autorizar formalmente a homologação geral; novos relatórios podem ser recebidos sem reabrir os achados já registrados. B e C não significam homologação nem conclusão de implantação.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 06 (09/11/2026)
+
+A **matriz histórica de 51 achados foi preservada integralmente acima**. Esta seção incorpora os dois achados do Relatório 06 (08/11/2026), sem reclassificar os 51 anteriores. Documento de execução: `auditoria/CODEX-RELATORIO06-EXECUCAO-20261109.md`. Fonte fixada Motorista/Admin `9fc171050d8b5703540c49d19a8f1e9f5162775f`; integrador branch `audit/continuacao-20261107`.
+
+| ID | Prioridade | Área | Estado | Correção implementada e limite de aceite |
+|---|---|---|---|---|
+| **INV-052** | P2 | Corridas Motorista / recibo PDF | **B** | Gerador de recibo diferencia ausente e zero, permite estimado quando preço final é null e não exibe distância/duração ausentes como zero. O rótulo distingue estimativa e não afirma pagamento confirmado. Cartão do histórico usa conversão coerente. Teste isolado do gerador com fonte pinada e 10 casos numéricos em runtime V8; testes Node versionados, typecheck, renderização PDF e Android ainda não executados. |
+| **INV-053** | P2 | Corridas Motorista / histórico e resumo | **B** | Complementa a paginação existente do OBS-011: filtro do período no servidor, cursor estável por `(created_at,id)`, 50+1 por página e total financeiro do período obtido em lotes read-only independentes da lista. Consulta limitada a 10.000 linhas para proteção de custo; ao atingir teto, resumo fica **explicitamente parcial**. A busca textual opera só sobre linhas carregadas, com divulgação clara. Simulação dos três scripts em duas passadas, sete gates de código e 0/1/50/51/500 registros sintéticos passaram; falta validação no PostgREST/RLS, typecheck, concorrência, UI e Android. |
+
+**Subtotal Relatório 06:** A 0, B 2, C 0, D 0, E 0, G 0 = **2**.
+
+**Total consolidado 01–06:** A **0**, B **37** (35+2), C **13**, D **0**, E **1**, G **2** = **53 achados**.
+
+**Limitações e bloqueios mantidos:** não foi realizado `node --test` no checkout completo, instalação, compilação, PDF renderizado, E2E no banco, APK, homologação física, deploy ou merge. Não houve migração `QA_NOT_APPLIED`, escrita em produção, alteração de ledger ou dados pessoais. Verificações V8 sobre fontes pinadas não substituem esses gates. Os estados B/C não significam homologação.
+
+**Continuidade:** aguardar Relatório 07 ou posterior. Homologação final somente após frase de autorização expressa do responsável.
