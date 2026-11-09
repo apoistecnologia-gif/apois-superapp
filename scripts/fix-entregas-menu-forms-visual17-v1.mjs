@@ -94,9 +94,7 @@ export function patchEditor(source){
   s=once(s,'                  Salvar produto\n                </Button>',
     '                  Salvar dados do produto\n                </Button>',
     "save scope caption");
-  s=once(s,'                     Configure escolhas obrigatórias, extras e acréscimos de preço.',
-    '                     Configure escolhas obrigatórias, extras e acréscimos de preço.',
-    "option instruction invariant");
+  check(s,["Configure escolhas obrigatórias, extras e acréscimos de preço."],"option instructions");
   s=once(s,'              {loadingOptions ? (\n',
     '              <p className="mt-2 text-sm leading-relaxed text-zinc-300">Grupos e opções são gravados separadamente após cada ação concluída. Fechar esta janela não desfaz alterações já salvas.</p>\n'+
     '              {loadingOptions ? (\n',
