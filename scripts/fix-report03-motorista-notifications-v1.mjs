@@ -117,6 +117,11 @@ patch("src/components/notifications/NotificationPreferencesPage.tsx","channelErr
     "    setSaved(false);\n    setError(null);\n    setChannelError(null);\n  }\n\n  async function onSave()",
     "partial UI reset");
   s=once(s,
+    "{perm.permission === \"granted\" && \"O app pode enviar alertas mesmo quando estiver em segundo plano.\"}",
+    "{perm.permission === \"granted\" && \"Permissão concedida. A entrega também depende do registro do token deste aparelho.\"}",
+    "native permission status text");
+
+  s=once(s,
     "      await savePreferences(prefs);\n      invalidatePreferencesCache();\n      setSavedPrefs(prefs);\n      setSaved(true);",
     [
       "      const persisted = await savePreferences(prefs);",
