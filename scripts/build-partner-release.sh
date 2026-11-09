@@ -240,6 +240,10 @@ bun install --frozen-lockfile
 node "$ROOT/scripts/fix-partner-tanstack-error-boundary-v1.mjs"
 cd "$ROOT"
 node "$ROOT/scripts/fix-partner-driver-new-monthly-price-v1.mjs"
+# RV-07 / CV-023: presentation-only status mapping after contract price resolver.
+node "$ROOT/scripts/fix-apois-financial-status-visual07-v1.mjs" motorista
+node --test "$ROOT/scripts/qa/test-apois-financial-status-visual07-v1.test.mjs"
+require_contains 'APOIS_CV07_DRIVER_MEMBERSHIP_STATUS_V1' "$MOTORISTA/src/routes/motorista.assinatura.tsx" 'CV07 Motorista status displayed safely'
 node "$ROOT/scripts/qa/test-partner-driver-new-monthly-price-v1.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
