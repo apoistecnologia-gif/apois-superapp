@@ -97,3 +97,9 @@ Fonte: consulta somente de metadados a `pg_proc` no Supabase Corridas `tbbzkrfup
 - Nenhuma RPC de saque chamada; nenhuma movimentação, estorno, pagamento, chave PIX ou saldo alterado.
 - Com mais três revogações, total de funções SECURITY DEFINER anon-executáveis em Corridas deve cair de 69 para 66; confirmar no advisor antes de tomar como medição definitiva.
 - validate_internal_scheduler_token permanece sob investigação de chamadores; não revogar sem identificar invocações internas para evitar quebra de tarefas programadas.
+
+## Reclassificação de wrappers Corridas (09/11/2026)
+
+- Dos 66 `public SECURITY DEFINER` ainda executáveis por `anon`, 15 são funções de trigger e 51 são invocáveis. Dez funções invocáveis incluem marcador textual direto de identidade/role, outras 41 não: a maioria é wrapper SQL fino que chama a implementação no schema `apois_rpc_private`, portanto classificador textual não prova vulnerabilidade.
+- Foram inspecionados os pares public/private de `driver_get_profile`, `driver_complete_registration_v3`, `driver_finish_ride`, `driver_request_withdrawal`, `driver_set_payout_destination`, `get_driver_financial_dashboard` e `admin_is_authorized`. As implementações privadas sensíveis consultadas usam `auth.uid`/`mobility_user_id` ou `private.has_permission`, além de guardas transacionais onde aplicável. O `validate_internal_scheduler_token` compara hash de token com segredo privado; nenhum chamador compatível foi provado seguro para mudança de ACL neste ciclo.
+- Nenhuma revogação em massa foi feita nesta passagem. Há gates de autenticação internos, porém continuam faltando testes de invocação com JWT falso, perfil B e verificação de chamador antes de qualquer restrição adicional; INV-018 permanece parcial.
