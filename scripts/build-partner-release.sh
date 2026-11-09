@@ -83,6 +83,8 @@ node "$ROOT/scripts/harden-partner-motorista-login-focus-v19.mjs"
 # Password recovery callback: no reroute to map; readable email input; return to login on reset.
 node "$ROOT/scripts/fix-partner-motorista-recovery-v1.mjs"
 node "$ROOT/scripts/fix-partner-motorista-recovery-otp-v5.mjs"
+# Relatório 11 / INV-063: synthetic OTP recipient/cooldown verification before release; no emails.
+node --test "$ROOT/scripts/qa/test-report11-recovery-otp-v1.test.mjs"
 node "$ROOT/scripts/fix-partner-motorista-recovery-relay-v2.mjs"
 node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/fix-motorista-internal-contrast-v1.mjs"
