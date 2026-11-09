@@ -183,6 +183,17 @@ for (const [rel, marker] of [
   ['src/components/ui/prompt-dialog.tsx', 'APOIS_CV13_SHARED_COMPONENTS_V1'],
 ]) if (!readFileSync(resolve(workspace, rel), 'utf8').includes(marker))
   throw Error('[FAIL] RV13 Entregas shared visual missing ' + rel);
+// RV-16: presentational scope/recency disclosures on the disposable Entregas copy.
+// Keep Pix manual, financial calculations, queries, RLS, realtime and map eligibility untouched.
+run(process.execPath, [resolve(root, 'scripts/fix-entregas-finance-scope-visual16-v1.mjs')]);
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-finance-scope-visual16-v1.test.mjs')]);
+for (const rel of [
+  'src/components/MerchantCourierSettlementsPanel.tsx',
+  'src/components/AdminCourierSettlementsPanel.tsx',
+  'src/components/AdminReviewsPanel.tsx',
+  'src/components/AdminRealtimeOperationsPanel.tsx',
+]) if (!readFileSync(resolve(workspace,rel),'utf8').includes('APOIS_CV16_SCOPE_AND_LOCATION_COMMUNICATION_V1'))
+  throw Error('[FAIL] RV16 scope/recency visual missing '+rel);
 run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 
 const baseEnv = {
