@@ -295,3 +295,30 @@ Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3)
 - .apois/source-lock.json, três origens pinadas e 67 achados técnicos históricos intactos; nenhuma edição em SQL/RLS, auth, pagamentos, preços, opções, cupons ou dados, nem merge/deploy/APK.
 
 **Consolidação: 43 registros visuais CV-001–CV-043** (38 anteriores + 5 novos; quatro ampliações sem renumeração). CV-030 segue não aplicável ao esquema pinado; CV-037 e CV-038 dependem de homologação. VIS-001 é alias INV-047; VIS-007/CV-006 permanece retificado. **Histórico técnico: 67 (A=0, B=46, C=17, D=0, E=1, G=3).** Próxima numeração CV-044.
+
+## Achados visuais — rodada 13 (componentes compartilhados, VIS-045–049)
+
+**Entrada:** RELATORIO-VISUAL-13-APOIS-COMPONENTES-COMPARTILHADOS-20261109(1).md. Branch de leitura do auditor externo audit/ecossistema-20261107; única branch modificada: audit/continuacao-20261107. As três fontes de .apois/source-lock.json permanecem somente leitura.
+
+| CV | Origem | Prioridade | Área | Código e evidência de correção | Estado e aceite pendente |
+|---|---|---|---|---|---|
+| **CV-044** | **VIS-045** | P2 | Entrada APOIS Parceiro/Cliente | Substituídos exclusivamente os endpoints de degradês de CTA com texto branco: Parceiro #D51722 → #CE101A → #C9141B; Cliente #D51722 → #C9141B. Os tons passam no cálculo sRGB estático de contraste para texto comum; não foram alterados comandos, identificadores nem destino. | **Fonte HTML alterada, sem medição do botão renderizado:** validar CSS computado, todas as áreas com letras, estados e 320/360/390/412 px. |
+| **CV-045** | **VIS-046** | P1 se observado no produto | Entregas Cliente / AppBottomNav | O hardener eleva os quatro mínimos a 72 px e o centro a 68 px; com px-2 o total nominal mínimo era 372 px. O overlay final dá min-w-0/flex-1 para os quatro itens antes de sm, e shrink-0 ao centro, preservando altura 64 px, ícones, rótulos e 5 destinos; em 320 px a divisão nominal fica 59 px por lateral (320−16−68)/4. | **Patch idempotente verificado em V8 sobre fonte pinada transformada; sem DOM real:** medir 320/360 px, safe-area, paisagem, fonte ampliada e toque. |
+| **CV-046** | **VIS-047** | P2 | Entregas / DialogContent e PromptDialog | No DialogContent compartilhado, overlay limitado a max-h-[calc(100dvh-2rem)], overflow-y-auto e overscroll-contain. Radix Content/Overlay/Close, z-index, children e props preservados; regras próprias de outros sheets não alteradas. | **Patch em código, sem render/teclado:** testar prompts longos e edição administrativa com foco/teclado e fontes ampliadas, sem enviar ações. |
+| **CV-047** | **VIS-048** | P2 | Entregas / fechar DialogContent | Texto acessível sr-only 'Close' substituído por 'Fechar', mantendo componente DialogPrimitive.Close. | **Fonte gerada alterada; TalkBack pendente.** Verificar rótulo anunciado em pt-BR. |
+| **CV-048** | **VIS-049** | P2 | Entregas / PromptDialog | Campos obrigatórios passam a apresentar '(obrigatório)' quando o próprio rótulo não o informa, além de aria-required no Input e Textarea. canSubmit, Enter, defaults, cancelar/confirmar e setters intocados. | **Patch verificado em V8; render/TalkBack pendente:** validar nomes, textos longos e diferenças de campo com e sem required. |
+
+### Ampliações nesta rodada — sem novos IDs
+- **VIS-034 / CV-033:** AppBottomNav adiciona aria-current="page" no NavButton ativo; navegação e estado active já existentes permanecem responsáveis pela seleção.
+- **VIS-035 / CV-034:** botões idênticos 'Acessar' do shell Cliente receberam aria-label="Acessar Corridas" e aria-label="Acessar Entregas". Texto visível e click handlers não alterados.
+- **VIS-004 / CV-003:** DialogContent amplia o acionador do ícone X para min-h-11/min-w-11 (44 px nominal), mantendo foco/fechamento Radix e a tradução de sr-only 'Fechar'. Dimensão computada ainda precisa de render.
+
+### Gates RV-13 e preservações
+- Novo overlay: scripts/fix-entregas-shared-visual13-v1.mjs (planifica todos os três patches antes de escrever; falha em source drift; idempotente).
+- Novo teste: scripts/qa/test-entregas-shared-visual13-v1.test.mjs, ligado **aos dois builders** após os overlays RV-12 e antes da verificação final. **Foi versionado, não executado em checkout Node integral.**
+- Alterados diretamente os dois shells HTML para gradiente e nome acessível (sem rotas/JS modificados).
+- Realmente executado: inspeção GitHub da branch e SHA protegido, comparação dos três snapshots pinados; **execução sintética V8** das funções reais de patch sobre cópias em memória com hardeners de nav/camadas representados, 3/3 transformações, idempotência e rejeição de drift; cálculo geométrico nominal. Não é bundle compilado, DOM, Chromium, React, Android, TalkBack nem teste de integração.
+- Nada foi alterado em auth, Supabase, SQL/RLS, APIs, gateway, pagamentos, preços, pedidos, upload, callbacks, handlers, repositórios-fonte, branch externa, produção ou APK.
+- Pendências anteriores **CV-037** (tema Motorista), **CV-038** (endereços longos), **CV-039** (adicionais no Merchant realmente distribuído/impressão) e **CV-030** (não aplicável ao contrato pinado salvo novas provas) são preservadas, sem reclassificação artificial.
+
+**Consolidação: 48 registros visuais CV-001–CV-048** (43 anteriores + 5 novos; três ampliações sem duplicação). **Matriz técnica histórica inalterada: 67 achados, A=0, B=46, C=17, D=0, E=1, G=3.** Próximo ID CV-049. Os efeitos finais ainda aguardam render, Node/typecheck/lint/build, testes físicos, TalkBack e homologação autorizada.
