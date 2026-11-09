@@ -46,6 +46,7 @@ forbid_bundle() {
 export APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"
 node "$ROOT/scripts/harden-motorista-auth.mjs"
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
+node "$ROOT/scripts/harden-motorista-flags-offline-v1.mjs"
 node "$ROOT/scripts/harden-partner-motorista-onboarding.mjs"
 node "$ROOT/scripts/harden-motorista-document-boundary.mjs"
 node "$ROOT/scripts/harden-motorista-provider-boundary.mjs"
