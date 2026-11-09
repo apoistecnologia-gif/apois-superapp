@@ -18,9 +18,16 @@ function routeList() {
   return [...code.slice(start, end).matchAll(/'([^']+\.tsx)'/g)].map((match) => match[1]);
 }
 
-test("viewport correction runs on 31 real source routes and preserves pinned files", () => {
-  const paths = routeList();
-  assert.equal(paths.length, 31, "route coverage drift requires review");
+test("viewport correction covers 30 present pinned routes, with one known absent auth route", () => {
+  const listed = routeList();
+  assert.equal(listed.length, 31, "route coverage drift requires review");
+  // The protected source snapshot has no recuperar-senha route; the runtime
+  // overlay explicitly skips absent routes. Any OTHER missing route still fails.
+  const allowedAbsent = "src/routes/recuperar-senha.tsx";
+  const absent = listed.filter(relative => !existsSync(resolve(source, relative)));
+  assert.deepEqual(absent, [allowedAbsent], "unexpected source route missing from pinned snapshot");
+  const paths = listed.filter(relative => existsSync(resolve(source, relative)));
+  assert.equal(paths.length, 30, "viewport route coverage drift");
   const workspace = mkdtempSync(join(tmpdir(), "apois-viewport-"));
   try {
     let originalFixedHeight = 0;
