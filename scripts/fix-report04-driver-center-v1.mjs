@@ -98,6 +98,8 @@ if(!s.includes("APOIS_REPORT04_CORRECTION_STATES")){
    '  <p role="alert" className="text-sm text-red-700">{loadError}</p>',
    '  <button type="button" onClick={()=>void refresh()} className="min-h-11 rounded-xl bg-[#E51B23] px-4 text-sm font-bold text-white">Tentar novamente</button>',
    ' </section>;',
+   // Strict TS narrowing after both branches without altering runtime outcomes.
+   ' if(!current)return null;',
   ].join("\n"),
   "initial load error");
  s=once(s,
