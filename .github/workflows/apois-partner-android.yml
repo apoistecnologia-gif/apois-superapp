@@ -25,6 +25,7 @@ on:
       - 'scripts/harden-partner-motorista-native-utilities.mjs'
       - 'scripts/fix-report05-motorista-security-v1.mjs'
       - 'scripts/fix-partner-courier-offer-focus-ts-v1.mjs'
+      - 'scripts/test-partner-driver-recovery-relay-v2.mjs'
 
 permissions:
   contents: read
