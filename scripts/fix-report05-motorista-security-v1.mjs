@@ -192,7 +192,7 @@ if(!config.includes("APOIS_REPORT05_LOCATION_DIAGNOSTIC_V1")){
     'import { Geolocation } from "@capacitor/geolocation";\nimport { classifyPartnerLocationPermission } from "@/lib/partnerLocationPermission";\n// APOIS_REPORT05_LOCATION_DIAGNOSTIC_V1',
     "settings imports");
   config=once(config,'useState<PermissionState | "unsupported" | null>(null)',
-    'useState<PermissionState | "approximate" | "unsupported" | null>(null)',
+    'useState<PermissionState | "approximate" | "off" | "timeout" | "unsupported" | null>(null)',
     "settings approximate state");
   config=once(config,
     '          setLocState(\n            nativeState.location === "granted"\n              ? "granted"\n              : nativeState.location === "denied"\n                ? "denied"\n                : "unsupported",\n          );',
@@ -234,6 +234,8 @@ if(!config.includes("APOIS_REPORT05_LOCATION_DIAGNOSTIC_V1")){
     "      const off=/OS-PLUG-GLOC-0007|OS-PLUG-GLOC-0017/.test(message);",
     "      const timeout=/OS-PLUG-GLOC-0010|timeout|timed out/i.test(message);",
     "      if(denied)setLocState(\"denied\");",
+    "      else if(off)setLocState(\"off\");",
+    "      else if(timeout)setLocState(\"timeout\");",
     "      toast.error(denied?\"Permissão de localização negada.\":off?\"A localização está desligada no aparelho.\":timeout?\"Tempo esgotado ao obter localização. Tente novamente.\":\"Não foi possível obter sua localização agora.\");",
     "    }finally{setTestingLocation(false);}",
     "  }",
@@ -242,7 +244,7 @@ if(!config.includes("APOIS_REPORT05_LOCATION_DIAGNOSTIC_V1")){
   config=config.slice(0,start)+test+config.slice(end);
   config=once(config,
     'hint={locState === "granted" ? "Permitida" : locState === "denied" ? "Bloqueada — ajuste nas configurações do aparelho" : locState === "unsupported" ? "Indisponível" : "Pendente"}',
-    'hint={locState === "granted" ? "Permissão precisa — disponível" : locState === "approximate" ? "Localização aproximada — para corridas, habilite a precisa" : locState === "denied" ? "Bloqueada — ajuste nas configurações do aparelho" : locState === "unsupported" ? "Indisponível" : "Pendente"}',
+    'hint={locState === "granted" ? "Permissão precisa — disponível" : locState === "approximate" ? "Localização aproximada — para corridas, habilite a precisa" : locState === "denied" ? "Bloqueada — ajuste nas configurações do aparelho" : locState === "off" ? "GPS desligado no aparelho" : locState === "timeout" ? "GPS demorou para responder — tente novamente" : locState === "unsupported" ? "Indisponível" : "Pendente"}',
     "settings hint");
   write(settings,config);
 }
