@@ -134,6 +134,12 @@ run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-apois-financial-
 if (!readFileSync(resolve(workspace, 'src/components/MerchantSubscriptionGate.tsx'), 'utf8').includes('APOIS_CV07_MERCHANT_STATUS_FALLBACK_V1')) {
   throw new Error('[FAIL] CV07 Merchant monthly fallback missing');
 }
+// RV-09 / CV-028: after existing customer deletion-request hardener, before building.
+// Present RPC-confirmed + logout failure truthfully; do not send another request.
+run(process.execPath, [resolve(root, 'scripts/fix-apois-account-deletion-visual09-v1.mjs'), 'entregas']);
+if (!readFileSync(resolve(workspace, 'src/routes/perfil/dados-pessoais.tsx'), 'utf8').includes('APOIS_CV09_DELIVERY_DELETION_RESULT_V1')) {
+  throw new Error('[FAIL] CV09 Entregas deletion request feedback missing');
+}
 run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 
 const baseEnv = {
