@@ -48,7 +48,7 @@ for (const marker of [
   'const driverRecordId = String(driver.id);',
   'driver_id: driverRecordId',
   'accepted_driver_id: driverRecordId',
-  'async function normalizeRecipientAuthIds',
+  'async function normalizeRecipientDomainIds',
   'callerDomainUserId === String(ride.passenger_id)',
   'callerDriverRecordId === String(ride.driver_id ?? "")',
   'cancellation_reason: "Nenhum motorista disponível no momento."',
@@ -132,11 +132,15 @@ if (driverAction) {
 
 const push = read('.work/corridas/supabase/functions/send-ride-push/index.ts');
 if (push) {
-  for (const marker of ['normalizeRecipientAuthIds', 'callerDomainUserId', 'callerDriverRecordId', 'finalUserIds = await normalizeRecipientAuthIds(admin, input.user_ids);']) {
+  for (const marker of ['normalizeRecipientDomainIds', 'callerDomainUserId', 'callerDriverRecordId', 'finalUserIds = await normalizeRecipientDomainIds(admin, input.user_ids);', '.from("user_notification_tokens")', '.from("user_notification_preferences")', '.from("notification_logs").insert(']) {
     if (!push.includes(marker)) fail(`workspace send-ride-push sem ${marker}`);
   }
-  if (push.includes('const isPassenger = callerId === ride.passenger_id;') || push.includes('const isDriver = callerId === ride.driver_id;')) {
-    fail('workspace send-ride-push voltou a comparar AUTH ID com IDs de domínio');
+  if (push.includes('const isPassenger = callerId === ride.passenger_id;') ||
+      push.includes('const isDriver = callerId === ride.driver_id;') ||
+      push.includes('normalizeRecipientAuthIds') ||
+      !push.includes('.in("user_id", finalUserIds)') ||
+      !push.includes('.in("user_id", allowedUsers)')) {
+    fail('workspace send-ride-push misturou AUTH e DOMAIN ID nas consultas ou encaminhamento');
   }
 }
 
