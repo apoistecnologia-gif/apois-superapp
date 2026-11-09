@@ -615,6 +615,15 @@ if (name === 'entregas') {
     'src/components/AdminRealtimeOperationsPanel.tsx',
   ]) if (!readFileSync(resolve(root, '.work/entregas',rel),'utf8').includes('APOIS_CV16_SCOPE_AND_LOCATION_COMMUNICATION_V1'))
     throw Error('[FAIL] RV16 scope/recency visual missing '+rel);
+  // RV-17: only generated Merchant editor, reviews and support. Preserve all data writes/RPCs.
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-menu-forms-visual17-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-menu-forms-visual17-v1.test.mjs')]);
+  for(const [rel,marker] of [
+    ['src/components/MerchantProductEditor.tsx','APOIS_CV17_PRODUCT_EDITOR_V1'],
+    ['src/routes/pedido/$orderId/avaliar.tsx','APOIS_CV17_REVIEW_LABELS_V1'],
+    ['src/routes/perfil/ajuda.tsx','APOIS_CV17_HELP_REQUIREMENTS_V1'],
+  ]) if(!readFileSync(resolve(root,'.work/entregas',rel),'utf8').includes(marker))
+    throw Error('[FAIL] RV17 Entregas forms missing '+rel);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 }
 
