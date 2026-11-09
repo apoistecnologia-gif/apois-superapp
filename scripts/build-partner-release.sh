@@ -164,6 +164,11 @@ node "$ROOT/scripts/verify-partner-motorista-drawer-profile-v5.mjs"
 # Relatorio 03: aplicar correcoes apenas na copia isolada do Motorista/Admin.
 node "$ROOT/scripts/fix-report03-motorista-notifications-v1.mjs"
 node "$ROOT/scripts/fix-report03-native-push-permission-v1.mjs"
+# Relatorio 07: code-only gates after all Motorista lifecycle hardeners.
+# Never deploy Edge Functions / run QA_NOT_APPLIED SQL as part of this builder.
+node "$ROOT/scripts/fix-report07-driver-reason-code-v1.mjs"
+node --test "$ROOT/scripts/qa/test-report07-driver-reason-code-v1.test.mjs"
+node --test "$ROOT/scripts/qa/test-report07-redispatch-v1.test.mjs"
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
