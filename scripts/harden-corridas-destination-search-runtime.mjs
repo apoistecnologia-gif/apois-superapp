@@ -141,9 +141,13 @@ class PlacesService {
       const data = await this.invokeMaps({ action: "place_details", placeId });
       const result = data?.result;
       const rawLocation = result?.geometry?.location;
-      const latitude = Number(rawLocation?.lat);
-      const longitude = Number(rawLocation?.lng);
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      // APOIS_REPORT12_VALID_COORDS_V1: no null->0 coercion or out-of-world points.
+      // The Places Edge contract returns numeric lat/lng; reject numeric strings.
+      const latitude = rawLocation?.lat;
+      const longitude = rawLocation?.lng;
+      if (typeof latitude !== "number" || typeof longitude !== "number" ||
+          !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+          latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
         throw this.normalizeError("places_invalid_location");
       }
 
