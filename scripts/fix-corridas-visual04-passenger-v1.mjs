@@ -94,6 +94,10 @@ transform("src/routes/_authenticated.revisar-solicitacao.tsx", (source) => {
       "{String(value)}",
       "{formatApoisReviewDetailValue(value, key)}",
       "review value");
+    source = once(source,
+      'className="text-xs font-bold capitalize"',
+      'className="text-xs font-bold break-words whitespace-normal"',
+      "review long text and unknown codes");
   }
   for (const invariant of [
     "APOIS_VISUAL04_REVIEW_DETAILS_V1",
