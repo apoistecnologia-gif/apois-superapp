@@ -70,6 +70,7 @@ node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 node "$ROOT/scripts/harden-motorista-embedded-hash-router.mjs"
 node "$ROOT/scripts/harden-motorista-feature-flags-rejection.mjs"
 node "$ROOT/scripts/harden-motorista-history-recovery.mjs"
+node "$ROOT/scripts/fix-motorista-history-cursor-v1.mjs"
 node "$ROOT/scripts/harden-motorista-registration-insert-only.mjs"
 node "$ROOT/scripts/harden-motorista-document-photo-types.mjs"
 
