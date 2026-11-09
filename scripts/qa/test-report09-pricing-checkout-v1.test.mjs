@@ -157,7 +157,7 @@ test("INV-060: comparador real rejeita destino/parada antiga, falha e GPS releva
   assert.ok(start >= 0 && end > start);
   const expression = source.slice(start + token.length, end);
   const check = vm.runInNewContext(
-    "(route, location, destination, orderedStops, status, routeFailureRef) => Boolean(" +
+    "(route, location, destination, orderedStops, status, hasUnrecoveredRouteError) => Boolean(" +
       expression + ")",
   );
   const route = {
@@ -168,15 +168,15 @@ test("INV-060: comparador real rejeita destino/parada antiga, falha e GPS releva
   const location = { latitude: -9.39, longitude: -40.50 };
   const destination = { latitude: -9.40, longitude: -40.51 };
   const stops = [{ latitude: -9.41, longitude: -40.52 }];
-  const failed = { current: false };
+  let failed = false;
   assert.equal(check(route, location, destination, stops, "success", failed), true);
   assert.equal(check(route, location, { ...destination, latitude: -9.50 }, stops, "debouncing", failed), false);
   assert.equal(check(route, location, destination, [{ ...stops[0], longitude: -40.54 }], "loading", failed), false);
   assert.equal(check(route, { ...location, latitude: -9.3901 }, destination, stops, "debouncing", failed), true);
   assert.equal(check(route, { ...location, latitude: -9.392 }, destination, stops, "loading", failed), false);
-  failed.current = true;
+  failed = true;
   assert.equal(check(route, location, destination, stops, "loading", failed), false);
-  failed.current = false;
+  failed = false;
   assert.equal(check(route, location, destination, stops, "failed", failed), false);
 });
 
