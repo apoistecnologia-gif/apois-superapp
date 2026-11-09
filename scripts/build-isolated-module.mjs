@@ -353,6 +353,10 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-request-timeout.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-eligibility-no-gateway.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-runtime.mjs')]);
+  // Relatorio 08 / INV-057: accept a newer backend-confirmed driver cycle,
+  // without removing foreign-ride, stale-update or terminal guards.
+  run(process.execPath, [resolve(root, 'scripts/fix-report08-passenger-redispatch-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs')]);
   // Report 1: GPS address must use a deployed and quota-gated reverse-geocoding route.
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-reverse-geocode-live-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-superapp-ui.mjs')]);
