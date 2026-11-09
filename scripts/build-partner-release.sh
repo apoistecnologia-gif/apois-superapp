@@ -89,6 +89,9 @@ node "$ROOT/scripts/fix-partner-motorista-recovery-relay-v2.mjs"
 node "$ROOT/scripts/harden-partner-motorista-profile-contrast-v2.mjs"
 node "$ROOT/scripts/fix-motorista-internal-contrast-v1.mjs"
 node "$ROOT/scripts/fix-motorista-history-own-profile-v2.mjs"
+# Historical error/retry recovery must precede cursor and period-summary transforms.
+# Required by INV-053; edits only the disposable Motorista workspace.
+node "$ROOT/scripts/harden-motorista-history-recovery.mjs"
 node "$ROOT/scripts/fix-motorista-history-cursor-v1.mjs"
 # Relatorio 06 / INV-053: apply to the existing cursor, not to the pinned source.
 node "$ROOT/scripts/fix-report06-motorista-history-period-v1.mjs"
