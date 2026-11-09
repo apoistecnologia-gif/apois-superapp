@@ -97,7 +97,7 @@ export function patchRealtimeOperations(src) {
     '      <p className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm leading-relaxed text-zinc-300" role="note">Indicadores de pedidos, valores e lista representam até 300 entregas ativas mais recentemente atualizadas. Esse recorte pode omitir operações mais antigas.</p>\n'+
     '      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">',
     "active jobs sample scope");
-  s=one(s,'                 Somente entregadores online com localização válida.',
+  s=one(s,'                Somente entregadores online com localização válida.',
     '                 Somente entregadores online com coordenadas registradas. Não é aplicado critério de recência às coordenadas.',
     "map recency warning");
   s=one(s,'title={profile?.full_name ?? "Entregador online"}',
