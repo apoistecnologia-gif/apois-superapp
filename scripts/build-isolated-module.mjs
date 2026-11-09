@@ -567,7 +567,9 @@ if (name === 'entregas') {
     console.error('[FAIL] INV-012: Entregas install must use bun --frozen-lockfile.');
     process.exit(1);
   }
+  run(process.execPath, [resolve(root, 'scripts/reconcile-entregas-bun-lock-v1.mjs')], { cwd: root, env });
   run(process.execPath, [resolve(root, 'scripts/verify-entregas-bun-lock-v1.mjs')], { cwd: root, env });
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-overlay-v1.test.mjs')], { cwd: root, env });
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-lock-v1.test.mjs')], { cwd: root, env });
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-report02-transforms-v1.test.mjs')], { cwd: root, env });
 }
