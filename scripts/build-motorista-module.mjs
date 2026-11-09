@@ -45,6 +45,7 @@ for (const script of [
 ]) {
   run(process.execPath, [resolve(root, `scripts/${script}`)], root, hardenerEnv);
 }
+run(process.execPath, [resolve(root, 'scripts/fix-report04-driver-document-reconciliation-v1.mjs')], root, hardenerEnv);
 
 // Isola o documento SSR da rota raiz no build client-only: index.mobile.html
 // já fornece html/head/body/#root. Reutiliza o hardener validado no Parceiro.
