@@ -65,6 +65,7 @@ run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-brand-ass
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-viewport.mjs')]);
 run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-viewport-v1.test.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/install-entregas-current-db-types-v1.mjs')]);
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-generated-types-v1.test.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-auth-runtime.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/fix-entregas-hash-auth-callbacks.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/harden-entregas-superapp-address-ux.mjs')]);
