@@ -543,6 +543,18 @@ if (name === 'entregas') {
   if (!readFileSync(resolve(root, '.work/entregas/src/components/ProductCustomizationSheet.tsx'), 'utf8').includes('APOIS_CV10_PRODUCT_CUSTOMIZATION_ACCESSIBILITY_V1')) {
     throw new Error('[FAIL] CV10 options must be native accessible buttons');
   }
+  // RV-11: last scoped Entregas presentation layers, after V11 and prior visual/checkout hardeners.
+  // No address persistence, API, payment, auth or geocoding contract is modified.
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-labels-visual11-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-address-catalog-visual11-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-autocomplete-visual11-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-visual11-v1.test.mjs')]);
+  for(const [rel,marker] of [
+    ['src/routes/enderecos.tsx','APOIS_CV11_ADDRESS_CARD_V1'],
+    ['src/routes/register.tsx','APOIS_CV11_REGISTER_FIELDS_V1'],
+    ['src/components/CustomerLocationAddressSelector.tsx','APOIS_CV11_AUTOCOMPLETE_FEEDBACK_V1'],
+    ['src/routes/estabelecimento.$merchantId.tsx','APOIS_CV11_CATALOG_V1'],
+  ]) if (!readFileSync(resolve(root,'.work/entregas',rel),'utf8').includes(marker)) throw Error('[FAIL] RV11 Entregas missing '+rel);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 }
 
