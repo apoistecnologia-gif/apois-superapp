@@ -17,11 +17,23 @@ const patches = [
       ],
       [
         "  const [error, setError] = useState<string | null>(null);",
-        "  const [error, setError] = useState<string | null>(null);\n\n  // Rota retida pode ser exibida, mas não autoriza a escolha B com dados da A.\n  // GPS com variação inferior a 85 m não é tratado como alteração de intenção.\n  const routeIsCurrent = Boolean(route && location && destination && status !== \"failed\" &&\n    route.destination.lat === destination.latitude &&\n    route.destination.lng === destination.longitude &&\n    (route.intermediates ?? []).length === orderedStops.length &&\n    orderedStops.every((stop, index) =>\n      route.intermediates?.[index]?.lat === stop.latitude &&\n      route.intermediates?.[index]?.lng === stop.longitude) &&\n    Math.hypot(\n      (location.latitude - route.origin.lat) * 111320,\n      (location.longitude - route.origin.lng) * 111320 * Math.cos(location.latitude * Math.PI / 180)\n    ) <= 85);"
+        "  const [error, setError] = useState<string | null>(null);\n\n  // Rota retida pode ser exibida, mas não autoriza a escolha B com dados da A.\n  // GPS com variação inferior a 85 m não é tratado como alteração de intenção.\n  const routeFailureRef = useRef(false);\n  const routeIsCurrent = Boolean(!routeFailureRef.current && route && location && destination && status !== \"failed\" &&\n    route.destination.lat === destination.latitude &&\n    route.destination.lng === destination.longitude &&\n    (route.intermediates ?? []).length === orderedStops.length &&\n    orderedStops.every((stop, index) =>\n      route.intermediates?.[index]?.lat === stop.latitude &&\n      route.intermediates?.[index]?.lng === stop.longitude) &&\n    Math.hypot(\n      (location.latitude - route.origin.lat) * 111320,\n      (location.longitude - route.origin.lng) * 111320 * Math.cos(location.latitude * Math.PI / 180)\n    ) <= 85);"
       ],
       [
         "        isStale: status === \"stale\",",
         "        isStale: status === \"stale\",\n        isCurrent: routeIsCurrent,"
+      ],
+      [
+        "      setRoute(newRoute);\n      setStatus(\"success\");",
+        "      routeFailureRef.current = false;\n      setRoute(newRoute);\n      setStatus(\"success\");"
+      ],
+      [
+        "      if (err.name === \"AbortError\") return;\n      setError(",
+        "      if (err.name === \"AbortError\") return;\n      routeFailureRef.current = true;\n      setError("
+      ],
+      [
+        "          ++routeGenerationRef.current;\n          setRoute(null);",
+        "          ++routeGenerationRef.current;\n          routeFailureRef.current = false;\n          setRoute(null);"
       ]
     ]
   },
