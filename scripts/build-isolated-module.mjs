@@ -342,6 +342,10 @@ if (name === 'corridas') {
   // CORRIDAS_* environment mapped below.
   run(process.execPath, [resolve(root, 'scripts/sanitize-corridas-workspace-env.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/adapt-corridas-current.mjs')]);
+  // Reconcile the existing historical storage isolation hardener with the
+  // isolated Supabase auth key BEFORE history and favorites are used.
+  // No new store: this is an already-versioned targeted hardener.
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-superapp-storage.mjs')]);
 } else {
   run(process.execPath, [resolve(root, 'scripts/adapt-module-for-superapp.mjs'), name]);
 }
@@ -431,6 +435,10 @@ if (name === 'corridas') {
   // patch only the prepared Corridas workspace, then snapshot intentional map changes.
   run(process.execPath, [resolve(root, 'scripts/fix-report12-destination-map-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report12-map-selection-v1.test.mjs')]);
+  // Relatório 13 / INV-066: valid destination/stop must not depend on local
+  // recent-history write; favorites must confirm actual storage success.
+  run(process.execPath, [resolve(root, 'scripts/fix-report13-destination-history-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report13-destination-history-v1.test.mjs')]);
   protectedCorridasMapRuntimeAfterVisual = new Map(
     protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
   );
