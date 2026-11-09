@@ -41,7 +41,8 @@ test("INV-067: QA_NOT_APPLIED, fail closed, no auto backfill or destructive roll
 });
 
 test("INV-067: participants are isolated by ticket/user with restrictive RLS", () => {
-  assert.match(migration, /PRIMARY KEY \(ticket_id, driver_user_id\)/);
+  assert.match(migration, /id uuid PRIMARY KEY DEFAULT gen_random_uuid\(\)/);
+  assert.match(migration, /CREATE UNIQUE INDEX apois_case_driver_participants_active_unique_idx[\s\S]*ON public\.apois_case_driver_participants\(ticket_id,driver_user_id\)[\s\S]*WHERE revoked_at IS NULL/);
   assert.match(migration, /REFERENCES public\.passenger_support_tickets\(id\)/);
   assert.match(migration, /REFERENCES public\.drivers\(id\)/);
   assert.match(migration, /driver_user_id uuid NOT NULL REFERENCES public\.users\(id\)/);
@@ -69,7 +70,7 @@ test("INV-067: access helper keeps staff, passenger, no-session and recorded inv
 test("INV-067: request snapshots A under case+ride locks, not admin requester", () => {
   assert.match(requester, /SELECT \* INTO v_case[\s\S]*FOR UPDATE/);
   assert.match(requester, /JOIN public\.drivers d ON d\.id=r\.driver_id/);
-  assert.match(requester, /FOR SHARE OF r/);
+  assert.match(requester, /FOR SHARE OF r,d/);
   assert.match(requester, /INSERT INTO public\.apois_case_driver_participants/);
   assert.match(requester, /v_driver_id,v_driver_user_id,'statement_request'/);
   assert.match(requester, /driver_response_requested_by=\(SELECT auth\.uid\(\)\)/);
@@ -97,7 +98,9 @@ test("INV-067: staff deliberate grants are audited, bounded and role restricted"
     "SELECT d.user_id INTO v_user_id",
     "WHERE d.id=_driver_id",
     "'staff_grant'",
-    "ON CONFLICT (ticket_id,driver_user_id) DO UPDATE",
+    "ON CONFLICT (ticket_id,driver_user_id) WHERE revoked_at IS NULL DO NOTHING",
+    "GET DIAGNOSTICS v_changed=ROW_COUNT",
+    "participant_already_active",
     "'internal_note'",
     "FALSE",
   ]) assert.ok(grant.includes(frag), "missing staff grant safeguard " + frag);
