@@ -309,3 +309,22 @@ Os **60 achados dos Relatórios 01–09 e toda a matriz histórica acima foram p
 **Testes efetivamente executados:** 16 verificações isoladas V8 e leitura-only do catálogo do Supabase Corridas para confrontar o predicado vivo com a migração preparada e o diálogo transformado. `scripts/qa/test-report10-account-deletion-v1.test.mjs` foi versionado, **mas a suíte Node não foi executada**; não houve build, APK, teste físico, exclusão, login/logout real ou deploy. Nenhuma migração `QA_NOT_APPLIED` foi executada. Os bloqueios INV-054 G e INV-055/056 C continuam como antes. Não confundir correção textual com comportamento homologado ou SQL preparado com função implantada.
 
 **Fonte única de execução:** `apoistecnologia-gif/apois-superapp@audit/continuacao-20261107`. Sem merge/main, repositórios-fonte protegidos intactos. A liberação da homologação final exige a frase de autorização expressa do responsável.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 11 (09/11/2026)
+
+Os **62 registros anteriores (Relatórios 01–10), suas notas, estados e evidências permanecem integralmente preservados acima**. Esta atualização acrescenta somente **INV-063**, conforme `RELATORIO-11-APOIS-RECUPERACAO-DE-SENHA-20261109(1).md`. Relatório da execução: `auditoria/CODEX-RELATORIO11-EXECUCAO-20261109.md`. Branch autorizada `audit/continuacao-20261107`; source-lock inalterado.
+
+| ID | Prioridade | Área | Estado | Correção e aceite restante |
+|---|---|---|---|---|
+| **INV-063** | **P2** | Corridas Motorista / recuperação por e-mail e OTP | **B** | Gerador OTP v5 atualizado para vincular solicitação e verificação ao e-mail normalizado, capturar geração e impedir resposta visual obsoleta. Campo de e-mail desabilitado durante envio/verificação, com guarda síncrona de evento; aviso de envio só aparece se `sentTo` corresponder ao campo. Mantido o limite global de 60 s entre envios aceitos (inclusive após corrigir o endereço), sem permitir spam por troca de e-mail; texto do limite explicitado. `verifyOtp({type:"recovery"})`, mensagem “Se a conta existir”, relay, contraste, atualização posterior de senha e identidade visual preservados. Gerador exercitado sobre fonte pinada, **12/12 verificações estruturais e 13/13 casos funcionais de callbacks com mocks em V8 aprovados**. Suíte Node com 7 testes criada e conectada ao futuro builder, **não executada**. Faltam Node real, typecheck, React, envio de e-mail em homologação, fluxo OTP e Android físico. |
+
+**Subtotal Relatório 11:** A 0 / B 1 / C 0 / D 0 / E 0 / G 0 = **1 novo achado**.
+
+**Novo total consolidado Relatórios 01–11: A 0 / B 43 / C 16 / D 0 / E 1 / G 3 = 63 achados.**
+
+**Verificações reais:** interpretação do gerador com arquivo fixado de Motorista somente em memória, 12 comparações estruturais e 13 testes de comportamento isolado de `requestCode`, `verifyCode` e `onChange` com serviço/Auth simulados e endereços `example.invalid`. Não houve `node --test` no checkout, builder, React, Android, APK, envio de e-mail, alteração de senha, acesso a conta, deploy, migração ou SQL. Os testes sintéticos não comprovam a recuperação real no celular.
+
+**Pendências anteriores intactas:** INV-054 G, INV-055 C, INV-056 C e INV-061 C. Todas as migrações `QA_NOT_APPLIED` permanecem não aplicadas. Nenhum merge, nenhuma edição de fonte protegida, nenhuma mudança comercial, visual ou financeira. A homologação final continua bloqueada até a autorização expressa do responsável.
