@@ -262,3 +262,36 @@ Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3)
 - **Relatório independente:** auditoria/CODEX-RELATORIO-COMUNICACAO-VISUAL11-EXECUCAO-20261109.md.
 
 **Consolidação: 38 registros visuais CV-001–CV-038** (30 anteriores + 8 registros desta rodada; CV-037 pendente e CV-038 pendente de homologação). CV-030 segue não aplicável ao esquema pinado; VIS-001 continua alias INV-047; VIS-007/CV-006 permanece retificado. **Matriz técnica histórica: 67, A=0/B=46/C=17/D=0/E=1/G=3, não modificada.** Sem merge, deploy, APK, produção ou edição das fontes. Próxima numeração: CV-039.
+
+
+## Achados visuais — rodada 12 (Operação Merchant/Admin, VIS-040–044)
+
+**Entrada:** RELATORIO-VISUAL-12-APOIS-OPERACAO-ADMIN-20261109(1).md. Cinco novos IDs CV-039–CV-043 e quatro ampliações de registros anteriores. A fonte audit/ecossistema-20261107 foi referência somente de leitura. O integrador permaneceu na branch audit/continuacao-20261107.
+
+| CV | Origem | Prioridade | Superfície | Evidência e tratamento | Status / aceite |
+|---|---|---|---|---|---|
+| **CV-039** | **VIS-040** | **P1** | Merchant: itens do pedido detalhado, impressão e Central de revisão | No snapshot pinado, as linhas apresentavam quantidade/nome/valor sem selected_options. Migração create_order_atomic armazena array JSONB de groupName e optionName, entre outros campos. Novo formatador de apresentação lista grupo e opção por item no card e na comanda; na Central apenas se a revisão enriquecida já existir. Não modifica preço, quantidade, subtotal, desconto, total, pedidos nem pagamento. Impressão permanece via textContent. | **Implementado nos overlays; não homologado em impressão nem operação real.** A montagem isolada executa gerador de revisão da Central; o builder Merchant NÃO o executa. O overlay não inventa query de itens nessa Central. **P1 depende de confirmar qual build é distribuído e revisar todos os pontos de conferência antes da operação.** Duas escolhas sintéticas distintas produziram textos distintos. |
+| **CV-040** | **VIS-041** | P2 | MerchantCouponsPanel: badge de vigência | O badge antigo exibia Ativo para cupom habilitado que só começa amanhã. Overlay inclui Agendado quando starts_at é futuro, mantendo Ativo, Pausado, Expirado conforme os mesmos relógios/datas de apresentação. | Implementado em gerador, não homologado em browser/horário real; não altera datas nem validador. |
+| **CV-041** | **VIS-042** | P2 | MerchantCouponsPanel: contagem de usos | O snapshot original confundia falha da consulta de usos com zero, mas o integrador **já aplicava fix-entregas-coupon-metrics-v2.mjs (INV-032)**. A mitigação anterior distingue indisponível e bloqueia exclusão no handler e no botão quando usageState não é ready. RV-12 a preserva. Ampliação visual corrige a confusão de **falha da lista principal** com lista vazia e fornece retry sem duplicar alertas. | Mitigação técnica anterior existente; ampliação visual preparada. Sem exclusões, banco ou testes de autorização de backend. |
+| **CV-042** | **VIS-043** | P2 | Central Merchant enriquecida: pagamento direto | Quando cash + pending, o gerador dizia Pagamento direto de teste — não recebido sem condicionar o ambiente. Overlay altera só a frase para Pagamento direto — ainda não confirmado, mantendo o status pending, a modalidade, a regra de aceite e a cobrança. | Implementado apenas no caminho com Central de revisão enriquecida; validar deployment antes de avaliar outras mensagens. |
+| **CV-043** | **VIS-044** | P2 | MerchantProductEditor: seletor de foto | O input file oculto via classe hidden não era alcançável por Tab. Overlay conserva o mesmo input dentro do label, muda para sr-only, adiciona foco visível no label e informa JPG, PNG e WebP (formatos do accept atual). Não acrescenta botão/onClick, upload, verificação MIME, reset e estado busy intactos. | Implementado no gerador, não homologado no teclado/Android. |
+
+### Ampliações de achados existentes — sem novas entradas na contagem
+
+| Registro anterior | Superfície adicional | Tratamento |
+|---|---|---|
+| VIS-027 / **CV-026** | AdminOrdersPanel lista/timeline e MerchantCouponsPanel lista | Erro persistente versus vazio verdadeiro, mensagens e retry; stale de pedidos indicado após falha. Não altera consultas nem domínio, sem afirmar que o erro foi reproduzido no navegador. |
+| VIS-032 / **CV-031** | AdminOrdersPanel selects e AdminCoveragePanel | Nome acessível aos selects de status/pagamento/cidade, Input local de cobertura com aria-label contextual ou fallback, textarea GeoJSON nomeada. Preserva campos previamente envolvidos por labels e callbacks. |
+| VIS-034 / **CV-033** | AdminReviewsPanel e AdminCourierSettlementsPanel | aria-pressed nos filtros por botão, com callbacks/valores preservados. |
+| VIS-022 / **CV-021** | MerchantProductEditor / troca de imagem | Ajuda informa apenas JPG/PNG/WebP do editor atual. Não reutiliza os limites de documentos do Motorista; mesma intervenção CV-043, sem dupla contagem. |
+
+### Arquivos e verificação desta rodada
+
+- Novos: scripts/templates/formatMerchantSelectedOptions.ts; scripts/fix-entregas-merchant-options-visual12-v1.mjs; scripts/fix-entregas-merchant-coupons-image-visual12-v1.mjs; scripts/fix-entregas-admin-visual12-v1.mjs; scripts/qa/test-entregas-visual12-v1.test.mjs e relatório auditoria/CODEX-RELATORIO-COMUNICACAO-VISUAL12-EXECUCAO-20261109.md.
+- Atualizados: scripts/build-isolated-module.mjs, scripts/build-merchant-panel.mjs e esta matriz. Ambos os builders agora aplicam overlays tardios após hardeners existentes; Node test e gates de marcadores foram adicionados antes do typecheck.
+- Evidência executada: leitura remota de código pinado e sequências de montagem; patch de rota Merchant e Central gerada em memória, com reaplicação idempotente; script de cupons aplicado contra fonte transformada pelo V2; imagem e Admin contra componentes pinados; formatação de dois itens sintéticos iguais com opções A/B distintas; análise de sintaxe dos scripts JS. **A suíte Node está versionada e ligada ao build, mas não foi executada no checkout completo.** Também não houve React render, impressão, clique, Pix, upload, permissão, pedido real ou acesso a banco.
+- O overlay da Central ignora explicitamente a montagem sem gerador de revisão. Corrigir isso alterando query ou comportamento da Central exigiria engenharia e testes funcionais fora desta intervenção exclusivamente visual.
+- P1 pendente de homologação completa: identificar build publicado, pedido personalizado em ambiente de teste, central, card e preview/impressão real (largura de papel), linhas de nome igual com opções distintas e observação geral separada. Além disso, teclado/TalkBack, estados de erro/loading/zero, datas e layout 320/360/390/412 px precisam de testes reais.
+- .apois/source-lock.json, três origens pinadas e 67 achados técnicos históricos intactos; nenhuma edição em SQL/RLS, auth, pagamentos, preços, opções, cupons ou dados, nem merge/deploy/APK.
+
+**Consolidação: 43 registros visuais CV-001–CV-043** (38 anteriores + 5 novos; quatro ampliações sem renumeração). CV-030 segue não aplicável ao esquema pinado; CV-037 e CV-038 dependem de homologação. VIS-001 é alias INV-047; VIS-007/CV-006 permanece retificado. **Histórico técnico: 67 (A=0, B=46, C=17, D=0, E=1, G=3).** Próxima numeração CV-044.
