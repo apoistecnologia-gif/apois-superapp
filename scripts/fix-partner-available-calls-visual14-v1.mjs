@@ -4,7 +4,7 @@ import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
 export const MARK="APOIS_CV14_AVAILABLE_CALLS_STATE_V1";
-const logic=String.raw\`
+const logic=String.raw`
   // APOIS_CV14_AVAILABLE_CALLS_STATE_V1: list retrieval and claim results are independent.
   const [message,setMessage]=useState<string|null>(null);
   const [claimMessage,setClaimMessage]=useState<string|null>(null);
@@ -116,7 +116,7 @@ const logic=String.raw\`
       }
     }finally{setClaiming(null);}
   };
-\`;
+`;
 function exactlyOnce(source,before,after,label){
   const occurrences=source.split(before).length-1;
   if(occurrences!==1)throw Error("[RV14] "+label+" anchor count="+occurrences);
