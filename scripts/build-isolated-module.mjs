@@ -557,6 +557,17 @@ if (name === 'entregas') {
   );
 }
 
+// INV-012: customer Superapp must be as reproducible as the merchant panel.
+// The pinned Entregas snapshot is currently missing two Capacitor login packages
+// from bun.lock; fail closed instead of silently producing a different APK.
+if (name === 'entregas') {
+  if (JSON.stringify(config.install) !== JSON.stringify(['bun', 'install', '--frozen-lockfile'])) {
+    console.error('[FAIL] INV-012: Entregas install must use bun --frozen-lockfile.');
+    process.exit(1);
+  }
+  run(process.execPath, [resolve(root, 'scripts/verify-entregas-bun-lock-v1.mjs')], { cwd: root, env });
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-lock-v1.test.mjs')], { cwd: root, env });
+}
 for (const command of [config.install, config.build]) {
   const [bin, ...args] = command;
   run(bin, args, { cwd, env });
