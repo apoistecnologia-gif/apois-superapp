@@ -25,10 +25,18 @@ patch("src/contexts/CartContext.tsx",one=>{
      '  const [isHydrated, setIsHydrated] = useState(false);\n  const catalogRequest=useRef(0);',"request state");
  one('...newItem, lineId, basePrice, price: finalUnitPrice,',
      '...newItem, isUnavailable: false, lineId, basePrice, price: finalUnitPrice,',"readd clears unavailable");
+ one('    const basePrice = newItem.basePrice !== undefined ? newItem.basePrice : newItem.price;',
+     '    catalogRequest.current += 1; // invalidate pending catalog reads on cart edit\n    const basePrice = newItem.basePrice !== undefined ? newItem.basePrice : newItem.price;',"invalidate add");
+ one('  const updateQuantity = (lineId: string, delta: number) => {',
+     '  const updateQuantity = (lineId: string, delta: number) => {\n    catalogRequest.current += 1;',"invalidate quantity");
+ one('  const removeItem = (lineId: string) => {',
+     '  const removeItem = (lineId: string) => {\n    catalogRequest.current += 1;',"invalidate remove");
+ one('  const clearCart = useCallback(() => {\n    setItems([]);',
+     '  const clearCart = useCallback(() => {\n    catalogRequest.current += 1;\n    setItems([]);',"invalidate clear");
  one('  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);',
  '  const refreshCartCatalog=async ():Promise<boolean>=>{\n' +
- '    const snapshot=items.filter(item=>item.merchantId===merchant?.id);\n' +
- '    if(!isHydrated||!snapshot.length)return false;\n' +
+ '    const snapshot=items;\n' +
+ '    if(!isHydrated||!merchant||!snapshot.length||snapshot.some(item=>item.merchantId!==merchant.id))return false;\n' +
  '    const sequence=++catalogRequest.current;\n' +
  '    const ids=[...new Set(snapshot.map(item=>item.id))];\n' +
  '    try{\n' +
