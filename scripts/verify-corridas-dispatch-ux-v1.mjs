@@ -15,7 +15,7 @@ requireAll(".work/corridas/src/routes/_authenticated.corrida.$rideId.tsx", [
   "A busca termina automaticamente se nenhum motorista aceitar dentro do prazo."
 ]);
 const rideHook=read(".work/corridas/src/hooks/rides/use-active-ride.tsx");
-console.log("[DIAG] active ride terminal expressions",rideHook.split("\\n").map((line,index)=>({line,index:index+1})).filter(item=>/expired|isTerminalRideStatus|setScreenState\\("cancelled"\\)/.test(item.line)).slice(0,20));
+console.log("[DIAG] active ride terminal expressions", rideHook.split(String.fromCharCode(10)).map((line,index)=>({line,index:index+1})).filter(item=>item.line.includes("expired") || item.line.includes("isTerminalRideStatus") || item.line.includes("setScreenState")).slice(0,35));
 requireAll(".work/corridas/src/hooks/rides/use-active-ride.tsx", [
   "APOIS_REDISPATCH_POLL_V1",
   'action: "redispatch"',
