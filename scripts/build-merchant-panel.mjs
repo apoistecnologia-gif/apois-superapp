@@ -137,6 +137,7 @@ if (!readFileSync(resolve(workspace, 'src/components/MerchantSubscriptionGate.ts
 // RV-09 / CV-028: after existing customer deletion-request hardener, before building.
 // Present RPC-confirmed + logout failure truthfully; do not send another request.
 run(process.execPath, [resolve(root, 'scripts/fix-apois-account-deletion-visual09-v1.mjs'), 'entregas']);
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs')]);
 if (!readFileSync(resolve(workspace, 'src/routes/perfil/dados-pessoais.tsx'), 'utf8').includes('APOIS_CV09_DELIVERY_DELETION_RESULT_V1')) {
   throw new Error('[FAIL] CV09 Entregas deletion request feedback missing');
 }
