@@ -80,7 +80,7 @@ export function useApoisDeletionDialogFocus(open: boolean) {
     const handleFocusIn = (event: FocusEvent) => {
       if (event.target instanceof Node && !dialog.contains(event.target)) {
         const first = getFocusable()[0] ?? cancel;
-        if (!first.disabled) first.focus({ preventScroll: true });
+        if (!first.hasAttribute("disabled")) first.focus({ preventScroll: true });
         else dialog.focus({ preventScroll: true });
       }
     };
