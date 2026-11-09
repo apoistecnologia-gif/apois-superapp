@@ -483,6 +483,18 @@ if (name === 'corridas') {
     ['src/components/rides/active/RideStatusHeader.tsx','APOIS_CV14_RIDE_STATUS_WRAP_V1'],
   ]) if(!readFileSync(resolve(root,'.work/corridas',rel),'utf8').includes(marker))
     throw Error('[FAIL] RV14 Passenger visual missing '+rel);
+  // RV-15: restore scoped public-form placeholder contrast, then only user-facing
+  // auth error copy and field accessibility on disposable Corridas; do not change
+  // password predicates, Supabase callback/session logic or email submission.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-public-form-contrast-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-auth-visual15-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-auth-visual15-v1.test.mjs')]);
+  for(const rel of ['src/routes/_public.recuperar-senha.tsx','src/routes/_public.redefinir-senha.tsx']){
+    const generated=readFileSync(resolve(root,'.work/corridas',rel),'utf8');
+    if(!generated.includes('APOIS_CV15_AUTH_FEEDBACK_ACCESSIBILITY_V1') ||
+       !generated.includes('data-apois-corridas-public-form-contrast-v1'))
+      throw Error('[FAIL] RV15 Passenger auth visual missing '+rel);
+  }
   for (const [relative, marker] of [
     ['src/routes/_authenticated.buscar-destino.tsx', 'data-apois-visual04-clear-search-v1'],
     ['src/routes/_authenticated.revisar-solicitacao.tsx', 'APOIS_VISUAL04_REVIEW_DETAILS_V1'],
