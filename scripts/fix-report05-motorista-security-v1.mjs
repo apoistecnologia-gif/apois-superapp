@@ -207,7 +207,7 @@ if(!config.includes("APOIS_REPORT05_LOCATION_DIAGNOSTIC_V1")){
     "    setTestingLocation(true);",
     "    try{",
     "      let lat:number,lng:number;",
-    "      let quality:\"precise\"|\"approximate\"|\"unknown\"=\"unknown\";",
+    "      let quality: ReturnType<typeof classifyPartnerLocationPermission> | \"unknown\"=\"unknown\";",
     "      if(isNative()){",
     "        const current=await Geolocation.checkPermissions();",
     "        quality=classifyPartnerLocationPermission(current);",
