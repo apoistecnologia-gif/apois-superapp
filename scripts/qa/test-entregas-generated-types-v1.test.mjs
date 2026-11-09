@@ -27,7 +27,7 @@ test("live 67-table public schema replaces incomplete types only in temporary wo
     const first=execute();
     assert.equal(first.status,0,first.stderr||first.stdout);
     assert.equal(readFileSync(target,"utf8"),full);
-    for(const table of critical) assert.match(full,new RegExp("^      "+table+": \\\\{$","m"));
+    for(const table of critical) assert.ok(full.includes("      "+table+": {"), "missing "+table);
     assert.ok([...full.matchAll(/^      [a-z_]+: \{$/gm)].length>=67);
     const second=execute();
     assert.equal(second.status,0,second.stderr||second.stdout);
