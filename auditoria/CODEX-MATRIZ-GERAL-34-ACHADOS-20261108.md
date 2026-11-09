@@ -27,7 +27,7 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 | INV-016 | P2 | Corridas | B | Anexo sem URL mostra erro/retentativa; homologação pendente |
 | INV-017 | P2 | Supabase | G | Proteção contra senhas vazadas depende de configuração/testes |
 | INV-018 | P2 | Supabase Entregas e Corridas | C | Entregas: 113 RPCs `SECURITY DEFINER` com `anon EXECUTE` inicialmente, 26 ACLs reduzidas (20 admin e 6 internas), restam 87. Corridas: 84 inicialmente, ACL de 12 ações administrativas e 3 RPCs financeiras service-role corrigida e verificada, restam 69. Migrações aplicadas com testes rollback de ACL; nenhuma operação financeira executada. As 156 RPCs remanescentes somadas exigem classificação por privilégio/chamador; contagem não equivale a vulnerabilidades comprovadas. |
-| INV-019 | P1 | Vercel | E | Aliases/previews demandam identificação do commit em publicação |
+| INV-019 | P1 | Vercel / versão publicada | C | Vercel consultada com projectId sem teamId: domínio parceiros.apoisbrasil.com.br vinculado a deployment CLI de 27/10/2026 (`dpl_GT6JfV8dJ7MQrydb7Vo2MTde9G2r`), sem SHA Git. Preview Estabelecimento de 03/11 (`dpl_J6ozrdGUkkipCczc5Tp8pSLKhHuy`) aponta para fonte Entregas commit `ccd30fc03cc95119f702ceab27b85fd81e57c88d`, ramo `legal/novos-planos-assinatura-homolog-20261103`, diferente do snapshot pinado. Diferença entre versões confirmada; precisa build/publicação de artefato auditado e QA da URL sem alterar alias por presunção. |
 | INV-020 | P2 | Entregas financeiro | B | Migração `apois_inv020_settlement_notification_mojibake_fix_20261108` aplicada após simulação rollback. Literal corrigido, ACL INV-009 preservada; não altera lançamento/valor, falta E2E e histórico. |
 | INV-021 | P1 | Corridas carteira | B | DOMAIN ID e hardener Auth ligados à montagem; teste real pendente |
 | INV-022 | P2 | Entregas busca | B | Lojas não dependem dos 40 produtos exibidos |
@@ -47,11 +47,11 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 ## Total geral
 - A: 0 (nenhuma feature pronta apenas por presença de interface ou teste isolado).
 - B: 23 — correções implementadas e/ou aplicadas, sem homologação integral do produto.
-- C: 7 — medidas parciais, inclusive promoções mantidas desativadas, lock ainda incompatível e risco residual de imagem órfã.
+- C: 8 — medidas parciais, inclusive promoções mantidas desativadas, lock ainda incompatível e versão publicada divergente.
 - D: 0 — não restou item sem remediação alguma; os bloqueios continuam classificados como parciais, condicionais ou externos.
-- E: 2 — evidência/versão ainda a comprovar.
+- E: 1 — evidência/versão ainda a comprovar.
 - G: 2 — bloqueios externos ou de configuração.
-- Soma conferida: 0 + 23 + 7 + 0 + 2 + 2 = 34.
+- Soma conferida: 0 + 23 + 8 + 0 + 1 + 2 = 34.
 - Total: 34.
 
 **Estado de produção em 08/11/2026:** as migrações INV-009, INV-034, INV-024 e o reforço parcial INV-018 foram confirmadas aplicadas no Supabase Entregas (`ptgkwyyolrdgnqketkjj`). INV-009 deixou de ser bloqueio por ACL de execução direta; **INV-031 permanece NÃO APLICADA**. Não declarar produção homologada: restam E2E de pagamento, permissões e apps. Nenhum pagamento real foi efetuado nesta continuação.
@@ -93,3 +93,8 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 - INV-015: criada e aplicada apois_inv015_product_images_merchant_insert_20261108, política limitada a INSERT autenticado com proprietário/gerente ativo, produto, loja, extensão e caminho verificados. Antes não havia política para product-images. Simulação DDL com rollback e 6/6 formatos sintéticos confirmados; política relida após aplicação. Gerador do editor reconcilia resposta perdida do update. Sem exclusões.
 - INV-014: criada e aplicada apois_inv014_customer_avatar_versioned_insert_20261108, política separada para avatar do próprio usuário em subpasta customer-avatar, sem sobreposição da política existente do entregador. Simulação e 6/6 formatos sintéticos aprovados; política relida após aplicação. Cliente grava URLs únicas e confirma profile por readback. Sem exclusões.
 - Persistem: compilação/typecheck, testes reais com conta autenticada, publicação web/Android, validação de upload/CDN, plano seguro para objetos órfãos, conciliação Bun e E2E de funcionalidades e pagamentos. Promoções continuam NÃO aplicadas. Nenhum APK ou cobrança real foi produzido.
+
+## Continuação — evidência Vercel e segurança Corridas (08/11/2026)
+
+- INV-019: projeto e deployment de produção identificados por consulta Vercel de leitura. `parceiros.apoisbrasil.com.br` corresponde a deployment **CLI** de 27/10/2026, sem Git SHA. Preview do Estabelecimento em 03/11 está no branch comercial de Entregas com SHA `ccd30fc...`, e não na fonte pinada da auditoria. Sem substituição de alias ou deploy automático: o código auditado ainda precisa de build/QA/release.
+- INV-018 Corridas: revogadas EXECUTE de anon e authenticated em 3 funções de status de saques, que já exigiam `service_role` no próprio corpo. Migração `apois_corridas_inv018_withdrawal_state_service_only_20261108` aplicada após BEGIN/ROLLBACK; funções e ACL 3/3 verificadas. Advisor de segurança de Corridas após a migração apontou 66 funções SECURITY DEFINER anon-executáveis (antes 69), das quais não se pode deduzir vulnerabilidades por contagem. Nenhum saque ou valor alterado.
