@@ -66,8 +66,8 @@ export function patchReset(src) {
   out=once(out,'              type={showPassword ? "text" : "password"}\n              placeholder="Digite a nova senha"',
     '              id="apois-reset-password"\n              type={showPassword ? "text" : "password"}\n              autoComplete="new-password"\n              placeholder="Digite a nova senha"',
     "reset password input");
-  out=once(out,'              type="password"\n              placeholder="Repita a nova senha"',
-    '              id="apois-reset-confirm-password"\n              type="password"\n              autoComplete="new-password"\n              placeholder="Repita a nova senha"',
+  out=once(out,'            type="password"\n            placeholder="Repita a nova senha"',
+    '            id="apois-reset-confirm-password"\n            type="password"\n            autoComplete="new-password"\n            placeholder="Repita a nova senha"',
     "reset confirmation input");
   out=once(out,'              onClick={() => setShowPassword(!showPassword)}\n              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"',
     '              onClick={() => setShowPassword(!showPassword)}\n'+
