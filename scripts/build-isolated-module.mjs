@@ -458,6 +458,7 @@ if (name === 'corridas') {
   // RV-09 / CV-027: Passenger deletion dialog already mounted by its existing hardener.
   // Apply only the focus/isolation layer; never change the deletion RPC or auth.
   run(process.execPath, [resolve(root, 'scripts/fix-apois-account-deletion-visual09-v1.mjs'), 'passageiro']);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs')]);
   for (const [relative, marker] of [
     ['src/components/profile/PassengerAccountDeletion.tsx', 'APOIS_CV09_PASSENGER_DELETION_DIALOG_V1'],
     ['src/lib/useApoisDeletionDialogFocus.ts', 'APOIS_CV09_DELETION_FOCUS_V1'],
