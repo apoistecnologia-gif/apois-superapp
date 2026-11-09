@@ -251,6 +251,34 @@ jobs:
           grep -Fq 'VITE_GOOGLE_MAPS_NATIVE_API_KEY' .work/corridas/src/components/map/PassengerMap.tsx
           echo "[OK] Cliente compilado com mapa nativo Corridas habilitado"
 
+      - name: Diagnose generated Corridas TypeScript on failed build
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=".work/corridas/src"
+          print_range() {
+            local path="$1" start="$2" end="$3"
+            local target="$root/$path"
+            test -f "$target" || { echo "[DIAG] Missing $path"; return; }
+            echo "::group::[DIAG] $path L$start-$end"
+            sed -n "${start},${end}{=;p;}" "$target" | paste -d' ' - -
+            echo "::endgroup::"
+          }
+          # Only application snippets near compiler diagnostics: never dump .env or keys.
+          print_range components/pricing/CategorySelector.tsx 1 58
+          print_range components/profile/PassengerAccountDeletion.tsx 72 92
+          print_range lib/useApoisDeletionDialogFocus.ts 54 83
+          print_range 'routes/_authenticated.corrida.$rideId.tsx' 243 263
+          print_range 'routes/_authenticated.corrida.$rideId.tsx' 321 344
+          print_range routes/_authenticated.corridas.tsx 128 150
+          print_range routes/_authenticated.inicio.tsx 45 61
+          print_range routes/_authenticated.ocorrencias.tsx 1 28
+          print_range services/geocoding/geocoding-service.ts 158 175
+          print_range services/payments/payment-service.ts 1 86
+          print_range services/rides/active-ride-service.ts 15 50
+          print_range services/rides/active-ride-service.ts 170 184
+
       - name: Create Android project
         shell: bash
         env:
