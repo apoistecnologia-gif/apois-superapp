@@ -116,6 +116,8 @@ replaceDrivers('  const getDocs = useServerFn(getDriverDocumentUrls);',
  '  }',
  "replace serverFn with authenticated QA route");
 write(adminDriversFile,adminDrivers);
+const report03Patch=spawnSync(process.execPath,["scripts/fix-report03-admin-preview-notifications-v1.mjs"],{cwd:root,stdio:"inherit",env:{...process.env,APOIS_MOTORISTA_WORKSPACE:".work/partner-motorista"}});
+if(report03Patch.status!==0)throw Error("[FAIL] Admin notification preview API patch failed");
 
 const guardFix=spawnSync(process.execPath,["scripts/fix-admin-guard-navigation-v1.mjs"],{cwd:root,stdio:"inherit"});
 if(guardFix.status!==0)throw Error("[FAIL] QA Admin Guard navigation patch failed");
