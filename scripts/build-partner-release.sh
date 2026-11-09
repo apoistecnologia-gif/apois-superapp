@@ -171,6 +171,13 @@ node "$ROOT/scripts/fix-report03-native-push-permission-v1.mjs"
 node "$ROOT/scripts/fix-report07-driver-reason-code-v1.mjs"
 node --test "$ROOT/scripts/qa/test-report07-driver-reason-code-v1.test.mjs"
 node --test "$ROOT/scripts/qa/test-report07-redispatch-v1.test.mjs"
+# CV-013..015: last scoped rating presentation patch, after V7 and other Motorista hardeners.
+# No source-pin edit, backend action, rating submission or app publication here.
+node "$ROOT/scripts/fix-partner-motorista-rating-accessibility-cv03-v1.mjs"
+node --test "$ROOT/scripts/qa/test-motorista-rating-accessibility-cv03-v1.test.mjs"
+require_contains 'APOIS_CV03_DRIVER_RATING_V1' "$MOTORISTA/src/routes/motorista.app.tsx" 'Motorista rating accessibility marker'
+require_contains 'aria-pressed={stars === n}' "$MOTORISTA/src/routes/motorista.app.tsx" 'Rating announces selected star'
+require_contains 'textarea#apois-driver-rating-comment::placeholder' "$MOTORISTA/src/styles.css" 'Rating placeholder only contrast'
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
