@@ -138,4 +138,17 @@ patch("src/components/notifications/NotificationPreferencesPage.tsx","channelErr
     "UI partial warning");
   return s;
 });
+patch("src/lib/adminNotifications.functions.ts","const MAX_RECIPIENTS = 100;",original=>{
+  let s=once(original,"const MAX_RECIPIENTS = 50_000;","const MAX_RECIPIENTS = 100;","Admin limit");
+  s=once(s,"      failed_users?: number;","      failed_users?: number;\n      failed?: number;\n      processed?: number;","Admin response");
+  s=once(s,
+    "    return {\n      ok: payload.ok !== false,",
+    "    if (Number(payload.processed ?? -1) !== recipients.length) throw new Error(\"notification_processing_unverified\");\n    return {\n      ok: payload.ok !== false,\n      processed: Number(payload.processed),",
+    "process ack");
+  s=once(s,
+    "      failed: Number(payload.failed_users ?? 0),",
+    "      failed: Number(payload.failed_users ?? payload.failed ?? 0),",
+    "failed contract");
+  return s;
+});
 console.log("[OK] Relatorio 03: notificacoes do Motorista/Admin tratadas em " + workspace);
