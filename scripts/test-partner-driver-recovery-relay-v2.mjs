@@ -70,7 +70,8 @@ assert.ok(recoveryForm.includes('token: sanitizedCode'),"Numeric user code must 
 // it still matches the successful code request. Do not demand the obsolete inline form.
 assert.ok(recoveryForm.includes('const verifyingEmail = parsed.data.email.trim().toLowerCase()') &&
   recoveryForm.includes('email: verifyingEmail') &&
-  recoveryForm.includes('sentTo !== verifyingEmail') &&
+  recoveryForm.includes('sentTo === email.trim().toLowerCase()') &&
+  recoveryForm.includes('currentEmailRef.current.trim().toLowerCase() === verifyingEmail') &&
   recoveryForm.includes('isCurrentVerification()'),
   "OTP must stay bound to the requested recipient across asynchronous verification");
 assert.ok(recoveryForm.includes('to: "/motorista/redefinir-senha", replace: true'),"OTP must navigate only on verified session");
