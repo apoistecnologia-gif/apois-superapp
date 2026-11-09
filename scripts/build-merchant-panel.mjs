@@ -132,6 +132,12 @@ const baseEnv = {
 // INV-012: local QA can inspect a drifting pinned fixture; never promote it to a release.
 const fixtureOnly = process.env.APOIS_MERCHANT_QA_FIXTURE_ONLY === '1'
   && !process.env.CI && !process.env.VERCEL && !process.env.VERCEL_ENV;
+run(process.execPath, [resolve(root, 'scripts/reconcile-entregas-bun-lock-v1.mjs')], {
+  cwd: root, env: baseEnv,
+});
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-overlay-v1.test.mjs')], {
+  cwd: root, env: baseEnv,
+});
 run(process.execPath, [resolve(root, 'scripts/verify-entregas-bun-lock-v1.mjs'),
   ...(fixtureOnly ? ['--qa-fixture-only'] : [])], { cwd: root, env: baseEnv });
 run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-lock-v1.test.mjs')], {
