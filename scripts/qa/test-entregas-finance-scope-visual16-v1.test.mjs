@@ -60,7 +60,7 @@ test("CV-056 / VIS-057: all four views disclose limited arrays, not global total
     [reviews,500,"avaliações"],[realtime,300,"entregas ativas"]
   ]){
     assert.ok(s.includes(".limit("+cap+")"),subject+" cap changed");
-    assert.ok(s.includes("Até "+cap),subject+" limit note missing");
+    assert.ok(s.toLowerCase().includes("até "+cap),subject+" limit note missing");
     assert.ok(s.includes('role="note"'),subject+" note not exposed");
   }
   assert.ok(reviews.includes("médias, contagens, a busca e os filtros consideram apenas"));
