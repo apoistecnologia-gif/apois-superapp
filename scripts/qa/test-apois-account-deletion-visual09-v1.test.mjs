@@ -82,7 +82,7 @@ test("CV-027 shared focus helper is isolated from account, auth and deletion ope
   const helper=read("scripts/templates/useApoisDeletionDialogFocus.ts");
   for(const x of ["APOIS_CV09_DELETION_FOCUS_V1",
     "cancel.focus({ preventScroll: true })", 'setAttribute("inert", "")',
-    'setAttribute("aria-hidden", "true")', 'event.key === "Tab"',
+    'setAttribute("aria-hidden", "true")', 'event.key !== "Tab"',
     'event.key === "Escape"', 'event.shiftKey',
     'addEventListener("focusin", handleFocusIn, true)',
     'removeEventListener("keydown", handleKeyDown, true)',
