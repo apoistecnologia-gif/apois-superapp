@@ -63,6 +63,9 @@ node "$ROOT/scripts/harden-partner-motorista-rating-handoff.mjs"
 node "$ROOT/scripts/harden-motorista-voice-dedup.mjs"
 node "$ROOT/scripts/harden-motorista-map-branding.mjs"
 node "$ROOT/scripts/harden-partner-motorista-payment-policy.mjs"
+# Relatorio 06 / INV-052: after receipt visual hardener; read-only synthetic unit gate.
+node "$ROOT/scripts/fix-report06-motorista-receipt-v1.mjs"
+node --test "$ROOT/scripts/qa/test-report06-receipt-v1.test.mjs"
 # Relatorio 05: patch after native GPS utilities (imported by payment-policy).
 node "$ROOT/scripts/fix-report05-motorista-security-v1.mjs"
 node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs"
