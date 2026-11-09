@@ -475,6 +475,14 @@ if (name === 'corridas') {
   run(process.execPath, ['--test', resolve(root,'scripts/qa/test-corridas-notification-visual11-v1.test.mjs')]);
   if(!readFileSync(resolve(root,'.work/corridas/src/routes/_authenticated.notificacoes.tsx'),'utf8').includes('APOIS_CV11_PASSENGER_NOTIFICATION_READ_V1'))
     throw Error('[FAIL] RV11 Passenger notification readable state missing');
+  // RV-14: initial loading and reconnect messages, on disposable Passenger UI only.
+  run(process.execPath, [resolve(root,'scripts/fix-corridas-active-ride-visual14-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root,'scripts/qa/test-corridas-active-ride-visual14-v1.test.mjs')]);
+  for(const [rel,marker] of [
+    ['src/routes/_authenticated.corrida.$rideId.tsx','APOIS_CV14_PASSENGER_LOADING_V1'],
+    ['src/components/rides/active/RideStatusHeader.tsx','APOIS_CV14_RIDE_STATUS_WRAP_V1'],
+  ]) if(!readFileSync(resolve(root,'.work/corridas',rel),'utf8').includes(marker))
+    throw Error('[FAIL] RV14 Passenger visual missing '+rel);
   for (const [relative, marker] of [
     ['src/routes/_authenticated.buscar-destino.tsx', 'data-apois-visual04-clear-search-v1'],
     ['src/routes/_authenticated.revisar-solicitacao.tsx', 'APOIS_VISUAL04_REVIEW_DETAILS_V1'],
