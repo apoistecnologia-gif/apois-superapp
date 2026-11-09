@@ -166,7 +166,7 @@ export function patchAvailableCalls(source){
     '{message&&<p role="status" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{message}</p>}',
     '{message&&<p role="status" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{message}</p>}\n'+
     '      {claimMessage&&<p role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{claimMessage}</p>}\n'+
-    '      {loading&&<p role="status" className="text-sm text-zinc-600">Consultando solicitações…</p>}\n'+
+    '      {loading&&<p role="status" aria-live="polite" className="text-sm text-zinc-600">Consultando solicitações…</p>}\n'+
     '      {isStale&&<p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Informações sem atualização recente. Atualize para verificar a disponibilidade.</p>}',
     "separate feedback and stale list");
   next=exactlyOnce(next,
