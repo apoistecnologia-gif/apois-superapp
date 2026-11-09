@@ -37,7 +37,7 @@ requireAll('superapp/partner-shell/index.html', [
   'Escolha como você deseja trabalhar na APOIS.',
   'Sou <em>Motorista</em>',
   'Sou <em>Entregador</em>',
-  'background:linear-gradient(135deg,#ff2733,#f71320 58%,#df0d18)',
+  'background:linear-gradient(135deg,#D51722,#CE101A 58%,#C9141B)',
   'background:#F7F7F8',
 ], 'seletor Parceiro replica a referência aprovada com superfícies claras e CTA vermelho');
 
