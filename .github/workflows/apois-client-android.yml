@@ -23,6 +23,7 @@ on:
       - 'scripts/build-isolated-module.mjs'
       - 'scripts/fix-corridas-generated-ts-gate-v1.mjs'
       - 'scripts/harden-corridas-backend-identity-boundary.mjs'
+      - '.apois/modules.json'
 
 permissions:
   contents: read
