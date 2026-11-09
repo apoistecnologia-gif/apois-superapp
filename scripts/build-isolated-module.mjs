@@ -454,6 +454,19 @@ if (name === 'corridas') {
   // Relatório 09 / INV-058–060: geração de preço e coerência na confirmação.
   run(process.execPath, [resolve(root, 'scripts/fix-report09-pricing-checkout-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report09-pricing-checkout-v1.test.mjs')]);
+  // CV-016/017: visual-only last-mile presentation on the transformed Corridas workspace.
+  // VIS-019 is documented for future authorized engineering review; the 3200ms timer is immutable here.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-visual04-passenger-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-visual04-passenger-v1.test.mjs')]);
+  for (const [relative, marker] of [
+    ['src/routes/_authenticated.buscar-destino.tsx', 'data-apois-visual04-clear-search-v1'],
+    ['src/routes/_authenticated.revisar-solicitacao.tsx', 'APOIS_VISUAL04_REVIEW_DETAILS_V1'],
+  ]) {
+    const path = resolve(root, '.work/corridas', relative);
+    if (!readFileSync(path, 'utf8').includes(marker)) {
+      throw new Error('[FAIL] CV04 Corridas visual missing ' + marker + ' in ' + relative);
+    }
+  }
 }
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
