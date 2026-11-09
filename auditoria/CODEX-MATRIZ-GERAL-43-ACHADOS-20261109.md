@@ -152,3 +152,5 @@ Esta seção **acrescenta nove achados** ao registro histórico de 34, sem recla
 **Verificações reais feitas na fase 03:** leitura dos arquivos pinados, 18 verificações estáticas/lógicas no runtime de execução e simulação dos geradores sobre fontes reais do pin (3 scripts frontend/8 arquivos, 2 scripts backend/3 arquivos). **Não foram executados** testes Node versionados, typecheck, build ou Android físico; estes passos não são pré-requisito para receber próximo relatório, mas ficam explicitamente pendentes.
 
 **Integridade:** os 34 registros anteriores e suas notas foram copiados integralmente acima. Os três pins e duas bases Supabase mantidos; nenhum dado alterado.
+
+**Verificação complementar do INV-042/043 (09/11):** handler de API Admin executado em JS isolado com rede mockada, 9/9 respostas de autorização/histórico/limites corretas; não houve chamada externa. Permanece pendente o endpoint Vercel realmente publicado e teste de Node/typecheck.
