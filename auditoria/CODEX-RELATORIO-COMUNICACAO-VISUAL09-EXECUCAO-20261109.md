@@ -119,3 +119,6 @@ Os três builders passaram a incluir o comando para a **mesma suíte Node** como
 **Não executados:** merge, deploy, publicação, APK, operação destrutiva, escrita em Supabase, alteração de SQL/RLS, alteração do source-lock ou dos três repositórios-fonte.
 
 **Estado final:** CV-027 e CV-028 **implementados na preparação**, com evidências isoladas; homologação e compilação permanecem pendentes. Próxima numeração disponível: CV-029.
+
+
+**Ajuste final de compatibilidade TypeScript:** após a primeira gravação do relatório, o helper de foco foi corrigido em `2c1ab0372780249b94e425a9bb6499d85986ed30`: a verificação de botão desabilitado no retorno de `querySelectorAll<HTMLElement>` passou a usar `hasAttribute("disabled")` (disponível em `HTMLElement`) em lugar de `.disabled` (não declarado em `HTMLElement` genérico). Não houve alteração de comportamento ou teste físico; a compilação integral continua pendente.
