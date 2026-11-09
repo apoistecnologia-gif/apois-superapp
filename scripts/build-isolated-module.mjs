@@ -511,6 +511,19 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-assets-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-product-image-reconciliation-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-customer-avatar-cache-v1.mjs')]);
+  // CV-019/020: late UI-only order timeline captions and accessible steps.
+  // Preserve realtime, payment_status, order transitions, PIN, delivered banner and map.
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-order-timeline-visual05-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-order-timeline-visual05-v1.test.mjs')]);
+  const cv05OrderRoute = readFileSync(resolve(root, '.work/entregas/src/routes/pedido/$orderId/index.tsx'), 'utf8');
+  for (const marker of [
+    'APOIS_VISUAL05_ORDER_TIMELINE_V1',
+    'data-apois-cv05-order-stage-message',
+    'data-apois-cv05-order-steps',
+    'role="status" aria-live="polite"',
+  ]) {
+    if (!cv05OrderRoute.includes(marker)) throw new Error('[FAIL] CV05 Entregas missing ' + marker);
+  }
   run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 }
 
