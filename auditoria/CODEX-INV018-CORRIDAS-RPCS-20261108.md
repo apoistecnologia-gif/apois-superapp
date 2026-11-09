@@ -89,3 +89,11 @@ Fonte: consulta somente de metadados a `pg_proc` no Supabase Corridas `tbbzkrfup
 - Testar 15 chamadas pelo papel `anon`, por usuário autenticado autorizado/não autorizado e por `service_role` quando pertinente, **sem executar efeitos financeiros reais**; os testes realizados até aqui foram de ACL em catálogo.
 - Avaliar especificamente `validate_internal_scheduler_token` e demais RPCs que lidam com tokens/estado/ledger, identificando chamadores e contrato de acesso antes de mudar permissões.
 - Não declarar que as 69 funções são vulnerabilidades; diversas podem ser helpers públicos necessários ao login, corrida, localização, cotação ou triggers.
+
+## Continuação adicional: saques — três RPCs de status protegidas (08/11/2026)
+
+- Funções reais revisadas no Supabase Corridas: mark_driver_withdrawal_failed(uuid,text,jsonb), mark_driver_withdrawal_paid(uuid,text,text,jsonb), mark_driver_withdrawal_processing(uuid). Todas declaradas SECURITY DEFINER, com guarda explícita auth.role() = service_role antes da mutação.
+- Teste BEGIN/ROLLBACK reduziu EXECUTE nas três: anon=false, authenticated=false, service_role=true. Migração apois_corridas_inv018_withdrawal_state_service_only_20261108 aplicada e ACL reconsultada 3/3 com exatamente o mesmo resultado.
+- Nenhuma RPC de saque chamada; nenhuma movimentação, estorno, pagamento, chave PIX ou saldo alterado.
+- Com mais três revogações, total de funções SECURITY DEFINER anon-executáveis em Corridas deve cair de 69 para 66; confirmar no advisor antes de tomar como medição definitiva.
+- validate_internal_scheduler_token permanece sob investigação de chamadores; não revogar sem identificar invocações internas para evitar quebra de tarefas programadas.
