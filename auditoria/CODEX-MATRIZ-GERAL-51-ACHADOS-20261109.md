@@ -289,3 +289,23 @@ Os **57 achados anteriores e toda a sua documentação permanecem preservados ac
 **Evidências de execução:** gerador e suíte Node foram versionados e o builder passou a chamá-los ao final das transformações do módulo Corridas. Em V8 isolado foram aprovadas 21 verificações de transformação/callback, 7 comparações de rota e 7 snapshots de checkout (35 verificações ao todo). **A suíte Node incluída, build, typecheck, React, Android e E2E não foram executados.** Não foi gerado APK nem publicado código, banco, migração, pagamento ou dispatch. Nenhuma fonte fixada, Entregas ou main foi alterada.
 
 **Bloqueios anteriores intactos:** INV-054 G, INV-055 C e INV-056 C; migrações `QA_NOT_APPLIED` continuam NÃO APLICADAS. Não reclassificar os 57 achados anteriores por regressões não comprovadas. Homologação final somente após a frase expressa de liberação.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 10 (09/11/2026)
+
+Os **60 achados dos Relatórios 01–09 e toda a matriz histórica acima foram preservados**. Esta fase incorpora exclusivamente INV-061 e INV-062, com base no `RELATORIO-10-APOIS-EXCLUSAO-DE-CONTA-20261108.md`. Documentação: `auditoria/CODEX-RELATORIO10-EXECUCAO-20261109.md`. Branch autorizada `audit/continuacao-20261107`, pins preservados, sem deploy.
+
+| ID | Prioridade | Área | Estado | Alteração versionada e limite de aceite |
+|---|---|---|---|---|
+| **INV-061** | **P1** | Corridas / exclusão de conta com corrida em busca | **C** | RPC vivo `apois_rpc_private.request_own_account_deletion()` no Supabase Corridas confirmado sem o estado canônico `procurar_motorista`. Preparada a migração estrita `20261109_report10_account_deletion_search_guard_QA_NOT_APPLIED.sql`: adiciona apenas este estado à lista impeditiva, preserva todos os aliases legados, autenticação, auditoria e soft deletion. **SQL NÃO APLICADO.** A função de produção ainda não bloqueia este estado; faltam execução autorizada, staging com perfis sintéticos, corrida em busca e teste de concorrência com criação/aceite, sem mudança de política para agendadas. |
+| **INV-062** | **P2** | Corridas Motorista / aviso antes da exclusão | **B** | Texto do modal v4 agora explica que a conta APOIS Corridas é compartilhada pelos perfis Motorista **e Passageiro**, ambos afetados após solicitação confirmada pelo servidor; descreve retenção e soft deletion sem prometer apagamento físico imediato. O verificador do builder exige a nova informação; mantém `EXCLUIR`, RPC autenticada, confirmação `ok` e saída somente depois de confirmação. Gerador real ensaiado em memória; falta builder, Node --test, UI React e Android. |
+
+**Subtotal Relatório 10:** A 0 / B 1 / C 1 / D 0 / E 0 / G 0 = **2 novos**.
+
+**Novo total consolidado dos Relatórios 01–10:** **A 0 / B 42 / C 16 / D 0 / E 1 / G 3 = 62 achados**.
+
+**Testes efetivamente executados:** 16 verificações isoladas V8 e leitura-only do catálogo do Supabase Corridas para confrontar o predicado vivo com a migração preparada e o diálogo transformado. `scripts/qa/test-report10-account-deletion-v1.test.mjs` foi versionado, **mas a suíte Node não foi executada**; não houve build, APK, teste físico, exclusão, login/logout real ou deploy. Nenhuma migração `QA_NOT_APPLIED` foi executada. Os bloqueios INV-054 G e INV-055/056 C continuam como antes. Não confundir correção textual com comportamento homologado ou SQL preparado com função implantada.
+
+**Fonte única de execução:** `apoistecnologia-gif/apois-superapp@audit/continuacao-20261107`. Sem merge/main, repositórios-fonte protegidos intactos. A liberação da homologação final exige a frase de autorização expressa do responsável.
