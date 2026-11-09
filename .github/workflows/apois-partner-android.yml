@@ -18,6 +18,7 @@ on:
       - 'scripts/audit-codemagic-host-installs-v18.mjs'
       - 'scripts/harden-partner-motorista-history-receipt.mjs'
       - 'scripts/fix-report06-motorista-receipt-v1.mjs'
+      - 'scripts/build-partner-release.sh'
 
 permissions:
   contents: read
