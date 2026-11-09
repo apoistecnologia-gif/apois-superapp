@@ -469,6 +469,7 @@ if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/connect-entregas-merchant-order-status-v3.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-persisted-cart-validation-v3.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-product-image-reconciliation-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-customer-avatar-cache-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 }
 
