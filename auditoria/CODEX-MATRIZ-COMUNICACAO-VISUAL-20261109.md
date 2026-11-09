@@ -107,3 +107,24 @@ Prioridade de publicação futura: identificar exatamente a origem do login Esta
 ### Consolidação
 
 Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3). VIS-001 segue alias de INV-047, não contado; CV-006/VIS-007 continua fora da fila de defeitos ativos do código, com conferência física pendente. A matriz técnica mantém **67 achados; A 0 / B 46 / C 17 / D 0 / E 1 / G 3**, sem reclassificação. **Nenhum merge, deploy ou APK realizado**.
+
+
+## Achados visuais — rodada 05 (Cliente Entregas, andamento do pedido, VIS-020–021)
+
+**Relatório de entrada:** `RELATORIO-VISUAL-05-APOIS-PEDIDOS-20261109(1).md`. Fonte oficial verificada: `apoistecnologia-gif/apois-entregas@2f4606e0fb52dffb49f2e6aebbe921ce687ab625`, rota `src/routes/pedido/$orderId/index.tsx`, além dos geradores efetivos na branch **autorizada** `audit/continuacao-20261107`. Não modificar `audit/ecossistema-20261107` nem fontes pinadas.
+
+| CV | Origem | Prioridade | Tela | Comprovação e intervenção mínima | Situação |
+|---|---|---|---|---|---|
+| CV-019 | VIS-020 | P2 | Cliente Entregas / andamento de pedido | `created`, `pending_payment` e `paid` deixam a timeline sem etapa ativa; `searching_driver`, `driver_assigned`, `driver_arriving_store` compartilham “Pedido pronto”. Confirmadas nomenclaturas na tela `src/routes/pedidos.tsx` e contrato de estados. Overlay CV05 apresenta, quando pertinente, um único texto contextual derivado **somente** de `order.status`, com guarda em `order.payment_status` para não afirmar pagamento confirmado quando os estados divergem. Para retirada, nunca anuncia entregador | **Implementado no gerador, NÃO homologado em tela real**; validar status, pagamento, retorno, estados desatualizados e leitura |
+| CV-020 | VIS-021 | P2 | Cliente Entregas / etapas da linha do tempo | O `steps.map` usa `div` com estados principalmente por cor; só atual mostra EM ANDAMENTO. Overlay CV05 usa `<ol>` / `<li>`, `aria-current="step"`, textos `sr-only` para concluída/atual/pendente e marca ícones decorativos, evitando anúncio repetido do indicador visual. **Não** atribui `aria-live` ao conjunto de etapas | **Implementado no gerador, NÃO homologado em TalkBack**; conferir ordem, nome, estado, atualização e fonte ampliada |
+
+### Escopo, preservações e provas CV05
+
+- Patcher de apresentação exclusivo do workspace gerado: `scripts/fix-entregas-order-timeline-visual05-v1.mjs`, chamado no fim do bloco de Entregas em `scripts/build-isolated-module.mjs`, **depois** da implementação existente de rastreamento, atualizações, avaliação e demais transformadores.
+- Suíte de regressão versionada: `scripts/qa/test-entregas-order-timeline-visual05-v1.test.mjs`, incorporada ao builder; execução de `node --test` no checkout integral **ainda não realizada**.
+- Teste **realmente executado** em V8 sobre a rota pinada com simulação dos trechos relevantes do gerador de rastreamento: **12/12 checks**. Teste sobre a fixture extraída da suíte versionada: **17/17 checks** após ajuste de indentação; valida seleção de texto por estado, `payment_status` independente, lista e estados acessíveis, ausência de anúncio coletivo, preservação de callbacks/PIN, idempotência e rejeição de source drift. Não equivale a React, CSS calculado, browser, APK ou teste E2E.
+- Foi verificado que `fix-entregas-customer-delivery-tracking-v1.mjs` já amplia a disponibilidade do PIN **a partir de estados confirmados de coleta/rota**, além de chegada ao destino. Essa lógica posterior é preservada sem alterações pelo patch visual; não é correto usar a condição restrita do snapshot inicial como se fosse a regra final.
+- O banner `role="status" aria-live="polite"` somente para `delivered` e a retirada do mapa de entrega concluída **são mantidos**. Cancelamento, reembolso, fulfillment `delivery`/`pickup`, status oficiais, RPC, mapas, polling, Realtime, pagamentos e valores ficam intactos.
+- Pendências físicas: confirmar a cadeia final e SHA de APK, DOM e TalkBack, apresentação de 9+ estados em 320/360/390/412 px e paisagem, fonte ampliada, ausência de duplicação sonora em updates, histórico e notificações, e políticas de `payment_status` reais. Problema de estado atrasado/falso é assunto de engenharia, não corrigido por texto.
+
+**Consolidação:** 20 achados CV independentes (`CV-001–CV-020`, 8 + 4 + 3 + 3 + 2). `VIS-001` permanece alias de `INV-047`, não contado novamente; a retificação `VIS-007 / CV-006` permanece válida. **Matriz técnica intocada: 67 achados, A 0 / B 46 / C 17 / D 0 / E 1 / G 3.** Sem merge, deploy, APK, migrations ou operações em produção.
