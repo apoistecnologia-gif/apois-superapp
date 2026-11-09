@@ -22,8 +22,8 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 | INV-011 | P2 | Testes | C | Gates expandidos, falta comportamento autenticado |
 | INV-012 | P2 | Entregas build | C | Builder do estabelecimento agora impede release com `bun.lock` divergente, instalação frozen ou lint falhos; fallback somente fixture local mediante opt-in, nunca Vercel/CI. Snapshot pinado ainda não contém `@capacitor/app` e `@capacitor/browser` no lock (79 dependências declaradas vs 77). Falta reconciliar lock e compilar. |
 | INV-013 | P2 | Entregas | B | Gerador de histórico paginado por cursor `(created_at,id)` em páginas de 30, owner scoped, Realtime e deduplicação, conectado aos dois builders. Teste TEMP/ROLLBACK percorreu 105 pedidos sintéticos com timestamps iguais e inserção recente, sem duplicar, ignorando 13 pedidos da outra conta; ainda faltam typecheck, build e UI 51+. |
-| INV-014 | P2 | Entregas | E | Avatar cache URL fixa; confirmar regressão |
-| INV-015 | P2 | Entregas | E | Imagem de produto órfã após falha do update; confirmar fonte final |
+| INV-014 | P2 | Cliente Entregas avatar | B | Fonte usava URL fixa e upsert sem política própria. Gerador de avatar versionado conectado aos dois builders: URL única, MIME seguro, upsert=false e confirmação por leitura de profiles. Política INSERT restrita ao próprio UID em pasta customer-avatar, aplicada na produção. 6/6 casos de formato sintético aprovados. Faltam build, autenticação real e visual em duas telas/sessões; arquivos antigos preservados. |
+| INV-015 | P2 | Estabelecimento / imagens | C | Confirmada ausência de política INSERT para product-images apesar do upload direto. Migração em produção restringiu novos arquivos a gerentes autorizados e produtos da loja; 6/6 formatos sintéticos passaram. Gerador de upload faz verificação de MIME e confirmação de update por leitura posterior. Falta build/upload autenticado; se o update realmente falhar, objeto novo pode permanecer órfão e exige reconciliação posterior segura. Nenhuma exclusão automática. |
 | INV-016 | P2 | Corridas | B | Anexo sem URL mostra erro/retentativa; homologação pendente |
 | INV-017 | P2 | Supabase | G | Proteção contra senhas vazadas depende de configuração/testes |
 | INV-018 | P2 | Supabase Entregas e Corridas | C | Entregas: 113 RPCs `SECURITY DEFINER` com `anon EXECUTE` inicialmente, 26 ACLs reduzidas (20 admin e 6 internas), restam 87. Corridas: 84 inicialmente, ACL de 12 ações administrativas e 3 RPCs financeiras service-role corrigida e verificada, restam 69. Migrações aplicadas com testes rollback de ACL; nenhuma operação financeira executada. As 156 RPCs remanescentes somadas exigem classificação por privilégio/chamador; contagem não equivale a vulnerabilidades comprovadas. |
@@ -46,12 +46,12 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 
 ## Total geral
 - A: 0 (nenhuma feature pronta apenas por presença de interface ou teste isolado).
-- B: 22 — correções implementadas e/ou aplicadas, sem homologação integral do produto.
-- C: 6 — medidas parciais, inclusive promoções mantidas desativadas e lock ainda incompatível.
+- B: 23 — correções implementadas e/ou aplicadas, sem homologação integral do produto.
+- C: 7 — medidas parciais, inclusive promoções mantidas desativadas, lock ainda incompatível e risco residual de imagem órfã.
 - D: 0 — não restou item sem remediação alguma; os bloqueios continuam classificados como parciais, condicionais ou externos.
-- E: 4 — evidência/versão ainda a comprovar.
+- E: 2 — evidência/versão ainda a comprovar.
 - G: 2 — bloqueios externos ou de configuração.
-- Soma conferida: 0 + 22 + 6 + 0 + 4 + 2 = 34.
+- Soma conferida: 0 + 23 + 7 + 0 + 2 + 2 = 34.
 - Total: 34.
 
 **Estado de produção em 08/11/2026:** as migrações INV-009, INV-034, INV-024 e o reforço parcial INV-018 foram confirmadas aplicadas no Supabase Entregas (`ptgkwyyolrdgnqketkjj`). INV-009 deixou de ser bloqueio por ACL de execução direta; **INV-031 permanece NÃO APLICADA**. Não declarar produção homologada: restam E2E de pagamento, permissões e apps. Nenhum pagamento real foi efetuado nesta continuação.
@@ -84,3 +84,12 @@ A = corrigido, build e E2E validados; B = correção implementada no código, se
 **INV-033:** reparo do validador de sacola persistida: `refreshCartCatalog` retorna `Promise<boolean>`; erros de rede e alterações de preço/categoria/opções impedem checkout até uma nova revisão; produto de outro estabelecimento é considerado inválido. Checagem ocorre antes de `create-order` e da criação do PIX. As garantias foram adicionadas ao verificador textual, mas **não executadas no cliente compilado**; não confundir com homologação.
 
 **Complemento INV-018 — Corridas (08/11/2026):** no Supabase `tbbzkrfupmqdywnzgnms`, 84 funções `public SECURITY DEFINER` eram executáveis por `anon`. A migração `apois_corridas_inv018_restrict_admin_pix_financial_rpc_execute_20261108`, versionada em `supabase/corridas-forward-migrations/20261108_inv018_restrict_admin_pix_financial_rpc_execute.sql`, restringiu `anon` em 12 funções administrativas (exceto `admin_is_authorized`, preservada por compatibilidade) e restringiu `anon/authenticated` em 3 RPCs que já exigiam `service_role`: `activate_prepaid_pix_ride`, `claim_prepaid_pix_initial_dispatch`, `reverse_refunded_ride_payment`. Teste `BEGIN/ROLLBACK`: total 15, anon 0, authenticated 12, service_role 15. Aplicação em produção registrada em `supabase_migrations.schema_migrations` e ACL verificada novamente com contagens idênticas. Restam 69 funções `SECURITY DEFINER` com `anon EXECUTE` em Corridas (15 delas triggers), além de 87 em Entregas; inventários separados `auditoria/CODEX-INV018-CORRIDAS-RPCS-20261108.md` e `auditoria/CODEX-INV018-RPCS-PRIVILEGIADAS-20261108.md`. Sem alterar políticas de negócio, contas, dinheiro ou saldo.
+
+## Continuação complementar — INV-012/014/015/033 (08/11/2026)
+
+- INV-012: o módulo Entregas do Superapp passou a exigir instalação Bun frozen e validação explícita de manifesto/lock antes de montar o aplicativo. A divergência real de dois pacotes do login Google no snapshot pinado permanece e impede um release não reproduzível. Sem alteração dos pins.
+- INV-033: mutações de sacola agora invalidam leituras concorrentes de catálogo e mistura de lojas rejeita o checkout.
+- INV-013/014/015/033: cinco geradores reais aplicados em memória a seis arquivos pinados, sem falhas nem alteração da fonte; teste Node de workspace temporário incluído nos dois builders, ainda sem execução do checkout integral.
+- INV-015: criada e aplicada apois_inv015_product_images_merchant_insert_20261108, política limitada a INSERT autenticado com proprietário/gerente ativo, produto, loja, extensão e caminho verificados. Antes não havia política para product-images. Simulação DDL com rollback e 6/6 formatos sintéticos confirmados; política relida após aplicação. Gerador do editor reconcilia resposta perdida do update. Sem exclusões.
+- INV-014: criada e aplicada apois_inv014_customer_avatar_versioned_insert_20261108, política separada para avatar do próprio usuário em subpasta customer-avatar, sem sobreposição da política existente do entregador. Simulação e 6/6 formatos sintéticos aprovados; política relida após aplicação. Cliente grava URLs únicas e confirma profile por readback. Sem exclusões.
+- Persistem: compilação/typecheck, testes reais com conta autenticada, publicação web/Android, validação de upload/CDN, plano seguro para objetos órfãos, conciliação Bun e E2E de funcionalidades e pagamentos. Promoções continuam NÃO aplicadas. Nenhum APK ou cobrança real foi produzido.
