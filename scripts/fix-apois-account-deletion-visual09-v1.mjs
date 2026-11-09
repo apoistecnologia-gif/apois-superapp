@@ -84,7 +84,7 @@ export function patchDeliveryDeletionFeedback(source) {
     containsAll(source, [
       "let deletionRequestConfirmed = false;",
       "deletionRequestConfirmed = true;",
-      "toast.error(deletionRequestConfirmed ?",
+      "toast.error(deletionRequestConfirmed",
       'request_own_account_deletion',
     ], "partial delivery feedback");
     return source;
