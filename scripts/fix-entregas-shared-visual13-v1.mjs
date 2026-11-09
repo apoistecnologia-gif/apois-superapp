@@ -17,7 +17,7 @@ function completed(source, requirements, name) {
   return source;
 }
 export function patchBottomNav(source) {
-  const requirements = ['aria-current={active ? "page" : undefined}', "min-w-0 flex-1 sm:min-w-[72px]", "flex shrink-0 justify-center", 'data-apois-entregas-customer-nav-v5'];
+  const requirements = ['aria-current={active ? "page" : undefined}', "min-w-0 flex-1", "sm:min-w-[72px]", "flex shrink-0 justify-center", 'data-apois-entregas-customer-nav-v5'];
   if (source.includes(MARK)) return completed(source, requirements, "AppBottomNav");
   completed(source, ['data-apois-entregas-customer-nav-v5', 'min-w-[72px]', 'h-[68px] w-[68px]'], "AppBottomNav source");
   let next = once(source,
