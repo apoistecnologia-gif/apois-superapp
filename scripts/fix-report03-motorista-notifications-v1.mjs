@@ -151,4 +151,7 @@ patch("src/lib/adminNotifications.functions.ts","const MAX_RECIPIENTS = 100;",or
     "failed contract");
   return s;
 });
+patch("src/routes/admin.notificacoes.tsx","if (Number(res.failed ?? 0) > 0 || noTokens > 0 || suppressed > 0)",original=>{
+  return once(original,"      if (sent > 0) toast.success(`${sent} push(es) aceito(s) pelo Firebase.`);","      if (sent > 0) {\n        if (Number(res.failed ?? 0) > 0 || noTokens > 0 || suppressed > 0)\n          toast.warning(`${sent} push(es) aceito(s) pelo Firebase; alguns destinatários não receberam. Verifique o histórico.`);\n        else toast.success(`${sent} push(es) aceito(s) pelo Firebase.`);\n      }","partial Admin toast");
+});
 console.log("[OK] Relatorio 03: notificacoes do Motorista/Admin tratadas em " + workspace);
