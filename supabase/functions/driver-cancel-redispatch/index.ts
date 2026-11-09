@@ -54,8 +54,33 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     const rideId = text(body.ride_id, 50);
     const reason = text(body.reason, 500);
+    // APOIS_REPORT07_CANCEL_REASON_CODE_V1: no-show is a stable code,
+    // independent from the Portuguese label (also accept legacy clients).
+    const normalized = reason.toLocaleLowerCase("pt-BR").normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+    const inferredCode = ["passageiro nao apareceu", "passageiro nao compareceu", "no-show", "no show"].includes(normalized)
+      ? "passenger_no_show" : "other";
+    const reasonCode = text(body.reason_code, 40) || inferredCode;
+    if (!["passenger_no_show", "other"].includes(reasonCode)) {
+      return json(req, { error: "invalid_cancel_reason_code" }, 422);
+    }
     if (!UUID_PATTERN.test(rideId)) return json(req, { error: "invalid_ride_id" }, 422);
     if (reason.length < 3) return json(req, { error: "driver_cancel_reason_required" }, 422);
+
+    // Fail closed until the guarded SQL migration has committed. Otherwise
+    // an accented no-show could silently take the ordinary cancellation path.
+    if (reasonCode === "passenger_no_show") {
+      const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: contract, error: contractError } = await admin.from("app_settings")
+        .select("value").eq("key", "ride.driver_no_show_code_v1").maybeSingle();
+      if (contractError || contract?.value !== true) {
+        return json(req, { error: "driver_no_show_contract_unavailable", ok: false }, 503);
+      }
+    }
+    const rpcReason = reasonCode === "passenger_no_show"
+      ? "APOIS_NO_SHOW_V1:" + reason : reason;
 
     // Executa a RPC com o JWT real do motorista. A própria RPC valida que a
     // corrida pertence a ele e que a transição/cancelamento é permitida.
@@ -65,7 +90,7 @@ Deno.serve(async (req) => {
     });
     const { data: cancelledRide, error: cancelError } = await driverClient.rpc("driver_cancel_ride", {
       _ride_id: rideId,
-      _reason: reason,
+      _reason: rpcReason,
     });
     if (cancelError) {
       return json(req, { error: cancelError.message || "driver_cancel_failed" }, 409);
