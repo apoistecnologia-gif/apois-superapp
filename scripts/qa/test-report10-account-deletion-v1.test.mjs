@@ -2,10 +2,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
-const root = resolve(import.meta.dirname ?? process.cwd());
+const root = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(root, "../..");
 const read = (relative) => readFileSync(resolve(repoRoot, relative), "utf8");
 const sql = read("supabase/corridas-forward-migrations/20261109_report10_account_deletion_search_guard_QA_NOT_APPLIED.sql");
