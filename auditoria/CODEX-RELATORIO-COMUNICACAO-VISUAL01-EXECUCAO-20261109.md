@@ -53,3 +53,9 @@ Contraste calculado matematicamente para a mensagem `#991B1B` em `#FFF1F2`: **7,
 Verificar versão final gerada após todos os scripts, inclusive componentes efetivamente renderizados; conferir desktop Estabelecimento e seus estados e login Motorista/Passageiro nos tamanhos 320/360/390/412 CSS px, orientação horizontal, teclado aberto, safe-area, fonte ampliada, toque, foco e leitor de tela. Em Android físico, observar loading, erro, GPS negado/indisponível/timeout, WebView autofill e rolagem. Registrar arquivo, build, SHA, data, screenshot antes/depois e PASS/FAIL/BLOQUEADO em cada caso.
 
 **Resultado da rodada:** correções visuais de baixo risco aplicadas na branch autorizada, matriz separada criada e verificações estáticas aprovadas. **Homologação do produto permanece pendente.**
+
+## 6. Consulta de vinculação do deployment na Vercel
+
+Consulta **somente leitura** feita ao conector Vercel nesta rodada. O domínio `apoisbrasil.com.br` aparece na conta conectada, mas a listagem de projetos retornou **zero projetos acessíveis**, inclusive no time associado. A consulta direta pelo hostname `parceiros.apoisbrasil.com.br` no endpoint de deployments retornou **404 (deployment not found)**. Isso **não prova** que o site esteja fora do ar ou que não exista em outro time, conta, projeto ou plataforma; significa apenas que não foi possível estabelecer a referência segura do deployment com o acesso disponível. A decisão de não substituir CSS de uma versão não vinculada permanece correta.
+
+Assim, **CV-001/002 ficam pendentes de vincular projeto, SHA de implantação e CSS computado após a montagem**, sem publicação nem edição de código de autenticação.
