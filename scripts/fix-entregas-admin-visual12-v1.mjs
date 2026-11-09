@@ -45,7 +45,7 @@ export function patchAdminCoverage(s){
   s=one(s,'  placeholder: string;\n  inputMode?:',
     '  placeholder: string;\n  ariaLabel?: string;\n  inputMode?:',"coverage helper type");
   s=one(s,'      placeholder={placeholder}\n      inputMode={inputMode}',
-    '      placeholder={placeholder}\n      aria-label={ariaLabel ?? placeholder} // APOIS_CV12_ADMIN_COVERAGE_FIELDS_V1\n      inputMode={inputMode}',"accessible field name");
+    '      placeholder={placeholder}\n      aria-label={ariaLabel ?? placeholder} data-apois-cv12="APOIS_CV12_ADMIN_COVERAGE_FIELDS_V1"\n      inputMode={inputMode}',"accessible field name");
   for(const [find,add] of [
     ['placeholder="Raio km"','placeholder="Raio km"\n                          ariaLabel="Raio de entrega do cliente em quilômetros"'],
     ['placeholder="Ex.: 8 (vazio desativa)"','placeholder="Ex.: 8 (vazio desativa)"\n                          ariaLabel="Raio de busca do entregador em quilômetros; vazio desativa"'],
