@@ -60,6 +60,7 @@ run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-motorista-histor
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-registration-insert-only.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-document-photo-types.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/fix-partner-admin-finance-refresh-v2.mjs')], root, hardenerEnv);
+run(process.execPath, [resolve(root, 'scripts/fix-report03-motorista-notifications-v1.mjs')], root, hardenerEnv);
 
 const env = {
   ...process.env,
