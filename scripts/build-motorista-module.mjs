@@ -33,6 +33,7 @@ const corridasAuthStorageKey = 'sb-' + corridasProjectHost.split('.')[0] + '-aut
 // Validar identidade/escopo da chave sem aceitar .env.mobile protegido como fonte canônica.
 run(process.execPath, [resolve(root, 'scripts/verify-corridas-build-env.mjs')]);
 
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-motorista-flags-offline-v1.test.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
 for (const script of [
   'harden-motorista-auth.mjs',
