@@ -62,6 +62,13 @@ run(process.execPath, [resolve(root, 'scripts/harden-motorista-registration-inse
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-document-photo-types.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/fix-partner-admin-finance-refresh-v2.mjs')], root, hardenerEnv);
 run(process.execPath, [resolve(root, 'scripts/fix-report03-motorista-notifications-v1.mjs')], root, hardenerEnv);
+// RV-07 / CV-023: the standalone embedded Motorista has its own build path.
+// Only its generated status presentation is transformed, never membership or eligibility.
+run(process.execPath, [resolve(root, 'scripts/fix-apois-financial-status-visual07-v1.mjs'), 'motorista'], root, hardenerEnv);
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-apois-financial-status-visual07-v1.test.mjs')]);
+if (!readFileSync(resolve(workspace, 'src/routes/motorista.assinatura.tsx'), 'utf8').includes('APOIS_CV07_DRIVER_MEMBERSHIP_STATUS_V1')) {
+  throw new Error('[FAIL] CV07 Motorista monthly status patch missing');
+}
 run(process.execPath, [resolve(root, 'scripts/fix-report03-native-push-permission-v1.mjs')], root, hardenerEnv);
 
 const env = {
