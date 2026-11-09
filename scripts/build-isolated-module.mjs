@@ -561,6 +561,19 @@ if (name === 'entregas') {
     ['src/components/CustomerLocationAddressSelector.tsx','APOIS_CV11_AUTOCOMPLETE_FEEDBACK_V1'],
     ['src/routes/estabelecimento.$merchantId.tsx','APOIS_CV11_CATALOG_V1'],
   ]) if (!readFileSync(resolve(root,'.work/entregas',rel),'utf8').includes(marker)) throw Error('[FAIL] RV11 Entregas missing '+rel);
+  // RV-12: operational Merchant/Admin visual overlays after existing coupon V2 and review generator.
+  // No order writes, gateway changes or new data queries; source checkout remains pinned.
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-options-visual12-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-merchant-coupons-image-visual12-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-admin-visual12-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-visual12-v1.test.mjs')]);
+  for (const [rel,marker] of [
+    ['src/routes/merchant.tsx','APOIS_CV12_MERCHANT_ORDER_OPTIONS_V1'],
+    ['src/components/MerchantCouponsPanel.tsx','APOIS_CV12_COUPON_STATES_V1'],
+    ['src/components/MerchantProductEditor.tsx','APOIS_CV12_PRODUCT_IMAGE_KEYBOARD_V1'],
+    ['src/components/AdminOrdersPanel.tsx','APOIS_CV12_ADMIN_ORDERS_V1'],
+  ]) if (!readFileSync(resolve(root, '.work/entregas',rel),'utf8').includes(marker))
+    throw Error('[FAIL] RV12 Entregas missing '+rel);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 }
 
