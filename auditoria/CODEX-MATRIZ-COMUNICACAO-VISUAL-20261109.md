@@ -128,3 +128,23 @@ Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3)
 - Pendências físicas: confirmar a cadeia final e SHA de APK, DOM e TalkBack, apresentação de 9+ estados em 320/360/390/412 px e paisagem, fonte ampliada, ausência de duplicação sonora em updates, histórico e notificações, e políticas de `payment_status` reais. Problema de estado atrasado/falso é assunto de engenharia, não corrigido por texto.
 
 **Consolidação:** 20 achados CV independentes (`CV-001–CV-020`, 8 + 4 + 3 + 3 + 2). `VIS-001` permanece alias de `INV-047`, não contado novamente; a retificação `VIS-007 / CV-006` permanece válida. **Matriz técnica intocada: 67 achados, A 0 / B 46 / C 17 / D 0 / E 1 / G 3.** Sem merge, deploy, APK, migrations ou operações em produção.
+
+
+## Achados visuais — rodada 06 (Motorista / anexos de cadastro e correções, VIS-022–023)
+
+**Entrada:** `RELATORIO-VISUAL-06-APOIS-DOCUMENTOS-20261109(1).md`; integrador somente na branch `audit/continuacao-20261107`. As fontes do `.apois/source-lock.json` permanecem pinadas e somente para leitura.
+
+| CV | Origem | Prioridade | Superfície | Evidência e intervenção | Situação |
+|---|---|---|---|---|---|
+| **CV-021** | **VIS-022** | P2 | Motorista / documentos e fotos de vistoria; central de correções | O gerador V2 conhece os formatos e 8 MiB finais, mas não os comunica perto do seletor. Overlay CV06 acrescenta ajuda por `effectiveAccept`, com PDF somente quando o campo aceita, explica o limite **final** após preparação e associa a descrição acessível. No reenvio por correções acrescenta legenda JPG/PNG/WebP, até 8 MB para envio. Mantém as instruções de enquadramento e a validação existente | **Implementado no gerador; não homologado no Android/DOM.** Verificar fontes reais, leitor de tela, diferentes formatos, tamanho original/processado e alinhamento dos campos |
+| **CV-022** | **VIS-023** | P2 | Motorista / seletor nativo da câmera e galeria | `handleNative` pode trocar erro específico de saída acima de 8 MB por aviso de permissão. Overlay CV06 preserva erro de tamanho e `native_photo_size`, trata imagem vazia separadamente e deixa a causa desconhecida neutra. Mantém cancelamento silencioso e funções nativas, sem reimplementar seletor | **Implementado no gerador; reprodução Android e homologação pendentes.** Exercitar erro de tamanho pós-processamento, cancelamento, seleção válida, falhas desconhecidas e WebView |
+
+### Preservação e provas RV-06
+
+- Patch criado: `scripts/fix-partner-driver-document-guidance-visual06-v1.mjs`; teste: `scripts/qa/test-partner-driver-document-guidance-visual06-v1.test.mjs`; integrado no bloco Motorista de `scripts/build-partner-release.sh` **depois** do seletor nativo, central de correções, branding e overlay CV03. Apenas workspace descartável é alterado na futura montagem.
+- Conferência das fontes pinadas e dos literais reais dos geradores; 4/4 testes locais de Node em **fixtures sintéticas** aprovados, mais sintaxe verificada. Teste versionado programado no builder, mas execução com checkout completo não comprovada. Isso **não equivale** a compilação, teste web, upload ou APK.
+- Não alterar `driverRegistration.mobile.ts`, contratos de upload, proteção de dados, compressão, limites, câmera, autenticação, RPC, Supabase, mapas, pagamentos, eventos, estados ou callbacks. Correções do INV-047/VIS-001 e retificação CV-006/VIS-007 não reabertas.
+- **Pendências:** executar os geradores completos e gates de Node em checkout apto; TypeScript/lint/build, inspeção de DOM e contraste; validar em Android físico câmera/galeria/cancelamento; PDF só onde permitido, arquivo grande, texto de erro, estados local/enviado; TalkBack e telas 320/360/390/412 px. A homologação física continua bloqueada até autorização específica.
+- **Relatório independente:** `auditoria/CODEX-RELATORIO-COMUNICACAO-VISUAL06-EXECUCAO-20261109.md`.
+
+**Consolidação:** 22 achados visuais CV-001–CV-022 (20 anteriores + 2 novos), sem duplicar VIS-001/INV-047. Retificação VIS-007/CV-006 válida. **Matriz técnica histórica intacta: 67 achados, A 0 / B 46 / C 17 / D 0 / E 1 / G 3.** Nenhum merge, deploy, APK ou alteração de fontes pinadas.
