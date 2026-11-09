@@ -574,6 +574,16 @@ if (name === 'entregas') {
     ['src/components/AdminOrdersPanel.tsx','APOIS_CV12_ADMIN_ORDERS_V1'],
   ]) if (!readFileSync(resolve(root, '.work/entregas',rel),'utf8').includes(marker))
     throw Error('[FAIL] RV12 Entregas missing '+rel);
+  // RV-13: after RV-12, patch only disposable shared UI components.
+  // Preserve source snapshots, routing/callbacks, Radix focus and validation.
+  run(process.execPath, [resolve(root, 'scripts/fix-entregas-shared-visual13-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-shared-visual13-v1.test.mjs')]);
+  for (const [rel, marker] of [
+    ['src/components/AppBottomNav.tsx', 'APOIS_CV13_SHARED_COMPONENTS_V1'],
+    ['src/components/ui/dialog.tsx', 'APOIS_CV13_SHARED_COMPONENTS_V1'],
+    ['src/components/ui/prompt-dialog.tsx', 'APOIS_CV13_SHARED_COMPONENTS_V1'],
+  ]) if (!readFileSync(resolve(root, '.work/entregas', rel), 'utf8').includes(marker))
+    throw Error('[FAIL] RV13 Entregas shared visual missing ' + rel);
   run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 }
 
