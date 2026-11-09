@@ -20,6 +20,8 @@ on:
       - 'scripts/fix-report06-motorista-receipt-v1.mjs'
       - 'scripts/build-partner-release.sh'
       - 'scripts/fix-report07-driver-reason-code-v1.mjs'
+      - 'scripts/fix-report04-driver-center-v1.mjs'
+      - 'scripts/harden-partner-motorista-native-utilities.mjs'
 
 permissions:
   contents: read
