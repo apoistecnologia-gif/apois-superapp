@@ -16,6 +16,7 @@ on:
       - '.github/workflows/apois-partner-android.yml'
       - 'scripts/audit-partner-red-visual-v16.mjs'
       - 'scripts/audit-codemagic-host-installs-v18.mjs'
+      - 'scripts/harden-partner-motorista-history-receipt.mjs'
 
 permissions:
   contents: read
