@@ -26,7 +26,7 @@ export function patchPassengerRideRoute(source){
     throw Error("[RV14 passenger] loading boundary drift");
   let block=source.slice(start,end);
   const count=block.split('<Skeleton className=').length-1;
-  if(count!==5)throw Error("[RV14 passenger] expected five decorative skeletons, found "+count);
+  if(count!==6)throw Error("[RV14 passenger] expected six decorative skeletons, found "+count);
   block=once(block,
     '<div className="flex h-[100dvh] flex-col space-y-6 bg-black p-6">',
     '<div className="flex h-[100dvh] flex-col space-y-6 bg-black p-6">\n'+
