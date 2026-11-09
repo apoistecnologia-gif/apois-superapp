@@ -567,6 +567,7 @@ if (name === 'entregas') {
   }
   run(process.execPath, [resolve(root, 'scripts/verify-entregas-bun-lock-v1.mjs')], { cwd: root, env });
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-lock-v1.test.mjs')], { cwd: root, env });
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-report02-transforms-v1.test.mjs')], { cwd: root, env });
 }
 for (const command of [config.install, config.build]) {
   const [bin, ...args] = command;
