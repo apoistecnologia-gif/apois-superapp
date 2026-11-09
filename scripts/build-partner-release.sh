@@ -197,6 +197,10 @@ node "$ROOT/scripts/fix-apois-account-deletion-visual09-v1.mjs" motorista
 node --test "$ROOT/scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs"
 require_contains 'APOIS_CV09_DRIVER_DELETION_DIALOG_V1' "$MOTORISTA/src/routes/motorista.configuracoes.tsx" 'CV09 Motorista dialog focus'
 require_contains 'APOIS_CV09_DELETION_FOCUS_V1' "$MOTORISTA/src/lib/useApoisDeletionDialogFocus.ts" 'CV09 shared focus guard'
+# RV-14: only the generated calls component. Server claim/presence and RPCs stay intact.
+node "$ROOT/scripts/fix-partner-available-calls-visual14-v1.mjs" motorista
+node --test "$ROOT/scripts/qa/test-partner-available-calls-visual14-v1.test.mjs"
+require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$MOTORISTA/src/components/ApoisAvailableCalls.tsx" 'RV14 Motorista guarded call feedback/expiry'
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
@@ -346,6 +350,10 @@ require_contains 'data-apois-courier-history-light-v1' "$ENTREGADOR/src/componen
 require_contains 'APOIS_COURIER_SIMPLE_FLOW_V1' "$ENTREGADOR/src/components/CourierPremiumViews.tsx" 'Entregador com coleta e PIN como únicas ações da entrega'
 require_contains 'APOIS_COURIER_AUTOMATIC_STAGES_V1' "$ENTREGADOR/src/routes/courier.tsx" 'Transições autenticadas preservadas sem botões redundantes'
 require_contains 'APOIS_COURIER_MANUAL_ONLINE_V1' "$ENTREGADOR/src/routes/courier.tsx" 'Entregador fica offline após login sem entrega ativa'
+# RV-14: same overlay on the Courier copy; do not touch source Entregas.
+node "$ROOT/scripts/fix-partner-available-calls-visual14-v1.mjs" entregador
+node --test "$ROOT/scripts/qa/test-partner-available-calls-visual14-v1.test.mjs"
+require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_COURIER_MAPS_URL_NO_API_KEY_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação Google Maps externa disponível sem chave API da APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
 
