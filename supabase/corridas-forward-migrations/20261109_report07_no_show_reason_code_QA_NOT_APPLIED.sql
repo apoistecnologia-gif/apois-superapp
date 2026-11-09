@@ -165,8 +165,7 @@ begin
   );
   return to_jsonb(v_ride);
 end;
-$function$
-
+$function$;
 
 -- Readiness gate: the new Edge endpoint refuses coded no-show until this
 -- transaction has committed. Other cancellations must continue normal flow.
