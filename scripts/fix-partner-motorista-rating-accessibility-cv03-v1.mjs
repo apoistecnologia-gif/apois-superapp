@@ -23,7 +23,7 @@ if (!rating.includes("data-apois-driver-rating-readable-v7")) {
 if (!rating.includes("APOIS_CV03_DRIVER_RATING_V1")) {
   rating = once(rating,
     '<div className="mt-1.5 flex items-center justify-center gap-1">',
-    '<div role="group" aria-label="Nota do passageiro" className="mt-1.5 flex items-center justify-center gap-1">',
+    '<div data-apois-cv03-rating-stars="APOIS_CV03_DRIVER_RATING_V1" role="group" aria-label="Nota do passageiro" className="mt-1.5 flex items-center justify-center gap-1">',
     "grupo das cinco estrelas");
   rating = once(rating,
     '<button key={n} type="button" onClick={() => setStars(n)} className="p-1 transition active:scale-90">',
@@ -37,10 +37,6 @@ if (!rating.includes("APOIS_CV03_DRIVER_RATING_V1")) {
     'placeholder:text-[#8A9098]',
     'placeholder:text-[#596372]',
     "contraste do placeholder V7");
-  rating = once(rating,
-    'function RatingScreen(',
-    '// APOIS_CV03_DRIVER_RATING_V1: nomes acessíveis, label associado e contraste local.\nfunction RatingScreen(',
-    "marcador da rodada");
 }
 for (const marker of [
   "APOIS_CV03_DRIVER_RATING_V1",
