@@ -161,7 +161,7 @@ function replaceRequired(source, search, replacement, label) {
       </header>
 
       <div className="absolute right-4 top-[38%] z-30 flex flex-col gap-3">
-        {locationError ? <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-extrabold text-[#E51B23] shadow-md">GPS</div> : null}
+        {/* O aviso completo fica no painel rolável, sem cobrir os controles do mapa. */}
         <button type="button" onClick={() => { refreshLocation(); void refreshAddress(); }} disabled={isLocating} className="grid h-10 w-10 place-items-center rounded-full border border-[#E2E4E8] bg-white/95 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,.15)] active:scale-90 disabled:opacity-50" aria-label="Centralizar minha localização">
           <Navigation className={cn("h-5 w-5", isLocating && "animate-pulse")} />
         </button>
@@ -169,6 +169,12 @@ function replaceRequired(source, search, replacement, label) {
 
       <section className="apois-kit-home-panel relative z-40 mt-auto max-h-[38dvh] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-[#E2E4E8] bg-white px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-16px_44px_rgba(17,17,17,.14)]">
         <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[#C9CDD3]" />
+        {locationError ? (
+          <div data-apois-location-error-v1="true" role="status" aria-live="polite" className="mb-2 flex items-start gap-2 rounded-[14px] border border-[#F3C5C7] bg-[#FFF1F2] px-3 py-2 text-[12px] font-semibold leading-5 text-[#991B1B]">
+            <AlertCircle size={17} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span className="min-w-0 break-words">{locationError}</span>
+          </div>
+        ) : null}
 
         <div className="rounded-[20px] border border-[#E2E4E8] bg-white px-3">
           <button type="button" onClick={() => { refreshLocation(); void refreshAddress(); }} className="flex min-h-[54px] w-full items-center gap-3 border-b border-[#ECEEF1] text-left">
@@ -225,6 +231,7 @@ function replaceRequired(source, search, replacement, label) {
 
   source = source.slice(0, returnIndex) + referenceHome + source.slice(returnEnd + '\n  );'.length);
   if (!source.includes('data-apois-reference-home-v2')) throw new Error('[FAIL] Corridas visual V2 não entrou na Home');
+  if (!source.includes('data-apois-location-error-v1="true"')) throw new Error('[FAIL] Corridas: mensagem real de localização ausente do painel');
   console.log('[OK] Corridas: Home operacional alinhada ao mock aprovado sem alterar lógica de corrida');
 
   for (const marker of ['PassengerMap', 'data-apois-reference-home-v2', 'apois-kit-home', 'apois-kit-home-panel', 'APOIS_COMPACT_HOME_V1', 'Local de partida', 'Destino', '<CategorySelector />', 'Solicitar corrida']) {
