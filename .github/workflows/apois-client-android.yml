@@ -22,6 +22,7 @@ on:
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
       - 'scripts/build-isolated-module.mjs'
       - 'scripts/fix-corridas-generated-ts-gate-v1.mjs'
+      - 'scripts/harden-corridas-backend-identity-boundary.mjs'
 
 permissions:
   contents: read
