@@ -147,7 +147,7 @@ patch('supabase/functions/send-ride-push/index.ts', (source) => {
   if (next.includes(oldRecipients)) next = next.replace(oldRecipients, newRecipients);
 
   next = next.replace(
-    '    // user_notification_tokens.user_id referencia public.users(id), não auth.users.id',
+    '    // user_notification_tokens.user_id = auth.users.id (mesma identidade de rides.*_id)',
     '    // user_notification_tokens/user_notification_preferences/notification_logs usam public.users(id); rides usam DOMAIN/DRIVER IDs.',
   );
 
