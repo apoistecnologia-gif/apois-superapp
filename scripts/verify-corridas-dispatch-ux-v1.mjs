@@ -14,13 +14,16 @@ requireAll(".work/corridas/src/routes/_authenticated.corrida.$rideId.tsx", [
   "bottom-[max(64px,env(safe-area-inset-bottom))]",
   "A busca termina automaticamente se nenhum motorista aceitar dentro do prazo."
 ]);
-const rideHook=read(".work/corridas/src/hooks/rides/use-active-ride.tsx");
-console.log("[DIAG] active ride terminal expressions", rideHook.split(String.fromCharCode(10)).map((line,index)=>({line,index:index+1})).filter(item=>item.line.includes("expired") || item.line.includes("isTerminalRideStatus") || item.line.includes("setScreenState")).slice(0,35));
+const rideHook = read(".work/corridas/src/hooks/rides/use-active-ride.tsx");
+const mayBeTyped = (raw, typed) => rideHook.includes(raw) || rideHook.includes(typed);
+assert.ok(mayBeTyped('updatedRide.status === "expired"', 'String(updatedRide.status) === "expired"'),
+  "generated ride must transition to cancelled on server-confirmed expired");
+assert.ok(mayBeTyped('status === "expired" || status.startsWith("cancelada")',
+  'String(status) === "expired" || status.startsWith("cancelada")'),
+  "terminal status must recognize expired and cancellation");
 requireAll(".work/corridas/src/hooks/rides/use-active-ride.tsx", [
   "APOIS_REDISPATCH_POLL_V1",
   'action: "redispatch"',
-  'String(updatedRide.status) === "expired"',
-  'String(status) === "expired" || status.startsWith("cancelada")',
   "window.clearInterval(timer)"
 ]);
 requireAll(".work/corridas/src/types/rides/active-ride.ts", ['"expired"']);
