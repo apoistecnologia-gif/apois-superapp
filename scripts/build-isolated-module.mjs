@@ -469,6 +469,12 @@ if (name === 'corridas') {
   // VIS-019 is documented for future authorized engineering review; the 3200ms timer is immutable here.
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-visual04-passenger-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-visual04-passenger-v1.test.mjs')]);
+  // RV-11 CV-035: Passenger-only notification read/unread accessible text.
+  // Existing markAsRead, counts, Motorista notifications, and hydration untouched.
+  run(process.execPath, [resolve(root,'scripts/fix-corridas-notification-visual11-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root,'scripts/qa/test-corridas-notification-visual11-v1.test.mjs')]);
+  if(!readFileSync(resolve(root,'.work/corridas/src/routes/_authenticated.notificacoes.tsx'),'utf8').includes('APOIS_CV11_PASSENGER_NOTIFICATION_READ_V1'))
+    throw Error('[FAIL] RV11 Passenger notification readable state missing');
   for (const [relative, marker] of [
     ['src/routes/_authenticated.buscar-destino.tsx', 'data-apois-visual04-clear-search-v1'],
     ['src/routes/_authenticated.revisar-solicitacao.tsx', 'APOIS_VISUAL04_REVIEW_DETAILS_V1'],
