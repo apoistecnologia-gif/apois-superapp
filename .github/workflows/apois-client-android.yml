@@ -20,6 +20,8 @@ on:
       - 'scripts/fix-report08-passenger-redispatch-v1.mjs'
       - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
+      - 'scripts/build-isolated-module.mjs'
+      - 'scripts/fix-corridas-generated-ts-gate-v1.mjs'
 
 permissions:
   contents: read
