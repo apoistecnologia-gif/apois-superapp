@@ -70,7 +70,9 @@ patch(
     ),
   (source) =>
     source.includes('doc.setFillColor(246, 190, 28);') &&
-    source.includes('doc.text("Valor da corrida"') &&
+    (source.includes('doc.text("Valor da corrida"') ||
+      (source.includes('APOIS_REPORT06_RECEIPT_NULL_SAFE_V1') &&
+        source.includes('doc.text(finalPrice === null && estimatedPrice !== null ? "Valor estimado da corrida" : "Valor da corrida"'))) &&
     source.includes('A APOIS não retém comissão nem recebe o valor da corrida;'),
   'motorista: PDF do recibo usa identidade dourada e deixa pagamento direto explícito',
 );
