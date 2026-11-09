@@ -268,3 +268,24 @@ Os **56 achados anteriores e seus registros permanecem integralmente preservados
 **Dependências:** INV-054 (G) e INV-055/056 (C) do Relatório 07 permanecem como antes: as operações de cancelamento, recusa e redistribuição não tiveram implantação completa comprovada. Não declarar E2E por teste de callback.
 
 **Restrições:** nenhum APK, homologação física, publicação, merge, chamada real de corrida, push, banco, migração `QA_NOT_APPLIED`, alterações comerciais ou edição dos snapshots. Somente o integrador Corridas e documentação foram alterados. Homologação final somente com autorização expressa do responsável.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 09 (09/11/2026)
+
+Os **57 achados anteriores e toda a sua documentação permanecem preservados acima**. Esta fase acrescenta apenas INV-058, INV-059 e INV-060, com base no Relatório 09 (08/11/2026). Documento de execução: `auditoria/CODEX-RELATORIO09-EXECUCAO-20261109.md`. Branch autorizada `audit/continuacao-20261107`. Passageiro pinado `7b047f75a1a919a5336c0df6e0d60b14b02f2618`.
+
+| ID | Prioridade | Área | Estado | Alteração versionada e aceite ainda pendente |
+|---|---|---|---|---|
+| **INV-058** | **P2** | Corridas Passageiro / PricingProvider retry | **B** | Gerador `fix-report09-pricing-checkout-v1.mjs` separa consulta em andamento, erro e sucesso reutilizável por até 30 s; uma falha libera tentativa idêntica, chamadas simultâneas compartilham operação e `FareDetails` permite retry explícito. Serviço autoritativo original de preço e cache preservados. Callback extraído da versão gerada: erro, retry e concorrência simulados passaram. Falta builder, Node --test materializado, typecheck, React e E2E. |
+| **INV-059** | **P1** | Corridas Passageiro / preço fora de ordem | **B** | Assinatura inclui origem, destino, paradas, distância, duração e categorias. Respostas/erros obsoletos não alteram estimativas/estado, somente estimativa da assinatura aplicada fica exposta. Casos A lenta/B rápida, erro antigo, clear e A→B→A passaram em V8 com serviços simulados. Falta testar rede e renderização integrada; sem tarifas inventadas no cliente. |
+| **INV-060** | **P1 condicional** | Corridas Passageiro / readiness e confirmação | **B** | Rota calculada vinculada à escolha atual, paradas e tolerância de GPS de 85 m; estado de falha mantém bloqueio até sucesso novo. Checkout exige rota/preço correntes; Home, revisão e `use-ride-request` reforçados, preservando recuperação de corrida ativa e idempotência. 7 cenários de comparador de rota e 7 snapshots de checkout passaram isoladamente. O relatório original **não comprovou clique incorreto completo**; a mitigação é preventiva e carece de teste React/Android e backend de homologação. |
+
+**Subtotal Relatório 09:** A 0 / B **3** / C 0 / D 0 / E 0 / G 0 = **3 novos**.
+
+**Total consolidado dos Relatórios 01–09: A 0 / B 41 / C 15 / D 0 / E 1 / G 3 = 60 achados.**
+
+**Evidências de execução:** gerador e suíte Node foram versionados e o builder passou a chamá-los ao final das transformações do módulo Corridas. Em V8 isolado foram aprovadas 21 verificações de transformação/callback, 7 comparações de rota e 7 snapshots de checkout (35 verificações ao todo). **A suíte Node incluída, build, typecheck, React, Android e E2E não foram executados.** Não foi gerado APK nem publicado código, banco, migração, pagamento ou dispatch. Nenhuma fonte fixada, Entregas ou main foi alterada.
+
+**Bloqueios anteriores intactos:** INV-054 G, INV-055 C e INV-056 C; migrações `QA_NOT_APPLIED` continuam NÃO APLICADAS. Não reclassificar os 57 achados anteriores por regressões não comprovadas. Homologação final somente após a frase expressa de liberação.
