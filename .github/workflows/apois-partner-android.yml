@@ -19,6 +19,7 @@ on:
       - 'scripts/harden-partner-motorista-history-receipt.mjs'
       - 'scripts/fix-report06-motorista-receipt-v1.mjs'
       - 'scripts/build-partner-release.sh'
+      - 'scripts/fix-report07-driver-reason-code-v1.mjs'
 
 permissions:
   contents: read
