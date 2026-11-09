@@ -95,7 +95,7 @@ Correções nesta continuação:
 
 ### INV-033 — sacola e checkout
 
-`fix-entregas-persisted-cart-validation-v3.mjs` consulta catálogo, opções e grupos vigentes na restauração da sacola e bloqueia itens marcados indisponíveis. O código do checkout contém gate antes do PIX, aceitando total autoritativo apenas mediante conferência/consentimento em caso de divergência. **Não executar o verificador de integridade em isolamento como substituto de typecheck/build.** Ainda falta confirmar tratamento fail-closed de falha de rede durante revalidação, atualização quando o estabelecimento muda dados com app aberto e testes reais em telas.
+`fix-entregas-persisted-cart-validation-v3.mjs` consulta catálogo, opções e grupos vigentes na restauração da sacola e bloqueia itens marcados indisponíveis. O código do checkout contém gate antes do PIX, aceitando total autoritativo apenas mediante conferência/consentimento em caso de divergência. **Não executar o verificador de integridade em isolamento como substituto de typecheck/build.** A proteção fail-closed foi implementada depois deste registro histórico; faltam typecheck/build, revalidação em falha de rede e testes reais em telas.
 
 ### INV-028 — Vercel
 
@@ -103,7 +103,7 @@ A ferramenta Vercel listou os projetos `apois-entregas-estabelecimento`, `apois-
 
 ### Outros bloqueios herdados do Relatório 01
 
-- INV-001: backend com ação `detail` aplicada em produção v12 e UI gerada, faltam build/E2E; INV-012: fallback de instalação `bun` e lint não bloqueante no builder; INV-020: literal da liquidação corrigido no banco após rollback, faltam E2E/histórico; INV-010: pagamento Safe2Pay não homologado; INV-017: checagens de credenciais vazadas; INV-019: aliases não identificados.
+- INV-001: backend com ação `detail` aplicada em produção v12 e UI gerada, faltam build/E2E; INV-012: gate estrito de release adicionado; lock do pin ainda incompatível e não homologado; INV-020: literal da liquidação corrigido no banco após rollback, faltam E2E/histórico; INV-010: pagamento Safe2Pay não homologado; INV-017: checagens de credenciais vazadas; INV-019: aliases não identificados.
 - Manter revisão de funções `SECURITY DEFINER` restantes, incluindo RPCs de pedidos, carteira, payouts e filas, com classificação pelo uso antes de revogar privilégios; autenticação, cidade e RLS exigem testes adversariais.
 - Testes ainda **não executados nesta continuação**: `bun install`, typecheck, lint, unitários completos do workspace, build full/Android, E2E autenticado, pagamento real, varredura funcional de todos os 34 achados. Os testes de SQL sintético não autorizam conclusão da homologação de produção.
 - Não foi criada branch Supabase (cobrança adicional dependeria de autorização de custo); não foi feito merge na `main`; não foi requisitada movimentação financeira.
@@ -141,3 +141,25 @@ A função foi implantada na produção existente (sem recurso pago adicional): 
 Foi criado `scripts/fix-entregas-support-ticket-detail-v1.mjs` (commit `77701885e1ee929ccb2116e4108b9b32abf5926f`) para alterar apenas `.work/entregas`, substituindo o download da lista de 50 pelo detalhe autorizado na rota canônica. Integrado aos builders em commits `3fbcacbfc109cabe2a6912c54b8f93bf6995dab4` e `6dcd146f9e72221b80d5214376bf3b5353f3229c`. Pontos de inserção do script foram encontrados uma única vez no snapshot pinado. **Não houve build cliente, deploy Vercel ou Android**; verificar 51+ chamados, acesso de usuário B ao protocolo A, anexos, replies e realtime após compilar.
 
 **Validação isolada INV-024 — 16/16 casos aprovados:** o corpo **vivo** de `public.merchant_accepting_orders(uuid,timestamptz)` foi obtido via `pg_get_functiondef`, clonado como `pg_temp.merchant_accepting_orders_test` com referências somente a tabelas temporárias de estabelecimentos/cidades/horários. Transação `BEGIN/ROLLBACK` avaliou: 24h em dois horários; fechamento temporário; cidade inativa; turno atravessando a meia-noite (antes/depois do encerramento); exceção de data fechada; hora local Recife aberta/fechada; Nova York aberta/fechada no mesmo dia UTC; segundo intervalo e intervalo de pausa; exceção de data com horário especial antes/durante; cadastro não aprovado. Assert SQL `16/16` sem falha. Não houve mutação persistente do catálogo nem teste de tela ou acesso anônimo. 
+
+## Continuação — lock Bun, sacola fail-closed, histórico por cursor (08/11/2026)
+
+### INV-012: falha de lock reproduzível identificada e release protegido
+
+Leitura direta do `package.json` e `bun.lock` do snapshot Entregas `2f4606e0fb52dffb49f2e6aebbe921ce687ab625`: o manifesto declara 79 dependências de runtime e desenvolvimento, e o lock lista 77. Ausentes `@capacitor/app@8.0.0` e `@capacitor/browser@8.0.0`. A busca do código identificou ambos como imports do `GoogleLoginButton.tsx`; **não foram removidos nem foram inventados pacotes resolvidos**.
+
+Novo validador `scripts/verify-entregas-bun-lock-v1.mjs` compara dependency maps e identifica drift sem instalar ou alterar `bun.lock`; cinco testes unitários adicionados em `scripts/qa/test-entregas-bun-lock-v1.test.mjs`. O builder `scripts/build-merchant-panel.mjs` agora interrompe o release em divergência do lock, instalação `bun install --frozen-lockfile` falhada ou lint falho. Uma fixture QA local pode usar fallback **somente** com `APOIS_MERCHANT_QA_FIXTURE_ONLY=1` e fora de CI/Vercel; nunca recebe status de release válido. **Os cinco testes estão escritos, não executados neste runtime**, e lock pinado ainda precisa ser gerado/reconciliado e testado com Bun. Nenhum snapshot foi modificado.
+
+### INV-033: validação de catálogo obrigatória para checkout
+
+`scripts/fix-entregas-persisted-cart-validation-v3.mjs` foi ajustado: consulta produtos com `merchant_id` e marca itens de outra loja como inválidos; `refreshCartCatalog` agora retorna `Promise<boolean>`. Valor `false` cobre erro da consulta, falta de hidratação, estado assíncrono obsoleto, produto/opção indisponível, preço ou categoria divergente. A tela de checkout chama `await refreshCartCatalog()` **antes** da Edge Function `create-order`, bloqueando qualquer tentativa de gerar cobrança se a sacola não tiver sido confirmada com catálogo vivo. Quando preço/categoria muda, o usuário revisa os itens renderizados e confirma numa nova tentativa. Gate textual de integridade ampliado para ordem da chamada, checagem de merchant e falha fechada. Ainda **sem typecheck ou teste do app em execução**.
+
+### INV-013: histórico de pedidos sem limite silencioso de linhas
+
+O snapshot original `src/routes/pedidos.tsx` carregava todos os pedidos de uma vez por `.order('created_at')`, sem paginação. Foi criado `scripts/fix-entregas-customer-orders-pagination-v1.mjs`, conectando ambos os builders à transformação somente em `.work/entregas`. A tela passa a carregar lotes de 30 com consulta de 31 itens, exibir `Carregar pedidos anteriores`, ordenar por `created_at DESC,id DESC`, manter cursor composto no próximo lote, assegurar `customer_user_id`, mesclar por ID e atualizar linhas históricas já carregadas em eventos Realtime. O checker `verify-apois-report02-integrity-v1.mjs` agora exige marcadores do fluxo e tie-breaker.
+
+**Teste efetivamente executado:** transação no Supabase Entregas com **tabelas temporárias e ROLLBACK**. Foram criados 105 pedidos sintéticos do usuário A e 13 do usuário B, vários com mesmo timestamp; paginação por cursor percorreu **4 páginas, 105 registros únicos**, mesmo após simular inclusão de pedido mais novo entre páginas, sem revelar pedidos B. Resultado aprovado. Isso **não prova** que a consulta `.or()` do SDK, a tela visual, o botão ou o Realtime funcionam no aplicativo real; dependem de typecheck, build e E2E autenticado. Nenhum pedido real foi inserido.
+
+### Limitações deste ambiente e próximos gates
+
+O código fonte privado está disponível pelo conector GitHub, mas o ambiente local de terminal não consegue resolver `github.com` e não tem `bun` instalado. Por isso **não foram executados** node unitários no checkout completo, `bun install`, `tsc --noEmit`, lint, build Entregas/Merchant, Android E2E nem testes autenticados em produção. Os testes SQL temporários acima são resultados reais, distintos das novas implementações React ainda sem compilação. Nenhum GitHub Action novo, deploy Vercel, merge, alteração de alias, cobrança, pagamento ou recurso pago foi criado nesta continuação. A correção `INV-028` ainda depende de identificação da versão Vercel exata. A migração `INV-031` permanece não aplicada.
