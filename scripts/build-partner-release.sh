@@ -185,6 +185,13 @@ node --test "$ROOT/scripts/qa/test-partner-driver-document-guidance-visual06-v1.
 require_contains 'APOIS_CV06_DRIVER_DOCUMENT_GUIDANCE_V1' "$MOTORISTA/src/components/DriverDocumentField.tsx" 'Motorista document limits help'
 require_contains 'APOIS_CV06_DRIVER_NATIVE_REJECTION_V1' "$MOTORISTA/src/components/DriverDocumentField.tsx" 'Motorista native picker error guidance'
 require_contains 'data-apois-cv06-correction-hint' "$MOTORISTA/src/components/ApoisDriverCorrections.tsx" 'Motorista correction photo limits'
+# RV-08 CV-025/026: after Support Workroom generation, staff triage, privacy
+# and all Motorista visual hardeners. Purely communicative overlay on .work.
+node "$ROOT/scripts/fix-partner-support-workroom-visual08-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-support-workroom-visual08-v1.test.mjs"
+require_contains 'APOIS_CV08_CASE_WORKROOM_V1' "$MOTORISTA/src/components/ApoisCaseWorkroom.tsx" 'CV08 status/empty/error communication'
+require_contains 'caseStatusLabel(t.status)' "$MOTORISTA/src/components/ApoisCaseWorkroom.tsx" 'CV08 ticket status labels'
+require_contains 'ticketListLoaded&&!ticketListFailed' "$MOTORISTA/src/components/ApoisCaseWorkroom.tsx" 'CV08 error vs empty guard'
 # APOIS_DRIVER_LIFECYCLE_HOMOLOG_V2 gate
 if ! grep -q 'completed-confirmed' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] voz final de corrida sem confirmação'; exit 1; fi
 if ! grep -q 'bg-white text-\[#111827\]' "$MOTORISTA/src/routes/motorista.app.tsx"; then echo '[FAIL] card de oferta sem contraste seguro'; exit 1; fi
