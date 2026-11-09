@@ -105,6 +105,7 @@ for (const script of [
   'connect-entregas-auto-promotions-v3.mjs',
   'connect-entregas-merchant-order-status-v3.mjs',
   'fix-entregas-persisted-cart-validation-v3.mjs',
+  'harden-entregas-merchant-image-mime.mjs',
   'fix-entregas-merchant-product-image-reconciliation-v1.mjs',
   'fix-entregas-customer-avatar-cache-v1.mjs',
   'fix-entregas-admin-orders-contrast-v1.mjs',
