@@ -427,6 +427,10 @@ if (name === 'corridas') {
   // The check above ensures visual migration itself never touches Maps/GPS.
   // Snapshot below treats this small functional correction as the new baseline.
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-current-gps-fallback-v1.mjs')]);
+  // Relatório 12 / INV-064–065: after original visual safety check,
+  // patch only the prepared Corridas workspace, then snapshot intentional map changes.
+  run(process.execPath, [resolve(root, 'scripts/fix-report12-destination-map-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report12-map-selection-v1.test.mjs')]);
   protectedCorridasMapRuntimeAfterVisual = new Map(
     protectedMapRuntimePaths.map((path) => [path, readFileSync(resolve(root, path), 'utf8')]),
   );
