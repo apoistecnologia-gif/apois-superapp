@@ -33,8 +33,8 @@ export function patchAdminOrders(s){
     '                        ) : timelineLoadFailed ? (\n                          <div role="alert" className="space-y-2 py-4 text-sm text-amber-200">Não foi possível consultar a timeline deste pedido. <button type="button" className="min-h-11 rounded-lg border border-amber-500/40 px-3 font-bold" onClick={() => void loadTimeline(order)}>Tentar novamente</button></div>\n                        ) : timeline.length === 0 ? (',
     "timeline not false empty");
   for(const [key,label] of [["statusFilter","Filtrar pedidos por status"],["paymentFilter","Filtrar pedidos por pagamento"],["cityFilter","Filtrar pedidos por cidade"]]){
-    const token="            <select\n              value={"+key+"}";
-    s=one(s,token,"            <select\n              aria-label=\""+label+"\"\n              value={"+key+"}","admin filter "+key);
+    const token="          <select\n            value={"+key+"}";
+    s=one(s,token,"          <select\n            aria-label=\""+label+"\"\n            value={"+key+"}","admin filter "+key);
   }
   return s;
 }
