@@ -71,16 +71,16 @@ function must(src,markers,label){
 
         <div className="mt-3 flex items-start gap-3 rounded-[18px] border border-[#E5E7EB] bg-white px-4 py-3">
           <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#E51B23]" />
-          <div><p className="text-[12px] font-black text-[#111827]">Sua segurança é prioridade</p><p className="mt-0.5 text-[10.5px] font-medium leading-relaxed text-[#6B7280]">PIN no embarque e recursos de segurança durante a corrida.</p></div>
+          <div><p className="text-[12px] font-black text-[#111827]">Sua segurança é prioridade</p><p className="mt-0.5 text-[12px] font-medium leading-relaxed text-[#596372]">PIN no embarque e recursos de segurança durante a corrida.</p></div>
         </div>
 
-        <p className="mt-4 text-center text-[9px] font-bold uppercase tracking-[0.16em] text-[#9CA3AF]">APOIS Parceiro • visual 18</p>
       </div>
     </main>
   );`;
 
   src=src.slice(0,start)+jsx+src.slice(end+'\n  );'.length);
-  must(src,['data-apois-partner-auth-v18','APOIS Parceiro • visual 18','DriverGoogleLoginButton'],'login Motorista v18');
+  must(src,['data-apois-partner-auth-v18','Sua segurança é prioridade','DriverGoogleLoginButton'],'login Motorista v18');
+  if(src.includes('APOIS Parceiro • visual 18')) throw new Error('[FAIL] marcador interno visível no login Motorista');
   if(src.includes('background: "#111418"')) throw new Error('[FAIL] login Motorista v18 reteve painel escuro');
   write(rel,src);
 }
