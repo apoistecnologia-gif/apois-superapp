@@ -15,6 +15,7 @@ on:
     paths:
       - '.github/workflows/apois-partner-android.yml'
       - 'scripts/audit-partner-red-visual-v16.mjs'
+      - 'scripts/audit-codemagic-host-installs-v18.mjs'
 
 permissions:
   contents: read
