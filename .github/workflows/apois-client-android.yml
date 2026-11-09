@@ -26,6 +26,7 @@ on:
       - '.apois/modules.json'
       - 'scripts/verify-corridas-auth-regressions.mjs'
       - 'scripts/verify-corridas-dispatch-ux-v1.mjs'
+      - 'scripts/harden-corridas-trip-flow-ux.mjs'
 
 permissions:
   contents: read
