@@ -76,6 +76,8 @@ test("CV-016/017: visual-only transform is idempotent and fail-closed", () => {
     assert.match(review, /formatApoisReviewDetailLabel\(key\)/);
     assert.match(review, /formatApoisReviewDetailValue\(value, key\)/);
     assert.doesNotMatch(review, /\{String\(value\)\}/);
+    assert.match(review, /text-xs font-bold break-words whitespace-normal/);
+    assert.doesNotMatch(review, /text-xs font-bold capitalize/);
     assert.match(review, /const response = await confirmRide\(comfort\)/);
     assert.match(review, /checkout\.finalTotal/);
     assert.match(review, /O valor oficial será confirmado pelo servidor ao solicitar/);
