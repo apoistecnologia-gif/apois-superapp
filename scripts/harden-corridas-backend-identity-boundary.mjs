@@ -116,9 +116,9 @@ patch('supabase/functions/driver-ride-action/index.ts', (source) => {
 patch('supabase/functions/send-ride-push/index.ts', (source) => {
   let next = source;
 
-  if (!next.includes('async function normalizeRecipientAuthIds')) {
+  if (!next.includes('async function normalizeRecipientDomainIds')) {
     const insertionPoint = 'Deno.serve(async (req) => {';
-    const helper = `async function normalizeRecipientAuthIds(admin: any, ids: string[]): Promise<string[]> {\n  const unique = [...new Set(ids.map(String).filter(Boolean))].slice(0, 100);\n  if (!unique.length) return [];\n\n  // Chamadores internos legados enviam DOMAIN USER ID (public.users.id),\n  // enquanto tokens/preferências de push usam AUTH ID. Converter quando houver\n  // vínculo em public.users e preservar ids que já sejam AUTH IDs.\n  const { data: domainRows, error } = await admin\n    .from("users")\n    .select("id,auth_user_id")\n    .in("id", unique);\n  if (error) throw new Error(\`push_identity_lookup_failed:\${error.message}\`);\n  const authByDomain = new Map(\n    (domainRows ?? []).map((row: any) => [String(row.id), String(row.auth_user_id ?? "")]),\n  );\n  return [...new Set(unique.map((id) => authByDomain.get(id) || id).filter(Boolean))];\n}\n\n`;
+    const helper = "async function normalizeRecipientDomainIds(admin: any, ids: string[]): Promise<string[]> {\n  const unique = [...new Set(ids.map(String).filter(Boolean))];\n  if (!unique.length) return [];\n  // Push preferences, tokens and logs reference public.users(id), not auth.users(id).\n  // Reject unknown and mixed identity namespaces rather than guessing.\n  if (unique.length > 100) throw new Error(\"too_many_recipients\");\n  const { data: rows, error } = await admin\n    .from(\"users\")\n    .select(\"id\")\n    .in(\"id\", unique);\n  if (error) throw new Error(\"push_identity_lookup_failed\");\n  const valid = new Set((rows ?? []).map((row: any) => String(row.id)));\n  if (unique.some((id) => !valid.has(id))) throw new Error(\"push_recipient_not_domain_user\");\n  return unique;\n}\n\n";
     next = next.replace(insertionPoint, helper + insertionPoint);
   }
 
@@ -134,8 +134,8 @@ patch('supabase/functions/send-ride-push/index.ts', (source) => {
   if (next.includes(oldProfileAdminBlock)) next = next.replace(oldProfileAdminBlock, newProfileAdminBlock);
 
   next = next.replace(
-    '      finalUserIds = [...new Set(input.user_ids.filter(Boolean))].slice(0, 100);',
-    '      finalUserIds = await normalizeRecipientAuthIds(admin, input.user_ids);',
+    '      if (input.user_ids.length > 100) return json(req, { error: "too_many_recipients", maximum: 100 }, 422);\n      finalUserIds = [...new Set(input.user_ids.filter(Boolean))];',
+    '      finalUserIds = await normalizeRecipientDomainIds(admin, input.user_ids);',
   );
 
   const oldActorBlock = `      const ride = data as RideRow;\n      const isPassenger = callerId === ride.passenger_id;\n      const isDriver = callerId === ride.driver_id;\n      const allowedActor = rule.actor === "driver" ? isDriver : isPassenger || isDriver;`;
@@ -143,26 +143,26 @@ patch('supabase/functions/send-ride-push/index.ts', (source) => {
   if (next.includes(oldActorBlock)) next = next.replace(oldActorBlock, newActorBlock);
 
   const oldRecipients = `      finalUserIds = isDriver\n        ? [ride.passenger_id]\n        : ride.driver_id\n          ? [ride.driver_id]\n          : [];`;
-  const newRecipients = `      if (isDriver) {\n        finalUserIds = await normalizeRecipientAuthIds(admin, [ride.passenger_id]);\n      } else if (ride.driver_id) {\n        const { data: assignedDriver, error: assignedDriverError } = await admin\n          .from("drivers")\n          .select("user_id")\n          .eq("id", ride.driver_id)\n          .maybeSingle();\n        if (assignedDriverError)\n          throw new Error(\`push_driver_identity_lookup_failed:\${assignedDriverError.message}\`);\n        finalUserIds = assignedDriver?.user_id\n          ? await normalizeRecipientAuthIds(admin, [String(assignedDriver.user_id)])\n          : [];\n      } else {\n        finalUserIds = [];\n      }`;
+  const newRecipients = `      if (isDriver) {\n        finalUserIds = await normalizeRecipientDomainIds(admin, [ride.passenger_id]);\n      } else if (ride.driver_id) {\n        const { data: assignedDriver, error: assignedDriverError } = await admin\n          .from("drivers")\n          .select("user_id")\n          .eq("id", ride.driver_id)\n          .maybeSingle();\n        if (assignedDriverError)\n          throw new Error(\`push_driver_identity_lookup_failed:\${assignedDriverError.message}\`);\n        finalUserIds = assignedDriver?.user_id\n          ? await normalizeRecipientDomainIds(admin, [String(assignedDriver.user_id)])\n          : [];\n      } else {\n        finalUserIds = [];\n      }`;
   if (next.includes(oldRecipients)) next = next.replace(oldRecipients, newRecipients);
 
   next = next.replace(
-    '    // user_notification_tokens.user_id = auth.users.id (mesma identidade de rides.*_id)',
-    '    // user_notification_tokens/user_notification_preferences usam AUTH ID; rides usam DOMAIN/DRIVER IDs.',
+    '    // user_notification_tokens.user_id referencia public.users(id), não auth.users.id',
+    '    // user_notification_tokens/user_notification_preferences/notification_logs usam public.users(id); rides usam DOMAIN/DRIVER IDs.',
   );
 
   return next;
 }, (source) =>
-  source.includes('async function normalizeRecipientAuthIds') &&
+  source.includes('async function normalizeRecipientDomainIds') &&
   source.includes('let callerDomainUserId: string | null = null;') &&
   source.includes('let callerDriverRecordId: string | null = null;') &&
   source.includes('callerDomainUserId === String(ride.passenger_id)') &&
   source.includes('callerDriverRecordId === String(ride.driver_id ?? "")') &&
-  source.includes('finalUserIds = await normalizeRecipientAuthIds(admin, input.user_ids);') &&
+  source.includes('finalUserIds = await normalizeRecipientDomainIds(admin, input.user_ids);') &&
   source.includes('.eq("id", ride.driver_id)') &&
-  source.includes('user_notification_tokens/user_notification_preferences usam AUTH ID; rides usam DOMAIN/DRIVER IDs.') &&
+  source.includes('user_notification_tokens/user_notification_preferences/notification_logs usam public.users(id); rides usam DOMAIN/DRIVER IDs.') &&
   !source.includes('const isPassenger = callerId === ride.passenger_id;') &&
   !source.includes('const isDriver = callerId === ride.driver_id;'),
-'Corridas backend: Push converte participantes de domínio para AUTH ID antes de tokens/FCM');
+'Corridas backend: Push preserva DOMAIN USER ID em tokens, preferências e logs');
 
 console.log('[OK] Corridas backend identity boundary concluído sem alterar o submódulo protegido');
