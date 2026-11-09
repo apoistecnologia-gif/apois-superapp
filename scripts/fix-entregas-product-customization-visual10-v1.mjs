@@ -75,7 +75,7 @@ export function patchProductCustomization(source) {
   ].join("\n");
   // JSX comments within opening tag must be a valid attribute position: marker is an attribute instead.
   const jsxOpening = replacement.replace("                        <button // " + MARK,
-    '                        <button data-apois-cv10-option-accessibility="true"');
+    '                        <button data-apois-cv10-option-accessibility="' + MARK + '"');
   next = one(next, opening, jsxOpening, "native button with aria pressed");
   next = one(next,
     [
@@ -91,7 +91,7 @@ export function patchProductCustomization(source) {
       "                      );",
     ].join("\n"),
     "close the option button");
-  if (!next.includes('data-apois-cv10-option-accessibility="true"') ||
+  if (!next.includes('data-apois-cv10-option-accessibility="' + MARK + '"') ||
       !next.includes('aria-pressed={isSelected}')) throw new Error("[CV10] not committed in DOM");
   return next;
 }
