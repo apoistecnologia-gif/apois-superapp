@@ -44,7 +44,16 @@ function run(bin, args, options = {}) {
     console.error(result.error.message);
     process.exit(1);
   }
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (result.status !== 0) {
+    // GitHub runner can terminate a child with a signal and no JS exception.
+    // Never log command arguments, environment variables or credentials.
+    console.error("[FAIL] Isolated module child process", {
+      binary: bin === process.execPath ? "node" : bin,
+      exitStatus: result.status,
+      signal: result.signal ?? "none",
+    });
+    process.exit(result.status ?? 1);
+  }
 }
 
 function injectSuperappBridge(indexPath, moduleName) {
@@ -487,8 +496,11 @@ if (name === 'corridas') {
   // auth error copy and field accessibility on disposable Corridas; do not change
   // password predicates, Supabase callback/session logic or email submission.
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-public-form-contrast-v1.mjs')]);
+  console.log("[DIAG] Starting RV15 public auth transform");
   run(process.execPath, [resolve(root, 'scripts/fix-corridas-auth-visual15-v1.mjs')]);
+  console.log("[DIAG] RV15 public auth transform finished");
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-auth-visual15-v1.test.mjs')]);
+  console.log("[DIAG] RV15 auth tests finished");
   for(const rel of ['src/routes/_public.recuperar-senha.tsx','src/routes/_public.redefinir-senha.tsx']){
     const generated=readFileSync(resolve(root,'.work/corridas',rel),'utf8');
     if(!generated.includes('APOIS_CV15_AUTH_FEEDBACK_ACCESSIBILITY_V1') ||
