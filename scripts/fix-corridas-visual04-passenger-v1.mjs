@@ -74,7 +74,7 @@ const formatter = [
   '  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "Não informado";',
   '  if (Array.isArray(value)) return value.length ? value.map((entry) => formatApoisReviewDetailValue(entry, key, depth + 1)).join(", ") : "Nenhum item";',
   "  if (typeof value === \"object\") {",
-  "    if (depth > 4) return JSON.stringify(value) ?? "Dados estruturados";",
+  '    if (depth > 4) return JSON.stringify(value) ?? "Dados estruturados";',
   "    const entries = Object.entries(value as Record<string, unknown>);",
   '    return entries.length ? entries.map(([subkey, item]) => formatApoisReviewDetailLabel(subkey) + ": " + formatApoisReviewDetailValue(item, subkey, depth + 1)).join(" · ") : "Sem detalhes";',
   "  }",
