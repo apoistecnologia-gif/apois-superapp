@@ -122,6 +122,7 @@ node "$ROOT/scripts/verify-apois-report02-integrity-v1.mjs" finance
 node "$ROOT/scripts/fix-partner-driver-correction-center-v1.mjs"
 node "$ROOT/scripts/fix-partner-driver-corrections-red-v2.mjs"
 node "$ROOT/scripts/fix-report04-driver-center-v1.mjs"
+node "$ROOT/scripts/fix-report04-driver-document-reconciliation-v1.mjs"
 node "$ROOT/scripts/verify-apois-vehicle-incidents-v1.mjs" partner
 node "$ROOT/scripts/verify-apois-13-photo-driver-pendencies-v1.mjs"
 node "$ROOT/scripts/harden-partner-operational-status-v1.mjs" motorista
