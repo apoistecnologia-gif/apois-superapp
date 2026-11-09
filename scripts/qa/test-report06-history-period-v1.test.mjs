@@ -77,7 +77,7 @@ test("INV-053 original route: period and cursor transformations are repeatable",
 
   const aggregateBody=bodyBetween(generated,
    "      let grossVolume = 0;\n","      setPeriodSummary({");
-  const aggregate=new Function("seen","report06ValidAmount",aggregateBody+
+  const aggregate=new Function("seen","report06ValidAmount","let grossVolume = 0;\n"+aggregateBody+
    "\nreturn {total:seen.size,grossVolume,completedCount,avgFare:completedCount ? grossVolume/completedCount:0};");
   for(const n of [0,1,50,51,500]){
    const data=Array.from({length:n},(_,i)=>({id:String(i),status:i%10===0?"cancelled":"finalizada",
