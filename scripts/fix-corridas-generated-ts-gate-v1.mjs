@@ -21,8 +21,8 @@ export function applyGeneratedCorridasTypecheck(root=process.cwd()){
  const dir=resolve(root,".work/corridas/src");
  const specs=[
  ["components/pricing/CategorySelector.tsx",[
-   ['  carros: "0%",','  carro: "0%"',"canonical carro sprite"],
-   ['  motos: "25%",','  moto: "25%"',"canonical moto sprite"],
+   ['  carros: "0%",','  carro: "0%",',"canonical carro sprite"],
+   ['  motos: "25%",','  moto: "25%",',"canonical moto sprite"],
    ['servicePosition.carros','servicePosition.carro',"canonical fallback"],
  ]],
  ["components/profile/PassengerAccountDeletion.tsx",[
