@@ -85,7 +85,7 @@ test("CV-016/017: visual-only transform is idempotent and fail-closed", () => {
       "ride_comfort_preferences", "conversation", "music", "air_conditioning",
       "Object.entries(value as Record<string, unknown>)",
       "typeof value === \"boolean\"", "Array.isArray(value)",
-      "apoisReviewDetailChoices[key]?.[value] ?? value",
+      "Object.prototype.hasOwnProperty.call(choices, value)",
     ]) assert.ok(review.includes(token), "Keep contract: " + token);
     result = run();
     assert.equal(result.status, 0, result.stderr);
