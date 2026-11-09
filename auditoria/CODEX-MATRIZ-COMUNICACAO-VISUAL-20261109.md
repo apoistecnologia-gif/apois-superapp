@@ -33,3 +33,28 @@ Esta matriz **NÃO substitui** `CODEX-MATRIZ-GERAL-51-ACHADOS-20261109.md` nem `
 ## Encaminhamento
 
 Prioridade de publicação futura: identificar exatamente a origem do login Estabelecimento e verificar CV-001/002/003/004; validar posteriormente o resultado final dos overlays CV-005/006/007/008 em 320, 360, 390 e 412 CSS px, orientação horizontal, fonte ampliada, foco, safe-area, teclado aberto e Android físico. Esta matriz é **incremental**, será ampliada nos relatórios CV seguintes, sem alterar a matriz técnica.
+
+
+## Achados visuais — rodada 02 (Entregador, VIS-010–013)
+
+**Entrada:** `RELATORIO-VISUAL-02-APOIS-ENTREGADOR-20261109(1).md` (auditoria estática, sem homologação). Escopo verificado na branch **autorizada** `audit/continuacao-20261107`, não na branch de auditoria de origem mencionada no relatório. Snapshot `apoistecnologia-gif/apois-entregas@2f4606e0fb52dffb49f2e6aebbe921ce687ab625` permanece protegido.
+
+| CV | Origem | Prioridade | Superfície | Constatação e decisão | Situação, sem antecipar homologação |
+|---|---|---|---|---|---|
+| CV-009 | VIS-010 | P2 | Entregador / ActiveDelivery | Gerador final mostrava “PEDIDO RETIRADO” para `onTransition("picked_up")`, indicando fato consumado antes do clique | **Implementado no gerador** “Confirmar retirada”, handler/etapa/PIN preservados; teste de app real pendente |
+| CV-010 | VIS-011 | P2 | Entregador / CourierOfferOverlay | Snapshot e patches sem papel de diálogo ou gestão de foco | **Implementado no gerador**: `role=dialog`, `aria-modal`, título, foco inicial, navegação Tab cíclica e retorno de foco. Sem evento novo de recusa; TalkBack e DOM final pendentes |
+| CV-011 | VIS-012 | P1 **condicional** | Entregador / oferta em tela baixa | Corpo `max-h-[72dvh]` somado a cabeçalho/reserva da navegação, risco de extravasamento não reproduzido no app real | **Mitigação preventiva em gerador**: altura total limitada, `min-h-0`, corpo rolável e ações fixadas durante rolagem. Fixture Chromium confirmou risco e mitigação; APK não verificado |
+| CV-012 | VIS-013 | P2 | Entregador / ações de ajuda e endereços | Alvos inline sem altura/padding mínimos no componente substituído por gerador tardio | **Implementado no gerador**: `min-h-11` (44px), padding, foco visível e quebra de linha. Callbacks inalterados; medição física pendente |
+
+### Execução e evidências CV 02
+
+- Script novo: `scripts/fix-partner-courier-visual02-v1.mjs`, aplicado **após** os geradores de jornada simples, histórico/perfil e ações operacionais; fontes pinadas intactas.
+- Teste novo integrado ao builder: `scripts/qa/test-partner-courier-visual02-v1.test.mjs`.
+- **Executado:** 8/8 verificações sintéticas em V8 sobre o patcher, incluindo idempotência, fail-closed por desvio de origem, preservação de handlers; inspeção de sintaxe e geometria de fixture Chromium em 5 viewports.
+- **Não executado:** teste Node no checkout integral, compilação TypeScript, lint, bundle, E2E, TalkBack, foco Android e telas reais. Não chamar “homologado” apenas por simulação.
+- Fixture Chromium (**não produto real**): cartão original ultrapassou o topo em 320×480, 360×640 e 640×360; cartão ajustado permaneceu na área útil nos cinco cenários. Classificação P1 continua condicional à reprodução no app.
+- Foram preservados marca, paleta, safe-area, privacidade do endereço antes do aceite, prazo, sons, aceite/recusa, GPS, PIN, pagamentos, valores e histórico. Nenhum merge, deploy, APK, SQL ou mensagem real.
+
+### Contagem e continuidade
+
+**12 itens visuais CV-001–CV-012** (8 da rodada 01 e 4 da rodada 02). VIS-001 segue apenas como alias de INV-047. Os 67 achados técnicos mantêm suas classificações originais **A 0 / B 46 / C 17 / D 0 / E 1 / G 3** e sua matriz oficial separada. Sem autorização para homologação física final.
