@@ -16,11 +16,11 @@ export function patchAddressCard(s){
 "old card keyboard selector");
  s=once(s,
 '                  <div className="flex gap-3">\n                    <div className="grid h-11',
-'                  <button type="button" onClick={() => setSelectedAddressId(address.id)}\n                    aria-pressed={selected}\n                    aria-label={"Selecionar " + address.label + ": " + address.street + ", " + address.number + ", " + address.neighborhood + ", " + address.city + "/" + address.state}\n                    className="flex min-h-11 w-full gap-3 text-left focus-visible:rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">\n                    <div className="grid h-11',
+'                  <div role="button" tabIndex={0} onClick={() => setSelectedAddressId(address.id)}\n                    onKeyDown={(event) => { if (event.target !== event.currentTarget) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedAddressId(address.id); } }}\n                    aria-pressed={selected}\n                    aria-label={"Selecionar " + address.label + ": " + address.street + ", " + address.number + ", " + address.neighborhood + ", " + address.city + "/" + address.state}\n                    className="flex min-h-11 w-full gap-3 text-left focus-visible:rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">\n                    <div className="grid h-11',
 "native selection separate from Edit/Delete");
  s=once(s,
 '                    </div>\n                  </div>\n\n                  {!located ? (',
-'                    </div>\n                  </button>\n\n                  {!located ? (',
+'                    </div>\n                  </div>\n\n                  {!located ? (',
 "native button closes before nested buttons");
  // CV-038 in RV11 is theme risk; CV-039: remove only the two visible truncations.
  // Full text remains within normal card flow. Await real narrow-screen measurement.
