@@ -11,6 +11,151 @@ const pos=src.indexOf("function DriverPasswordRecoveryPage() {");
 if(pos<0 || src.indexOf("function DriverPasswordRecoveryPage() {",pos+1)>=0)
  throw Error("[FAIL] Unexpected Motorista recovery route structure");
 src=src.slice(0,pos)+"// APOIS_DRIVER_RECOVERY_EMAIL_OTP_V5\nfunction DriverPasswordRecoveryPage() {\n  const navigate = useNavigate();\n  const [email, setEmail] = useState(\"\");\n  const [code, setCode] = useState(\"\");\n  const [sent, setSent] = useState(false);\n  const [loading, setLoading] = useState(false);\n  const [verifying, setVerifying] = useState(false);\n  const [error, setError] = useState<string | null>(null);\n  const [codeError, setCodeError] = useState<string | null>(null);\n  const [lastRequestedAt, setLastRequestedAt] = useState(0);\n\n  async function requestCode(event: React.FormEvent<HTMLFormElement>) {\n    event.preventDefault();\n    if (loading || verifying) return;\n    setError(null);\n    setCodeError(null);\n    const parsed = schema.safeParse({ email });\n    if (!parsed.success) {\n      setError(parsed.error.issues[0]?.message ?? \"Informe um e-mail válido.\");\n      return;\n    }\n    if (lastRequestedAt && Date.now() - lastRequestedAt < 60_000) {\n      setError(\"Uma solicitação já foi realizada. Aguarde pelo menos um minuto para pedir outro código.\");\n      return;\n    }\n    setLoading(true);\n    try {\n      // The same Auth endpoint that powered the approved APOIS Merchant OTP flow.\n      // The Recovery email template must include {{ .Token }} (see setup file).\n      const redirectTo = getDriverPasswordRecoveryRedirectTo();\n      const { error: sendError } = await supabase.auth.resetPasswordForEmail(\n        parsed.data.email.trim().toLowerCase(),\n        redirectTo ? { redirectTo } : undefined,\n      );\n      if (sendError) {\n        setError(sendError.status === 429\n          ? \"Limite temporário de envios. Aguarde antes de solicitar outro código.\"\n          : \"Não foi possível solicitar o código agora. Tente novamente.\");\n        return;\n      }\n      setSent(true);\n      setCode(\"\");\n      setLastRequestedAt(Date.now());\n    } catch {\n      setError(\"Falha de conexão. Verifique sua internet e tente novamente.\");\n    } finally {\n      setLoading(false);\n    }\n  }\n\n  async function verifyCode(event: React.FormEvent<HTMLFormElement>) {\n    event.preventDefault();\n    if (verifying || loading) return;\n    setCodeError(null);\n    const parsed = schema.safeParse({ email });\n    if (!parsed.success) {\n      setCodeError(\"Informe o mesmo e-mail utilizado para solicitar o código.\");\n      return;\n    }\n    const sanitizedCode = code.replace(/\\D/g, \"\").slice(0, 8);\n    if (!/^\\d{6,8}$/.test(sanitizedCode)) {\n      setCodeError(\"Digite o código numérico de 6 a 8 dígitos recebido por e-mail.\");\n      return;\n    }\n    setVerifying(true);\n    try {\n      // The code, rather than a clicked URL, establishes a temporary recovery session.\n      // No password is changed until the next screen explicitly calls updateUser().\n      const { data, error: otpError } = await supabase.auth.verifyOtp({\n        email: parsed.data.email.trim().toLowerCase(),\n        token: sanitizedCode,\n        type: \"recovery\",\n      });\n      if (otpError || !data.session) {\n        setCodeError(\"Código inválido, expirado ou já utilizado. Solicite um novo código.\");\n        return;\n      }\n      setCode(\"\");\n      await navigate({ to: \"/motorista/redefinir-senha\", replace: true });\n    } catch {\n      setCodeError(\"Não foi possível verificar o código. Confira sua conexão.\");\n    } finally {\n      setVerifying(false);\n    }\n  }\n\n  return (\n    <main data-apois-driver-recovery-otp-v5 className=\"min-h-[100dvh] min-w-0 bg-[#F7F7F8] px-4 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-[calc(env(safe-area-inset-top)+24px)] text-[#111827] sm:px-5\">\n      <div className=\"mx-auto w-full min-w-0 max-w-md\">\n        <div className=\"grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2\">\n          <Link to=\"/motorista/login\" aria-label=\"Voltar ao login\" className=\"flex h-11 w-11 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#111827]\"><ArrowLeft className=\"h-5 w-5\" aria-hidden=\"true\" /></Link>\n          <div className=\"flex min-w-0 justify-center\"><MovviLogo size={60} productLabel=\"MOTORISTA\" /></div>\n          <div className=\"h-11 w-11\" aria-hidden=\"true\" />\n        </div>\n\n        <section className=\"mt-8 min-w-0 rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-[0_18px_50px_rgba(0,0,0,.08)] sm:p-6\">\n          <p className=\"text-xs font-black uppercase tracking-[0.17em] text-[#C9141B]\">APOIS Motorista · Acesso seguro</p>\n          <h1 className=\"mt-2 text-[26px] font-black leading-tight text-[#111827]\">Recuperar minha senha</h1>\n          <p className=\"mt-3 text-sm leading-6 text-[#596372]\">\n            Receba um código no seu e-mail e digite aqui. Não é necessário abrir links no navegador.\n          </p>\n\n          <form onSubmit={requestCode} className=\"mt-6 space-y-3\" aria-busy={loading}>\n            <label htmlFor=\"apois-otp-recovery-email\" className=\"block text-xs font-bold uppercase tracking-[0.08em] text-[#596372]\">E-mail da conta</label>\n            <div className=\"flex h-14 min-w-0 items-center gap-3 rounded-2xl border border-[#D4D8DF] bg-white px-4 focus-within:border-[#E51B23]\">\n              <Mail className=\"h-5 w-5 shrink-0 text-[#C9141B]\" aria-hidden=\"true\" />\n              <input id=\"apois-otp-recovery-email\" data-apois-driver-recovery-email-v1 type=\"email\" inputMode=\"email\" autoComplete=\"email\" required\n                placeholder=\"seuemail@exemplo.com\" value={email}\n                onChange={(event) => { setEmail(event.target.value); setSent(false); setCode(\"\"); setError(null); setCodeError(null); }}\n                style={{ color:\"#111827\", WebkitTextFillColor:\"#111827\", caretColor:\"#111827\", colorScheme:\"light\", backgroundColor:\"#FFFFFF\" }}\n                className=\"h-full min-w-0 flex-1 bg-white text-base font-semibold text-[#111827] outline-none placeholder:text-[#7B8493]\" />\n            </div>\n            {error && <p role=\"alert\" className=\"rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800\">{error}</p>}\n            <button type=\"submit\" disabled={loading || verifying} className=\"flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#E51B23] px-4 text-sm font-black text-white disabled:opacity-60\">\n              {loading && <Loader2 className=\"h-4 w-4 animate-spin\" aria-hidden=\"true\" />}\n              {loading ? \"Solicitando código...\" : sent ? \"Solicitar outro código\" : \"Enviar código por e-mail\"}\n            </button>\n          </form>\n\n          {sent && <div role=\"status\" aria-live=\"polite\" className=\"mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-[#F0FBF5] p-3 text-sm leading-5 text-[#14532D]\"><CheckCircle2 className=\"mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\" /><span>Solicitação recebida. Se a conta existir, confira o e-mail e digite o código abaixo.</span></div>}\n\n          <div className=\"my-6 h-px bg-[#E5E7EB]\" aria-hidden=\"true\" />\n          <form onSubmit={verifyCode} className=\"space-y-3\" aria-busy={verifying}>\n            <label htmlFor=\"apois-otp-recovery-code\" className=\"block text-sm font-extrabold text-[#111827]\">Código de verificação</label>\n            <p className=\"text-xs leading-5 text-[#596372]\">Digite o código numérico de 6 a 8 dígitos recebido no e-mail informado acima.</p>\n            <input id=\"apois-otp-recovery-code\" data-apois-driver-recovery-otp-input-v5\n              type=\"text\" inputMode=\"numeric\" autoComplete=\"one-time-code\"\n              maxLength={8} pattern=\"[0-9]{6,8}\" placeholder=\"000000\"\n              value={code} onChange={(event) => { setCode(event.target.value.replace(/\\D/g,\"\").slice(0,8)); setCodeError(null); }}\n              style={{ color:\"#111827\", WebkitTextFillColor:\"#111827\", caretColor:\"#111827\", colorScheme:\"light\", backgroundColor:\"#FFFFFF\" }}\n              className=\"h-14 w-full rounded-2xl border border-[#D4D8DF] bg-white px-4 text-center text-2xl font-black tracking-[.2em] text-[#111827] outline-none focus:border-[#E51B23]\" />\n            {codeError && <p role=\"alert\" className=\"rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800\">{codeError}</p>}\n            <button type=\"submit\" disabled={loading || verifying || code.length < 6}\n              className=\"flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#E51B23] bg-[#FFF7F7] px-4 text-sm font-black text-[#B71922] disabled:opacity-50\">\n              {verifying && <Loader2 className=\"h-4 w-4 animate-spin\" aria-hidden=\"true\" />}\n              {verifying ? \"Verificando código...\" : \"Verificar código e continuar\"}\n            </button>\n          </form>\n          <p className=\"mt-5 text-center text-xs leading-5 text-[#667081]\">Sua senha só será alterada depois de verificar o código e confirmar a nova senha.</p>\n        </section>\n      </div>\n    </main>\n  );\n}";
+
+// APOIS_DRIVER_RECOVERY_EMAIL_BINDING_V11 / INV-063.
+// The generated component is patched only after the existing V5 structure
+// is assembled; the original OTP, redirect, colors and screens remain intact.
+function recoveryReplaceOnce(before, after, label) {
+  const count = src.split(before).length - 1;
+  if (count !== 1) throw Error("[FAIL] Recovery V11 " + label + " expected one anchor, got " + count);
+  src = src.replace(before, after);
+}
+recoveryReplaceOnce(
+  'import { useState } from "react";',
+  'import { useRef, useState } from "react";',
+  "ref import"
+);
+recoveryReplaceOnce(
+  '  const [lastRequestedAt, setLastRequestedAt] = useState(0);',
+  [
+    '  const [lastRequestedAt, setLastRequestedAt] = useState(0);',
+    '  // APOIS_DRIVER_RECOVERY_EMAIL_BINDING_V11: isolate request identity from the editable field.',
+    '  const [sentTo, setSentTo] = useState<string | null>(null);',
+    '  const currentEmailRef = useRef("");',
+    '  const requestGenerationRef = useRef(0);',
+    '  const requestInFlightRef = useRef(false);',
+    '  const verifyInFlightRef = useRef(false);',
+  ].join("\n"),
+  "request tracking"
+);
+recoveryReplaceOnce(
+  '    if (loading || verifying) return;\n    setError(null);',
+  '    if (loading || verifying || requestInFlightRef.current || verifyInFlightRef.current) return;\n    setError(null);',
+  "duplicate request barrier"
+);
+recoveryReplaceOnce(
+  '      setError("Uma solicitação já foi realizada. Aguarde pelo menos um minuto para pedir outro código.");',
+  '      setError("Aguarde pelo menos um minuto entre solicitações, mesmo ao corrigir o e-mail. O servidor também pode limitar envios.");',
+  "global rate limit clarification"
+);
+recoveryReplaceOnce(
+  '    setLoading(true);\n    try {\n      // The same Auth endpoint',
+  [
+    '    const recipient = parsed.data.email.trim().toLowerCase();',
+    '    currentEmailRef.current = recipient;',
+    '    const requestGeneration = ++requestGenerationRef.current;',
+    '    const isCurrentRecipient = () => requestGenerationRef.current === requestGeneration &&',
+    '      currentEmailRef.current.trim().toLowerCase() === recipient;',
+    '    requestInFlightRef.current = true;',
+    '    setLoading(true);',
+    '    try {',
+    '      // The same Auth endpoint',
+  ].join("\n"),
+  "request recipient snapshot"
+);
+recoveryReplaceOnce(
+  '      const { error: sendError } = await supabase.auth.resetPasswordForEmail(\n        parsed.data.email.trim().toLowerCase(),',
+  '      const { error: sendError } = await supabase.auth.resetPasswordForEmail(\n        recipient,',
+  "bound request recipient"
+);
+recoveryReplaceOnce(
+  '      if (sendError) {\n        setError(sendError.status === 429',
+  '      if (!sendError) setLastRequestedAt(Date.now()); // Global anti-spam clock counts accepted sends, even if UI changed.\n      if (!isCurrentRecipient()) return;\n      if (sendError) {\n        setError(sendError.status === 429',
+  "stale response guard"
+);
+recoveryReplaceOnce(
+  '      setSent(true);\n      setCode("");\n      setLastRequestedAt(Date.now());',
+  '      setSentTo(recipient);\n      setSent(true);\n      setCode("");',
+  "acknowledged recipient"
+);
+recoveryReplaceOnce(
+  '    } catch {\n      setError("Falha de conexão. Verifique sua internet e tente novamente.");\n    } finally {\n      setLoading(false);\n    }\n  }',
+  '    } catch {\n      if (isCurrentRecipient()) setError("Falha de conexão. Verifique sua internet e tente novamente.");\n    } finally {\n      requestInFlightRef.current = false;\n      setLoading(false);\n    }\n  }',
+  "reject stale network error"
+);
+recoveryReplaceOnce(
+  '    if (verifying || loading) return;\n    setCodeError(null);',
+  '    if (verifying || loading || verifyInFlightRef.current || requestInFlightRef.current) return;\n    setCodeError(null);',
+  "duplicate verification barrier"
+);
+recoveryReplaceOnce(
+  '    setVerifying(true);\n    try {\n      // The code, rather than a clicked URL,',
+  [
+    '    const verifyingEmail = parsed.data.email.trim().toLowerCase();',
+    '    currentEmailRef.current = verifyingEmail;',
+    '    const verificationGeneration = requestGenerationRef.current;',
+    '    const isCurrentVerification = () => !requestInFlightRef.current &&',
+    '      requestGenerationRef.current === verificationGeneration &&',
+    '      currentEmailRef.current.trim().toLowerCase() === verifyingEmail;',
+    '    verifyInFlightRef.current = true;',
+    '    setVerifying(true);',
+    '    try {',
+    '      // The code, rather than a clicked URL,',
+  ].join("\n"),
+  "verification recipient snapshot"
+);
+recoveryReplaceOnce(
+  '        email: parsed.data.email.trim().toLowerCase(),\n        token: sanitizedCode,',
+  '        email: verifyingEmail,\n        token: sanitizedCode,',
+  "verify bound recipient"
+);
+recoveryReplaceOnce(
+  '      if (otpError || !data.session) {\n        setCodeError("Código inválido, expirado ou já utilizado. Solicite um novo código.");',
+  '      if (!isCurrentVerification()) return;\n      if (otpError || !data?.session) {\n        setCodeError("Código inválido, expirado ou já utilizado. Solicite um novo código.");',
+  "stale OTP response"
+);
+recoveryReplaceOnce(
+  '    } catch {\n      setCodeError("Não foi possível verificar o código. Confira sua conexão.");\n    } finally {\n      setVerifying(false);\n    }\n  }',
+  '    } catch {\n      if (isCurrentVerification()) setCodeError("Não foi possível verificar o código. Confira sua conexão.");\n    } finally {\n      verifyInFlightRef.current = false;\n      setVerifying(false);\n    }\n  }',
+  "verification error guard"
+);
+recoveryReplaceOnce(
+  'placeholder="seuemail@exemplo.com" value={email}\n                onChange={(event) => { setEmail(event.target.value); setSent(false); setCode(""); setError(null); setCodeError(null); }}',
+  [
+    'placeholder="seuemail@exemplo.com" value={email} disabled={loading || verifying}',
+    '                onChange={(event) => {',
+    '                  if (requestInFlightRef.current || verifyInFlightRef.current) return;',
+    '                  const nextEmail = event.target.value;',
+    '                  currentEmailRef.current = nextEmail;',
+    '                  ++requestGenerationRef.current; // Invalidate any earlier UI callback.',
+    '                  setEmail(nextEmail); setSent(false); setSentTo(null); setCode("");',
+    '                  setError(null); setCodeError(null);',
+    '                }}',
+  ].join("\n"),
+  "locked email edits and stale generation"
+);
+recoveryReplaceOnce(
+  '{sent && <div role="status" aria-live="polite"',
+  '{sent && sentTo === email.trim().toLowerCase() && <div role="status" aria-live="polite"',
+  "receipt matches current recipient"
+);
+recoveryReplaceOnce(
+  'value={code} onChange={(event) => { setCode(event.target.value.replace(/\\D/g,"").slice(0,8)); setCodeError(null); }}',
+  'value={code} disabled={loading || verifying} onChange={(event) => { setCode(event.target.value.replace(/\\D/g,"").slice(0,8)); setCodeError(null); }}',
+  "locked code while verifying"
+);
+for (const token of [
+  "APOIS_DRIVER_RECOVERY_EMAIL_BINDING_V11",
+  "requestInFlightRef.current",
+  "verifyInFlightRef.current",
+  "sentTo === email.trim().toLowerCase()",
+  "disabled={loading || verifying}",
+  'type: "recovery"',
+  "Se a conta existir",
+]) {
+  if (!src.includes(token)) throw Error("[FAIL] Recovery V11 contract missing " + token);
+}
+
 src=src.replace('import { createFileRoute, Link } from "@tanstack/react-router";',
                 'import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";');
 if(!src.includes("supabase.auth.verifyOtp({") || !src.includes('type: "recovery"'))
