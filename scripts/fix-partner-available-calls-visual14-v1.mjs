@@ -94,6 +94,7 @@ const logic=String.raw`
     const buttons=Array.from(dialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])")??[]);
     if(!buttons.length){event.preventDefault();return;}
     const first=buttons[0],last=buttons[buttons.length-1];
+    if(!first||!last){event.preventDefault();return;}
     if(event.shiftKey && document.activeElement===first){event.preventDefault();last.focus();}
     else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first.focus();}
   };
