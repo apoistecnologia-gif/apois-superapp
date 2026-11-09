@@ -73,3 +73,9 @@ Nenhum arquivo dos submódulos fixados, branch `main` ou banco remoto foi altera
 ## Continuidade
 
 A implementação **preparatória e reversível** dos nove achados foi registrada. A etapa não é homologação final: INV-041/042 permanecem parciais e as validações de Node/TypeScript/build não ocorreram neste ambiente. O Relatório 04 pode ser recebido sem testes físicos, e o histórico anterior não deve ser reaberto por padrão. Somente o comando do usuário `ACABOU OS RELATÓRIOS. AGORA VAMOS PARA A HOMOLOGAÇÃO FINAL.` abre testes físicos.
+
+## Verificação complementar da API administrativa (09/11)
+
+O handler CommonJS versionado em `api/admin/notifications.js` foi **executado em runtime JavaScript isolado com `fetch` inteiramente substituído por mock de memória**: **9/9 cenários aprovados** — anônimo (401), usuário sem permissão (403), histórico autorizado (200), público 0 (422), público 1 (200), público 100 (200), público 101 (422), público 150 (422) e método não permitido (405). Os dois envios sintéticos foram interceptados pelo mock; **nenhum HTTP/FCM real**. Não confundir com execução do teste Node versionado ou resposta de Vercel implantado, que continuam pendentes.
+
+Foi também refinado o texto da tela de preferências para diferenciar permissão do sistema concedida de token do aparelho efetivamente registrado. Commit `8450357`.
