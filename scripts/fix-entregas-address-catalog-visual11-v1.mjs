@@ -54,8 +54,8 @@ export function patchCatalog(s){
  s=once(s,'onClick={() => setActiveCategory(cat.id)}',
  'onClick={() => setActiveCategory(cat.id)}\n              aria-pressed={activeCategory === cat.id}',"category active");
  s=once(s,
- 'onClick={() => !isCustomizing && handleAddToCart(product)}\n                       disabled={isCustomizing}',
- 'onClick={() => !isCustomizing && handleAddToCart(product)}\n                       disabled={isCustomizing}\n                       aria-label={isCustomizing ? "Preparando " + product.name : "Adicionar ou personalizar " + product.name}\n                       data-apois-cv11="APOIS_CV11_CATALOG_V1"',
+ 'onClick={() => !isCustomizing && handleAddToCart(product)}\n                      disabled={isCustomizing}',
+ 'onClick={() => !isCustomizing && handleAddToCart(product)}\n                      disabled={isCustomizing}\n                       aria-label={isCustomizing ? "Preparando " + product.name : "Adicionar ou personalizar " + product.name}\n                       data-apois-cv11="APOIS_CV11_CATALOG_V1"',
  "product-specific action");
  return s;
 }
