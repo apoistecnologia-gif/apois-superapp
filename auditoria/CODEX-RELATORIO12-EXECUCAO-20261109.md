@@ -54,11 +54,11 @@ Nova suíte `scripts/qa/test-report12-map-selection-v1.test.mjs` conectada ao bu
 
 ## 5. Verificações realmente executadas
 
-**15? Não: totais apurados e descritos sem inflar contagens.**
+**Resultados dos testes isolados (sem React ou aparelho):**
 
 - **14/14 checagens de integração sintética:** executado o gerador versionado sobre quatro arquivos de fonte pinada com marcadores dos hardeners anteriores inseridos apenas em memória para representar a sequência. Foram testados os contratos JS e nativo de observação de câmera, a supressão de auto-follow durante escolha, geocoding existente, seleção, favorito, histórico, prevenção de falso sucesso, os modos de destino/parada e tipagens. **Não foi o builder completo**.
 - **21/21 verificações comportamentais sintéticas:** código real versionado do handler extraído do gerador executado com setters, câmera e geocoder simulados (destino B, histórico, parada, favorito, falha por posição ausente, endereço indisponível, mapa movido durante a requisição, duplo clique). Validação real extraída do template Places executada com valores nulos, ausentes, strings, NaN e fora de faixa, além de 0,0 e limites válidos. Sem chamada remota nem conta real.
-- **Suíte Node versionada:** oito cenários com fixtures do código integrado, **não executados** no checkout completo. (A suíte foi incluída para falhar no futuro build se os contratos de regressão divergirem.)
+- **Suíte Node versionada:** nove testes com fixtures do código integrado, **não executados** no checkout completo. (A suíte foi incluída para falhar no futuro build se os contratos de regressão divergirem.)
 
 **Não executados:** `build-isolated-module`, instalação de dependências, `node --test` real, `tsc`, React, Vite, Android, Mapas nativos/JavaScript em execução, geocodificação real ou paga, fluxo físico de parar o pin, automação do toque, pedido/cobrança de corrida, deploy, migração ou publicação. O Relatório 12 **não** demonstra que a integração nativa esteja homologada em aparelho.
 
