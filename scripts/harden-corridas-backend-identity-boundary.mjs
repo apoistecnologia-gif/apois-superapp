@@ -160,7 +160,14 @@ patch('supabase/functions/send-ride-push/index.ts', (source) => {
   source.includes('callerDriverRecordId === String(ride.driver_id ?? "")') &&
   source.includes('finalUserIds = await normalizeRecipientDomainIds(admin, input.user_ids);') &&
   source.includes('.eq("id", ride.driver_id)') &&
-  source.includes('user_notification_tokens/user_notification_preferences/notification_logs usam public.users(id); rides usam DOMAIN/DRIVER IDs.') &&
+  // INV03 later reconciles the canonical FCM body on the disposable workspace.
+  // Verify real domain-user queries, not a comment that its canonical copy replaces.
+  source.includes('.from("user_notification_preferences")') &&
+  source.includes('.in("user_id", finalUserIds)') &&
+  source.includes('.from("user_notification_tokens")') &&
+  source.includes('.in("user_id", allowedUsers)') &&
+  source.includes('.from("notification_logs").insert(') &&
+  source.includes('user_id: userId') &&
   !source.includes('const isPassenger = callerId === ride.passenger_id;') &&
   !source.includes('const isDriver = callerId === ride.driver_id;'),
 'Corridas backend: Push preserva DOMAIN USER ID em tokens, preferências e logs');
