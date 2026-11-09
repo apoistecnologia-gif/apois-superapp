@@ -91,7 +91,7 @@ if (modulesRaw) {
   const isolatedBuilder = read('scripts/build-isolated-module.mjs');
   const reconcileMarker = 'reconcile-entregas-bun-lock-v1.mjs';
   const verifyMarker = 'verify-entregas-bun-lock-v1.mjs';
-  const installMarker = 'const config = manifest.modules[name];';
+  const installMarker = 'for (const command of [config.install, config.build]) {';
   if (entregasInstall !== JSON.stringify(['bun', 'install', '--frozen-lockfile'])) {
     fail('Entregas deve instalar com --frozen-lockfile após reconciliação isolada');
   } else if (!isolatedBuilder.includes(reconcileMarker) ||
