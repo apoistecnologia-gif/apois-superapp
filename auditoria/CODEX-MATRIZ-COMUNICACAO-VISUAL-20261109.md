@@ -322,3 +322,30 @@ Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3)
 - Pendências anteriores **CV-037** (tema Motorista), **CV-038** (endereços longos), **CV-039** (adicionais no Merchant realmente distribuído/impressão) e **CV-030** (não aplicável ao contrato pinado salvo novas provas) são preservadas, sem reclassificação artificial.
 
 **Consolidação: 48 registros visuais CV-001–CV-048** (43 anteriores + 5 novos; três ampliações sem duplicação). **Matriz técnica histórica inalterada: 67 achados, A=0, B=46, C=17, D=0, E=1, G=3.** Próximo ID CV-049. Os efeitos finais ainda aguardam render, Node/typecheck/lint/build, testes físicos, TalkBack e homologação autorizada.
+
+## Achados visuais — rodada 14 (estado de consulta, reconexão e carregamento, VIS-050–053)
+
+**Entrada:** RELATORIO-VISUAL-14-APOIS-ESTADOS-RECONEXAO-20261109(1).md. Auditor externo partiu da branch audit/ecossistema-20261107. Integração exclusiva em audit/continuacao-20261107. `.apois/source-lock.json` e três fontes pinadas permanecem protegidas.
+
+| CV | Origem | Pri. | Superfície | Alteração verificada | Aceite ainda necessário |
+|---|---|---|---|---|---|
+| **CV-049** | **VIS-050** | P2 | Central ApoisAvailableCalls, Motorista/Entregador | A estimativa `remaining_seconds` agora envelhece localmente por timestamp e intervalo de 1 s; rótulo mostra segundos (1 s, e não 1 min) e indica prazo estimado encerrado. Depois de 20 s sem nova consulta, a UI avisa que os dados estão antigos. Ações com indicação de prazo localmente esgotado ou lista obsoleta ficam temporariamente desabilitadas até atualizar; **validação oficial de aceite/prazo permanece exclusivamente no servidor**. | Variação de relógio, WebView suspensa e retomada, chamada obtida por outro motorista, render e sincronismo em dispositivo real. O bloqueio local é apenas preventivo, não prova de disponibilidade/expiração oficial. |
+| **CV-050** | **VIS-051** | P2 | Resultado de assumir solicitação | Estado separado `claimMessage` mostra falha de aceite sem que um `refresh` bem-sucedido apague o aviso. Texto não atribui uma causa não comprovada; não repete a tentativa de aceite automaticamente. | React real e mensagens/alertas em sequências de sucesso/falha/consulta sem rede. |
+| **CV-051** | **VIS-052** | P2 | Consulta tardia após offline, fechar ou trocar papel | Versões de ciclo e requisição via `useRef`, comparação do estado atual antes de aplicar `setCalls`/`setMessage`/`setLoading`; respostas antigas são descartadas. Efeito de offline limpa lista e mostra orientação, mesmo se resposta anterior chegar depois. | Testar concorrência em React/WebView, app em background, prop online e retomada de foco/push com RPC mockada. |
+| **CV-052** | **VIS-053** | P2 | Corridas Passageiro, carregamento inicial | Mensagem `Carregando informações da corrida…` com `role=status`/`aria-live=polite`; seis Skeleton são decorativos (`aria-hidden=true`). Mantidos estados `not_found`, `unauthorized`, `failed`, hook e navegação. | TalkBack/teclado, orientação, fonte ampliada, render e fim do carregamento. |
+
+### Ampliações sem novos registros
+- **VIS-028 / CV-027:** o modal manual da Central passa a ter foco inicial no botão Fechar, ciclo de Tab/Shift+Tab, fechamento por Escape e retorno de foco; não substitui os componentes Radix auditados anteriormente. Sem teste físico de foco ou leitor de tela.
+- **VIS-004 / CV-003:** Fechar do modal ganha `min-h-11` (44 px nominal); Atualizar corrida na reconexão passa de 36×36 para 44×44 px mínimos. Mantidos `onClose`, `refreshRide`, `isRefreshing` e estados desabilitados.
+- **VIS-039 / CV-038:** descrição do banner de reconexão e subtítulo do RideStatusHeader trocam `truncate` por `break-words`, sem alterar textos/status/ETAs. Testar quebra real. A ampliação não encerra CV-038, que também trata endereço longo em Entregas.
+
+### Arquivos, execução e limites
+
+- Novo overlay `scripts/fix-partner-available-calls-visual14-v1.mjs`, aplicado na cópia montada de `ApoisAvailableCalls.tsx` de Motorista e Entregador; gerador legado e fontes pinadas não alterados.
+- Novo overlay `scripts/fix-corridas-active-ride-visual14-v1.mjs`, aplicado à rota de corrida e `RideStatusHeader` na cópia de Corridas do Passenger.
+- Novas suítes `scripts/qa/test-partner-available-calls-visual14-v1.test.mjs` e `scripts/qa/test-corridas-active-ride-visual14-v1.test.mjs`, integradas respectivamente a `scripts/build-partner-release.sh` e `scripts/build-isolated-module.mjs`.
+- **Efetivamente realizado:** leitura do gerador e snapshots fixados; execução das funções reais de overlay em V8 sobre código de entrada reconstruído, idempotência, falha controlada quando âncora muda e preservação de RPC/handlers; **6/6 casos V8** da suíte Partner com respostas sintéticas inclusive ordem invertida, falha de aceite seguida de consulta válida e consulta tardia após offline; **4/4 casos V8** da suíte Passageiro contra snapshot pinado. São testes de fixtures, **não** execução de `node --test`, do React, do navegador ou do APK.
+- **Não realizado:** `node --test` de checkout integral, `bun run typecheck`, lint/build, browser/React montado, TalkBack, dispositivos, APIs reais, pedidos/corridas, backend, deploy ou APK.
+- **Pendências anteriores intocadas:** CV-037 (tema Motorista), CV-038 (endereços longos), CV-039 P1 (itens/adicionais da Central efetivamente distribuída e impressão), CV-030 (não aplicável ao contrato pinado salvo divergência demonstrada). Não reclassificar nenhum achado por suposição.
+
+**Consolidação: 52 registros visuais CV-001–CV-052** (48 anteriores + 4 novos; três ampliações sem repetição de IDs). **Matriz técnica histórica preservada: 67 achados, A=0, B=46, C=17, D=0, E=1, G=3.** Próximo registro CV-053. A RV-14 implementa mitigação verificável em código, mas **não autoriza homologação, APK, deploy ou declaração de funcionamento físico**.
