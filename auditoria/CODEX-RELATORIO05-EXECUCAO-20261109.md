@@ -50,3 +50,7 @@ Nenhuma mudança no repositório-fonte fixado. Não criar módulo paralelo de ra
 ## Conclusão da fase de código
 
 Os três achados receberam correções reais versionadas no integrador e verificações isoladas. **INV-049 e INV-051: B**, aguardam compilação/homologação; **INV-050: C**, pois a validação no RPC está somente preparada. **Não é a homologação final.** O próximo relatório poderá ser recebido sem APK ou teste físico; testes Android só após a frase de liberação definida pelo usuário.
+
+## Verificação complementar da ordem de build (09/11)
+
+Foi executada também em runtime JavaScript isolado, sobre os **três arquivos reais pinados** de Segurança, Configurações e Tema, a ordem: `harden-partner-motorista-native-utilities` → `harden-partner-motorista-settings-cleanup` → `harden-partner-motorista-brand-theme` → `fix-report05-motorista-security-v1`. **Quatro scripts passaram**, seguidos novamente pelas **39 verificações simuladas**, todas aprovadas. Os mocks apenas leram/alteraram a cópia em memória; não produziram build nem modificaram o app real. Isso reduz risco de conflito entre a versão bruta, os ajustes existentes de configurações e a correção nova.
