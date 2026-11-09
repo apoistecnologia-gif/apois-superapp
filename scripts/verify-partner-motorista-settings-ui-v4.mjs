@@ -38,7 +38,12 @@ for(const token of [
   'deletePhrase.trim() !== "EXCLUIR"',
   'rpc("request_own_account_deletion")',
   "data?.ok !== true",
+  // Relatório 10 / INV-062: descrição explícita da conta compartilhada.
+  "APOIS Corridas, compartilhada pelos perfis Motorista e Passageiro",
+  "deixará de acessar ambos os perfis de Corridas",
 ]) assert.ok(settings.includes(token), "Settings V4 lost real action/confirmation: "+token);
+assert.ok(!settings.includes("Esta ação impedirá o uso do perfil APOIS Motorista após a confirmação"),
+  "Account deletion disclosure must describe both Corridas roles");
 assert.ok(!settings.includes("window.confirm(")&&!settings.includes("window.prompt("),
   "Native dialogs can trigger unexpected navigation; use explicit React modal");
 assert.ok(!settings.includes('functions.invoke("delete-my-account"'),
