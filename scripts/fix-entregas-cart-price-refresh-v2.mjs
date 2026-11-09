@@ -3,7 +3,7 @@
 // Não altera coupons/promotions nem reprecifica automaticamente sacolas antigas.
 import {readFileSync,writeFileSync} from "node:fs";
 import {resolve} from "node:path";
-const path=resolve(".work/entregas/src/contexts/CartContext.tsx");
+const path=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||".work/entregas","src/contexts/CartContext.tsx");
 let src=readFileSync(path,"utf8");
 const MARK="APOIS_CART_CURRENT_CATALOG_LINE_V2";
 if(src.includes(MARK)){console.log("[OK] cart price patch already applied");process.exit(0);}
