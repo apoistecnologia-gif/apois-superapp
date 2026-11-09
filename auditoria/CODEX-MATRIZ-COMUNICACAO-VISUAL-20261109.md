@@ -58,3 +58,28 @@ Prioridade de publicação futura: identificar exatamente a origem do login Esta
 ### Contagem e continuidade
 
 **12 itens visuais CV-001–CV-012** (8 da rodada 01 e 4 da rodada 02). VIS-001 segue apenas como alias de INV-047. Os 67 achados técnicos mantêm suas classificações originais **A 0 / B 46 / C 17 / D 0 / E 1 / G 3** e sua matriz oficial separada. Sem autorização para homologação física final.
+
+
+## Achados visuais — rodada 03 (Motorista, VIS-014–016)
+
+**Referência:** `RELATORIO-VISUAL-03-APOIS-MOTORISTA-20261109(1).md`. Foi verificado o código de `src/routes/motorista.app.tsx` no commit-fonte fixado `9fc171050d8b5703540c49d19a8f1e9f5162775f` e a sequência real de geração no integrador `audit/continuacao-20261107`. A auditoria de origem é estática; não houve novo APK ou versão publicada associada.
+
+| CV | Alias de origem | Prioridade | Superfície | Evidência e tratamento | Estado de aceite |
+|---|---|---|---|---|---|
+| CV-013 | VIS-014 | P2 | Motorista / RatingScreen / estrelas | Cinco botões SVG sem nome/estado acessível explícitos. Overlay CV03 mantém escala 1–5, `onClick={() => setStars(n)}`, adiciona grupo nomeado, `aria-label` individual e `aria-pressed={stars === n}`, com alvo mínimo 44px e foco visível | **Implementado no gerador, não homologado no app**; verificar TalkBack, teclado, foco e anúncio de nota |
+| CV-014 | VIS-015 | P2 | Motorista / RatingScreen / comentário | Somente placeholder identificava a textarea. Overlay CV03 acrescenta label visível `Comentário (opcional)`, `htmlFor` e `id`, mantendo `value={comment}` e `onChange` | **Implementado no gerador, não homologado no app**; verificar campo vazio/preenchido, teclado e leitor de tela |
+| CV-015 | VIS-016 | P2 | Motorista / RatingScreen / placeholder | V7 gera `#8A9098` sobre branco (contraste teórico **3,22:1**); o CSS de login não alcança automaticamente a avaliação. Overlay CV03 aplica `#596372` somente à textarea desta tela (contraste teórico **6,08:1**) | **Implementado no gerador, sem CSS computado real**; inspecionar WebView, campo aberto e compilação |
+
+### Retificação explícita do Relatório Visual 01
+
+**CV-006 / VIS-007**: **retirado da fila de defeitos ativos no código de montagem**; `fix-partner-input-contrast-v1.mjs` já substitui o placeholder intermediário do login por `#596372` com `!important`, antes da correção final da avaliação. Não duplicar nem reabrir sem nova evidência de CSS computado ou APK. Preservado como registro histórico com aceitação física ainda pendente; esta retificação não altera os 67 estados técnicos, nem deve ser interpretada como homologação da interface.
+
+### Execução e limites da rodada 03
+
+- Gerador de overlay visual isolado adicionado: `scripts/fix-partner-motorista-rating-accessibility-cv03-v1.mjs`, aplicado **após** `fix-partner-motorista-ride-visual-v7.mjs` e demais geradores Motorista, sem editar fontes pinadas.
+- Teste de fixture incorporado ao builder: `scripts/qa/test-motorista-rating-accessibility-cv03-v1.test.mjs` (execução Node no checkout completo ainda pendente).
+- Ensaios efetivos nesta rodada: 8/8 checks sobre trecho real de RatingScreen do commit pinado com alterações visuais V7 sintetizadas; 7/7 checks sobre fixture QA em V8; checagens de sintaxe e integridade de ordem de build. **Isto não é um teste React, APK ou E2E.**
+- Pendências: Node test do checkout, lint, typecheck, montagem final; árvore acessível DOM, teclado/Tab, TalkBack, fontes ampliadas, 320/360/390/412 px, paisagem, input aberto, submissão/erro/retry/skip em homologação autorizada.
+- Preservados fluxo de avaliação, proteção de autoavaliação de homologação, oferta, PIN, mapas, GPS, política financeira, identidade visual e logomarca. Nada foi publicado.
+
+**Contagem visual atual: 15 registros CV-001–CV-015** (8 + 4 + 3), sem contar VIS-001 novamente (alias INV-047). **Classificação histórica técnica inalterada: 67; A 0 / B 46 / C 17 / D 0 / E 1 / G 3.** Não houve merge, deploy, APK, SQL ou pagamentos reais.
