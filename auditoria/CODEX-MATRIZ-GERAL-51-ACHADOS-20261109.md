@@ -348,3 +348,22 @@ Todos os **63 registros anteriores e suas evidências permaneceram integralmente
 **Integridade do pipeline:** o gerador INV-065 entra **depois** da verificação de pureza visual e do corretor de GPS, mas **antes** de capturar `protectedCorridasMapRuntimeAfterVisual`. Assim a verificação final continua comparando o runtime protegido contra sua baseline funcional correta. Nenhum guard foi removido nem relaxado; `main`, fontes pinadas e Entregas intactos. `INV-054 G`, `INV-055 C`, `INV-056 C` e `INV-061 C` mantidos como estavam.
 
 **Não realizados:** Node test completo, build Vite, typecheck, React, mapa efetivo, consulta paga, aplicativo Android, solicitação de corrida, migração, APK, merge ou deploy. Todos os `QA_NOT_APPLIED` seguem NÃO APLICADOS. Nenhum achado antigo foi reclassificado sem nova evidência. Homologação apenas após autorização expressa.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 13 (09/11/2026)
+
+**Os 65 achados dos Relatórios 01–12, seus estados e suas evidências foram integralmente preservados.** Novo achado do relatório `RELATORIO-13-APOIS-HISTORICO-LOCAL-E-SELECAO-DE-DESTINO-20261109(1).md`: **INV-066**. Execução rastreada em `auditoria/CODEX-RELATORIO13-EXECUCAO-20261109.md`, na branch exclusiva `audit/continuacao-20261107`.
+
+| ID | Prioridade | Área | Estado | Evidências de correção e critérios pendentes |
+|---|---|---|---|---|
+| **INV-066** | **P2** | Corridas Passageiro / histórico local, destino/parada e favoritos | **B** | O caminho normal validado não depende mais de `localStorage.setItem` dos recentes para concluir destino ou parada. Novo `fix-report13-destination-history-v1.mjs` mantém os serviços existentes, valida coordenadas/identificação antes de tentar persistir, transforma `addToHistory` e `addFavorite` para devolver sucesso real de gravação e isola somente falha de histórico em `completeAddressSelection`, apresentando aviso não técnico sem disfarçar erro de Places ou validar dados ruins. Falha em favorito **não** mostra “salvo” e mantém modo de escolha; sucesso confirmado preserva Casa/Trabalho, duplicados, máximo 20 recentes e segregação por usuário. `harden-corridas-superapp-storage.mjs`, existente mas não chamado diretamente pelo builder principal consultado, foi ligado após o adaptador do Superapp para usar a mesma chave Auth e manter isolamento no produto preparado. **5/5 transformações, 11/11 contratos e 14/14 testes versionados executados em V8 com mocks aprovados.** Testes Node integrados ao futuro builder, mas **não executados** com `node --test` no projeto materializado. Faltam typecheck, React, WebView, aparelho real, troca de conta e recuperação após armazenamento negado/corrompido. |
+
+**Subtotal Relatório 13:** A 0 / B 1 / C 0 / D 0 / E 0 / G 0 = **1 achado novo**.
+
+**Novo total consolidado dos Relatórios 01–13: A 0 / B 46 / C 16 / D 0 / E 1 / G 3 = 66 achados.**
+
+**Integridade:** o ajuste acontece **depois** do Report12 e da verificação da pureza visual, **antes** do snapshot funcional de Mapas/GPS. Proteções finais, painel de categorias, preço, pagamento, pedido e relay mantidos. Alterações versionadas apenas no integrador `apoistecnologia-gif/apois-superapp@audit/continuacao-20261107`, sem branch `main`, merge ou repositórios-fonte modificados. All `QA_NOT_APPLIED` permanecem não aplicados. Os estados antigos INV-054 G, INV-055/056 C e INV-061 C seguem sem reclassificação.
+
+**Testes realizados:** execução sintética de transformações/callbacks reais em V8 com localStorage, Auth e Places simulados. **Não realizados:** Node runner real, typecheck, build React/Vite, Maps real, Android físico, APK, teste entre contas reais, corrida, consulta paga, SQL, deploy ou publicação. O estado B significa implementação versionada com teste isolado, **não** homologação final. Continua obrigatório aguardar autorização expressa para a fase final.
