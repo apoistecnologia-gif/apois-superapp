@@ -21,6 +21,16 @@ function change(s,from,to,label){
         }
       }
     }
+    if(label==='limpeza sincrona da rota' &&
+       s.includes('APOIS_ROUTE_CLEAR_SAFE_V1') &&
+       s.includes('++routeGenerationRef.current;') &&
+       s.includes('setRoute(null);') &&
+       s.includes('setStatus("idle");') &&
+       s.includes('setError(null);')){
+      // The existing clearRoute body may have been normalized by a later overlay.
+      // Keep the synchronous invalidation contract; do not reapply a stale anchor.
+      return s;
+    }
     throw Error('[FAIL] '+label);
   }
   return s.replace(from,to);
