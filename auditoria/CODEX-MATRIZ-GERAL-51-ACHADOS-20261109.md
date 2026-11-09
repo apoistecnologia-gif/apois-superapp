@@ -224,3 +224,24 @@ A **matriz histórica de 51 achados foi preservada integralmente acima**. Esta s
 **Limitações e bloqueios mantidos:** não foi realizado `node --test` no checkout completo, instalação, compilação, PDF renderizado, E2E no banco, APK, homologação física, deploy ou merge. Não houve migração `QA_NOT_APPLIED`, escrita em produção, alteração de ledger ou dados pessoais. Verificações V8 sobre fontes pinadas não substituem esses gates. Os estados B/C não significam homologação.
 
 **Continuidade:** aguardar Relatório 07 ou posterior. Homologação final somente após frase de autorização expressa do responsável.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 07 (09/11/2026)
+
+Os **53 registros anteriores permanecem integralmente acima**, sem substituição de evidências nem reclassificação. Esta fase adiciona os três novos itens do relatório de 08/11/2026. Documento de execução: `auditoria/CODEX-RELATORIO07-EXECUCAO-20261109.md`. Integrador: `audit/continuacao-20261107`. Snapshot Motorista/Admin: `9fc171050d8b5703540c49d19a8f1e9f5162775f`.
+
+| ID | Prioridade | Área | Estado | Código implementado/preparado e aceite restante |
+|---|---|---|---|---|
+| **INV-054** | P1 | Corridas: cancelar / recusar / dispatch | **G** | Edge `driver-cancel-redispatch`, `driver-reject-redispatch` e `dispatch-ride` existem no integrador, mas continuam **ausentes do inventário implantado** do Supabase Corridas. Cliente não faz fallback mutador duplicativo; informa indisponibilidade de endpoint. O dispatcher preparado possui proteção de lote ativo e CAS de `dispatch_attempts`. Falta cobertura de recusa perdida após RPC, deployment autorizado e E2E em staging de ambos fluxos. **Não liberado.** |
+| **INV-055** | P1 | Finalização e fila liberada | **C** | Criado handler futuro de `driver-finish-redispatch` que separa finalização confirmada de redispatch adiado, respeita promoção da próxima e aciona despacho inicial da fila liberada; acrescentado consumidor service-only de eventos duráveis de auditoria, com limites 6h/200. A Edge real permanece v12, sem a continuação. Falta agendamento, cobertura completa de resposta perdida, testes de concorrência, push e staging. |
+| **INV-056** | P1 | Motivo de ausência do passageiro | **C** | Cliente e Edge preparados com `passenger_no_show` separado do rótulo, gate fail-closed de prontidão e compatibilidade legada. Migração `20261109_report07_no_show_reason_code_QA_NOT_APPLIED.sql` inclui acento correto, legado e código explícito, preservando espera/chegada. **Não aplicada**; falta teste SQL transacional em staging com chegada/espera 2 min e prova de compatibilidade de apps antigos. |
+
+**Subtotal Relatório 07:** A 0, B 0, C 2, D 0, E 0, G 1 = **3**.
+
+**Total consolidado 01–07:** A **0**, B **37**, C **15**, D **0**, E **1**, G **3** = **56 achados**.
+
+**Evidência:** inventário Supabase e definições RPC efetivamente lidos (somente leitura); gerador do cliente exercitado duas vezes em fonte fixada, 9 testes sintéticos de motivo; helper de continuação Edge executado com fetch mockado (sucesso/503/offline) e 15 asserts isolados. Nenhuma função modificadora foi chamada. Testes Node versionados, Deno/typecheck, SQL staging, ambiente de homologação, Android, APK e produção **não executados**.
+
+**Restrição mantida:** não confundir código preparado com serviços implantados. Nenhum merge, nenhuma migração `QA_NOT_APPLIED`, nenhum disparo de corrida, SOS, push, pagamento ou modificação do snapshot. Homologação final somente mediante autorização expressa.
