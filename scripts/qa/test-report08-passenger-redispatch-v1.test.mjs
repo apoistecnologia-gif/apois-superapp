@@ -64,6 +64,8 @@ test("INV-057: real pinned hook accepts legitimate new assignment, rejects stale
    "currentRideIdRef.current !== activeId","reconcilePromiseRef.current === pending",
    "requestSequence !== requestSequenceRef.current",
   ])assert.ok(result.includes(required),"missing "+required);
+  assert.ok(result.includes('updatedRide.status === "expired" || updatedRide.status.startsWith("cancelada")'),
+    "server-confirmed expiration must be terminal and unsubscribe");
   apply();assert.equal(readFileSync(target,"utf8"),result,"idempotent");
   assert.equal(readFileSync(pin,"utf8"),original,"locked source unchanged");
   const {report08RideDecision:decide,report08RideVersion:version}=logic(result);
