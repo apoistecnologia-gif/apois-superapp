@@ -367,3 +367,22 @@ Todos os **63 registros anteriores e suas evidências permaneceram integralmente
 **Integridade:** o ajuste acontece **depois** do Report12 e da verificação da pureza visual, **antes** do snapshot funcional de Mapas/GPS. Proteções finais, painel de categorias, preço, pagamento, pedido e relay mantidos. Alterações versionadas apenas no integrador `apoistecnologia-gif/apois-superapp@audit/continuacao-20261107`, sem branch `main`, merge ou repositórios-fonte modificados. All `QA_NOT_APPLIED` permanecem não aplicados. Os estados antigos INV-054 G, INV-055/056 C e INV-061 C seguem sem reclassificação.
 
 **Testes realizados:** execução sintética de transformações/callbacks reais em V8 com localStorage, Auth e Places simulados. **Não realizados:** Node runner real, typecheck, build React/Vite, Maps real, Android físico, APK, teste entre contas reais, corrida, consulta paga, SQL, deploy ou publicação. O estado B significa implementação versionada com teste isolado, **não** homologação final. Continua obrigatório aguardar autorização expressa para a fase final.
+
+
+---
+
+# ATUALIZAÇÃO — RELATÓRIO 14 (09/11/2026)
+
+**Os 66 achados anteriores (Relatórios 01–13), seus estados e seus documentos permanecem íntegros acima.** A fase 14 acrescenta exclusivamente **INV-067 (P1)**, a partir de `RELATORIO-14-APOIS-AUTORIZACAO-DE-OCORRENCIAS-20261109(1).md`. Execução documentada em `auditoria/CODEX-RELATORIO14-EXECUCAO-20261109.md`, **`audit/continuacao-20261107`**.
+
+| ID | Prioridade | Área | Estado | Correção, evidência e bloqueios |
+|---|---|---|---|---|
+| **INV-067** | **P1** | Corridas / autorização de ocorrências, motorista substituído, ticket, eventos, evidências e Storage | **C — preparada, NÃO APLICADA** | **Consultas reais de catálogo somente leitura** ao Supabase Corridas `tbbzkrfupmqdywnzgnms` confirmaram `apois_case_access` e a política SELECT do ticket ancorados em `rides.driver_id` **mutável**; `apois_request_driver_statement` grava solicitante staff e data, mas não destinatário. `apois_case_reply`, metadados, eventos visíveis e bucket utilizam `apois_case_access`. Foi **versionada, sem execução**, migração SQL **`20261109_report14_case_driver_participants_QA_NOT_APPLIED.sql`** com participantes explícitos por ticket, snapshot sob locks, autorização `driver` por identidade registrada, política SELECT de ticket alinhada ao helper, operação administrativa auditada de inclusão/revogação e **nenhum backfill automático** de legados. Também há **rollback emergencial fail-closed QA_NOT_APPLIED**, que não restaura o predicado inseguro. **20/20 verificações estruturais/modeladas V8 passaram**, sem PostgreSQL, RLS real, Node runner, dados de usuário ou download de evidência. **Crítico pendente:** revisão de autorização para o novo grant administrativo (somente `support.read` existe no catálogo), segurança de `SECURITY DEFINER` em esquema exposto, legado sem destinatário, concorrência, sessões controladas A/B, políticas storage e URLs assinadas. **Produção ainda não foi corrigida**; não declarar homologado. |
+
+**Subtotal Relatório 14:** A 0 / B 0 / C **1** / D 0 / E 0 / G 0 = **1 novo achado**.
+
+**Novo total consolidado Relatórios 01–14: A 0 / B 46 / C 17 / D 0 / E 1 / G 3 = 67 achados.**
+
+**Validações permitidas efetuadas:** definições de funções, RLS, catálogo de colunas, ACLs e políticas de Storage, sem consulta de tickets, relatos ou anexos. Testes sintéticos que simulam A→B, acesso explicitamente concedido, revogado e legado bloqueado; 20 PASS / 0 FAIL. **NÃO EXECUTADOS:** SQL/migration em qualquer ambiente, `node --test` no checkout, testes RLS sob sessão, `pgTAP`, casos reais, assinaturas de Storage, build, APK, deploy ou merge.
+
+**Integridade:** `source-lock` intacto; nenhuma fonte pinada, outro ramo, pagamentos, tarifas, UI ou fluxo de corrida modificado. Todas as outras migrações `QA_NOT_APPLIED` continuam não aplicadas; INV-054 G, INV-055/056 C e INV-061 C seguem sem reclassificação. O estado C reflete exclusivamente **código e documentação de correção preparados**, não redução de risco já implantada no Supabase.
