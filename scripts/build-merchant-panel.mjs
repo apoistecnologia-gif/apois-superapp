@@ -141,6 +141,14 @@ run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-apois-account-de
 if (!readFileSync(resolve(workspace, 'src/routes/perfil/dados-pessoais.tsx'), 'utf8').includes('APOIS_CV09_DELIVERY_DELETION_RESULT_V1')) {
   throw new Error('[FAIL] CV09 Entregas deletion request feedback missing');
 }
+// RV-10 CV-029 / VIS-030: semantic product option buttons only, after
+// safe-area/image fallback, cart/checkout/payment hardeners and other visuals.
+// CV-030 / VIS-031 is not applicable under the pinned NOT NULL max contract.
+run(process.execPath, [resolve(root, 'scripts/fix-entregas-product-customization-visual10-v1.mjs')]);
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-product-customization-visual10-v1.test.mjs')]);
+if (!readFileSync(resolve(root, '.work/entregas/src/components/ProductCustomizationSheet.tsx'), 'utf8').includes('APOIS_CV10_PRODUCT_CUSTOMIZATION_ACCESSIBILITY_V1')) {
+  throw new Error('[FAIL] CV10 options must be native accessible buttons');
+}
 run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'entregas']);
 
 const baseEnv = {
