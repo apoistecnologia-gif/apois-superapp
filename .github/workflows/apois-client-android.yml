@@ -25,6 +25,7 @@ on:
       - 'scripts/harden-corridas-backend-identity-boundary.mjs'
       - '.apois/modules.json'
       - 'scripts/verify-corridas-auth-regressions.mjs'
+      - 'scripts/verify-corridas-dispatch-ux-v1.mjs'
 
 permissions:
   contents: read
