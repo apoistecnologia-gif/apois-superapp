@@ -36,6 +36,7 @@ run(process.execPath, [resolve(root, 'scripts/verify-corridas-build-env.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
 for (const script of [
   'harden-motorista-auth.mjs',
+  'harden-motorista-flags-offline-v1.mjs',
   'harden-motorista-document-boundary.mjs',
   'harden-motorista-provider-boundary.mjs',
   'harden-motorista-finance-boundary.mjs',
