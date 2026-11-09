@@ -25,6 +25,7 @@ const scripts = [
   'scripts/fix-entregas-persisted-cart-validation-v3.mjs',
   'scripts/fix-entregas-customer-orders-pagination-v1.mjs',
   'scripts/harden-entregas-merchant-image-mime.mjs',
+  'scripts/fix-entregas-merchant-assets-v1.mjs',
   'scripts/fix-entregas-merchant-product-image-reconciliation-v1.mjs',
   'scripts/fix-entregas-customer-avatar-cache-v1.mjs',
 ];
@@ -93,6 +94,12 @@ test('pinned Entregas source accepts cart and history repair without source muta
     assert.match(merchantRoute, /APOIS_MERCHANT_IMAGE_MIME_V1/);
     assert.doesNotMatch(merchantRoute, /accept="image\/\*"/);
     assert.match(merchantRoute, /accept="image\/jpeg,image\/png,image\/webp"/);
+    assert.match(merchantRoute, /APOIS_MERCHANT_ASSET_RECONCILIATION_V1/);
+    const assetHandler = merchantRoute.split('const uploadMerchantAsset = async')[1]?.split('const saveSettings = async')[0];
+    assert.ok(assetHandler, 'merchant upload handler still present');
+    assert.match(assetHandler, /\.select\("id, logo_url, cover_url"\)/);
+    assert.match(assetHandler, /checked\.data\?\.\[field\] !== publicUrl/);
+    assert.doesNotMatch(assetHandler, /\.remove\(/, 'do not delete asset on ambiguous update');
 
     const copies = new Map(paths.map(relative => [
       relative, readFileSync(resolve(workspace, relative), 'utf8'),
