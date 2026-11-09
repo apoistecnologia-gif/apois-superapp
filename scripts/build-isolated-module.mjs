@@ -727,12 +727,19 @@ if (name === 'entregas') {
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-bun-lock-v1.test.mjs')], { cwd: root, env });
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-report02-transforms-v1.test.mjs')], { cwd: root, env });
 }
+if (name === 'corridas') {
+  // Last-mile TS alignment on a disposable generated workspace, never on pinned sources.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-generated-ts-gate-v1.mjs')], { cwd: root, env });
+}
 for (const command of [config.install, config.build]) {
   const [bin, ...args] = command;
   run(bin, args, { cwd, env });
   if (name === 'corridas' && command === config.install) {
     run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-reverse-geocode-live-v1.test.mjs')], { cwd: root, env });
-    // Fail the passenger Android/web build on TypeScript regressions, not just on Vite bundling.
+  }
+  if (name === 'corridas' && command === config.build) {
+    // TanStack generates file-route type definitions during Vite build.
+    // Enforce the same strict typecheck immediately afterward, never skip it.
     run('bun', ['run', 'typecheck'], { cwd, env });
   }
 }
