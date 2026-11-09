@@ -157,3 +157,7 @@ Nada foi declarado homologado sem execução.
 ### Complemento — anexos de chamados (09/11/2026)
 
 - Foi confirmado por inspeção da tela Cliente/Admin e do banco real que `support-attachments` existia privado, porém sem políticas de objeto. Foi aplicada migração versionada `apois_report01_support_attachment_storage_20261109` com INSERT exclusivo do cliente dono do chamado aberto e SELECT restrito aos anexos registrados em mensagens visíveis ao cliente ou ao administrador. Simulação rollback e 8/8 testes de nomes de arquivo passaram; não há homologação com login real. O fluxo de limpeza de arquivos não associados e o uso de URLs assinadas no Android ainda exigem teste.
+
+### GPS e busca de local (09/11/2026)
+
+- As Edge Functions `passenger-geocode-reverse` e `passenger-geocode-nearest-poi` usadas pelo pin do Passageiro não estavam publicadas na conta Supabase Corridas. A função reverse versionada, mesmo se publicada, esperava `latitude/longitude` enquanto a chamada cliente transmitia `lat/lng`. Foi comprovada alternativa publicada `google-maps-address` versão 18, com ação `reverse_geocode` e cota por RPC autenticada. Criado gerador de adaptação em workspace, integrado ao build e com testes de fixture escritos, preservando o pin e sem disparar chamadas pagas. Faltam compilação, teste autenticado de GPS e confirmação de endereço visual em dispositivo; **não declarar defeito encerrado**.
