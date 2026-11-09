@@ -165,6 +165,23 @@ if(!s.includes("APOIS_REPORT05_SECURITY_V1")){
   s=once(s,afterShare,shareUI,"share fallback JSX");
   if(s.includes('.slice(0, 15)')||!s.includes("getPartnerCurrentPosition(5000).catch(() => null)"))
     throw Error("[INV05] phone truncation or SOS continuity regression");
+  // A coarse-only coordinate may help the SOS, but must never be described as precise.
+  s=once(s,
+    'description: hasValidPosition ? "Sua localização atual foi incluída no alerta." : "O alerta foi enviado sem coordenadas de localização.",',
+    'description: hasValidPosition ? (coords?.permission==="approximate" ? "A localização aproximada foi incluída no alerta." : "Sua localização atual foi incluída no alerta.") : "O alerta foi enviado sem coordenadas de localização.",',
+    "SOS approximate description");
+  s=once(s,
+    '      toast.error(caughtError instanceof Error&&caughtError.message==="location_permission_denied"\n        ? "Permissão de localização negada. Ative a localização para compartilhar."\n        : "Não foi possível obter a localização. Confira o GPS e tente novamente.");',
+    [
+      '      const reason=caughtError instanceof Error?caughtError.message:"";',
+      '      toast.error(reason==="location_permission_denied"',
+      '        ? "Permissão de localização negada. Ative a localização para compartilhar."',
+      '        : /OS-PLUG-GLOC-0007|OS-PLUG-GLOC-0017/.test(reason)',
+      '          ? "A localização está desligada no aparelho."',
+      '          : /OS-PLUG-GLOC-0010|timeout|timed out/i.test(reason)',
+      '            ? "O GPS não respondeu a tempo. Tente novamente."',
+      '            : "Não foi possível obter a localização. Confira o GPS e tente novamente.");'
+    ].join("\n"),"GPS disabled and timeout feedback");
   write(security,s);
 }
 
