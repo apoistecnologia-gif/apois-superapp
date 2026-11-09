@@ -263,3 +263,39 @@ test("INV-066: provider cannot acknowledge missing session or rejected writes", 
   });
   assert.throws(() => quota(sample()), /quota/);
 });
+
+
+test("INV-066: original recent storage tolerates corrupt JSON but surfaces denied reads", () => {
+  const declaration = "  public static getRecent(): DestinationHistoryItem[] {";
+  const start = store.indexOf(declaration);
+  const end = store.indexOf("\n  }\n", start + declaration.length);
+  assert.ok(start >= 0 && end > start, "pinned recent reader missing");
+  const body = store.slice(start + declaration.length, end);
+  const makeReader = (localStorage) =>
+    new Function("localStorage", "return function() {" + body + "\n};")(localStorage);
+  const broken = makeReader({ getItem: () => "{corrupted-json" });
+  assert.equal(broken.call({ getRecentKey: () => "synthetic-recent" }).length, 0);
+  const denied = makeReader({ getItem: () => { throw Error("synthetic-read-denied"); } });
+  assert.throws(() => denied.call({ getRecentKey: () => "synthetic-recent" }), /synthetic-read-denied/);
+});
+
+test("INV-066: existing recent service still deduplicates and caps twenty items", () => {
+  const declaration = "  public addRecent(destination: DestinationHistoryItem): void {";
+  const start = recent.indexOf(declaration);
+  const end = recent.indexOf("\n  }\n", start + declaration.length);
+  assert.ok(start >= 0 && end > start, "pinned addRecent behavior missing");
+  const body = recent.slice(start + declaration.length, end);
+  const items = Array.from({ length: 20 }, (_, i) => sample({
+    placeId: "p:" + i, id: "old:" + i,
+  }));
+  let saved = null;
+  const addRecent = new Function("RecentDestinationsService", "DestinationStorage", "Date",
+    "return function(destination) {" + body + "\n};")(
+    { MAX_ITEMS: 20 }, { saveRecent: (value) => { saved = value; } }, Date,
+  );
+  addRecent.call({ getRecent: () => items }, sample({ placeId: "p:7", id: "new" }));
+  assert.equal(saved.length, 20);
+  assert.equal(saved[0].placeId, "p:7");
+  assert.equal(saved.filter((item) => item.placeId === "p:7").length, 1);
+  assert.equal(saved.some((item) => item.placeId === "p:19"), false);
+});
