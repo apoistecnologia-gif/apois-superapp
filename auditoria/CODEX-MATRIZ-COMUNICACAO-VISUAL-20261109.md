@@ -349,3 +349,42 @@ Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3)
 - **Pendências anteriores intocadas:** CV-037 (tema Motorista), CV-038 (endereços longos), CV-039 P1 (itens/adicionais da Central efetivamente distribuída e impressão), CV-030 (não aplicável ao contrato pinado salvo divergência demonstrada). Não reclassificar nenhum achado por suposição.
 
 **Consolidação: 52 registros visuais CV-001–CV-052** (48 anteriores + 4 novos; três ampliações sem repetição de IDs). **Matriz técnica histórica preservada: 67 achados, A=0, B=46, C=17, D=0, E=1, G=3.** Próximo registro CV-053. A RV-14 implementa mitigação verificável em código, mas **não autoriza homologação, APK, deploy ou declaração de funcionamento físico**.
+
+## Achados visuais — rodada 15 (autenticação e retestes, VIS-054–055)
+
+**Entrada:** RELATORIO-VISUAL-15-APOIS-AUTENTICACAO-RETESTE-20261109(1).md. Origem do auditor audit/ecossistema-20261107 somente leitura. Intervenção exclusivamente em audit/continuacao-20261107, a partir do HEAD RV-14 `ceb3970031ddf9e834718c1bda7052318e6b57b7`. Repositórios fixados e `.apois/source-lock.json` não alterados.
+
+| CV | VIS | Pri. | Superfície e evidência | Implementação/status | Validação pendente |
+|---|---|---|---|---|---|
+| **CV-053** | **VIS-054** | P2, dependência de contrato | Passageiro: cadastro verifica `password.length < 8 || !/[A-Za-z]/.test(password) || !/\\d/.test(password)` e ajuda pede 8 caracteres alfanuméricos; redefinição verifica `password.length < 6` e informa mínimo 6. A política oficial do Supabase Auth implantado não foi obtida. | **Bloqueado por falta de confirmação do contrato. Não corrigido.** Confirmado no commit pinado do Passageiro e nos overlays. Checada conexão de projeto Corridas `tbbzkrfupmqdywnzgnms` por consulta read-only de metadados, mas esta não informa parâmetros de senha. Nenhum requisito local, servidor, política, sessão, callback ou envio foi modificado. | Consultar configuração oficial/aprovada da política Auth e só então, mediante intervenção autorizada de engenharia, reconciliar validação local, instrução e servidor; testar sem contas reais. |
+| **CV-054** | **VIS-055** | P2 | Passageiro: recuperação e redefinição apresentavam `toast.error(error.message)` diretamente. Cadastro já tinha classificador próprio, não é regressão dele. | **Implementação de UI entregue, homologação pendente:** novo `apoisPassengerPublicAuthError.ts` trata rate-limit, rede, e-mail inválido, senha fraca, token expirado e fallback neutro em português, sem mostrar a mensagem bruta; falhas são registradas no console para diagnóstico. As duas rotas geradas recebem helper após o hardener de callback/PKCE e preservam estados/sucesso, `resetPasswordForEmail` e `updateUser`. | Node/typecheck e React no app real; testes TalkBack e de erros mockados por fluxo; não foram disparados e-mails ou senhas reais. |
+
+### Ampliações de identificadores anteriores, sem duplicar contagem
+- **VIS-032 / CV-031:** `label htmlFor` agora corresponde a `id` nos campos E-mail (recuperação), Nova senha e Confirmar nova senha (redefinição); mantidos nomes visuais, valores, máscara, `autoComplete=email/new-password` e eventos.
+- **VIS-035 / CV-034:** o botão Eye/EyeOff de redefinição recebeu `aria-label` dinâmica Mostrar/Ocultar senha, `aria-pressed` e `aria-controls` exclusivamente do campo Nova senha; confirmação permanece oculta.
+- **VIS-004 / CV-003:** botão de revelar a senha ampliado com `min-h-11 min-w-11` (44px nominais), foco visível e ancoragem sem substituir `onClick`. Requer medição de touch/render.
+- **Contraste de formulários públicos:** o script existente `fix-corridas-public-form-contrast-v1.mjs`, que não estava chamado explicitamente por `build-isolated-module.mjs`, agora é executado e verificado antes do overlay RV-15, com escopo apenas em cadastro/recuperação/redefinição e CSS de placeholder.
+
+### Reteste dirigido de seis cenários anteriores — resultados do integrador, não do snapshot bruto
+
+O relatório externo reexecutou os defeitos sobre **fontes base não transformadas** e encontrou os seis comportamentos antigos. Nesta continuação, os testes sintéticos em V8 foram executados **sobre os overlays reais versionados**, com as diferenças de montagem explicitadas:
+
+| ID anterior | Reprodução/regressão de código pós-overlay | Limite |
+|---|---|---|
+| **VIS-033 / CV-032** | RV-11 `patchAddressCard` aplicado ao pin Entregas e reaplicado sem diferença. Guarda `event.target !== event.currentTarget` impede Enter no alvo BUTTON filho de disparar seleção externa; `role=group` separa ações. | Sem evento DOM real |
+| **VIS-040 / CV-039 P1** | RV-12 `patchMerchantRoute` sobre fonte pinada inclui `selected_options` no card e `printMerchantOrder`; formatador diferencia duas opções sintéticas com mesmo nome de item. | **Central Merchant distribuída e impressão REAL continuam não homologadas**; builder Merchant separado ainda pode não montar a revisão enriquecida |
+| **VIS-041 / CV-040** | Cupom ativo com início futuro resulta em `Agendado` via expressão real de RV-12; cupom vigente continua `Ativo`. | Sem relógio/browser real |
+| **VIS-042 / CV-041** | `fix-entregas-coupon-metrics-v2` + RV-12 aplicados à fonte de cupons; consulta indisponível mostra `Indisponível`, exclusão fica desabilitada enquanto `usageState!==ready`, erro da lista não é zero. | Sem RPC, banco, exclusão real |
+| **VIS-051 / CV-050** | Reexecução do harness da RV-14 sobre implementação real: falha de claim persiste após `refresh` válido; não reenviou aceite. | Sem componente React montado |
+| **VIS-052 / CV-051** | Harness RV-14: resposta antiga não repõe chamadas nem apaga aviso offline; respostas invertidas deixam vencer a mais recente. | Sem RPC/browser ou presença real |
+
+### Evidências executadas e limitações RV-15
+
+- GitHub: HEAD inicial, `source-lock` protegido, relatório RV-14, código pinado de cadastro/recuperação/redefinição, hardener de callback, builder e regras do Cliente Entregas anteriores.
+- Simulação do **hardener real de recuperação** em V8 sobre arquivos pinados e do **script real de contraste público** em ambiente virtual; overlay RV-15 das duas rotas aplicado com sucesso, idempotência e integridade de callback/sessão preservadas.
+- **5/5 verificações da nova suíte RV-15 em V8**, usando helper e arquivos de saída injetados, incluindo traduções de erros sintéticos, rótulos/autofill, botão Eye, preservação dos métodos Auth, detecção explícita do contrato de senha ainda divergente e ordem do builder.
+- **Seis cenários históricos retestados sinteticamente** nos overlays RV-11/RV-12/RV-14, sem criar novo ID. Reexecutada adicionalmente a suíte RV-14 de 6 casos em V8, **6/6 aprovados**, que inclui VIS-051/052.
+- **NÃO executado:** `node --test` em checkout integral, typecheck/lint, compilação, React/browser montado, TalkBack, dispositivos Android, login, reset real, envio de e-mail, RPC, upload, pedido ou pagamento. A suíte Node está versionada e integrada ao builder, ainda não homologada.
+- **Sem modificações** em backend, Auth/Supabase config, SQL/RLS, tokens, callbacks, rotas, preços, lógica de credenciais, presença, Maps, pagamento, dados de clientes, fontes pinadas, deploy ou APK.
+
+**Consolidação: 54 registros visuais CV-001–CV-054** (52 anteriores + 2 novos; três ampliações sem novos IDs). **VIS-054/CV-053 permanece pendente por política não confirmada; VIS-055/CV-054 tem overlay implementado, ainda sem homologação real.** A matriz técnica histórica permanece em **67 achados** (A=0, B=46, C=17, D=0, E=1, G=3). Próximo ID CV-055. CV-037, CV-038 e CV-039 P1 seguem pendentes; CV-030 permanece não aplicável ao contrato pinado até evidência contrária.
