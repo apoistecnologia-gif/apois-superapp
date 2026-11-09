@@ -54,6 +54,13 @@ node --check api/admin/driver-documents.js
 # Compare both server-only endpoints byte-for-byte; missing/drifted files still fail closed.
 node -e 'const fs = require("node:fs"); try { const root = fs.readFileSync("api/admin/driver-documents.js"); const preview = fs.readFileSync("admin-preview/api/admin/driver-documents.js"); if (!root.equals(preview)) process.exit(1); } catch { process.exit(1); }' || { echo "[FAIL] Isolated server endpoint source drift"; exit 1; }
 node scripts/test-admin-preview-private-documents-v1.mjs
+# Relatorio 03: notificacoes tambem exigem endpoint Vercel autenticado real.
+test -s api/admin/notifications.js
+test -s admin-preview/api/admin/notifications.js
+node --check api/admin/notifications.js
+node --check admin-preview/api/admin/notifications.js
+node -e 'const fs=require("node:fs");if(!fs.readFileSync("api/admin/notifications.js").equals(fs.readFileSync("admin-preview/api/admin/notifications.js")))process.exit(1)'
+node scripts/test-admin-preview-notifications-v1.mjs
 
 case "${CORRIDAS_VITE_SUPABASE_URL:-}" in
   https://tbbzkrfupmqdywnzgnms.supabase.co) ;;
