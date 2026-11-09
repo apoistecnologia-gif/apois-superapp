@@ -148,3 +148,25 @@ Total visual independente agora **18 registros CV-001–CV-018** (8 + 4 + 3 + 3)
 - **Relatório independente:** `auditoria/CODEX-RELATORIO-COMUNICACAO-VISUAL06-EXECUCAO-20261109.md`.
 
 **Consolidação:** 22 achados visuais CV-001–CV-022 (20 anteriores + 2 novos), sem duplicar VIS-001/INV-047. Retificação VIS-007/CV-006 válida. **Matriz técnica histórica intacta: 67 achados, A 0 / B 46 / C 17 / D 0 / E 1 / G 3.** Nenhum merge, deploy, APK ou alteração de fontes pinadas.
+
+
+## Achados visuais — rodada 07 (financeiro e mensalidades, VIS-024–025)
+
+**Relatório de origem:** `RELATORIO-VISUAL-07-APOIS-FINANCEIRO-20261109(1).md`, auditoria somente; branch autorizada `audit/continuacao-20261107`. A auditoria externa usou checkout `audit/ecossistema-20261107`, que **não** é destino de alterações.
+
+| CV | Origem | Prioridade | Superfície | Evidência e intervenção limitada | Estado / aceite |
+|---|---|---|---|---|---|
+| **CV-023** | **VIS-024** | P2 | Motorista / mensalidade | O gerador `harden-motorista-finance-boundary.mjs` apresentava `pending`, `processing`, estado desconhecido ou ausência de registro como **Mensalidade inativa**. Overlay CV07 introduz somente estado de apresentação, com rótulos `Pagamento pendente`, `Pagamento em processamento`, `Mensalidade inativa` apenas para `inactive` conhecido, e `Situação da mensalidade indisponível` quando não houver dado confiável; atualização em curso indica consulta. Erro/desconhecimento não acende o ponto verde. Preserva `operational = paidActive || homologation`, as guardas, consulta RLS, retry, suporte e preço por contrato no Parceiro | **Implementado no gerador, não homologado.** 10 cenários diretos + 3 de falta de dado/erro/atualização verificados em V8; pendente: cadeia completa, React/Android, dados reais, fallback/retentativa |
+| **CV-024** | **VIS-025** | P2 | Estabelecimento / cartão de situação da mensalidade | `harden-entregas-merchant-direct-finance.mjs` gerava fallback `Status: ${value}` expondo código técnico `provider_status`. Overlay CV07 preserva exatamente seis casos conhecidos (`paid`, `authorized`, `pending`, `paused`, `cancelled`, `canceled`) e substitui somente o `default` por **Situação da mensalidade indisponível**, tanto para código novo quanto para ausência de dado. Nenhuma confirmação de pagamento inventada, gateway ou callback alterado | **Implementado no gerador, não homologado.** 8 cenários de tradução em V8; pendente: contrato real, renderização, atualização e acessibilidade |
+
+### Execução, integridade e pendências do RV-07
+
+- Patch visual versionado: `scripts/fix-apois-financial-status-visual07-v1.mjs`; teste versionado: `scripts/qa/test-apois-financial-status-visual07-v1.test.mjs`.
+- Ordem integrada em **três** builders: `scripts/build-partner-release.sh` (Motorista após preço contratual); `scripts/build-motorista-module.mjs` (Motorista standalone depois do boundary e antes do typecheck); `scripts/build-merchant-panel.mjs` (Estabelecimento depois da neutralização do gateway e antes do typecheck). Scripts não editam `sources/`; destino de alterações durante montagem é `.work/`.
+- Validação executada: extração/evaluação isolada dos literais gerados **do próprio integrador remoto**, aplicação real em memória do patch da branch, rótulos em 21 cenários V8, conferência de idempotência, existência de callbacks, mensagens de indisponibilidade e ordem de integração. **Não** se tratou de `node --test` com checkout integral, renderização, compilação, WebView ou movimentação financeira. Teste Node foi versionado e incorporado como gate futuro.
+- A atualização `fix-partner-driver-new-monthly-price-v1.mjs` preserva consulta do contrato do Motorista no builder Parceiro, incluindo R$ 59,90 para novos e R$ 49,90 para antigos. Entregador R$ 49,90 é somente divulgação, sem cobrança automática. Estabelecimento R$ 69,90 e gateway inativo preservados. Nenhuma regra comercial mudou.
+- **Observação fora do escopo:** `scripts/build-motorista-module.mjs` não contém a etapa de preço contratual presente no builder Parceiro. Confirmar com engenharia qual fluxo standalone é efetivamente distribuído e seu valor exibido. Sem prova de divergência em APK publicado; nenhuma alteração de preço autorizada por este RV.
+- Pendências: ler status reais de produção de forma autorizada, executar suites em checkout completo, typecheck/lint/build, layout 320/360/390/412 px, paisagem, fontes ampliadas, teclado/leitor de tela, falha de consulta, retentativa, contrato antigo/novo e distinção de ganhos registrados/recebimento. Não gerar cobrança de teste real.
+- **Relatório independente:** `auditoria/CODEX-RELATORIO-COMUNICACAO-VISUAL07-EXECUCAO-20261109.md`.
+
+**Contagem visual agora: 24 achados independentes CV-001–CV-024 (22 anteriores + 2 do RV-07).** VIS-001 permanece alias INV-047; CV-006/VIS-007 permanece retificado. **Classificação histórica técnica inalterada: 67, A=0, B=46, C=17, D=0, E=1, G=3.** Sem merge, deploy, APK, SQL/RLS, escrituras financeiras, alterações de repositórios-fonte ou alteração de `.apois/source-lock.json`.
