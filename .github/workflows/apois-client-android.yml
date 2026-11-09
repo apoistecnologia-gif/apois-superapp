@@ -17,6 +17,8 @@ on:
       - test/apois-pix-simulado-isolado-20261029
     paths:
       - '.github/workflows/apois-client-android.yml'
+      - 'scripts/fix-report08-passenger-redispatch-v1.mjs'
+      - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
 
 permissions:
   contents: read
