@@ -20,7 +20,8 @@
       "workspace": ".work/entregas",
       "install": [
         "bun",
-        "install"
+        "install",
+        "--frozen-lockfile"
       ],
       "build": [
         "bash",
