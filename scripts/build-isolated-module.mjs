@@ -585,6 +585,14 @@ if (name === 'entregas') {
   // No address persistence, API, payment, auth or geocoding contract is modified.
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-labels-visual11-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-address-catalog-visual11-v1.mjs')]);
+  // CV11 depends on the async V11 latest-request guard in the disposable Entregas workspace.
+  // Preserve this guard and its behavioural tests before adding visual feedback.
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-address-async-v11.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-address-async-v3.mjs')]);
+  for (const rel of ['src/components/CustomerLocationAddressSelector.tsx', 'src/routes/enderecos/novo.tsx']) {
+    const generated = readFileSync(resolve(root, '.work/entregas', rel), 'utf8');
+    if (!generated.includes('APOIS_ADDRESS_ASYNC_V11')) throw Error('[FAIL] CV11 requires async V11: ' + rel);
+  }
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-autocomplete-visual11-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-entregas-visual11-v1.test.mjs')]);
   for(const [rel,marker] of [
