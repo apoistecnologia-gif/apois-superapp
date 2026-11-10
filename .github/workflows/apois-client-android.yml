@@ -23,6 +23,7 @@ on:
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
       - 'scripts/build-isolated-module.mjs'
       - 'scripts/fix-corridas-profile-viewport-v1.mjs'
+      - 'scripts/harden-corridas-final-red-surfaces.mjs'
       - 'scripts/verify-corridas-profile-viewport-v1.mjs'
       - 'scripts/protect-apois-embedded-viewport-v1.mjs'
       - 'scripts/harden-apois-native-webview-scroll-v1.mjs'
