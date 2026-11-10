@@ -113,6 +113,11 @@ node "$ROOT/scripts/verify-partner-driver-demand-zones-v1.mjs"
 node "$ROOT/scripts/harden-partner-motorista-arrival-voice-v5.mjs"
 node "$ROOT/scripts/harden-partner-driver-trip-ux-v6.mjs"
 node "$ROOT/scripts/harden-partner-driver-passenger-name-v6.mjs"
+# Physical Android feedback: follow route heading on vector map and avoid generic P avatar.
+# Source pin and backend permissions remain unchanged.
+node "$ROOT/scripts/fix-partner-driver-forward-camera-v1.mjs"
+node "$ROOT/scripts/fix-partner-driver-passenger-avatar-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-forward-camera-v1.test.mjs"
 node "$ROOT/scripts/harden-partner-driver-registration-exit-v3.mjs"
 # QA: private vehicle inspection (front/right/left/dashboard/front and rear seats).
 node "$ROOT/scripts/fix-partner-driver-vehicle-photo-form-v1.mjs"
