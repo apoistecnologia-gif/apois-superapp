@@ -71,9 +71,21 @@ patch('src/hooks/use-route.tsx',(s)=>{
   s=change(s,'  const [route, setRoute] = useState<RouteResult | null>(null);',
     '  const [route, setRoute] = useState<RouteResult | null>(null);\n  const routeGenerationRef=useRef(0); // APOIS_ROUTE_CLEAR_SAFE_V1',
     'geracao de calculo');
-  s=change(s,'  const calculateRoute = useCallback(async () => {\n    if (!location || !destination) {',
-    '  const calculateRoute = useCallback(async () => {\n    const generation=++routeGenerationRef.current;\n    if (!location || !destination) {',
-    'generation no calculo');
+  // Reconcile both pinned and normalized calculateRoute headers. The generation
+  // check must execute before any awaited backend route calculation; never
+  // disable stale-result rejection to satisfy a fragile whitespace anchor.
+  if (!/const generation\s*=\s*\+\+routeGenerationRef\.current\s*;/.test(s)) {
+    const calculateAnchor = '  const calculateRoute = useCallback(async () => {';
+    const n = s.split(calculateAnchor).length - 1;
+    if (n !== 1 || !s.includes('if (!location || !destination) {') ||
+        !s.includes('const routeGenerationRef=useRef(0);')) {
+      throw Error('[FAIL] generation no calculo: unexpected route shape');
+    }
+    s = s.replace(calculateAnchor, calculateAnchor + '\n    const generation=++routeGenerationRef.current;');
+  }
+  if (!s.includes('const generation=++routeGenerationRef.current;')) {
+    throw Error('[FAIL] route generation must increment on every calculation');
+  }
   s=change(s,'      setRoute(newRoute);\n      setStatus("success");',
     '      if (generation !== routeGenerationRef.current) return;\n      setRoute(newRoute);\n      setStatus("success");','resposta antiga de calculo');
   s=change(s,'    } catch (err: any) {\n      if (err.name === "AbortError") return;',
