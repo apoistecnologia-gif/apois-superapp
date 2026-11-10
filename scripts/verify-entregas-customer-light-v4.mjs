@@ -7,6 +7,7 @@ const work=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||'.work/entregas');
 const read=p=>readFileSync(resolve(work,p),'utf8');
 const root=read('src/routes/__root.tsx');
 const home=read('src/routes/inicio.tsx');
+const hours=read('src/lib/merchant-hours.ts');
 const nav=read('src/components/AppBottomNav.tsx');
 const css=read('src/system-theme.css');
 const modules=read('src/assets/apoisClientBrandData.ts');
@@ -41,7 +42,7 @@ for(const term of [
   'onClick={() => navigate({ to: "/enderecos" })}',
   'onClick={() => navigate({ to: "/buscar" })}',
   'fetchMerchantCategories()', 'fetchMerchants(',
-  'calculateMerchantStatus(', 'setDefaultAddress(',
+  'fetchAuthoritativeMerchantStatuses(', 'authoritativeStatus[merchant.id]', 'APOIS_MERCHANT_SERVER_STATUS_V3', 'setDefaultAddress(',
   'catRestaurantes','catMercados','catFarmacias','catLojas'
 ])assert.ok(home.includes(term),'A Home perdeu visual/fluxo: '+term);
 assert.ok(!home.includes('src={logoAsset.url}'),'Logo branco antigo nao e legivel em fundo claro');
@@ -50,4 +51,7 @@ for(const to of ['"/inicio"','"/pedidos"','"/favoritos"','"/perfil"','"/buscar"'
   assert.ok(nav.includes(to),'Destino do menu foi removido: '+to);
 assert.ok(nav.includes('bg-white/95')&&nav.includes('border-[#E6E8EC]'),'Rodape nao segue o tema claro');
 assert.ok(nav.includes('min-h-[88px]')&&nav.includes('min-h-[64px]')&&nav.includes('pb-[max(44px,env(safe-area-inset-bottom))]'),'Menu nao preserva area de toque grande e safe area Android');
+// Server-authoritative merchant availability replaces device-clock guesses.
+assert.ok(hours.includes('"apois_visible_merchant_order_status"'), 'Status must use server RPC');
+assert.ok(!home.includes('calculateMerchantStatus('), 'Home must not infer open hours from device time');
 console.log('[OK] Entregas: tema claro escopado somente ao Cliente; identidade e navegacao preservadas sem modificar operacoes.');
