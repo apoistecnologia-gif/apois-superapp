@@ -1,4 +1,11 @@
 /* APOIS_DRIVER_DRAWER_PROFILE_V5 */
+/* APOIS_DRIVER_MENU_OVERLAY_V6 — mobile drawer covers the entire viewport;
+   there is no background region to dim. Desktop keeps its backdrop. */
+.apois-driver-menu-overlay-v6 { z-index:160!important; }
+@media (max-width:639px) {
+ .apois-driver-menu-overlay-v6 { display:none!important; pointer-events:none!important; }
+}
+
 [data-apois-driver-menu-fixed-v5] {
  position:fixed!important; inset:0!important; width:100vw!important; height:100dvh!important; max-height:100dvh!important;
  padding:0!important; display:flex!important; flex-direction:column!important; overflow:hidden!important;
