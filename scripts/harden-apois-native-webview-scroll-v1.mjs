@@ -5,7 +5,8 @@
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-const role=process.argv[2];
+import {fileURLToPath} from 'node:url';
+export function protectNativeWebView(role){
 assert.ok(['cliente','parceiro'].includes(role),'Usage: node scripts/harden-apois-native-webview-scroll-v1.mjs cliente|parceiro');
 const file=resolve(role==='cliente'
   ? 'superapp/shell/android/app/src/main/java/br/com/apois/app/MainActivity.java'
@@ -33,3 +34,7 @@ for(const required of [marker,'getBridge().getWebView().setOverScrollMode(androi
   if(!code.includes(required))throw Error('[FAIL] MainActivity scroll protection missing '+required);
 if(role==='parceiro'&&!code.includes('registerPlugin(DriverVoicePlugin.class)'))throw Error('[FAIL] Partner native voice plugin lost');
 console.log('[OK] '+role+': WebView overscroll disabled; nested scroll and Capacitor plugins preserved');
+
+}
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))
+  protectNativeWebView(process.argv[2]);
