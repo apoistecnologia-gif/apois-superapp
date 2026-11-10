@@ -410,6 +410,10 @@ if (name === 'corridas') {
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-stops-confirm-display.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-android-footer-safe-area.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-android-footer-safe-area.mjs')]);
+  // Physical Android QA: only Profile pins the outer WebView shell so the bottom
+  // tabs cannot scroll upward with the document. Ride/map routes stay unchanged.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-profile-viewport-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/verify-corridas-profile-viewport-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/restore-corridas-wallet-screen.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/verify-corridas-wallet-screen.mjs')]);
   // O tema do Perfil ja esta no pipeline; aplicar somente os handlers seguros.
