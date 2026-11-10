@@ -20,6 +20,11 @@ on:
       - 'scripts/harden-partner-motorista-history-receipt.mjs'
       - 'scripts/fix-report06-motorista-receipt-v1.mjs'
       - 'scripts/build-partner-release.sh'
+      - 'superapp/partner-shell/build.mjs'
+      - 'scripts/protect-apois-embedded-viewport-v1.mjs'
+      - 'scripts/harden-apois-native-webview-scroll-v1.mjs'
+      - 'scripts/qa/verify-apois-mobile-viewport-v1.mjs'
+      - 'scripts/configure-partner-android.mjs'
       - 'scripts/fix-partner-motorista-drawer-profile-v5.mjs'
       - 'scripts/qa/driver-menu-profile-v5.css'
       - 'scripts/verify-partner-motorista-drawer-profile-v5.mjs'
@@ -162,6 +167,7 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           npm run build:partner
+          node scripts/qa/verify-apois-mobile-viewport-v1.mjs parceiro
           # Gate QA: não publicar um APK antigo que omita o cadastro com 13 fotos e o fluxo de pendências.
           node --check scripts/fix-partner-driver-signup-form-v4.mjs
           node --check scripts/fix-partner-driver-auth-resume-v5.mjs
@@ -252,6 +258,7 @@ jobs:
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
           node scripts/install-partner-splash.mjs
+          node scripts/qa/verify-apois-mobile-viewport-v1.mjs parceiro --native
           MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
           grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
@@ -316,6 +323,10 @@ jobs:
           unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
           test -s "$TEMP_APK_ASSETS/assets/public/index.html"
           node scripts/qa/verify-partner-static-assets-v1.mjs "$TEMP_APK_ASSETS/assets/public"
+          for path in index.html modules/motorista/index.html modules/entregador/index.html; do
+            grep -Fq 'data-apois-embedded-viewport-v1' "$TEMP_APK_ASSETS/assets/public/$path" || { echo "[FAIL] Parceiro APK: proteção global ausente: $path"; exit 1; }
+          done
+          echo '[OK] Parceiro APK inclui viewport global nas três entradas'
           echo "[OK] Parceiro APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
           rm -rf "$TEMP_APK_ASSETS"
           trap - EXIT
