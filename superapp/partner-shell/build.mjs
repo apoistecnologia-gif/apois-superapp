@@ -1,3 +1,4 @@
+import { protectEmbeddedViewport } from '../../scripts/protect-apois-embedded-viewport-v1.mjs';
 import '../../scripts/harden-partner-shell-startup.mjs';
 import { verifyPartnerBundleAssets } from '../../scripts/qa/verify-partner-static-assets-v1.mjs';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -200,5 +201,6 @@ if (!(launchIndex >= 0 && pendingIndex > launchIndex && lockIndex > pendingIndex
   process.exit(1);
 }
 
+protectEmbeddedViewport(dist, ['motorista','entregador']);
 verifyPartnerBundleAssets(dist);
 console.log('[OK] APOIS Parceiro gerado e validado: finanças, UI operacional, GPS/background, sessão WebView/FGS, callbacks/Push, saídas secundárias, back guards e trava cruzada protegidos.');
