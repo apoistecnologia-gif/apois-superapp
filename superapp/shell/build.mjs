@@ -48,6 +48,41 @@ console.log(`[OK] arte oficial APOIS decodificada e embutida no shell cliente ($
 
 // Arquitetura oficial: este APK é exclusivamente do cliente.
 // Motorista e Entregador pertencem ao Superapp Parceiro e não entram aqui.
+// APOIS_CLIENT_CORRIDAS_LOADING_BRAND_V1: the pinned Corridas index has a
+// black/yellow fallback while React hydrates. Replace only that fallback in
+// the disposable/packaged bundle, never in the protected source or React app.
+function brandCorridasStartupLoading(indexPath) {
+  const source = readFileSync(indexPath, 'utf8');
+  const opening = '      <div\n        id="apois-fallback-loading"';
+  const closing = '      </div>\n    </div>';
+  if (source.split(opening).length !== 2) throw Error('[FAIL] Corridas loading: expected one pinned fallback');
+  const start = source.indexOf(opening);
+  const end = source.indexOf(closing, start);
+  if (end < 0) throw Error('[FAIL] Corridas loading: fallback closing boundary changed');
+  const oldBlock = source.slice(start, end + '      </div>'.length);
+  for (const required of ['background: black', 'color: #ffb800', 'Carregando APOIS...']) {
+    if (!oldBlock.includes(required)) throw Error('[FAIL] Corridas loading: unexpected source ' + required);
+  }
+  const startupScript = source.match(/<script\b[^>]*src="[^"]+"[^>]*><\/script>/g) ?? [];
+  if (!source.includes('id="root"') || startupScript.length < 1) {
+    throw Error('[FAIL] Corridas loading: React bootstrap document missing');
+  }
+  const logo = `data:image/png;base64,${officialBrandingBytes.toString('base64')}`;
+  const replacement = `      <div id="apois-fallback-loading" data-apois-client-loading-v1 role="status" aria-live="polite"
+        style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:100dvh;background:#F7F7F8;color:#111827;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));font-family:Inter,system-ui,sans-serif;text-align:center;">
+        <img src="${logo}" width="104" height="104" alt="APOIS" style="display:block;width:104px;height:104px;object-fit:contain;" />
+        <p style="margin:0;font-size:14px;line-height:1.4;font-weight:800;letter-spacing:.08em;color:#C9141B;">Carregando APOIS...</p>
+      </div>`;
+  const updated = source.slice(0, start) + replacement + source.slice(end + '      </div>'.length);
+  if (!updated.includes('data-apois-client-loading-v1') ||
+      !startupScript.every((script) => updated.includes(script)) ||
+      !updated.includes('id="root"') || updated.includes('color: #ffb800')) {
+    throw Error('[FAIL] Corridas loading: bootstrap or branding regression');
+  }
+  writeFileSync(indexPath, updated, 'utf8');
+  console.log('[OK] Corridas: fallback preto/amarelo substituído por logo oficial APOIS e texto vermelho; bootstrap React intacto');
+}
+
 const modules = [
   ['corridas', resolve(root, '../../.work/corridas/dist')],
   ['entregas', resolve(root, '../../.work/entregas/.output/public')],
@@ -61,6 +96,7 @@ for (const [name, source] of modules) {
   const target = resolve(dist, 'modules', name);
   mkdirSync(target, { recursive: true });
   cpSync(source, target, { recursive: true });
+  if (name === 'corridas') brandCorridasStartupLoading(resolve(target, 'index.html'));
   console.log(`[OK] ${name} copiado para dist/modules/${name}`);
 }
 
