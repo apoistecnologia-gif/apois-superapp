@@ -1,3 +1,4 @@
+import { protectEmbeddedViewport } from '../../scripts/protect-apois-embedded-viewport-v1.mjs';
 import '../../scripts/harden-superapp-shell-auth.mjs';
 import '../../scripts/harden-superapp-shell-mobile-ui.mjs';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -266,4 +267,5 @@ for (const moduleName of ['corridas', 'entregas']) {
 // A navegação física do Android já é tratada pelo bridge injetado em
 // build-isolated-module.mjs. Não registrar um segundo listener aqui: dois
 // backButton handlers causam navegação dupla/race no módulo Entregas.
+protectEmbeddedViewport(dist, ['corridas','entregas']);
 console.log(`[OK] shell cliente gerado em ${dist}: Corridas + Entregas`);
