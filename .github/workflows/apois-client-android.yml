@@ -28,6 +28,7 @@ on:
       - 'scripts/verify-corridas-dispatch-ux-v1.mjs'
       - 'scripts/harden-corridas-trip-flow-ux.mjs'
       - 'scripts/qa/test-entregas-viewport-v1.test.mjs'
+      - 'scripts/harden-entregas-personal-data-light-v1.mjs'
 
 permissions:
   contents: read
