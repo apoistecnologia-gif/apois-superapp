@@ -8,7 +8,10 @@ const comp=read("src/components/rides/active/PassengerDriverRating.tsx");
 const route=read("src/routes/_authenticated.corrida.$rideId.tsx");
 const service=read("src/services/rides/active-ride-service.ts");
 test("Customer can rate driver only on finished ride, not cancelled/active",()=>{
- assert.ok(route.includes('screenState === "completed" && ('));
+ assert.ok(route.includes('data-apois-completed-summary-v2'));
+ assert.ok(route.includes('PassengerDriverRating rideId={ride.id}'));
+ assert.ok(route.includes('actionAvailability?.canRate && !ratingDecision'));
+ assert.ok(route.includes('onSkip={() => setRatingDecision(true)}'));
  assert.ok(route.includes("canRate={Boolean(actionAvailability?.canRate)}"));
  assert.ok(service.includes('canRate: status === "finalizada" && ride.passenger_rating == null'));
  assert.ok(comp.includes("if(alreadyRated||done)"));
@@ -30,5 +33,7 @@ test("Accessible stars, required selection, bounded optional comment and retry",
  'role="alert"','disabled={busy}','Enviando avaliação...',
  'Avaliação registrada. Obrigado!'
  ])assert.ok(comp.includes(needle),"Missing "+needle);
- assert.ok(route.includes("onRated={() => void refreshRide()}"));
+ assert.ok(route.includes("onRated={() => {setRatingDecision(true);void refreshRide();}}"));
+ assert.ok(comp.includes("Pular avaliação"));
+ assert.ok(comp.includes("onSkip();"));
 });
