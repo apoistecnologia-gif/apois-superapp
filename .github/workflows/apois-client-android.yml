@@ -35,6 +35,8 @@ on:
       - 'scripts/harden-entregas-overlay-layering.mjs'
       - 'scripts/harden-entregas-superapp-order-details.mjs'
       - 'scripts/stabilize-entregas-secondary-mobile-inputs.mjs'
+      - 'scripts/verify-entregas-customer-light-v4.mjs'
+      - 'scripts/verify-entregas-customer-current-visual-v5.mjs'
       - 'scripts/harden-entregas-superapp-secondary-mobile-ui.mjs'
       - 'scripts/harden-entregas-address-async-v11.mjs'
       - 'scripts/harden-entregas-customer-address-uf-v9.mjs'
