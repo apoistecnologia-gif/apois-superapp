@@ -24,6 +24,25 @@ function patch(path, before, after, options = {}) {
   throw new Error(`Address async V11: unexpected source ${path}`);
 }
 const selector = 'src/components/CustomerLocationAddressSelector.tsx';
+// The Client pipeline applies CV11 visual feedback before the final bundled
+// address-audit pass. Preserve that richer version on reruns, but verify the
+// actual latest-only guards and visible retry/error/empty states.
+const selectorSource = readFileSync(resolve(root, selector), 'utf8');
+if (selectorSource.includes('APOIS_CV11_AUTOCOMPLETE_FEEDBACK_V1')) {
+  for (const guard of [
+    'APOIS_ADDRESS_ASYNC_V11',
+    'const requestId = ++searchRequestRef.current;',
+    'if (requestId !== searchRequestRef.current) return;',
+    '++searchRequestRef.current; // Discard autocomplete still in flight after selection.',
+    'setAutocompleteStatus("error")',
+    'setAutocompleteStatus(matches.length === 0 ? "empty" : "ready")',
+    'Tentar novamente',
+    'Nenhum endereço encontrado',
+  ]) {
+    if (!selectorSource.includes(guard)) throw Error('Address async V11: incomplete CV11 visual guard ' + guard);
+  }
+  console.log('[OK] Address async V11: CV11 feedback already applied with latest-only guards');
+} else {
 patch(selector, '  const autoRan = useRef(false);',
   '  const autoRan = useRef(false);\n  const searchRequestRef = useRef(0); // APOIS_ADDRESS_ASYNC_V11');
 patch(selector, '  const search = async (value: string) => {\n    setQuery(value);',
@@ -36,6 +55,8 @@ patch(selector,
   '    } catch (error) {\n      if (requestId !== searchRequestRef.current) return;\n      console.error("Erro no autocomplete:", error);\n      setSuggestions([]);');
 patch(selector, '  const selectSuggestion = async (suggestion: Suggestion) => {\n    setIsSearching(true);',
   '  const selectSuggestion = async (suggestion: Suggestion) => {\n    ++searchRequestRef.current; // Discard autocomplete still in flight after selection.\n    setIsSearching(true);');
+
+}
 
 const form = 'src/routes/enderecos/novo.tsx';
 // cepRequestRef é declarado uma única vez. Ancorar em `confirmedUfRef` duplicava
