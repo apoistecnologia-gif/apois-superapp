@@ -467,6 +467,10 @@ if (name === 'corridas') {
   // Relatório 09 / INV-058–060: geração de preço e coerência na confirmação.
   run(process.execPath, [resolve(root, 'scripts/fix-report09-pricing-checkout-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report09-pricing-checkout-v1.test.mjs')]);
+  // Physical Android QA: GPS jitter must not invalidate a priced itinerary;
+  // real route or stop changes still require official backend repricing.
+  run(process.execPath, [resolve(root, 'scripts/fix-corridas-ride-gps-stability-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-ride-gps-stability-v1.test.mjs')]);
   // CV-016/017: visual-only last-mile presentation on the transformed Corridas workspace.
   // RV-09 / CV-027: Passenger deletion dialog already mounted by its existing hardener.
   // Apply only the focus/isolation layer; never change the deletion RPC or auth.
