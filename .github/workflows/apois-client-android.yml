@@ -40,6 +40,8 @@ on:
       - 'scripts/harden-entregas-superapp-secondary-mobile-ui.mjs'
       - 'scripts/harden-entregas-address-async-v11.mjs'
       - 'scripts/qa/test-entregas-address-async-v3.mjs'
+      - 'superapp/shell/build.mjs'
+      - 'scripts/qa/verify-client-corridas-loading-v1.mjs'
       - 'scripts/harden-entregas-customer-address-uf-v9.mjs'
 
 permissions:
@@ -264,6 +266,7 @@ jobs:
           grep -Fq 'data-apois-entregas-customer-nav-v5' .work/entregas/src/components/AppBottomNav.tsx
           echo '[OK] Cliente Entregas: identidade clara atual, cartoes, home e rodape validados'
           npm run build:shell
+          node scripts/qa/verify-client-corridas-loading-v1.mjs superapp/shell/dist/modules/corridas/index.html
           npm run harden:auth-deeplinks
           npm run inject:push-routing
           test -s superapp/shell/dist/modules/corridas/index.html
@@ -402,6 +405,7 @@ jobs:
           unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
           test -s "$TEMP_APK_ASSETS/assets/public/index.html"
           node scripts/qa/verify-client-static-assets-v1.mjs "$TEMP_APK_ASSETS/assets/public"
+          node scripts/qa/verify-client-corridas-loading-v1.mjs "$TEMP_APK_ASSETS/assets/public/modules/corridas/index.html"
           echo "[OK] Cliente APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
           rm -rf "$TEMP_APK_ASSETS"
           trap - EXIT
