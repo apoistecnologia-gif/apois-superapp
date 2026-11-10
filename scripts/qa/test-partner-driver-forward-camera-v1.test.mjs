@@ -18,8 +18,8 @@ test("Camera follows actual road bearing, not forced north-up",()=>{
  const to=route.indexOf("type RequestRemovalReason",from);
  assert.ok(from>0 && to>from);
  const camera=route.slice(from,to);
- for(const x of ["APOIS_DRIVER_FORWARD_CAMERA_V1",
-  "heading: nearDestination ? 0 : (heading ?? undefined)",
+ assert.ok(route.includes("APOIS_DRIVER_FORWARD_CAMERA_V1"));
+ for(const x of ["heading: nearDestination ? 0 : (heading ?? undefined)",
   "tilt: nearDestination || heading == null ? 0 : 40",
   "navMap.setHeading?.(heading)", "navMap.setTilt?.(40)",
   "offsetLatLng(position, heading, NAVIGATION_CENTER_AHEAD_METERS)"])
