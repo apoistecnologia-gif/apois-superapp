@@ -33,6 +33,8 @@ function requireMarkers(path, markers) {
 
 patch('src/routes/_authenticated.tsx', (source) => replacePairs(source, [
   ['min-h-[100dvh] bg-zinc-950 flex justify-center selection:bg-yellow-500/30 overflow-hidden', 'min-h-[100dvh] bg-[#EEF1F4] flex justify-center selection:bg-[#E51B23]/20 overflow-hidden'],
+  // APOIS_CORRIDAS_AUTH_VIEWPORT_V2: retain full viewport lock while migrating colors.
+  ['fixed inset-x-0 top-0 z-0 flex h-[100dvh] justify-center overflow-hidden overscroll-none bg-zinc-950 selection:bg-yellow-500/30', 'fixed inset-x-0 top-0 z-0 flex h-[100dvh] justify-center overflow-hidden overscroll-none bg-[#EEF1F4] selection:bg-[#E51B23]/20'],
   ['relative w-full max-w-[430px] h-[100dvh] bg-black overflow-hidden flex flex-col', 'relative w-full max-w-[430px] h-[100dvh] bg-[#F7F7F8] overflow-hidden flex flex-col'],
 ]), 'layout autenticado usa base clara');
 
