@@ -500,6 +500,10 @@ if (name === 'corridas') {
     ['src/components/rides/active/RideStatusHeader.tsx','APOIS_CV14_RIDE_STATUS_WRAP_V1'],
   ]) if(!readFileSync(resolve(root,'.work/corridas',rel),'utf8').includes(marker))
     throw Error('[FAIL] RV14 Passenger visual missing '+rel);
+   // Passenger rating after a finished ride uses existing rate_passenger_ride RPC;
+   // the frontend does not change RLS, payment, ride state or protected submodules.
+   run(process.execPath, [resolve(root, 'scripts/connect-corridas-passenger-driver-rating-v1.mjs')]);
+   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-driver-rating-v1.test.mjs')]);
   // RV-15: restore scoped public-form placeholder contrast, then only user-facing
   // auth error copy and field accessibility on disposable Corridas; do not change
   // password predicates, Supabase callback/session logic or email submission.
