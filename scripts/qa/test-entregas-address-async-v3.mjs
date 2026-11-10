@@ -20,6 +20,7 @@ function searchHarness() {
     searchRequestRef: { current: 0 },
     setQuery: value => c.query = value,
     setSuggestions: value => c.suggestions = value,
+    setAutocompleteStatus: value => c.status = value,
     invokeMaps: () => { const d = deferred(); requests.push(d); return d.promise; },
     console: { error() {} },
   });
@@ -32,18 +33,21 @@ test('autocomplete: older response cannot replace newer results', async () => {
   requests[1].resolve({ predictions: ['atual'] }); await current;
   requests[0].resolve({ predictions: ['antiga'] }); await old;
   assert.equal(c.suggestions[0], 'atual');
+  assert.equal(c.status, 'ready', 'most recent results must be shown as ready');
 });
 test('autocomplete: clearing query cannot resurrect pending suggestions', async () => {
   const { c, requests } = searchHarness();
   const old = c.search('Rua antiga'); await c.search('');
   requests[0].resolve({ predictions: ['antiga'] }); await old;
   assert.equal(c.suggestions.length, 0);
+  assert.equal(c.status, 'idle', 'clearing search must restore idle state');
 });
 test('autocomplete: stale failure cannot erase current results', async () => {
   const requests = [];
   const c = vm.createContext({
     searchRequestRef: { current: 0 }, setQuery() {},
     setSuggestions: value => c.suggestions = value,
+    setAutocompleteStatus: value => c.status = value,
     invokeMaps: () => new Promise((resolve, reject) => requests.push({ resolve, reject })),
     console: { error() {} },
   });
@@ -52,6 +56,7 @@ test('autocomplete: stale failure cannot erase current results', async () => {
   requests[1].resolve({ predictions: ['atual'] }); await current;
   requests[0].reject(new Error('offline')); await old;
   assert.equal(c.suggestions[0], 'atual');
+  assert.equal(c.status, 'ready', 'a stale error must not erase ready status');
 });
 
 const form = read('routes/enderecos/novo.tsx');
