@@ -6,6 +6,7 @@ const work=resolve(process.env.APOIS_ENTREGAS_WORKSPACE||'.work/entregas');
 const read=p=>readFileSync(resolve(work,p),'utf8');
 const root=read('src/routes/__root.tsx');
 const home=read('src/routes/inicio.tsx');
+const hours=read('src/lib/merchant-hours.ts');
 const nav=read('src/components/AppBottomNav.tsx');
 const css=read('src/system-theme.css');
 const packageJson=JSON.parse(read('package.json'));
@@ -25,7 +26,7 @@ for(const text of [
   'navigate({ to: "/enderecos" })','navigate({ to: "/buscar" })',
   'navigate({ to: "/sacola" })','<AppBottomNav activeTab="inicio"',
   'catRestaurantes','catMercados','catFarmacias','catLojas',
-  'calculateMerchantStatus(','merchant.delivery_fee',
+  'fetchAuthoritativeMerchantStatuses(', 'authoritativeStatus[merchant.id]', 'APOIS_MERCHANT_SERVER_STATUS_V3','merchant.delivery_fee',
 ])assert.ok(home.includes(text),'Home perdeu estilo/funcao: '+text);
 assert.ok(!home.includes('className="relative flex h-screen w-full flex-col overflow-hidden bg-black text-white"'),
   'Home Cliente ainda ficou preta');
@@ -49,4 +50,7 @@ assert.equal(css.split('/* APOIS_ENTREGAS_CUSTOMER_VISUAL_V5 */').length-1,1,'Te
 assert.ok(!css.includes('html.apois-system-theme:not(.apois-entregas-customer-light-v4) {color-scheme:light'),
   'Produtos de parceiro foram afetados');
 assert.ok(packageJson.scripts?.['build:customer'], 'Build real Cliente Entregas perdido');
+// Server-authoritative merchant availability replaces device-clock guesses.
+assert.ok(hours.includes('"apois_visible_merchant_order_status"'), 'Status must use server RPC');
+assert.ok(!home.includes('calculateMerchantStatus('), 'Home must not infer open hours from device time');
 console.log('[OK] Entregas Cliente V5: identidade vermelho/branco/preto, menus/fluxos preservados, sem efeitos nos demais produtos.');
