@@ -68,13 +68,26 @@ for (const [path, label] of [
 
 {
   const state = read('src/routes/perfil/ajuda.tsx');
-  if (!state.source.includes('max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]')) {
+  const safeForm = 'max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]';
+  const v17Form = 'max-h-[calc(100dvh-1rem)]';
+  const safeBottom = 'pb-[max(env(safe-area-inset-bottom),1.25rem)]';
+  const safeTop = 'pt-[max(env(safe-area-inset-top),1.25rem)]';
+  if (!state.source.includes(safeForm) && !state.source.includes(v17Form)) {
     state.source = state.source.replace(
       /className="w-full rounded-t-3xl border border-zinc-800 bg-zinc-950 p-5 sm:max-w-lg sm:rounded-3xl"/,
       'className="max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))] w-full overflow-y-auto rounded-t-3xl border border-zinc-800 bg-zinc-950 px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-5 sm:max-w-lg sm:rounded-3xl"',
     );
   }
-  if (!state.source.includes('max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]')) {
+  // RV17 creates an accessible scrollable dialog first. Keep role/ARIA and
+  // the height required by its regression tests; add both Android safe insets.
+  const accessibleForm = 'className="max-h-[calc(100dvh-1rem)] w-full overflow-y-auto rounded-t-3xl border border-zinc-800 bg-zinc-950 p-5 sm:max-w-lg sm:rounded-3xl"';
+  if (state.source.includes(accessibleForm)) {
+    state.source = state.source.replace(accessibleForm,
+      'className="max-h-[calc(100dvh-1rem)] w-full overflow-y-auto rounded-t-3xl border border-zinc-800 bg-zinc-950 px-5 ' + safeBottom + ' ' + safeTop + ' sm:max-w-lg sm:rounded-3xl"');
+  }
+  const v17Safe = state.source.includes(v17Form) && state.source.includes('role="dialog" aria-modal="true"') &&
+    state.source.includes(safeBottom) && state.source.includes(safeTop);
+  if (!state.source.includes(safeForm) && !v17Safe) {
     throw new Error('[FAIL] Entregas Ajuda: formulário inferior não recebeu viewport móvel segura');
   }
   write(state, 'Entregas Ajuda: formulário móvel estabilizado');
