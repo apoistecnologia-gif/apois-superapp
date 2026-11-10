@@ -1,3 +1,4 @@
+import {protectNativeWebView} from './harden-apois-native-webview-scroll-v1.mjs';
 import { dirname, resolve } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -167,3 +168,6 @@ if (!mainActivity.includes('registerPlugin(DriverVoicePlugin.class)')) {
 }
 writeFileSync(mainActivityPath, mainActivity, 'utf8');
 console.log('[OK] Android do APOIS Parceiro configurado: permissões, deep links próprios e DriverVoice.');
+
+// Enforce native Android scroll boundary on every QA/CI/CodeMagic build.
+protectNativeWebView('parceiro');
