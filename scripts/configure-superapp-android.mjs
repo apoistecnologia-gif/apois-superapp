@@ -1,3 +1,4 @@
+import {protectNativeWebView} from './harden-apois-native-webview-scroll-v1.mjs';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -291,3 +292,6 @@ if (!finalManifest.includes('android:icon="@mipmap/ic_launcher"') || !finalManif
   throw new Error('Launcher Cliente: manifest nao utiliza os icones oficiais.');
 }
 console.log(`[OK] APOIS_CLIENT_LAUNCHER_INSTALL_V1: ${densities.length} densidades, icon normal/redondo/adaptativo e splash com marca APOIS oficial; ${removedStockBranding} bitmaps de template descartados.`);
+
+// Enforce native Android scroll boundary on every QA/CI/CodeMagic build.
+protectNativeWebView('cliente');
