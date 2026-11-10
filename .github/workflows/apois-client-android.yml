@@ -29,6 +29,7 @@ on:
       - 'scripts/harden-corridas-trip-flow-ux.mjs'
       - 'scripts/qa/test-entregas-viewport-v1.test.mjs'
       - 'scripts/harden-entregas-personal-data-light-v1.mjs'
+      - 'scripts/fix-entregas-persisted-cart-validation-v3.mjs'
 
 permissions:
   contents: read
