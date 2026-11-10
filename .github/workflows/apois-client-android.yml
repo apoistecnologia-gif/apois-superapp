@@ -24,6 +24,10 @@ on:
       - 'scripts/build-isolated-module.mjs'
       - 'scripts/fix-corridas-profile-viewport-v1.mjs'
       - 'scripts/verify-corridas-profile-viewport-v1.mjs'
+      - 'scripts/protect-apois-embedded-viewport-v1.mjs'
+      - 'scripts/harden-apois-native-webview-scroll-v1.mjs'
+      - 'scripts/qa/verify-apois-mobile-viewport-v1.mjs'
+      - 'scripts/configure-superapp-android.mjs'
       - 'scripts/fix-corridas-generated-ts-gate-v1.mjs'
       - 'scripts/harden-corridas-backend-identity-boundary.mjs'
       - '.apois/modules.json'
@@ -268,6 +272,7 @@ jobs:
           grep -Fq 'data-apois-entregas-customer-nav-v5' .work/entregas/src/components/AppBottomNav.tsx
           echo '[OK] Cliente Entregas: identidade clara atual, cartoes, home e rodape validados'
           npm run build:shell
+          node scripts/qa/verify-apois-mobile-viewport-v1.mjs cliente
           node scripts/qa/verify-client-corridas-loading-v1.mjs superapp/shell/dist/modules/corridas/index.html
           npm run harden:auth-deeplinks
           npm run inject:push-routing
@@ -320,6 +325,7 @@ jobs:
           bunx cap sync android
           cd ../..
           node scripts/configure-superapp-android.mjs
+          node scripts/qa/verify-apois-mobile-viewport-v1.mjs cliente --native
           MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
           echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
@@ -407,8 +413,11 @@ jobs:
           unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
           test -s "$TEMP_APK_ASSETS/assets/public/index.html"
           node scripts/qa/verify-client-static-assets-v1.mjs "$TEMP_APK_ASSETS/assets/public"
-          grep -R -Fq 'data-apois-corridas-profile-viewport-v1' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: perfil sem correção de viewport'; exit 1; }
-          echo '[OK] Cliente APK inclui correção de viewport do Perfil'
+          grep -R -Fq 'data-apois-corridas-auth-viewport-v2' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: correção global de viewport ausente'; exit 1; }
+          for path in index.html modules/corridas/index.html modules/entregas/index.html; do
+            grep -Fq 'data-apois-embedded-viewport-v1' "$TEMP_APK_ASSETS/assets/public/$path" || { echo "[FAIL] Cliente APK: proteção global ausente: $path"; exit 1; }
+          done
+          echo '[OK] Cliente APK inclui viewport global nas três entradas'
           node scripts/qa/verify-client-corridas-loading-v1.mjs "$TEMP_APK_ASSETS/assets/public/modules/corridas/index.html"
           echo "[OK] Cliente APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
           rm -rf "$TEMP_APK_ASSETS"
