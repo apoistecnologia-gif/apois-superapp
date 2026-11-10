@@ -32,6 +32,9 @@ on:
       - 'scripts/harden-entregas-personal-data-light-v1.mjs'
       - 'scripts/fix-entregas-persisted-cart-validation-v3.mjs'
       - 'scripts/fix-entregas-product-customization-visual10-v1.mjs'
+      - 'scripts/harden-entregas-overlay-layering.mjs'
+      - 'scripts/harden-entregas-address-async-v11.mjs'
+      - 'scripts/harden-entregas-customer-address-uf-v9.mjs'
 
 permissions:
   contents: read
