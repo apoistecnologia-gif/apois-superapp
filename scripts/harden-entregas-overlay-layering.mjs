@@ -33,15 +33,23 @@ for (const relativePath of [
 }
 
 const productSheet = patch('src/components/ProductCustomizationSheet.tsx', (source) => {
-  let next = source
-    .replace(
-      'className="h-[90vh] bg-zinc-950 border-zinc-800 p-0 rounded-t-[32px] overflow-hidden flex flex-col focus:outline-none"',
-      'className="flex h-[90dvh] max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))] flex-col overflow-hidden rounded-t-[32px] border-zinc-800 bg-zinc-950 p-0 focus:outline-none"',
-    )
-    .replace(
-      'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
-      'pb-[max(52px,env(safe-area-inset-bottom))]',
-    );
+  // RV10 already normalizes 90vh to 90dvh, without changing the other classes.
+  // Accept either exact pinned form, but keep the complete safe-area contract.
+  const target = 'className="flex h-[90dvh] max-h-[calc(100dvh-max(env(safe-area-inset-top),12px))] flex-col overflow-hidden rounded-t-[32px] border-zinc-800 bg-zinc-950 p-0 focus:outline-none"';
+  const legacy = [
+    'className="h-[90vh] bg-zinc-950 border-zinc-800 p-0 rounded-t-[32px] overflow-hidden flex flex-col focus:outline-none"',
+    'className="h-[90dvh] bg-zinc-950 border-zinc-800 p-0 rounded-t-[32px] overflow-hidden flex flex-col focus:outline-none"',
+  ];
+  let next = source;
+  if (!next.includes(target)) {
+    const matches = legacy.filter((anchor) => next.includes(anchor));
+    if (matches.length !== 1) throw Error('[FAIL] Entregas overlay: sheet layout anchor drift');
+    next = next.replace(matches[0], target);
+  }
+  next = next.replace(
+    'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+    'pb-[max(52px,env(safe-area-inset-bottom))]',
+  );
   return next;
 }, 'Entregas overlay: personalização usa viewport dinâmica e CTA acima da barra Android');
 
