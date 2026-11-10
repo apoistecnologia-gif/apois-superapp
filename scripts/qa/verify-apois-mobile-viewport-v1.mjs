@@ -14,7 +14,7 @@ for(const entry of ['index.html',...modules.map(name=>'modules/'+name+'/index.ht
   const html=readFileSync(path,'utf8');
   assert.equal(html.split('data-apois-embedded-viewport-v1').length-1,1,'Viewport guard must exist once in '+entry);
   assert.ok(html.includes('overscroll-behavior-y:none;overscroll-behavior-x:none'),'WebView scroll-chain guard missing in '+entry);
-  const guard=html.match(/<style data-apois-embedded-viewport-v1>[\\s\\S]*?<\\/style>/)?.[0];
+  const guard=html.match(/<style data-apois-embedded-viewport-v1>[\s\S]*?<\/style>/)?.[0];
   assert.ok(guard,'Embedded guard must be a real stylesheet in '+entry);
   assert.ok(!guard.includes('touch-action:none')&&!guard.includes('overflow:hidden')&&!guard.includes('pointer-events:none'),
     'Viewport guard must not globally disable touches or scrolling in '+entry);
