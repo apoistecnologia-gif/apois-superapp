@@ -581,6 +581,16 @@ if (name === 'entregas') {
   if (!readFileSync(resolve(root, '.work/entregas/src/components/ProductCustomizationSheet.tsx'), 'utf8').includes('APOIS_CV10_PRODUCT_CUSTOMIZATION_ACCESSIBILITY_V1')) {
     throw new Error('[FAIL] CV10 options must be native accessible buttons');
   }
+  // Restore the pinned Cliente Entregas visual dependency chain before RV11/RV13.
+  // These transforms affect .work/entregas only; do not mutate source-lock or submodules.
+  for (const visualScript of [
+    'harden-entregas-superapp-brand-assets.mjs',
+    'harden-entregas-customer-light-v4.mjs',
+    'harden-entregas-customer-current-visual-v5.mjs',
+    'harden-entregas-customer-current-visual-v6.mjs',
+    'harden-entregas-customer-contrast-v7.mjs',
+    'harden-entregas-customer-address-visual-v8.mjs',
+  ]) run(process.execPath, [resolve(root, 'scripts', visualScript)]);
   // RV-11: last scoped Entregas presentation layers, after V11 and prior visual/checkout hardeners.
   // No address persistence, API, payment, auth or geocoding contract is modified.
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-labels-visual11-v1.mjs')]);
