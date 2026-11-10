@@ -8,11 +8,22 @@ const menu=read("src/components/DriverSideMenu.tsx"),sheet=read("src/components/
 const form=read("src/components/profile/ProfileForm.tsx"),profile=read("src/routes/motorista.perfil.tsx");
 const css=read("src/styles.css");
 for(const m of ['data-apois-driver-menu-fullscreen-v4','data-apois-driver-menu-fixed-v5','data-apois-driver-menu-header-v5',
- 'data-apois-driver-menu-scroll-v5','overlayClassName="!fixed !inset-0 !z-[220] !bg-[#111827]/70"','data-apois-driver-sidebar-profile-v3',
+ 'data-apois-driver-menu-scroll-v5','overlayClassName="apois-driver-menu-overlay-v6 !fixed !inset-0 !z-[160] !bg-[#111827]/70"','data-apois-driver-sidebar-profile-v3',
  'data-apois-driver-sidebar-tools-v1','onClick={() => openOperationalTool("status")}','onClick={() => openOperationalTool("calls")}',
  'onOpenChange(false)','onLogout()','to="/motorista/perfil"']){
  assert.ok(menu.includes(m),"Driver menu content/callback regression "+m);
 }
+// QA: the mobile overlay must not dim its fullscreen menu, even when Tailwind
+// or WebView chooses a different stylesheet evaluation/portal order.
+assert.ok(menu.includes('style={{ zIndex: 230, backgroundColor: "#FFFFFF", opacity: 1 }}'),
+ "Driver drawer must have a solid, higher stacking surface independent of stylesheet timing");
+assert.ok(!menu.includes('overlayClassName="!fixed !inset-0 !z-[220]'),
+ "Old higher stacking overlay would shade the menu itself");
+assert.ok(css.includes("/* APOIS_DRIVER_MENU_OVERLAY_V6") &&
+ css.includes(".apois-driver-menu-overlay-v6 { z-index:160!important; }") &&
+ css.includes("@media (max-width:639px)") &&
+ css.includes(".apois-driver-menu-overlay-v6 { display:none!important; pointer-events:none!important; }"),
+ "Mobile fullscreen backdrop must not cover its own Radix dialog");
 assert.ok(sheet.includes("overlayClassName?: string")&&sheet.includes("<SheetOverlay className={overlayClassName} />"),
  "Sheet overlay must be configurable without changing other consumers");
 assert.ok(!sheet.includes("<SheetOverlay className=\"!fixed"),"No global Sheet overlay changes");
