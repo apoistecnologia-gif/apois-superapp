@@ -22,6 +22,8 @@ on:
       - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
       - 'scripts/build-isolated-module.mjs'
+      - 'scripts/connect-corridas-passenger-driver-rating-v1.mjs'
+      - 'scripts/qa/test-corridas-passenger-driver-rating-v1.test.mjs'
       - 'scripts/harden-corridas-trip-flow-ux.mjs'
       - 'scripts/fix-corridas-ride-gps-stability-v1.mjs'
       - 'scripts/qa/test-corridas-ride-gps-stability-v1.test.mjs'
