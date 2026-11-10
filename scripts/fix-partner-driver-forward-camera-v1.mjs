@@ -23,9 +23,9 @@ camera=replaceOnce(camera,
   "heading: nearDestination ? 0 : (heading ?? undefined),\n        tilt: nearDestination || heading == null ? 0 : 40,",
   "initial route-follow bearing");
 camera=replaceOnce(camera,
-  "      navMap.setHeading?.(0);\n      navMap.setTilt?.(0);",
-  "      navMap.setHeading?.(heading);\n      navMap.setTilt?.(40);",
-  "continual route-follow bearing");
+  "    } else if (heading != null) {\n      navMap.setHeading?.(0);\n      navMap.setTilt?.(0);",
+  "    } else if (heading != null) {\n      navMap.setHeading?.(heading);\n      navMap.setTilt?.(40);",
+  "continual route-follow bearing, keeping north-up only near destination");
 camera=camera.replace("function applyNavigationCamera(", "// APOIS_DRIVER_FORWARD_CAMERA_V1: camera aims up the actual route on supported vector WebViews.\nfunction applyNavigationCamera(");
 for(const required of [
  "routeHeadingFrom(position, route, destination)",
