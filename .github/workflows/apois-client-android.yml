@@ -39,6 +39,7 @@ on:
       - 'scripts/verify-entregas-customer-current-visual-v5.mjs'
       - 'scripts/harden-entregas-superapp-secondary-mobile-ui.mjs'
       - 'scripts/harden-entregas-address-async-v11.mjs'
+      - 'scripts/qa/test-entregas-address-async-v3.mjs'
       - 'scripts/harden-entregas-customer-address-uf-v9.mjs'
 
 permissions:
