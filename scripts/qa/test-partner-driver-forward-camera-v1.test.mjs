@@ -39,9 +39,8 @@ test("No fake passenger identity, photo or security bypass",()=>{
 });
 test("Keep route computation, voice, follow, actual status and ride lifecycle",()=>{
  for(const x of ["computeDriverRoute","tickNavigation","autoFollowRef.current",
-  "fitBounds","requestRide","startRideRingtone","onClick={handleAccept}",
-  "onClick={handleReject}"]){
-   if(x==="requestRide") continue;
+  "fitBounds","startRideRingtone","onAccept={handleAccept}",
+  "onReject={handleReject}"]){
    assert.ok(route.includes(x),"Missing "+x);
  }
 });
