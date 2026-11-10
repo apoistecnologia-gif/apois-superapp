@@ -102,8 +102,8 @@ patch("src/routes/sacola.tsx",one=>{
      '  const { items, merchant, updateQuantity, removeItem, totalPrice, refreshCartCatalog } = useCart();',"state");
  one('    void fetchDefaultAddress();',
      '    void fetchDefaultAddress();\n    void refreshCartCatalog();',"refresh on entry");
- one('    if (items.length === 0) {',
-     '    if(items.some(item=>item.isUnavailable)){toast.error("Remova os produtos indisponíveis antes de finalizar.");return;}\n    if (items.length === 0) {',"blocked checkout");
+ one('  const handleFinishOrder = () => {\n    if (items.length === 0) {',
+     '  const handleFinishOrder = () => {\n    if(items.some(item=>item.isUnavailable)){toast.error("Remova os produtos indisponíveis antes de finalizar.");return;}\n    if (items.length === 0) {',"blocked checkout");
  one('<h3 className="text-[15px] font-bold text-white">{item.name}</h3>',
      '<h3 className="text-[15px] font-bold text-white">{item.name}</h3>\n                  {item.isUnavailable && <p role="alert" className="text-xs font-bold text-red-400">Item indisponível ou personalização inválida. Remova para continuar.</p>}',"item label");
 });
