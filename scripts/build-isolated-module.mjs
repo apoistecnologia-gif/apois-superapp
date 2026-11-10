@@ -585,6 +585,9 @@ if (name === 'entregas') {
   // No address persistence, API, payment, auth or geocoding contract is modified.
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-labels-visual11-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/fix-entregas-address-catalog-visual11-v1.mjs')]);
+  // V11's CEP tests and canonical UF persistence require the V9 normalizer.
+  // Reconcile it only in .work/entregas; the pinned source remains untouched.
+  run(process.execPath, [resolve(root, 'scripts/harden-entregas-customer-address-uf-v9.mjs')]);
   // CV11 depends on the async V11 latest-request guard in the disposable Entregas workspace.
   // Preserve this guard and its behavioural tests before adding visual feedback.
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-address-async-v11.mjs')]);
