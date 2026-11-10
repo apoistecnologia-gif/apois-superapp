@@ -96,7 +96,11 @@ for (const page of [
   }, (source) =>
     source.includes('<AppBottomNav activeTab="perfil" />') && source.includes('pb-32') &&
     source.includes('pt-[max(env(safe-area-inset-top),0.85rem)]') &&
-    (page[1] !== 'Ajuda' || source.includes('max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]')),
+    (page[1] !== 'Ajuda' || source.includes('max-h-[calc(100dvh-max(env(safe-area-inset-top),1rem))]') ||
+      (source.includes('max-h-[calc(100dvh-1rem)]') &&
+       source.includes('role="dialog" aria-modal="true"') &&
+       source.includes('pb-[max(env(safe-area-inset-bottom),1.25rem)]') &&
+       source.includes('pt-[max(env(safe-area-inset-top),1.25rem)]'))),
   `Entregas: ${page[1]} mantém navegação inferior e safe-area em celular`);
 }
 
