@@ -31,7 +31,7 @@ export function patchProductCustomization(source) {
     'const getGroupStatus = (group: OptionGroup) => {',
     'const isGroupValid = (group: OptionGroup) => {',
     'handleToggleOption(group.id, option.id, group.max_selections)',
-    'pb-[max(52px,env(safe-area-inset-bottom))]',
+    '<SheetFooter',
   ]) {
     if (!source.includes(required)) throw new Error("[CV10] source drift: " + required);
   }
@@ -41,6 +41,12 @@ export function patchProductCustomization(source) {
   if (!source.includes('h-[90dvh]') && !source.includes('h-[90vh]'))
     throw new Error("[CV10] product sheet viewport height anchor missing");
   let next = source.includes('h-[90dvh]') ? source : one(source,'h-[90vh]','h-[90dvh]','dynamic product sheet viewport');
+  if(!next.includes('pb-[max(52px,env(safe-area-inset-bottom))]')){
+    next=one(next,
+      'border-t border-zinc-900 p-4 pt-6 flex flex-row',
+      'border-t border-zinc-900 px-4 pt-6 pb-[max(52px,env(safe-area-inset-bottom))] flex flex-row',
+      'sheet footer safe area');
+  }
   next = one(next,
     '<h3 className="text-white font-bold text-sm">{group.name}</h3>',
     '<h3 id={\`apois-product-group-heading-\${group.id}\`} className="text-white font-bold text-sm">{group.name}</h3>',
