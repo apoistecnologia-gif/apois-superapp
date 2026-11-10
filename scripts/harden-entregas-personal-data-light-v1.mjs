@@ -14,7 +14,7 @@ function change(from,to,label){
   source=source.replace(from,to);
 }
 if(!source.includes(marker)){
-  change('className="relative flex h-screen w-full flex-col overflow-hidden bg-black text-white"',
+  change('className="relative flex h-dvh w-full flex-col overflow-hidden bg-black text-white"',
     'data-apois-personal-data-light-v1="true" className="relative flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-[#F7F7F8] text-[#171D27]"',
     'layout claro');
   change('className="z-50 flex shrink-0 items-center justify-between border-b border-zinc-900 bg-black/80 px-4 pb-4 pt-[max(env(safe-area-inset-top),1rem)] backdrop-blur-lg"',
