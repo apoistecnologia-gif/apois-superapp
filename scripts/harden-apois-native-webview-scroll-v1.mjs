@@ -17,7 +17,7 @@ if(!code.includes(marker)){
   const anchor='super.onCreate(savedInstanceState);';
   if(!code.includes(anchor)) {
     // Fresh Capacitor Android can generate an empty BridgeActivity class.
-    const empty=/public class MainActivity extends BridgeActivity\\s*\\{\\s*\\}/;
+    const empty=/public class MainActivity extends BridgeActivity\s*\{\s*\}/;
     if(!empty.test(code))throw Error('[FAIL] MainActivity without recognized onCreate '+role);
     code=code.replace(empty,`public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n    }\n}`);
   }
