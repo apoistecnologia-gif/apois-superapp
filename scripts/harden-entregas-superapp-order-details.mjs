@@ -13,11 +13,12 @@ if (!source.includes('import { AppBottomNav } from "@/components/AppBottomNav";'
   );
 }
 
-if (source.includes('className="flex h-screen w-full flex-col overflow-hidden bg-black text-white"')) {
-  source = source.replace(
-    'className="flex h-screen w-full flex-col overflow-hidden bg-black text-white"',
-    'className="relative flex h-screen w-full flex-col overflow-hidden bg-black text-white"',
-  );
+// The 100dvh normalizer runs first on Android. Both pinned and normalized
+// containers must receive the same positioning; do not re-add on a repeat run.
+for (const viewport of ['h-screen', 'h-dvh']) {
+  const before = `className="flex ${viewport} w-full flex-col overflow-hidden bg-black text-white"`;
+  const after = `className="relative flex ${viewport} w-full flex-col overflow-hidden bg-black text-white"`;
+  if (source.includes(before)) source = source.replace(before, after);
 }
 
 if (source.includes('className="flex-1 space-y-6 overflow-y-auto p-4 pb-20"')) {
