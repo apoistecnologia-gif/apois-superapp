@@ -22,6 +22,8 @@ on:
       - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
       - 'scripts/build-isolated-module.mjs'
+      - 'scripts/fix-corridas-profile-viewport-v1.mjs'
+      - 'scripts/verify-corridas-profile-viewport-v1.mjs'
       - 'scripts/fix-corridas-generated-ts-gate-v1.mjs'
       - 'scripts/harden-corridas-backend-identity-boundary.mjs'
       - '.apois/modules.json'
@@ -405,6 +407,8 @@ jobs:
           unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
           test -s "$TEMP_APK_ASSETS/assets/public/index.html"
           node scripts/qa/verify-client-static-assets-v1.mjs "$TEMP_APK_ASSETS/assets/public"
+          grep -R -Fq 'data-apois-corridas-profile-viewport-v1' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: perfil sem correção de viewport'; exit 1; }
+          echo '[OK] Cliente APK inclui correção de viewport do Perfil'
           node scripts/qa/verify-client-corridas-loading-v1.mjs "$TEMP_APK_ASSETS/assets/public/modules/corridas/index.html"
           echo "[OK] Cliente APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
           rm -rf "$TEMP_APK_ASSETS"
