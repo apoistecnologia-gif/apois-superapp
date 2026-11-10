@@ -22,6 +22,8 @@ on:
       - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
       - 'scripts/build-isolated-module.mjs'
+      - 'scripts/fix-corridas-ride-gps-stability-v1.mjs'
+      - 'scripts/qa/test-corridas-ride-gps-stability-v1.test.mjs'
       - 'scripts/fix-corridas-profile-viewport-v1.mjs'
       - 'scripts/harden-corridas-final-red-surfaces.mjs'
       - 'scripts/verify-corridas-profile-viewport-v1.mjs'
@@ -424,6 +426,8 @@ jobs:
           done
           echo '[OK] Cliente APK inclui viewport global nas três entradas'
           node scripts/qa/verify-client-corridas-loading-v1.mjs "$TEMP_APK_ASSETS/assets/public/modules/corridas/index.html"
+          grep -R -Fq 'Recalculando tarifa...' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: aviso de tarifa indisponível não empacotado'; exit 1; }
+          echo '[OK] APK Cliente tem tarifa pendente explícita sem liberar solicitação'
           echo "[OK] Cliente APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
           rm -rf "$TEMP_APK_ASSETS"
           trap - EXIT
