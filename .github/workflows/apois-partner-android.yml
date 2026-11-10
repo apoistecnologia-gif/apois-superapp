@@ -23,6 +23,7 @@ on:
       - 'scripts/fix-partner-driver-forward-camera-v1.mjs'
       - 'scripts/fix-partner-driver-passenger-avatar-v1.mjs'
       - 'scripts/qa/test-partner-driver-forward-camera-v1.test.mjs'
+      - 'scripts/audit-partner-preflight-v1.mjs'
       - 'superapp/partner-shell/build.mjs'
       - 'scripts/protect-apois-embedded-viewport-v1.mjs'
       - 'scripts/harden-apois-native-webview-scroll-v1.mjs'
