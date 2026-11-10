@@ -31,12 +31,16 @@ export function patchProductCustomization(source) {
     'const getGroupStatus = (group: OptionGroup) => {',
     'const isGroupValid = (group: OptionGroup) => {',
     'handleToggleOption(group.id, option.id, group.max_selections)',
-    'h-[90dvh]',
     'pb-[max(52px,env(safe-area-inset-bottom))]',
   ]) {
     if (!source.includes(required)) throw new Error("[CV10] source drift: " + required);
   }
-  let next = source;
+  // Pinned sheet uses 90vh; viewport normalizer only covers routes.
+  // Convert this component's height to dynamic viewport units without
+  // changing products, selection, checkout or callbacks.
+  if (!source.includes('h-[90dvh]') && !source.includes('h-[90vh]'))
+    throw new Error("[CV10] product sheet viewport height anchor missing");
+  let next = source.includes('h-[90dvh]') ? source : one(source,'h-[90vh]','h-[90dvh]','dynamic product sheet viewport');
   next = one(next,
     '<h3 className="text-white font-bold text-sm">{group.name}</h3>',
     '<h3 id={\`apois-product-group-heading-\${group.id}\`} className="text-white font-bold text-sm">{group.name}</h3>',
