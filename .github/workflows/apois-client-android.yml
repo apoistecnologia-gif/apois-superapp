@@ -27,6 +27,7 @@ on:
       - 'scripts/verify-corridas-auth-regressions.mjs'
       - 'scripts/verify-corridas-dispatch-ux-v1.mjs'
       - 'scripts/harden-corridas-trip-flow-ux.mjs'
+      - 'scripts/qa/test-entregas-viewport-v1.test.mjs'
 
 permissions:
   contents: read
