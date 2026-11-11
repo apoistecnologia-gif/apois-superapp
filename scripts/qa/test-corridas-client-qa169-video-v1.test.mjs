@@ -12,6 +12,8 @@ test("QA169 driver image onError neutral icon, no fake picture or RLS bypass",()
  const src=read("src/components/rides/active/DriverCard.tsx");
  for(const x of ["photoUrl !== failedUrl","setFailedUrl(photoUrl)","createSignedUrl(path,3600)",'<User className=',"ride.driver_phone","ride.driver_name"])assert.ok(src.includes(x),x);
  assert.ok(!src.includes("src={ride.driver_photo}"));
+ assert.ok(src.includes("/^https:\\/\\//i.test(raw)"),"Generated URL regex must escape slashes correctly");
+ assert.ok(src.includes("/^profile-photos\\//i"),"Generated storage path regex must escape slash correctly");
 });
 test("QA169 actual polyline forward camera only while ride is in trip",()=>{
  const map=read("src/components/map/PassengerMap.tsx"),ride=read('src/routes/_authenticated.corrida.$rideId.tsx');
