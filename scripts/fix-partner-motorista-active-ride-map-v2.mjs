@@ -45,7 +45,11 @@ edit("src/routes/motorista.app.tsx",s=>{
   s=one(s,"      .catch(() => {\n        if (cancelled) return;",
     "      .catch(() => {\n        settled = true;\n        if (cancelled) return;","route failure");
   const cleanup="    return () => { cancelled = true; };";
-  s=one(s,cleanup,[
+  const routeStart=s.indexOf("    const routeRequestKey = ");
+  const routeEnd=s.indexOf("  }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]);",routeStart);
+  if(routeStart<0||routeEnd<routeStart)throw Error("[FAIL] route effect bounds changed");
+  let routeBlock=s.slice(routeStart,routeEnd);
+  routeBlock=one(routeBlock,cleanup,[
     "    return () => {",
     "      cancelled = true;",
     "      // On remount/GPS-cell changes, the next effect must retry pending requests.",
@@ -53,7 +57,8 @@ edit("src/routes/motorista.app.tsx",s=>{
     "        lastRouteRequestKeyRef.current = null;",
     "      }",
     "    };"
-  ].join("\n"),"route canceled request key");
+  ].join("\n"),"route-specific canceled request key");
+  s=s.slice(0,routeStart)+routeBlock+s.slice(routeEnd);
   const oldDeps="  }, [active?.id, active?.status, position?.lat, position?.lng, mapReadyNonce]); // eslint-disable-line react-hooks/exhaustive-deps";
   const newDeps=[
     "  // APOIS_DRIVER_RIDE_MAP_STABILITY_V2: avoid cancelling the route on sub-100m GPS jitter.",
