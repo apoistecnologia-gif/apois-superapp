@@ -14,7 +14,7 @@ function once(old,next,label){
  src=src.replace(old,next);
 }
 // The incoming offer previously consumed 85-94% of a real Android viewport.
-once('style={{ maxHeight: "min(94dvh, 680px)" }}',
+once('style={{ maxHeight: "100%" }}',
      'style={{ maxHeight: "min(68dvh, 540px)" }}',
      "incoming offer height");
 // Preserve all information via internal scroll and real accept/reject callbacks.
