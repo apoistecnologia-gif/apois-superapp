@@ -52,7 +52,9 @@ REVOKE ALL ON FUNCTION public.apois_driver_may_view_passenger_avatar(text) FROM 
 GRANT EXECUTE ON FUNCTION public.apois_driver_may_view_passenger_avatar(text) TO authenticated;
 CREATE POLICY apois_driver_assigned_or_offered_passenger_avatar_qa195
  ON storage.objects FOR SELECT TO authenticated
- USING (bucket_id = 'profile-photos' AND public.apois_driver_may_view_passenger_avatar(name));
+ USING (bucket_id = 'profile-photos'
+   AND storage.allow_only_operation('object.sign')
+   AND public.apois_driver_may_view_passenger_avatar(name));
 COMMENT ON FUNCTION public.apois_driver_may_view_passenger_avatar(text) IS
  'Autoriza somente foto exata do passageiro associado a oferta ou corrida do motorista, sem listagem publica.';
 COMMIT;

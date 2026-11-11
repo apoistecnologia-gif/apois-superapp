@@ -24,6 +24,7 @@ test("QA195 scoped HUD CSS and operational callbacks",()=>{
 });
 test("QA195 offer SQL is narrow, avatars remain private",()=>{
  for(const s of ["CREATE FUNCTION public.apois_driver_offer_passenger","SECURITY DEFINER","offered_driver_ids","rejected_driver_ids","request_expires_at","public.mobility_user_id()","apois_driver_may_view_passenger_avatar","storage.objects","bucket_id = 'profile-photos'","REVOKE ALL ON FUNCTION"])assert.ok(sql.includes(s),s);
+ assert.ok(sql.includes("storage.allow_only_operation('object.sign')"),"Signed URL only, never list objects");
  assert.ok(!sql.includes("ALTER TABLE public.users"));
  assert.ok(!sql.includes("GRANT SELECT ON public.users"));
 });
