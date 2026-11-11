@@ -6,12 +6,11 @@ const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motoris
 const read=p=>readFileSync(resolve(root,p),"utf8");
 const route=read("src/routes/motorista.app.tsx");
 const map=read("src/components/MovviMap.tsx");
-test("Vector driver map enables heading and tilt; no change for other roles",()=>{
- for(const x of ["APOIS_DRIVER_VECTOR_MAP_V1",
-  "renderingType: isDriverRole && navigationMode && typeof google !== \"undefined\"",
-  "tiltInteractionEnabled: isDriverRole",
-  "headingInteractionEnabled: isDriverRole","getMapStyleForTheme(\"light\")"])
-  assert.ok(map.includes(x),"Missing "+x);
+test("Camera code remains available without unstable vector mode on the existing Android WebView",()=>{
+ assert.ok(map.includes("APOIS_DRIVER_VECTOR_MAP_V1"));
+ assert.ok(map.includes("APOIS_DRIVER_RIDE_MAP_STABILITY_V2"));
+ assert.ok(map.includes("renderingType: undefined"));
+ assert.ok(map.includes('getMapStyleForTheme("light")'));
 });
 test("Camera follows actual road bearing, not forced north-up",()=>{
  const from=route.indexOf("function applyNavigationCamera(");
