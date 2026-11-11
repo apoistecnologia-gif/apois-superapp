@@ -25,6 +25,7 @@ on:
       - 'scripts/connect-corridas-passenger-driver-rating-v1.mjs'
       - 'scripts/qa/test-corridas-passenger-driver-rating-v1.test.mjs'
       - 'scripts/harden-corridas-trip-flow-ux.mjs'
+      - 'scripts/qa/test-corridas-ride-footer-layout-v1.test.mjs'
       - 'scripts/fix-corridas-ride-gps-stability-v1.mjs'
       - 'scripts/qa/test-corridas-ride-gps-stability-v1.test.mjs'
       - 'scripts/fix-corridas-profile-viewport-v1.mjs'
@@ -194,6 +195,7 @@ jobs:
           node --check scripts/harden-corridas-pickup-map-focus.mjs
           grep -Fq 'pickupCameraCoordinate' scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-trip-flow-ux.mjs
+          node --check scripts/qa/test-corridas-ride-footer-layout-v1.test.mjs
           node --check scripts/harden-client-live-ride-camera-v2.mjs
           node --check scripts/verify-client-live-ride-camera-v2.mjs
           grep -Fq 'harden-client-live-ride-camera-v2.mjs' scripts/build-isolated-module.mjs
