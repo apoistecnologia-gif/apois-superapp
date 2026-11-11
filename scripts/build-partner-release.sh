@@ -119,6 +119,9 @@ node "$ROOT/scripts/fix-partner-driver-forward-camera-v1.mjs"
 node "$ROOT/scripts/fix-partner-driver-passenger-avatar-v1.mjs"
 # Android QA 175 regression: avoid WebGL vector on idle and keep errors inside the map.
 node "$ROOT/scripts/fix-partner-motorista-map-startup-stability-v1.mjs"
+# Physical QA179: stop map crashes when a ride starts and retry cancelled routes.
+node "$ROOT/scripts/fix-partner-motorista-active-ride-map-v2.mjs"
+node --test "$ROOT/scripts/qa/test-partner-motorista-active-map-v2.test.mjs"
 node --test "$ROOT/scripts/qa/test-partner-motorista-map-startup-stability-v1.test.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-forward-camera-v1.test.mjs"
 node "$ROOT/scripts/harden-partner-driver-registration-exit-v3.mjs"
