@@ -8,7 +8,7 @@ const map=read("src/components/MovviMap.tsx");
 const route=read("src/routes/motorista.app.tsx");
 const boundary=read("src/components/routing/DriverMapErrorBoundary.tsx");
 test("Driver home and trip share a single stable raster map",()=>{
- assert.ok(map.includes("APOIS_DRIVER_MAP_STARTUP_STABILITY_V1"));
+ assert.ok(map.includes("APOIS_DRIVER_MAP_TILES_WATCHDOG_V1"));
  assert.ok(map.includes("APOIS_DRIVER_RIDE_MAP_STABILITY_V2"));
  assert.ok(map.includes("renderingType: undefined"));
  assert.ok(!map.includes("google.maps?.RenderingType?.VECTOR"));
