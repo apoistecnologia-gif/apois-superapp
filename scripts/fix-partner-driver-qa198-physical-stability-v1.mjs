@@ -99,7 +99,7 @@ function addRating(begin,end,label){
  });
 }
 addRating("function PickupNavOverlay(","\nfunction CircleAction(","pickup");
-addRating("function ActiveTripNavOverlay(","__EOF__","trip");
+// Trip retains the existing name and photo; defer its score-row redesign until source matches a stable component layout.
 
 css+="\n/* "+marker+": overlay translucency and hide nonfunctional phone circles. */\n"+
  '[data-apois-driver-offer-qa195]{background:rgba(0,0,0,.12)!important;}\n'+

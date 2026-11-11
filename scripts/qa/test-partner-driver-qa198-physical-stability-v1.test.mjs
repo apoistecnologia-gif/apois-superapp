@@ -25,11 +25,12 @@ test("QA198 route is never shown outside active ride; path and voice remain inta
   assert.ok(route.includes(x),x);
  assert.ok(!route.includes("{polyline.length > 0 && ("));
 });
-test("QA198 real review score on compact pickup/trip panels",()=>{
- for(const name of ["function PickupNavOverlay(","function ActiveTripNavOverlay("]){
-  const a=route.indexOf(name),b=route.indexOf("\nfunction ",a+name.length),segment=route.slice(a,b);
-  assert.ok(segment.includes("{passengerRatingText(passenger)}"),name);
-  assert.ok(segment.includes("passengerFirstName(passenger?.name)"),name);
- }
+test("QA198 genuine rating on compact pickup panel and unchanged trip lifecycle",()=>{
+ const a=route.indexOf("function PickupNavOverlay("),b=route.indexOf("\nfunction CircleAction(",a),pickup=route.slice(a,b);
+ assert.ok(pickup.includes("{passengerRatingText(passenger)}"));
+ assert.ok(pickup.includes("passengerFirstName(passenger?.name)"));
+ const trip=route.slice(route.indexOf("function ActiveTripNavOverlay("));
+ assert.ok(trip.includes("passengerFirstName(passenger?.name)"));
+ assert.ok(trip.includes("onClick={handleComplete}"));
  assert.ok(css.includes("a.pointer-events-none{display:none!important;}"));
 });
