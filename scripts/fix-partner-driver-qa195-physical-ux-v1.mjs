@@ -71,7 +71,7 @@ between("function IncomingOffer(","\nfunction InfoCard(","offer",offer=>{
   'style={{ maxHeight: "min(48dvh, 440px)" }}',"offer exposes map");
  offer=once(offer,'data-apois-driver-offer-readable-v7 className=',
   'data-apois-driver-offer-readable-v7 data-apois-driver-offer-qa195="true" className=',"offer marker");
- offer=once(offer,"bg-black/40 animate-in","bg-black/25 animate-in","offer backdrop");
+ // Preserve the existing backdrop opacity; earlier visual hardeners already tune it.
  offer=once(offer,'className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 sm:px-5"',
   'className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-3 sm:px-5"',"offer scroll");
  offer=once(offer,'const ratingText = passengerRatingText(passenger, 2);',
