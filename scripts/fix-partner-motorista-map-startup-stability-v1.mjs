@@ -72,12 +72,11 @@ update("src/routes/motorista.app.tsx",s=>{
   s=one(s,'import { MovviMap } from "@/components/MovviMap";',
           'import { MovviMap } from "@/components/MovviMap";\n'+
           'import { DriverMapErrorBoundary } from "@/components/routing/DriverMapErrorBoundary";',"boundary import");
-  s=one(s,'        <MovviMap center={stableMapCenter} zoom={stableMapZoom} height="100%"\n          themeOverride="dark"',
-          '        <DriverMapErrorBoundary>\n'+
-          '        <MovviMap center={stableMapCenter} zoom={stableMapZoom} height="100%"\n'+
-          '          navigationMode={inNavigationMode}\n          themeOverride="dark"',"boundary open");
-  s=one(s,"        </MovviMap>\n      </div>",
-          "        </MovviMap>\n        </DriverMapErrorBoundary>\n      </div>","boundary close");
+  // Match the stable component tag, independent of the visual migration's theme/format.
+  s=one(s,"        <MovviMap ",
+          "        <DriverMapErrorBoundary>\n        <MovviMap navigationMode={inNavigationMode} ","boundary open");
+  s=one(s,"        </MovviMap>",
+          "        </MovviMap>\n        </DriverMapErrorBoundary>","boundary close");
   return s;
 });
 console.log("[OK] Motorista idle raster, vector navigation only; map failure contained; timeout actionable.");
