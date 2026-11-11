@@ -18,3 +18,8 @@ Não tocar em fontes protegidas, repositório franciel046631/apois-entregas, pag
 
 ## Estado
 Correções de QA201 **registradas em código, aguardando integração e build**. Nenhuma versão Android nova nem homologação declarada.
+
+## Código preparado para vetor sem trocar identidade visual
+- `scripts/fix-partner-driver-qa202-cloud-vector-readiness-v1.mjs`: disponibiliza, apenas ao Motorista, o mapa vetorial com Map ID validado e estilo Cloud previamente aprovado. Fora dessas condições continua usando o raster atual, sem mudanças no meio da corrida.
+- `scripts/qa/test-partner-driver-qa202-cloud-vector-readiness-v1.test.mjs`: exige associação de Map ID e proíbe misturar estilos locais com Cloud.
+- **Não ativado:** ainda não existe Map ID APOIS Corridas configurado/verificado neste ambiente; portanto a orientação não está homologada. O arquivo JSON de estilo para importação está pronto.
