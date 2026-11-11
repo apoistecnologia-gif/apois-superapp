@@ -21,6 +21,8 @@ on:
       - 'scripts/fix-report06-motorista-receipt-v1.mjs'
       - 'scripts/build-partner-release.sh'
       - 'scripts/fix-partner-driver-forward-camera-v1.mjs'
+      - 'scripts/fix-partner-driver-qa186-navigation-layout-v1.mjs'
+      - 'scripts/qa/test-partner-driver-qa186-navigation-layout-v1.test.mjs'
       - 'scripts/fix-partner-driver-passenger-avatar-v1.mjs'
       - 'scripts/qa/test-partner-driver-forward-camera-v1.test.mjs'
       - 'scripts/audit-partner-preflight-v1.mjs'

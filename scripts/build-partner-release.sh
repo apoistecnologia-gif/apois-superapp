@@ -275,6 +275,9 @@ node "$ROOT/scripts/fix-apois-financial-status-visual07-v1.mjs" motorista
 node --test "$ROOT/scripts/qa/test-apois-financial-status-visual07-v1.test.mjs"
 require_contains 'APOIS_CV07_DRIVER_MEMBERSHIP_STATUS_V1' "$MOTORISTA/src/routes/motorista.assinatura.tsx" 'CV07 Motorista status displayed safely'
 node "$ROOT/scripts/qa/test-partner-driver-new-monthly-price-v1.mjs"
+# QA186 presentation-only Android Motorista fixes after existing hardeners.
+node "$ROOT/scripts/fix-partner-driver-qa186-navigation-layout-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa186-navigation-layout-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
