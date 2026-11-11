@@ -78,10 +78,10 @@ rOne(
  ].join("\n"),
  "register in flight"
 );
-rOne('    let cancelled = false;\n    callRoute(',
+rOne('    let cancelled = false;\n    let settled = false;\n    callRoute(',
      '    callRoute(',
      "do not cancel because GPS changes");
-const oldCancelled='        if (cancelled) return;';
+const oldCancelled='        settled = true;\n        if (cancelled) return;';
 const occurrences=route.split(oldCancelled).length-1;
 if(occurrences!==2)throw Error("[FAIL] QA201 expected 2 async callbacks, found "+occurrences);
 route=route.replaceAll(oldCancelled,
@@ -119,8 +119,16 @@ rOne(fallback,[
  '          setPolyline([]); setRouteSteps([]); setLegKm(null); setEtaSeconds(null);',
  '        }'
 ].join("\n"),"honest fallback");
-rOne('    return () => { cancelled = true; };',
-'    // Deliberately no per-GPS-tick cleanup. Epoch and activeRef guard stale work.',
+rOne([
+'    return () => {',
+'      cancelled = true;',
+'      // On remount/GPS-cell changes, the next effect must retry pending requests.',
+'      if (!settled && lastRouteRequestKeyRef.current === routeRequestKey) {',
+'        lastRouteRequestKeyRef.current = null;',
+'      }',
+'    };'
+].join("\n"),
+'    // Deliberately no per-GPS-cell cleanup. Epoch and activeRef guard stale work.',
 "prevent GPS cancellation of route");
 if(route.includes("if (cancelled)")||route.includes("const fallback = [pos, dest]")||route.includes("(km / 35) * 3600")){
  throw Error("[FAIL] QA201 stale cancellation or fake ETA survived");
