@@ -92,32 +92,48 @@ if(occurrences!==2)throw Error("[FAIL] QA201 expected 2 async callbacks, found "
 route=route.replaceAll(oldCancelled,
  '        if (routeRequestEpochRef.current !== requestEpoch || activeRef.current?.id !== active.id || activeRef.current?.status !== active.status) return;');
 rOne(
- '        const points = decodePolyline(res.encodedPolyline);\n        if (points.length < 2) throw new Error("route_polyline_empty");\n        setPolyline(points);',
+ '        const points = decodePolyline(res.encodedPolyline);',
  [
  '        const points = decodePolyline(res.encodedPolyline);',
  '        if (!Array.isArray(points) || points.length === 0 || !Number.isFinite(res.durationSeconds) || !Number.isFinite(res.distanceMeters)) {',
  '          throw new Error("route_provider_invalid_geometry");',
- '        }',
+ '        }'
+ ].join("\n"),
+ "reject invalid provider response"
+);
+rOne(
+ '        setPolyline(points);',
+ [
  '        if (routeRefreshRef.current?.phase === fitKey) {',
  '          routeRefreshRef.current.failed = false;',
  '          routeRefreshRef.current.failures = 0;',
  '        }',
  '        setPolyline(points);'
  ].join("\n"),
- "reject invalid provider response"
+ "successful route clears failure count"
 );
-const fallback=[
- '        // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.',
- '        // Libera nova tentativa após um intervalo curto em vez de congelar a falha.',
- '        lastRouteFailureAtRef.current = Date.now();',
- '        lastRouteRequestKeyRef.current = null;',
- '        const fallback = [pos, dest];',
- '        setPolyline(fallback);',
- '        setRouteSteps([]);',
- '        const km = haversineKm(pos, dest);',
- '        setLegKm(km); setEtaSeconds(Math.round((km / 35) * 3600));',
- '        focusRoute(fallback);'
+// Work inside the catch block only: previous retry-on-failure clears the key
+// and would bypass QA201's bounded 3min/450m policy.
+const catchStart=route.indexOf("      .catch(() => {");
+const fallbackStart=catchStart<0?-1:route.indexOf("        const fallback = [pos, dest];",catchStart);
+const fallbackEnd=fallbackStart<0?-1:route.indexOf("        focusRoute(fallback);",fallbackStart);
+if(catchStart<0||fallbackStart<0||fallbackEnd<=fallbackStart)
+ throw Error("[FAIL] QA201 route fallback location drift");
+let preFallback=route.slice(catchStart,fallbackStart);
+if(!preFallback.includes("lastRouteRequestKeyRef.current = null;"))
+ throw Error("[FAIL] QA201 legacy failure retry anchor changed");
+preFallback=preFallback.replace("lastRouteRequestKeyRef.current = null;",
+ "// QA201: keep last request key; bounded snapshot controls retry.");
+const fallbackReplacement=[
+ '        // Never draw a fake straight-line driving route or a made-up ETA.',
+ '        const snapshot = routeRefreshRef.current;',
+ '        if (snapshot?.phase === fitKey) { snapshot.failed = true; snapshot.failures += 1; }',
+ '        if (lastFitKeyRef.current !== fitKey) {',
+ '          setPolyline([]); setRouteSteps([]); setLegKm(null); setEtaSeconds(null);',
+ '        }'
 ].join("\n");
+route=route.slice(0,catchStart)+preFallback+fallbackReplacement+
+ route.slice(fallbackEnd+"        focusRoute(fallback);".length);
 rOne(fallback,[
  '        // NO fabricated route or ETA when Google Routes fails.',
  '        // Keep a previous verified route during same phase, or show only endpoints.',
