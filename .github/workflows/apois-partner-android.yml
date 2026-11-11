@@ -31,6 +31,11 @@ on:
       - 'scripts/qa/test-partner-driver-qa195-physical-ux-v1.test.mjs'
       - 'scripts/fix-partner-driver-qa198-physical-stability-v1.mjs'
       - 'scripts/qa/test-partner-driver-qa198-physical-stability-v1.test.mjs'
+      - 'scripts/fix-partner-driver-qa201-route-reliability-v1.mjs'
+      - 'scripts/qa/test-partner-driver-qa201-route-reliability-v1.test.mjs'
+      - 'scripts/fix-partner-driver-qa202-cloud-vector-readiness-v1.mjs'
+      - 'scripts/qa/test-partner-driver-qa202-cloud-vector-readiness-v1.test.mjs'
+      - 'docs/google-maps/apois-passageiro-vector-style-import.json'
       - 'supabase/corridas-forward-migrations/20261111_apois_driver_offer_passenger_photo_scope.sql'
       - 'scripts/qa/test-partner-driver-qa190-physical-video-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-qa186-navigation-layout-v1.test.mjs'
@@ -74,6 +79,9 @@ jobs:
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
       CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      # Driver vector map requires a reviewed, published APOIS Cloud style and a JavaScript vector Map ID; unset by default.
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: ${{ vars.APOIS_PARTNER_VECTOR_MAP_ID }}
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: ${{ vars.APOIS_PARTNER_CLOUD_STYLE_VERIFIED }}
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64 }}
@@ -262,6 +270,7 @@ jobs:
           echo "[OK] Auditoria integrada e navegacao entre modulos validadas"
 
       - name: Create Android project
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -287,6 +296,7 @@ jobs:
           echo "[OK] Projeto Android Parceiro criado"
 
       - name: Restore original protected Partner QA signing identity
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -301,6 +311,7 @@ jobs:
           echo "[OK] QA original signing identity pinned; no replacement keystore generated"
 
       - name: Stamp monotonic Partner QA Android version
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -314,6 +325,7 @@ jobs:
           echo "[OK] Partner QA Android versionCode=${VERSION_CODE} monotonic"
 
       - name: Build installable debug APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -356,6 +368,7 @@ jobs:
           echo "[OK] APK de teste gerado"
 
       - name: Upload APOIS Parceiro APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         uses: actions/upload-artifact@v4
         with:
           name: APOIS-Parceiro-TESTE

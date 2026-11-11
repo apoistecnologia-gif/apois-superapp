@@ -293,6 +293,12 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa195-physical-ux-v1.test.mjs"
 # QA198: preserve map, passenger and route presentation after physical QA197.
 node "$ROOT/scripts/fix-partner-driver-qa198-physical-stability-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa198-physical-stability-v1.test.mjs"
+# QA201: GPS request epoch, route refresh cap, honest fallback, real trip score.
+node "$ROOT/scripts/fix-partner-driver-qa201-route-reliability-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa201-route-reliability-v1.test.mjs"
+# QA202: cloud-styled vector gated; defaults to same Passenger raster until approved.
+node "$ROOT/scripts/fix-partner-driver-qa202-cloud-vector-readiness-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa202-cloud-vector-readiness-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
