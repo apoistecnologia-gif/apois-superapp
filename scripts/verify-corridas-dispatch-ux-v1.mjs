@@ -11,7 +11,9 @@ requireAll(".work/corridas/src/routes/_authenticated.corrida.$rideId.tsx", [
   "APOIS_CANCEL_VISIBLE_V1",
   "CANCELAR CORRIDA",
   "safe-area-inset-bottom",
-  "bottom-[max(64px,env(safe-area-inset-bottom))]",
+  "data-apois-passenger-inflow-actions-v1",
+  'className="relative z-20 shrink-0 space-y-2',
+  "pb-[max(64px,env(safe-area-inset-bottom))]",
   "A busca termina automaticamente se nenhum motorista aceitar dentro do prazo."
 ]);
 const rideHook = read(".work/corridas/src/hooks/rides/use-active-ride.tsx");
@@ -64,4 +66,4 @@ requireAll("supabase/corridas-forward-migrations/20261024040000_expire_unaccepte
   "r.accepted_driver_id is null",
   "cron.schedule("
 ]);
-console.log("[OK] Corridas: cancelamento fixo, busca expirada, redespacho seguro, push versionado e cron protegidos.");
+console.log("[OK] Corridas: ações reservadas na tela, busca expirada, redespacho seguro, push versionado e cron protegidos.");
