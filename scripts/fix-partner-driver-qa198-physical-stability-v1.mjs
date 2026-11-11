@@ -17,7 +17,7 @@ function one(s,old,next,label) {
  return s.replace(old,next);
 }
 function changeComponent(begin,end,label,fn){
- const a=src.indexOf(begin),b=a<0?-1:src.indexOf(end,a+begin.length);
+ const a=src.indexOf(begin),b=a<0?-1:(end==="__EOF__"?src.length:src.indexOf(end,a+begin.length));
  if(a<0||b<=a)throw Error("[FAIL] QA198 "+label+" component missing");
  const before=src.slice(a,b),after=fn(before);
  if(before===after)throw Error("[FAIL] QA198 "+label+" unchanged");
@@ -99,7 +99,7 @@ function addRating(begin,end,label){
  });
 }
 addRating("function PickupNavOverlay(","\nfunction CircleAction(","pickup");
-addRating("function ActiveTripNavOverlay(","\nfunction ","trip");
+addRating("function ActiveTripNavOverlay(","__EOF__","trip");
 
 css+="\n/* "+marker+": overlay translucency and hide nonfunctional phone circles. */\n"+
  '[data-apois-driver-offer-qa195]{background:rgba(0,0,0,.12)!important;}\n'+
