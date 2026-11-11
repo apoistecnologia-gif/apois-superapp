@@ -50,7 +50,7 @@ s=s.slice(0,start)+panel+s.slice(end);
 s=once(s,'                    autoFocus\n                    maxLength={4}\n                    disabled={pinBusy}',
  '                    maxLength={4}\n                    disabled={pinBusy}',"PIN focus");
 s=once(s,'className="fixed inset-0 z-[1000] flex items-end justify-center bg-[#101828]/60 sm:items-center"',
- 'className="fixed inset-0 z-[1000] flex items-end justify-center overflow-y-auto overscroll-contain bg-[#101828]/60 pt-[max(8px,env(safe-area-inset-top))] sm:items-center',"PIN scroll");
+ 'className="fixed inset-0 z-[1000] flex items-end justify-center overflow-y-auto overscroll-contain bg-[#101828]/60 pt-[max(8px,env(safe-area-inset-top))] sm:items-center"',"PIN scroll");
 s=once(s,'className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0"',
  'className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0 scroll-mt-24',"PIN tap field");
 // Respect RLS: no fabricated passenger identity.
@@ -72,11 +72,5 @@ css+=[
 ].join("\n");
 for(const x of ["onStart(pinCode)","onClick={onAccept}","onClick={handleComplete}","APOIS_DRIVER_RIDE_MAP_STABILITY_V2","data-apois-waiting-actions-v1","createPortal(cancelRideDialog, document.body)"])
  if(!s.includes(x))throw Error("[FAIL] preserved callback missing "+x);
-// Temporary QA187 diagnostics: print only generated JSX around TypeScript parse errors.
-const generatedLines=s.split("\n");
-for(const [from,to] of [[3098,3107],[3155,3165]]) {
-  console.log("[QA187] generated JSX lines "+from+"-"+to);
-  for(let line=from;line<=to;line++) console.log("[QA187] "+line+": "+(generatedLines[line-1]||""));
-}
 writeFileSync(file,s,"utf8");writeFileSync(comfortFile,comfort,"utf8");writeFileSync(cssFile,css,"utf8");
 console.log("[OK] QA186: map-first waiting, accessible PIN, no fabricated profile, callbacks preserved.");

@@ -16,6 +16,7 @@ test("PIN keyboard starts only on touch and server validation survives",()=>{
  'inputMode="numeric"','maxLength={4}','onStart(pinCode)','overflow-y-auto overscroll-contain'])
  assert.ok(p.includes(x),x);
  assert.ok(!/autoFocus\s+maxLength=\{4\}/.test(pin));
+ assert.ok(pin.includes('sm:items-center"'),"PIN portal className closes before onClick");
  assert.ok(css.includes('[data-apois-pin-v4] label:focus-within'));
 });
 test("passenger RLS, raster map, accept, finish, ratings preserved",()=>{
