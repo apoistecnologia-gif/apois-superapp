@@ -287,6 +287,9 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa192-vector-passenger-v1.test
 # QA194: restore Passenger's APOIS base palette without changing GPS/ride lifecycle.
 node "$ROOT/scripts/fix-partner-driver-qa194-passenger-map-style-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa194-passenger-map-style-v1.test.mjs"
+# QA195: Android physical video UX, Motorista only.
+node "$ROOT/scripts/fix-partner-driver-qa195-physical-ux-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa195-physical-ux-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
