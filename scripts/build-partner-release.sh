@@ -290,6 +290,9 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa194-passenger-map-style-v1.t
 # QA195: Android physical video UX, Motorista only.
 node "$ROOT/scripts/fix-partner-driver-qa195-physical-ux-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa195-physical-ux-v1.test.mjs"
+# QA198: preserve map, passenger and route presentation after physical QA197.
+node "$ROOT/scripts/fix-partner-driver-qa198-physical-stability-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa198-physical-stability-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
