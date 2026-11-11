@@ -47,7 +47,7 @@ rOne(
  "invalidate when no destination"
 );
 rOne(
- '    const routeRequestKey = fitKey;',
+ '    const routeRequestKey = `${fitKey}:${pos.lat.toFixed(3)}:${pos.lng.toFixed(3)}`;',
  [
  '    const routeRequestKey = fitKey;',
  '    const now = Date.now();',
@@ -65,6 +65,11 @@ rOne(
  '    if (lastRouteRequestKeyRef.current === routeRequestKey) {',
  '    if (lastRouteRequestKeyRef.current === routeRequestKey && !refreshDue) {',
  "skip when not due"
+);
+rOne(
+ '    if (routeFailToastedRef.current === fitKey && Date.now() - lastRouteFailureAtRef.current < 12000 && polyline.length > 0) return;',
+ '    // QA201 epoch + bounded snapshot supersedes the legacy short retry check.',
+ "drop legacy query throttle"
 );
 rOne(
  '    lastRouteRequestKeyRef.current = routeRequestKey;',
@@ -87,7 +92,7 @@ if(occurrences!==2)throw Error("[FAIL] QA201 expected 2 async callbacks, found "
 route=route.replaceAll(oldCancelled,
  '        if (routeRequestEpochRef.current !== requestEpoch || activeRef.current?.id !== active.id || activeRef.current?.status !== active.status) return;');
 rOne(
- '        const points = decodePolyline(res.encodedPolyline);\n        setPolyline(points);',
+ '        const points = decodePolyline(res.encodedPolyline);\n        if (points.length < 2) throw new Error("route_polyline_empty");\n        setPolyline(points);',
  [
  '        const points = decodePolyline(res.encodedPolyline);',
  '        if (!Array.isArray(points) || points.length === 0 || !Number.isFinite(res.durationSeconds) || !Number.isFinite(res.distanceMeters)) {',
@@ -103,6 +108,9 @@ rOne(
 );
 const fallback=[
  '        // Fallback: mantém marcadores e desenha linha reta para não quebrar UX.',
+ '        // Libera nova tentativa após um intervalo curto em vez de congelar a falha.',
+ '        lastRouteFailureAtRef.current = Date.now();',
+ '        lastRouteRequestKeyRef.current = null;',
  '        const fallback = [pos, dest];',
  '        setPolyline(fallback);',
  '        setRouteSteps([]);',
