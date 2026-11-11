@@ -134,15 +134,7 @@ const fallbackReplacement=[
 ].join("\n");
 route=route.slice(0,catchStart)+preFallback+fallbackReplacement+
  route.slice(fallbackEnd+"        focusRoute(fallback);".length);
-rOne(fallback,[
- '        // NO fabricated route or ETA when Google Routes fails.',
- '        // Keep a previous verified route during same phase, or show only endpoints.',
- '        const snapshot = routeRefreshRef.current;',
- '        if (snapshot?.phase === fitKey) { snapshot.failed = true; snapshot.failures += 1; }',
- '        if (lastFitKeyRef.current !== fitKey) {',
- '          setPolyline([]); setRouteSteps([]); setLegKm(null); setEtaSeconds(null);',
- '        }'
-].join("\n"),"honest fallback");
+
 rOne([
 '    return () => {',
 '      cancelled = true;',
