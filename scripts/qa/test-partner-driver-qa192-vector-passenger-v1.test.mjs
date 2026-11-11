@@ -12,6 +12,17 @@ test("QA192 initial map selects vector once only on capable device, fallback rem
  assert.ok(!map.includes("renderingType: isDriverRole && navigationMode"));
  assert.ok(!map.includes("renderingType: undefined"));
 });
+test("QA193 stable map options do not reapply renderer on GPS re-renders",()=>{
+ for(const x of [
+  "APOIS_DRIVER_QA193_STABLE_OPTIONS",
+  "options={stableMapOptions}",
+  "useMemo<google.maps.MapOptions>(() => ({",
+  "renderingType: isLoaded && typeof google !== \"undefined\"",
+  "[isLoaded, isDriverRole, driverVectorCapable, forceRasterAfterFailure, styles, bgColor]"
+ ])assert.ok(map.includes(x),x);
+ assert.ok(!map.includes("        options={{"),"No inline mutable options prop");
+});
+
 test("QA192 navigation only changes camera on actual route; no source-lock or dispatcher changes",()=>{
  for(const x of ["APOIS_DRIVER_FORWARD_CAMERA_V1","routeHeadingFrom(position, route, destination)","navMap.setHeading?.(heading)","navMap.setTilt?.(40)","APOIS_DRIVER_RIDE_MAP_STABILITY_V2","onStart(pinCode)","callRoute({ data: { origin: pos, destination: dest } })"])assert.ok(ride.includes(x),x);
 });

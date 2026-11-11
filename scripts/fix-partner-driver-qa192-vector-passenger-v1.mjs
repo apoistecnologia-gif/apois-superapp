@@ -64,5 +64,32 @@ for(const marker of [
 ])if(!s.includes(marker))throw Error("[FAIL] QA192 lost map contract "+marker);
 if(s.includes("renderingType: isDriverRole && navigationMode"))
  throw Error("[FAIL] QA192 illegal renderer transition");
+// QA193: keep one stable GoogleMap options object across GPS/React renders.
+// react-google-maps/api applies changed options props via map.setOptions.
+// Reapplying inline options at every GPS tick can interfere with follow camera.
+const optionsStart=s.indexOf("        options={{");
+const optionsStop=optionsStart<0?-1:s.indexOf("\n        }}",optionsStart);
+if(s.split("        options={{").length!==2 || optionsStop<=optionsStart)
+ throw Error("[FAIL] QA193 GoogleMap options boundary changed");
+let optionBody=s.slice(optionsStart+"        options={{".length,optionsStop);
+const vectorNeedle="renderingType: isDriverRole && driverVectorCapable && !forceRasterAfterFailure";
+if(optionBody.split(vectorNeedle).length!==2 || !optionBody.includes("restriction:") || !optionBody.includes("backgroundColor: bgColor"))
+ throw Error("[FAIL] QA193 vector options contract changed");
+// Hook computes options even while the Maps library is loading, so guard its namespace.
+optionBody=optionBody.replace(vectorNeedle,
+ "renderingType: isLoaded && typeof google !== \"undefined\" && isDriverRole && driverVectorCapable && !forceRasterAfterFailure");
+const stableOptions=[
+ "  // APOIS_DRIVER_QA193_STABLE_OPTIONS: no setOptions churn on GPS updates.",
+ "  const stableMapOptions = useMemo<google.maps.MapOptions>(() => ({",
+ optionBody,
+ "  }), [isLoaded, isDriverRole, driverVectorCapable, forceRasterAfterFailure, styles, bgColor]);"
+].join("\n");
+const stateAnchor="  const [forceRasterAfterFailure, setForceRasterAfterFailure] = useState(false);";
+if(s.split(stateAnchor).length!==2)throw Error("[FAIL] QA193 state anchor changed");
+s=s.slice(0,optionsStart)+"        options={stableMapOptions}"+s.slice(optionsStop+"\n        }}".length);
+s=s.replace(stateAnchor,stateAnchor+"\n"+stableOptions);
+for(const x of ["APOIS_DRIVER_QA193_STABLE_OPTIONS","options={stableMapOptions}","useMemo<google.maps.MapOptions>","renderingType: isLoaded && typeof google !== \"undefined\""])
+ if(!s.includes(x))throw Error("[FAIL] QA193 missing "+x);
+if(s.includes("        options={{"))throw Error("[FAIL] QA193 inline map options remain");
 writeFileSync(path,s,"utf8");
 console.log("[OK] QA192 Motorista: stable vector where WebGL available, hardware/raster fallback, explicit safe retry; no map remount when changing ride status.");
