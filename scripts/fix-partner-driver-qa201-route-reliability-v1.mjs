@@ -132,8 +132,29 @@ css+="\n/* "+marker+" — HUD padding scoped to Motorista, not Entregador. */\n"
 '[data-apois-trip-top-v6]{padding:7px 10px!important;border-radius:16px!important;box-shadow:0 7px 18px -13px rgba(17,24,39,.35)!important;}\n'+
 '[data-apois-trip-top-v6] .mb-2,[data-apois-pickup-top-v4] .mb-2{margin-bottom:2px!important;}\n'+
 '[data-apois-pickup-top-v4]>div{padding:7px 10px!important;}\n';
+// QA201 physical evidence: the active-trip bar displayed only first name,
+// while pickup also had a genuine star score. Add the same compact score
+// without adding a new row, changing identity, or inventing reviews.
+const tripStart=s.indexOf("function ActiveTripNavOverlay(");
+if(tripStart<0)throw Error("[FAIL] QA201 trip component absent");
+const tripBefore=s.slice(tripStart);
+const nameRegex=/<div className="(truncate text-\[13px\] font-bold leading-tight [^"]+)">\s*\{passengerFirstName\(passenger\?\.name\)\}\s*<\/div>/g;
+const titles=[...tripBefore.matchAll(nameRegex)];
+if(titles.length!==1)throw Error("[FAIL] QA201 trip name layout changed, count="+titles.length);
+const titleClass=titles[0][1];
+const tripAfter=tripBefore.replace(nameRegex,
+  '<div className="flex min-w-0 items-center justify-between gap-2">'+
+  '<span className="'+titleClass+' min-w-0">{passengerFirstName(passenger?.name)}</span>'+
+  '<span aria-label={"Avaliação: " + passengerRatingText(passenger)} className="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold text-[#A8550F]">'+
+  '{Number(passenger?.total_ratings ?? 0) > 0 ? <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> : null}'+
+  '{passengerRatingText(passenger)}</span>'+
+  '</div>'
+);
+if(tripAfter===tripBefore)throw Error("[FAIL] QA201 trip rating not applied");
+s=s.slice(0,tripStart)+tripAfter;
+
 for(const required of ["routeRequestEpochRef.current !== requestEpoch","refreshDue","routeRefreshRef.current","apois_driver_assigned_passenger","onStart(pinCode)","onClick={handleComplete}","onClick={onAccept}","onClick={onReject}"]){
  if(!s.includes(required))throw Error("[FAIL] QA201 lost "+required);
 }
 writeFileSync(path,s,"utf8");writeFileSync(cssPath,css,"utf8");
-console.log("[OK] QA201 code staged: GPS route query survives, at most one refresh after 450m and 3min, no fake route/ETA, compact trip HUD.");
+console.log("[OK] QA201 code staged: live route query, bounded reroute, honest fallback, genuine trip passenger rating and compact HUD.");

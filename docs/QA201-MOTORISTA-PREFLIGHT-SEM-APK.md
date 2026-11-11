@@ -8,6 +8,7 @@ Base canônica: `666430e848414cf7d4eb86e2f840e3f58b7c279c` (QA200). Patch poster
 - No mesmo estado da corrida, a rota e o ETA nunca eram atualizados. QA201 limita o refresh a 3 minutos E pelo menos 450 metros percorridos (ou no máximo duas tentativas após falha), evitando picos de chamadas cobradas.
 - No erro da API o cliente desenhava linha reta e inventava ETA a 35 km/h. QA201 não inventa dados; mantém apenas a última rota confirmada da mesma etapa ou mostra marcadores, emitindo aviso anterior.
 - O CSS do trip HUD tinha seletor incorreto, pois o atributo data-apois-trip-top-v6 fica no próprio cartão, não no pai. QA201 corrige o seletor, sem alterar o Entregador.
+- A barra inferior da viagem mostrava nome, mas omitia a nota genuína. QA201 acrescenta a nota ao lado do primeiro nome sem novo painel, exibindo "Novo" se ainda não houver avaliações.
 
 ## Gatilho de navegação vetorial — pendência externa concreta
 O usuário exige a aparência do mapa do Passageiro (JSON embarcado) E rotação real da câmera. Google Maps JS não aplica um JSON styles local quando Map ID está presente. É necessário importar e publicar `docs/google-maps/apois-passageiro-vector-style-import.json` no Google Maps Platform, associar a um Map ID JavaScript vetorial com tilt/heading e verificar a conta/custo. Nenhum Map ID APOIS Corridas foi encontrado no build do Motorista; só a chave da Maps JavaScript API. Sem acesso às configurações do Google Cloud, não é seguro ativar o mapa vetorial padrão, alterar cobrança nem afirmar homologação.

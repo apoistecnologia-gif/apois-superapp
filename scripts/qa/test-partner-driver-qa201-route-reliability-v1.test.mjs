@@ -24,6 +24,16 @@ test("QA201 never lies by drawing a straight line as turn-by-turn route",()=>{
  assert.ok(route.includes('throw new Error("route_provider_invalid_geometry")'));
  assert.ok(route.includes("setPolyline([]); setRouteSteps([]); setLegKm(null); setEtaSeconds(null);"));
 });
+test("QA201 trip shows actual star rating beside only the first name",()=>{
+ const a=code.indexOf("function ActiveTripNavOverlay(");
+ assert.ok(a>0,"Trip component present");
+ const trip=code.slice(a);
+ assert.ok(trip.includes('aria-label={"Avaliação: " + passengerRatingText(passenger)}'));
+ assert.ok(trip.includes("passengerFirstName(passenger?.name)"));
+ assert.ok(trip.includes("Number(passenger?.total_ratings ?? 0) > 0"));
+ assert.ok(trip.includes("onClick={handleComplete}"));
+});
+
 test("QA201 preserves driver + passenger, PIN, completion and non-overlap",()=>{
  for(const t of ["APOIS_ASSIGNED_PASSENGER_V6","apois_driver_offer_passenger","passengerIdentityRef.current === pid","onStart(pinCode)","onClick={handleComplete}","DriverMapErrorBoundary","onClick={onAccept}","onClick={onReject}"])assert.ok(code.includes(t),t);
  for(const t of ["[data-apois-trip-top-v6]{padding:7px 10px!important", "[data-apois-pickup-top-v4]>div{padding:7px 10px!important"])
