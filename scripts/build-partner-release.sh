@@ -281,6 +281,9 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa186-navigation-layout-v1.tes
 # QA190: short incoming offer and guaranteed return to forward map camera after route preview.
 node "$ROOT/scripts/fix-partner-driver-qa190-physical-video-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa190-physical-video-v1.test.mjs"
+# QA192: immutable vector/raster choice, Google runtime fallback and audited passenger RPC contract.
+node "$ROOT/scripts/fix-partner-driver-qa192-vector-passenger-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa192-vector-passenger-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"

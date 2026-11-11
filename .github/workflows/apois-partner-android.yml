@@ -23,6 +23,8 @@ on:
       - 'scripts/fix-partner-driver-forward-camera-v1.mjs'
       - 'scripts/fix-partner-driver-qa186-navigation-layout-v1.mjs'
       - 'scripts/fix-partner-driver-qa190-physical-video-v1.mjs'
+      - 'scripts/fix-partner-driver-qa192-vector-passenger-v1.mjs'
+      - 'scripts/qa/test-partner-driver-qa192-vector-passenger-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-qa190-physical-video-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-qa186-navigation-layout-v1.test.mjs'
       - 'scripts/fix-partner-driver-passenger-avatar-v1.mjs'
