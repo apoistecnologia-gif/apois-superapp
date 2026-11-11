@@ -39,6 +39,6 @@ test("Fallbacks do not bypass real route, voice, payments or ride lifecycle",()=
    "toast.message",
    "onAccept={handleAccept}","onReject={handleReject}",
    "navigationMode={inNavigationMode}",
-   "Finalizar corrida"
+   "finalizarCorridaMobile"
  ])assert.ok(route.includes(marker),"Lost existing ride operation: "+marker);
 });
