@@ -28,7 +28,7 @@ if(a<0||b<=a)throw Error("[FAIL] waiting CTA boundaries");
 const actions=[
 '      {/* APOIS_DRIVER_QA186_NAV_LAYOUT_V1: no callback/ride rule changes. */}',
 '      {isArrived && createPortal(',
-'        <div data-apois-waiting-actions-v1 className="fixed inset-x-0 bottom-0 z-[70] border-t border-[#E5E7EB] bg-white/95 text-[#111827] shadow-[0_-9px_28px_-18px_rgba(17,24,39,.35)] backdrop-blur-sm" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>',
+'        <div data-apois-waiting-actions-v1 className="fixed inset-x-0 bottom-0 z-[40] border-t border-[#E5E7EB] bg-white/95 text-[#111827] shadow-[0_-9px_28px_-18px_rgba(17,24,39,.35)] backdrop-blur-sm" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>',
 '          <div className="mx-auto flex w-full max-w-md flex-col gap-1.5 px-4 py-2">',
 '            <ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />',
 '            <button type="button" aria-label="Passageiro não apareceu" onClick={() => { setCancelReason("Passageiro não apareceu"); setCancelOpen(true); }}',
@@ -52,7 +52,7 @@ s=once(s,'                    autoFocus\n                    maxLength={4}\n    
 s=once(s,'className="fixed inset-0 z-[1000] flex items-end justify-center bg-[#101828]/60 sm:items-center"',
  'className="fixed inset-0 z-[1000] flex items-end justify-center overflow-y-auto overscroll-contain bg-[#101828]/60 pt-[max(8px,env(safe-area-inset-top))] sm:items-center"',"PIN scroll");
 s=once(s,'className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0"',
- 'className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0 scroll-mt-24',"PIN tap field");
+ 'className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0 scroll-mt-24"',"PIN tap field");
 // Respect RLS: no fabricated passenger identity.
 const fallback='{passenger?.name ?? "Passageiro"}';
 const hits=s.split(fallback).length-1;
