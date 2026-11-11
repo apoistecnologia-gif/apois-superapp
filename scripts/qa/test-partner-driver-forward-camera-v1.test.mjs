@@ -8,7 +8,7 @@ const route=read("src/routes/motorista.app.tsx");
 const map=read("src/components/MovviMap.tsx");
 test("Vector driver map enables heading and tilt; no change for other roles",()=>{
  for(const x of ["APOIS_DRIVER_VECTOR_MAP_V1",
-  "renderingType: isDriverRole ? google.maps.RenderingType.VECTOR : undefined",
+  "renderingType: isDriverRole && navigationMode && typeof google !== \"undefined\"",
   "tiltInteractionEnabled: isDriverRole",
   "headingInteractionEnabled: isDriverRole","getMapStyleForTheme(\"light\")"])
   assert.ok(map.includes(x),"Missing "+x);
