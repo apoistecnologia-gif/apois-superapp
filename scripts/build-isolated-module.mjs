@@ -448,6 +448,8 @@ if (name === 'corridas') {
   // patch only the prepared Corridas workspace, then snapshot intentional map changes.
   run(process.execPath, [resolve(root, 'scripts/fix-report12-destination-map-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report12-map-selection-v1.test.mjs')]);
+  run(process.execPath,[resolve(root,'scripts/fix-corridas-client-qa169-video-v1.mjs')]);
+  run(process.execPath,['--test',resolve(root,'scripts/qa/test-corridas-client-qa169-video-v1.test.mjs')]);
   // Relatório 13 / INV-066: valid destination/stop must not depend on local
   // recent-history write; favorites must confirm actual storage success.
   run(process.execPath, [resolve(root, 'scripts/fix-report13-destination-history-v1.mjs')]);
