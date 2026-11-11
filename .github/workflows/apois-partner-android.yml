@@ -25,6 +25,8 @@ on:
       - 'scripts/fix-partner-driver-qa190-physical-video-v1.mjs'
       - 'scripts/fix-partner-driver-qa192-vector-passenger-v1.mjs'
       - 'scripts/qa/test-partner-driver-qa192-vector-passenger-v1.test.mjs'
+      - 'scripts/fix-partner-driver-qa194-passenger-map-style-v1.mjs'
+      - 'scripts/qa/test-partner-driver-qa194-passenger-map-style-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-qa190-physical-video-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-qa186-navigation-layout-v1.test.mjs'
       - 'scripts/fix-partner-driver-passenger-avatar-v1.mjs'
