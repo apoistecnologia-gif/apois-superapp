@@ -42,19 +42,16 @@ const begin=s.indexOf("<ActiveTripNavOverlay");
 const finish=begin<0?-1:s.indexOf("        />",begin);
 if(begin<0||finish<begin)throw Error("[FAIL] QA209 active trip onComplete missing");
 let call=s.slice(begin,finish);
-const completeRegex=/await callComplete\(\{\s*data:\s*\{[\s\S]*?\}\s*\}\);/g;
-const completed=[...call.matchAll(completeRegex)];
-if(completed.length!==1)throw Error("[FAIL] QA209 callback complete statement count="+completed.length);
-call=call.replace(completeRegex,(statement)=>statement+"\n"+[
- "            // QA209: server RPC confirmed this ride completed.",
+// Earlier ride visual hardener already stores the authoritative completedRide
+// and ratingRef on success. Do not replace it with fabricated local rating data.
+const completeAnchor="ratingRef.current = completedRide;";
+if(call.split(completeAnchor).length!==2)throw Error("[FAIL] QA209 completedRide success anchor count="+(call.split(completeAnchor).length-1));
+call=call.replace(completeAnchor,completeAnchor+"\n"+[
+ "            // Server already confirmed completion. Clear the view synchronously.",
  "            const completedRideId = active.id;",
  "            if (activeRef.current?.id === completedRideId) activeRef.current = null;",
  "            setActive((previous) => previous?.id === completedRideId ? null : previous);",
- "            if (!activeRef.current || activeRef.current.id === completedRideId) clearDriverRouteVisuals();",
- "            if (!ratedRidesRef.current.has(completedRideId)) {",
- '              setRatingRide((previous) => previous?.id === completedRideId ? previous : { ...active, status: "finalizada" });',
- '              setStars(5); setRatingComment(""); setRatingSubmitted(false);',
- "            }"
+ "            if (!activeRef.current || activeRef.current.id === completedRideId) clearDriverRouteVisuals();"
 ].join("\n"));
 s=s.slice(0,begin)+call+s.slice(finish);
 for(const t of [

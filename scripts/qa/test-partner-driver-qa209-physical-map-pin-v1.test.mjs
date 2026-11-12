@@ -28,7 +28,7 @@ test("QA209 remove three native polylines synchronously only after successful ri
  "routeRequestEpochRef.current += 1","setPolyline([]); setRouteSteps([]); setEtaSeconds(null); setLegKm(null);",
  "{active && polyline.length > 0 && (",
  "setActive((previous) => previous?.id === completedRideId ? null : previous)",
- "setRatingRide((previous) => previous?.id === completedRideId"])
+ "ratingRef.current = completedRide;"])
  assert.ok(s.includes(t),t);
  assert.equal(s.split('onLoad={(line) => { driverRouteOverlayRefs.current.add(line); }}').length-1,3);
  assert.ok(s.includes("if (r.status === \"finalizada\") {"));
