@@ -238,7 +238,8 @@ jobs:
           node scripts/verify-corridas-trip-flow-ux.mjs
           node scripts/verify-corridas-dispatch-ux-v1.mjs
           node scripts/harden-corridas-pickup-map-focus.mjs
-          node scripts/harden-corridas-trip-flow-ux.mjs
+          # QA215: the legacy trip UX transform already ran inside build:corridas;
+          # reapplying it here would overwrite the tested pickup backoff.
           node scripts/verify-corridas-trip-flow-ux.mjs
           echo '[OK] Passageiro: UX idempotente, mapa pin visivel, cancelamento confirmado e dados limpos'
           grep -Fq 'APOIS_WEBVIEW_REFERRER_COMPAT_V1' .work/corridas/src/services/google/google-maps-loader.ts
