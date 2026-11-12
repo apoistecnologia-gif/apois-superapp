@@ -21,7 +21,7 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'unauthorized' USING ERRCODE='42501';
   END IF;
-  IF NOT isfinite(_lat) OR NOT isfinite(_lng) OR
+  IF _lat IS NULL OR _lng IS NULL OR
      _lat NOT BETWEEN -90 AND 90 OR _lng NOT BETWEEN -180 AND 180 THEN
     RETURN;
   END IF;
