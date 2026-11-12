@@ -520,7 +520,6 @@ if (name === 'corridas') {
    run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs')]);
    // QA216: patch only generated Corridas; keep source pins and other modules.
    run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-profile-qa216-v1.mjs')]);
-   run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-driver-identification-qa216-v1.mjs')]);
    run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs')]);
   // RV-15: restore scoped public-form placeholder contrast, then only user-facing
   // auth error copy and field accessibility on disposable Corridas; do not change
