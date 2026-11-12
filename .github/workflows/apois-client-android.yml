@@ -389,11 +389,13 @@ jobs:
           set -euo pipefail
           GRADLE_FILE="superapp/shell/android/app/build.gradle"
           test -s "$GRADLE_FILE"
-          sed -i -E "s/(versionCode[[:space:]]+)[0-9]+/\\1${GITHUB_RUN_NUMBER}/" "$GRADLE_FILE"
+          # Keep installable QA above historical 1.0.11-qa.1001 test builds.
+          QA_VERSION_CODE="$((2000 + GITHUB_RUN_NUMBER))"
+          sed -i -E "s/(versionCode[[:space:]]+)[0-9]+/\\1${QA_VERSION_CODE}/" "$GRADLE_FILE"
           sed -i -E "s/(versionName[[:space:]]+)\"[^\"]*\"/\\1\"1.0.11-qa.${GITHUB_RUN_NUMBER}\"/" "$GRADLE_FILE"
-          grep -Fq "versionCode ${GITHUB_RUN_NUMBER}" "$GRADLE_FILE"
+          grep -Fq "versionCode ${QA_VERSION_CODE}" "$GRADLE_FILE"
           grep -Fq "versionName \"1.0.11-qa.${GITHUB_RUN_NUMBER}\"" "$GRADLE_FILE"
-          echo "[OK] Android QA versionCode=${GITHUB_RUN_NUMBER} stamped"
+          echo "[OK] Android QA versionCode=${QA_VERSION_CODE} stamped"
 
       - name: Force persisted QA debug signing in generated Gradle
         if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
@@ -431,7 +433,7 @@ jobs:
           echo "[OK] APK signer matches protected pinned QA signing certificate"
           AAPT="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name aapt -perm -111 | sort -V | tail -n 1)"
           test -n "$AAPT" || { echo "::error::aapt missing; cannot verify Cliente APK package/version"; exit 1; }
-          "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$GITHUB_RUN_NUMBER" "1.0.11-qa.${GITHUB_RUN_NUMBER}"
+          "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$((2000 + GITHUB_RUN_NUMBER))" "1.0.11-qa.${GITHUB_RUN_NUMBER}"
           echo "[OK] Cliente APK package/version verified against QA configuration"
           # Verify the ACTUAL APK ZIP payload, not only intermediate web/dist.
           TEMP_APK_ASSETS="$(mktemp -d)"
