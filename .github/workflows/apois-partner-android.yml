@@ -4,6 +4,7 @@ name: APOIS Parceiro Android APK
 # QA 2026-11-09: rebuild with courier path selected from existing workspace even when env is relative.
 # V4 QA gate: correct normalized uppercase submission in generated React form
 # QA208: build installable homologation APK with user-confirmed APOIS JavaScript vector Map ID, reusing original signing; not a production deploy.
+# QA214: package approved QA209 camera, PIN and route-finish repairs for Android physical regression; keep original QA signature.
 
 on:
   workflow_dispatch:
