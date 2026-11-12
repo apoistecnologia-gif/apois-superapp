@@ -24,6 +24,8 @@ on:
       - 'scripts/build-isolated-module.mjs'
       - 'scripts/connect-corridas-passenger-driver-rating-v1.mjs'
       - 'scripts/qa/test-corridas-passenger-driver-rating-v1.test.mjs'
+      - 'scripts/fix-corridas-passenger-qa215-pickup-address-v1.mjs'
+      - 'scripts/qa/test-corridas-passenger-qa215-pickup-address-v1.test.mjs'
       - 'scripts/harden-corridas-trip-flow-ux.mjs'
       - 'scripts/qa/test-corridas-ride-footer-layout-v1.test.mjs'
       - 'scripts/fix-corridas-client-qa169-video-v1.mjs'
@@ -325,6 +327,7 @@ jobs:
           print_range services/rides/active-ride-service.ts 170 184
 
       - name: Create Android project
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         env:
           CORRIDAS_ANDROID_MAPS_API_KEY: ""
@@ -345,6 +348,7 @@ jobs:
           echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
 
       - name: Restore persistent QA Android debug signing
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
@@ -374,6 +378,7 @@ jobs:
           echo "[OK] Reusable QA signing identity verified"
 
       - name: Stamp monotonic QA Android version
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -386,12 +391,14 @@ jobs:
           echo "[OK] Android QA versionCode=${GITHUB_RUN_NUMBER} stamped"
 
       - name: Force persisted QA debug signing in generated Gradle
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         run: |
           set -euo pipefail
           node scripts/configure-apois-client-qa-debug-signing.mjs
 
       - name: Build installable debug APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -444,6 +451,7 @@ jobs:
           echo "[OK] APK Cliente de teste gerado"
 
       - name: Upload APOIS Cliente APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         uses: actions/upload-artifact@v4
         with:
           name: APOIS-Cliente-TESTE
