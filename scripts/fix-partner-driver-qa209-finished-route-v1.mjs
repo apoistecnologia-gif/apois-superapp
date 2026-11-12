@@ -42,19 +42,19 @@ const begin=s.indexOf("<ActiveTripNavOverlay");
 const finish=begin<0?-1:s.indexOf("        />",begin);
 if(begin<0||finish<begin)throw Error("[FAIL] QA209 active trip onComplete missing");
 let call=s.slice(begin,finish);
-const closing='            } });';
-if(call.split(closing).length!==2)throw Error("[FAIL] QA209 callback complete anchor="+(call.split(closing).length-1));
-call=call.replace(closing,[
- closing,
- '            // Server RPC has succeeded; do not wait for Realtime echo to clear the display.',
- '            const completedRideId = active.id;',
- '            if (activeRef.current?.id === completedRideId) activeRef.current = null;',
- '            setActive((previous) => previous?.id === completedRideId ? null : previous);',
- '            if (!activeRef.current || activeRef.current.id === completedRideId) clearDriverRouteVisuals();',
- '            if (!ratedRidesRef.current.has(completedRideId)) {',
+const completeRegex=/await callComplete\(\{\s*data:\s*\{[\s\S]*?\}\s*\}\);/g;
+const completed=[...call.matchAll(completeRegex)];
+if(completed.length!==1)throw Error("[FAIL] QA209 callback complete statement count="+completed.length);
+call=call.replace(completeRegex,(statement)=>statement+"\n"+[
+ "            // QA209: server RPC confirmed this ride completed.",
+ "            const completedRideId = active.id;",
+ "            if (activeRef.current?.id === completedRideId) activeRef.current = null;",
+ "            setActive((previous) => previous?.id === completedRideId ? null : previous);",
+ "            if (!activeRef.current || activeRef.current.id === completedRideId) clearDriverRouteVisuals();",
+ "            if (!ratedRidesRef.current.has(completedRideId)) {",
  '              setRatingRide((previous) => previous?.id === completedRideId ? previous : { ...active, status: "finalizada" });',
  '              setStars(5); setRatingComment(""); setRatingSubmitted(false);',
- '            }'
+ "            }"
 ].join("\n"));
 s=s.slice(0,begin)+call+s.slice(finish);
 for(const t of [
