@@ -42,9 +42,9 @@ home=one(home,
 );
 home=one(home,
   '              styles={APOIS_COURIER_MAP_STYLE}',
-  `              mapId={useCourierCloudMap ? courierCloudMapId : undefined}
+  `              mapId={useCourierCloudMap ? courierCloudMapId : null}
               colorScheme={ColorScheme.LIGHT}
-              styles={useCourierCloudMap ? undefined : APOIS_COURIER_MAP_STYLE}`,
+              styles={useCourierCloudMap ? null : APOIS_COURIER_MAP_STYLE}`,
   "home Google Map style"
 );
 for(const token of [
@@ -52,8 +52,8 @@ for(const token of [
   "<RecenterControl position=",
   'backgroundColor="#EDEAE4"',
   "clickableIcons={false}",
-  "mapId={useCourierCloudMap ? courierCloudMapId : undefined}",
-  "styles={useCourierCloudMap ? undefined : APOIS_COURIER_MAP_STYLE}",
+  "mapId={useCourierCloudMap ? courierCloudMapId : null}",
+  "styles={useCourierCloudMap ? null : APOIS_COURIER_MAP_STYLE}",
 ])if(!home.includes(token))throw Error("[FAIL] Courier live map contract lost "+token);
 
 // Route map already uses the VITE_GOOGLE_MAPS_MAP_ID variable.
