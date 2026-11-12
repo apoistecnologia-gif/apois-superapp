@@ -12,6 +12,8 @@ test("QA215 GPS polling never repeats reverse-geocode every second after an erro
  "void refreshAddress(false);","if (geocodeBusyRef.current) return;",
  "geocodeBusyRef.current = false;"])assert.ok(s.includes(term),term);
  assert.equal(s.split("action: \"reverse_geocode\"").length-1,1);
+ assert.ok(!s.includes("if (lastAttemptCell.current === key) return;"));
+ assert.ok(s.includes("if (lastAttemptCell.current !== key) lastAttemptCell.current = key;"));
 });
 test("QA215 only preserves a confirmed address near original GPS; old streets are never reused",()=>{
  for(const term of ["movedFromSuccess < 85","movedFromSuccess >= 120",

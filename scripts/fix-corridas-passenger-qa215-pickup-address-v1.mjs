@@ -66,9 +66,9 @@ if(!block.includes("action: \"reverse_geocode\"")||
  !block.includes("geocodeBusyRef.current = false;"))
  throw Error("[FAIL] QA215 deployed geocoding/cleanup contract changed");
 s=s.slice(0,start)+block+s.slice(end);
-const autoEffect='    if (location) {\n      refreshAddress();\n    }';
-one(autoEffect,'    if (location) {\n      void refreshAddress(false); // GPS watches obey cooldown and distance gate.\n    }',
-  "GPS watch must not request manual force");
+const autoEffect='    if (lastAttemptCell.current === key) return;\n    lastAttemptCell.current = key;\n    void refreshAddress();';
+one(autoEffect,'    // Retain cell diagnostics but let QA215 elapsed-time and distance gate decide.\n    if (lastAttemptCell.current !== key) lastAttemptCell.current = key;\n    void refreshAddress(false);',
+  "GPS watch must obey cooldown rather than permanent cell dedupe");
 for(const token of [
  marker,"lastAttemptRef","elapsed < 20000","elapsed < 60000",
  "movedFromSuccess < 85","movedFromSuccess >= 120",
