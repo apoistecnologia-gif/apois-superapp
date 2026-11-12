@@ -14,7 +14,7 @@ once('import PassengerMap from "@/components/map/PassengerMap";',
  'import PassengerMap from "@/components/map/PassengerMap";\nimport { PassengerDemandSharing } from "@/components/map/PassengerDemandSharing"; // APOIS_PASSENGER_QA218_OPTIN_V1',
  "import passenger map");
 once("function InicioPage() {",
- "function InicioPage() {\\n  const { user: demandUser } = useAuth();",
+ "function InicioPage() {\n  const { user: demandUser } = useAuth();",
  "dedicated authenticated presence identity");
 const start=s.indexOf("<PassengerMap");
 const end=start<0?-1:s.indexOf("/>",start);
