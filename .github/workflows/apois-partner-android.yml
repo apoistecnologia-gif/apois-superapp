@@ -1,4 +1,5 @@
 name: APOIS Parceiro Android APK
+# QA218: driver map verification checks both legacy demand and opt-in cohorts before APK packing.
 # QA218: known authorized web-only audit workflows are explicitly allowlisted; no release or deploy.
 # Build de homologacao Android solicitado em 12/11/2026: executar APK Parceiro no repositorio oficial publico.
 # test workflow: GitHub Actions debug APK — courier home structurally non-overlapping inline availability
