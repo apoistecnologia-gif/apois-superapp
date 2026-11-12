@@ -13,17 +13,13 @@ if(s.includes("APOIS_PASSENGER_QA218_OPTIN_V1"))throw Error("[FAIL] QA218 opt-in
 once('import PassengerMap from "@/components/map/PassengerMap";',
  'import PassengerMap from "@/components/map/PassengerMap";\nimport { PassengerDemandSharing } from "@/components/map/PassengerDemandSharing"; // APOIS_PASSENGER_QA218_OPTIN_V1',
  "import passenger map");
-const authMatches=[...s.matchAll(/const\\s+\\{([^}]*)\\}\\s*=\\s*useAuth\\(\\);/g)];
-if(authMatches.length!==1)throw Error("[FAIL] QA218 home auth hook count="+authMatches.length);
-const currentAuth=authMatches[0][0];
-const currentFields=authMatches[0][1];
-if(!/\\buser\\b/.test(currentFields)){
- s=s.replace(currentAuth,currentAuth.replace(currentFields,currentFields.trimEnd()+", user"));
-}
+once("function InicioPage() {",
+ "function InicioPage() {\\n  const { user: demandUser } = useAuth();",
+ "dedicated authenticated presence identity");
 const start=s.indexOf("<PassengerMap");
 const end=start<0?-1:s.indexOf("/>",start);
 if(start<0||end<0||end-start>900)throw Error("[FAIL] QA218 map JSX changed");
-const insert='\n        <PassengerDemandSharing authUserId={user?.id} latitude={location?.latitude}\n          longitude={location?.longitude} showControl={!hasDestination} />';
+const insert='\n        <PassengerDemandSharing authUserId={demandUser?.id} latitude={location?.latitude}\n          longitude={location?.longitude} showControl={!hasDestination} />';
 s=s.slice(0,end+2)+insert+s.slice(end+2);
 const file=resolve(root,"src/components/map/PassengerDemandSharing.tsx");
 mkdirSync(dirname(file),{recursive:true});
