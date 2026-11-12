@@ -28,9 +28,9 @@ test("Home map uses cloud light style with original inline palette fallback and 
  for(const token of [
   "APOIS_COURIER_EXCLUSIVE_VECTOR_MAP_20261112_V1",
   "const useCourierCloudMap = /^[0-9a-f]{16,32}$/i.test(courierCloudMapId);",
-  "mapId={useCourierCloudMap ? courierCloudMapId : undefined}",
+  "mapId={useCourierCloudMap ? courierCloudMapId : null}",
   "colorScheme={ColorScheme.LIGHT}",
-  "styles={useCourierCloudMap ? undefined : APOIS_COURIER_MAP_STYLE}",
+  "styles={useCourierCloudMap ? null : APOIS_COURIER_MAP_STYLE}",
   "<CourierStyledLiveMarkers position={mapPosition} merchants={nearbyMerchants} />",
   "<RecenterControl position=",
   "backgroundColor=\"#EDEAE4\"",
