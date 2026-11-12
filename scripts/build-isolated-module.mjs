@@ -511,6 +511,9 @@ if (name === 'corridas') {
    // QA215: physical Passenger address flicker after a completed trip; isolated module only.
    run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-qa215-pickup-address-v1.mjs')]);
    run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-qa215-pickup-address-v1.test.mjs')]);
+   // QA215 Android safe area for completed ride; do not change rating/skip RPC.
+   run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-qa215-completed-safe-area-v1.mjs')]);
+   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs')]);
   // RV-15: restore scoped public-form placeholder contrast, then only user-facing
   // auth error copy and field accessibility on disposable Corridas; do not change
   // password predicates, Supabase callback/session logic or email submission.

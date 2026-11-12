@@ -9,7 +9,7 @@ const pickup=read('src/hooks/use-pickup-address.tsx');
 const route=read('src/hooks/use-route.tsx');
 const map=read('src/components/map/PassengerMap.tsx');
 const dialog=read('src/components/rides/active/CancellationDialog.tsx');
-for(const token of ['APOIS_PICKUP_STABLE_V1','geocodeBusyRef.current','Math.hypot(north, east) < 85','addressKnownRef.current ? "success" : "error"'])
+for(const token of ['APOIS_PICKUP_STABLE_V1','geocodeBusyRef.current','APOIS_PASSENGER_QA215_PICKUP_BACKOFF_V1','movedFromSuccess < 85','elapsed < 20000','elapsed < 60000','addressKnownRef.current ? "success" : "error"'])
   assert.ok(pickup.includes(token),'pickup instavel: '+token);
 for(const token of ['focusPickup={!destination}','currentAddressText','&& !address'])
   assert.ok(home.includes(token),'home nao protege endereco: '+token);
