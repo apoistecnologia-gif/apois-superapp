@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - fix/motorista-ui-pdf-20261112
+      - fix/motorista-mapa-rotacao-video-20261112
     paths:
       - '.github/workflows/apois-motorista-pdf-qa-no-apk.yml'
       - 'scripts/fix-partner-driver-pdf-notes-20261112-v1.mjs'
+      - 'scripts/fix-partner-driver-video-map-rotation-20261112-v1.mjs'
+      - 'scripts/qa/test-partner-driver-video-map-rotation-20261112-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs'
       - 'scripts/build-partner-release.sh'
   workflow_dispatch:
@@ -55,6 +58,8 @@ jobs:
         run: |
           set -euo pipefail
           node --check scripts/fix-partner-driver-pdf-notes-20261112-v1.mjs
+          node --check scripts/fix-partner-driver-video-map-rotation-20261112-v1.mjs
+          node --check scripts/qa/test-partner-driver-video-map-rotation-20261112-v1.test.mjs
           node --check scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs
           npm run verify:pins
       - name: Web-only build and PDF regressions (NO APK)
@@ -65,6 +70,8 @@ jobs:
           bash scripts/build-partner-release.sh
           grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'APOIS_DRIVER_VIDEO_20261112_ROTATION_V1' .work/partner-motorista/src/components/MovviMap.tsx
+          grep -Fq 'driverCameraHistory.delete(map)' .work/partner-motorista/src/routes/motorista.app.tsx
           test -s superapp/partner-shell/dist/modules/motorista/index.html
           test -s superapp/partner-shell/dist/modules/entregador/index.html
           if find . -type f -name '*.apk' -print -quit | grep -q .; then
