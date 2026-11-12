@@ -25,7 +25,7 @@ const file=resolve(root,"src/components/map/PassengerDemandSharing.tsx");
 mkdirSync(dirname(file),{recursive:true});
 writeFileSync(file,readFileSync(resolve("scripts/templates/PassengerDemandSharing.tsx"),"utf8"),"utf8");
 for(const text of ["APOIS_PASSENGER_QA218_OPTIN_V1",
- "PassengerDemandSharing authUserId={user?.id}","showControl={!hasDestination}",
+ "PassengerDemandSharing authUserId={demandUser?.id}","showControl={!hasDestination}",
  "useNearbyPassengerDrivers","data-apois-qa217-route-distance"])
  if(!s.includes(text))throw Error("[FAIL] QA218 lost "+text);
 writeFileSync(path,s,"utf8");
