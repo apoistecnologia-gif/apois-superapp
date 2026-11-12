@@ -13,7 +13,13 @@ if(s.includes("APOIS_PASSENGER_QA218_OPTIN_V1"))throw Error("[FAIL] QA218 opt-in
 once('import PassengerMap from "@/components/map/PassengerMap";',
  'import PassengerMap from "@/components/map/PassengerMap";\nimport { PassengerDemandSharing } from "@/components/map/PassengerDemandSharing"; // APOIS_PASSENGER_QA218_OPTIN_V1',
  "import passenger map");
-once("  const { profile } = useAuth();","  const { profile, user } = useAuth();","auth identity");
+const authMatches=[...s.matchAll(/const\\s+\\{([^}]*)\\}\\s*=\\s*useAuth\\(\\);/g)];
+if(authMatches.length!==1)throw Error("[FAIL] QA218 home auth hook count="+authMatches.length);
+const currentAuth=authMatches[0][0];
+const currentFields=authMatches[0][1];
+if(!/\\buser\\b/.test(currentFields)){
+ s=s.replace(currentAuth,currentAuth.replace(currentFields,currentFields.trimEnd()+", user"));
+}
 const start=s.indexOf("<PassengerMap");
 const end=start<0?-1:s.indexOf("/>",start);
 if(start<0||end<0||end-start>900)throw Error("[FAIL] QA218 map JSX changed");
