@@ -14,9 +14,9 @@ function once(a,b,label){
  s=s.replace(a,b);
 }
 if(s.includes("APOIS_PASSENGER_DRIVER_ID_QA216_V1"))throw Error("[FAIL] DriverCard duplicated");
-once('import React from "react";',
-     'import React, { useEffect, useState } from "react";\nimport { supabase } from "@/integrations/supabase/client";',
-     'imports');
+once('import { ActiveRide } from "@/types/rides/active-ride";',
+     'import { useEffect, useState } from "react";\nimport { supabase } from "@/integrations/supabase/client";\nimport { ActiveRide } from "@/types/rides/active-ride";',
+     'stable ride type import');
 once(
  'export const DriverCard: React.FC<DriverCardProps> = ({ ride }) => {\n  if (!ride.driver_id && !ride.driver_name) return null;',
  `export const DriverCard: React.FC<DriverCardProps> = ({ ride }) => {
