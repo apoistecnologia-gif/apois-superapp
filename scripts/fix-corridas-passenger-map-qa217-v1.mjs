@@ -74,14 +74,9 @@ s=one(s,
 const nativeDep='}, [destination, displayedRoutePoints, origin, status, validDriverLocation, focusPickup]);';
 if(!s.includes(nativeDep))throw Error("[FAIL] QA217 native effect deps");
 s=s.replace(nativeDep,'}, [destination, effectiveJourneyPoints, origin, status, validDriverLocation, focusPickup, approachMode]);');
-const jsDep='}, [destination, orderedStops, origin, route?.decodedPoints, status, focusPickup]);';
-if(s.includes(jsDep)){
- s=s.replace(jsDep,'}, [destination, orderedStops, origin, effectiveJourneyPoints, status, focusPickup, approachMode]);');
-}else{
- const fallback='}, [destination, orderedStops, origin, route?.decodedPoints, status]);';
- if(s.includes(fallback))s=s.replace(fallback,'}, [destination, orderedStops, origin, effectiveJourneyPoints, status, focusPickup, approachMode]);');
- else throw Error("[FAIL] QA217 JS map effect deps");
-}
+const jsDeps=s.match(/  \}, \[[^\n]*orderedStops[^\n]*status[^\n]*\]\);/g)||[];
+if(jsDeps.length!==1)throw Error("[FAIL] QA217 JS map dependencies count="+jsDeps.length+" lines="+s.split("\\n").filter(x=>x.includes("orderedStops")&&x.includes("status")).slice(-5).join(" | "));
+s=s.replace(jsDeps[0],jsDeps[0].replace(']);',', effectiveJourneyPoints, approachMode]);'));
 s=one(s,'  const retry = () => {',
  readFileSync(resolve("scripts/templates/PassengerMapNearbyEffects.txt"),"utf8")+'  const retry = () => {',
  "route fit and pulse effects");
