@@ -1,4 +1,5 @@
 name: APOIS Cliente Android APK
+# QA219: maps-only nearby pins; no overlay; automatic coarse presence with profile opt-out.
 # QA Android: corrigir registro do geocodificador no MainActivity já protegido contra overscroll (12/11/2026).
 # QA218: known authorized web-only audit workflows are explicitly allowlisted; no release or deploy.
 # Build de homologacao Android solicitado em 12/11/2026: executar APK Cliente no repositorio oficial publico.
@@ -17,12 +18,18 @@ on:
       - audit/ecossistema-20261107
       - audit/continuacao-20261107
       - build/qa218-android-homologacao-20261112
+      - fix/passageiro-mapa-livre-qa219-20261112
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-android-github-homolog-20261029
       - test/apois-pix-simulado-isolado-20261029
     paths:
       - '.github/workflows/apois-client-android.yml'
+      - 'scripts/fix-corridas-passenger-home-qa217-v1.mjs'
+      - 'scripts/fix-corridas-passenger-optin-qa218-v1.mjs'
+      - 'scripts/templates/PassengerDemandSharing.tsx'
+      - 'scripts/qa/test-passenger-optin-zones-qa218.test.mjs'
+      - 'scripts/qa/test-corridas-passenger-map-qa217-v1.test.mjs'
       - 'scripts/fix-report08-passenger-redispatch-v1.mjs'
       - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
@@ -77,7 +84,7 @@ permissions:
 
 jobs:
   build-client-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112'))
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/passageiro-mapa-livre-qa219-20261112'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
