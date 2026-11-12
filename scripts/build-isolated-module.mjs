@@ -511,6 +511,10 @@ if (name === 'corridas') {
    // QA215: physical Passenger address flicker after a completed trip; isolated module only.
    run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-qa215-pickup-address-v1.mjs')]);
    run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-qa215-pickup-address-v1.test.mjs')]);
+   // Android OS reverse-geocoder recovery only when Supabase address lookup fails.
+   // Keep pinned sources, ride coordinates, native Maps and payments unchanged.
+   run(process.execPath, [resolve(root, 'scripts/fix-corridas-native-geocoder-recovery-v1.mjs')]);
+   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-native-geocoder-v1.test.mjs')]);
    // QA215 Android safe area for completed ride; do not change rating/skip RPC.
    run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-qa215-completed-safe-area-v1.mjs')]);
    run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs')]);
