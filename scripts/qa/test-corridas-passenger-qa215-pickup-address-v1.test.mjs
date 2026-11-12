@@ -24,6 +24,6 @@ test("QA215 still calls deployed, authenticated/quotable endpoint and keeps UI e
  for(const term of ['"google-maps-address"','action: "reverse_geocode"',
  "setPickupShortLabel(exactShortLabel)","setPickupLabel(exactAddress)",
  'setStatus("success");',
- 'setError("Não foi possível consultar o endereço. Verifique sua conexão.");'])
+ 'throw new Error("Não foi possível consultar o endereço. Verifique sua conexão.");'])
  assert.ok(s.includes(term),term);
 });
