@@ -303,6 +303,10 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa202-cloud-vector-readiness-v
 node "$ROOT/scripts/fix-partner-driver-qa209-camera-v1.mjs"
 node "$ROOT/scripts/fix-partner-driver-qa209-finished-route-v1.mjs"
 node "$ROOT/scripts/fix-partner-driver-qa209-pin-controls-v1.mjs"
+# PDF 12/11: presentation-only physical Android notes, after all QA209 patches.
+# Never build an APK here; this script only changes disposable Motorista web source.
+node "$ROOT/scripts/fix-partner-driver-pdf-notes-20261112-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa209-physical-map-pin-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
