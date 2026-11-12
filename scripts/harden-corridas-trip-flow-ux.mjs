@@ -16,6 +16,10 @@ function change(s,from,to,label){
     if(label==='memoizacao pickup' && s.includes('APOIS_PASSENGER_QA215_PICKUP_BACKOFF_V1') &&
        s.includes('const refreshAddress = useCallback(async (force = true) => {') &&
        s.includes('const lastGeocodeRef = useRef<') && s.includes('geocodeBusyRef.current = false;')) return s;
+    if(label==='erro transitório preserva endereço' &&
+       s.includes('APOIS_PASSENGER_QA215_PICKUP_BACKOFF_V1') &&
+       s.includes('if (!addressKnownRef.current) { setAddress(null); setPickupLabel(null); setPickupShortLabel(null); }') &&
+       s.includes('setStatus(addressKnownRef.current ? "success" : "error");')) return s;
     if(label==='controle de jitter de gps'){
       const marker='    setIsLoading(true);\n    setStatus("identifying");';
       if(s.includes(marker)){
