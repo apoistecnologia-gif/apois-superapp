@@ -234,9 +234,15 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const action = String(body?.action ?? "");
-    const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY")?.trim();
+    // APOIS_CORRIDAS_GOOGLE_SECRET_ALIAS_V1: Routes and geocoding belong to
+    // the same Corridas environment, but may use either legacy secret name.
+    // Do not copy browser/Android credentials or expose a key to the client.
+    const apiKey =
+      Deno.env.get("GOOGLE_MAPS_API_KEY")?.trim() ||
+      Deno.env.get("GOOGLE_MAPS_PLATFORM_API_KEY")?.trim();
 
     if (action === "reverse_geocode") {
+      if (!apiKey) console.warn("APOIS Corridas reverse geocoding: no server-side Google key configured");
       const lat = Number(body?.lat);
       const lng = Number(body?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return json({ error: "Coordenadas inválidas" }, 400);
