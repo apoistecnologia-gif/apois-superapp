@@ -8,14 +8,14 @@ const root=resolve(process.env.APOIS_MOTORISTA_WORKSPACE||".work/partner-motoris
 const src=readFileSync(resolve(root,"src/routes/motorista.app.tsx"),"utf8");
 const css=readFileSync(resolve(root,"src/styles.css"),"utf8");
 function section(begin,end){
- const a=src.indexOf(begin),b=a<0?-1:src.indexOf(end,a+begin.length);
+ const a=src.indexOf(begin),b=a<0?-1:(end==="__EOF__"?src.length:src.indexOf(end,a+begin.length));
  assert.ok(a>=0&&b>a,begin+" to "+end);
  return src.slice(a,b);
 }
 const offer=section("function IncomingOffer(","\nfunction InfoCard(");
 const pickup=section("function PickupNavOverlay(","\nfunction CircleAction(");
 const waiting=section("function ActiveRidePanel(","\nfunction ActionButton(");
-const trip=section("function ActiveTripNavOverlay(","\nfunction RatingScreen(");
+const trip=section("function ActiveTripNavOverlay(","__EOF__");
 test("P1 offer expands on tap; real passenger and preferences remain visible with accept/reject",()=>{
  for(const value of ["data-apois-offer-expandable-v1","setOfferExpanded","aria-expanded={offerExpanded}","Ver passageiro e preferências",
   "CountdownRing","onClick={onAccept}","onClick={onReject}","<ApoisRideComfortCard details={ride.service_details}","onClick={onOpenProfile}"])
