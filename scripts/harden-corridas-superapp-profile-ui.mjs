@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const path = resolve('.work/corridas/src/routes/_authenticated.perfil.tsx');
@@ -42,10 +42,18 @@ if (!source.includes('profileAvatarUrl') || !source.includes('user?.user_metadat
 }
 if (!source.includes('min-h-[68px]')) throw new Error('[FAIL] Corridas: Perfil sem alvos de toque adequados');
 if (!source.includes('env(safe-area-inset-top)')) throw new Error('[FAIL] Corridas: Perfil sem safe area superior');
+// QA216: the branded round photo moved to a dedicated component. Verify the
+// actual red border there, rather than requiring an obsolete Avatar class in
+// the profile route. All other visual/interaction assertions remain enforced.
+const generatedPhoto = resolve('.work/corridas/src/components/profile/PassengerProfilePhoto.tsx');
+const photoBrandRingVerified =
+  source.includes('APOIS_PASSENGER_PROFILE_QA216_V1') &&
+  existsSync(generatedPhoto) &&
+  readFileSync(generatedPhoto, 'utf8').includes('rounded-full border-2 border-[#E51B23]');
 if (
   !source.includes('bg-[#F7F7F8]') ||
   !source.includes('text-[#111111]') ||
-  !source.includes('border-[#E51B23]')
+  (!source.includes('border-[#E51B23]') && !photoBrandRingVerified)
 ) {
   throw new Error('[FAIL] Corridas: Perfil não recebeu a identidade vermelho/branco');
 }
