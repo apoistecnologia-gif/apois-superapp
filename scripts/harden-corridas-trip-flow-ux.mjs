@@ -11,6 +11,11 @@ function patch(path,transform){
 function change(s,from,to,label){
   if(s.includes(to))return s;
   if(!s.includes(from)){
+    // QA215: accept a previously verified bounded hook during a second legacy
+    // hardening pass, without silently accepting missing geocode locks.
+    if(label==='memoizacao pickup' && s.includes('APOIS_PASSENGER_QA215_PICKUP_BACKOFF_V1') &&
+       s.includes('const refreshAddress = useCallback(async (force = true) => {') &&
+       s.includes('const lastGeocodeRef = useRef<') && s.includes('geocodeBusyRef.current = false;')) return s;
     if(label==='controle de jitter de gps'){
       const marker='    setIsLoading(true);\n    setStatus("identifying");';
       if(s.includes(marker)){
