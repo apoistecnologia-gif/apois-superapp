@@ -60,7 +60,9 @@ jobs:
       - name: Web-only build and PDF regressions (NO APK)
         run: |
           set -euo pipefail
-          # Test web builder directly: the global audit:ui gate rejects\n          # even baseline QA workflows; do not loosen its production policy.\n          bash scripts/build-partner-release.sh
+          # Test web builder directly: the global audit:ui gate rejects
+          # even baseline QA workflows; do not loosen its production policy.
+          bash scripts/build-partner-release.sh
           grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx
           test -s superapp/partner-shell/dist/modules/motorista/index.html
