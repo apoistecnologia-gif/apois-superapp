@@ -172,7 +172,21 @@ if(process.argv.includes("--dist")){
   const courierLiveMap = mapPatched.slice(mapPatched.indexOf("export function CourierLiveMap("),mapPatched.indexOf("export function CourierRouteMap("));
   const courierOnlineToggle = courierPatched.slice(courierPatched.indexOf("  const toggleOnline = async () => {"),courierPatched.indexOf("\n  const acceptOffer = async",courierPatched.indexOf("  const toggleOnline = async () => {")));
   const courierStatusCard = waitingPatched.slice(waitingPatched.indexOf("export function CourierStatusCard("),waitingPatched.indexOf("export function CourierWaitingSheet("));
+  // QA218: the approved courier-exclusive cloud vector map intentionally
+  // replaces inline 'styles' with Map ID + palette fallback. Verify BOTH gates
+  // instead of expecting the old inline-only style and rejecting valid APKs.
+  if (mapPatched.includes("APOIS_COURIER_EXCLUSIVE_VECTOR_MAP_20261112_V1")) {
+    all(mapPatched,[
+      "APOIS_COURIER_CLIENT_MAP_V4",
+      "const APOIS_COURIER_MAP_STYLE: google.maps.MapTypeStyle[]",
+      "CourierStyledLiveMarkers",
+      "mapId={useCourierCloudMap ? courierCloudMapId : null}",
+      "styles={useCourierCloudMap ? null : APOIS_COURIER_MAP_STYLE}",
+      '"#0B2944"','"#EDEAE4"',
+    ], "Courier cloud vector Map ID and official inline fallback both preserved");
+  } else {
   all(mapPatched,["APOIS_COURIER_CLIENT_MAP_V4","const APOIS_COURIER_MAP_STYLE: google.maps.MapTypeStyle[]","CourierStyledLiveMarkers","styles={APOIS_COURIER_MAP_STYLE}","\"#0B2944\"","\"#EDEAE4\""],"Courier home reuses actual APOIS Cliente map colors");
+  }
   check(!courierLiveMap.includes("mapId={mapId}"),"Courier home does not combine local styles with incompatible cloud mapId");
   check(!courierLiveMap.includes("<AdvancedMarker"),"Courier home replaces advanced markers incompatible with styled classic map");
   all(courierOnlineToggle,["APOIS_COURIER_FAST_ONLINE_V4","Date.now() - currentPosition.recordedAt <= 20_000","accuracy <= 100","rpc(\"bootstrap_courier_location\"","rpc(\"set_courier_online\"","backgroundStarted = await startCourierNativeLocation();","ensureCourierPushRegistration(true)","setAvailability((previous: any) => ({ ...(previous ?? {}), is_online: true }))","setAvailability((previous: any) => ({ ...(previous ?? {}), is_online: false }))","void loadCourierOperations(courier.id).catch"],"Online activation is server-confirmed, non-blocking after validation and uses recent GPS safely");
