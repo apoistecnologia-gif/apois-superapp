@@ -60,22 +60,22 @@ test("Reverse-specific Google timeout cancels hung requests and continues to fal
   assert.ok(timers.scheduled.includes(2400));
 });
 
-test("Other Google features preserve original unbounded lookup behavior", async () => {
+test("Only Geocoding (reverse) uses Google legacy query; Places uses New adapter", async () => {
   const timers = fakeTimers();
   let called = 0;
   const {googleJson} = googleHelper(async()=>{called++;return {
-    ok:true,status:200,json:async()=>({status:"OK",predictions:[{description:"endereco"}]})
+    ok:true,status:200,json:async()=>({status:"OK",results:[{formatted_address:"Petrolina"}]})
   }}, timers);
-  const result = await googleJson(new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json"));
-  assert.equal(result.predictions.length, 1);
+  const result = await googleJson(new URL("https://maps.googleapis.com/maps/api/geocode/json"));
+  assert.equal(result.results.length, 1);
   assert.equal(called, 1);
   assert.equal(timers.scheduled.length, 0);
   const reverse = between('if (action === "reverse_geocode") {', 'if (action === "autocomplete") {');
   const auto = between('if (action === "autocomplete") {', 'if (action === "place_details") {');
   const details = src.slice(src.indexOf('if (action === "place_details") {'));
   assert.ok(reverse.includes('googleJson(url, GOOGLE_LOOKUP_TIMEOUT_MS)'));
-  assert.ok(auto.includes('googleJson(url);'));
-  assert.ok(details.includes('googleJson(url);'));
+  assert.ok(auto.includes('placesNewAutocomplete('));
+  assert.ok(details.includes('placesNewDetails('));
 });
 
 test("Photon reverse transport cannot block the passenger screen for 50 seconds", async () => {
@@ -114,20 +114,21 @@ test("No unauthenticated access, rate limit bypass or new provider",()=>{
 });
 
 
-test("Server geocoding key recognizes either established Corridas secret name",()=>{
+test("Corridas-specific server secret takes precedence; legacy names remain compatible",()=>{
   const start=src.indexOf("    const apiKey =\n");
   const end=src.indexOf('\n\n    if (action === "reverse_geocode") {',start);
   assert.ok(start>=0 && end>start, "key lookup location must remain stable");
   const snippet=src.slice(start,end);
-  assert.ok(snippet.includes('Deno.env.get("GOOGLE_MAPS_PLATFORM_API_KEY")'));
-  assert.ok(snippet.includes('Deno.env.get("GOOGLE_MAPS_API_KEY")'));
+  for(const name of ["GOOGLE_MAPS_CORRIDAS_API_KEY","GOOGLE_MAPS_API_KEY","GOOGLE_MAPS_PLATFORM_API_KEY"])
+    assert.ok(snippet.includes('Deno.env.get("'+name+'")'));
   assert.ok(!snippet.includes("CORRIDAS_WEB_MAPS_API_KEY"));
   const resolve = values => new Function("Deno",snippet+"\nreturn apiKey;")({
     env:{get:key=>values[key]??undefined}
   });
+  assert.equal(resolve({GOOGLE_MAPS_CORRIDAS_API_KEY:"corridas-only"}),"corridas-only");
   assert.equal(resolve({GOOGLE_MAPS_PLATFORM_API_KEY:"platform-server"}),"platform-server");
   assert.equal(resolve({GOOGLE_MAPS_API_KEY:"legacy-server"}),"legacy-server");
-  assert.equal(resolve({GOOGLE_MAPS_API_KEY:"legacy-server",GOOGLE_MAPS_PLATFORM_API_KEY:"platform-server"}),"legacy-server");
+  assert.equal(resolve({GOOGLE_MAPS_CORRIDAS_API_KEY:"corridas-only",GOOGLE_MAPS_API_KEY:"legacy-server"}),"corridas-only");
   assert.equal(resolve({}),undefined);
   assert.ok(src.includes('if (!apiKey) console.warn("APOIS Corridas reverse geocoding: no server-side Google key configured")'));
 });
