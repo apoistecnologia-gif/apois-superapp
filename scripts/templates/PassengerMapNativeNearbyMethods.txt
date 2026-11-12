@@ -1,0 +1,23 @@
+  // APOIS_PASSENGER_QA217_MAP_V1: red pins are anonymous and approximate.
+  // Native marker refresh is serialized by the caller and limited to 12 points.
+  public async setNearbyDriverMarkers(
+    mapId: string,
+    positions: Array<{lat:number;lng:number}>,
+    dim = false,
+  ): Promise<void> {
+    const map = this.maps.get(mapId);
+    if (!map) return;
+    const old = this.nearbyDriverMarkerIds.get(mapId) ?? [];
+    this.nearbyDriverMarkerIds.set(mapId, []);
+    if (old.length) await map.removeMarkers(old).catch(() => undefined);
+    if (!positions.length) return;
+    const ids = await map.addMarkers(positions.slice(0, 12).map(coordinate => ({
+      coordinate,
+      title: "Motorista disponível (posição aproximada)",
+      iconUrl: "assets/markers/apois-nearby-red.svg",
+      opacity: dim ? 0.3 : 1,
+      zIndex: 20,
+    })));
+    this.nearbyDriverMarkerIds.set(mapId, ids);
+  }
+
