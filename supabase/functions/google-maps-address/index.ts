@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { placesNewAutocomplete, placesNewDetails } from "./places-new-compat.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -237,7 +238,11 @@ Deno.serve(async (req: Request) => {
     // APOIS_CORRIDAS_GOOGLE_SECRET_ALIAS_V1: Routes and geocoding belong to
     // the same Corridas environment, but may use either legacy secret name.
     // Do not copy browser/Android credentials or expose a key to the client.
+    // APOIS_CORRIDAS_PLACES_NEW_V1: distinct server-side key; keep previous
+    // Corridas-only server variable names as compatibility fallbacks.
+    // The GitHub WebView and Android keys MUST NOT be used for REST services.
     const apiKey =
+      Deno.env.get("GOOGLE_MAPS_CORRIDAS_API_KEY")?.trim() ||
       Deno.env.get("GOOGLE_MAPS_API_KEY")?.trim() ||
       Deno.env.get("GOOGLE_MAPS_PLATFORM_API_KEY")?.trim();
 
@@ -283,20 +288,17 @@ Deno.serve(async (req: Request) => {
 
       if (apiKey) {
         try {
-          const url = new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json");
-          url.searchParams.set("input", localizedInput);
-          url.searchParams.set("components", "country:br");
-          url.searchParams.set("language", "pt-BR");
-          if (hasLocation) {
-            url.searchParams.set("location", `${lat},${lng}`);
-            url.searchParams.set("radius", "50000");
-            url.searchParams.set("strictbounds", "true");
-          }
-          url.searchParams.set("key", apiKey);
-          const payload = await googleJson(url);
-          if ((payload.predictions ?? []).length > 0) return json({ predictions: payload.predictions, provider: "google" });
+          // Google Places API (New) is now the only Google autocomplete
+          // endpoint; preserve legacy-shaped predictions for installed APKs.
+          const predictions = await placesNewAutocomplete(
+            apiKey, localizedInput,
+            hasLocation ? lat : undefined,
+            hasLocation ? lng : undefined,
+          );
+          return json({ predictions, provider: "google_places_new" });
         } catch (googleError) {
-          console.error("Google autocomplete failed; using fallback", googleError);
+          // Do not log user's query, coordinates or the credential.
+          console.error("Google Places API (New) autocomplete unavailable; using existing fallback", googleError);
         }
       }
 
@@ -327,13 +329,14 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!apiKey) return json({ error: "Não foi possível abrir os detalhes deste endereço." }, 503);
-      const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
-      url.searchParams.set("place_id", placeId);
-      url.searchParams.set("fields", "address_components,geometry");
-      url.searchParams.set("language", "pt-BR");
-      url.searchParams.set("key", apiKey);
-      const payload = await googleJson(url);
-      return json({ result: payload.result ?? null, provider: "google" });
+      try {
+        const result = await placesNewDetails(apiKey, placeId);
+        return json({ result, provider: "google_places_new" });
+      } catch (googleError) {
+        // No Place ID, user text, credentials or coordinates in logs.
+        console.error("Google Places API (New) details unavailable", googleError);
+        return json({ error: "Detalhes do destino temporariamente indisponíveis." }, 503);
+      }
     }
 
     return json({ error: "Ação inválida" }, 400);
