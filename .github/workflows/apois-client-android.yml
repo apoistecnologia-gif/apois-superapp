@@ -212,6 +212,9 @@ jobs:
           grep -Fq 'APOIS_PASSENGER_LIVE_FOCUS_V2' scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-pickup-map-focus.mjs
           node --check scripts/harden-corridas-pickup-timeout-v1.mjs
+          node --check scripts/fix-corridas-native-geocoder-recovery-v1.mjs
+          node --check scripts/install-apois-client-native-geocoder.mjs
+          node --check scripts/qa/test-corridas-native-geocoder-v1.test.mjs
           grep -Fq 'relative flex h-full min-h-0' scripts/harden-corridas-trip-flow-ux.mjs
           grep -Fq 'APOIS_PICKUP_STABLE_V1' scripts/harden-corridas-trip-flow-ux.mjs
           node --check scripts/verify-corridas-trip-flow-ux.mjs
@@ -348,6 +351,11 @@ jobs:
           bunx cap sync android
           cd ../..
           node scripts/configure-superapp-android.mjs
+          node scripts/install-apois-client-native-geocoder.mjs
+          test -s superapp/shell/android/app/src/main/java/br/com/apois/app/APOISNativeGeocoderPlugin.java
+          grep -Fq 'registerPlugin(APOISNativeGeocoderPlugin.class)' superapp/shell/android/app/src/main/java/br/com/apois/app/MainActivity.java
+          grep -Fq 'APOIS_NATIVE_GEOCODER_RECOVERY_V1' .work/corridas/src/hooks/use-pickup-address.tsx
+          echo '[OK] Android Cliente: fallback nativo de endereco instalado e registrado'
           node scripts/qa/verify-apois-mobile-viewport-v1.mjs cliente --native
           MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
