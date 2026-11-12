@@ -20,7 +20,7 @@ function replaceOnce(text,from,to,reason) {
 }
 function component(begin,end,reason,fn) {
   const a=source.indexOf(begin);
-  const b=a<0?-1:source.indexOf(end,a+begin.length);
+  const b=a<0?-1:(end==="__EOF__"?source.length:source.indexOf(end,a+begin.length));
   if(a<0||b<=a)throw Error("[FAIL] PDF UI section "+reason);
   const old=source.slice(a,b),updated=fn(old);
   if(old===updated)throw Error("[FAIL] PDF UI unchanged: "+reason);
@@ -127,7 +127,7 @@ component("function ActiveRidePanel(","\nfunction ActionButton(","P3-5 waiting+P
 
 // P6 — a single top navigation card with compact inline data; no three
 // separate metric boxes or extra route cards. Keep Ver rota / Seguir buttons.
-component("function ActiveTripNavOverlay(","\nfunction RatingScreen(","P6 trip HUD",block=>{
+component("function ActiveTripNavOverlay(","__EOF__","P6 trip HUD",block=>{
   // The TripOverlay is the only valid visible top HUD in em_viagem.
   const a=block.indexOf('          <div className="flex items-center justify-between gap-2">\n            <TopStat');
   const b=a<0?-1:block.indexOf('\n          </div>',a);
