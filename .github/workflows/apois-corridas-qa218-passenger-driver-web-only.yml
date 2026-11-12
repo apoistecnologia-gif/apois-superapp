@@ -1,8 +1,9 @@
-name: APOIS QA218 Passageiro e Motorista - Web Only
+name: APOIS QA219 Mapa Livre Passageiro - Web Only
 on:
   push:
     branches:
       - fix/passageiro-presenca-motorista-zonas-20261112
+      - fix/passageiro-mapa-livre-qa219-20261112
     paths:
       - '.github/workflows/apois-corridas-qa218-passenger-driver-web-only.yml'
       - 'scripts/build-isolated-module.mjs'
@@ -108,10 +109,13 @@ jobs:
           grep -Fq "APOIS_PASSENGER_QA217_HOME_V1" .work/corridas/src/routes/_authenticated.inicio.tsx
           test -s .work/corridas/src/components/map/PassengerDemandSharing.tsx
           grep -Fq "APOIS_PASSENGER_QA218_OPTIN_V1" .work/corridas/src/routes/_authenticated.inicio.tsx
+          grep -Fq "APOIS_PASSENGER_QA219_PRIVACY_V1" .work/corridas/src/routes/_authenticated.perfil.tsx
+          ! grep -Fq "data-apois-qa217-nearby-label" .work/corridas/src/routes/_authenticated.inicio.tsx
+          grep -Fq "return null;" .work/corridas/src/components/map/PassengerDemandSharing.tsx
           npm run build:motorista
           grep -Fq "apois_driver_passenger_hotspots" .work/motorista/src/routes/motorista.app.tsx
           if find . -type f -name '*.apk' -print -quit | grep -q .; then
             echo "::error::APK proibido nesta etapa"
             exit 1
           fi
-          echo "[OK] QA218 Passageiro + Motorista: typecheck, testes e builds web, sem APK"
+          echo "[OK] QA219 Passageiro mapa livre, opt-out no Perfil e testes web; sem APK"
