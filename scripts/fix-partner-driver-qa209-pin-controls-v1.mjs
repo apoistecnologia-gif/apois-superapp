@@ -27,6 +27,18 @@ for(const x of ["onStart(pinCode)","onClick={() => void submitPin()}","Toque em 
  if(!panel.includes(x))throw Error("[FAIL] QA209 PIN preserved contract "+x);
 if(panel.includes('cursor-text opacity-0'))throw Error("[FAIL] QA209 transparent PIN still present");
 s=s.slice(0,begin)+panel+s.slice(end);
+// The white incoming offer keeps every fact/accept/reject control, but cannot
+// occlude half the Android map. Existing overflow scrolling remains accessible.
+const offerStart=s.indexOf("function IncomingOffer(");
+const offerEnd=offerStart<0?-1:s.indexOf("\nfunction InfoCard(",offerStart);
+if(offerStart<0||offerEnd<=offerStart)throw Error("[FAIL] QA209 offer bounds");
+let offer=s.slice(offerStart,offerEnd);
+const oldOfferHeight='style={{ maxHeight: "min(48dvh, 440px)" }}';
+if(offer.split(oldOfferHeight).length!==2)throw Error("[FAIL] QA209 offer height prerequisite");
+offer=offer.replace(oldOfferHeight,'style={{ maxHeight: "min(44dvh, 410px)" }}');
+for(const token of ["overflow-y-auto","onClick={onAccept}","onClick={onReject}","estimated_price","CountdownRing"])
+ if(!offer.includes(token))throw Error("[FAIL] QA209 offer lost "+token);
+s=s.slice(0,offerStart)+offer+s.slice(offerEnd);
 css+="\n/* "+marker+": visible blinking caret belongs to a real numeric input. */\n"+
  '@keyframes apois-pin-caret-blink{0%,49%{opacity:1}50%,100%{opacity:0}}\n'+
  '[data-apois-pin-caret="true"]{animation:apois-pin-caret-blink 1s step-end infinite;}\n'+

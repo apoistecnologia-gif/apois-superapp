@@ -203,10 +203,13 @@ if(process.argv.includes("--dist")){
     "if (/destino|destination|arriv|",
   ],"Google Directions ARRIVE steps cannot trigger premature destination speech");
   all(driverAppPatched,[
-    "const NAVIGATION_ZOOM = 16;",
+    "const NAVIGATION_ZOOM = 17;",
     "APOIS_DRIVER_FORWARD_CAMERA_V1",
-    "heading: nearDestination ? 0 : (heading ?? undefined)",
-    "tilt: nearDestination || heading == null ? 0 : 40",
+    "APOIS_DRIVER_QA209_CAMERA_V1",
+    "driverCameraHistory",
+    "movedMeters < 12",
+    "navMap.moveCamera({",
+    "tilt:nearDestination ? 0 : 25",
     "routeStepsPhase !== active.id +",
     "res.distanceMeters < directMeters * 0.55",
     "evidence.travelledKm >= 0.12",

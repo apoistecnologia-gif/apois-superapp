@@ -48,6 +48,11 @@ test("QA209 PIN has four real focusable inputs and a blinking caret, not a trans
  assert.ok(!pin.includes('<label htmlFor="apois-motorista-pin-v4"'));
  assert.ok(css.includes("@keyframes apois-pin-caret-blink"));
 });
+test("QA209 incoming offer takes at most 44dvh while retaining real fare, profile and decisions",()=>{
+ const offer=section("function IncomingOffer(","\nfunction InfoCard(");
+ assert.ok(offer.includes('maxHeight: "min(44dvh, 410px)"'));
+ for(const token of ["overflow-y-auto","onClick={onAccept}","onClick={onReject}","estimated_price","CountdownRing"])assert.ok(offer.includes(token),token);
+});
 test("QA209 does not alter passenger/offer APIs, driver dispatch or entitlement, and preserves Google Cloud style gate",()=>{
  for(const t of ["apois_driver_offer_passenger","apois_driver_assigned_passenger",
   "passengerFirstName(passenger?.name)","onClick={onAccept}","onClick={onReject}",
