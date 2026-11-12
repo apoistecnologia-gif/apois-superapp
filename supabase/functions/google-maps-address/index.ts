@@ -49,14 +49,27 @@ async function consumeLookupQuota(req: Request) {
   return { allowed: true, status: 200, error: "" };
 }
 
+// APOIS_GEOCODE_SERVER_TIMEOUT_V1: bounded Google lookup. If Maps is unavailable,
+// do not hold the passenger's 12s address budget while waiting for the fallback.
+// No added Google requests, changed credentials, or client-side API exposure.
+const GOOGLE_LOOKUP_TIMEOUT_MS = 2400;
 async function googleJson(url: URL) {
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) throw new Error(`Google Maps HTTP ${response.status}`);
-  const payload = await response.json();
-  if (!["OK", "ZERO_RESULTS"].includes(payload?.status)) {
-    throw new Error(`Google Maps retornou ${payload?.status ?? "erro desconhecido"}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GOOGLE_LOOKUP_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Google Maps HTTP ${response.status}`);
+    const payload = await response.json();
+    if (!["OK", "ZERO_RESULTS"].includes(payload?.status)) {
+      throw new Error(`Google Maps retornou ${payload?.status ?? "erro desconhecido"}`);
+    }
+    return payload;
+  } finally {
+    clearTimeout(timeout);
   }
-  return payload;
 }
 
 function toGoogleLikeComponents(address: Record<string, unknown>) {
@@ -85,13 +98,14 @@ function toGoogleLikeComponents(address: Record<string, unknown>) {
 const photonHeaders = { Accept: "application/json" };
 
 // Retry ONCE only for transient transport/5xx errors from the existing
-// Photon endpoint. Never use paid Google APIs as additional fallback, and
-// never retry 429/403 (provider rate/permission limit).
+// Photon endpoint. Each reverse request is limited to 3s, keeping the
+// combined Google + fallback worst-case under the passenger's 12s deadline.
+// Never use paid Google APIs as additional fallback, and never retry 429/403.
 // APOIS_PHOTON_REVERSE_TRANSIENT_RETRY_V1
 async function fetchPhotonReverseJson(url: URL) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 3000);
     try {
       const response = await fetch(url, { headers: photonHeaders, signal: controller.signal });
       if (response.status === 429 || response.status === 403) {
