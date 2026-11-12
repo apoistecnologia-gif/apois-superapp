@@ -25,7 +25,7 @@ if(s.includes("1 motorista próximo")){
 }else{
   const marker='      {/* CONTROLES DO MAPA (SOBRE O MAPA) */}';
   one(marker,
-    '      <div data-apois-qa217-nearby-label="true" className="pointer-events-none absolute left-4 right-4 top-[calc(env(safe-area-inset-top)+80px)] z-20 text-center text-xs font-bold text-[#4B5563]"><span className="rounded-full bg-white/95 px-3 py-2 shadow-md">'+presenceLabel+'</span></div>\\n'+marker,
+    '      <div data-apois-qa217-nearby-label="true" className="pointer-events-none absolute left-4 right-4 top-[calc(env(safe-area-inset-top)+80px)] z-20 text-center text-xs font-bold text-[#4B5563]"><span className="rounded-full bg-white/95 px-3 py-2 shadow-md">'+presenceLabel+'</span></div>\n'+marker,
     "home presence label");
 }
 one('      {/* CONTROLES DO MAPA (SOBRE O MAPA) */}',
