@@ -29,7 +29,7 @@ for(const marker of [
 if(!source.includes("const profileAvatarUrl =")){
   replaceOnce(
     '  const currentProfile = normalizeProfile(profile, user?.email);',
-    '  const currentProfile = normalizeProfile(profile, user?.email);\\n  const profileAvatarUrl = currentProfile.avatarUrl ?? readNonEmptyString(user?.user_metadata?.avatar_url) ?? readNonEmptyString(user?.user_metadata?.picture);',
+    '  const currentProfile = normalizeProfile(profile, user?.email);\n  const profileAvatarUrl = currentProfile.avatarUrl ?? readNonEmptyString(user?.user_metadata?.avatar_url) ?? readNonEmptyString(user?.user_metadata?.picture);',
     "profile avatar source"
   );
 }
