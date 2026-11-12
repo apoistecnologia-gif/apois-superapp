@@ -48,10 +48,10 @@ test("Live delivery route uses same exclusive Map ID, preserving GPS, route, sta
   "onMetrics={setMetrics}",
   "onClick={openNavigation}",
   "APOIS_COURIER_MAPS_URL_NO_API_KEY_V1",
-  'paid routing disabled in homologation',
  ])assert.ok(route.includes(token),token);
  assert.ok(route.includes("job.id"));
  assert.ok(route.includes("goingToDelivery"));
+ assert.ok(src.includes("paid routing disabled in homologation"),"Existing paid route gate stays in RouteMapContent");
  assert.ok(!route.includes('const mapId = ((import.meta as any).env.VITE_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID") as string;'));
 });
 test("No existing API key, payments, GPS or dispatch dependency rewritten by this visual patch",()=>{
