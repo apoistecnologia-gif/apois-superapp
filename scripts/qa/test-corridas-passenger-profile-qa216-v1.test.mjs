@@ -52,10 +52,10 @@ test("QA216 completed rides: count real passenger finalizada, never blind zero o
 
 test("QA216 accepted driver: name/model/color/plate preserved; no raw private-path <img>",()=>{
  for(const x of [
-  "APOIS_PASSENGER_DRIVER_ID_QA216_V1",
-  'createSignedUrl(value, 3600)',
+  "APOIS_CLIENT_QA169_VIDEO_V1",
+  'createSignedUrl(path,3600)',
   "src={photoUrl}",
-  "onError={() => setPhotoUrl(null)}",
+  "onError={() => setFailedUrl(photoUrl)}",
   'ride.driver_name || "Motorista"',
  ])assert.ok(driver.includes(x),x);
  assert.ok(!driver.includes('src={ride.driver_photo}'));
