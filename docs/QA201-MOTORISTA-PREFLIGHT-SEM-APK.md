@@ -23,3 +23,9 @@ Correções de QA201 **registradas em código, aguardando integração e build**
 - `scripts/fix-partner-driver-qa202-cloud-vector-readiness-v1.mjs`: disponibiliza, apenas ao Motorista, o mapa vetorial com Map ID validado e estilo Cloud previamente aprovado. Fora dessas condições continua usando o raster atual, sem mudanças no meio da corrida.
 - `scripts/qa/test-partner-driver-qa202-cloud-vector-readiness-v1.test.mjs`: exige associação de Map ID e proíbe misturar estilos locais com Cloud.
 - **Não ativado:** ainda não existe Map ID APOIS Corridas configurado/verificado neste ambiente; portanto a orientação não está homologada. O arquivo JSON de estilo para importação está pronto.
+
+## Map ID criado e confirmado na interface do Google Cloud (12/11/2026)
+- Estilo publicado: **APOIS — Mapa Oficial**, preview com água azul-marinho e ruas claras. O usuário confirmou a criação rápida e a renomeação do Map ID em Google Maps Platform.
+- Map ID público: `1af3628136c58ef870ba9d1a`. Tipo **JavaScript → Vetor**, inclinação e rotação selecionadas.
+- A integração foi habilitada **apenas no workflow de teste** em `.github/workflows/apois-partner-android.yml`, sem tocar em chave da API, faturamento ou Google Cloud; Codemagic/produção permanecem sem ativação automática até a homologação física e a configuração deliberada do pipeline de produção.
+- `scripts/qa/verify-apois-partner-vector-map-config-v1.mjs` bloqueia a compilação caso o Map ID não apareça no bundle Motorista ou apareça indevidamente no Entregador. Validar no Android real `getRenderingType()`, `getHeading()`, `getTilt()`, mapa estável, estilo efetivo e eventual fallback WebGL. Não declarar homologação nem gerar APK só por aprovar préflight.

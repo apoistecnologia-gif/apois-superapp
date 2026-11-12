@@ -35,6 +35,7 @@ on:
       - 'scripts/qa/test-partner-driver-qa201-route-reliability-v1.test.mjs'
       - 'scripts/fix-partner-driver-qa202-cloud-vector-readiness-v1.mjs'
       - 'scripts/qa/test-partner-driver-qa202-cloud-vector-readiness-v1.test.mjs'
+      - 'scripts/qa/verify-apois-partner-vector-map-config-v1.mjs'
       - 'docs/google-maps/apois-passageiro-vector-style-import.json'
       - 'supabase/corridas-forward-migrations/20261111_apois_driver_offer_passenger_photo_scope.sql'
       - 'scripts/qa/test-partner-driver-qa190-physical-video-v1.test.mjs'
@@ -80,8 +81,9 @@ jobs:
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
       CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
       # Driver vector map requires a reviewed, published APOIS Cloud style and a JavaScript vector Map ID; unset by default.
-      VITE_APOIS_PARTNER_VECTOR_MAP_ID: ${{ vars.APOIS_PARTNER_VECTOR_MAP_ID }}
-      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: ${{ vars.APOIS_PARTNER_CLOUD_STYLE_VERIFIED }}
+      # QA206: public Map ID created in Google Cloud project Movvi; no API keys or billing changed.
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64 }}
@@ -259,6 +261,7 @@ jobs:
             exit 1
           fi
           echo "[OK] Módulos Parceiro compilados com identidade nova"
+          node scripts/qa/verify-apois-partner-vector-map-config-v1.mjs
 
       - name: Validate full partner preflight on APK bundle
         shell: bash
