@@ -1,0 +1,34 @@
+name: APOIS Corridas - QA geocodificacao backend
+
+on:
+  push:
+    branches:
+      - audit/continuacao-20261107
+    paths:
+      - '.github/workflows/apois-corridas-geocode-backend-qa.yml'
+      - 'supabase/functions/google-maps-address/index.ts'
+      - 'scripts/qa/test-corridas-geocode-time-budget-v1.test.mjs'
+      - 'scripts/qa/test-photon-reverse-retry-v1.mjs'
+      - 'scripts/qa/test-photon-autocomplete-retry-v1.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-corridas-geocode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout official APOIS backend
+        uses: actions/checkout@v4
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar timeout e fallback de geocodificacao
+        run: node --test scripts/qa/test-corridas-geocode-time-budget-v1.test.mjs
+      - name: Regressao Photon reverse
+        run: node scripts/qa/test-photon-reverse-retry-v1.mjs
+      - name: Regressao Photon autocomplete
+        run: node --test scripts/qa/test-photon-autocomplete-retry-v1.mjs
