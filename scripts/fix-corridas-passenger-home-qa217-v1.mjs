@@ -19,9 +19,15 @@ one('  const [isPaymentListOpen, setIsPaymentListOpen] = useState(false);',
 one('          driverLocation={undefined}',
  '          driverLocation={undefined}\n          nearbyDrivers={nearby.points}',
  "coarse map pins");
-one('1 motorista próximo',
- '{nearby.state === "loading" ? "Buscando motoristas próximos..." : nearby.state === "unavailable" ? "Motoristas próximos indisponíveis" : nearby.points.length === 0 ? "Nenhum motorista próximo agora" : nearby.points.length + (nearby.points.length === 1 ? " motorista próximo" : " motoristas próximos")}',
- "remove invented count");
+const presenceLabel='{nearby.state === "loading" ? "Buscando motoristas próximos..." : nearby.state === "unavailable" ? "Motoristas próximos indisponíveis" : nearby.points.length === 0 ? "Nenhum motorista próximo agora" : nearby.points.length + (nearby.points.length === 1 ? " motorista próximo" : " motoristas próximos")}';
+if(s.includes("1 motorista próximo")){
+  one("1 motorista próximo",presenceLabel,"replace old fixed count");
+}else{
+  const marker='      {/* CONTROLES DO MAPA (SOBRE O MAPA) */}';
+  one(marker,
+    '      <div data-apois-qa217-nearby-label="true" className="pointer-events-none absolute left-4 right-4 top-[calc(env(safe-area-inset-top)+80px)] z-20 text-center text-xs font-bold text-[#4B5563]"><span className="rounded-full bg-white/95 px-3 py-2 shadow-md">'+presenceLabel+'</span></div>\\n'+marker,
+    "home presence label");
+}
 one('      {/* CONTROLES DO MAPA (SOBRE O MAPA) */}',
  readFileSync(resolve("scripts/templates/PassengerHomeRouteBadge.txt"),"utf8")+'      {/* CONTROLES DO MAPA (SOBRE O MAPA) */}',
  "visible route metrics");
