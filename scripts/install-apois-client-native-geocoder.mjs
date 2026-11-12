@@ -17,19 +17,29 @@ mkdirSync(dirname(nativePath),{recursive:true});
 const source = readFileSync(activityPath,"utf8");
 if (!source.includes("package " + expectedPackage + ";") || !source.includes("extends BridgeActivity"))
   throw Error("[FAIL] Generated APOIS Cliente MainActivity changed");
-const original = /public class MainActivity extends BridgeActivity\s*\{\s*\}/;
-const replacement = `public class MainActivity extends BridgeActivity {
-    // APOIS_NATIVE_GEOCODER_INSTALL_V1: plugin registered before Bridge starts.
+// The existing native WebView overscroll hardener customizes MainActivity.
+// Register the geocoder before super.onCreate, preserving ALL existing hooks.
+const onCreate = "        super.onCreate(savedInstanceState);";
+const original = /public class MainActivity extends BridgeActivity\\s*\\{\\s*\\}/;
+let updated = source;
+if (!updated.includes("APOIS_NATIVE_GEOCODER_INSTALL_V1")) {
+  if (source.includes(onCreate)) {
+    if (source.split(onCreate).length !== 2) throw Error("[FAIL] Ambiguous MainActivity onCreate");
+    updated = source.replace(onCreate,
+      "        // APOIS_NATIVE_GEOCODER_INSTALL_V1\\n" +
+      "        registerPlugin(APOISNativeGeocoderPlugin.class);\\n" + onCreate);
+  } else if (original.test(source)) {
+    updated = source.replace(original, `public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(android.os.Bundle savedInstanceState) {
+        // APOIS_NATIVE_GEOCODER_INSTALL_V1
         registerPlugin(APOISNativeGeocoderPlugin.class);
         super.onCreate(savedInstanceState);
     }
-}`;
-let updated = source;
-if (!updated.includes("APOIS_NATIVE_GEOCODER_INSTALL_V1")) {
-  if (!original.test(source)) throw Error("[FAIL] Refusing to overwrite customized MainActivity");
-  updated = source.replace(original, replacement);
+}`);
+  } else {
+    throw Error("[FAIL] Refusing to overwrite customized MainActivity");
+  }
 }
 if (!updated.includes("registerPlugin(APOISNativeGeocoderPlugin.class);"))
   throw Error("[FAIL] Native plugin registration missing");
