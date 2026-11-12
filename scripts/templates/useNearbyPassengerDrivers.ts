@@ -18,7 +18,7 @@ export function useNearbyPassengerDrivers(lat:number|undefined,lng:number|undefi
   useEffect(()=>{
     let active=true;
     setResult({points:[],state:"loading"});
-    if(!coordinate(lat,lng))return ()=>{active=false;};
+    if(typeof lat!=="number"||typeof lng!=="number"||!coordinate(lat,lng))return ()=>{active=false;};
     const fetchNearby=async()=>{
       if(!navigator.onLine||document.visibilityState!=="visible")return;
       try{
