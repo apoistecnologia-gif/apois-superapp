@@ -13,7 +13,7 @@ once("const NAVIGATION_CENTER_AHEAD_METERS = 175;","const NAVIGATION_CENTER_AHEA
 const a=s.indexOf("function applyNavigationCamera("),b=s.indexOf("type RequestRemovalReason",a);
 if(a<0||b<a)throw Error("[FAIL] QA209 camera helper bounds");
 const original=s.slice(a,b);
-for(const required of ["nearDestination","navMap.setHeading?.(heading)","routeHeadingFrom(position, route, destination)"])
+for(const required of ["nearDestination","navMap.setHeading?.(heading)","navigationHeadingFor(position, route, destination)"])
  if(!original.includes(required))throw Error("[FAIL] QA209 camera prerequisite "+required);
 const lines=[
  "// "+marker+": one stable, map-instance-scoped navigator.",
