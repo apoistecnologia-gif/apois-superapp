@@ -1,0 +1,79 @@
+name: APOIS Entregador - Mapa Vetorial Exclusivo - QA sem APK
+
+on:
+  push:
+    branches:
+      - fix/entregador-mapa-vetorial-exclusivo-20261112
+    paths:
+      - '.github/workflows/apois-entregador-vector-qa-no-apk.yml'
+      - 'scripts/fix-partner-courier-exclusive-vector-style-20261112-v1.mjs'
+      - 'scripts/qa/test-partner-courier-exclusive-vector-style-20261112-v1.test.mjs'
+      - 'scripts/build-partner-release.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-web-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Checkout public builder
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - name: Fetch protected pinned sources
+        run: |
+          set -euo pipefail
+          test -n "$APOIS_REPO_TOKEN"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -f sources/apois-corridas-motorista-admin/src/routes/motorista.app.tsx
+          echo "[OK] Source pinned; no upstream changes"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Bun
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Verify patch syntax and protected source pins
+        run: |
+          set -euo pipefail
+          node --check scripts/fix-partner-courier-exclusive-vector-style-20261112-v1.mjs
+          node --check scripts/qa/test-partner-courier-exclusive-vector-style-20261112-v1.test.mjs
+          npm run verify:pins
+      - name: Validar mapa do Entregador em web-only (NO APK)
+        run: |
+          set -euo pipefail
+          # Test web builder directly: the global audit:ui gate rejects
+          # even baseline QA workflows; do not loosen its production policy.
+          bash scripts/build-partner-release.sh
+          grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'APOIS_DRIVER_VIDEO_20261112_ROTATION_V1' .work/partner-motorista/src/components/MovviMap.tsx
+          grep -Fq 'driverCameraHistory.delete(map)' .work/partner-motorista/src/routes/motorista.app.tsx
+          test -s superapp/partner-shell/dist/modules/motorista/index.html
+          test -s superapp/partner-shell/dist/modules/entregador/index.html
+          grep -Fq 'APOIS_COURIER_EXCLUSIVE_VECTOR_MAP_20261112_V1' .work/partner-entregador/src/components/CourierRouteMap.tsx
+          grep -RFq '1af3628136c58ef8d1029763' superapp/partner-shell/dist/modules/entregador
+          ! grep -RFq '1af3628136c58ef8d1029763' superapp/partner-shell/dist/modules/motorista
+          if find . -type f -name '*.apk' -print -quit | grep -q .; then
+            echo "::error::Proibido criar APK nesta homologação"
+            exit 1
+          fi
+          echo "[OK] Entregador: mapa vetorial exclusivo validado com Motorista preservado, sem APK"
