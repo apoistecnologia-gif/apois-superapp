@@ -20,8 +20,10 @@ let m=readFileSync(serviceFile,"utf8");
 m=one(m,'  private driverMarkerId: Map<string, string> = new Map();',
   '  private driverMarkerId: Map<string, string> = new Map();\n  private nearbyDriverMarkerIds: Map<string, string[]> = new Map(); // APOIS_PASSENGER_QA217_MAP_V1',
   "native pin registry");
-m=one(m,'      this.driverMarkerId.delete(mapId);',
-  '      this.driverMarkerId.delete(mapId);\n      this.nearbyDriverMarkerIds.delete(mapId);',"destroy map marker");
+const deleteAnchor='      this.driverMarkerId.delete(mapId);';
+if(m.split(deleteAnchor).length!==3)throw Error("[FAIL] QA217 native driver cleanup anchors");
+m=m.replace(deleteAnchor,
+ '      this.driverMarkerId.delete(mapId);\n      this.nearbyDriverMarkerIds.delete(mapId);');
 m=one(m,'  public async removeDestinationMarker(mapId: string): Promise<void> {',
   readFileSync(resolve("scripts/templates/PassengerMapNativeNearbyMethods.txt"),"utf8")+
   '  public async removeDestinationMarker(mapId: string): Promise<void> {',"native pins method");
