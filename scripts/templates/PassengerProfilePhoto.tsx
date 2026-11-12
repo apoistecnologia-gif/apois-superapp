@@ -6,10 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 // private Storage folder, then update only public.users.avatar_url with RLS.
 // Do not expose a public bucket, service credentials or protected profile data.
 type Props = {
-  avatarSource?: string;
+  avatarSource?: string | undefined;
   name: string;
-  authUserId?: string;
-  profileId?: string;
+  authUserId?: string | undefined;
+  profileId?: string | undefined;
   onSaved: () => Promise<void>;
 };
 
