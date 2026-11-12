@@ -115,14 +115,14 @@ test("No unauthenticated access, rate limit bypass or new provider",()=>{
 
 
 test("Server geocoding key recognizes either established Corridas secret name",()=>{
-  const start=src.indexOf("    const apiKey =\\n");
-  const end=src.indexOf('\\n\\n    if (action === "reverse_geocode") {',start);
+  const start=src.indexOf("    const apiKey =\n");
+  const end=src.indexOf('\n\n    if (action === "reverse_geocode") {',start);
   assert.ok(start>=0 && end>start, "key lookup location must remain stable");
   const snippet=src.slice(start,end);
   assert.ok(snippet.includes('Deno.env.get("GOOGLE_MAPS_PLATFORM_API_KEY")'));
   assert.ok(snippet.includes('Deno.env.get("GOOGLE_MAPS_API_KEY")'));
   assert.ok(!snippet.includes("CORRIDAS_WEB_MAPS_API_KEY"));
-  const resolve = values => new Function("Deno",snippet+"\\nreturn apiKey;")({
+  const resolve = values => new Function("Deno",snippet+"\nreturn apiKey;")({
     env:{get:key=>values[key]??undefined}
   });
   assert.equal(resolve({GOOGLE_MAPS_PLATFORM_API_KEY:"platform-server"}),"platform-server");
