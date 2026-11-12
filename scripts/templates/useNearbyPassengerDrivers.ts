@@ -20,7 +20,8 @@ export function useNearbyPassengerDrivers(lat:number|undefined,lng:number|undefi
     setResult({points:[],state:"loading"});
     if(typeof lat!=="number"||typeof lng!=="number"||!coordinate(lat,lng))return ()=>{active=false;};
     const fetchNearby=async()=>{
-      if(!navigator.onLine||document.visibilityState!=="visible")return;
+      if(!navigator.onLine){if(active)setResult({points:[],state:"unavailable"});return;}
+      if(document.visibilityState!=="visible")return;
       try{
         // Deliberate typed boundary: new SQL RPC is applied in controlled deploy
         // after RLS/security review; production absence means no fake pins.
