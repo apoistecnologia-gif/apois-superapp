@@ -13,6 +13,7 @@ on:
       - 'scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs'
       - 'scripts/templates/PassengerProfilePhoto.tsx'
       - 'scripts/templates/PassengerCompletedRideCount.tsx'
+      - 'scripts/harden-corridas-mobile-proportions.mjs'
       - 'scripts/fix-corridas-passenger-map-qa217-v1.mjs'
       - 'scripts/fix-corridas-passenger-eta-qa217-v1.mjs'
       - 'scripts/fix-corridas-passenger-home-qa217-v1.mjs'
@@ -71,6 +72,7 @@ jobs:
           node --check scripts/fix-corridas-passenger-profile-qa216-v1.mjs
           node --check scripts/harden-corridas-superapp-profile-ui.mjs
           node --check scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs
+          node --check scripts/harden-corridas-mobile-proportions.mjs
           node --check scripts/fix-corridas-passenger-map-qa217-v1.mjs
           node --check scripts/fix-corridas-passenger-eta-qa217-v1.mjs
           node --check scripts/fix-corridas-passenger-home-qa217-v1.mjs
