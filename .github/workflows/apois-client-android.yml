@@ -1,5 +1,6 @@
 name: APOIS Cliente Android APK
 # QA Android: corrigir registro do geocodificador no MainActivity já protegido contra overscroll (12/11/2026).
+# QA218: known authorized web-only audit workflows are explicitly allowlisted; no release or deploy.
 # Build de homologacao Android solicitado em 12/11/2026: executar APK Cliente no repositorio oficial publico.
 # homologação 1.0.3: persistência de nomes das paradas e build Android final — retry hardening 26/10
 # diagnóstico de cobertura da loja fictícia — 30/10/2026
