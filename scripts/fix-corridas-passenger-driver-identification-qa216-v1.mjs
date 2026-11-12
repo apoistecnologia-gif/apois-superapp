@@ -10,7 +10,7 @@ const path=resolve(root,"src/components/rides/active/DriverCard.tsx");
 let s=readFileSync(path,"utf8");
 function once(a,b,label){
  const count=s.split(a).length-1;
- if(count!==1)throw Error("[FAIL] QA216 DriverCard "+label+" count="+count);
+ if(count!==1)throw Error("[FAIL] QA216 DriverCard "+label+" count="+count+" snippet="+JSON.stringify(s.slice(0,1600)));
  s=s.replace(a,b);
 }
 if(s.includes("APOIS_PASSENGER_DRIVER_ID_QA216_V1"))throw Error("[FAIL] DriverCard duplicated");
