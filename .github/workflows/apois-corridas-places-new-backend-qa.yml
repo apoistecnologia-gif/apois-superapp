@@ -1,0 +1,39 @@
+name: APOIS Corridas - Places New backend QA (no APK)
+
+on:
+  push:
+    branches:
+      - fix/corridas-places-new-backend-20261112
+    paths:
+      - '.github/workflows/apois-corridas-places-new-backend-qa.yml'
+      - 'supabase/functions/google-maps-address/**'
+      - 'scripts/qa/test-corridas-places-new-backend-v1.test.mjs'
+      - 'scripts/qa/test-corridas-geocode-time-budget-v1.test.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  places-new-offline-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testar Places New e compatibilidade com o APK sem rede
+        run: node --test scripts/qa/test-corridas-places-new-backend-v1.test.mjs
+      - name: Testar tempo de reverse-geocoding e chaves de backend
+        run: node --test scripts/qa/test-corridas-geocode-time-budget-v1.test.mjs
+      - name: Testar Photon reverse anterior
+        run: node scripts/qa/test-photon-reverse-retry-v1.mjs
+      - name: Testar Photon autocomplete anterior
+        run: node --test scripts/qa/test-photon-autocomplete-retry-v1.mjs
+      - name: Verificar protecoes de seguranca da API
+        run: |
+          test "$(grep -Fc 'consume_google_maps_lookup_quota' supabase/functions/google-maps-address/index.ts)" -ge 1
+          ! grep -Fq 'maps.googleapis.com/maps/api/place/autocomplete/json' supabase/functions/google-maps-address/index.ts
+          ! grep -Fq 'maps.googleapis.com/maps/api/place/details/json' supabase/functions/google-maps-address/index.ts
+          echo "[OK] No legacy Places endpoint; original per-user quota preserved"
