@@ -299,6 +299,11 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa201-route-reliability-v1.tes
 # QA202: cloud-styled vector gated; defaults to same Passenger raster until approved.
 node "$ROOT/scripts/fix-partner-driver-qa202-cloud-vector-readiness-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa202-cloud-vector-readiness-v1.test.mjs"
+# QA209 physical video: stable vector road camera, realtime + confirmed finish cleanup, real PIN fields.
+node "$ROOT/scripts/fix-partner-driver-qa209-camera-v1.mjs"
+node "$ROOT/scripts/fix-partner-driver-qa209-finished-route-v1.mjs"
+node "$ROOT/scripts/fix-partner-driver-qa209-pin-controls-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa209-physical-map-pin-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
