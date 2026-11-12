@@ -4,7 +4,7 @@ on:
     branches:
       - fix/passageiro-mapa-eta-proximos-20261112
     paths:
-      - '.github/workflows/apois-passageiro-qa216-web-only.yml'
+      - '.github/workflows/apois-passageiro-qa217-web-only.yml'
       - 'scripts/build-isolated-module.mjs'
       - 'scripts/fix-corridas-passenger-qa215-completed-safe-area-v1.mjs'
       - 'scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs'
