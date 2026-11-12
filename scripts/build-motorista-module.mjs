@@ -88,6 +88,7 @@ if (!readFileSync(resolve(workspace, 'src/mobile.tsx'), 'utf8').includes('histor
 
 // QA218: mostrar apenas zonas agregadas de pedidos e passageiros opt-in.
 run(process.execPath, [resolve(root, 'scripts/harden-partner-motorista-demand-map-v1.mjs')], root, hardenerEnv);
+run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-motorista-passenger-hotspots-qa218.test.mjs')], root, hardenerEnv);
 run('bun', ['install'], workspace, env);
 run(process.execPath, [resolve(root, 'scripts/verify-apois-report02-integrity-v1.mjs'), 'finance'], root, hardenerEnv);
 run('bun', ['run', 'typecheck'], workspace, env);
