@@ -24,15 +24,9 @@ for(const marker of [
 ]){
  if(!source.includes(marker))throw Error("[FAIL] QA216 Perfil missing prerequisite "+marker);
 }
-// The isolated build does not necessarily run the optional legacy profile UI
-// hardener. Resolve the authenticated Google avatar fallback here if absent.
-if(!source.includes("const profileAvatarUrl =")){
-  replaceOnce(
-    '  const currentProfile = normalizeProfile(profile, user?.email);',
-    '  const currentProfile = normalizeProfile(profile, user?.email);\n  const profileAvatarUrl = currentProfile.avatarUrl ?? readNonEmptyString(user?.user_metadata?.avatar_url) ?? readNonEmptyString(user?.user_metadata?.picture);',
-    "profile avatar source"
-  );
-}
+// The existing late-stage APOIS profile visual pass supplies the metadata
+// avatar fallback once. Do not duplicate its two index-signature accesses,
+// which are normalized by the strict generated TypeScript gate.
 replaceOnce(
  'import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";',
  'import { PassengerProfilePhoto } from "@/components/profile/PassengerProfilePhoto";\nimport { PassengerCompletedRideCount } from "@/components/profile/PassengerCompletedRideCount"; // APOIS_PASSENGER_PROFILE_QA216_V1',
