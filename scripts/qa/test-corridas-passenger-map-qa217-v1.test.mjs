@@ -56,9 +56,10 @@ test("QA217: red pulse pins on JS and native, real-only presence and strict back
   "opacity: dim ? 0.3 : 1"
  ])assert.ok(native.includes(text),text);
  for(const text of [
-  "useNearbyPassengerDrivers(","nearbyDrivers={nearby.points}",
-  "Motoristas próximos indisponíveis","Nenhum motorista próximo agora"
+  "useNearbyPassengerDrivers(","nearbyDrivers={nearby.points}"
  ])assert.ok(home.includes(text),text);
+ assert.ok(!home.includes("data-apois-qa217-nearby-label"),"nearby overlay removed");
+ assert.ok(!home.includes("Nenhum motorista próximo agora"),"no nearby message");
  for(const text of [
   "apois_nearby_driver_presence","state:\"unavailable\"",
   "points:[],state:\"unavailable\""
