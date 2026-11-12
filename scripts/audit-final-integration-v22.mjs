@@ -162,7 +162,20 @@ requireAll('scripts/harden-partner-red-visual.mjs', [
 const workflowsDir = resolve('.github/workflows');
 if (existsSync(workflowsDir)) {
   const workflows = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/i.test(name));
-  const allowedTestWorkflows = new Set(['apois-client-android.yml', 'apois-partner-android.yml', 'apois-actions-probe.yml', 'apois-partner-preflight.yml']);
+  // QA218: explicit allowlist only for existing, intentionally WEB/NO-APK QA
+  // workflows. Production release remains external; unknown workflows still fail.
+  const allowedTestWorkflows = new Set([
+    'apois-client-android.yml',
+    'apois-partner-android.yml',
+    'apois-actions-probe.yml',
+    'apois-partner-preflight.yml',
+    'apois-corridas-geocode-backend-qa.yml',
+    'apois-corridas-qa218-passenger-driver-web-only.yml',
+    'apois-entregador-vector-qa-no-apk.yml',
+    'apois-motorista-pdf-qa-no-apk.yml',
+    'apois-passageiro-qa216-web-only.yml',
+    'apois-passageiro-qa217-web-only.yml',
+  ]);
   const unexpected = workflows.filter((name) => !allowedTestWorkflows.has(name));
   if (unexpected.length) {
     fail(`GitHub Actions de release/CI não autorizados reapareceram: ${unexpected.join(', ')}`);
