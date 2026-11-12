@@ -23,18 +23,41 @@ for(const s of [
  'action: "reverse_geocode"'
 ])assert.ok(hook.includes(s),'Pickup failure handling regression '+s);
 assert.ok(!home.includes('Toque para tentar identificar o endereço'),'Misleading pickup CTA must be removed');
-assert.ok(!hook.includes('setPickupLabel(null)'),'Do not remove previously known address label during a temporary outage');
+// QA215: keep the known label through a temporary outage, but never keep a
+// stale street name after the passenger has actually moved >=120m.
+if(hook.includes("APOIS_PASSENGER_QA215_PICKUP_BACKOFF_V1")) {
+ assert.ok(hook.includes("if (!addressKnownRef.current) { setAddress(null); setPickupLabel(null); setPickupShortLabel(null); }"),
+   "Only drop the label after reverse geocode fails with no confirmed near address");
+ assert.ok(hook.includes("if (previous && movedFromSuccess >= 120)"),
+   "Clear stale street only on meaningful travel");
+ assert.ok(hook.includes("if (!force && movedFromSuccess < 85) return;"),
+   "Keep successful nearby GPS address under small jitter");
+ assert.ok(hook.includes("setStatus(addressKnownRef.current ? \"success\" : \"error\");"),
+   "A temporary failure may not mark a confirmed address unavailable");
+} else {
+ assert.ok(!hook.includes('setPickupLabel(null)'),
+   "Pre-QA215: never erase a confirmed address in a temporary outage");
+}
 // The real 1.0.11-qa.1001 APK locked runningCell BEFORE jitter check.
 // If user movement was <85m, refreshAddress returned before try/finally and
 // the entire pickup retry was permanently stuck. Lock must be last.
 assert.ok(hook.includes('APOIS_PICKUP_NO_EARLY_RUNNING_LOCK_V2'),'GPS retry lock regression guard missing');
-const jitter=hook.indexOf('if (Math.hypot(north, east) < 85) return;');
+const modern=hook.includes("APOIS_PASSENGER_QA215_PICKUP_BACKOFF_V1");
+const jitter=modern
+ ? hook.indexOf('if (!force && movedFromSuccess < 85) return;')
+ : hook.indexOf('if (Math.hypot(north, east) < 85) return;');
 const busy=hook.indexOf('geocodeBusyRef.current = true;');
 const lock=hook.indexOf('runningCell.current = true;');
 const retryTry=hook.indexOf('    try {',lock);
 const release=hook.indexOf('runningCell.current = false;',retryTry);
 assert.ok(jitter>=0 && busy>jitter && lock>busy && retryTry>lock && release>retryTry,
-  'Pickup lock must be acquired only after jitter exit and released in finally');
+  'Pickup lock must be acquired after GPS-jitter/cooldown guards and released in finally');
+if(modern) {
+ const cooldown=hook.indexOf('if (!force && lastAttempt && elapsed < 20000) return;');
+ const repeated=hook.indexOf('if (!force && lastAttempt && elapsed < 60000 && attemptMeters < 120 && !previous) return;');
+ assert.ok(cooldown>jitter && repeated>cooldown && busy>repeated,
+   'QA215 must enforce a 20s request cap and 60s failed-position backoff before claiming lock');
+}
 assert.ok(!/\breturn\b/.test(hook.slice(lock,retryTry)),
   'Never return after claiming lock but before finally cleanup');
 
