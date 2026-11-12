@@ -407,6 +407,10 @@ require_contains 'APOIS_COURIER_MANUAL_ONLINE_V1' "$ENTREGADOR/src/routes/courie
 # RV-14: same overlay on the Courier copy; do not touch source Entregas.
 node "$ROOT/scripts/fix-partner-available-calls-visual14-v1.mjs" entregador
 node --test "$ROOT/scripts/qa/test-partner-available-calls-visual14-v1.test.mjs"
+# Google Cloud: courier-only vector map, same published 2D style as Motorista.
+# Applied after all courier hardeners; affects map presentation only.
+node "$ROOT/scripts/fix-partner-courier-exclusive-vector-style-20261112-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-courier-exclusive-vector-style-20261112-v1.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_COURIER_MAPS_URL_NO_API_KEY_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação Google Maps externa disponível sem chave API da APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
@@ -438,7 +442,9 @@ export APP_LABEL="APOIS Parceiro"
 export VITE_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_GOOGLE_MAPS_API_KEY="$CORRIDAS_MAPS_KEY_VALUE"
 export VITE_APOIS_GOOGLE_MAPS_BROWSER_KEY="$CORRIDAS_MAPS_KEY_VALUE"
-export VITE_GOOGLE_MAPS_MAP_ID="${ENTREGAS_GOOGLE_MAPS_MAP_ID:-DEMO_MAP_ID}"
+export VITE_GOOGLE_MAPS_MAP_ID="1af3628136c58ef8d1029763" # Exclusivo APOIS Entregador, publicado no Google Cloud (12/11/2026)
+[[ "$VITE_GOOGLE_MAPS_MAP_ID" =~ ^[0-9a-fA-F]{16,32}$ ]] || { echo "[FAIL] Map ID Entregador inválido"; exit 1; }
+[[ "$VITE_GOOGLE_MAPS_MAP_ID" != "1af3628136c58ef8a23052b5" && "$VITE_GOOGLE_MAPS_MAP_ID" != "1af3628136c58ef870ba9d1a" ]] || { echo "[FAIL] Map ID compartilhado ou do Motorista não autorizado para Entregador"; exit 1; }
 export VITE_SUPABASE_URL="https://ptgkwyyolrdgnqketkjj.supabase.co"
 export VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_DcfjTMboo1HX0O3w8Ptijg_quQbvVBY"
 # Reconcile patched TanStack lockfile only in discarded Entregador workspace.
@@ -449,6 +455,10 @@ node "$ROOT/scripts/fix-partner-entregas-tanstack-boundary-v1.mjs"
 node "$ROOT/scripts/fix-partner-courier-offer-focus-ts-v1.mjs"
 bun run typecheck
 bun run build
+# Public Map ID is embedded in courier web bundle, never in Motorista bundle.
+require_contains '1af3628136c58ef8d1029763' .output/public 'Entregador compila apenas seu Map ID Google Cloud exclusivo'
+forbid_bundle '1af3628136c58ef870ba9d1a' .output/public 'Entregador não recebe o Map ID do Motorista'
+forbid_bundle '1af3628136c58ef8a23052b5' .output/public 'Entregador não recebe o Map ID compartilhado com Cliente'
 require_contains 'ptgkwyyolrdgnqketkjj.supabase.co' .output/public 'Bundle Entregador usa Supabase Entregas canônico atual'
 forbid_bundle 'sbvhdgyuuperszlsllji.supabase.co' .output/public 'Bundle Entregador remove URL Supabase inválida antiga'
 
