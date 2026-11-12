@@ -16,7 +16,7 @@ rep('  const [polyline, setPolyline] = useState<LatLng[]>([]);',[
 ].join("\n"),"zone state");
 rep('  useDriverBroadcast(userId, online && (!featureStatusBlock || Boolean(active)), position);',[
 '  useDriverBroadcast(userId, online && (!featureStatusBlock || Boolean(active)), position);',
-'  // The API uses the GPS stored for the authenticated driver; never trust a map position arg.',
+'  // QA218: only aggregated opt-in groups; GPS from authenticated driver.',
 '  const showDemandZones = Boolean(online && !active && !incoming && !ratingRide &&',
 '    position && Number.isFinite(position.lat) && Number.isFinite(position.lng));',
 '  useEffect(() => {',
@@ -24,10 +24,15 @@ rep('  useDriverBroadcast(userId, online && (!featureStatusBlock || Boolean(acti
 '    if(!showDemandZones){setDemandZones([]);return;}',
 '    const refreshDemand = async () => {',
 '      try {',
-'        const {data,error}=await (supabase as any).rpc("apois_get_driver_demand_zones");',
+'        // QA218: preservar zonas de pedidos e somar somente grupos consentidos.',
+'        const [requests,passengers]=await Promise.all([',
+'          (supabase as any).rpc("apois_get_driver_demand_zones"),',
+'          (supabase as any).rpc("apois_driver_passenger_hotspots"),',
+'        ]);',
 '        if(disposed)return;',
-'        if(error || !Array.isArray(data)){setDemandZones([]);return;}',
-'        const zones=data.filter((zone:any)=>zone && Number.isFinite(zone.lat) &&',
+'        const requestZones=!requests.error && Array.isArray(requests.data) ? requests.data : [];',
+'        const optInZones=!passengers.error && Array.isArray(passengers.data) ? passengers.data : [];',
+'        const zones=[...requestZones,...optInZones].filter((zone:any)=>zone && Number.isFinite(zone.lat) &&',
 '          Number.isFinite(zone.lng) && zone.lat>=-35 && zone.lat<=6 &&',
 '          zone.lng>=-75 && zone.lng<=-30 &&',
 '          ["moderada","alta","muito_alta"].includes(zone.level)).slice(0,8);',
@@ -59,6 +64,6 @@ rep('          {active && (\n            <>\n              <PlacePinMarker',[
 '            <>',
 '              <PlacePinMarker'
 ].join("\n"),"map overlay");
-for(const marker of ["APOIS_DRIVER_DEMAND_ZONES_V1",'rpc("apois_get_driver_demand_zones")',"showDemandZones && demandZones.map","OverlayView.OVERLAY_LAYER","window.clearInterval(timer)"])if(!src.includes(marker))throw Error("Marker missing: "+marker);
+for(const marker of ["APOIS_DRIVER_DEMAND_ZONES_V1",'rpc("apois_get_driver_demand_zones")','rpc("apois_driver_passenger_hotspots")',"showDemandZones && demandZones.map","OverlayView.OVERLAY_LAYER","window.clearInterval(timer)"])if(!src.includes(marker))throw Error("Marker missing: "+marker);
 writeFileSync(file,src,"utf8");
 console.log("[OK] Motorista: anonymous pulsing demand areas in ONLINE idle map; no client data or mock points");
