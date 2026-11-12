@@ -1,0 +1,95 @@
+name: APOIS Passageiro - QA217 Mapa e ETA - Web Only
+on:
+  push:
+    branches:
+      - fix/passageiro-mapa-eta-proximos-20261112
+    paths:
+      - '.github/workflows/apois-passageiro-qa216-web-only.yml'
+      - 'scripts/build-isolated-module.mjs'
+      - 'scripts/fix-corridas-passenger-qa215-completed-safe-area-v1.mjs'
+      - 'scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs'
+      - 'scripts/fix-corridas-passenger-profile-qa216-v1.mjs'
+      - 'scripts/harden-corridas-superapp-profile-ui.mjs'
+      - 'scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs'
+      - 'scripts/templates/PassengerProfilePhoto.tsx'
+      - 'scripts/templates/PassengerCompletedRideCount.tsx'
+      - 'scripts/fix-corridas-passenger-map-qa217-v1.mjs'
+      - 'scripts/fix-corridas-passenger-eta-qa217-v1.mjs'
+      - 'scripts/fix-corridas-passenger-home-qa217-v1.mjs'
+      - 'scripts/templates/PassengerArrivalEstimate.ts'
+      - 'scripts/templates/useNearbyPassengerDrivers.ts'
+      - 'scripts/templates/PassengerMapNearbyEffects.txt'
+      - 'scripts/templates/PassengerMapNativeNearbyMethods.txt'
+      - 'scripts/templates/PassengerHomeRouteBadge.txt'
+      - 'scripts/qa/test-corridas-passenger-map-qa217-v1.test.mjs'
+      - 'docs/QA217-PROPOSTA-RPC-MOTORISTAS-PROXIMOS.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build-corridas-web-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+    steps:
+      - name: Checkout isolated Passenger QA branch
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - name: Load protected pinned source snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$APOIS_REPO_TOKEN"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -f sources/apois-corridas-passageiro/src/routes/_authenticated.perfil.tsx
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Validate JS syntax and source locks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/fix-corridas-passenger-qa215-completed-safe-area-v1.mjs
+          node --check scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs
+          node --check scripts/fix-corridas-passenger-profile-qa216-v1.mjs
+          node --check scripts/harden-corridas-superapp-profile-ui.mjs
+          node --check scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs
+          node --check scripts/fix-corridas-passenger-map-qa217-v1.mjs
+          node --check scripts/fix-corridas-passenger-eta-qa217-v1.mjs
+          node --check scripts/fix-corridas-passenger-home-qa217-v1.mjs
+          node --check scripts/qa/test-corridas-passenger-map-qa217-v1.test.mjs
+          npm run verify:pins
+      - name: Build Passenger web and run integrated visual/regression/type checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build:corridas
+          test -s .work/corridas/dist/index.html
+          grep -Fq 'data-apois-completed-fixed-action-qa215' .work/corridas/src/routes/_authenticated.corrida.\$rideId.tsx
+          grep -Fq 'data-apois-passenger-profile-photo-qa216' .work/corridas/src/components/profile/PassengerProfilePhoto.tsx
+          grep -Fq 'data-apois-passenger-completed-count-qa216' .work/corridas/src/components/profile/PassengerCompletedRideCount.tsx
+          if find . -type f -name '*.apk' -print -quit | grep -q .; then
+            echo "::error::APK proibido nesta etapa"
+            exit 1
+          fi
+          test -s .work/corridas/src/hooks/rides/use-passenger-arrival-estimate.ts
+          grep -Fq "APOIS_PASSENGER_QA217_MAP_V1" .work/corridas/src/components/map/PassengerMap.tsx
+          grep -Fq "APOIS_PASSENGER_QA217_HOME_V1" .work/corridas/src/routes/_authenticated.inicio.tsx
+          echo "[OK] Passageiro QA217 integrado: web build, typecheck e testes, sem APK"
