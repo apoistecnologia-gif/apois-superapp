@@ -53,13 +53,15 @@ async function consumeLookupQuota(req: Request) {
 // do not hold the passenger's 12s address budget while waiting for the fallback.
 // No added Google requests, changed credentials, or client-side API exposure.
 const GOOGLE_LOOKUP_TIMEOUT_MS = 2400;
-async function googleJson(url: URL) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), GOOGLE_LOOKUP_TIMEOUT_MS);
+async function googleJson(url: URL, timeoutMs = 0) {
+  // Only reverse_geocode opts in to the short deadline. Keep existing
+  // autocomplete/place_details behavior unchanged.
+  const controller = timeoutMs > 0 ? new AbortController() : null;
+  const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   try {
     const response = await fetch(url, {
       headers: { Accept: "application/json" },
-      signal: controller.signal,
+      ...(controller ? { signal: controller.signal } : {}),
     });
     if (!response.ok) throw new Error(`Google Maps HTTP ${response.status}`);
     const payload = await response.json();
@@ -68,7 +70,7 @@ async function googleJson(url: URL) {
     }
     return payload;
   } finally {
-    clearTimeout(timeout);
+    if (timeout !== null) clearTimeout(timeout);
   }
 }
 
@@ -246,7 +248,7 @@ Deno.serve(async (req: Request) => {
           url.searchParams.set("language", "pt-BR");
           url.searchParams.set("region", "br");
           url.searchParams.set("key", apiKey);
-          const payload = await googleJson(url);
+          const payload = await googleJson(url, GOOGLE_LOOKUP_TIMEOUT_MS);
           if ((payload.results ?? []).length > 0) return json({ results: payload.results, provider: "google" });
         } catch (googleError) {
           console.error("Google reverse geocode failed; using fallback", googleError);
