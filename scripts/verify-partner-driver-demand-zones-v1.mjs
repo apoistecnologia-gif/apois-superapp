@@ -13,11 +13,31 @@ for(const marker of [
   "setDemandZones([])",
   "window.clearInterval(timer)",
   "window.setInterval",
-  "Array.isArray(data)",
+  // QA218 checks both RPC payloads after the loop, preserving older one-RPC support.
   "data-apois-demand-zone-v1",
   "animate-ping",
 ]){
  assert.ok(client.includes(marker),"Driver map missing "+marker);
+}
+// QA218 preserves the legacy anonymous ride-demand RPC and additionally reads
+// only consented passenger cohorts from the server. A missing/invalid response
+// produces no synthetic pins for either source.
+if (client.includes('rpc("apois_driver_passenger_hotspots")')) {
+  for (const marker of [
+    'Array.isArray(requests.data)',
+    'Array.isArray(passengers.data)',
+    'const zones=[...requestZones,...optInZones]',
+    'online && !active && !incoming && !ratingRide',
+  ]) assert.ok(client.includes(marker), "QA218 driver zones missing "+marker);
+  const optInSql=readFileSync("docs/QA218-MIGRACAO-ZONAS-PASSAGEIROS-OPTIN.sql","utf8");
+  for(const marker of [
+    "HAVING count(DISTINCT p.passenger_id)>=5",
+    "ENABLE ROW LEVEL SECURITY",
+    "p.refreshed_at>now()-interval '2 minutes'",
+    "REVOKE ALL ON TABLE public.apois_passenger_demand_presence",
+  ]) assert.ok(optInSql.includes(marker), "QA218 privacy gate missing "+marker);
+} else {
+  assert.ok(client.includes("Array.isArray(data)"), "Legacy demand should validate RPC response");
 }
 assert.equal((client.match(/apois_get_driver_demand_zones/g)||[]).length,1,"one RPC caller");
 assert.ok(!client.includes('from("rides").select("origin_lat'),"No direct read of rider GPS");
