@@ -308,6 +308,10 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa209-physical-map-pin-v1.test
 # Never build an APK here; this changes only the disposable Motorista web source.
 node "$ROOT/scripts/fix-partner-driver-pdf-notes-20261112-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs"
+# Video 1001992704.mp4: preserve vector rotation and reset phase bearing;
+# only presentation/camera in disposable Motorista. No APK or Maps key edits.
+node "$ROOT/scripts/fix-partner-driver-video-map-rotation-20261112-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-video-map-rotation-20261112-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
