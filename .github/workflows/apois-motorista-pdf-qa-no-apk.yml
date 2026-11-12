@@ -1,0 +1,72 @@
+name: APOIS Motorista PDF 12-11 - QA sem APK
+
+on:
+  push:
+    branches:
+      - fix/motorista-ui-pdf-20261112
+    paths:
+      - '.github/workflows/apois-motorista-pdf-qa-no-apk.yml'
+      - 'scripts/fix-partner-driver-pdf-notes-20261112-v1.mjs'
+      - 'scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs'
+      - 'scripts/build-partner-release.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-web-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Checkout public builder
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - name: Fetch protected pinned sources
+        run: |
+          set -euo pipefail
+          test -n "$APOIS_REPO_TOKEN"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -f sources/apois-corridas-motorista-admin/src/routes/motorista.app.tsx
+          echo "[OK] Source pinned; no upstream changes"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Bun
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Verify patch syntax and protected source pins
+        run: |
+          set -euo pipefail
+          node --check scripts/fix-partner-driver-pdf-notes-20261112-v1.mjs
+          node --check scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs
+          npm run verify:pins
+      - name: Web-only build and PDF regressions (NO APK)
+        run: |
+          set -euo pipefail
+          npm run build:partner
+          grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx
+          test -s superapp/partner-shell/dist/modules/motorista/index.html
+          test -s superapp/partner-shell/dist/modules/entregador/index.html
+          if find . -type f -name '*.apk' -print -quit | grep -q .; then
+            echo "::error::Proibido criar APK nesta homologação"
+            exit 1
+          fi
+          echo "[OK] JS/CSS, fluxos motoristas e integração web compilados, sem APK"
