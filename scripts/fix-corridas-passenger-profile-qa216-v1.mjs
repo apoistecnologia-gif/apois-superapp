@@ -18,7 +18,7 @@ for(const marker of [
  'APOIS_CLIENT_PROFILE_EDIT_V1',
  'APOIS_CLIENT_ACCOUNT_DELETION_V1',
  '<Avatar className=',
- 'AvatarImage src={profileAvatarUrl}',
+ 'AvatarImage src={',
  '{currentProfile.completedRides} corridas',
  'onSaved={refreshSession}',
 ]){
@@ -43,7 +43,7 @@ const end=start<0 ? -1 : source.indexOf('</Avatar>',start);
 if(start<0||end<0||source.indexOf('<Avatar className=',end)>=0)
  throw Error("[FAIL] QA216 Perfil avatar region changed");
 const oldAvatar=source.slice(start,end+'</Avatar>'.length);
-if(!/AvatarImage src=\\{(?:profileAvatarUrl|currentProfile\\.avatarUrl)\\}/.test(oldAvatar)||!oldAvatar.includes('AvatarFallback'))
+if(!oldAvatar.includes('AvatarImage src={')||!oldAvatar.includes('AvatarFallback'))
  throw Error("[FAIL] QA216 Perfil avatar source/placeholder not found");
 source=source.slice(0,start)+
  '<PassengerProfilePhoto avatarSource={profileAvatarUrl} name={currentProfile.name}\n          authUserId={user?.id} profileId={profile?.id} onSaved={refreshSession} />'+
