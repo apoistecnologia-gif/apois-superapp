@@ -1,0 +1,98 @@
+
+  // APOIS_PASSENGER_QA217_MAP_V1: fit newly calculated itinerary above the
+  // bottom sheet. Do not recenter an active driver's live-trip camera.
+  useEffect(() => {
+    if (status !== "ready" || focusPickup || isTrip || approachMode ||
+        validDriverLocation || !origin || !destination ||
+        displayedRoutePoints.length < 2) return;
+    const routeKey = encodedPolyline || route?.encodedPolyline || "";
+    if (!routeKey || routePreviewKeyRef.current === routeKey) return;
+    routePreviewKeyRef.current = routeKey;
+    const timer = window.setTimeout(() => {
+      if (nativeModeRef.current) {
+        void mapService.fitRouteBounds(nativeMapIdRef.current, displayedRoutePoints);
+        return;
+      }
+      const maps = (window as any).google?.maps;
+      if (!maps?.LatLngBounds || !mapRef.current) return;
+      const bounds = new maps.LatLngBounds();
+      displayedRoutePoints.forEach((point) => bounds.extend(point));
+      const height = mapElementRef.current?.clientHeight ?? 600;
+      mapRef.current.fitBounds(bounds, {
+        top: 105,
+        right: 28,
+        bottom: Math.min(350, Math.round(height * 0.47)),
+        left: 28,
+      });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [status, focusPickup, isTrip, approachMode, validDriverLocation,
+      origin, destination, encodedPolyline, route?.encodedPolyline, displayedRoutePoints]);
+
+  // Only real coarse dots from the protected RPC. No pins during an active
+  // ride. Blink red on JavaScript and Capacitor-native maps.
+  useEffect(() => {
+    const points = (nearbyDrivers ?? []).slice(0, 12).filter((point) =>
+      Number.isFinite(point.lat) && Number.isFinite(point.lng) &&
+      Math.abs(point.lat) <= 90 && Math.abs(point.lng) <= 180);
+    nearbyMarkerRefs.current.forEach((marker) => marker.setMap(null));
+    nearbyMarkerRefs.current = [];
+    if (status !== "ready" || !points.length) {
+      if (nativeModeRef.current) {
+        void mapService.setNearbyDriverMarkers(nativeMapIdRef.current, []).catch(() => undefined);
+      }
+      return;
+    }
+    if (nativeModeRef.current) {
+      let disposed = false;
+      let busy = false;
+      let dim = false;
+      const sync = async () => {
+        if (disposed || busy || document.visibilityState !== "visible") return;
+        busy = true;
+        try {
+          await mapService.setNearbyDriverMarkers(nativeMapIdRef.current, points, dim);
+        } catch {
+          // Never expose driver details in logs.
+        } finally {
+          busy = false;
+          dim = !dim;
+        }
+      };
+      void sync();
+      const timer = window.setInterval(() => { void sync(); }, 1600);
+      return () => {
+        disposed = true;
+        window.clearInterval(timer);
+        void mapService.setNearbyDriverMarkers(nativeMapIdRef.current, []).catch(() => undefined);
+      };
+    }
+    const maps = (window as any).google?.maps;
+    if (!maps?.Marker) return;
+    nearbyMarkerRefs.current = points.map(position => new maps.Marker({
+      map: mapRef.current,
+      position,
+      clickable: false,
+      zIndex: 20,
+      title: "Motorista disponível (posição aproximada)",
+      icon: {
+        path: maps.SymbolPath.CIRCLE,
+        scale: 7,
+        fillColor: "#E51B23",
+        fillOpacity: 1,
+        strokeColor: "#FFFFFF",
+        strokeWeight: 2,
+      },
+    }));
+    let bright = true;
+    const timer = window.setInterval(() => {
+      bright = !bright;
+      nearbyMarkerRefs.current.forEach((marker) => marker.setOpacity(bright ? 1 : 0.25));
+    }, 1100);
+    return () => {
+      window.clearInterval(timer);
+      nearbyMarkerRefs.current.forEach((marker) => marker.setMap(null));
+      nearbyMarkerRefs.current = [];
+    };
+  }, [nearbyDrivers, status]);
+
