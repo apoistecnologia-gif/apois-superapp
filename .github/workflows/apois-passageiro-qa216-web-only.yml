@@ -9,7 +9,7 @@ on:
       - 'scripts/fix-corridas-passenger-qa215-completed-safe-area-v1.mjs'
       - 'scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs'
       - 'scripts/fix-corridas-passenger-profile-qa216-v1.mjs'
-      - 'scripts/fix-corridas-passenger-driver-identification-qa216-v1.mjs'
+      - 'scripts/harden-corridas-superapp-profile-ui.mjs'
       - 'scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs'
       - 'scripts/templates/PassengerProfilePhoto.tsx'
       - 'scripts/templates/PassengerCompletedRideCount.tsx'
@@ -59,7 +59,7 @@ jobs:
           node --check scripts/fix-corridas-passenger-qa215-completed-safe-area-v1.mjs
           node --check scripts/qa/test-corridas-passenger-qa215-completed-safe-area-v1.test.mjs
           node --check scripts/fix-corridas-passenger-profile-qa216-v1.mjs
-          node --check scripts/fix-corridas-passenger-driver-identification-qa216-v1.mjs
+          node --check scripts/harden-corridas-superapp-profile-ui.mjs
           node --check scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs
           npm run verify:pins
       - name: Build Passenger web and run integrated visual/regression/type checks
