@@ -450,6 +450,8 @@ if (name === 'corridas') {
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-report12-map-selection-v1.test.mjs')]);
   run(process.execPath,[resolve(root,'scripts/fix-corridas-client-qa169-video-v1.mjs')]);
   run(process.execPath,['--test',resolve(root,'scripts/qa/test-corridas-client-qa169-video-v1.test.mjs')]);
+  // QA217: intentional Passenger map behavior, before protected post-visual baseline.
+  run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-map-qa217-v1.mjs')]);
   // Relatório 13 / INV-066: valid destination/stop must not depend on local
   // recent-history write; favorites must confirm actual storage success.
   run(process.execPath, [resolve(root, 'scripts/fix-report13-destination-history-v1.mjs')]);
@@ -521,6 +523,10 @@ if (name === 'corridas') {
    // QA216: patch only generated Corridas; keep source pins and other modules.
    run(process.execPath, [resolve(root, 'scripts/fix-corridas-passenger-profile-qa216-v1.mjs')]);
    run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-profile-qa216-v1.test.mjs')]);
+   // QA217: backend route ETA and home distance/presence only on Passenger.
+   run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-eta-qa217-v1.mjs')]);
+   run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-home-qa217-v1.mjs')]);
+   run(process.execPath,['--test',resolve(root,'scripts/qa/test-corridas-passenger-map-qa217-v1.test.mjs')]);
   // RV-15: restore scoped public-form placeholder contrast, then only user-facing
   // auth error copy and field accessibility on disposable Corridas; do not change
   // password predicates, Supabase callback/session logic or email submission.
