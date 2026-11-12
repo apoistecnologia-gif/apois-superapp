@@ -15,6 +15,7 @@ on:
     branches:
       - audit/ecossistema-20261107
       - audit/continuacao-20261107
+      - build/qa218-android-homologacao-20261112
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-android-github-homolog-20261029
@@ -75,7 +76,7 @@ permissions:
 
 jobs:
   build-client-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107'))
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
