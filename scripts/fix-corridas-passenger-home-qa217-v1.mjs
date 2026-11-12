@@ -24,6 +24,10 @@ one('          driverLocation={undefined}',
 if (s.includes("1 motorista próximo")) {
  throw Error("[FAIL] QA219: legacy fixed nearby driver label must be removed from its original component");
 }
+const mapStart=s.indexOf("<PassengerMap");
+const mapEnd=mapStart<0?-1:s.indexOf("/>",mapStart);
+if(mapStart<0||mapEnd<0||mapEnd-mapStart>1000)
+ throw Error("[FAIL] QA217 home real PassengerMap mount not located");
 const routeBadge=readFileSync(resolve("scripts/templates/PassengerHomeRouteBadge.txt"),"utf8");
 s=s.slice(0,mapEnd+2)+"\n"+routeBadge+s.slice(mapEnd+2);
 for(const marker of ['APOIS_PASSENGER_QA217_HOME_V1','useNearbyPassengerDrivers(','nearbyDrivers={nearby.points}',
