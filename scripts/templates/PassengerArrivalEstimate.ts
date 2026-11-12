@@ -4,8 +4,8 @@ import { PolylineDecoder } from "@/services/routes/polyline-decoder";
 import type { ActiveRide, RideStatus } from "@/types/rides/active-ride";
 
 // APOIS_PASSENGER_QA217_ROAD_ETA_V1 — road ETA, not straight-line speed.
-// Reuse the existing authenticated, quota-controlled passenger-routes-compute.
-// Never call Distance Matrix/Google directly, nor overwrite the route provider.
+// Reuse the existing authenticated passenger-routes-compute; frontend throttles
+// requests to 90 seconds. Never call Maps directly or overwrite route state.
 export type RoadArrivalEstimate = {
   phase: "pickup" | "destination";
   distanceMeters: number;
