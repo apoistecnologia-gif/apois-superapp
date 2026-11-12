@@ -141,6 +141,20 @@ const activeRide = patch('src/routes/_authenticated.corrida.$rideId.tsx', (sourc
     '{status !== "procurar_motorista" ? <RideStatusHeader status={status} isRefreshing={isRefreshing} /> : null}',
   );
 
+  // QA217: keep the existing "hide duplicate searching header" behavior
+  // when the ETA component receives new road-distance props.
+  if (next.includes('APOIS_PASSENGER_QA217_ETA_V1') &&
+      !next.includes('status !== "procurar_motorista" ? <RideStatusHeader')) {
+    const headerStart=next.indexOf('<RideStatusHeader status={status} isRefreshing={isRefreshing}');
+    const headerEnd=headerStart<0?-1:next.indexOf('/>',headerStart);
+    if(headerStart<0||headerEnd<0||headerEnd-headerStart>500)
+      throw Error('[FAIL] QA217 RideStatusHeader layout drift');
+    const header=next.slice(headerStart,headerEnd+2);
+    next=next.slice(0,headerStart)+
+      '{status !== "procurar_motorista" ? '+header+' : null}'+
+      next.slice(headerEnd+2);
+  }
+
   // Mantém mais mapa visível e deixa o conteúdo rolável quando necessário.
   next = next
     .replace(
