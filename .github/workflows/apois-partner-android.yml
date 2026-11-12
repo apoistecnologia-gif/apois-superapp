@@ -80,7 +80,7 @@ jobs:
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
       CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
-      # Driver vector map requires a reviewed, published APOIS Cloud style and a JavaScript vector Map ID; unset by default.
+      # QA-only, enabled after user published style and confirmed vector + rotation in Cloud.
       # QA206: public Map ID created in Google Cloud project Movvi; no API keys or billing changed.
       VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
       VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"

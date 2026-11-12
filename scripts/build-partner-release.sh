@@ -326,6 +326,9 @@ forbid_bundle 'Aguardando pagamento do passageiro' dist/client 'Motorista sem es
 forbid_bundle 'Solicitar saque' dist/client 'Motorista sem saque custodial legado'
 
 # ---------------- Entregador ----------------
+# Motorista-only Map ID must not enter the Vite/Nitro environment of Entregador.
+# Vite can embed all VITE_ variables in its import.meta.env runtime object.
+unset VITE_APOIS_PARTNER_VECTOR_MAP_ID VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED
 cd "$ROOT"
 unset APOIS_MOTORISTA_WORKSPACE
 export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"
