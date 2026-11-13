@@ -66,3 +66,20 @@ Classificação conservadora: **presente em código** não equivale a **testado 
 | Estilo vetorial do mapa | Map ID e flag CI; QA219 evita conflito local/Cloud | Validar `getRenderingType()` VECTOR/Raster no dispositivo e estilo publicado |
 
 **Regra de saída para APK:** não promover o QA219 a homologação aprovada sem testes reais de PIN, duas corridas sequenciais, cancelamento concorrente, mapa vetorial/fallback, GPS em movimento, ligação/voz, tela bloqueada, e regressão do Entregador/Passageiro (estes últimos sem alterações diretas).
+
+
+## Rodada adicional — concorrência Realtime e mapa
+
+**Verificação adicional na fonte fixa (`movvi-go-connect@9fc1710`):** `applyActive` não comparava a fase recebida com a fase previamente apresentada; `removeIncomingRequest` usava `setIncoming(null)` sem comparar `ride.id`.
+
+**Ajustes adicionais na mesma branch QA219:**
+- `applyActive` passa a descartar regressões `em_viagem → motorista_chegou` e `motorista_chegou → motorista_a_caminho` da mesma corrida, e conclusão de outra corrida enquanto uma está ativa.
+- `removeIncomingRequest` agora usa atualização funcional de estado condicionada ao ID da oferta para não apagar outra oferta que apareceu posteriormente.
+- `handleLoad` do Google Maps passa a declarar `useCloudVector` como dependência do callback, após a correção que bloqueia `map.setOptions({styles})` com Map ID cloud.
+- O teste QA219 foi ampliado com cenários executáveis de ordem atrasada, progresso válido, conclusão e cancelamento de corrida em fila.
+
+**Verificação efetivamente realizada:** 4 casos do teste de QA219 executados em V8 com mocks locais (todos passaram), incluindo simulação de estágios fora de ordem. O transformador QA219 também foi aplicado com sucesso a um recorte do manipulador `applyActive` extraído diretamente do commit fixado (simulando a alteração QA209 de `clearDriverRouteVisuals`). **Esta validação não representa execução de toda a cadeia de build do Superapp**; é necessário o preflight contra a árvore transformada real.
+
+**Referência externa atual:** a documentação da Google Maps JavaScript API informa que `styles` não é suportado quando há `mapId` ou vector map e que `getRenderingType()` identifica a renderização real após carregar tiles. A presença do Map ID no bundle não basta para garantir vector em hardware Android.
+
+**Pendente:** bun typecheck/build real, Android físico, teste de dois motoristas, assertivas no Supabase sob conta de QA e reconciliação financeira. Nenhuma execução de produção ou ação no servidor.
