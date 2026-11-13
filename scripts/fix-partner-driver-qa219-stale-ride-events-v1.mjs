@@ -35,8 +35,8 @@ export function patchStaleTerminalEvents(source) {
   const incomingClears = cancellation.split('setIncoming(null);').length - 1;
   if (incomingClears !== 2) throw new Error("[FAIL] QA219 expected two conditional incoming clears, got " + incomingClears);
   cancellation = cancellation.replaceAll('setIncoming(null);', 'setIncoming((current) => current?.id === r.id ? null : current);');
-  const oldClear = '        setActive(null);\\n        clearDriverRouteVisuals();';
-  const newClear = '        setActive((current) => current?.id === r.id ? null : current);\\n        if (!activeRef.current || activeRef.current.id === r.id) clearDriverRouteVisuals();';
+  const oldClear = ["        setActive(null);", "        clearDriverRouteVisuals();"].join("\n");
+  const newClear = ["        setActive((current) => current?.id === r.id ? null : current);", "        if (!activeRef.current || activeRef.current.id === r.id) clearDriverRouteVisuals();"].join("\n");
   if (cancellation.split(oldClear).length !== 2) throw new Error("[FAIL] QA219 cancellation route cleanup contract changed");
   cancellation = cancellation.replace(oldClear, newClear);
   handler = handler.slice(0, cancelStart) + cancellation + handler.slice(cancelEnd);
