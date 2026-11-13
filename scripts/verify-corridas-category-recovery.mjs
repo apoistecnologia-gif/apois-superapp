@@ -26,7 +26,10 @@ assert.ok(cat.includes('data-apois-categories-retry="true"'),'Tela sem botao de 
 assert.ok(cat.includes('categoriesError'),'Erro de consulta precisa ficar visivel');
 assert.ok(cat.includes('refreshCategories()'),'Atualizar precisa repetir chamada real');
 assert.ok(cat.includes('validated-sprite-v6'),'Sprite original APOIS foi removido');
-assert.ok(cat.includes('servicePosition[cat.key]'),'Imagem nao e atribuida por categoria real');
+assert.ok(cat.includes('servicePosition[String(cat.key ?? cat.code ?? "").toLowerCase()]'),'Imagem deve mapear o codigo verdadeiro da categoria');
+for (const marker of ['carros: "0%"', 'carro: "0%"', 'motos: "25%"', 'moto: "25%"']) {
+  assert.ok(cat.includes(marker), 'Sprite deve reconhecer codigo singular/plural: '+marker);
+}
 assert.ok(cat.includes('categories.map((cat)'),'Categorias nao usam o banco');
 assert.ok(!cat.includes('Não há categorias disponíveis para esta rota no momento.'),'Mensagem enganosa nao eliminada');
 assert.ok(!p.includes('const DEMO_CATEGORIES'),'Proibido catalogo falso');
