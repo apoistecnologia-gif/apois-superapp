@@ -338,6 +338,9 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa222-follow-reroute-v1.test.m
 # External navigation is the sole turn-by-turn provider. Integrate after QA222 on disposable Motorista.
 node "$ROOT/scripts/install-partner-external-navigation-ui.mjs" motorista
 APOIS_EXTERNAL_NAV_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-external-navigation-v1.test.mjs"
+# QA234: one deliberate swipe per critical action, PIN-success launches preferred external navigator.
+node "$ROOT/scripts/install-partner-qa234-swipe-cost-v1.mjs" motorista
+APOIS_QA234_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa234-swipe-cost-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
