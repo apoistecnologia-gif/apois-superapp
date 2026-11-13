@@ -45,6 +45,12 @@ export function patchNativeWatchRestart(source) {
       '    watchRestartRequestedRef.current = false;',
     ].join('\n'),"start during pending stop"
   );
+  // A stale callback from a stopped watcher must not update the map position.
+  only(
+    '      const lat = coords.latitude, lng = coords.longitude;',
+    '      if (watchStopRequestedRef.current) return;\n      const lat = coords.latitude, lng = coords.longitude;',
+    "ignore stale native GPS callback"
+  );
   only(
     '          void Geolocation.clearWatch({ id }).catch(() => undefined);\n          return;',
     [
