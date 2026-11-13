@@ -37,12 +37,12 @@ function changeOnce(original,from,to,label){
 }
 rootSource=changeOnce(rootSource,
  'import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";',
- 'import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";\\n'+
+ 'import { DriverNativePermissionsSync } from "../components/DriverNativePermissionsSync";\n'+
  'import { ApoisBubblePermissionGate } from "../components/ApoisBubblePermissionGate";',
  "driver root import");
 rootSource=changeOnce(rootSource,
  '          {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}',
- '          {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}\\n'+
+ '          {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}\n'+
  '          {APP_ROLE === "driver" ? <ApoisBubblePermissionGate /> : null}',
  "first-use driver modal mount");
 if(!rootSource.includes("<DriverPresenceKeeper />")||!rootSource.includes("<Outlet />"))
