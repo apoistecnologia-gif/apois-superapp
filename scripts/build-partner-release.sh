@@ -469,6 +469,11 @@ APOIS_QA235_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa235-sin
 # QA241: same approved logo, first-entry Android permission, and return to courier/Maps.
 node "$ROOT/scripts/install-partner-qa241-courier-bubble.mjs"
 APOIS_QA241_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa241-profile-courier-swipe.test.mjs"
+# QA243 — Entregador: count only TODAY and keep internal map operational, routing external only.
+# Staged for a future authorized build; this commit does NOT run a build or generate APK.
+node "$ROOT/scripts/fix-partner-qa243-courier-daily-stats.mjs"
+node "$ROOT/scripts/fix-partner-qa243-courier-external-only-map.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa243-courier-metrics-map.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
