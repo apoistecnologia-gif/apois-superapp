@@ -38,8 +38,8 @@ const end=a.lastIndexOf("}");
 if(end<0||a.includes("APOISReturnBubble."))throw Error("[QA239] MainActivity anchor");
 a=a.slice(0,end)+
  '    // QA239: only display while the app is backgrounded; hide on return.\n'+
- '    @Override protected void onPause(){super.onPause();APOISReturnBubble.show(getApplicationContext());}\n'+
- '    @Override protected void onResume(){super.onResume();APOISReturnBubble.hide();}\n'+
+ '    @Override public void onPause(){super.onPause();APOISReturnBubble.show(getApplicationContext());}\n'+
+ '    @Override public void onResume(){super.onResume();APOISReturnBubble.hide();}\n'+
  a.slice(end);
 if(!m.includes("android.permission.SYSTEM_ALERT_WINDOW")){
  const tag=m.indexOf(">",m.indexOf("<manifest"));
