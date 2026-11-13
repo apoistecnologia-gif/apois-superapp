@@ -64,6 +64,8 @@ once('  const { checkout } = useCheckoutPreparation();',[
  '  };'
 ].join("\n"),"booking cause feedback");
 
+// Only show request problems after the passenger has selected a destination.
+// Without a destination, a wallet or stale-route message is confusing and unrelated.
 // Find the actual CTA rather than relying on a historical visual indentation.
 const click='onClick={handleReview}';
 const clickAt=s.indexOf(click);
@@ -71,7 +73,7 @@ if(clickAt<0||s.indexOf(click,clickAt+1)>=0)throw Error("[FAIL] QA237 request ac
 const buttonAt=s.lastIndexOf("<button",clickAt);
 if(buttonAt<0||clickAt-buttonAt>200)throw Error("[FAIL] QA237 cannot place notice before CTA");
 const notice=[
-'                {(!checkout.readiness || !!routeError) && (',
+'                {(hasDestination && (!checkout.readiness || !!routeError)) && (',
 '                  <div data-apois-qa237-request-gate="true" role="status"',
 '                    className="mb-3 rounded-2xl border border-[#F5CBCB] bg-[#FFF7F7] px-3 py-3 text-[#7C2424]">',
 '                    <p className="text-[12px] font-semibold leading-relaxed">{qa237BlockMessage}</p>',
