@@ -20,7 +20,7 @@ test("one shared navigator for Motorista and Entregador, official Android Activi
   '&travelmode=driving&dir_action=navigate',
   '&navigate=yes',
   'provider: ApoisNavigator; latitude: number; longitude: number',
-  '"INICIAR NAVEGAÇÃO"', '"Google Maps"', '"Waze"',
+  'label="Iniciar navegação"', '"Google Maps"', '"Waze"',
   'setOperation({ role, active })', '"apois-parceiro:external-navigator:v1"',
   "window.localStorage.setItem", "window.localStorage.removeItem",
   'role="group"', 'disabled={busy || !coordinateValid}',
