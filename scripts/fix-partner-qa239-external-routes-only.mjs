@@ -20,7 +20,8 @@ effect=one(effect,
  [
  "    // "+mark+": active ride route is OWNED by Google Maps/Waze externally.",
  "    // Driver map remains an operational status/GPS and demand-zones map.",
- "    if (active) {",
+ "    const qa239ExternalOnly=():boolean=>true;",
+ "    if (qa239ExternalOnly()) {",
  "      routeRequestEpochRef.current += 1;",
  "      routeRefreshRef.current = null;",
  "      lastRouteRequestKeyRef.current = null;",
@@ -35,7 +36,7 @@ route=route.slice(0,start)+effect+route.slice(finish);
 // Secondary recovery is also prevented from reaching Routes, even when main map is unmounted.
 recovery=one(recovery,
  "  useEffect(() => {\n    if (mainDriverOwnsMap()) {",
- "  useEffect(() => {\n    // "+mark+": session recovery is data-only; no map route billing.\n    clearLines();\n    return;\n    if (mainDriverOwnsMap()) {",
+ "  useEffect(() => {\n    // "+mark+": function guard avoids TypeScript narrowing the legacy fallback branch.\n    const qa239ExternalOnly=():boolean=>true;\n    if(qa239ExternalOnly()){clearLines();return;}\n    if (mainDriverOwnsMap()) {",
  "secondary recovery guard");
 for(const token of ['useDriverBroadcast(','showDemandZones && demandZones.map','qa235ArrivalRef.current','onStartPin={()=>setQa236PinOpen(true)}','onConfirm={handleComplete}','ApoisExternalNavigation latitude={ride.destination_lat}']){
  if(!route.includes(token))throw Error("[FAIL] QA239 prerequisite "+token);
