@@ -20,9 +20,14 @@ once('import { useCheckoutPreparation } from "@/hooks/use-checkout-preparation";
  'import { useCheckoutPreparation } from "@/hooks/use-checkout-preparation";\n'+
  'import { usePricing } from "@/hooks/use-pricing"; // '+marker,
  "pricing hook");
-once('  const { route, status: routeStatus, error: routeError } = useRoute();',
- '  const { route, status: routeStatus, error: routeError, retry: qa237RetryRoute } = useRoute();',
- "existing route retry");
+// Earlier QA generations may already add the route freshness fields.
+const declarations=[...s.matchAll(/^\s*const\s*\{([^}]+)\}\s*=\s*useRoute\(\);/gm)]
+ .filter(m=>m[1].includes("route")&&m[1].includes("routeError"));
+if(declarations.length!==1)throw Error("[FAIL] QA237 route declaration count="+declarations.length);
+const declaration=declarations[0][0];
+if(/\bqa237RetryRoute\b|\bretry\s*:/.test(declaration))
+ throw Error("[FAIL] QA237 retry already declared");
+s=s.replace(declaration,declaration.replace("} = useRoute();",", retry: qa237RetryRoute } = useRoute();"));
 once('  const { checkout } = useCheckoutPreparation();',[
  '  const { checkout } = useCheckoutPreparation();',
  '  const { calculatePricing: qa237RetryPricing } = usePricing();',
