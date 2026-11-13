@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { Navigation2, MapPinned, ChevronDown } from "lucide-react";
 import { ApoisSlideAction } from "./ApoisSwipeControls";
 
 export type ApoisNavigator = "google" | "waze";
@@ -12,8 +13,6 @@ type OpenResult = { opened: boolean; fallback: boolean; provider: string };
 type ExternalPlugin = {
   open(options: { provider: ApoisNavigator; latitude: number; longitude: number }): Promise<OpenResult>;
   setOperation(options: { role: ApoisPartnerRole; active: boolean; rideId?: string | undefined; pickupLatitude?: number | undefined; pickupLongitude?: number | undefined; stage?:string | undefined }): Promise<{updated:boolean}>;
-  bubbleStatus(): Promise<{enabled:boolean;granted:boolean}>;
-  configureBubble(options:{enabled:boolean}): Promise<{enabled:boolean;granted:boolean}>;
 };
 const NativeNavigation = registerPlugin<ExternalPlugin>("APOISExternalNavigation");
 const PREFERENCE_KEY = "apois-parceiro:external-navigator:v1";
@@ -97,31 +96,6 @@ export function ApoisExternalNavigation({
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  // QA239: optional permission gated native return bubble for the Driver.
-  const [bubbleEnabled,setBubbleEnabled]=useState(false);
-  const [bubbleGranted,setBubbleGranted]=useState(false);
-  const isDriverNav=stage==="até o passageiro"||stage==="até o destino";
-  useEffect(()=>{
-    if(!isDriverNav||!Capacitor.isNativePlatform()||Capacitor.getPlatform()!=="android")return;
-    let cancelled=false;
-    const refresh=()=>void NativeNavigation.bubbleStatus().then(v=>{
-      if(!cancelled){setBubbleEnabled(v.enabled);setBubbleGranted(v.granted);}
-    }).catch(()=>undefined);
-    refresh();
-    let subscription:{remove:()=>Promise<void>}|null=null;
-    void App.addListener("appStateChange",({isActive})=>{if(isActive)refresh();})
-      .then(x=>{if(cancelled)void x.remove();else subscription=x;}).catch(()=>undefined);
-    return()=>{cancelled=true;if(subscription)void subscription.remove();};
-  },[isDriverNav]);
-  async function toggleBubble(){
-    try{
-      const result=await NativeNavigation.configureBubble({enabled:!bubbleEnabled});
-      setBubbleEnabled(result.enabled);setBubbleGranted(result.granted);
-      if(result.enabled&&!result.granted)setMessage("Autorize Exibir sobre outros aplicativos e retorne ao APOIS.");
-      else setMessage("");
-    }catch{setMessage("Bolha indisponível; use a notificação VOLTAR AO APOIS.");}
-  }
-
   const coordinateValid = validNavigationCoordinate(latitude, longitude);
 
   async function openProvider(provider: ApoisNavigator) {
@@ -167,12 +141,6 @@ export function ApoisExternalNavigation({
 
   return (
     <div data-apois-external-navigation="true" className="w-full min-w-0">
-      {isDriverNav && Capacitor.isNativePlatform() && Capacitor.getPlatform()==="android" ? (
-        <button type="button" onClick={()=>void toggleBubble()} aria-pressed={bubbleEnabled}
-          className="mb-2 min-h-11 w-full rounded-xl border border-[#F1C2C6] bg-[#FFF1F2] px-3 text-xs font-bold text-[#A31626]">
-          {bubbleEnabled ? bubbleGranted ? "Bolha APOIS ativa • Desativar" : "Autorizar bolha no Android" : "Ativar bolha de retorno (opcional)"}
-        </button>
-      ):null}
       <div className="flex min-w-0 items-center gap-2">
         <ApoisSlideAction
           label="Iniciar navegação"
@@ -183,41 +151,55 @@ export function ApoisExternalNavigation({
         />
         {preferred ? (
           <button type="button" onClick={() => { setChooser(true); setMessage(""); }}
-            className="min-h-11 shrink-0 rounded-xl border border-[#D0D5DD] bg-white px-3 text-xs font-bold text-[#344054]"
-            aria-label="Trocar aplicativo de navegação">Trocar</button>
+            className="flex min-h-[56px] shrink-0 items-center justify-center gap-1.5 rounded-[16px] border border-[#D6D9DF] bg-white px-3.5 text-xs font-extrabold text-[#252B36] shadow-[0_4px_12px_rgba(15,23,42,.07)] transition active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51B23]"
+            aria-label="Escolher aplicativo de navegação">
+            <Navigation2 aria-hidden="true" className="h-4 w-4 text-[#D51A29]"/>
+            <span>Trocar</span>
+            <ChevronDown aria-hidden="true" className="h-4 w-4 text-[#64748B]"/>
+          </button>
         ) : null}
       </div>
       {message ? <p role="status" className="mt-1 text-xs font-semibold text-[#AF1830]">{message}</p> : null}
       {chooser ? (
         <div role="group" aria-label={"Escolher navegador para " + stage}
-          className="mt-2 rounded-2xl border border-[#E5E7EB] bg-white p-3 text-[#111827] shadow-md">
-          <p className="mb-2 text-xs font-extrabold">Navegar {stage} com:</p>
+          className="mt-3 rounded-[22px] border border-[#E1E3E8] bg-white p-4 text-[#171B23] shadow-[0_16px_34px_rgba(15,23,42,.12)]">
+          <p className="mb-3 text-[13px] font-black tracking-[-.01em]">Navegar {stage} com:</p>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" disabled={busy} onClick={() => void openProvider("google")}
-              className="min-h-11 rounded-xl border border-[#E51B23] bg-[#FFF1F2] px-2 text-xs font-bold text-[#C9141B]">Google Maps</button>
+              className="min-h-[52px] rounded-[15px] border border-[#E51B23] bg-[#E51B23] px-2 text-[13px] font-extrabold text-white shadow-[0_6px_18px_rgba(229,27,35,.2)] transition active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51B23]">Google Maps</button>
             <button type="button" disabled={busy} onClick={() => void openProvider("waze")}
-              className="min-h-11 rounded-xl border border-[#D0D5DD] bg-[#F9FAFB] px-2 text-xs font-bold text-[#344054]">Waze</button>
+              className="min-h-[52px] rounded-[15px] border border-[#D5D9E0] bg-[#F8F9FB] px-2 text-[13px] font-extrabold text-[#252B36] shadow-sm transition active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D51A29]">Waze</button>
           </div>
-          <label className="mt-3 flex min-h-9 items-center gap-2 text-xs font-medium text-[#344054]">
+          <label className="mt-3 flex min-h-[46px] items-center gap-2.5 rounded-[13px] border border-[#E5E7EB] bg-[#F8F9FB] px-3 text-[12px] font-semibold text-[#344054]">
             <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)}
               className="h-4 w-4 accent-[#E51B23]" /> Salvar como navegador preferido
           </label>
           <button type="button" onClick={() => setChooser(false)}
-            className="min-h-9 text-xs font-semibold text-[#667085]">Fechar opções</button>
+            className="mt-1 min-h-[42px] w-full rounded-xl text-[12px] font-bold text-[#6B7280] transition hover:bg-[#F2F3F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D51A29]">Fechar opções</button>
         </div>
       ) : null}
     </div>
   );
 }
 
-/** QA239: one-touch floating shortcut INSIDE APOIS to the selected external navigator. */
+/** QA240: polished shortcut inside APOIS to the external Maps/Waze navigator. */
 export function ApoisQuickMapButton({latitude,longitude}:{latitude:number|null|undefined;longitude:number|null|undefined}){
   const [busy,setBusy]=useState(false);
+  const [error,setError]=useState("");
   if(!validNavigationCoordinate(latitude,longitude))return null;
-  return <button type="button" disabled={busy} aria-label="Abrir navegação externa"
-    data-apois-qa239-map-shortcut="true"
-    className="fixed right-3 z-40 flex h-12 min-w-12 items-center justify-center rounded-full border-2 border-white bg-[#E51B23] px-3 text-xs font-extrabold text-white shadow-lg disabled:opacity-60"
-    style={{top:"calc(env(safe-area-inset-top) + 126px)"}}
-    onClick={()=>{if(busy)return;setBusy(true);void launchApoisNavigationAfterRideStart(latitude,longitude)
-      .catch(()=>undefined).finally(()=>setBusy(false));}}>MAPA</button>;
+  return <div data-apois-qa240-map-shortcut="true"
+    className="pointer-events-none fixed right-3 z-40 flex flex-col items-end gap-1.5"
+    style={{top:"calc(env(safe-area-inset-top) + 128px)"}}>
+    <button type="button" disabled={busy} aria-label="Voltar ao Google Maps ou Waze"
+      className="pointer-events-auto flex min-h-[50px] items-center gap-2.5 rounded-full border-2 border-white bg-[#E51B23] pl-3.5 pr-4 text-[12px] font-black text-white shadow-[0_12px_28px_rgba(111,13,22,.34)] transition active:scale-[.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#FF8088]/45 disabled:opacity-70"
+      onClick={()=>{if(busy)return;setBusy(true);setError("");
+        void launchApoisNavigationAfterRideStart(latitude,longitude)
+          .catch(()=>setError("Não foi possível abrir o navegador externo."))
+          .finally(()=>setBusy(false));
+      }}>
+      <MapPinned aria-hidden="true" className="h-[21px] w-[21px]"/>
+      <span>{busy?"Abrindo…":"Voltar ao mapa"}</span>
+    </button>
+    {error?<span role="alert" className="max-w-[210px] rounded-xl border border-[#F7CDD2] bg-white px-3 py-2 text-[11px] font-bold text-[#A71A27] shadow-md">{error}</span>:null}
+  </div>;
 }
