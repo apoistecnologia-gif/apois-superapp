@@ -94,7 +94,7 @@ export function patchDriverCamera(source) {
 }
 
 export function patchPinDigits(source) {
-  if (source.includes(marker)) throw new Error("[FAIL] QA220 PIN applied twice");
+  if (source.includes('data-apois-qa220-pin-digit-v1="true"')) throw new Error("[FAIL] QA220 PIN applied twice");
   const begin=source.indexOf("function ActiveRidePanel(");
   const end=begin < 0 ? -1 : source.indexOf("\nfunction ActionButton(", begin);
   if (begin < 0 || end <= begin) throw new Error("[FAIL] QA220 real PIN panel not found");
