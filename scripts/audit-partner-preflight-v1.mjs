@@ -220,6 +220,27 @@ if(process.argv.includes("--dist")){
     'NativeNavigation.setOperation({ role, active, ...(role==="motorista"',
   ],"Motorista uses official external Google Maps/Waze navigation, without internal turn-by-turn voice");
   check(!driverAppPatched.includes("tickNavigation("),"Motorista does not repeat third-party turn-by-turn voice in APOIS");
+  if(driverAppPatched.includes("APOIS_PARTNER_QA239_DEMAND_ONLY_V1")) {
+    // QA239 intentionally removes in-app route/ETA calculation; never demand paid
+    // route plausibility when directions belong to external Google Maps or Waze.
+    all(driverAppPatched,[
+      "APOIS_PARTNER_QA239_DEMAND_ONLY_V1",
+      "showApoisDemandMap=Boolean(apoisDemandMapOpen && online && !active && !incoming && !ratingRide)",
+      "showDemandZones = Boolean(showApoisDemandMap && online",
+      "setPolyline([]);setLegKm(null);setEtaSeconds(null);",
+      "ApoisExternalNavigation latitude={ride.origin_lat}",
+      "ApoisExternalNavigation latitude={ride.destination_lat}",
+      "useApoisOperationalNotification(\"motorista\", Boolean(active)",
+      "data-apois-qa236-start-ride=\"true\"",
+      "onStartPin={()=>setQa236PinOpen(true)}",
+      "launchApoisNavigationAfterRideStart(accepted.origin_lat, accepted.origin_lng)",
+      "onStart(pinCode)",
+      "onConfirm={handleComplete}",
+      "launchApoisNavigationAfterRideStart(ride.destination_lat, ride.destination_lng)",
+    ],"QA239 demand-only map, external routes and complete ride lifecycle");
+    check(!driverAppPatched.includes("callRoute({ data: { origin: pos, destination: dest } })"),
+      "QA239 has no paid internal route calculation during driver operations");
+  } else {
   all(driverAppPatched,[
     "const NAVIGATION_ZOOM = 17;",
     "APOIS_DRIVER_FORWARD_CAMERA_V1",
@@ -242,7 +263,7 @@ if(process.argv.includes("--dist")){
     "launchApoisNavigationAfterRideStart(ride.destination_lat, ride.destination_lng)",
     "elapsedMs >= 900000",
   ],"Motorista preserves route plausibility and ride lifecycle while opening external navigation");
-
+  }
   all(driverAppPatched,["data-apois-trip-top-v6","data-apois-trip-bottom-v6","onShowRoute","onRecenter","m.fitBounds"],"Motorista V6 keeps route overview and compact light panels");
   all(driverAppPatched,["APOIS_DRIVER_PRESENCE_ACK_V1",'window.addEventListener("apois:driver-presence-rejected", handlePresenceRejection)',"setDesiredOnline(false);","stopDriverWatch();"],"Motorista cannot remain phantom ONLINE after RPC rejection");
 
