@@ -30,7 +30,7 @@ if(role==="motorista"){
  for(const t of must)if(!s.includes(t))throw Error("[FAIL] QA235 driver source "+t);
  s=once(s,
    'useApoisOperationalNotification("motorista", Boolean(active));',
-   'useApoisOperationalNotification("motorista", Boolean(active), active?.id, active?.origin_lat, active?.origin_lng);',
+   'useApoisOperationalNotification("motorista", Boolean(active), active?.status === "motorista_a_caminho" ? active.id : undefined, active?.status === "motorista_a_caminho" ? active.origin_lat : undefined, active?.status === "motorista_a_caminho" ? active.origin_lng : undefined);',
    "native Android background GPS receives active ride pickup for automatic push arrival");
  s="// APOIS_PARTNER_QA235_ONE_NAVIGATION_V1\n"+
    'import { setApoisExternalNavigationOwnsVoice } from "@/lib/voiceNav";\n'+s;
