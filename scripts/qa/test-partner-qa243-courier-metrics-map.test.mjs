@@ -41,7 +41,7 @@ test("QA243: Courier has same external-only road navigation as Motorista; local 
   "ApoisExternalNavigation latitude={target.lat}",
   "ApoisQuickMapButton latitude={target.lat}",
   "AdvancedMarker",
-  "nearbyMerchants.map",
+  "<CourierStyledLiveMarkers position={mapPosition} merchants={nearbyMerchants} />",
   "RecenterControl",
   "job.pickup_latitude",
   "job.delivery_latitude",
