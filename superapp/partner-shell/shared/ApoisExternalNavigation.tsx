@@ -11,7 +11,7 @@ export type ApoisPartnerRole = "motorista" | "entregador";
 type OpenResult = { opened: boolean; fallback: boolean; provider: string };
 type ExternalPlugin = {
   open(options: { provider: ApoisNavigator; latitude: number; longitude: number }): Promise<OpenResult>;
-  setOperation(options: { role: ApoisPartnerRole; active: boolean; rideId?: string; pickupLatitude?: number; pickupLongitude?: number }): Promise<{updated:boolean}>;
+  setOperation(options: { role: ApoisPartnerRole; active: boolean; rideId?: string | undefined; pickupLatitude?: number | undefined; pickupLongitude?: number | undefined }): Promise<{updated:boolean}>;
 };
 const NativeNavigation = registerPlugin<ExternalPlugin>("APOISExternalNavigation");
 const PREFERENCE_KEY = "apois-parceiro:external-navigator:v1";
