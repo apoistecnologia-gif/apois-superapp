@@ -344,6 +344,9 @@ APOIS_QA234_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa234-swip
 # QA235: one external voice, auto map on acceptance, no manual arrival and GPS-owned passenger push.
 node "$ROOT/scripts/fix-partner-qa235-single-navigation-arrival-v1.mjs" motorista
 APOIS_QA235_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa235-single-navigation-v1.test.mjs"
+# QA236: restore Start Ride / PIN in pickup state; no mandatory arrival control.
+node "$ROOT/scripts/fix-partner-qa236-pickup-pin-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa236-pickup-pin-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
