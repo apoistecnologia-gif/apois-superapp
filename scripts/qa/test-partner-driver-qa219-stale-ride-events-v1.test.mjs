@@ -59,7 +59,7 @@ test("guard evaluates out-of-order and independent ride events without changing 
   assert.ok(begin > 0 && end > begin);
   const guardSource = patched.slice(begin, end).replace("const phaseOrder: Record<string, number>", "const phaseOrder");
   const evaluate = new Function("r", "activeRef", "queuedRideRef", "incomingRef",
-    guardSource + '\\nreturn true;');
+    guardSource + '\nreturn true;');
   const check = (status, currentId, currentStatus, rideId = "A", queuedId = null, incomingId = null) =>
     evaluate({id:rideId,status}, {current: currentId ? {id:currentId,status:currentStatus} : null},
       {current:queuedId ? {id:queuedId} : null}, {current:incomingId ? {id:incomingId} : null}) === true;
