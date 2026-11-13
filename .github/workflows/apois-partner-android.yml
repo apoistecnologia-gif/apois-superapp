@@ -17,12 +17,18 @@ on:
       - audit/continuacao-20261107
       - build/qa218-android-homologacao-20261112
       - fix/motorista-qa219-video-20261112
+      - feature/apois-partner-external-navigation-20261113
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-partner-courier-gps-logo-push-20261027
       - fix/apois-android-github-homolog-20261029
     paths:
       - '.github/workflows/apois-partner-android.yml'
+      - 'scripts/install-partner-external-navigation-ui.mjs'
+      - 'scripts/install-partner-external-navigation.mjs'
+      - 'scripts/android/APOISExternalNavigationPlugin.java'
+      - 'scripts/qa/test-partner-external-navigation-v1.test.mjs'
+      - 'superapp/partner-shell/shared/ApoisExternalNavigation.tsx'
       - 'scripts/audit-partner-red-visual-v16.mjs'
       - 'scripts/audit-codemagic-host-installs-v18.mjs'
       - 'scripts/harden-partner-motorista-history-receipt.mjs'
@@ -83,7 +89,7 @@ permissions:
 
 jobs:
   build-partner-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112' || github.ref == 'refs/heads/feature/apois-partner-external-navigation-20261113')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
