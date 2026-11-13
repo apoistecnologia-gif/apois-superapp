@@ -252,12 +252,17 @@ if(process.argv.includes("--dist")){
   all(read(".work/partner-motorista/src/lib/driverLocalSignOut.ts"),['scope: "local"','window.location.replace','sb-'],"Motorista logout local with offline fallback");
   all(offersPatched,["APOIS_PARTNER_LOGO_DATA_URL","apois:courier-offer-accepted","AudioContext","stopAlert","pulseAlert"],"Built courier offer modal, ringtone and immediate route refresh");
   all(courierPatched,["window.addEventListener(\"apois:courier-offer-accepted\", refresh)","window.removeEventListener(\"apois:courier-offer-accepted\", refresh)"],"Courier updates active route on accepted offer");
-  all(read(".work/partner-entregador/src/components/CourierRouteMap.tsx"),[
+  const qa243CourierMap=read(".work/partner-entregador/src/components/CourierRouteMap.tsx");
+  all(qa243CourierMap,[
     'ApoisExternalNavigation latitude={target.lat} longitude={target.lng}',
     'stage={goingToDelivery ? "até o cliente" : "até o estabelecimento"}',
     'job.pickup_latitude','job.delivery_latitude',
-    'update_courier_delivery_route_metrics',
-  ],"Courier navigates to merchant or customer via shared external providers; operational metrics retained");
+    'APOIS_PARTNER_QA243_EXTERNAL_ONLY_COURIER_MAP_V1',
+    'ApoisQuickMapButton latitude={target.lat}',
+    'Distância em linha reta','Ruas e trânsito',
+  ],"Courier navigates externally while preserving GPS and two-stage destinations");
+  check(!/Route\\.computeRoutes|importLibrary\\("routes"\\)|update_courier_delivery_route_metrics/.test(qa243CourierMap),
+    "Courier uses zero internal paid Routes calls or route-metrics writes; Google Maps/Waze own guidance");
   all(courierPatched,[
     'useApoisOperationalNotification("entregador", Boolean(activeJob))',
     "onTransition={transitionDelivery}", "onComplete={completeDelivery}"
