@@ -37,7 +37,7 @@ test("preferred navigator can reopen on demand, while ride start auto-launch req
    'const provider = readPreferred() ?? "google";',
    "NativeNavigation.open({provider, latitude: Number(latitude), longitude: Number(longitude)})",
    "<ApoisSlideAction","onConfirm={launch}","label=\"Iniciar navegação\"",
-   '"Trocar"'
+   'Trocar</button>'
  ])assert.ok(navigator.includes(s),"external navigator missing "+s);
  assert.ok(!navigator.includes("computeDriverRoute"),"no paid Routes request in shared external launcher");
 });
