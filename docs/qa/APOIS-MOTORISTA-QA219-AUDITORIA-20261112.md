@@ -141,3 +141,11 @@ Classificação conservadora: **presente em código** não equivale a **testado 
 - Coletar eventos por ride_id, status, timestamp e origem do evento (push/polling/resync) para provar ou refutar alternâncias inesperadas.
 - Android real: mapa e getRenderingType, direção em movimento, ETA, PIN/IME, GPS/background, cancelamento concorrente e fila.
 - Sem APK, merge, deploy ou mudanças no Supabase de produção.
+
+
+## QA219 — controle manual da câmera
+- Achado de código: no manipulador onDragStart, o Motorista só desativava autoFollowRef fora dos status de navegação. Isso contradizia a regra do próprio componente, segundo a qual arrastar manualmente pausa o acompanhamento até o botão Seguir.
+- Correção de apresentação: script fix-partner-driver-video-map-rotation-20261112-v1.mjs passa a definir autoFollowRef.current=false no dragstart em qualquer fase, sem mudar o GPS, centro inicial, Map ID nem chamadas Routes.
+- A ação Seguir/recenter existente continua reativando autoFollowRef; o teste qa/test-partner-driver-video-map-rotation-20261112-v1.test.mjs exige essa condição.
+- A fonte do commit fixado foi inspecionada e contém exatamente o condicional anterior; a transformação tem sintaxe JS válida e âncora única.
+- Teste físico necessário: arrastar manualmente durante viagem, esperar atualizações GPS e confirmar que a câmera permanece na região escolhida até tocar em Seguir.
