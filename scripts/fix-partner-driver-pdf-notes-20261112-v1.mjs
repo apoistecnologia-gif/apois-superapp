@@ -110,7 +110,8 @@ component("function ActiveRidePanel(","\nfunction ActionButton(","P3-5 waiting+P
   ].join("\n");
   block=replaceOnce(block,phase,summary+phase,"fixed summary portal");
   const pinAnchor='className="fixed inset-0 z-[1000] flex items-end justify-center overflow-y-auto overscroll-contain bg-[#101828]/60 pt-[max(8px,env(safe-area-inset-top))] sm:items-center"';
-  const pinNext='className="fixed inset-0 z-[1000] flex items-start justify-center overflow-hidden overscroll-contain bg-[#101828]/60 px-2 pt-[max(12px,env(safe-area-inset-top))] pb-2 sm:items-center"';
+  const pinNext='className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto overscroll-contain bg-[#101828]/60 px-2 pt-[max(12px,env(safe-area-inset-top))] pb-2 sm:items-center"';
+  // QA219: keep modal vertically scrollable when the Android IME shrinks the viewport.
   block=replaceOnce(block,pinAnchor,pinNext,"fixed PIN top");
   block=replaceOnce(block,
     'style={{ maxHeight: "calc(100dvh - max(env(safe-area-inset-top), 8px) - 8px)" }}',
