@@ -22,7 +22,7 @@ export function ApoisSlideAction({ label, onConfirm, disabled=false, busy=false,
  const [pending,setPending]=useState(false);
  const [failure,setFailure]=useState("");
  const locked=disabled||busy||pending;
- const color=tone==="danger"?"#AF2331":tone==="neutral"?"#374151":"#D91920";
+ const color=tone==="danger"?"#9D202B":tone==="neutral"?"#374151":"#D51A29";
  const move=useCallback((v:number)=>{const p=clamp(v);progressRef.current=p;setProgress(p);},[]);
  const fire=useCallback(async ()=>{
    if(locked||lock.current)return;
@@ -57,22 +57,22 @@ export function ApoisSlideAction({ label, onConfirm, disabled=false, busy=false,
  }
  return (
   <div className={"min-w-0 w-full "+className} data-apois-slide-action="true">
-   <div ref={track} className="relative h-[54px] w-full overflow-hidden rounded-2xl border border-[#D6D9E0] bg-white shadow-sm"
+   <div ref={track} className="relative h-[56px] w-full overflow-hidden rounded-2xl border border-[#B80E23] bg-[#C91429] shadow-[0_5px_16px_rgba(201,20,41,0.19)]"
         style={{touchAction:"pan-y"}}>
     <div className="absolute inset-y-0 left-0 rounded-2xl transition-colors"
-         style={{width:(progress*100)+"%",background:color,opacity:progress>.1?.13:0}} />
+         style={{width:(progress*100)+"%",background:"#850F1E",opacity:progress>.1?.35:0}} />
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center pl-9 pr-2 text-center">
-      <span className="truncate text-[12px] font-extrabold uppercase tracking-[.02em] text-[#22262E]">
+      <span className="truncate text-[13px] font-extrabold uppercase tracking-[.025em] text-white">
         {pending||busy?"Processando…":label}
       </span>
-      <span className="ml-1 text-[15px] font-bold text-[#A8ADB8]">››</span>
+      <span className="ml-1 text-[15px] font-bold text-white/75">›</span>
     </div>
     <button type="button" disabled={locked} aria-label={"Deslize para "+label+". Teclado: Enter para confirmar."}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
       onPointerCancel={onCancel} onLostPointerCapture={onCancel} onKeyDown={onKey}
-      className="absolute top-[3px] grid h-[46px] w-[46px] select-none place-items-center rounded-xl text-white shadow-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#D91920] disabled:opacity-70"
-      style={{left:"4px",transform:"translateX("+Math.round(progress*geometry())+"px)",background:color,touchAction:"none"}}>
-      <span aria-hidden="true" className="text-xl font-black">{pending||busy?"·":"›"}</span>
+      className="absolute top-[4px] grid h-[46px] w-[46px] select-none place-items-center rounded-[13px] bg-white text-[#B91C2B] shadow-[0_2px_6px_rgba(0,0,0,.22)] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#851323] disabled:opacity-70"
+      style={{left:"4px",transform:"translateX("+Math.round(progress*geometry())+"px)",background:"#FFFFFF",touchAction:"none"}}>
+      <span aria-hidden="true" className="text-[25px] leading-none font-black text-[#C91429]">{pending||busy?"·":"›"}</span>
     </button>
    </div>
    {failure?<p role="alert" className="mt-1 text-xs font-semibold text-[#B42318]">{failure}</p>:null}
