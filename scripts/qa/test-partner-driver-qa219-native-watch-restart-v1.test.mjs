@@ -37,3 +37,67 @@ test("generated Motorista has the race guard without altering published modules"
  for(const text of [marker,"const stopDriverWatch = useCallback","Geolocation.watchPosition","watchRestartRequestedRef.current = true","watchRestartRequestedRef.current = false","clearWatch({ id }).catch(() => undefined).finally"])
   assert.ok(source.includes(text),text);
 });
+
+
+function nativeWatchHarness() {
+  const patched = patchNativeWatchRestart(baseline)
+    .replace(/const applyCoords = \(coords: \{[\s\S]*?\}\) => \{/, 'const applyCoords = (coords) => {')
+    .replaceAll(' as number', '')
+    .replaceAll('import.meta.env.DEV', 'false');
+  const code = [
+    'const useRef=(v)=>({current:v}), useCallback=(callback)=>callback;',
+    'const watchIdRef={current:null}, watchStartingRef={current:false};',
+    'const pending=[], cleared=[];',
+    'const Geolocation={',
+    '  watchPosition:(options,callback)=>new Promise((resolve,reject)=>{pending.push({resolve,reject,callback});}),',
+    '  clearWatch:({id})=>{cleared.push(id);return Promise.resolve();}',
+    '};',
+    'const navigator={geolocation:{clearWatch:()=>{}}};',
+    'const isNativeDriverAndroid=()=>true, isBrazilCoordinate=()=>true, setPosition=()=>{};',
+    patched,
+    'return {startWatch,stopDriverWatch,pending,cleared,watchIdRef,watchStartingRef,watchRestartRequestedRef};'
+  ].join('\n');
+  return new Function(code)();
+}
+async function flushNativeCallbacks() {
+  for(let i=0;i<10;i+=1) await Promise.resolve();
+}
+test("real async: rapid ONLINE/OFFLINE/ONLINE closes obsolete GPS watch then starts exactly one replacement",async()=>{
+  const m=nativeWatchHarness();
+  m.startWatch();
+  m.stopDriverWatch();
+  m.startWatch();
+  assert.equal(m.pending.length,1,"only first native start pending");
+  m.pending[0].resolve("old-id");
+  await flushNativeCallbacks();
+  assert.deepEqual(m.cleared,["old-id"]);
+  assert.equal(m.pending.length,2,"one replacement created after the old was closed");
+  m.pending[1].resolve("new-id");
+  await flushNativeCallbacks();
+  assert.equal(m.watchIdRef.current,"new-id");
+  assert.equal(m.watchStartingRef.current,false);
+});
+test("real async: latest OFFLINE wins and cancels a previously requested GPS restart",async()=>{
+  const m=nativeWatchHarness();
+  m.startWatch();
+  m.stopDriverWatch();
+  m.startWatch();
+  m.stopDriverWatch();
+  m.pending[0].resolve("old-id");
+  await flushNativeCallbacks();
+  assert.deepEqual(m.cleared,["old-id"]);
+  assert.equal(m.pending.length,1,"must not restart after a newer OFFLINE");
+  assert.equal(m.watchIdRef.current,null);
+});
+test("real async: rejected obsolete GPS startup retries once for the newer ONLINE cycle",async()=>{
+  const m=nativeWatchHarness();
+  m.startWatch();
+  m.stopDriverWatch();
+  m.startWatch();
+  m.pending[0].reject(new Error("initial GPS unavailable"));
+  await flushNativeCallbacks();
+  assert.equal(m.pending.length,2,"retry only the newer online cycle");
+  m.pending[1].resolve("second-id");
+  await flushNativeCallbacks();
+  assert.equal(m.watchIdRef.current,"second-id");
+});
