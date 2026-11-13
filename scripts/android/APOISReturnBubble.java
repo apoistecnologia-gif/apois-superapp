@@ -32,10 +32,15 @@ public final class APOISReturnBubble {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(context);
     }
 
-    public static void active(Context context, boolean active) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean("rideActive", active).apply();
-        if (!active) {
+    // A role is active only for an authenticated in-progress ride or delivery.
+    public static void active(Context context, String role, boolean active) {
+        if (!"motorista".equals(role) && !"entregador".equals(role)) return;
+        android.content.SharedPreferences prefs =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (active) {
+            prefs.edit().putString("activeRole", role).putBoolean("rideActive", true).apply();
+        } else if (role.equals(prefs.getString("activeRole", ""))) {
+            prefs.edit().putBoolean("rideActive", false).remove("activeRole").apply();
             externalNavigatorVisible = false;
             hide();
         }
@@ -95,7 +100,12 @@ public final class APOISReturnBubble {
                 try {
                     Intent back = new Intent(app, MainActivity.class);
                     back.setAction(Intent.ACTION_VIEW);
-                    back.setData(Uri.parse("br.com.apois.parceiro://module/motorista"));
+                    String role = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                        .getString("activeRole", "motorista");
+                    String target = "entregador".equals(role)
+                        ? "br.com.apois.parceiro://module/entregador"
+                        : "br.com.apois.parceiro://module/motorista";
+                    back.setData(Uri.parse(target));
                     back.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                         | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     app.startActivity(back); // Actual user click, never auto-hijack Google Maps.
