@@ -90,7 +90,7 @@ test("secondary recovery cannot request or modify main Driver map, even if a rou
   const s=patchRecovery(recoveryFixture);
   assert.ok(s.includes(marker));
   assert.ok(s.includes('document.querySelector('));
-  assert.ok(s.includes(owner));
+  assert.ok(s.includes("data-apois-driver-main-map-owner"), "selector survives TS escaped quotes");
   assert.ok(s.includes('if (mainDriverOwnsMap()) {'));
   assert.ok(s.includes('if (cancelled || mainDriverOwnsMap()) return;'));
   assert.ok(s.includes('if (mainDriverOwnsMap()) return null;'));
