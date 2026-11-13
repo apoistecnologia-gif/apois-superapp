@@ -34,6 +34,10 @@ if(role==="motorista"){
    "native Android background GPS receives active ride pickup for automatic push arrival");
  s="// APOIS_PARTNER_QA235_ONE_NAVIGATION_V1\n"+
    'import { setApoisExternalNavigationOwnsVoice } from "@/lib/voiceNav";\n'+s;
+ s=once(s,
+   'import { ApoisExternalNavigation, useApoisOperationalNotification, launchApoisNavigationAfterRideStart } from "@/components/ApoisExternalNavigation";',
+   'import { ApoisExternalNavigation, useApoisOperationalNotification, launchApoisNavigationAfterRideStart, setApoisOperationalNotification } from "@/components/ApoisExternalNavigation";',
+   "direct native pickup setup before app background");
  voice=once(voice,'export async function speak(text: string, opts?: { dedupKey?: string; interrupt?: boolean }) {',
    '// QA235: external maps controls all guidance voice during an active ride.\n'+
    'let qa235ExternalVoice=false;\n'+
@@ -74,8 +78,11 @@ if(role==="motorista"){
  s=once(s,'        setActive(accepted);\n        sheetRef.current?.snapTo(34);',
    '        setActive(accepted);\n'+
    '        setApoisExternalNavigationOwnsVoice(true);\n'+
-   '        void launchApoisNavigationAfterRideStart(accepted.origin_lat, accepted.origin_lng)\n'+
-   '          .catch((error)=>{console.warn("[APOIS] Navegação após aceite indisponível",error);'+
+   '        void (async()=>{\n'+
+   '          // Arm the existing GPS service before Google/Waze sends the WebView to background.\n'+
+   '          await setApoisOperationalNotification("motorista", true, accepted.id, accepted.origin_lat, accepted.origin_lng);\n'+
+   '          await launchApoisNavigationAfterRideStart(accepted.origin_lat, accepted.origin_lng);\n'+
+   '        })().catch((error)=>{console.warn("[APOIS] Navegação após aceite indisponível",error);'+
    'toast.info("Corrida aceita. Use Reabrir mapa se necessário.");});\n'+
    '        sheetRef.current?.snapTo(34);',
    "open preferred navigator immediately after confirmed non-queued accept");
