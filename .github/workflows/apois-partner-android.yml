@@ -46,6 +46,8 @@ on:
       - 'scripts/fix-partner-driver-qa209-camera-v1.mjs'
       - 'scripts/fix-partner-driver-qa209-finished-route-v1.mjs'
       - 'scripts/fix-partner-driver-qa209-pin-controls-v1.mjs'
+      - 'scripts/fix-partner-driver-qa220-android-map-pin-v1.mjs'
+      - 'scripts/qa/test-partner-driver-qa220-android-map-pin-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-qa209-physical-map-pin-v1.test.mjs'
       - 'scripts/qa/verify-apois-partner-vector-map-config-v1.mjs'
       - 'docs/google-maps/apois-passageiro-vector-style-import.json'
