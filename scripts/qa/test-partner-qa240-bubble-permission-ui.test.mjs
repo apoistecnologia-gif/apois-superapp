@@ -36,7 +36,9 @@ test("QA240: official image on Android overlay, explicit MainActivity return, no
   "getBoolean(\"rideActive\", false)", "Settings.canDrawOverlays(context)",
   "WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY"])
    assert.ok(native.includes(marker),"Android "+marker);
- assert.ok(native.indexOf("app.startActivity(back)")<native.indexOf("catch (Exception ignored)"),"return must be attempted before fallback");
+ const clickHandler=native.slice(native.indexOf("container.setOnClickListener"),native.indexOf("WindowManager.LayoutParams params"));
+ assert.ok(clickHandler.includes("app.startActivity(back)"),"explicit return must be launched by bubble tap");
+ assert.ok(!clickHandler.slice(0,clickHandler.indexOf("app.startActivity(back)")).includes("hide();"),"overlay must remain visible until Android accepts return");
  assert.ok(!native.includes('setText("A")'),"never use synthetic letter as logo");
  assert.ok(!native.includes("container.setOnClickListener(view -> {\n                hide();"),"cannot hide before launching Activity");
  for(const marker of ["APOISReturnBubble.externalNavigationLaunched()",
@@ -53,7 +55,13 @@ test("QA240: official image on Android overlay, explicit MainActivity return, no
 
 test("QA240: navigation buttons are finished and operational flows remain approved",()=>{
  const component=readFileSync("superapp/partner-shell/shared/ApoisExternalNavigation.tsx","utf8");
- assert.equal(nav,component);
+ // QA235 intentionally turns the generated primary navigation swipe into a
+ // one-tap retry button. Preserve that approved behavior and the new styling.
+ assert.ok(component.includes("ApoisSlideAction"));
+ assert.ok(nav.includes("Reabrir mapa"));
+ assert.ok(nav.includes("data-apois-qa240-map-shortcut"));
+ assert.ok(nav.includes("rounded-[16px]"));
+ assert.ok(!nav.includes("Desativar bolha"));
  for(const marker of [
   'data-apois-qa240-map-shortcut="true"',
   "Voltar ao mapa", "Voltar ao Google Maps ou Waze",
