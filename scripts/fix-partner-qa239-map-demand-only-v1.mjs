@@ -36,7 +36,7 @@ const opening=codeTags[0].index;
 const closing=s.indexOf("        </MovviMap>",opening);
 if(closing<=opening)throw Error("[QA239] actual map close absent");
 s=s.slice(0,opening)+"{showApoisDemandMap && "+s.slice(opening);
-s=s.slice(0,s.indexOf("        </MovviMap>",opening)).concat(s.slice(s.indexOf("        </MovviMap>",opening)).replace("        </MovviMap>",[
+s=s.replace("        </MovviMap>",[
 '        </MovviMap>}',
 '        {!showApoisDemandMap && <div data-apois-economy-map-off="true" className="absolute inset-0 bg-[#0C1221]">',
 '          {!active && !incoming && !ratingRide && (',
