@@ -216,7 +216,7 @@ if(process.argv.includes("--dist")){
     'registerPlugin<ExternalPlugin>("APOISExternalNavigation")',
     'https://www.google.com/maps/dir/?api=1&destination=',
     'https://waze.com/ul?ll=',
-    'INICIAR NAVEGAÇÃO',
+    'label="Iniciar navegação"',
     'setOperation({ role, active })',
   ],"Motorista uses official external Google Maps/Waze navigation, without internal turn-by-turn voice");
   check(!driverAppPatched.includes("tickNavigation("),"Motorista does not repeat third-party turn-by-turn voice in APOIS");
@@ -235,7 +235,9 @@ if(process.argv.includes("--dist")){
     'ApoisExternalNavigation latitude={ride.destination_lat}',
     'useApoisOperationalNotification("motorista", Boolean(active))',
     "onStart(pinCode)",
-    "onClick={handleComplete}",
+    "onConfirm={handleComplete}",
+    "launchApoisNavigationAfterRideStart(ride.destination_lat, ride.destination_lng)",
+    "elapsedMs >= 900000",
   ],"Motorista preserves route plausibility and ride lifecycle while opening external navigation");
 
   all(driverAppPatched,["data-apois-trip-top-v6","data-apois-trip-bottom-v6","onShowRoute","onRecenter","m.fitBounds"],"Motorista V6 keeps route overview and compact light panels");
