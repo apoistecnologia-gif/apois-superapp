@@ -10,9 +10,6 @@ export function patchNativeWatchRestart(source) {
   if (source.includes(marker)) throw new Error("[FAIL] QA219 native watch already patched");
   const stop = source.indexOf('  const stopDriverWatch = useCallback(() => {');
   const start = source.indexOf('  const startWatch = useCallback(() => {', stop);
-  const end = source.indexOf('  // Primeiro', start) >= 0
-    ? source.indexOf('  // Primeiro', start)
-    : source.indexOf('  // Solicita', start);
   // Bound to the stop/start watcher functions instead of changing unrelated UI.
   if (stop < 0 || start <= stop) throw new Error("[FAIL] QA219 native watcher bounds changed");
   const guardStart = '  const watchStopRequestedRef = useRef(false);';
