@@ -38,10 +38,10 @@ export function patchAndroidMap(source) {
     "disable unstable Android WebView vector rendering"
   );
   source = once(source,
-    '  const styles = useMemo(() => getMapStyleForTheme(theme), [theme]);',
+    '  const styles = useMemo(() => isDriverRole ? getMapStyleForTheme("light") : getMapStyleForTheme(theme), [isDriverRole,theme]);',
     [
       '  const styles = useMemo<google.maps.MapTypeStyle[]>(() => {',
-      '    const base = getMapStyleForTheme(theme);',
+      '    const base = isDriverRole ? getMapStyleForTheme("light") : getMapStyleForTheme(theme);',
       '    if (!stableAndroidMap) return base;',
       '    // Hide only man-made building polygons; roads, labels, parks, water and route overlays stay.',
       '    return [...base, { featureType: "landscape.man_made", elementType: "geometry", stylers: [{ visibility: "off" }] }];',
