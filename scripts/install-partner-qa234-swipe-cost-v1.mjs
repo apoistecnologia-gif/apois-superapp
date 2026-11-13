@@ -65,10 +65,19 @@ function driver(s){
  const offerLimit=offerEnd>offerStart?offerEnd:s.indexOf("\nfunction ",offerStart+20);
  if(offerStart<0||offerLimit<=offerStart)throw Error("[FAIL] QA234 IncomingOffer bounds");
  let offer=s.slice(offerStart,offerLimit);
- const re=/<div className="grid grid-cols-2 gap-3">[\s\S]*?onClick=\{onReject\}[\s\S]*?onClick=\{onAccept\}[\s\S]*?<\/div>/g;
- const matches=[...offer.matchAll(re)];
- if(matches.length!==1)throw Error("[FAIL] QA234 IncomingOffer action row count "+matches.length);
- offer=offer.replace(re,'<ApoisOfferSwipe acceptLabel="Aceitar corrida" rejectLabel="Recusar" onAccept={onAccept} onReject={onReject} />');
+ // Offer footer was restyled in QA190/QA195: identify real handler pair
+ // rather than depending on one historical Tailwind class.
+ const rejectAt=offer.indexOf("onClick={onReject}"),acceptAt=offer.indexOf("onClick={onAccept}");
+ if(rejectAt<0||acceptAt<=rejectAt||offer.indexOf("onClick={onReject}",rejectAt+1)>=0)
+   throw Error("[FAIL] QA234 IncomingOffer reject/accept unique pair");
+ const rowBegin=offer.lastIndexOf("<div",rejectAt),rowEnd=offer.indexOf("</div>",acceptAt);
+ const originalRow=offer.slice(rowBegin,rowEnd+6);
+ if(rowBegin<0||rowEnd<=acceptAt||rowEnd-rowBegin>2600||
+    !originalRow.includes("Recusar")||!originalRow.includes("Aceitar"))
+   throw Error("[FAIL] QA234 IncomingOffer action footer bounds");
+ offer=offer.slice(0,rowBegin)+
+  '<ApoisOfferSwipe acceptLabel="Aceitar corrida" rejectLabel="Recusar" onAccept={onAccept} onReject={onReject} />'+
+  offer.slice(rowEnd+6);
  s=s.slice(0,offerStart)+offer+s.slice(offerLimit);
  // Pre-PIN "Iniciar corrida" opens existing PIN dialog. Keep PIN validation intact.
  const openPin='<ActionButton label="Iniciar corrida" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} icon={ChevronRight} emphasize />';
