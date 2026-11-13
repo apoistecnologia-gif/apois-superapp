@@ -8,6 +8,8 @@ if(!["motorista","entregador"].includes(moduleName))throw Error("Usage: node scr
 const root=resolve(process.env.APOIS_EXTERNAL_NAV_WORKSPACE || ".work/partner-"+moduleName);
 const shared=resolve("superapp/partner-shell/shared/ApoisExternalNavigation.tsx");
 const componentPath=resolve(root,"src/components/ApoisExternalNavigation.tsx");
+const swipeSource=resolve("superapp/partner-shell/shared/ApoisSwipeControls.tsx");
+const swipeTarget=resolve(root,"src/components/ApoisSwipeControls.tsx");
 function once(s,old,next,label){
  const n=s.split(old).length-1;if(n!==1)throw Error("[FAIL] ExternalNav "+label+" anchors="+n);
  return s.replace(old,next);
@@ -15,6 +17,8 @@ function once(s,old,next,label){
 if(!existsSync(shared))throw Error("[FAIL] ExternalNav shared module source missing");
 mkdirSync(dirname(componentPath),{recursive:true});
 copyFileSync(shared,componentPath);
+if(!existsSync(swipeSource))throw Error("[FAIL] QA234 shared swipe source missing");
+copyFileSync(swipeSource,swipeTarget);
 
 if(moduleName==="motorista"){
  const file=resolve(root,"src/routes/motorista.app.tsx");
