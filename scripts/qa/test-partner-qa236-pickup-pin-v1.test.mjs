@@ -12,7 +12,8 @@ test("visible Iniciar corrida action in pickup phase, independent of arrival pus
  for(const token of [
   "APOIS_PARTNER_QA236_PICKUP_PIN_V1",
   'data-apois-qa236-start-ride="true"',
-  "Iniciar corrida · Digitar PIN",
+  '<ApoisSlideAction label="Digitar PIN e iniciar corrida"',
+  'onConfirm={onStartPin}',
   "onStartPin={()=>setQa236PinOpen(true)}",
   'active.status === "motorista_a_caminho"',
   'qa236PinOpen && active',
@@ -22,7 +23,10 @@ test("visible Iniciar corrida action in pickup phase, independent of arrival pus
  ])assert.ok(driver.includes(token),"driver "+token);
  assert.ok(!driver.includes("O passageiro será avisado automaticamente pelo GPS."),"no explanatory banner instead of action");
  assert.ok(!driver.includes('<ApoisSlideAction label="Confirmar chegada"'),"no obsolete manual arrive slider");
- assert.ok(!driver.includes('<ApoisSlideAction label="Iniciar corrida"'),"no double-slide before PIN");
+ assert.equal(driver.split('<ApoisSlideAction label="Digitar PIN e iniciar corrida"').length-1,2,"both pickup and arrived use the same slide interaction");
+ assert.ok(driver.includes('data-apois-qa236-start-ride="true"'));
+ assert.ok(driver.includes('data-apois-qa236-arrived-pin="true"'));
+ assert.ok(!driver.includes('onClick={onStartPin}'),"no plain button for PIN entry");
 });
 
 test("PIN dialog readable, four numeric digits, one visible confirmation with handled failure",()=>{
