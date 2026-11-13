@@ -119,50 +119,71 @@ function driver(s){
  }
  return s;
 }
-function courier(map,app,premium){
+function courier(map,app,premium,offers){
  if(!map.includes("APOIS_PARTNER_EXTERNAL_NAV_UI_V1")||!app.includes("APOIS_PARTNER_EXTERNAL_NAV_UI_V1"))
   throw Error("[FAIL] QA234 Courier requires external nav QA233");
- if(premium.includes(marker))throw Error("[FAIL] QA234 Courier duplicate");
- for(const term of ["onClick={() => void onReject(offer.id)}","onClick={() => void onAccept(offer.id)}",
-  "onClick={() => void onTransition(action.status)}","onClick={onComplete}"]){
-  if(!premium.includes(term))throw Error("[FAIL] QA234 Courier existing callback "+term);
+ if(premium.includes(marker)||offers.includes(marker))throw Error("[FAIL] QA234 Courier duplicate transform");
+ // The current full-screen offer belongs to CourierOfferOverlay, not the
+ // legacy CourierPremiumViews offer card. Its original respond() RPC stays.
+ for(const term of ['onClick={() => void respond("reject")}', 'onClick={() => void respond("accept")}']){
+  if(!offers.includes(term))throw Error("[FAIL] QA234 CourierOfferOverlay RPC "+term);
  }
- premium="// "+marker+": delivery offer and status transitions remain in original backend.\n"+
-   'import { ApoisOfferSwipe, ApoisSlideAction } from "@/components/ApoisSwipeControls";\n'+premium;
- const os=premium.indexOf("export function CourierOfferCard("),oe=premium.indexOf("\nexport function ActiveDelivery(",os);
- if(os<0||oe<=os)throw Error("[FAIL] QA234 courier offer bounds");
- let offer=premium.slice(os,oe);
- const actionRow=/<div className="mt-4 grid grid-cols-\[0\.8fr_1\.2fr\] gap-3">[\s\S]*?onClick=\{\(\) => void onReject\(offer\.id\)\}[\s\S]*?onClick=\{\(\) => void onAccept\(offer\.id\)\}[\s\S]*?<\/div>/g;
- let hits=[...offer.matchAll(actionRow)];
- if(hits.length!==1)throw Error("[FAIL] QA234 CourierOfferCard row count "+hits.length);
- offer=offer.replace(actionRow,
-   '<ApoisOfferSwipe acceptLabel="Aceitar entrega" rejectLabel="Recusar" disabled={busy} onAccept={() => onAccept(offer.id)} onReject={() => onReject(offer.id)} />');
- premium=premium.slice(0,os)+offer+premium.slice(oe);
- premium=replaceButton(premium,"onClick={() => void onTransition(action.status)}",
-    '<ApoisSlideAction label={action.label} disabled={busy} busy={busy} onConfirm={() => onTransition(action.status)} className="mt-4" />',
-    "courier stage transition");
- premium=replaceButton(premium,"onClick={onComplete}",
-    '<ApoisSlideAction label="Confirmar entrega" disabled={busy || pin.length !== 4} busy={busy} onConfirm={onComplete} className="mt-3" />',
-    "courier PIN delivery completion");
- // The courier only pays for live route computations when opt-in is true.
- // Retain distance/duration persisted for operational payout, but not
- // continuous secondary navigation every 3m/500m after launch of Waze/Maps.
+ offers="// "+marker+": real Courier offer modal retains respond() server calls and timeout.\n"+
+   'import { ApoisOfferSwipe } from "@/components/ApoisSwipeControls";\n'+offers;
+ const reject=offers.indexOf('onClick={() => void respond("reject")}');
+ const accept=offers.indexOf('onClick={() => void respond("accept")}');
+ const rowStart=offers.lastIndexOf("<div",reject),rowEnd=offers.indexOf("</div>",accept);
+ if(reject<0||accept<=reject||rowStart<0||rowEnd<=accept||rowEnd-rowStart>3000)
+  throw Error("[FAIL] QA234 Courier offer footer bounds");
+ const original=offers.slice(rowStart,rowEnd+6);
+ if(!original.includes("RECUSAR")||!original.includes("ACEITAR ENTREGA"))
+  throw Error("[FAIL] QA234 Courier offer footer identity");
+ offers=offers.slice(0,rowStart)+
+  '<ApoisOfferSwipe acceptLabel="Aceitar entrega" rejectLabel="Recusar" disabled={Boolean(busy)} onAccept={() => respond("accept")} onReject={() => respond("reject")} />'+
+  offers.slice(rowEnd+6);
+ // The active sheet has been replaced by SimpleJourney after source pinning.
+ // Status must still be transitioned via existing onTransition("picked_up").
+ for(const term of ['onClick={() => void onTransition("picked_up")}', 'onSubmit={(event) => { event.preventDefault(); if (!busy) void onComplete(); }}',
+  'disabled={busy || pin.length !== 4}',"APOIS_COURIER_SIMPLE_FLOW_V1"]){
+  if(!premium.includes(term))throw Error("[FAIL] QA234 Courier active flow anchor "+term);
+ }
+ premium="// "+marker+": collection and PIN-secured delivery via original callbacks.\n"+
+   'import { ApoisSlideAction } from "@/components/ApoisSwipeControls";\n'+premium;
+ premium=replaceButton(premium,'onClick={() => void onTransition("picked_up")}',
+   '<ApoisSlideAction label="Confirmar retirada" disabled={busy} busy={busy} onConfirm={() => onTransition("picked_up")} className="mt-3" />',
+   "courier pickup slider");
+ // The PIN completion action is a submit Button inside a form. Preserve the
+ // form's Enter handler (a11y), but the visible primary action is a swipe.
+ premium=replaceButton(premium,'type="submit" disabled={busy || pin.length !== 4}',
+   '<ApoisSlideAction label="Confirmar entrega" disabled={busy || pin.length !== 4} busy={busy} onConfirm={onComplete} />',
+   "courier PIN delivery completion");
+ premium=once(premium,
+    'className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2"',
+    'className="mt-2 grid grid-cols-1 gap-2"',
+    "full-width courier PIN and swipe layout");
+ // Preserve transactional delivery metrics and GPS. Paid live routing is
+ // opt-in; even if enabled, do not pay for real-time traffic or 3-minute
+ // reroutes when external Waze/Google already handles turn-by-turn.
  const old='    if (!targetChanged && (elapsed < 180_000 || moved < 500)) return;';
- const next='    // '+marker+': operational metrics only, no redundant turn-by-turn polling.\n'+
+ const next='    // '+marker+': operational metrics only; external provider owns navigation.\n'+
   '    if (!targetChanged && (elapsed < 900_000 || moved < 1500)) return;';
  map=once(map,old,next,"Courier optional paid Routes cooldown");
  map=once(map,'routingPreference: "TRAFFIC_AWARE",',
-  'routingPreference: "TRAFFIC_UNAWARE",',"Courier optional paid Routes basic request");
- for(const t of ["onTransition={transitionDelivery}","onComplete={completeDelivery}",
+  'routingPreference: "TRAFFIC_UNAWARE",',"Courier basic Routes without paid traffic");
+ for(const tok of ['ApoisExternalNavigation latitude={target.lat}',"job.pickup_latitude","job.delivery_latitude",
+   "update_courier_delivery_route_metrics","VITE_APOIS_ENTREGAS_LIVE_ROUTING"]){
+  if(!map.includes(tok))throw Error("[FAIL] QA234 courier map preservation "+tok);
+ }
+ for(const tok of ["onTransition={transitionDelivery}","onComplete={completeDelivery}",
   'useApoisOperationalNotification("entregador", Boolean(activeJob))']){
-  if(!app.includes(t))throw Error("[FAIL] QA234 courier lifecycle "+t);
+  if(!app.includes(tok))throw Error("[FAIL] QA234 courier lifecycle "+tok);
  }
- for(const t of ["onAccept={() => onAccept(offer.id)}","onReject={() => onReject(offer.id)}",
-  "onConfirm={() => onTransition(action.status)}","onConfirm={onComplete}",
+ for(const tok of ['onAccept={() => respond("accept")}','onReject={() => respond("reject")}',
+  'onConfirm={() => onTransition("picked_up")}','onConfirm={onComplete}',
   "pin.length !== 4"]){
-  if(!premium.includes(t))throw Error("[FAIL] QA234 courier protected "+t);
+  if(!(premium+"\n"+offers).includes(tok))throw Error("[FAIL] QA234 courier protected callback "+tok);
  }
- return {map,app,premium};
+ return {map,app,premium,offers};
 }
 export {driver,courier};
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
@@ -175,8 +196,10 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
    const m=resolve(root,"src/components/CourierRouteMap.tsx");
    const a=resolve(root,"src/routes/courier.tsx");
    const p=resolve(root,"src/components/CourierPremiumViews.tsx");
-   const out=courier(readFileSync(m,"utf8"),readFileSync(a,"utf8"),readFileSync(p,"utf8"));
-   writeFileSync(m,out.map,"utf8");writeFileSync(a,out.app,"utf8");writeFileSync(p,out.premium,"utf8");
+   const o=resolve(root,"src/components/CourierOfferOverlay.tsx");
+   const out=courier(readFileSync(m,"utf8"),readFileSync(a,"utf8"),readFileSync(p,"utf8"),readFileSync(o,"utf8"));
+   writeFileSync(m,out.map,"utf8");writeFileSync(a,out.app,"utf8");
+   writeFileSync(p,out.premium,"utf8");writeFileSync(o,out.offers,"utf8");
  }else throw Error("[FAIL] QA234 expects motorista|entregador");
  console.log("[OK] "+marker+" "+process.argv[2]+": swipe operations, PIN auto-launch, paid-route throttling");
 }
