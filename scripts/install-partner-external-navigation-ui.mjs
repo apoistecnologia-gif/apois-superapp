@@ -88,15 +88,8 @@ if(moduleName==="motorista"){
  s=once(s,", type NavStep } from \"@/lib/voiceNav\";"," } from \"@/lib/voiceNav\";","remove unused NavStep type");
  if(/\brouteSteps\b|\bsetRouteSteps\b|\brouteStepsPhase\b|\bsetRouteStepsPhase\b|\bDriverRouteStep\b/.test(s))
   throw Error("[FAIL] ExternalNav orphan turn-by-turn state survived");
- const nearVoice=s.indexOf("  // Never announce arrival from one GPS proximity reading or an old route.");
- const nearVoiceEnd=nearVoice<0?-1:s.indexOf("  // Fala transições de status importantes.",nearVoice);
- if(nearVoice<0||nearVoiceEnd<=nearVoice)throw Error("[FAIL] ExternalNav protected arrival voice effect boundary");
- const nearEffect=s.slice(nearVoice,nearVoiceEnd);
- for(const tok of ["destinationEvidenceRef","evidence.travelledKm","evidence.nearFixes","void speak("]){
-   if(!nearEffect.includes(tok))throw Error("[FAIL] ExternalNav unexpected arrival voice segment "+tok);
- }
- s=s.slice(0,nearVoice)+"  // Arrival guidance is delegated to Google Maps/Waze; the ride still ends only in APOIS.\n\n"+s.slice(nearVoiceEnd);
-
+ // Keep QA222's movement-confirmed arrival voice. It is an operational
+ // reminder to return to APOIS and finalize the ride, not turn-by-turn guidance.
  // QA222's <42m off-route billing calls are no longer needed; keep the
  // slower operational ETA/route refresh (QA201) and existing map overlays.
  const geoStart=s.indexOf("// APOIS_DRIVER_QA222_FOLLOW_REROUTE_V1: bounded route geometry.");
