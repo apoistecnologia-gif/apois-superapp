@@ -12,7 +12,7 @@ once('      {/* MAPA */}',
 '        <ApoisQuickMapButton latitude={active.status==="em_viagem"?active.destination_lat:active.origin_lat}\n'+
 '          longitude={active.status==="em_viagem"?active.destination_lng:active.origin_lng} />\n'+
 '      )}\n      {/* MAPA */}',"route");
-for(const marker of ['showDemandZones && demandZones.map','onStartPin={()=>setQa236PinOpen(true)}','onClick={handleComplete}'])
+for(const marker of ['showDemandZones && demandZones.map','onStartPin={()=>setQa236PinOpen(true)}','onConfirm={handleComplete}'])
  if(!s.includes(marker))throw Error("[FAIL] QA239 lost "+marker);
 writeFileSync(file,s);
 console.log("[OK] QA239 in-app floating map shortcut uses external Android intent");
