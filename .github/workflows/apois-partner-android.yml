@@ -109,7 +109,7 @@ permissions:
 
 jobs:
   build-partner-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112' || github.ref == 'refs/heads/feature/apois-partner-external-navigation-20261113' || github.ref == 'refs/heads/feature/apois-partner-qa234-swipe-autonav-cost-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa236-pin-retorno-20261113')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112' || github.ref == 'refs/heads/feature/apois-partner-external-navigation-20261113' || github.ref == 'refs/heads/feature/apois-partner-qa234-swipe-autonav-cost-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa236-pin-retorno-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa239-bolha-economia-mapas-20261113')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
