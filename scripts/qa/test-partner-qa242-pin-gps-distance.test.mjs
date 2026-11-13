@@ -14,8 +14,8 @@ test("QA242 pickup and arrived require deliberate PIN entry swipe, then server P
  assert.ok(route.includes('onConfirm={onStartPin}'));
  assert.ok(!route.includes('onClick={onStartPin}'),"entry must not be plain click");
  assert.ok(pin.includes('ApoisSlideAction label="Confirmar PIN e iniciar corrida"'));
- assert.ok(pin.includes('disabled={busy || pin.length !== 4}')||pin.includes('disabled={busy || pinCode.length !== 4}')||pin.includes('disabled={submitting || code.length !== 4}'),
-   "actual PIN cannot be submitted before four digits");
+ assert.ok(pin.includes('const valid=/^\\d{4}$/.test(pin);'));
+ assert.ok(pin.includes('disabled={!valid||busy}'),"four real PIN digits required before server start");
  for(const guard of [
   'Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:12000,maximumAge:3000})',
   'distance>150','accuracy>100',
