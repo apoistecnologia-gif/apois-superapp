@@ -448,6 +448,8 @@ node "$ROOT/scripts/install-partner-external-navigation-ui.mjs" entregador
 APOIS_EXTERNAL_NAV_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-external-navigation-v1.test.mjs"
 node "$ROOT/scripts/install-partner-qa234-swipe-cost-v1.mjs" entregador
 APOIS_QA234_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa234-swipe-cost-v1.test.mjs"
+node "$ROOT/scripts/fix-partner-qa235-single-navigation-arrival-v1.mjs" entregador
+APOIS_QA235_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa235-single-navigation-v1.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
