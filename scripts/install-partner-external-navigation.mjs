@@ -22,7 +22,7 @@ const plugin=readFileSync(pluginSource,"utf8");
 for(const token of ["@CapacitorPlugin(name = \"APOISExternalNavigation\")",
  "public void open(PluginCall call)","public void setOperation(PluginCall call)",
  "com.google.android.apps.maps","com.waze","ACTION_VIEW",
- "DriverLocationService.class","CourierLocationService.class"]){
+ "sendBroadcast(update)","setPackage(getContext().getPackageName())"]){
  if(!plugin.includes(token))throw Error("[FAIL] ExternalNav native plugin "+token);
 }
 copyFileSync(pluginSource,pluginTarget);
@@ -65,16 +65,36 @@ function patchService(file,role) {
   '    public static final String ACTION_UPDATE_OPERATION = "'+action+'";\n'+
   "    private boolean apoisOperationActive = false;\n",
   file+" class");
- const start=/public int onStartCommand\(Intent intent, int flags, int startId\) \{/g;
- if([...source.matchAll(start)].length!==1)throw Error("[FAIL] ExternalNav "+file+" onStartCommand anchor");
- source=source.replace(start,match=>match+"\n"+
-  "        if (intent != null && ACTION_UPDATE_OPERATION.equals(intent.getAction())) {\n"+
-  "            if (!tracking) return START_NOT_STICKY;\n"+
-  '            apoisOperationActive = intent.getBooleanExtra("operationActive", false);\n'+
-  "            NotificationManager manager = getSystemService(NotificationManager.class);\n"+
-  "            if (manager != null) manager.notify(NOTIFICATION_ID, buildNotification());\n"+
-  (file==="Driver"?"            return START_REDELIVER_INTENT;\n":"            return START_NOT_STICKY;\n")+
-  "        }\n");
+ // Existing service is already in foreground. Register a PRIVATE, non-exported
+ // runtime receiver for status-only notification updates: no startService()
+ // calls, no change to START_REDELIVER_INTENT or app-background semantics.
+ source=exactlyOnce(source,"import android.content.Intent;",
+  "import android.content.Intent;\nimport android.content.BroadcastReceiver;\nimport android.content.Context;\nimport android.content.IntentFilter;",
+  file+" receiver imports");
+ source=exactlyOnce(source,"import androidx.core.app.NotificationCompat;",
+  "import androidx.core.app.NotificationCompat;\nimport androidx.core.content.ContextCompat;",
+  file+" private receiver helper");
+ source=exactlyOnce(source,"    private boolean apoisOperationActive = false;",
+  [
+    "    private boolean apoisOperationActive = false;",
+    "    private final BroadcastReceiver apoisOperationReceiver = new BroadcastReceiver() {",
+    "        @Override public void onReceive(Context context, Intent intent) {",
+    "            if (intent == null || !ACTION_UPDATE_OPERATION.equals(intent.getAction())) return;",
+    '            apoisOperationActive = intent.getBooleanExtra("operationActive", false);',
+    "            NotificationManager manager = getSystemService(NotificationManager.class);",
+    "            if (tracking && manager != null) manager.notify(NOTIFICATION_ID, buildNotification());",
+    "        }",
+    "    };"
+  ].join("\n"),file+" receiver field");
+ source=exactlyOnce(source,
+  "        super.onCreate();",
+  "        super.onCreate();\n"+
+  "        ContextCompat.registerReceiver(this, apoisOperationReceiver, "+
+  "new IntentFilter(ACTION_UPDATE_OPERATION), ContextCompat.RECEIVER_NOT_EXPORTED);",
+  file+" register receiver only while service runs");
+ source=exactlyOnce(source,"        super.onDestroy();",
+  "        try { unregisterReceiver(apoisOperationReceiver); } catch (IllegalArgumentException ignored) {}\n"+
+  "        super.onDestroy();",file+" receiver cleanup");
  source=exactlyOnce(source,
   '.setContentTitle("'+oldTitle+'")',
   '.setContentTitle(apoisOperationActive ? "APOIS — '+title+'" : "'+oldTitle+'")',
