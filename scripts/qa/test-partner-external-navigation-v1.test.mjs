@@ -21,7 +21,7 @@ test("one shared navigator for Motorista and Entregador, official Android Activi
   '&navigate=yes',
   'provider: ApoisNavigator; latitude: number; longitude: number',
   'label="Iniciar navegação"', '"Google Maps"', '"Waze"',
-  'setOperation({ role, active })', '"apois-parceiro:external-navigator:v1"',
+  'NativeNavigation.setOperation({ role, active, ...(role==="motorista"', '"apois-parceiro:external-navigator:v1"',
   "window.localStorage.setItem", "window.localStorage.removeItem",
   'role="group"', 'disabled={busy || !coordinateValid}',
  ]) assert.ok(shared.includes(t),"shared contract: "+t);
