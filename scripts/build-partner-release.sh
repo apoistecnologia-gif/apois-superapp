@@ -353,6 +353,9 @@ node "$ROOT/scripts/install-partner-qa239-shortcuts.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa239-map-cost.test.mjs"
 # QA240: first-use Motorista permission, official logo, no opt-in UI/regressions.
 node --test "$ROOT/scripts/qa/test-partner-qa240-bubble-permission-ui.test.mjs"
+# QA241: passenger profile no longer calls the missing public RPC; authorized ride-scoped info only.
+node "$ROOT/scripts/fix-partner-qa241-driver-offer-profile.mjs"
+APOIS_QA241_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa241-profile-courier-swipe.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
@@ -459,6 +462,9 @@ node "$ROOT/scripts/install-partner-qa234-swipe-cost-v1.mjs" entregador
 APOIS_QA234_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa234-swipe-cost-v1.test.mjs"
 node "$ROOT/scripts/fix-partner-qa235-single-navigation-arrival-v1.mjs" entregador
 APOIS_QA235_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa235-single-navigation-v1.test.mjs"
+# QA241: same approved logo, first-entry Android permission, and return to courier/Maps.
+node "$ROOT/scripts/install-partner-qa241-courier-bubble.mjs"
+APOIS_QA241_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa241-profile-courier-swipe.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
