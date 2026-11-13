@@ -12,7 +12,7 @@ const installer=readFileSync("scripts/install-partner-qa239-native-bubble.mjs","
 const logo=readFileSync(root+"/src/assets/apois-return-logo.png");
 
 test("QA240: initial Motorista setup uses official logo before login and automatically rechecks OS grant",()=>{
- assert.ok(driverRoot.includes('APP_ROLE === "driver" ? <ApoisBubblePermissionGate /> : null'));
+ assert.ok(driverRoot.includes('APP_ROLE === "driver" ? <ApoisBubblePermissionGate role="motorista" /> : null'));
  assert.ok(driverRoot.includes('<DriverPresenceKeeper />'));
  assert.ok(driverRoot.includes('<Outlet />'));
  for(const marker of ["APOIS_PARCEIRO_QA240_FIRST_USE_PERMISSION_V1",
