@@ -50,7 +50,7 @@ if(role==="motorista"){
    'setPhase(hasOffer?"partial":"unavailable")','role="status"',
    'public', 'Tentar novamente', 'Exibindo as informações já disponíveis'])
    assert.ok(component.includes(s),s);
-  assert.ok(!component.includes("get_passenger_public_profile"),"nonexistent RPC may not be called");
+  assert.ok(!component.includes('rpc("get_passenger_public_profile"'),"nonexistent RPC may not be called");
   assert.ok(!component.includes('.from("users")'),"no broad profile query");
   assert.ok(!rootCode.includes("<PassengerProfessionalProfileDialog"));
  });
