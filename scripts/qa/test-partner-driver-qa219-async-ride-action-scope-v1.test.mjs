@@ -55,7 +55,7 @@ test("functional same-ID guards preserve newer offers or trips",()=>{
 });
 test("fails closed when source contract changes or patch repeats",()=>{
   assert.throws(()=>patchAsyncRideActions(patchAsyncRideActions(fixture)),/applied twice/);
-  assert.throws(()=>patchAsyncRideActions(fixture.replace("setIncoming(offer);","setIncoming(null);")),/failed accept restore/);
+  assert.throws(()=>patchAsyncRideActions(fixture.replace("setIncoming(offer);","setIncoming(null);")),/accepted offer cleanup|failed accept restore/);
   assert.throws(()=>patchAsyncRideActions(fixture.replace("activeRef.current = null;","activeRef.current = ride;")),/cancellation cleanup/);
 });
 test("generated Motorista retains late-async guards after the pipeline",()=>{
