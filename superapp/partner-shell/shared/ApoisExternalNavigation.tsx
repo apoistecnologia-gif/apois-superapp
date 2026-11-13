@@ -12,6 +12,8 @@ type OpenResult = { opened: boolean; fallback: boolean; provider: string };
 type ExternalPlugin = {
   open(options: { provider: ApoisNavigator; latitude: number; longitude: number }): Promise<OpenResult>;
   setOperation(options: { role: ApoisPartnerRole; active: boolean; rideId?: string | undefined; pickupLatitude?: number | undefined; pickupLongitude?: number | undefined; stage?:string | undefined }): Promise<{updated:boolean}>;
+  bubbleStatus(): Promise<{enabled:boolean;granted:boolean}>;
+  configureBubble(options:{enabled:boolean}): Promise<{enabled:boolean;granted:boolean}>;
 };
 const NativeNavigation = registerPlugin<ExternalPlugin>("APOISExternalNavigation");
 const PREFERENCE_KEY = "apois-parceiro:external-navigator:v1";
@@ -95,6 +97,30 @@ export function ApoisExternalNavigation({
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  // QA239: optional permission gated native return bubble for the Driver.
+  const [bubbleEnabled,setBubbleEnabled]=useState(false);
+  const [bubbleGranted,setBubbleGranted]=useState(false);
+  const isDriverNav=stage==="até o passageiro"||stage==="até o destino";
+  useEffect(()=>{
+    if(!isDriverNav||!Capacitor.isNativePlatform()||Capacitor.getPlatform()!=="android")return;
+    let cancelled=false;
+    const refresh=()=>void NativeNavigation.bubbleStatus().then(v=>{
+      if(!cancelled){setBubbleEnabled(v.enabled);setBubbleGranted(v.granted);}
+    }).catch(()=>undefined);
+    refresh();
+    let subscription:{remove:()=>Promise<void>}|null=null;
+    void App.addListener("appStateChange",({isActive})=>{if(isActive)refresh();})
+      .then(x=>{if(cancelled)void x.remove();else subscription=x;}).catch(()=>undefined);
+    return()=>{cancelled=true;if(subscription)void subscription.remove();};
+  },[isDriverNav]);
+  async function toggleBubble(){
+    try{
+      const result=await NativeNavigation.configureBubble({enabled:!bubbleEnabled});
+      setBubbleEnabled(result.enabled);setBubbleGranted(result.granted);
+      if(result.enabled&&!result.granted)setMessage("Autorize Exibir sobre outros aplicativos e retorne ao APOIS.");
+      else setMessage("");
+    }catch{setMessage("Bolha indisponível; use a notificação VOLTAR AO APOIS.");}
+  }
 
   const coordinateValid = validNavigationCoordinate(latitude, longitude);
 
@@ -141,6 +167,12 @@ export function ApoisExternalNavigation({
 
   return (
     <div data-apois-external-navigation="true" className="w-full min-w-0">
+      {isDriverNav && Capacitor.isNativePlatform() && Capacitor.getPlatform()==="android" ? (
+        <button type="button" onClick={()=>void toggleBubble()} aria-pressed={bubbleEnabled}
+          className="mb-2 min-h-11 w-full rounded-xl border border-[#F1C2C6] bg-[#FFF1F2] px-3 text-xs font-bold text-[#A31626]">
+          {bubbleEnabled ? bubbleGranted ? "Bolha APOIS ativa • Desativar" : "Autorizar bolha no Android" : "Ativar bolha de retorno (opcional)"}
+        </button>
+      ):null}
       <div className="flex min-w-0 items-center gap-2">
         <ApoisSlideAction
           label="Iniciar navegação"
@@ -176,4 +208,16 @@ export function ApoisExternalNavigation({
       ) : null}
     </div>
   );
+}
+
+/** QA239: one-touch floating shortcut INSIDE APOIS to the selected external navigator. */
+export function ApoisQuickMapButton({latitude,longitude}:{latitude:number|null|undefined;longitude:number|null|undefined}){
+  const [busy,setBusy]=useState(false);
+  if(!validNavigationCoordinate(latitude,longitude))return null;
+  return <button type="button" disabled={busy} aria-label="Abrir navegação externa"
+    data-apois-qa239-map-shortcut="true"
+    className="fixed right-3 z-40 flex h-12 min-w-12 items-center justify-center rounded-full border-2 border-white bg-[#E51B23] px-3 text-xs font-extrabold text-white shadow-lg disabled:opacity-60"
+    style={{top:"calc(env(safe-area-inset-top) + 126px)"}}
+    onClick={()=>{if(busy)return;setBusy(true);void launchApoisNavigationAfterRideStart(latitude,longitude)
+      .catch(()=>undefined).finally(()=>setBusy(false));}}>MAPA</button>;
 }

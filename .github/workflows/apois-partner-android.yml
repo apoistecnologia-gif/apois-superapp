@@ -21,6 +21,7 @@ on:
       - feature/apois-partner-qa234-swipe-autonav-cost-20261113
       - fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113
       - fix/apois-parceiro-qa236-pin-retorno-20261113
+      - fix/apois-parceiro-qa239-bolha-economia-mapas-20261113
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-partner-courier-gps-logo-push-20261027
@@ -42,6 +43,11 @@ on:
       - 'scripts/fix-partner-qa236-pickup-pin-v1.mjs'
       - 'scripts/qa/test-partner-qa236-pickup-pin-v1.test.mjs'
       - 'scripts/install-partner-qa236-return-notification-v1.mjs'
+      - 'scripts/android/APOISReturnBubble.java'
+      - 'scripts/install-partner-qa239-native-bubble.mjs'
+      - 'scripts/install-partner-qa239-shortcuts.mjs'
+      - 'scripts/fix-partner-qa239-external-routes-only.mjs'
+      - 'scripts/qa/test-partner-qa239-map-cost.test.mjs'
       - 'scripts/install-partner-launcher.mjs'
       - 'scripts/audit-partner-red-visual-v16.mjs'
       - 'scripts/audit-codemagic-host-installs-v18.mjs'
