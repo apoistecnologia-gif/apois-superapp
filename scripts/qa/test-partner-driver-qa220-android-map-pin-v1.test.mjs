@@ -12,7 +12,7 @@ import {
 
 const mapFixture = [
   '  const isDriverRole = APP_ROLE === "driver";',
-  '  const styles = useMemo(() => getMapStyleForTheme(theme), [theme]);',
+  '  const styles = useMemo(() => isDriverRole ? getMapStyleForTheme("light") : getMapStyleForTheme(theme), [isDriverRole,theme]);',
   '  const useCloudVector = isDriverRole && cloudVectorConfig !== null;',
   '// APOIS_DRIVER_QA202_CLOUD_VECTOR_READINESS_V1',
   '// APOIS_DRIVER_VIDEO_20261112_ROTATION_V1',
