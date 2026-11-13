@@ -4,7 +4,6 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { patchNullTelemetry, marker } from "../fix-partner-driver-qa219-null-telemetry-v1.mjs";
 
-const sourcePath = resolve(process.cwd(), "scripts/qa/fixtures/qa219-driver-presence-baseline.txt");
 // Keep a literal implementation fixture so the test is independent of production API calls.
 const source = [
   "function normalizeHeading(value: number | null | undefined): number | null {",
