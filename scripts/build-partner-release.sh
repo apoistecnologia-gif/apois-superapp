@@ -328,6 +328,10 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa219-async-ride-action-scope-
 # Apply LAST to generated Motorista after QA202/QA209/QA219. Nothing in pinned source, Client or Courier.
 node "$ROOT/scripts/fix-partner-driver-qa220-android-map-pin-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa220-android-map-pin-v1.test.mjs"
+# QA221: a second global ride-recovery component was drawing onto the real Motorista map.
+# Serialize main driver ownership and keep only one small HUD on pickup and in-trip screens.
+node "$ROOT/scripts/fix-partner-driver-qa221-map-owner-compact-hud-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa221-map-owner-compact-hud-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
