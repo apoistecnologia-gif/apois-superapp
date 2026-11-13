@@ -97,10 +97,11 @@ if(role==="motorista"){
    "onClick={onAccept}","onClick={onReject}","routeRequestEpochRef.current",
    "setPolyline(points)","refreshDue = !samePhase",
   ])assert.ok(code.includes(t),"Motorista protected contract "+t);
-  for(const forbidden of ["tickNavigation(", "qa222DistanceToRoute(", "const offRouteDue=", "destinationEvidenceRef", "routeStepsPhase", "setRouteSteps(", "DriverRouteStep"]) {
+  for(const forbidden of ["tickNavigation(", "qa222DistanceToRoute(", "const offRouteDue=", "routeStepsPhase", "setRouteSteps(", "DriverRouteStep"]) {
    assert.ok(!code.includes(forbidden),"obsolete internal navigation still active: "+forbidden);
   }
   assert.ok(code.includes("Corrida aceita. Siga até o embarque"),"operational voice still exists");
+  assert.ok(code.includes("toque em finalizar corrida"),"movement-validated operational finalization reminder still exists");
   assert.ok(code.includes("Corrida finalizada."),"operational finish voice exists");
   assert.equal(readFileSync(component,"utf8"),shared,"Motorista uses exact shared component");
  });
