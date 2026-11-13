@@ -11,7 +11,7 @@ export type ApoisPartnerRole = "motorista" | "entregador";
 type OpenResult = { opened: boolean; fallback: boolean; provider: string };
 type ExternalPlugin = {
   open(options: { provider: ApoisNavigator; latitude: number; longitude: number }): Promise<OpenResult>;
-  setOperation(options: { role: ApoisPartnerRole; active: boolean }): Promise<{updated:boolean}>;
+  setOperation(options: { role: ApoisPartnerRole; active: boolean; rideId?: string; pickupLatitude?: number; pickupLongitude?: number }): Promise<{updated:boolean}>;
 };
 const NativeNavigation = registerPlugin<ExternalPlugin>("APOISExternalNavigation");
 const PREFERENCE_KEY = "apois-parceiro:external-navigator:v1";
@@ -55,26 +55,26 @@ export async function launchApoisNavigationAfterRideStart(latitude: number | nul
   if (!result.opened) throw Error("Navegador externo não abriu. Use Iniciar navegação no APOIS.");
 }
 
-export async function setApoisOperationalNotification(role: ApoisPartnerRole, active: boolean): Promise<void> {
+export async function setApoisOperationalNotification(role: ApoisPartnerRole, active: boolean, rideId?:string, pickupLatitude?:number, pickupLongitude?:number): Promise<void> {
   // Background GPS service already exists. Only update its notification when
   // Android app is visible; never start a second service from a background tab.
   if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return;
-  try { await NativeNavigation.setOperation({ role, active }); }
+  try { await NativeNavigation.setOperation({ role, active, ...(role==="motorista" && active && rideId && validNavigationCoordinate(pickupLatitude,pickupLongitude) ? {rideId,pickupLatitude,pickupLongitude} : {}) }); }
   catch (error) { console.warn("[APOIS] Não foi possível atualizar o texto da notificação operacional.", error); }
 }
 
-export function useApoisOperationalNotification(role: ApoisPartnerRole, active: boolean): void {
+export function useApoisOperationalNotification(role: ApoisPartnerRole, active: boolean, rideId?:string, pickupLatitude?:number, pickupLongitude?:number): void {
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return;
     let closed = false;
     // The service ACK can happen just after the backend active job is recovered.
-    void setApoisOperationalNotification(role, active);
+    void setApoisOperationalNotification(role, active, rideId, pickupLatitude, pickupLongitude);
     const retry = window.setTimeout(() => {
-      if (!closed) void setApoisOperationalNotification(role, active);
+      if (!closed) void setApoisOperationalNotification(role, active, rideId, pickupLatitude, pickupLongitude);
     }, 1500);
     let listener: { remove: () => Promise<void> } | null = null;
     void App.addListener("appStateChange", ({ isActive }) => {
-      if (isActive && !closed) void setApoisOperationalNotification(role, active);
+      if (isActive && !closed) void setApoisOperationalNotification(role, active, rideId, pickupLatitude, pickupLongitude);
     }).then((handle) => {
       if (closed) void handle.remove();
       else listener = handle;
@@ -84,7 +84,7 @@ export function useApoisOperationalNotification(role: ApoisPartnerRole, active: 
       window.clearTimeout(retry);
       if (listener) void listener.remove();
     };
-  }, [role, active]);
+  }, [role, active, rideId, pickupLatitude, pickupLongitude]);
 }
 
 export function ApoisExternalNavigation({
