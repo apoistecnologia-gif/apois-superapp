@@ -89,6 +89,13 @@ route=one(route,
  "reset heading on phase transition"
 );
 
+// QA219: Google Maps dragstart denotes the user's manual pan. Never force
+// auto-follow while they inspect the road, including during navigation.
+route=one(route,
+  '      if (!isNavigationRideStatus(activeRef.current?.status)) autoFollowRef.current = false;',
+  '      // QA219: manual dragging pauses follow until Seguir/recenter.\\n      autoFollowRef.current = false;',
+  "manual drag pauses follow in every phase");
+
 // Transparent runtime diagnostic for a future physical QA: only emits a
 // warning once if Google reports a true raster fallback. No map remounts.
 route=one(route,
