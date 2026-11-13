@@ -37,7 +37,7 @@ recovery=one(recovery,
  "  useEffect(() => {\n    if (mainDriverOwnsMap()) {",
  "  useEffect(() => {\n    // "+mark+": session recovery is data-only; no map route billing.\n    clearLines();\n    return;\n    if (mainDriverOwnsMap()) {",
  "secondary recovery guard");
-for(const token of ['useDriverBroadcast(','showDemandZones && demandZones.map','qa235ArrivalRef.current','onStartPin={()=>setQa236PinOpen(true)}','onClick={handleComplete}','ApoisExternalNavigation latitude={ride.destination_lat}']){
+for(const token of ['useDriverBroadcast(','showDemandZones && demandZones.map','qa235ArrivalRef.current','onStartPin={()=>setQa236PinOpen(true)}','onConfirm={handleComplete}','ApoisExternalNavigation latitude={ride.destination_lat}']){
  if(!route.includes(token))throw Error("[FAIL] QA239 prerequisite "+token);
 }
 writeFileSync(path,route);writeFileSync(recoveryPath,recovery);
