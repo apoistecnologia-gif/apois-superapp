@@ -96,19 +96,21 @@ export function ApoisExternalNavigation({
     setMessage("");
     setChooser(false);
     const lat = Number(latitude), lng = Number(longitude);
+    let installedProviderOpened = true;
     try {
       if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
         const result = await NativeNavigation.open({ provider, latitude: lat, longitude: lng });
         if (!result.opened) throw Error("O Android não confirmou a abertura do navegador.");
-        if (result.fallback) setMessage(
-          (provider === "waze" ? "Waze" : "Google Maps") + " não está instalado. Foi aberto o link oficial no navegador."
-        );
+        if (result.fallback) {
+          installedProviderOpened = false;
+          setMessage((provider === "waze" ? "Waze" : "Google Maps") + " não está instalado. Foi aberto o link oficial no navegador.");
+        }
       } else {
         const url = externalMapUrl(provider, lat, lng);
         const popup = window.open(url, "_blank", "noopener,noreferrer");
         if (!popup) throw Error("O navegador bloqueou a nova janela. Autorize pop-ups para abrir o mapa.");
       }
-      if (remember) { writePreferred(provider); setPreferred(provider); }
+      if (remember && installedProviderOpened) { writePreferred(provider); setPreferred(provider); }
     } catch (error) {
       const description = error instanceof Error ? error.message : "Não foi possível abrir a navegação.";
       setMessage(description + " Tente o outro aplicativo.");
