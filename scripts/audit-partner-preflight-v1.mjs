@@ -216,8 +216,8 @@ if(process.argv.includes("--dist")){
     'registerPlugin<ExternalPlugin>("APOISExternalNavigation")',
     'https://www.google.com/maps/dir/?api=1&destination=',
     'https://waze.com/ul?ll=',
-    'label="Iniciar navegação"',
-    'setOperation({ role, active })',
+    'Reabrir mapa',
+    'NativeNavigation.setOperation({ role, active, ...(role==="motorista"',
   ],"Motorista uses official external Google Maps/Waze navigation, without internal turn-by-turn voice");
   check(!driverAppPatched.includes("tickNavigation("),"Motorista does not repeat third-party turn-by-turn voice in APOIS");
   all(driverAppPatched,[
@@ -233,7 +233,9 @@ if(process.argv.includes("--dist")){
     "setLegKm(null); setEtaSeconds(null);",
     'ApoisExternalNavigation latitude={ride.origin_lat}',
     'ApoisExternalNavigation latitude={ride.destination_lat}',
-    'useApoisOperationalNotification("motorista", Boolean(active))',
+    'useApoisOperationalNotification("motorista", Boolean(active), active?.status === "motorista_a_caminho"',
+    'data-apois-automatic-arrival="true"',
+    'launchApoisNavigationAfterRideStart(accepted.origin_lat, accepted.origin_lng)',
     "onStart(pinCode)",
     "onConfirm={handleComplete}",
     "launchApoisNavigationAfterRideStart(ride.destination_lat, ride.destination_lng)",
