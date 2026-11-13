@@ -11,6 +11,10 @@ if(s.includes(marker)||!s.includes("APOIS_PARTNER_QA235_ONE_NAVIGATION_V1"))
   throw Error("[FAIL] QA236 must run once after QA235");
 copyFileSync(resolve("superapp/partner-shell/shared/ApoisPickupPin.tsx"),
  resolve(base,"src/components/ApoisPickupPin.tsx"));
+s=once(s,
+ 'active?.status === "motorista_a_caminho" ? active.origin_lng : undefined);',
+ 'active?.status === "motorista_a_caminho" ? active.origin_lng : undefined, active?.status);',
+ "native notification resets when the ride transitions from pickup to trip");
 s="// "+marker+": one visible ride-start button and PIN during GPS pending.\n"+
  'import {ApoisPickupPin} from "@/components/ApoisPickupPin";\n'+s;
 s=once(s,'  const [active, setActive] = useState<RideRow | null>(null);',
