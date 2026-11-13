@@ -4,6 +4,8 @@ on:
     branches:
       - fix/apois-partner-courier-gps-logo-push-20261027
       - fix/entregas-homologacao-ajustes-20261030
+      # QA219: isolated validation of generated Motorista/Parceiro modules; no APK or deploy.
+      - fix/motorista-qa219-video-20261112
     paths:
       - '.github/workflows/apois-partner-preflight.yml'
       - 'scripts/**'
