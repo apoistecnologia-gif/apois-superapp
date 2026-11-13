@@ -13,7 +13,12 @@ const fixture = [
   '      const incoming = incomingRef.current;',
   '      const active = activeRef.current;',
   '      if (r.status === "finalizada") { setActive(null); clearDriverRouteVisuals(); }',
-  '      else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") { setActive(null); }',
+  '      } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {',
+  '        if (wasQueued) { setIncoming(null); return; }',
+  '        setIncoming(null);',
+  '        setActive(null);',
+  '        clearDriverRouteVisuals();',
+  '      } else if (r.status === "motorista_a_caminho") { setActive(r); }',
   "    };",
   '    const ch = supabase.channel("driver-rides");',
   "}",
@@ -28,8 +33,9 @@ test("adds one guard inside ownership-checked active event handler", () => {
   assert.ok(result.includes("activeRef.current?.id === r.id"));
   assert.ok(result.includes("queuedRideRef.current?.id === r.id"));
   assert.ok(result.includes("incomingRef.current?.id === r.id"));
-  assert.ok(result.includes("ratingRef.current?.id === r.id"));
-  assert.ok(result.includes('clearDriverRouteVisuals()'));
+  assert.equal(result.split("setIncoming((current) => current?.id === r.id ? null : current);").length - 1, 2);
+  assert.ok(result.includes("setActive((current) => current?.id === r.id ? null : current)"));
+  assert.ok(result.includes("if (!activeRef.current || activeRef.current.id === r.id) clearDriverRouteVisuals()"));
   assert.ok(result.includes('const ch = supabase.channel'));
 });
 test("refuses a repeated application or an unexpected handler shape", () => {
