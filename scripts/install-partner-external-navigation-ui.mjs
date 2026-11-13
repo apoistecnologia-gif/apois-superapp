@@ -68,6 +68,25 @@ if(moduleName==="motorista"){
  const initialInstruction=/        const firstInstruction = String\(nextSteps\[0\]\?\.instruction \?\? ""\)[^\n]*\n        if \(firstInstruction && [^\n]*\n          void speak\(firstInstruction, [^\n]*\n        \}\n/g;
  if([...s.matchAll(initialInstruction)].length!==1)throw Error("[FAIL] ExternalNav first maneuver voice handler unexpectedly changed");
  s=s.replace(initialInstruction,"");
+ // Remove now-obsolete maneuver step buffers and provider step formatting.
+ // The operational polyline, ETA, and route-credibility checks remain untouched.
+ const stepsBegin=s.indexOf("        const nextSteps = (res.steps ?? []).map(");
+ const stepsEnd=stepsBegin<0?-1:s.indexOf("        setRouteStepsPhase(fitKey);",stepsBegin);
+ if(stepsBegin<0||stepsEnd<=stepsBegin)throw Error("[FAIL] ExternalNav old route step mapper changed");
+ const stepsBlock=s.slice(stepsBegin,stepsEnd);
+ if(!stepsBlock.includes("setRouteSteps(nextSteps)")||!stepsBlock.includes("DriverRouteStep"))
+  throw Error("[FAIL] ExternalNav expected navigation-only route steps");
+ s=s.slice(0,stepsBegin)+"        // External navigation owns road turns; the operational route remains.\n"+
+   s.slice(stepsEnd+"        setRouteStepsPhase(fitKey);".length);
+ s=once(s,'  const [routeSteps, setRouteSteps] = useState<NavStep[]>([]);\n',"","remove maneuver step React state");
+ s=once(s,'  const [routeStepsPhase, setRouteStepsPhase] = useState<string | null>(null);\n',"","remove maneuver status React state");
+ s=s.replaceAll("setRouteSteps([]);","");
+ s=s.replaceAll("setRouteStepsPhase(null);","");
+ s=once(s,'import { computeDriverRoute, type DriverRouteStep } from "@/lib/driverRoutes.mobile";',
+   'import { computeDriverRoute } from "@/lib/driverRoutes.mobile";',"remove unused route maneuver type");
+ s=once(s,", type NavStep } from \"@/lib/voiceNav\";"," } from \"@/lib/voiceNav\";","remove unused NavStep type");
+ if(/\brouteSteps\b|\bsetRouteSteps\b|\brouteStepsPhase\b|\bsetRouteStepsPhase\b|\bDriverRouteStep\b/.test(s))
+  throw Error("[FAIL] ExternalNav orphan turn-by-turn state survived");
  const nearVoice=s.indexOf("  // Never announce arrival from one GPS proximity reading or an old route.");
  const nearVoiceEnd=nearVoice<0?-1:s.indexOf("  // Fala transições de status importantes.",nearVoice);
  if(nearVoice<0||nearVoiceEnd<=nearVoice)throw Error("[FAIL] ExternalNav protected arrival voice effect boundary");
