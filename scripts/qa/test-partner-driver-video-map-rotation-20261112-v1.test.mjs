@@ -46,6 +46,7 @@ test("Pickup→destination transition clears old heading but keeps one stable Go
  const cam=section("function applyNavigationCamera(","type RequestRemovalReason");
  assert.ok(cam.includes("driverCameraHistory.set(map"));
  assert.ok(app.includes("driverCameraHistory.delete(map)"));
+ assert.ok(app.includes("const onDragStart = () => {\n      autoFollowRef.current = false;"), "manual pan must disable follow during navigation");
  assert.ok(app.includes("onRecenter={recenter}"));
 });
 test("If Google falls back to raster, code never promises map rotation or hides the problem",()=>{
