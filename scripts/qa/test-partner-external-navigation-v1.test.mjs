@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import {readFileSync,existsSync} from "node:fs";
 import {resolve} from "node:path";
 
-const role=process.argv.find(s=>s==="motorista"||s==="entregador")||null;
+const role=process.env.APOIS_EXTERNAL_NAV_ROLE || null;
 const base=resolve(".work/partner-"+(role||"motorista"));
 const shared=readFileSync(resolve("superapp/partner-shell/shared/ApoisExternalNavigation.tsx"),"utf8");
 const installer=readFileSync(resolve("scripts/install-partner-external-navigation-ui.mjs"),"utf8");
@@ -73,8 +73,8 @@ test("external navigation UI applies only AFTER the protected QA222 and courier 
  const courierBuild=script.indexOf('cd "$ENTREGADOR"',courierNav);
  assert.ok(driverQ>=0 && driverNav>driverQ && driverBuild>driverNav,"Motorista external navigation before compile, after QA222");
  assert.ok(courierQ>=0 && courierNav>courierQ && courierBuild>courierNav,"Courier external navigation after its map transforms");
- assert.ok(script.includes('node --test "$ROOT/scripts/qa/test-partner-external-navigation-v1.test.mjs" motorista'));
- assert.ok(script.includes('node --test "$ROOT/scripts/qa/test-partner-external-navigation-v1.test.mjs" entregador'));
+ assert.ok(script.includes('APOIS_EXTERNAL_NAV_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-external-navigation-v1.test.mjs"'));
+ assert.ok(script.includes('APOIS_EXTERNAL_NAV_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-external-navigation-v1.test.mjs"'));
 });
 
 if(role==="motorista"){
