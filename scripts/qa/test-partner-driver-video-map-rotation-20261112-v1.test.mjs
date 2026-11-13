@@ -22,6 +22,8 @@ test("Vector Map ID remains approved-only, Google decides hardware support, no p
  assert.ok(map.includes(token),token);
  assert.ok(!map.includes("WEBGL_lose_context"));
  assert.ok(!map.includes("canvas.getContext("));
+ assert.ok(map.includes("if (!useCloudVector) map.setOptions({ styles, backgroundColor: bgColor });"), "cloud Map ID must not receive JSON style in onLoad");
+ assert.ok(!map.includes("      map.setOptions({ styles, backgroundColor: bgColor });\n"), "unguarded map initialization");
 });
 test("Actual GPS movement heading used before next route curve, parked fallback remains route bearing",()=>{
  const cam=section("function applyNavigationCamera(","type RequestRemovalReason");
