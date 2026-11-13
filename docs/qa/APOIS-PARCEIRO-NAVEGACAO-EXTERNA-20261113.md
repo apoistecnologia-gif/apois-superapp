@@ -4,14 +4,14 @@
 **Branch:** `feature/apois-partner-external-navigation-20261113`  
 **Base:** `b6957ed61664ee945026658f029d730895d2f39a` (QA222)  
 **App Android:** `br.com.apois.parceiro`  
-**Execução:** código versionado na camada de integração do Superapp, sem alterar os submódulos protegidos, Supabase/Google Cloud ou usar GitHub Actions.
+**Execução:** código versionado na camada de integração do Superapp, sem alterar os submódulos protegidos, Supabase/Google Cloud. A compilação de homologação ocorre exclusivamente no GitHub Actions, pelo workflow `APOIS Parceiro Android APK`.
 
 ## 1. Auditoria da arquitetura
 
 - Motorista usa `MotoristaApp`, `PickupNavOverlay`, `ActiveTripNavOverlay`, `DriverLocationPlugin/Service`, `Geolocation.watchPosition`, RPCs de corrida e rotas, e mapas internos para a operação.
 - Entregador usa `CourierRouteMap`, `CourierLocationTracker`, `CourierLocationPlugin/Service`, `delivery_jobs`, `courier_transition_delivery`, `update_courier_location` e mapas operacionais.
 - O host `superapp/partner-shell` possui controle de função ativa, rotas de deep link específicas e serviços de GPS de foreground distintos já existentes. Ambos publicam localização em Supabase enquanto ativos.
-- O build canônico é `npm run build:partner` via `scripts/build-partner-release.sh`; o Codemagic `android-partner-superapp` chama `node scripts/install-partner-launcher.mjs` após gerar/sincronizar Android. `scripts/build-partner-modules.sh` é cadeia mais antiga e não substitui os ajustes QA222.
+- O build canônico é `npm run build:partner` via `scripts/build-partner-release.sh`. O workflow `.github/workflows/apois-partner-android.yml` (**GitHub Actions — APOIS Parceiro Android APK**) gera/sincroniza o host Capacitor Android, executa `node scripts/install-partner-launcher.mjs`, compila o APK de teste, valida assinatura/pacote e envia o artefato `APOIS-Parceiro-TESTE`. `scripts/build-partner-modules.sh` é uma cadeia anterior e não substitui os ajustes QA222.
 
 ## 2. Implementação compartilhada
 
@@ -79,10 +79,10 @@ Nenhum arquivo das fontes pinadas ou de implantação do backend foi alterado.
 
 ## 8. Testes e limites da validação
 
-**Executados sem GitHub Actions:** verificação estática de referência em 8 arquivos reais (**16/16 aprovações**), simulação isolada do instalador Android sobre duas classes Service representativas (**6/6 aprovações**) e checagem sintática JS dos três scripts novos. Isso verifica composição e marcadores; **não prova build TypeScript/Gradle nem execução nativa**.
+**Verificações executadas previamente à compilação:** verificação estática de referência em 8 arquivos reais (**16/16 aprovações**), simulação isolada do instalador Android sobre duas classes Service representativas (**6/6 aprovações**) e checagem sintática JS dos três scripts novos. Isso verifica composição e marcadores; **não prova build TypeScript/Gradle nem execução nativa**.
 
-**Não executados (obrigatórios para homologação):** `npm run build:partner` com ambas as fontes protegidas e dependências Bun; `node scripts/install-partner-launcher.mjs` após `cap sync` real; Gradle/Codemagic; instalação física Android com Google Maps e Waze presentes/ausentes; GPS segundo plano e tela bloqueada; retorno por notificação; recuperação após encerramento de processo; E2E reais de ambas as jornadas.
+**Validações de compilação necessárias no GitHub Actions:** `npm run build:partner` com as duas fontes protegidas, `node scripts/install-partner-launcher.mjs` após o `cap sync` real e `Gradle assembleDebug`, com conferência de assinatura original. A homologação física Android continua necessária: Google Maps/Waze presentes ou ausentes; GPS em segundo plano e tela bloqueada; retorno por notificação; recuperação após encerramento de processo; E2E reais de ambas as jornadas.
 
 **Critério de aceite pendente:** completar a sequência real `corrida: aceitar → navegar embarque → voltar → chegada → PIN → navegar destino → voltar → finalizar` e `entrega: aceitar → navegar estabelecimento → voltar → coleta → navegar cliente → voltar → concluir`, observando GPS, estado e rastreamento contínuos. 
 
-**Status:** código implementado no branch isolado; **validação parcial (estática/sintética)**. Nenhum APK novo, release, merge, GitHub Actions, deploy, publicação Play Store, alteração de Cloud/keys ou migração Supabase foi realizado.
+**Status inicial:** código implementado no branch isolado; **validação parcial (estática/sintética)**. A compilação de APK de teste deve ser verificada no **GitHub Actions**. Não realizar merge, deploy, publicação Play Store, alteração de Cloud/keys ou migração Supabase.
