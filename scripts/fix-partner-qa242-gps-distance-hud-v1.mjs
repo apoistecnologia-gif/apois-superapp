@@ -44,8 +44,13 @@ code=once(code,"const NAVIGATION_STATUSES = new Set(",
 
 function replaceMountedLeg(component,target,label){
  const start=code.indexOf("<"+component);
- const stop=start<0?-1:code.indexOf("/>",start);
- if(start<0||stop<=start||stop-start>1600)throw Error("[FAIL] QA242 "+label+" mount bounds");
+ const leg=start<0?-1:code.indexOf("legKm={legKm}",start);
+ const stop=leg<0?-1:code.indexOf("/>",leg);
+ // QA242: QA241 may expand the component callbacks well beyond 1600 chars.
+ // Search from the *specific* prop instead of imposing a brittle mount length.
+ // Do not pick another component/leg, and refuse unexpectedly large snippets.
+ if(start<0||leg<=start||stop<=leg||stop-start>12000)
+  throw Error("[FAIL] QA242 "+label+" mount/leg bounds");
  const snippet=code.slice(start,stop+2);
  const revised=once(snippet,"legKm={legKm}",'legKm={qa242StraightKm(position,{lat:active.'+target+'_lat,lng:active.'+target+'_lng})}',label+" GPS distance");
  code=code.slice(0,start)+revised+code.slice(stop+2);
