@@ -14,8 +14,9 @@ type OverlayPermissionBridge={
 };
 const PermissionBridge=registerPlugin<OverlayPermissionBridge>("APOISExternalNavigation");
 
-export function ApoisBubblePermissionGate(){
+export function ApoisBubblePermissionGate({role}:{role:"motorista"|"entregador"}){
   const isAndroid=Capacitor.isNativePlatform()&&Capacitor.getPlatform()==="android";
+  const setupTitle=role==="motorista"?"Configuração inicial do motorista":"Configuração inicial do entregador";
   const [state,setState]=useState<"checking"|"required"|"granted"|"unavailable">("checking");
   const [opening,setOpening]=useState(false);
   const [message,setMessage]=useState("");
@@ -76,12 +77,12 @@ export function ApoisBubblePermissionGate(){
           <div className="flex h-24 w-24 items-center justify-center rounded-[26px] border border-white/15 bg-white p-2 shadow-[0_16px_36px_rgba(229,27,35,.24)]">
             <img src={officialApoisLogo} alt="APOIS" className="h-full w-full object-contain"/>
           </div>
-          <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#FF7980]">Configuração inicial do motorista</p>
+          <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#FF7980]">{setupTitle}</p>
           <h1 id="apois-bubble-heading" className="mt-3 text-[27px] font-black leading-[1.13] tracking-[-.04em]">
             Volte à corrida<br/><span className="text-[#FF515D]">com um toque.</span>
           </h1>
           <p className="mt-3 max-w-[320px] text-[13px] font-medium leading-6 text-[#CBD0D8]">
-            A logomarca APOIS ficará na lateral do Google Maps ou Waze durante a corrida. Toque nela para voltar diretamente ao aplicativo.
+            A logomarca APOIS ficará na lateral do Google Maps ou Waze durante {role==="motorista"?"a corrida":"a entrega"}. Toque nela para voltar diretamente ao aplicativo.
           </p>
           <div className="mt-5 flex w-full items-center justify-center gap-3 rounded-[20px] border border-white/10 bg-white/[.045] px-3 py-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-[13px] bg-white p-1.5">
