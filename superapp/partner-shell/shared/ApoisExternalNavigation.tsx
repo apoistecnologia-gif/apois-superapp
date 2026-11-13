@@ -3,6 +3,7 @@
 // starts the actual Google Maps/Waze Activity, not an in-app browser WebView.
 import { useEffect, useState } from "react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { App } from "@capacitor/app";
 
 export type ApoisNavigator = "google" | "waze";
 export type ApoisPartnerRole = "motorista" | "entregador";
@@ -52,7 +53,25 @@ export async function setApoisOperationalNotification(role: ApoisPartnerRole, ac
 
 export function useApoisOperationalNotification(role: ApoisPartnerRole, active: boolean): void {
   useEffect(() => {
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return;
+    let closed = false;
+    // The service ACK can happen just after the backend active job is recovered.
     void setApoisOperationalNotification(role, active);
+    const retry = window.setTimeout(() => {
+      if (!closed) void setApoisOperationalNotification(role, active);
+    }, 1500);
+    let listener: { remove: () => Promise<void> } | null = null;
+    void App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive && !closed) void setApoisOperationalNotification(role, active);
+    }).then((handle) => {
+      if (closed) void handle.remove();
+      else listener = handle;
+    }).catch(() => undefined);
+    return () => {
+      closed = true;
+      window.clearTimeout(retry);
+      if (listener) void listener.remove();
+    };
   }, [role, active]);
 }
 
