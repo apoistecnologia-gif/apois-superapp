@@ -93,7 +93,7 @@ route=one(route,
 // auto-follow while they inspect the road, including during navigation.
 route=one(route,
   '      if (!isNavigationRideStatus(activeRef.current?.status)) autoFollowRef.current = false;',
-  '      // QA219: manual dragging pauses follow until Seguir/recenter.\\n      autoFollowRef.current = false;',
+  '      autoFollowRef.current = false;',
   "manual drag pauses follow in every phase");
 
 // Transparent runtime diagnostic for a future physical QA: only emits a
