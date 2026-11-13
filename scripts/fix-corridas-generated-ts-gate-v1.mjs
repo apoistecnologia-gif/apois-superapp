@@ -21,9 +21,9 @@ export function applyGeneratedCorridasTypecheck(root=process.cwd()){
  const dir=resolve(root,".work/corridas/src");
  const specs=[
  ["components/pricing/CategorySelector.tsx",[
-   ['  carros: "0%",','  carro: "0%",',"canonical carro sprite"],
-   ['  motos: "25%",','  moto: "25%",',"canonical moto sprite"],
-   ['servicePosition.carros','servicePosition.carro',"canonical fallback"],
+   // QA238 keeps both singular and plural category identifiers from current/legacy APIs.
+   // This is only a TypeScript noPropertyAccessFromIndexSignature compatibility fix.
+   ['servicePosition.carros','servicePosition["carros"]',"sprite index-signature fallback"],
  ]],
  ["components/profile/PassengerAccountDeletion.tsx",[
    ['ref={deleteDialogRef}','ref={(element) => { deleteDialogRef.current = element; }}',"dialog ref type compatible with div"],
