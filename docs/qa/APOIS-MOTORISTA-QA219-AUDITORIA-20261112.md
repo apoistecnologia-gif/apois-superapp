@@ -38,3 +38,31 @@ Branch: `fix/motorista-qa219-video-20261112`.
 
 ## Matriz de preservação
 Login/Google, cadastro/KYC, mensalidades/financeiro, schema/Edge Functions, Passenger, Entregador, assinatura Android, projeto Maps/faturamento: **sem alteração**. Corrigir em branch de homologação, não fazer merge/publicar/gerar APK sem aprovação.
+
+
+## Checklist de homologação funcional vinculado aos requisitos do Motorista
+Classificação conservadora: **presente em código** não equivale a **testado no Android**.
+
+| Fluxo/requisito | Evidência identificada | Pendência de homologação |
+|---|---|---|
+| Login, Google OAuth, sessão persistente | Hardening de auth e sessão do Motorista aplicado no pipeline | Cold start, voltar do Google e sessão após app suspenso |
+| Online/offline e elegibilidade | `toggleOnline`, checagem de presença e hardener de ACK | Rejeição do servidor, offline real e GPS não enviado offline |
+| GPS em primeiro/segundo plano | Hardener nativo e watch utilizados na geração do Parceiro | Tela bloqueada, otimização de bateria, retomada e precisão |
+| Nova corrida / alerta / voz | Oferta e contagem regressiva no vídeo; scripts de push/voz | App aberto, suspenso, terminado, som e push sem duplicidade |
+| Detalhes da oferta | Endereços, preço, nome, avaliação, preferências aparecem | Dados reais, sem vazamento de telefone/foto de terceiros |
+| Recusar / aceitar atomicamente | Operações `callAccept`/`callReject` presentes | Corrida oferecida para 2 motoristas e concorrência |
+| Receber próxima corrida em viagem | `queuedRideRef` e regras condicionais presentes no código | Aceitar oferta B durante A e cancelamento de B sem afetar A |
+| Navegar ao embarque / ao destino | Evidência visual de rota e ETA; scripts QA201/QA209 | GPS real, recálculo off-route, pausa/reconexão e câmera |
+| PIN e início seguro | Quatro inputs reais + `onStart(pinCode)` | PIN incorreto, bloqueio, IME, retorno e acesso sem validação |
+| Chegada, no-show e cancelamento | Botões e callbacks visíveis; estado `motorista_chegou` | Sem mudança espontânea de estado, multa e restituição |
+| Finalização e avaliação | Conclusão e cartão de avaliação no vídeo | Só finalizar após confirmação do servidor; apenas uma nota |
+| Nota do passageiro | Código de perfil/ratings e cartão de oferta | Dados reais, sem nota fictícia para novo usuário |
+| Valor, ganhos, carteira | Cards de ganhos no vídeo; camada financeira no pipeline | Conciliar com ledger/settlement; não inferir por `final_price` |
+| Multa de cancelamento e bloqueio do passageiro | Requisito do PDF; não auditado funcionalmente nesta rodada | Confirmar backend, RLS, wallet e UX de débito/pagamento |
+| Foto do perfil/veículo | Scripts de onboarding/foto no build | Android câmera/galeria, autorização e aprovação documental |
+| Menus / botão voltar Android | Hardener de navegação no build | Testar todas as subrotas e botão físico/sistema |
+| Segurança/SOS e voz desativável | Componentes e hardeners presentes | Teste real de emergência, toggle TTS e não duplicar locução |
+| Zonas pulsantes de demanda | `harden-partner-motorista-demand-map-v1.mjs` injeta RPCs de zonas agregadas | Confirmar retorno RLS, coordenadas, consentimento e pontos renderizados |
+| Estilo vetorial do mapa | Map ID e flag CI; QA219 evita conflito local/Cloud | Validar `getRenderingType()` VECTOR/Raster no dispositivo e estilo publicado |
+
+**Regra de saída para APK:** não promover o QA219 a homologação aprovada sem testes reais de PIN, duas corridas sequenciais, cancelamento concorrente, mapa vetorial/fallback, GPS em movimento, ligação/voz, tela bloqueada, e regressão do Entregador/Passageiro (estes últimos sem alterações diretas).
