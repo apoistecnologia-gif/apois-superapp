@@ -68,14 +68,14 @@ if(moduleName==="motorista"){
  const initialInstruction=/        const firstInstruction = String\(nextSteps\[0\]\?\.instruction \?\? ""\)[^\n]*\n        if \(firstInstruction && [^\n]*\n          void speak\(firstInstruction, [^\n]*\n        \}\n/g;
  if([...s.matchAll(initialInstruction)].length!==1)throw Error("[FAIL] ExternalNav first maneuver voice handler unexpectedly changed");
  s=s.replace(initialInstruction,"");
- const nearVoice=s.indexOf("  // Avisos automáticos de chegada");
+ const nearVoice=s.indexOf("  // Never announce arrival from one GPS proximity reading or an old route.");
  const nearVoiceEnd=nearVoice<0?-1:s.indexOf("  // Fala transições de status importantes.",nearVoice);
- if(nearVoice<0||nearVoiceEnd<=nearVoice)throw Error("[FAIL] ExternalNav proximity voice effect boundary");
+ if(nearVoice<0||nearVoiceEnd<=nearVoice)throw Error("[FAIL] ExternalNav protected arrival voice effect boundary");
  const nearEffect=s.slice(nearVoice,nearVoiceEnd);
- if(!nearEffect.includes('speak("Você chegou ao ponto de embarque."') ||
-    !nearEffect.includes('speak("Você chegou ao destino final."'))
-   throw Error("[FAIL] ExternalNav proximity voice differs from protected baseline");
- s=s.slice(0,nearVoice)+"  // Arrival notifications are now spoken by the chosen external navigator.\n\n"+s.slice(nearVoiceEnd);
+ for(const tok of ["destinationEvidenceRef","evidence.travelledKm","evidence.nearFixes","void speak("]){
+   if(!nearEffect.includes(tok))throw Error("[FAIL] ExternalNav unexpected arrival voice segment "+tok);
+ }
+ s=s.slice(0,nearVoice)+"  // Arrival guidance is delegated to Google Maps/Waze; the ride still ends only in APOIS.\n\n"+s.slice(nearVoiceEnd);
 
  // QA222's <42m off-route billing calls are no longer needed; keep the
  // slower operational ETA/route refresh (QA201) and existing map overlays.
