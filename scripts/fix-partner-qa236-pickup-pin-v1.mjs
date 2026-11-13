@@ -34,18 +34,19 @@ if(ha<0||hb<=ha)throw Error("[FAIL] QA236 old arrival handler");
 pickup=pickup.slice(0,ha)+pickup.slice(hb);
 pickup=once(pickup,
  '<div data-apois-automatic-arrival="true" className="rounded-xl bg-[#FFF1F2] px-3 py-2 text-center text-xs font-semibold text-[#9E1B2A]">O passageiro será avisado automaticamente pelo GPS.</div>',
- '<button type="button" data-apois-qa236-start-ride="true" onClick={onStartPin} '+
- 'className="min-h-[54px] w-full rounded-2xl bg-[#C91429] px-4 text-[15px] font-extrabold uppercase tracking-wide text-white shadow-[0_8px_20px_-10px_rgba(201,20,41,.5)]">'+
- 'Iniciar corrida · Digitar PIN</button>',
+ '<div data-apois-qa236-start-ride="true">'+
+ '<ApoisSlideAction label="Digitar PIN e iniciar corrida" onConfirm={onStartPin} />'+
+ '</div>',
  "replace GPS announcement with ride PIN CTA");
 s=s.slice(0,a)+pickup+s.slice(b);
 
-// Arrived phase already contains the QA209 PIN modal. Make its entry a
-// simple button so there is never a double-slide just to start the trip.
+// QA242: approved Motorista UX requires a deliberate swipe to open the PIN
+// both on pickup and in the GPS-confirmed arrived phase. The second, existing
+// PIN-confirmation swipe is retained for the real server-side ride start.
 s=once(s,'<ApoisSlideAction label="Iniciar corrida" onConfirm={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} />',
- '<button type="button" data-apois-qa236-arrived-pin="true" onClick={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} '+
- 'className="min-h-[52px] w-full rounded-2xl bg-[#C91429] px-4 text-sm font-extrabold uppercase text-white">'+
- 'Iniciar corrida · Digitar PIN</button>',"confirmed arrived entry uses only simple button");
+ '<div data-apois-qa236-arrived-pin="true">'+
+ '<ApoisSlideAction label="Digitar PIN e iniciar corrida" onConfirm={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} />'+
+ '</div>',"arrived entry requires deliberate slider");
 
 // Place the PIN dialog outside the pickup conditional, so a native GPS
 // arrival in the middle of input never destroys the user's four digits.
