@@ -83,3 +83,29 @@ Classificação conservadora: **presente em código** não equivale a **testado 
 **Referência externa atual:** a documentação da Google Maps JavaScript API informa que `styles` não é suportado quando há `mapId` ou vector map e que `getRenderingType()` identifica a renderização real após carregar tiles. A presença do Map ID no bundle não basta para garantir vector em hardware Android.
 
 **Pendente:** bun typecheck/build real, Android físico, teste de dois motoristas, assertivas no Supabase sob conta de QA e reconciliação financeira. Nenhuma execução de produção ou ação no servidor.
+
+
+## Rodada de aprofundamento — GPS nativo, presença e Supabase (leitura somente)
+
+### QA219-09 — watcher GPS perdido em OFFLINE/ONLINE rápido
+**Causa de código confirmada:** o hardener `harden-partner-motorista-native-watch.mjs` criava um watcher assíncrono. Se o usuário parasse o rastreamento antes de sua inicialização e o reativasse enquanto `watchStartingRef` ainda era verdadeiro, a segunda chamada retornava antecipadamente. Ao resolver, o watcher antigo era descartado sem iniciar outro.
+
+**Correção isolada:** `scripts/fix-partner-driver-qa219-native-watch-restart-v1.mjs` adiciona `watchRestartRequestedRef`, preservando a intenção mais recente: encerrar o watcher obsoleto antes de reiniciar quando ainda online, cancelar pedido de reinício se voltar offline e repetir a inicialização somente após falha do watcher anterior. Aplicação na cópia descartável `.work/partner-motorista` após os patches QA209/QA219. Nenhuma alteração em Java, Manifest, Supabase ou Entregador.
+
+**Verificação:** 3 testes sintéticos do novo hardener passaram em ambiente JavaScript isolado, usando a própria string `newWatch` existente no hardener nativo como fixture. Teste físico de alternância rápida e foreground service ainda pendente.
+
+### Supabase Corridas — conferência sem mutação
+- Projeto acessado: `tbbzkrfupmqdywnzgnms` — `APOIS CORRIDAS - PRODUÇÃO`, `ACTIVE_HEALTHY` no momento da consulta.
+- As tabelas do schema `public` retornadas pela API estavam com RLS habilitada. Essa informação **não substitui a auditoria de cada política**.
+- RPCs encontradas no catálogo: `driver_set_presence`, `apois_get_driver_demand_zones`, `apois_driver_passenger_hotspots`, `apois_driver_assigned_passenger`, `apois_driver_offer_passenger`.
+- O wrapper `public.driver_set_presence` é `SECURITY DEFINER` e delega a `apois_rpc_private.driver_set_presence`; a função interna exige `auth.uid() IS NOT NULL`, verifica o motorista, cadastro aprovado, suspensão, assinatura, documentos e limites de coordenadas. O fato de o wrapper ter `EXECUTE` para `anon` **não prova exposição anônima**, pois a implementação privada rejeita usuários não autenticados.
+- Os endpoints de demanda retornaram metadata de funções existentes; nenhum dado pessoal foi extraído. A tabela agregada de opt-in `apois_passenger_demand_presence` estava sem registros na listagem; não se deve inventar pontos de demanda no mapa.
+- Logs agregados entre `2026-11-12T23:45:00Z` e `2026-11-12T23:52:00Z`: 367 respostas HTTP 200, 1 resposta 201 e 4 respostas 400 em `edge_logs`. As respostas 400 **não foram atribuídas ao aplicativo Motorista** por falta de correlação de requisição/identificador, e não justificam alteração de backend.
+- Nenhum `INSERT`, `UPDATE`, `DELETE`, `DDL` ou deploy foi executado no projeto de produção.
+
+### Pendências de homologação reforçadas
+1. Executar `bun run typecheck`, scripts QA219 após toda a sequência de transforms e build web no workspace real.
+2. Testar em Android: ONLINE→OFFLINE→ONLINE com GPS ainda iniciando; GPS após bloqueio de tela; retorno do background; desconexão; serviço de foreground e ACK.
+3. Confirmar `getRenderingType()` após `tilesloaded`, rotação real, tile loading e Map ID publicado no mesmo projeto da chave.
+4. Corrida A ativa + oferta B + cancelamento de B; eventos Realtime fora de ordem; troca rápida de telas; verificar que o UI não regride e o servidor continua sendo autoridade.
+5. Não liberar APK nem produção até testes físicos e autorização.
