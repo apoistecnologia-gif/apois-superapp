@@ -530,6 +530,9 @@ if (name === 'corridas') {
    // QA218: only consent-driven, coarse passenger demand on Corridas home.
    run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-optin-qa218-v1.mjs')]);
    run(process.execPath,['--test',resolve(root,'scripts/qa/test-passenger-optin-zones-qa218.test.mjs')]);
+   // QA237: disable state must explain its reason and provide safe official route/quote retry.
+   run(process.execPath,[resolve(root,'scripts/fix-corridas-client-qa237-request-recovery-v1.mjs')]);
+   run(process.execPath,['--test',resolve(root,'scripts/qa/test-client-qa237-request-recovery-v1.test.mjs')]);
   // RV-15: restore scoped public-form placeholder contrast, then only user-facing
   // auth error copy and field accessibility on disposable Corridas; do not change
   // password predicates, Supabase callback/session logic or email submission.
