@@ -109,10 +109,12 @@ if(role==="motorista"){
  s=once(s,ref,ref+'\n'+autoLines,"bounded GPS proximity arrival and backend push");
  // The internal map is operational but no longer an active auto-follow
  // navigation camera. Manual recenter and route overview still work.
- const begin=s.indexOf("function applyNavigationCamera("),brace=begin<0?-1:s.indexOf("{",begin);
- if(begin<0||brace<begin||brace-begin>600||!s.slice(begin,brace).includes("immediate"))
-  throw Error("[FAIL] QA235 camera anchor moved");
- s=s.slice(0,brace+1)+'\n  // QA235: no continuous internal navigation camera while external map guides.\n  if(!immediate)return;\n'+s.slice(brace+1);
+ const begin=s.indexOf("function applyNavigationCamera(");
+ const entry=begin<0?-1:s.indexOf(") {\n  const now=Date.now();",begin);
+ if(begin<0||entry<0||entry-begin>850||!s.slice(begin,entry).includes("immediate"))
+  throw Error("[FAIL] QA235 camera function entry moved");
+ const insertion=entry+4;
+ s=s.slice(0,insertion)+'\n  // QA235: no continuous internal navigation camera while external map guides.\n  if(!immediate)return;'+s.slice(insertion);
  for(const t of ["onConfirm={submitPin}","onConfirm={handleComplete}","onClick={onRecenter}",
    "onClick={onShowRoute}","data-apois-qa220-pin-digit-v1","launchApoisNavigationAfterRideStart(accepted.origin_lat",
    "qa235ArrivalRef.current","setPolyline(points);"]){
