@@ -33,7 +33,7 @@ copyFileSync(resolve("scripts/android/APOISReturnBubble.java"),resolve(dir,"APOI
 p=once(p,
  '        boolean active = Boolean.TRUE.equals(call.getBoolean("active"));',
  '        boolean active = Boolean.TRUE.equals(call.getBoolean("active"));\n'+
- '        if ("motorista".equals(role)) APOISReturnBubble.active(getContext(),active);',
+ '        APOISReturnBubble.active(getContext(),role,active);',
  "existing driver operation state");
 p=once(p,'    private static final String GPS_STARTUP_PREFS',
  [
