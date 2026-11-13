@@ -351,6 +351,8 @@ node --test "$ROOT/scripts/qa/test-partner-qa236-pickup-pin-v1.test.mjs"
 node "$ROOT/scripts/fix-partner-qa239-external-routes-only.mjs"
 node "$ROOT/scripts/install-partner-qa239-shortcuts.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa239-map-cost.test.mjs"
+# QA240: first-use Motorista permission, official logo, no opt-in UI/regressions.
+node --test "$ROOT/scripts/qa/test-partner-qa240-bubble-permission-ui.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
