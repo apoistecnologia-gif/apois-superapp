@@ -12,7 +12,7 @@ const fixture = [
   '      const queued = queuedRideRef.current;',
   '      const incoming = incomingRef.current;',
   '      const active = activeRef.current;',
-  '      if (r.status === "finalizada") { setActive(null); clearDriverRouteVisuals(); }',
+  '      if (r.status === "finalizada") { setActive(null); clearDriverRouteVisuals();',
   '      } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {',
   '        if (wasQueued) { setIncoming(null); return; }',
   '        setIncoming(null);',
