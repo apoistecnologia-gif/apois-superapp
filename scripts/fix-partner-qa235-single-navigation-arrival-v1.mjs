@@ -33,6 +33,7 @@ if(role==="motorista"){
    'useApoisOperationalNotification("motorista", Boolean(active), active?.status === "motorista_a_caminho" ? active.id : undefined, active?.status === "motorista_a_caminho" ? active.origin_lat : undefined, active?.status === "motorista_a_caminho" ? active.origin_lng : undefined);',
    "native Android background GPS receives active ride pickup for automatic push arrival");
  s="// APOIS_PARTNER_QA235_ONE_NAVIGATION_V1\n"+
+   'import { Capacitor as ApoisNativePlatform } from "@capacitor/core";\n'+
    'import { setApoisExternalNavigationOwnsVoice } from "@/lib/voiceNav";\n'+s;
  s=once(s,
    'import { ApoisExternalNavigation, useApoisOperationalNotification, launchApoisNavigationAfterRideStart } from "@/components/ApoisExternalNavigation";',
@@ -95,6 +96,8 @@ if(role==="motorista"){
 '  const qa235ArrivalRef=useRef<{rideId:string;firstAt:number;lastAt:number;count:number;busy:boolean;retryAfter:number}|null>(null);',
 '  useEffect(()=>{',
 '    if(!active||active.status!=="motorista_a_caminho"||gpsStatus!=="granted"||!position){qa235ArrivalRef.current=null;return;}',
+'    // Android foreground GPS service confirms arrival independently of paused WebViews.',
+'    if(ApoisNativePlatform.isNativePlatform()&&ApoisNativePlatform.getPlatform()==="android")return;',
 '    const distance=haversineKm(position,{lat:active.origin_lat,lng:active.origin_lng})*1000;',
 '    if(!Number.isFinite(distance)||distance>85){qa235ArrivalRef.current=null;return;}',
 '    const now=Date.now();',
