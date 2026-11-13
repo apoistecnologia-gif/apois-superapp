@@ -42,7 +42,7 @@ a=a.slice(0,end)+
  '    @Override protected void onResume(){super.onResume();APOISReturnBubble.hide();}\n'+
  a.slice(end);
 if(!m.includes("android.permission.SYSTEM_ALERT_WINDOW")){
- const tag=m.indexOf(">");
+ const tag=m.indexOf(">",m.indexOf("<manifest"));
  if(tag<0)throw Error("[QA239] manifest tag missing");
  m=m.slice(0,tag+1)+'\n<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />'+m.slice(tag+1);
 }
