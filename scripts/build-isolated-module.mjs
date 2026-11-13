@@ -533,6 +533,8 @@ if (name === 'corridas') {
    // QA237: disable state must explain its reason and provide safe official route/quote retry.
    run(process.execPath,[resolve(root,'scripts/fix-corridas-client-qa237-request-recovery-v1.mjs')]);
    run(process.execPath,['--test',resolve(root,'scripts/qa/test-client-qa237-request-recovery-v1.test.mjs')]);
+   // QA238: QA219 home UX is a permanent acceptance criterion, not a branch-only fix.
+   run(process.execPath,['--test',resolve(root,'scripts/qa/test-client-qa238-map-home-regression.test.mjs')]);
   // RV-15: restore scoped public-form placeholder contrast, then only user-facing
   // auth error copy and field accessibility on disposable Corridas; do not change
   // password predicates, Supabase callback/session logic or email submission.
