@@ -73,6 +73,8 @@ if(role==="motorista"){
   const api=read("src/lib/driverRideLifecycle.mobile.ts");
   for(const t of [
    'active.status!=="motorista_a_caminho"',
+   'ApoisNativePlatform.isNativePlatform()&&ApoisNativePlatform.getPlatform()==="android"',
+   'import { Capacitor as ApoisNativePlatform } from "@capacitor/core"',
    'gpsStatus!=="granted"',
    'distance>85',
    "now-record.firstAt<6500",
