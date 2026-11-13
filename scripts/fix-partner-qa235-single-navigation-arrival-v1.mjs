@@ -16,7 +16,8 @@ if(navOpen<0||navClose<0||!nav.slice(navOpen,navClose).includes('label="Iniciar 
 nav=nav.slice(0,navOpen)+
  '        <button type="button" disabled={busy || !coordinateValid} onClick={launch}\n'+
  '          aria-label={"Reabrir navegação "+stage}\n'+
- '          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#E4B0B3] bg-[#FFF1F2] px-3 text-[12px] font-extrabold text-[#A31626] disabled:opacity-50">\n'+
+ '          className="flex min-h-[56px] min-w-0 flex-1 items-center justify-center gap-2 rounded-[16px] border border-[#C71623] bg-[#E51B23] px-3 text-[13px] font-extrabold text-white shadow-[0_9px_20px_rgba(201,20,41,.2)] transition active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51B23] disabled:opacity-50">\n'+
+ '          <Navigation2 aria-hidden="true" className="h-[19px] w-[19px] shrink-0" />\n'+
  '          {busy ? "Abrindo…" : "Reabrir mapa"}\n'+
  '        </button>'+nav.slice(navClose+10);
 if(nav.includes("<ApoisSlideAction"))throw Error("[FAIL] QA235 nav duplicate swipe");
