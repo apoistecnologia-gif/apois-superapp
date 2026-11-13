@@ -30,8 +30,12 @@ s=s.slice(0,start)+[
 ''].join('\n')+s.slice(end);
 // The QA236 screen owns its parent layout; patch only the Google Map element.
 // Keep its full operational JSX children, but never instantiate it without opt-in.
-const codeTags=[...s.matchAll(/<MovviMap\s+center=/g)];
-if(codeTags.length!==1)throw Error("[QA239] actual map JSX count="+codeTags.length);
+const codeTags=[...s.matchAll(/<MovviMap\b/g)].filter(match=>{
+  const next=s.slice(match.index,match.index+1200);
+  return next.includes("onLoad=") && next.includes("center=") && next.includes("zoom=");
+});
+if(codeTags.length!==1)throw Error("[QA239] actual map JSX count="+codeTags.length+" candidates="+
+  [...s.matchAll(/<MovviMap\b/g)].map(m=>JSON.stringify(s.slice(m.index,m.index+100))).join(" | "));
 const opening=codeTags[0].index;
 const closing=s.indexOf("        </MovviMap>",opening);
 if(closing<=opening)throw Error("[QA239] actual map close absent");
