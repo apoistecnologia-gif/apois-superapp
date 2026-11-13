@@ -100,31 +100,45 @@ if(process.env.APOIS_QA234_ROLE==="motorista"){
 }
 
 if(process.env.APOIS_QA234_ROLE==="entregador"){
- test("courier offers, collection, destination and PIN completion use swipes with unchanged status callbacks",()=>{
+ test("actual courier offer modal and collection/confirmation use swipes while existing backend callbacks survive",()=>{
   const premium=readGenerated("src/components/CourierPremiumViews.tsx");
+  const offers=readGenerated("src/components/CourierOfferOverlay.tsx");
   const app=readGenerated("src/routes/courier.tsx");
   const map=readGenerated("src/components/CourierRouteMap.tsx");
-  for(const marker of [
-    '<ApoisOfferSwipe acceptLabel="Aceitar entrega"',
-    'onAccept={() => onAccept(offer.id)} onReject={() => onReject(offer.id)}',
-    'onConfirm={() => onTransition(action.status)}',
+  for(const mark of [
+   "APOIS_PARTNER_QA234_SWIPE_COST_V1",
+   '<ApoisOfferSwipe acceptLabel="Aceitar entrega"',
+   'onAccept={() => respond("accept")} onReject={() => respond("reject")}',
+   'const respond = async (action: "accept" | "reject") =>',
+   "accept_delivery_offer", "reject_delivery_offer",
+  ])assert.ok(offers.includes(mark),"Courier real offer modal "+mark);
+  assert.ok(!offers.includes('onClick={() => void respond("accept")}'),"offer no longer touch-to-accept");
+  assert.ok(!offers.includes('onClick={() => void respond("reject")}'),"offer no longer touch-to-reject");
+  for(const mark of [
+    "APOIS_COURIER_SIMPLE_FLOW_V1",
+    'onConfirm={() => onTransition("picked_up")}',
     'label="Confirmar entrega" disabled={busy || pin.length !== 4}',
-    "job.status === \"at_pickup\"",
-    "job.status === \"picked_up\"",
-    "job.status === \"arrived_destination\"",
-  ])assert.ok(premium.includes(marker),"courier stage "+marker);
-  for(const marker of ["onTransition={transitionDelivery}","onComplete={completeDelivery}",
+    'onConfirm={onComplete}',
+    'onSubmit={(event) => { event.preventDefault(); if (!busy) void onComplete(); }}',
+    'grid grid-cols-1 gap-2',
+    "pin.length !== 4",
+  ])assert.ok(premium.includes(mark),"Courier active delivery "+mark);
+  assert.ok(!premium.includes('onClick={() => void onTransition("picked_up")}'),"old pickup tap replaced");
+  for(const mark of [
+    "onTransition={transitionDelivery}","onComplete={completeDelivery}",
     'useApoisOperationalNotification("entregador", Boolean(activeJob))',
-    "CourierLocationTracker"])assert.ok(app.includes(marker),"courier lifecycle "+marker);
-  for(const marker of ["ApoisExternalNavigation latitude={target.lat}",
+    "CourierLocationTracker"
+  ])assert.ok(app.includes(mark),"Courier lifecycle "+mark);
+  for(const mark of [
+    "ApoisExternalNavigation latitude={target.lat}",
     "job.pickup_latitude","job.delivery_latitude",
     "update_courier_delivery_route_metrics",
     "VITE_APOIS_ENTREGAS_LIVE_ROUTING",
     "elapsed < 900_000 || moved < 1500",
-    'routingPreference: "TRAFFIC_UNAWARE"'])assert.ok(map.includes(marker),"courier cost/status "+marker);
-  assert.ok(!premium.includes("onClick={() => void onAccept(offer.id)}"),"old offer tap removed");
-  assert.ok(!premium.includes("onClick={() => void onTransition(action.status)}"),"old transition tap removed");
-  assert.ok(!premium.includes("onClick={onComplete}"),"old confirm delivery tap removed");
+    'routingPreference: "TRAFFIC_UNAWARE"'
+  ])assert.ok(map.includes(mark),"Courier budget/track "+mark);
+  assert.ok(!map.includes("elapsed < 180_000 || moved < 500"),"original 3-minute paid refresh removed");
+  assert.ok(!map.includes('routingPreference: "TRAFFIC_AWARE"'),"Pro traffic route not paid for operation");
  });
 }
 
