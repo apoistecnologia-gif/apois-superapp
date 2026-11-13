@@ -53,6 +53,12 @@ map=one(map,
   "      map.setOptions({ styles, backgroundColor: bgColor });",
   '      // QA219: no local styles when a cloud Map ID is selected.\n      if (!useCloudVector) map.setOptions({ styles, backgroundColor: bgColor });',
   "initial cloud-style guard");
+// The onLoad callback now closes over the cloud-style selection: keep the
+// dependency complete to avoid stale callback state on an explicit retry.
+map=one(map,
+  "    [onLoad, styles, bgColor, theme],",
+  "    [onLoad, styles, bgColor, theme, useCloudVector],",
+  "onLoad style-gate dependencies");
 
 // Prefer the course from real GPS movement over route geometry. While stopped,
 // retain the route bearing; never follow compass noise just because the
