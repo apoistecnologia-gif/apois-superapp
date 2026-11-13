@@ -100,7 +100,7 @@ if(role==="motorista"){
   for(const forbidden of ["tickNavigation(", "qa222DistanceToRoute(", "const offRouteDue=", "destinationEvidenceRef", "routeStepsPhase", "setRouteSteps(", "DriverRouteStep"]) {
    assert.ok(!code.includes(forbidden),"obsolete internal navigation still active: "+forbidden);
   }
-  assert.ok(code.includes("Corrida aceita. Siga até o ponto de embarque"),"operational voice still exists");
+  assert.ok(code.includes("Corrida aceita. Siga até o embarque"),"operational voice still exists");
   assert.ok(code.includes("Corrida finalizada."),"operational finish voice exists");
   assert.equal(readFileSync(component,"utf8"),shared,"Motorista uses exact shared component");
  });
