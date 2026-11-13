@@ -26,7 +26,7 @@ Documentação: Google Maps URLs `https://developers.google.com/maps/documentati
 - Na ida até o passageiro, o botão abre as coordenadas de **embarque**.
 - Depois do PIN e início confirmado, o botão abre as coordenadas de **destino**.
 - Permanecem no APOIS: aceitar/recusar, GPS, online, chegada, autenticação, PIN, finalização, segurança, perfil, avaliações, mapa de acompanhamento, ETA de caráter operacional, cálculo de rota com limites e integridade comercial.
-- A interface deixa de executar `tickNavigation`, anunciar primeira manobra, pronunciar proximidade como navegação e disparar requisições pagas exclusivas de desvio de 42 m/7 s da QA222. A atualização operacional de rota/ETA da QA201 (até após 3 minutos com deslocamento suficiente, além de troca de fase/falhas permitidas) permanece.
+- A interface deixa de executar `tickNavigation`, anunciar primeira manobra e disparar requisições pagas exclusivas de desvio de 42 m/7 s da QA222. A orientação operacional de chegada com movimento comprovado e lembrete de finalização permanece no APOIS. A atualização operacional de rota/ETA da QA201 (até após 3 minutos com deslocamento suficiente, além de troca de fase/falhas permitidas) permanece.
 
 ## 4. Entregador
 
