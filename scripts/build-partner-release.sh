@@ -356,6 +356,10 @@ node --test "$ROOT/scripts/qa/test-partner-qa240-bubble-permission-ui.test.mjs"
 # QA241: passenger profile no longer calls the missing public RPC; authorized ride-scoped info only.
 node "$ROOT/scripts/fix-partner-qa241-driver-offer-profile.mjs"
 APOIS_QA241_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa241-profile-courier-swipe.test.mjs"
+# QA242: GPS-only straight-line distance for compact HUD (not a paid route);
+# both pickup/arrival require deliberate PIN entry swipe.
+node "$ROOT/scripts/fix-partner-qa242-gps-distance-hud-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa242-pin-gps-distance.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
