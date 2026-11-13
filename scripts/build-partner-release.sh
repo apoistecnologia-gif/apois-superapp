@@ -341,6 +341,9 @@ APOIS_EXTERNAL_NAV_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-ext
 # QA234: one deliberate swipe per critical action, PIN-success launches preferred external navigator.
 node "$ROOT/scripts/install-partner-qa234-swipe-cost-v1.mjs" motorista
 APOIS_QA234_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa234-swipe-cost-v1.test.mjs"
+# QA235: one external voice, auto map on acceptance, no manual arrival and GPS-owned passenger push.
+node "$ROOT/scripts/fix-partner-qa235-single-navigation-arrival-v1.mjs" motorista
+APOIS_QA235_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa235-single-navigation-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
