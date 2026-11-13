@@ -347,6 +347,9 @@ APOIS_QA235_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa235-sing
 # QA236: restore Start Ride / PIN in pickup state; no mandatory arrival control.
 node "$ROOT/scripts/fix-partner-qa236-pickup-pin-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa236-pickup-pin-v1.test.mjs"
+# QA239: keep route guidance in external app, preserve operational map and demand pins.
+node "$ROOT/scripts/fix-partner-qa239-external-routes-only.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa239-map-cost.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"

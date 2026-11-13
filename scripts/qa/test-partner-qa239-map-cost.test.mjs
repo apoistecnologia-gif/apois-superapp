@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const p=".work/partner-motorista/src/routes/motorista.app.tsx";
+const main=readFileSync(p,"utf8");
+const recovery=readFileSync(".work/partner-motorista/src/components/DriverActiveRideRecovery.tsx","utf8");
+assert.ok(main.includes("APOIS_QA239_EXTERNAL_ROUTES_ONLY_V1"));
+const part=main.slice(main.indexOf("  // Rota da corrida ativa."),main.indexOf("  // Voz de navegação"));
+assert.ok(part.includes("if (active) {"));
+assert.ok(part.indexOf("if (active) {") < part.indexOf("callRoute("));
+assert.ok(part.includes("setPolyline(previous => previous.length ? [] : previous)"));
+assert.ok(part.includes("setEtaSeconds(previous => previous === null ? previous : null)"));
+assert.ok(recovery.includes("APOIS_QA239_EXTERNAL_ROUTES_ONLY_V1"));
+assert.ok(recovery.indexOf("clearLines();\n    return;") < recovery.indexOf("computeDriverRoute("));
+for(const s of ['showDemandZones && demandZones.map','rpc("apois_get_driver_demand_zones")','rpc("apois_driver_passenger_hotspots")','onStartPin={()=>setQa236PinOpen(true)}','onClick={handleComplete}','ApoisExternalNavigation latitude={ride.destination_lat}'])assert.ok(main.includes(s),s);
+console.log("[OK] QA239 default no internal Routes requests; operational demand zones and lifecycle preserved");
