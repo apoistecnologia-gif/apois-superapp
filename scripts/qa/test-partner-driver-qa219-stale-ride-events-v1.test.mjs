@@ -13,6 +13,7 @@ const fixture = [
   "  // Toast em cada transição",
   "    const applyActive = (r: RideRow) => {",
   anchor,
+  '      const queuedAfterRideId = (r as any).queued_after_ride_id as string | null | undefined;',
   '      const queued = queuedRideRef.current;',
   '      const incoming = incomingRef.current;',
   '      const active = activeRef.current;',
