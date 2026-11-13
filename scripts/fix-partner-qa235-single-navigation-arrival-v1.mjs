@@ -28,6 +28,10 @@ if(role==="motorista"){
    '<ApoisOfferSwipe acceptLabel="Aceitar corrida"','label="Confirmar chegada" onConfirm={handleArrive}',
    "await onStart(pinCode);","haversineKm(","setPolyline(points);"];
  for(const t of must)if(!s.includes(t))throw Error("[FAIL] QA235 driver source "+t);
+ s=once(s,
+   'useApoisOperationalNotification("motorista", Boolean(active));',
+   'useApoisOperationalNotification("motorista", Boolean(active), active?.id, active?.origin_lat, active?.origin_lng);',
+   "native Android background GPS receives active ride pickup for automatic push arrival");
  s="// APOIS_PARTNER_QA235_ONE_NAVIGATION_V1\n"+
    'import { setApoisExternalNavigationOwnsVoice } from "@/lib/voiceNav";\n'+s;
  voice=once(voice,'export async function speak(text: string, opts?: { dedupKey?: string; interrupt?: boolean }) {',
