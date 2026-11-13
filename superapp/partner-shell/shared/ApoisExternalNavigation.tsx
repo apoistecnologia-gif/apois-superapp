@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { ApoisSlideAction } from "./ApoisSwipeControls";
 
 export type ApoisNavigator = "google" | "waze";
 export type ApoisPartnerRole = "motorista" | "entregador";
@@ -41,6 +42,17 @@ function writePreferred(value: ApoisNavigator | null) {
     if (value) window.localStorage.setItem(PREFERENCE_KEY, value);
     else window.localStorage.removeItem(PREFERENCE_KEY);
   } catch { /* Navigation can still launch when storage is unavailable. */ }
+}
+
+// QA234: call ONLY after the server accepted the PIN and updated the ride.
+// Android launches the saved preferred provider (Google Maps by default).
+// A navigation failure must never roll back a successfully started ride.
+export async function launchApoisNavigationAfterRideStart(latitude: number | null | undefined, longitude: number | null | undefined): Promise<void> {
+  if (!validNavigationCoordinate(latitude, longitude)) throw Error("Destino da corrida sem coordenadas válidas.");
+  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return;
+  const provider = readPreferred() ?? "google";
+  const result = await NativeNavigation.open({provider, latitude: Number(latitude), longitude: Number(longitude)});
+  if (!result.opened) throw Error("Navegador externo não abriu. Use Iniciar navegação no APOIS.");
 }
 
 export async function setApoisOperationalNotification(role: ApoisPartnerRole, active: boolean): Promise<void> {
@@ -130,11 +142,13 @@ export function ApoisExternalNavigation({
   return (
     <div data-apois-external-navigation="true" className="w-full min-w-0">
       <div className="flex min-w-0 items-center gap-2">
-        <button type="button" disabled={busy || !coordinateValid}
-          onClick={launch} aria-label={"Iniciar navegação externa: " + stage}
-          className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#E51B23] px-3 py-2 text-center text-[12px] font-extrabold uppercase tracking-wide text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50">
-          {busy ? "Abrindo navegação…" : "INICIAR NAVEGAÇÃO"}
-        </button>
+        <ApoisSlideAction
+          label="Iniciar navegação"
+          disabled={busy || !coordinateValid}
+          busy={busy}
+          onConfirm={launch}
+          className="flex-1"
+        />
         {preferred ? (
           <button type="button" onClick={() => { setChooser(true); setMessage(""); }}
             className="min-h-11 shrink-0 rounded-xl border border-[#D0D5DD] bg-white px-3 text-xs font-bold text-[#344054]"
