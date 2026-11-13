@@ -28,7 +28,7 @@ function replaceButton(s,needle,replacement,label,fromIndex=0){
 function driver(s){
  for(const t of ["APOIS_PARTNER_EXTERNAL_NAV_UI_V1","data-apois-qa221-trip-hud",
    "onClick={onAccept}","onClick={onReject}","onClick={handleArrive}","onClick={handleComplete}",
-   "onClick={submitPin}","await onStart(pinCode);","setPolyline(points);",
+   "onClick={() => void submitPin()}","await onStart(pinCode);","setPolyline(points);",
    'const refreshDue = !samePhase || (elapsedMs >= 180000 &&']){
   if(!s.includes(t))throw Error("[FAIL] QA234 Motorista prerequisite "+t);
  }
@@ -75,7 +75,7 @@ function driver(s){
  const openSlide='<ApoisSlideAction label="Iniciar corrida" onConfirm={() => { setPinError(null); setPinCode(""); setPinOpen(true); }} />';
  s=once(s,openPin,openSlide,"pre-PIN ride action slider");
  // The original PIN dialog must remain fully validated, including its error display.
- s=replaceButton(s,"onClick={submitPin}",
+ s=replaceButton(s,"onClick={() => void submitPin()}",
    '<ApoisSlideAction label="Confirmar PIN e iniciar corrida" onConfirm={submitPin} disabled={pinBusy || pinCode.length !== 4} busy={pinBusy} className="min-w-0" />',
    "PIN submit slider");
  // Navigation flow controls: swipe to confirm arrival/finish, keep cancellation separate.
