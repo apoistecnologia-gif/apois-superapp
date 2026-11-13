@@ -20,13 +20,26 @@ export function patchStaleTerminalEvents(source) {
   const guard = [
     '      // ' + marker + ': a delayed event from an older trip cannot wipe a newer trip/offer.',
     '      const terminalEvent = r.status === "finalizada" || r.status === "cancelada_passageiro" || r.status === "cancelada_motorista";',
-    '      const sameRideTracked = activeRef.current?.id === r.id || queuedRideRef.current?.id === r.id || incomingRef.current?.id === r.id || ratingRef.current?.id === r.id;',
+    '      const sameRideTracked = activeRef.current?.id === r.id || queuedRideRef.current?.id === r.id || incomingRef.current?.id === r.id;',
     '      const differentContextVisible = (activeRef.current != null && activeRef.current.id !== r.id)',
     '        || (queuedRideRef.current != null && queuedRideRef.current.id !== r.id)',
     '        || (incomingRef.current != null && incomingRef.current.id !== r.id);',
     '      if (terminalEvent && differentContextVisible && !sameRideTracked) return;',
   ].join("\n");
   handler = handler.replace(anchor, anchor + "\n" + guard);
+  // A cancelled queued offer must not erase an unrelated incoming offer or active trip.
+  const cancelStart = handler.indexOf('      } else if (r.status === "cancelada_passageiro" || r.status === "cancelada_motorista") {');
+  const cancelEnd = cancelStart < 0 ? -1 : handler.indexOf('      } else if (r.status === "motorista_a_caminho"', cancelStart);
+  if (cancelStart < 0 || cancelEnd <= cancelStart) throw new Error("[FAIL] QA219 cancellation handler changed");
+  let cancellation = handler.slice(cancelStart, cancelEnd);
+  const incomingClears = cancellation.split('setIncoming(null);').length - 1;
+  if (incomingClears !== 2) throw new Error("[FAIL] QA219 expected two conditional incoming clears, got " + incomingClears);
+  cancellation = cancellation.replaceAll('setIncoming(null);', 'setIncoming((current) => current?.id === r.id ? null : current);');
+  const oldClear = '        setActive(null);\\n        clearDriverRouteVisuals();';
+  const newClear = '        setActive((current) => current?.id === r.id ? null : current);\\n        if (!activeRef.current || activeRef.current.id === r.id) clearDriverRouteVisuals();';
+  if (cancellation.split(oldClear).length !== 2) throw new Error("[FAIL] QA219 cancellation route cleanup contract changed");
+  cancellation = cancellation.replace(oldClear, newClear);
+  handler = handler.slice(0, cancelStart) + cancellation + handler.slice(cancelEnd);
   const patched = source.slice(0, start) + handler + source.slice(end);
   for (const token of ['onClick={onAccept}', 'onClick={onReject}', 'onStart(pinCode)', 'onClick={handleComplete}', 'clearDriverRouteVisuals()']) {
     if (source.includes(token) && !patched.includes(token)) throw new Error("[FAIL] QA219 changed protected operation: " + token);
