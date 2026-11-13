@@ -34,12 +34,12 @@ export function ApoisDriverOfferPassengerProfile({
   const [phase,setPhase]=useState<Phase>("loading");
   const [remote,setRemote]=useState<Partial<PublicOffer>>({});
   const [retry,setRetry]=useState(0);
+  const hasOffer=Boolean(initial?.name||initial?.avatar_url||initial?.total_ratings);
   useEffect(()=>{
     if(!open||!rideId){setPhase("unavailable");setRemote({});return;}
     let alive=true;
     setRemote({});
     setPhase("loading");
-    const hasOffer=Boolean(initial?.name||initial?.avatar_url||initial?.total_ratings);
     // Never leave a permanent animated skeleton on slow/offline Supabase.
     const deadline=window.setTimeout(()=>{
       if(alive)setPhase(hasOffer?"partial":"unavailable");
@@ -59,7 +59,7 @@ export function ApoisDriverOfferPassengerProfile({
       })
       .finally(()=>window.clearTimeout(deadline));
     return()=>{alive=false;window.clearTimeout(deadline);};
-  },[open,rideId,retry]);
+  },[open,rideId,retry,hasOffer]);
   const source:PublicOffer={...EMPTY,...normalize(initial),...Object.fromEntries(
     Object.entries(remote).filter(([,value])=>value!=null),
   )};
