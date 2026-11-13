@@ -54,7 +54,7 @@ if(moduleName==="motorista"){
 
  // No duplicate voice prompts: Google Maps and Waze own turn-by-turn speech.
  const voice=s.indexOf("  // Anuncia manobras conforme o motorista se aproxima.");
- const after=voice<0?-1:s.indexOf("  // Avisos automáticos de chegada",voice);
+ const after=voice<0?-1:s.indexOf("  // Never announce arrival from one GPS proximity reading or an old route.",voice);
  if(voice<0||after<=voice)throw Error("[FAIL] ExternalNav internal maneuver effect not found");
  const oldEffect=s.slice(voice,after);
  if(!oldEffect.includes("tickNavigation(")||!oldEffect.includes("routeSteps.length"))throw Error("[FAIL] Unexpected maneuver voice effect");
