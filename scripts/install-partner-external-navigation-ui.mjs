@@ -63,6 +63,19 @@ if(moduleName==="motorista"){
    "  // Operational arrival/status voice remains in APOIS; no redundant TTS instructions.\n\n"+
    s.slice(after);
  s=once(s,", tickNavigation, type NavStep",", type NavStep","remove unused turn-by-turn voice import");
+ // A historical hardener also spoke the FIRST road instruction as soon as
+ // the route was fetched; remove this duplicate before Google/Waze speaks it.
+ const initialInstruction=/        const firstInstruction = String\(nextSteps\[0\]\?\.instruction \?\? ""\)[^\n]*\n        if \(firstInstruction && [^\n]*\n          void speak\(firstInstruction, [^\n]*\n        \}\n/g;
+ if([...s.matchAll(initialInstruction)].length!==1)throw Error("[FAIL] ExternalNav first maneuver voice handler unexpectedly changed");
+ s=s.replace(initialInstruction,"");
+ const nearVoice=s.indexOf("  // Avisos automáticos de chegada");
+ const nearVoiceEnd=nearVoice<0?-1:s.indexOf("  // Fala transições de status importantes.",nearVoice);
+ if(nearVoice<0||nearVoiceEnd<=nearVoice)throw Error("[FAIL] ExternalNav proximity voice effect boundary");
+ const nearEffect=s.slice(nearVoice,nearVoiceEnd);
+ if(!nearEffect.includes('speak("Você chegou ao ponto de embarque."') ||
+    !nearEffect.includes('speak("Você chegou ao destino final."'))
+   throw Error("[FAIL] ExternalNav proximity voice differs from protected baseline");
+ s=s.slice(0,nearVoice)+"  // Arrival notifications are now spoken by the chosen external navigator.\n\n"+s.slice(nearVoiceEnd);
 
  // QA222's <42m off-route billing calls are no longer needed; keep the
  // slower operational ETA/route refresh (QA201) and existing map overlays.
