@@ -17,7 +17,7 @@ test("QA239 does not invoke paid Driver Routes API during active rides",()=>{
 });
 test("QA239 Dynamic Maps only mounted after user request and when driver idle",()=>{
  assert.ok(driver.includes("showApoisDemandMap=Boolean(apoisDemandMapOpen && online && !active && !incoming && !ratingRide)"));
- assert.ok(driver.includes('showApoisDemandMap ? <div'));
+ assert.ok(driver.includes('{showApoisDemandMap && <MovviMap'));
  assert.ok(driver.includes('data-apois-open-demand-map="true"'));
  assert.ok(driver.includes('data-apois-economy-map-off="true"'));
  assert.ok(driver.includes("showDemandZones = Boolean(showApoisDemandMap && online && !active && !incoming && !ratingRide"));
