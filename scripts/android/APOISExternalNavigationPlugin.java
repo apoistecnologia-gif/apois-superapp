@@ -101,14 +101,15 @@ public class APOISExternalNavigationPlugin extends Plugin {
             call.resolve(reply);
             return;
         }
-        Intent update = "motorista".equals(role)
-            ? new Intent(getContext(), DriverLocationService.class)
-            : new Intent(getContext(), CourierLocationService.class);
-        update.setAction("br.com.apois.parceiro.action.UPDATE_" +
+        // Broadcast directly to the RECEIVER registered by the existing running
+        // GPS service. Never call startService: doing so would alter restart
+        // semantics and might strand background tracking after process recreation.
+        Intent update = new Intent("br.com.apois.parceiro.action.UPDATE_" +
             ("motorista".equals(role) ? "DRIVER" : "COURIER") + "_OPERATION");
+        update.setPackage(getContext().getPackageName());
         update.putExtra("operationActive", active);
         try {
-            getContext().startService(update); // Already-running foreground service only.
+            getContext().sendBroadcast(update); // Receiver is not exported.
             JSObject reply = new JSObject();
             reply.put("updated", true);
             call.resolve(reply);
