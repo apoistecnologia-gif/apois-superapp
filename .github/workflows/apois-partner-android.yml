@@ -21,6 +21,7 @@ on:
       - feature/apois-partner-qa234-swipe-autonav-cost-20261113
       - fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113
       - fix/apois-parceiro-qa236-pin-retorno-20261113
+      - fix/apois-parceiro-qa239-bolha-mapa-economico-20261113
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-partner-courier-gps-logo-push-20261027
@@ -42,6 +43,11 @@ on:
       - 'scripts/fix-partner-qa236-pickup-pin-v1.mjs'
       - 'scripts/qa/test-partner-qa236-pickup-pin-v1.test.mjs'
       - 'scripts/install-partner-qa236-return-notification-v1.mjs'
+      - 'scripts/fix-partner-qa239-map-demand-only-v1.mjs'
+      - 'scripts/install-partner-qa239-bubble-ui-v1.mjs'
+      - 'scripts/install-partner-qa239-bubble-native-v1.mjs'
+      - 'scripts/android/ApoisNavigationBubble.java'
+      - 'scripts/qa/test-partner-qa239-map-bubble-v1.test.mjs'
       - 'scripts/install-partner-launcher.mjs'
       - 'scripts/audit-partner-red-visual-v16.mjs'
       - 'scripts/audit-codemagic-host-installs-v18.mjs'
@@ -103,7 +109,7 @@ permissions:
 
 jobs:
   build-partner-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112' || github.ref == 'refs/heads/feature/apois-partner-external-navigation-20261113' || github.ref == 'refs/heads/feature/apois-partner-qa234-swipe-autonav-cost-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa236-pin-retorno-20261113')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112' || github.ref == 'refs/heads/feature/apois-partner-external-navigation-20261113' || github.ref == 'refs/heads/feature/apois-partner-qa234-swipe-autonav-cost-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa236-pin-retorno-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa239-bolha-mapa-economico-20261113')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -404,6 +410,7 @@ jobs:
           trap - EXIT
           cp "$APK" build/APOIS-Parceiro-TESTE.apk
           test -s build/APOIS-Parceiro-TESTE.apk
+          echo "[SHA256 APK] $(sha256sum build/APOIS-Parceiro-TESTE.apk | cut -d" " -f1)"
           echo "[OK] APK de teste gerado"
 
       - name: Upload APOIS Parceiro APK

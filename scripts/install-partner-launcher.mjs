@@ -11,6 +11,8 @@ import './install-partner-external-navigation.mjs';
 import './install-partner-qa235-native-auto-arrival.mjs';
 // QA236: return-to-PIN action through the SAME ongoing GPS notification.
 import './install-partner-qa236-return-notification-v1.mjs';
+// QA239: optional consented overlay on Google Maps/Waze; no new location service.
+import './install-partner-qa239-bubble-native-v1.mjs';
 // verify-partner-native-plugins roda via await no fim, depois de todos os hardeners.
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';

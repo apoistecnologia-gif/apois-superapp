@@ -347,6 +347,10 @@ APOIS_QA235_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa235-sing
 # QA236: restore Start Ride / PIN in pickup state; no mandatory arrival control.
 node "$ROOT/scripts/fix-partner-qa236-pickup-pin-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa236-pickup-pin-v1.test.mjs"
+# QA239: no driver Routes API and Dynamic Map only for on-demand aggregate zones.
+node "$ROOT/scripts/fix-partner-qa239-map-demand-only-v1.mjs"
+node "$ROOT/scripts/install-partner-qa239-bubble-ui-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa239-map-bubble-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
