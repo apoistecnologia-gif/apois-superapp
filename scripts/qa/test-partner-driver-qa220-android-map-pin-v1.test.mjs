@@ -87,7 +87,7 @@ test("route overview remains explicit; no seven-second automatic camera snap", (
 test("four real PIN inputs keep server validation and show black digits on pale backgrounds", () => {
   const result=patchPinDigits(pinFixture);
   const css=patchPinCss("/* styles */");
-  assert.ok(result.includes(marker));
+  assert.ok(result.includes('data-apois-qa220-pin-digit-v1="true"'));
   assert.equal((result.match(/data-apois-qa220-pin-digit-v1/g)||[]).length,1);
   assert.ok(result.includes('WebkitTextFillColor: "#111827"'));
   assert.ok(result.includes('value={pinCode[position] ?? ""}'));
