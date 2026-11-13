@@ -24,7 +24,7 @@ test("shared navigation still offers correct GPS and preference, never another p
  const shared=read("src/components/ApoisSwipeControls.tsx");
  assert.ok(shared.includes("ApoisSlideAction"),"single primary slider exists");
  assert.ok(shared.includes("threshold=0.79"),"deliberate slide threshold");
- assert.ok(shared.includes('bg-[#C91429]'),"single slider revised APOIS design");
+ assert.ok(shared.includes('bg-[linear-gradient(110deg,#E51B23'),"single slider retains official red design with QA241 gradient");
  assert.ok(nav.includes("https://waze.com/ul?ll="));
  assert.ok(nav.includes("https://www.google.com/maps/dir/?api=1&destination="));
  assert.ok(!nav.includes("computeDriverRoute"),"external navigator not billed through APOIS");
