@@ -45,7 +45,7 @@ test("QA240: official image on Android overlay, explicit MainActivity return, no
   "APOISReturnBubble.externalNavigationClosed()",
   "public void requestBubblePermission(PluginCall call)",
   "android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION",
-  "APOISReturnBubble.active(getContext(),active)",
+  "APOISReturnBubble.active(getContext(),role,active)",
   "writeFileSync(logoTarget,asset)",
   'APOISReturnBubble.show(getApplicationContext())'])
    assert.ok(installer.includes(marker),"native installer "+marker);
