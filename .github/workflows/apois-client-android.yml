@@ -18,6 +18,7 @@ on:
       - audit/continuacao-20261107
       - build/qa218-android-homologacao-20261112
       - fix/apois-cliente-qa237-botao-push-20261113
+      - fix/apois-cliente-qa238-mapa-livre-20261113
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-android-github-homolog-20261029
@@ -27,6 +28,12 @@ on:
       - 'scripts/fix-report08-passenger-redispatch-v1.mjs'
       - 'scripts/fix-corridas-client-qa237-request-recovery-v1.mjs'
       - 'scripts/qa/test-client-qa237-request-recovery-v1.test.mjs'
+      - 'scripts/qa/test-client-qa238-map-home-regression.test.mjs'
+      - 'scripts/fix-corridas-passenger-home-qa217-v1.mjs'
+      - 'scripts/fix-corridas-passenger-optin-qa218-v1.mjs'
+      - 'scripts/templates/PassengerDemandSharing.tsx'
+      - 'scripts/qa/test-passenger-optin-zones-qa218.test.mjs'
+      - 'scripts/qa/test-corridas-passenger-map-qa217-v1.test.mjs'
       - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
       - 'scripts/build-isolated-module.mjs'
@@ -80,7 +87,7 @@ permissions:
 
 jobs:
   build-client-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/apois-cliente-qa237-botao-push-20261113'))
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/apois-cliente-qa237-botao-push-20261113' || github.ref == 'refs/heads/fix/apois-cliente-qa238-mapa-livre-20261113'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
