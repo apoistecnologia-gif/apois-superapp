@@ -30,10 +30,13 @@ s=s.slice(0,start)+[
 ''].join('\n')+s.slice(end);
 // The QA236 screen owns its parent layout; patch only the Google Map element.
 // Keep its full operational JSX children, but never instantiate it without opt-in.
-const mapTags=[...s.matchAll(/<MovviMap\b/g)];
-if(mapTags.length!==1 || s.split("</MovviMap>").length!==2)throw Error("[QA239] exact Google Map instance changed: "+mapTags.length);
-s=s.replace("<MovviMap","{showApoisDemandMap && <MovviMap");
-s=s.replace("        </MovviMap>",[
+const codeTags=[...s.matchAll(/<MovviMap\s+center=/g)];
+if(codeTags.length!==1)throw Error("[QA239] actual map JSX count="+codeTags.length);
+const opening=codeTags[0].index;
+const closing=s.indexOf("        </MovviMap>",opening);
+if(closing<=opening)throw Error("[QA239] actual map close absent");
+s=s.slice(0,opening)+"{showApoisDemandMap && "+s.slice(opening);
+s=s.slice(0,s.indexOf("        </MovviMap>",opening)).concat(s.slice(s.indexOf("        </MovviMap>",opening)).replace("        </MovviMap>",[
 '        </MovviMap>}',
 '        {!showApoisDemandMap && <div data-apois-economy-map-off="true" className="absolute inset-0 bg-[#0C1221]">',
 '          {!active && !incoming && !ratingRide && (',
