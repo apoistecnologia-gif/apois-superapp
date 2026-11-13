@@ -25,6 +25,12 @@ export function patchStaleTerminalEvents(source) {
     '        || (queuedRideRef.current != null && queuedRideRef.current.id !== r.id)',
     '        || (incomingRef.current != null && incomingRef.current.id !== r.id);',
     '      if (terminalEvent && differentContextVisible && !sameRideTracked) return;',
+    '      // Finished events may not end another active ride, even if an old offer is tracked.',
+    '      if (r.status === "finalizada" && activeRef.current && activeRef.current.id !== r.id) return;',
+    '      // Reject delayed phase regressions for the same ride (Realtime vs polling).',
+    '      const phaseOrder: Record<string, number> = { motorista_a_caminho: 1, motorista_chegou: 2, em_viagem: 3 };',
+    '      if (activeRef.current?.id === r.id && (phaseOrder[r.status] ?? 0) > 0',
+    '        && (phaseOrder[activeRef.current.status] ?? 0) > (phaseOrder[r.status] ?? 0)) return;',
   ].join("\n");
   handler = handler.replace(anchor, anchor + "\n" + guard);
   // A cancelled queued offer must not erase an unrelated incoming offer or active trip.
@@ -40,7 +46,17 @@ export function patchStaleTerminalEvents(source) {
   if (cancellation.split(oldClear).length !== 2) throw new Error("[FAIL] QA219 cancellation route cleanup contract changed");
   cancellation = cancellation.replace(oldClear, newClear);
   handler = handler.slice(0, cancelStart) + cancellation + handler.slice(cancelEnd);
-  const patched = source.slice(0, start) + handler + source.slice(end);
+  let patched = source.slice(0, start) + handler + source.slice(end);
+  // A stale asynchronous removal of offer A must not erase the newly visible offer B.
+  const removeStart = patched.indexOf('  const removeIncomingRequest = useCallback(');
+  const removeEnd = removeStart < 0 ? -1 : patched.indexOf('  // Toast em cada transição', removeStart);
+  if (removeStart < 0 || removeEnd <= removeStart) throw new Error("[FAIL] QA219 offer removal bounds changed");
+  let removal = patched.slice(removeStart, removeEnd);
+  const removeAnchor = '    setIncoming(null);';
+  if (removal.split(removeAnchor).length !== 2) throw new Error("[FAIL] QA219 offer removal anchor changed");
+  removal = removal.replace(removeAnchor,
+    '    setIncoming((current) => current?.id === ride.id ? null : current);');
+  patched = patched.slice(0, removeStart) + removal + patched.slice(removeEnd);
   for (const token of ['onClick={onAccept}', 'onClick={onReject}', 'onStart(pinCode)', 'onClick={handleComplete}', 'clearDriverRouteVisuals()']) {
     if (source.includes(token) && !patched.includes(token)) throw new Error("[FAIL] QA219 changed protected operation: " + token);
   }
