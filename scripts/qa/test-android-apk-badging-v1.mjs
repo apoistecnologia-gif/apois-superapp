@@ -20,7 +20,7 @@ assert.ok(readFileSync('.github/workflows/apois-client-android.yml','utf8').incl
 assert.ok(readFileSync('.github/workflows/apois-partner-android.yml','utf8').includes("if: github.event_name == 'workflow_dispatch'"),'Partner QA APK job must run only when manually requested');
 
 for(const [path,expected] of [
- ['.github/workflows/apois-client-android.yml','verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$GITHUB_RUN_NUMBER"'],
+ ['.github/workflows/apois-client-android.yml','verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$((2000 + GITHUB_RUN_NUMBER))"'],
  ['.github/workflows/apois-partner-android.yml','verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$((28 + GITHUB_RUN_NUMBER))"']
 ]){
  const source=readFileSync(path,'utf8');
