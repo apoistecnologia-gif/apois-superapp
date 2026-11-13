@@ -107,10 +107,11 @@ if(moduleName==="motorista"){
    "  const qa222DeviationRef=useRef<Qa222Deviation|null>(null);",
    "",
    "remove obsolete navigation-only deviation tracker");
- s=once(s,"      qa222DeviationRef.current=null;\n","",
-   "remove tracker on active ride release");
- s=once(s,"        qa222DeviationRef.current=null;\n","",
-   "remove tracker after successful route");
+ // The QA222 status and success code writes reset lines in several scopes.
+ // Delete all COMPLETE reset lines, not a substring of another indentation.
+ const resets=[...s.matchAll(/^[ \t]*qa222DeviationRef\.current=null;[ \t]*$/gm)];
+ if(resets.length<2||resets.length>4)throw Error("[FAIL] ExternalNav unexpected deviation reset count "+resets.length);
+ s=s.replace(/^[ \t]*qa222DeviationRef\.current=null;[ \t]*\r?\n/gm,"");
  const oldRoute=[
   "    // APOIS_DRIVER_QA222_FOLLOW_REROUTE_V1: recalculate for sustained off-road movement, with provider cooldown.",
   "    const deviationMeters=isNavigationRideStatus(active.status)&&lastFitKeyRef.current===fitKey&&polyline.length>=2",
