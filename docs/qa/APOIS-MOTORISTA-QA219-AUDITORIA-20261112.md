@@ -109,3 +109,35 @@ Classificação conservadora: **presente em código** não equivale a **testado 
 3. Confirmar `getRenderingType()` após `tilesloaded`, rotação real, tile loading e Map ID publicado no mesmo projeto da chave.
 4. Corrida A ativa + oferta B + cancelamento de B; eventos Realtime fora de ordem; troca rápida de telas; verificar que o UI não regride e o servidor continua sendo autoridade.
 5. Não liberar APK nem produção até testes físicos e autorização.
+
+
+## Rodada QA219 complementar — operações assíncronas, GPS e varredura integral
+
+### Aceite e cancelamento assíncronos
+- Fonte confrontada: movvi-go-connect@9fc1710 e o patch QA209 de cancelamento.
+- O aceite usava setIncoming(null) após await callAccept; uma resposta atrasada poderia apagar uma oferta nova.
+- A falha do aceite usava setIncoming(offer), podendo ressuscitar oferta que já foi substituída.
+- O cancelamento limpava setActive(null), activeRef.current=null e clearDriverRouteVisuals() mesmo se outra corrida tivesse assumido a interface.
+- Correção: scripts/fix-partner-driver-qa219-async-ride-action-scope-v1.mjs. Os quatro testes de identificação e proteção das ações assíncronas passaram em V8.
+
+### Telemetria e watcher GPS
+- Na origem fixada, Number(null) convertia heading e speed desconhecidos em 0, dando aparência de medição real; o servidor admite NULL.
+- Correção: scripts/fix-partner-driver-qa219-null-telemetry-v1.mjs; mantém null/undefined como NULL e zero medido como zero.
+- O transformador da telemetria foi aplicado com sucesso ao hook do commit fixado e os três testes isolados passaram.
+- O watcher nativo agora ignora coordenadas recebidas após solicitação de OFFLINE.
+- Os sete testes de watcher passaram, incluindo quatro com promessas assíncronas simulando ON/OFF/ON, OFF mais recente, primeira inicialização com falha e callback tardio.
+- O serviço nativo Java e o AndroidManifest não foram alterados.
+
+### Varredura temporal de todos os quadros
+- Gravação 1001992822.mp4: 4.537 quadros decodificados, comparados consecutivamente em 96x216 tons de cinza.
+- Os horários abaixo vieram dos timestamps reais PTS do arquivo via ffprobe, não da média de FPS.
+- Diferença média absoluta de pixels >= 12: 23 mudanças; trata-se de método de triagem de transições, não inspeção visual individual de todos os quadros em resolução original.
+- Picos relevantes: 23,372s (oferta -> embarque); 34,199–34,266s (enquadramento); 43,508s (PIN); 48,313s (teclado); 53,561–53,712s (PIN -> viagem); 83,847–84,013s (finalização -> conclusão).
+- Parte dessas mudanças é compatível com gestos e transições esperadas; não declarar erro de Realtime somente por diferença de pixels.
+- Evidência analítica local: apois_full_frame_scan.json.
+
+### Bloqueadores de homologação
+- Testar toda a cadeia real de transformação, bun run typecheck e build web.
+- Coletar eventos por ride_id, status, timestamp e origem do evento (push/polling/resync) para provar ou refutar alternâncias inesperadas.
+- Android real: mapa e getRenderingType, direção em movimento, ETA, PIN/IME, GPS/background, cancelamento concorrente e fila.
+- Sem APK, merge, deploy ou mudanças no Supabase de produção.
