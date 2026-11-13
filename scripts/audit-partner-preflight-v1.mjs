@@ -212,10 +212,14 @@ if(process.argv.includes("--dist")){
     'isDriverRole ? getMapBackgroundForTheme("light") : getMapBackgroundForTheme(theme)',
     "clickableIcons: isDriverRole",
   ],"Motorista uses APOIS client light map palette with visible road/city labels");
-  all(read(".work/partner-motorista/src/lib/voiceNav.ts"),[
-    "Arrival is only allowed by the GPS movement guard",
-    "if (/destino|destination|arriv|",
-  ],"Google Directions ARRIVE steps cannot trigger premature destination speech");
+  all(read(".work/partner-motorista/src/components/ApoisExternalNavigation.tsx"),[
+    'registerPlugin<ExternalPlugin>("APOISExternalNavigation")',
+    'https://www.google.com/maps/dir/?api=1&destination=',
+    'https://waze.com/ul?ll=',
+    'INICIAR NAVEGAÇÃO',
+    'setOperation({ role, active })',
+  ],"Motorista uses official external Google Maps/Waze navigation, without internal turn-by-turn voice");
+  check(!driverAppPatched.includes("tickNavigation("),"Motorista does not repeat third-party turn-by-turn voice in APOIS");
   all(driverAppPatched,[
     "const NAVIGATION_ZOOM = 17;",
     "APOIS_DRIVER_FORWARD_CAMERA_V1",
@@ -225,19 +229,20 @@ if(process.argv.includes("--dist")){
     "now-previous.at < 1400",
     "navMap.moveCamera({",
     "tilt:nearDestination ? 0 : 25",
-    "routeStepsPhase !== active.id +",
     "res.distanceMeters < directMeters * 0.55",
-    "evidence.travelledKm >= 0.12",
-    "evidence.nearFixes >= 2",
-    "now - evidence.firstAt >= 20000",
     "setLegKm(null); setEtaSeconds(null);",
-  ],"Motorista rejects 0km false routes, clears stale steps and confirms motion before arrival");
+    'ApoisExternalNavigation latitude={ride.origin_lat}',
+    'ApoisExternalNavigation latitude={ride.destination_lat}',
+    'useApoisOperationalNotification("motorista", Boolean(active))',
+    "onStart(pinCode)",
+    "onClick={handleComplete}",
+  ],"Motorista preserves route plausibility and ride lifecycle while opening external navigation");
 
   all(driverAppPatched,["data-apois-trip-top-v6","data-apois-trip-bottom-v6","onShowRoute","onRecenter","m.fitBounds"],"Motorista V6 keeps route overview and compact light panels");
   all(driverAppPatched,["APOIS_DRIVER_PRESENCE_ACK_V1",'window.addEventListener("apois:driver-presence-rejected", handlePresenceRejection)',"setDesiredOnline(false);","stopDriverWatch();"],"Motorista cannot remain phantom ONLINE after RPC rejection");
 
   all(driverAppPatched,["APOIS_ASSIGNED_PASSENGER_V6","apois_driver_assigned_passenger"],"Passenger name lookup is confined to assigned ride and protected RPC");
-  all(read(".work/partner-motorista/src/components/DriverVoiceToggle.tsx"),["Voz ligada","Voz desligada","setVoiceEnabled(next)"],"Driver can explicitly toggle persistent turn-by-turn voice");
+  all(read(".work/partner-motorista/src/components/DriverVoiceToggle.tsx"),["Voz ligada","Voz desligada","setVoiceEnabled(next)"],"Driver retains optional operational voice controls");
   all(read(".work/partner-motorista/src/styles.css"),["APOIS_DRIVER_TRIP_V6"],"Driver V6 readable passenger and trip palette");
   all(read(".work/partner-motorista/src/lib/driverLocalSignOut.ts"),['scope: "local"','window.location.replace','sb-'],"Motorista logout local with offline fallback");
   all(offersPatched,["APOIS_PARTNER_LOGO_DATA_URL","apois:courier-offer-accepted","AudioContext","stopAlert","pulseAlert"],"Built courier offer modal, ringtone and immediate route refresh");
