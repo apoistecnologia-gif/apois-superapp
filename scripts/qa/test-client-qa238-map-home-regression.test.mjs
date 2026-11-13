@@ -58,3 +58,19 @@ test("QA237 follow-up: no 'blocked wallet' banner or refresh button before desti
   "a genuine financial block must still be enforced with a destination");
  assert.ok(home.includes("Atualizar percurso e valor"));
 });
+
+test("QA238: recalculation cannot bypass a financial or authentication blocker",()=>{
+ for(const s of [
+  "qa237HasNonRouteBlock",
+  '["passenger_debt_block","insufficient_balance","payment_method_missing","category_missing","user_not_authenticated"].includes(reason)',
+  "qa237Recoverable=!qa237HasNonRouteBlock && (qa237RouteProblem || qa237PricingProblem)",
+  'disabled={!checkout.readiness || !!routeError}',
+ ])assert.ok(home.includes(s),s);
+});
+test("QA238: illustrated Moto category has singular and plural code aliases",()=>{
+ const category=read("src/components/pricing/CategorySelector.tsx");
+ for(const s of ['carro: "0%"','carros: "0%"','moto: "25%"','motos: "25%"','fretes: "50%"','guincho: "75%"','envios: "100%"'])
+  assert.ok(category.includes(s),s);
+ assert.ok(category.includes('servicePosition[String(cat.key ?? cat.code ?? "").toLowerCase()]'));
+ assert.ok(category.includes('backgroundSize: "500% 100%"'));
+});

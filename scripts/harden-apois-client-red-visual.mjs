@@ -75,9 +75,11 @@ import { vehicleSprite } from "@/assets/categoryVehicleData";
 
 // APOIS_CATEGORY_VEHICLE_SPRITE_V6
 // Ordem física do sprite validado: Carro, Moto, Fretes, Guincho, Envios.
-const servicePosition: Record<RideCategoryCode, string> = {
+const servicePosition: Record<string, string> = {
   carros: "0%",
+  carro: "0%",
   motos: "25%",
+  moto: "25%",
   fretes: "50%",
   guincho: "75%",
   envios: "100%",
@@ -100,7 +102,7 @@ export const CategorySelector: React.FC = () => {
         const estimate = estimates.find((e) => e.categoryId === cat.id);
         const isAvailable = estimate?.available !== false && cat.isActive;
         const label = PRICING_CONFIG.LABELS[cat.key] || cat.name;
-        const spritePosition = servicePosition[cat.key] ?? servicePosition.carros;
+        const spritePosition = servicePosition[String(cat.key ?? cat.code ?? "").toLowerCase()] ?? servicePosition.carros;
         return (
           <button
             key={cat.id}
