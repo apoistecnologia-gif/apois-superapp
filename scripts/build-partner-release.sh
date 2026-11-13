@@ -332,6 +332,9 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa220-android-map-pin-v1.test.
 # Serialize main driver ownership and keep only one small HUD on pickup and in-trip screens.
 node "$ROOT/scripts/fix-partner-driver-qa221-map-owner-compact-hud-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa221-map-owner-compact-hud-v1.test.mjs"
+# QA222 physical moving test: real GPS following + confirmed deviation reroute on existing Google Routes.
+node "$ROOT/scripts/fix-partner-driver-qa222-follow-reroute-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa222-follow-reroute-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
