@@ -53,9 +53,11 @@ function nativeWatchHarness() {
     '  clearWatch:({id})=>{cleared.push(id);return Promise.resolve();}',
     '};',
     'const navigator={geolocation:{clearWatch:()=>{}}};',
-    'const isNativeDriverAndroid=()=>true, isBrazilCoordinate=()=>true, setPosition=()=>{};',
+    'const isNativeDriverAndroid=()=>true, isBrazilCoordinate=()=>true;',
+    'const positions=[];let latestPosition=null;',
+    'const setPosition=(value)=>{latestPosition=typeof value==="function"?value(latestPosition):value;positions.push(latestPosition);};',
     patched,
-    'return {startWatch,stopDriverWatch,pending,cleared,watchIdRef,watchStartingRef,watchRestartRequestedRef};'
+    'return {startWatch,stopDriverWatch,pending,cleared,positions,watchIdRef,watchStartingRef,watchRestartRequestedRef};'
   ].join('\n');
   return new Function(code)();
 }
@@ -100,4 +102,19 @@ test("real async: rejected obsolete GPS startup retries once for the newer ONLIN
   m.pending[1].resolve("second-id");
   await flushNativeCallbacks();
   assert.equal(m.watchIdRef.current,"second-id");
+});
+
+
+test("real async: GPS callback after going OFFLINE does not replace last position",async()=>{
+  const m=nativeWatchHarness();
+  m.startWatch();
+  const location=(latitude)=>({coords:{latitude,longitude:-40.5,heading:null,speed:null,accuracy:20}});
+  m.pending[0].callback(location(-9.4),null);
+  assert.equal(m.positions.length,1,"valid ONLINE GPS is consumed");
+  m.stopDriverWatch();
+  m.pending[0].callback(location(-9.5),null);
+  assert.equal(m.positions.length,1,"obsolete watcher must not update position after OFFLINE");
+  m.pending[0].resolve("stopped-watch");
+  await flushNativeCallbacks();
+  assert.deepEqual(m.cleared,["stopped-watch"]);
 });
