@@ -17,6 +17,7 @@ on:
       - audit/ecossistema-20261107
       - audit/continuacao-20261107
       - build/qa218-android-homologacao-20261112
+      - fix/apois-cliente-qa237-botao-push-20261113
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-android-github-homolog-20261029
@@ -24,6 +25,8 @@ on:
     paths:
       - '.github/workflows/apois-client-android.yml'
       - 'scripts/fix-report08-passenger-redispatch-v1.mjs'
+      - 'scripts/fix-corridas-client-qa237-request-recovery-v1.mjs'
+      - 'scripts/qa/test-client-qa237-request-recovery-v1.test.mjs'
       - 'scripts/qa/test-report08-passenger-redispatch-v1.test.mjs'
       - 'scripts/qa/test-apois-account-deletion-visual09-v1.test.mjs'
       - 'scripts/build-isolated-module.mjs'
@@ -77,7 +80,7 @@ permissions:
 
 jobs:
   build-client-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112'))
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/fix/entregas-homologacao-ajustes-20261030' || github.ref == 'refs/heads/audit/ecossistema-20261107' || github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/apois-cliente-qa237-botao-push-20261113'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -99,6 +102,7 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64 }}
       APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"
+      CORRIDAS_FIREBASE_PROJECT_ID: ${{ secrets.CORRIDAS_FIREBASE_PROJECT_ID }}
       CORRIDAS_PUBLIC_APP_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co/functions/v1/public-ride-tracker"
 
     steps:
@@ -231,6 +235,20 @@ jobs:
           node --check scripts/verify-corridas-profile-edit.mjs
           grep -Fq 'r.status in (' supabase/corridas-forward-migrations/20261023211500_passenger_pin_available_after_accept.sql
           grep -Fq 'get_passenger_ride_security_code' scripts/harden-corridas-driver-accept-pin-visibility.mjs
+
+      - name: QA237 verify Corridas Firebase compatibility before enabling push
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Do not copy FCM credentials into artifacts or print service-account JSON.
+          if [ -z "${CORRIDAS_FIREBASE_PROJECT_ID:-}" ] || [ -z "${FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+            echo '::warning::QA237: Push Corridas segue DESABILITADO. Configure CORRIDAS_FIREBASE_PROJECT_ID e a configuração Firebase do Cliente para a validação.'
+          elif APOIS_SUPERAPP_RIDES_PUSH_ENABLED=1 node scripts/validate-rides-push-firebase.mjs; then
+            echo 'APOIS_SUPERAPP_RIDES_PUSH_ENABLED=1' >> "$GITHUB_ENV"
+            echo '[OK] QA237: Push Corridas habilitado somente após correspondência Firebase mobile/backend.'
+          else
+            echo '::warning::QA237: Firebase mobile/backend incompatíveis; Push Corridas fica DESABILITADO por segurança.'
+          fi
 
       - name: Build Corridas + Entregas + shell Cliente
         shell: bash
