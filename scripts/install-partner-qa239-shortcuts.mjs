@@ -43,7 +43,7 @@ rootSource=changeOnce(rootSource,
 rootSource=changeOnce(rootSource,
  '          {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}',
  '          {APP_ROLE === "driver" ? <DriverNativePermissionsSync /> : null}\n'+
- '          {APP_ROLE === "driver" ? <ApoisBubblePermissionGate /> : null}',
+ '          {APP_ROLE === "driver" ? <ApoisBubblePermissionGate role="motorista" /> : null}',
  "first-use driver modal mount");
 if(!rootSource.includes("<DriverPresenceKeeper />")||!rootSource.includes("<Outlet />"))
  throw Error("[FAIL] QA240 driver GPS/auth root was changed");
