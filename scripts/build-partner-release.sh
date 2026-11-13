@@ -321,6 +321,9 @@ node --test "$ROOT/scripts/qa/test-partner-driver-qa219-native-watch-restart-v1.
 # QA219: GPS telemetry must not substitute missing heading/speed with zero.
 node "$ROOT/scripts/fix-partner-driver-qa219-null-telemetry-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-driver-qa219-null-telemetry-v1.test.mjs"
+# QA219: async ride accept/cancel replies may only affect the initiating ride.
+node "$ROOT/scripts/fix-partner-driver-qa219-async-ride-action-scope-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-driver-qa219-async-ride-action-scope-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
