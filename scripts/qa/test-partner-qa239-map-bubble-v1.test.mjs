@@ -12,7 +12,7 @@ test("QA239 does not invoke paid Driver Routes API during active rides",()=>{
  assert.ok(!driver.includes('callRoute({ data: { origin: pos, destination: dest } })'));
  assert.ok(!driver.includes("qa222DistanceToRoute("),"no obsolete navigation deviation");
  assert.ok(driver.includes("setPolyline([]);setLegKm(null);setEtaSeconds(null);"));
- for(const key of ["callArrive","callStart","callComplete","useApoisOperationalNotification","setApoisOperationalNotification","onStart(pinCode)","onClick={handleComplete}"])
+ for(const key of ["callArrive","callStart","callComplete","useApoisOperationalNotification","setApoisOperationalNotification","onStart(pinCode)","onConfirm={handleComplete}"])
   assert.ok(driver.includes(key),"preserve operational flow: "+key);
 });
 test("QA239 Dynamic Maps only mounted after user request and when driver idle",()=>{

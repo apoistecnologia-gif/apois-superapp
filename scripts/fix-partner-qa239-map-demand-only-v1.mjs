@@ -54,7 +54,7 @@ s=s.replace("        </MovviMap>",[
 '          className="absolute right-3 top-[calc(env(safe-area-inset-top)+85px)] z-30 min-h-11 rounded-xl bg-black/85 px-3 text-xs font-bold text-white">Ocultar mapa</button>}'
 ].join("\n"));
 
-for(const x of [MARK,'{showApoisDemandMap && <MovviMap','data-apois-open-demand-map','showDemandZones && demandZones.map','onStart(pinCode)','onClick={handleComplete}','setPolyline([]);setLegKm(null);setEtaSeconds(null);'])if(!s.includes(x))throw Error('[QA239] postcondition '+x);
+for(const x of [MARK,'{showApoisDemandMap && <MovviMap','data-apois-open-demand-map','showDemandZones && demandZones.map','onStart(pinCode)','onConfirm={handleComplete}','setPolyline([]);setLegKm(null);setEtaSeconds(null);'])if(!s.includes(x))throw Error('[QA239] postcondition '+x);
 if(s.includes('callRoute({ data: { origin: pos, destination: dest } })'))throw Error('[QA239] paid route request survived');
 writeFileSync(file,s,'utf8');
 console.log('[OK] QA239: Dynamic Maps demand-only with explicit opt-in, no internal Google Routes calls');
