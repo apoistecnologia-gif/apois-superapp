@@ -5,6 +5,8 @@ import './install-partner-courier-location.mjs';
 import './harden-partner-location-startup-ack.mjs';
 import './harden-partner-location-session-sync.mjs';
 import './harden-partner-location-notification-routing.mjs';
+// Shared Google Maps/Waze launcher and return action reuse both existing GPS Services.
+import './install-partner-external-navigation.mjs';
 // verify-partner-native-plugins roda via await no fim, depois de todos os hardeners.
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
