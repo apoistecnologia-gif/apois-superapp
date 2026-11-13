@@ -45,7 +45,8 @@ test("P3 only fixed waiting/preferences summary above CTA; legacy sheet kept for
 test("P4-P5 no-show CTA hidden while typing PIN; four real inputs and server verification intact",()=>{
  assert.equal((waiting.match(/isArrived && !pinOpen && !cancelOpen && createPortal/g)||[]).length,2);
  assert.ok(waiting.includes("data-apois-pin-v4"));
- assert.ok(waiting.includes('flex items-start justify-center overflow-hidden'));
+ assert.ok(waiting.includes('flex items-start justify-center overflow-y-auto'));
+ assert.ok(!waiting.includes('flex items-start justify-center overflow-hidden'), "Android PIN modal must remain scrollable");
  assert.ok(waiting.includes("focus({ preventScroll: true })"));
  assert.ok(waiting.includes('onStart(pinCode)'));
  assert.ok(waiting.includes("pinCode.length !== 4"));
