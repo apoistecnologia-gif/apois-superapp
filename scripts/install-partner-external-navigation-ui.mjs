@@ -35,7 +35,8 @@ if(moduleName==="motorista"){
  const ps=s.indexOf("function PickupNavOverlay("),pe=s.indexOf("\nfunction CircleAction(",ps);
  if(ps<0||pe<=ps)throw Error("[FAIL] ExternalNav Pickup bounds");
  let pickup=s.slice(ps,pe);
- const primary=pickup.indexOf("Cheguei no embarque"),closing=primary<0?-1:pickup.indexOf("</button>",primary);
+ // QA221 replaces the visual label; use the preserved operational callback as anchor.
+ const primary=pickup.indexOf("onClick={handleArrive}"),closing=primary<0?-1:pickup.indexOf("</button>",primary);
  if(primary<0||closing<=primary)throw Error("[FAIL] ExternalNav pickup primary CTA missing");
  pickup=pickup.slice(0,closing+9)+
    '\n          <ApoisExternalNavigation latitude={ride.origin_lat} longitude={ride.origin_lng} stage="até o passageiro" />'+
