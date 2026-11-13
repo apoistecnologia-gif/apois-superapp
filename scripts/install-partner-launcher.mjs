@@ -7,6 +7,8 @@ import './harden-partner-location-session-sync.mjs';
 import './harden-partner-location-notification-routing.mjs';
 // Shared Google Maps/Waze launcher and return action reuse both existing GPS Services.
 import './install-partner-external-navigation.mjs';
+// QA235: existing foreground GPS service sends arrival/push even while external Maps is foreground.
+import './install-partner-qa235-native-auto-arrival.mjs';
 // verify-partner-native-plugins roda via await no fim, depois de todos os hardeners.
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
