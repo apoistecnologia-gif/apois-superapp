@@ -28,29 +28,29 @@ s=s.slice(0,start)+[
 '  },[active?.id,active?.status]);',
 '  void callRoute;',
 ''].join('\n')+s.slice(end);
-once('      {/* MAPA */}\n      <div className="absolute inset-0">\n        <MovviMap','      {/* QA239 demand-only, explicit Dynamic Maps load. */}\n      {showApoisDemandMap ? <div className="absolute inset-0" data-apois-demand-map-visible="true">\n        <MovviMap','map mount');
-once('        </MovviMap>\n      </div>\n\n      {/* Top bar',[
-'        </MovviMap>',
-'        <button type="button" onClick={()=>setApoisDemandMapOpen(false)}',
-'          aria-label="Ocultar mapa de demanda" className="absolute right-3 top-[calc(env(safe-area-inset-top)+86px)] z-30 min-h-11 rounded-2xl border border-white/25 bg-black/80 px-4 text-xs font-bold text-white shadow-lg">Ocultar mapa</button>',
-'      </div> : <div data-apois-economy-map-off="true" className="absolute inset-0 bg-[#0C1221]">',
-'        {!active && !incoming && !ratingRide && (',
-'          <div className="absolute inset-x-5 top-[23%] mx-auto max-w-sm rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-center text-white shadow-xl">',
-'            <div className="text-base font-bold">Mapa econômico</div>',
-'            <p className="mt-2 text-xs leading-5 text-white/70">O mapa não consome carregamentos enquanto fechado. GPS e avisos de corridas permanecem ativos.</p>',
-'            {online ? <button type="button" onClick={()=>setApoisDemandMapOpen(true)} data-apois-open-demand-map="true" className="mt-4 min-h-12 w-full rounded-2xl bg-[#E51B23] px-4 text-sm font-extrabold text-white">Ver regiões de demanda</button>',
-'              : <p className="mt-3 text-xs font-semibold text-white/70">Fique online para consultar regiões próximas.</p>}',
-'          </div>',
-'        )}',
-'        {active && <div className="absolute inset-x-5 top-[24%] mx-auto max-w-sm text-center text-white/70">',
-'          <p className="text-lg font-bold text-white">Navegação externa</p>',
-'          <p className="mt-2 text-sm">Use Reabrir mapa para Google Maps ou Waze. O APOIS mantém GPS, PIN e finalização.</p>',
+// The QA236 screen owns its parent layout; patch only the Google Map element.
+// Keep its full operational JSX children, but never instantiate it without opt-in.
+const mapTags=[...s.matchAll(/<MovviMap\b/g)];
+if(mapTags.length!==1 || s.split("</MovviMap>").length!==2)throw Error("[QA239] exact Google Map instance changed: "+mapTags.length);
+s=s.replace("<MovviMap","{showApoisDemandMap && <MovviMap");
+s=s.replace("        </MovviMap>",[
+'        </MovviMap>}',
+'        {!showApoisDemandMap && <div data-apois-economy-map-off="true" className="absolute inset-0 bg-[#0C1221]">',
+'          {!active && !incoming && !ratingRide && (',
+'            <div className="absolute inset-x-5 top-[23%] mx-auto max-w-sm rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-center text-white shadow-xl">',
+'              <p className="text-base font-bold">Mapa econômico</p>',
+'              <p className="mt-2 text-xs text-white/70">O mapa só carrega se você solicitar. GPS e corridas permanecem ativos.</p>',
+'              {online ? <button type="button" onClick={()=>setApoisDemandMapOpen(true)} data-apois-open-demand-map="true" className="mt-4 min-h-12 w-full rounded-2xl bg-[#E51B23] px-3 text-sm font-bold text-white">Ver regiões de demanda</button>',
+'                : <p className="mt-2 text-xs text-white/70">Fique online para ver demanda.</p>}',
+'            </div>',
+'          )}',
+'          {active && <p className="absolute inset-x-4 top-[25%] text-center text-sm font-semibold text-white/70">Navegue pelo Google Maps ou Waze. O APOIS mantém PIN, GPS e finalização.</p>}',
 '        </div>}',
-'      </div>}',
-'',
-'      {/* Top bar'
-].join('\n'),'closed map shell');
-for(const x of [MARK,'showApoisDemandMap ? <div','data-apois-open-demand-map','showDemandZones && demandZones.map','onStart(pinCode)','onClick={handleComplete}','setPolyline([]);setLegKm(null);setEtaSeconds(null);'])if(!s.includes(x))throw Error('[QA239] postcondition '+x);
+'        {showApoisDemandMap && <button type="button" onClick={()=>setApoisDemandMapOpen(false)} aria-label="Ocultar mapa de demanda"',
+'          className="absolute right-3 top-[calc(env(safe-area-inset-top)+85px)] z-30 min-h-11 rounded-xl bg-black/85 px-3 text-xs font-bold text-white">Ocultar mapa</button>}'
+].join("\n"));
+
+for(const x of [MARK,'{showApoisDemandMap && <MovviMap','data-apois-open-demand-map','showDemandZones && demandZones.map','onStart(pinCode)','onClick={handleComplete}','setPolyline([]);setLegKm(null);setEtaSeconds(null);'])if(!s.includes(x))throw Error('[QA239] postcondition '+x);
 if(s.includes('callRoute({ data: { origin: pos, destination: dest } })'))throw Error('[QA239] paid route request survived');
 writeFileSync(file,s,'utf8');
 console.log('[OK] QA239: Dynamic Maps demand-only with explicit opt-in, no internal Google Routes calls');
