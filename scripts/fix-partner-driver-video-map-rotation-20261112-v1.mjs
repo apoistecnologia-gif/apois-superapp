@@ -48,6 +48,12 @@ const config=[
 map=map.slice(0,cfgStart)+config+map.slice(cfgEnd);
 if(map.includes("WEBGL_lose_context")||map.includes('canvas.getContext("webgl2"'))throw Error("[FAIL] Old premature GPU test retained");
 
+// QA219: Google Cloud Map ID cannot receive inline JSON styling at initial load.
+map=one(map,
+  "      map.setOptions({ styles, backgroundColor: bgColor });",
+  '      // QA219: no local styles when a cloud Map ID is selected.\n      if (!useCloudVector) map.setOptions({ styles, backgroundColor: bgColor });',
+  "initial cloud-style guard");
+
 // Prefer the course from real GPS movement over route geometry. While stopped,
 // retain the route bearing; never follow compass noise just because the
 // phone was turned in its holder. This keeps QA209 jitter limits intact.
