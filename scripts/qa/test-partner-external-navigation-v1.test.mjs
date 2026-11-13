@@ -41,9 +41,10 @@ test("Android native plugin only launches official installed apps, with strict c
   "ActivityNotFoundException", "Intent.ACTION_VIEW",
   '"driver_running"', '"courier_running"',
   '"motorista".equals(role)', '"entregador".equals(role)',
-  "getBoolean(\"active\")", "DriverLocationService.class", "CourierLocationService.class",
+  "getBoolean(\"active\")", "sendBroadcast(update)", "setPackage(getContext().getPackageName())",
  ])assert.ok(native.includes(t),"native contract "+t);
- assert.ok(!native.includes("startForegroundService("),"never duplicate/start GPS foreground services from navigator");
+ assert.ok(!native.includes("startForegroundService("),"navigator never starts a new GPS foreground service");
+ assert.ok(!native.includes("startService("),"notification updates must not restart running GPS services");
 });
 
 test("generated native installer reuses role-specific pending intents and service IDs",()=>{
@@ -53,7 +54,8 @@ test("generated native installer reuses role-specific pending intents and servic
   "registerPlugin(APOISExternalNavigationPlugin.class)",
   'patchService("Driver","motorista")','patchService("Courier","entregador")',
   "VOLTAR AO APOIS","ACTION_UPDATE_OPERATION","NotificationManager",
-  "apoisOperationActive","buildNotification()","com.google.android.apps.maps","com.waze",
+  "apoisOperationActive","buildNotification()","ContextCompat.RECEIVER_NOT_EXPORTED",
+  "unregisterReceiver(apoisOperationReceiver)","com.google.android.apps.maps","com.waze",
   "existing Location Service missing"
  ])assert.ok(script.includes(t),"installer "+t);
  assert.ok(launcher.includes("import './harden-partner-location-notification-routing.mjs';"));
