@@ -11,5 +11,5 @@ assert.ok(part.includes("setPolyline(previous => previous.length ? [] : previous
 assert.ok(part.includes("setEtaSeconds(previous => previous === null ? previous : null)"));
 assert.ok(recovery.includes("APOIS_QA239_EXTERNAL_ROUTES_ONLY_V1"));
 assert.ok(recovery.indexOf("clearLines();\n    return;") < recovery.indexOf("computeDriverRoute("));
-for(const s of ['showDemandZones && demandZones.map','rpc("apois_get_driver_demand_zones")','rpc("apois_driver_passenger_hotspots")','onStartPin={()=>setQa236PinOpen(true)}','onClick={handleComplete}','ApoisExternalNavigation latitude={ride.destination_lat}'])assert.ok(main.includes(s),s);
+for(const s of ['showDemandZones && demandZones.map','rpc("apois_get_driver_demand_zones")','rpc("apois_driver_passenger_hotspots")','onStartPin={()=>setQa236PinOpen(true)}','onConfirm={handleComplete}','ApoisExternalNavigation latitude={ride.destination_lat}'])assert.ok(main.includes(s),s);
 console.log("[OK] QA239 default no internal Routes requests; operational demand zones and lifecycle preserved");
