@@ -1,83 +1,75 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// APOIS_PASSENGER_QA218_OPTIN_V1. Never infer consent from login, GPS
-// permission, account installation, or previous ride requests.
+// APOIS_PASSENGER_QA219_AUTO_PRESENCE_V1
+// Home is map-only; aggregated foreground presence starts for authenticated
+// users unless they have disabled it in Perfil > Privacidade da região.
+// The RPC returns no exact passenger location or identity to drivers.
 type Props = {
   authUserId?: string | undefined;
   latitude?: number | undefined;
   longitude?: number | undefined;
-  showControl?: boolean | undefined;
+  showControl?: boolean | undefined; // retained for compatibility; no overlay
 };
-type PresenceState = "off" | "waiting" | "sharing" | "error";
-
-const isValidCoordinate = (lat: number | undefined, lng: number | undefined) =>
-  typeof lat === "number" && typeof lng === "number" &&
-  Number.isFinite(lat) && Number.isFinite(lng) &&
-  lat >= -35 && lat <= 6 && lng >= -74 && lng <= -32;
-
 type PresenceRpc = {
   rpc: (
     name: "apois_passenger_presence_ping" | "apois_passenger_presence_stop",
     args?: { _lat: number; _lng: number },
   ) => Promise<{ data: boolean | null; error: { message: string } | null }>;
 };
+const presenceApi = () => supabase as unknown as PresenceRpc;
+const preferenceKey = (id: string) => "apois:passenger:demand-consent:" + id;
 
-function presenceApi(): PresenceRpc {
-  // QA218 new RPC contracts precede generated Supabase TypeScript bindings.
-  return supabase as unknown as PresenceRpc;
+const isValidCoordinate = (lat: number | undefined, lng: number | undefined) =>
+  typeof lat === "number" && typeof lng === "number" &&
+  Number.isFinite(lat) && Number.isFinite(lng) &&
+  lat >= -35 && lat <= 6 && lng >= -74 && lng <= -32;
+
+function readSharingPreference(authUserId: string): boolean {
+  try {
+    // Automatically enabled for a logged-in passenger. Explicit opt-out wins.
+    // A previous explicit enable ("1") remains supported.
+    return localStorage.getItem(preferenceKey(authUserId)) !== "0";
+  } catch {
+    // If the choice cannot be persisted, fail closed instead of ignoring opt-out.
+    return false;
+  }
 }
 
-export function PassengerDemandSharing({
-  authUserId, latitude, longitude, showControl = true,
-}: Props) {
+export function PassengerDemandSharing({ authUserId, latitude, longitude }: Props) {
   const [enabled, setEnabled] = useState(false);
-  const [state, setState] = useState<PresenceState>("off");
-
   const cellLat = typeof latitude === "number" && Number.isFinite(latitude)
     ? Number(latitude.toFixed(2)) : undefined;
   const cellLng = typeof longitude === "number" && Number.isFinite(longitude)
     ? Number(longitude.toFixed(2)) : undefined;
-  const storageKey = authUserId ? "apois:passenger:demand-consent:" + authUserId : null;
 
   useEffect(() => {
-    try {
-      setEnabled(Boolean(storageKey && localStorage.getItem(storageKey) === "1"));
-    } catch {
-      setEnabled(false);
-    }
-  }, [storageKey]);
+    setEnabled(authUserId ? readSharingPreference(authUserId) : false);
+  }, [authUserId]);
 
   useEffect(() => {
-    if (!enabled || !authUserId) {
-      setState("off");
-      return;
-    }
+    if (!enabled || !authUserId) return;
     let disposed = false;
     let pending: Promise<void> = Promise.resolve();
 
     const stop = () => {
       pending = pending.then(async () => {
         try { await presenceApi().rpc("apois_passenger_presence_stop"); }
-        catch { /* stale rows cease being visible within two minutes */ }
+        catch { /* shared region expires server-side after two minutes */ }
       });
     };
 
     const send = () => {
       if (!isValidCoordinate(cellLat, cellLng) ||
-          !navigator.onLine || document.visibilityState !== "visible") {
-        if (!disposed) setState("waiting");
-        return;
-      }
+          !navigator.onLine || document.visibilityState !== "visible") return;
       pending = pending.then(async () => {
         if (disposed || !navigator.onLine || document.visibilityState !== "visible") return;
         try {
-          const {data, error} = await presenceApi().rpc("apois_passenger_presence_ping", {
+          await presenceApi().rpc("apois_passenger_presence_ping", {
             _lat: cellLat!, _lng: cellLng!,
           });
-          if (!disposed) setState(!error && data === true ? "sharing" : "error");
         } catch {
-          if (!disposed) setState("error");
+          // A failed server acknowledgement never manufactures a hotspot.
         }
       });
     };
@@ -85,10 +77,8 @@ export function PassengerDemandSharing({
     send();
     const timer = window.setInterval(send, 60_000);
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        setState("waiting");
-        stop();
-      } else send();
+      if (document.visibilityState === "hidden") stop();
+      else send();
     };
     const onOnline = () => send();
     document.addEventListener("visibilitychange", onVisibility);
@@ -102,46 +92,54 @@ export function PassengerDemandSharing({
     };
   }, [authUserId, enabled, cellLat, cellLng]);
 
+  // QA219: NO map overlay, card, pill, counter, text or invisible click layer.
+  return null;
+}
+
+// Shown in Perfil, not above the map. Default is on, with a persistent opt-out.
+export function PassengerDemandPrivacySettings({ authUserId }: { authUserId?: string | undefined }) {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    setEnabled(authUserId ? readSharingPreference(authUserId) : false);
+  }, [authUserId]);
+
   const toggle = () => {
-    if (!storageKey) return;
+    if (!authUserId) return;
     const next = !enabled;
     try {
-      if (next) localStorage.setItem(storageKey, "1");
-      else localStorage.removeItem(storageKey);
+      localStorage.setItem(preferenceKey(authUserId), next ? "1" : "0");
     } catch {
-      // Session consent still works without persistent local storage.
+      return;
     }
     setEnabled(next);
-    setState(next ? "waiting" : "off");
+    if (!next) {
+      // Delete own presence immediately, rather than relying only on expiration.
+      void presenceApi().rpc("apois_passenger_presence_stop").catch(() => undefined);
+    }
   };
 
   return (
-    <aside
-      data-apois-passenger-demand-optin-qa218="true"
-      className={showControl
-        ? "pointer-events-auto absolute left-3 top-[calc(env(safe-area-inset-top,0px)+110px)] z-30 max-w-[238px] rounded-2xl border border-[#E2E4E8] bg-white/95 p-3 shadow-xl"
-        : "hidden"}
-      aria-label="Compartilhamento opcional da região"
-    >
-      <button type="button" role="switch" aria-checked={enabled}
-        onClick={toggle} disabled={!authUserId}
-        className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-xs font-bold text-[#111827] disabled:opacity-50">
-        <span>Compartilhar minha região</span>
-        <span aria-hidden="true"
-          className={enabled ? "rounded-full bg-[#138A4A] px-2 py-1 text-white" : "rounded-full bg-[#6B7280] px-2 py-1 text-white"}>
+    <section data-apois-qa219-privacy-control="true"
+      aria-label="Privacidade da região"
+      className="rounded-2xl border border-[#E2E4E8] bg-white p-4 text-[#111827]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-bold">Região para motoristas</p>
+          <p className="mt-1 text-xs text-[#626B78]">
+            Ativado automaticamente enquanto você usa o aplicativo. Motoristas veem
+            apenas regiões aproximadas com 5 ou mais passageiros, nunca seu nome
+            ou sua localização individual.
+          </p>
+        </div>
+        <button type="button" role="switch" aria-checked={enabled}
+          aria-label="Compartilhar região aproximada com motoristas"
+          onClick={toggle} disabled={!authUserId}
+          className={enabled
+            ? "min-h-11 shrink-0 rounded-full bg-[#138A4A] px-3 text-xs font-bold text-white"
+            : "min-h-11 shrink-0 rounded-full bg-[#6B7280] px-3 text-xs font-bold text-white"}>
           {enabled ? "Ligado" : "Desligado"}
-        </span>
-      </button>
-      <p className="mt-1 text-[10px] leading-4 text-[#606977]">
-        Opcional. Apenas regiões aproximadas com 5 ou mais passageiros aparecem para os motoristas.
-      </p>
-      {enabled ? (
-        <p role="status" className="mt-1 text-[10px] font-semibold text-[#374151]">
-          {state === "sharing" ? "Região compartilhada enquanto o app estiver em uso."
-           : state === "waiting" ? "Aguardando GPS ou conexão..."
-           : state === "error" ? "Não foi possível atualizar sua região." : ""}
-        </p>
-      ) : null}
-    </aside>
+        </button>
+      </div>
+    </section>
   );
 }
