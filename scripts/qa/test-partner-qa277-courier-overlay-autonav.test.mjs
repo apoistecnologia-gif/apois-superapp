@@ -27,12 +27,15 @@ test("QA277: actual overlay accept RPC opens native navigation only on success",
     '.eq("courier_id", courierId)',
     '.in("status", ["accepted", "arriving_pickup"])',
     "validNavigationCoordinate(acceptedJob.pickup_latitude, acceptedJob.pickup_longitude)",
+    'await setApoisOperationalNotification("entregador", true);',
     "await launchApoisNavigationAfterRideStart(",
     "catch (navigationError)",
     "Use Reabrir mapa",
   ];
   for (const token of expected) assert.ok(handler.includes(token), "missing overlay guard: " + token);
   assert.ok(handler.indexOf("if (error) {") < handler.indexOf("launchApoisNavigationAfterRideStart("));
+  assert.ok(handler.indexOf('await setApoisOperationalNotification("entregador", true);') < handler.indexOf("await launchApoisNavigationAfterRideStart("), "QA278 arms the bubble first");
+  assert.ok(!handler.includes('setApoisOperationalNotification("motorista"'), "QA278 does not touch Motorista");
   assert.ok(handler.indexOf("await loadOffers();\n\n    // " + marker) >= 0);
   assert.equal(handler.split("launchApoisNavigationAfterRideStart(").length - 1, 1);
   assert.ok(handler.indexOf('if (action === "accept"') < handler.indexOf("launchApoisNavigationAfterRideStart("));
