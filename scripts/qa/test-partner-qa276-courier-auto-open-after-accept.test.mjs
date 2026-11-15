@@ -48,8 +48,11 @@ test("QA276: external navigation uses approved courier's active pickup, not a ra
     '.eq("courier_id", courierId)',
     '.in("status", ["accepted", "arriving_pickup"])',
     "validNavigationCoordinate(data.pickup_latitude, data.pickup_longitude)",
+    'await setApoisOperationalNotification("entregador", true);',
     "launchApoisNavigationAfterRideStart(",
   ]) assert.ok(helper.includes(needle), "unsafe or missing pickup navigation guard: " + needle);
+  assert.ok(helper.indexOf('await setApoisOperationalNotification("entregador", true);') < helper.indexOf("await launchApoisNavigationAfterRideStart("), "QA278 arms Android bubble before navigating");
+  assert.ok(!helper.includes('setApoisOperationalNotification("motorista"'), "QA278 does not touch Motorista");
   assert.ok(!helper.includes("update(") && !helper.includes("insert("), "navigation is read-only");
   assert.ok(!helper.includes("rpc("), "navigation performs no delivery state changes");
 });
