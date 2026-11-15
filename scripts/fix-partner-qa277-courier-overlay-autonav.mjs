@@ -29,7 +29,7 @@ once(
   'import { supabase } from "@/integrations/supabase/client";',
   'import { supabase } from "@/integrations/supabase/client";\n' +
   'import { isNativeCourierAndroid } from "@/lib/courier-push";\n' +
-  'import { launchApoisNavigationAfterRideStart, validNavigationCoordinate } from "@/components/ApoisExternalNavigation";',
+  'import { launchApoisNavigationAfterRideStart, validNavigationCoordinate, setApoisOperationalNotification } from "@/components/ApoisExternalNavigation";',
   "imports",
 );
 
@@ -61,6 +61,8 @@ const addition = [
   "        if (!acceptedJob || !validNavigationCoordinate(acceptedJob.pickup_latitude, acceptedJob.pickup_longitude)) {",
   '          throw Error("Endereço de retirada indisponível na entrega aceita.");',
   "        }",
+  "        // QA278: Android return bubble must be armed before Activity switch.",
+  '        await setApoisOperationalNotification("entregador", true);',
   "        await launchApoisNavigationAfterRideStart(",
   "          Number(acceptedJob.pickup_latitude), Number(acceptedJob.pickup_longitude),",
   "        );",
