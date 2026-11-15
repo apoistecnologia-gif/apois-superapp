@@ -30,7 +30,7 @@ for (const required of [
 
 replaceExactlyOnce(
   'import { useApoisOperationalNotification } from "@/components/ApoisExternalNavigation";',
-  'import { useApoisOperationalNotification, launchApoisNavigationAfterRideStart, validNavigationCoordinate } from "@/components/ApoisExternalNavigation";',
+  'import { useApoisOperationalNotification, launchApoisNavigationAfterRideStart, validNavigationCoordinate, setApoisOperationalNotification } from "@/components/ApoisExternalNavigation";',
   "shared native navigator import",
 );
 
@@ -52,6 +52,8 @@ const helper = [
   "  if (!data || !validNavigationCoordinate(data.pickup_latitude, data.pickup_longitude)) {",
   '    throw Error("Não foi possível confirmar as coordenadas da retirada.");',
   "  }",
+  "  // QA278: persist the accepted delivery role before Android pauses for Waze/Maps.",
+  '  await setApoisOperationalNotification("entregador", true);',
   "  await launchApoisNavigationAfterRideStart(",
   "    Number(data.pickup_latitude), Number(data.pickup_longitude),",
   "  );",
