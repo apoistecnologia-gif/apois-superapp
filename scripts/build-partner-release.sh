@@ -474,6 +474,10 @@ APOIS_QA241_ROLE=entregador node --test "$ROOT/scripts/qa/test-partner-qa241-pro
 node "$ROOT/scripts/fix-partner-qa243-courier-daily-stats.mjs"
 node "$ROOT/scripts/fix-partner-qa243-courier-external-only-map.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa243-courier-metrics-map.test.mjs"
+# QA276 — Launch the saved Google Maps/Waze provider once after a confirmed delivery acceptance.
+# Scoped to the generated Courier copy; no driver, customer, backend, or production changes.
+node "$ROOT/scripts/fix-partner-qa276-courier-auto-open-after-accept.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa276-courier-auto-open-after-accept.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
