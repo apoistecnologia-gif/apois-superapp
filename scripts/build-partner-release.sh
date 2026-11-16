@@ -363,6 +363,7 @@ node --test "$ROOT/scripts/qa/test-partner-qa242-pin-gps-distance.test.mjs"
 
 # QA280 Motorista only: GPS restoration during active ride and stationary pickup fix.
 node "$ROOT/scripts/fix-partner-qa280-driver-active-gps-recovery.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa280-recovery.test.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa280-stationary-gps.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
