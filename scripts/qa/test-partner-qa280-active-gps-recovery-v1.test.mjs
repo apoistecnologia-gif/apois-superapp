@@ -39,3 +39,13 @@ test("existing QA236 authenticated PIN flow stays intact", () => {
   assert.ok(source.includes("await callStart({data:{rideId:ride.id,safety_code:code}})"));
   assert.ok(source.includes('data-apois-qa236-start-ride="true"'));
 });
+
+test("QA280 PIN text is readable on narrow Android screens without changing the official swipe action", () => {
+  const pin = readFileSync(resolve("superapp/partner-shell/shared/ApoisPickupPin.tsx"), "utf8");
+  assert.ok(pin.includes('data-apois-qa280-pin-legibility="true"'));
+  assert.ok(pin.includes("white-space: normal !important"));
+  assert.ok(pin.includes("text-overflow: clip !important"));
+  assert.ok(pin.includes('ApoisSlideAction label="Confirmar PIN e iniciar corrida"'));
+  assert.ok(pin.includes("onConfirm={confirm}"));
+});
+
