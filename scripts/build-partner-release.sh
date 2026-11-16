@@ -362,6 +362,9 @@ APOIS_QA241_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa241-prof
 # both pickup/arrival require deliberate PIN entry swipe.
 node "$ROOT/scripts/fix-partner-qa242-gps-distance-hud-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa242-pin-gps-distance.test.mjs"
+# QA280: user-initiated GPS recovery during active Motorista ride, after all prior UI hardeners.
+node "$ROOT/scripts/fix-partner-qa280-active-ride-gps-recovery-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa280-active-gps-recovery-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
