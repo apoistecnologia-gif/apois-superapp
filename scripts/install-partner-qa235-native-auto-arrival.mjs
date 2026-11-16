@@ -154,6 +154,66 @@ const method=[
 '    }',
 ''].join("\n");
 s=once(s,'    private void startAsForeground() {',method+'    private void startAsForeground() {',"insert native arrival sender before FGS startup");
+
+// QA280: location updates requiring 5m displacement may stop while the driver
+// is stationary at pickup. Ask FusedLocation for NEW real GPS fixes only while
+// the authenticated arrival monitor is armed, not while idle/offline/courier.
+// Keep the original 3 accurate samples / 6.5s / backend RPC gates intact.
+s=once(s,'import com.google.android.gms.location.FusedLocationProviderClient;',
+  'import com.google.android.gms.location.CurrentLocationRequest;\\n'+
+  'import com.google.android.gms.tasks.CancellationTokenSource;\\n'+
+  'import com.google.android.gms.location.FusedLocationProviderClient;',
+  "QA280 fresh current location Android imports");
+s=once(s,'    private long qa235FirstAt = 0L;',
+  '    private long qa235FirstAt = 0L;\\n    private boolean qa280PickupFixPending = false;',
+  "QA280 single pending fresh GPS request");
+s=once(s,'            // Continue o heartbeat mesmo antes do primeiro fix de GPS.',
+  '            // QA280: fresh fixes while parked at pickup (not cached 5m-throttled fixes).\\n'+
+  '            if (qa235RideId != null && !qa235RideId.isEmpty()) qa280RequestFreshPickupFix();\\n'+
+  '            // Continue o heartbeat mesmo antes do primeiro fix de GPS.',
+  "QA280 attach to existing 15-second heartbeat");
+const qa280Method=[
+  '    // QA280: high-accuracy location from Android, never estimated from the map.',
+  '    // Runs only during an armed approach and does not create a second Service.',
+  '    private void qa280RequestFreshPickupFix() {',
+  '        if (!tracking || qa235RideId == null || qa235RideId.isEmpty()',
+  '                || qa280PickupFixPending || qa235Sending',
+  '                || System.currentTimeMillis() < qa235RetryAfterAt) return;',
+  '        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)',
+  '                != PackageManager.PERMISSION_GRANTED) return;',
+  '        qa280PickupFixPending = true;',
+  '        try {',
+  '            CurrentLocationRequest request = new CurrentLocationRequest.Builder()',
+  '                .setPriority(Priority.PRIORITY_HIGH_ACCURACY)',
+  '                .setMaxUpdateAgeMillis(0L)',
+  '                .setDurationMillis(10_000L)',
+  '                .build();',
+  '            CancellationTokenSource cancellation = new CancellationTokenSource();',
+  '            fusedLocationClient.getCurrentLocation(request, cancellation.getToken())',
+  '                .addOnCompleteListener(task -> {',
+  '                    qa280PickupFixPending = false;',
+  '                    if (!tracking || qa235RideId == null || qa235RideId.isEmpty()',
+  '                            || !task.isSuccessful()) return;',
+  '                    Location fresh = task.getResult();',
+  '                    if (fresh == null || !isUsableLocation(fresh)) return;',
+  '                    latestLocation = fresh;',
+  '                    rememberPendingLocation(fresh);',
+  '                    queuePresenceSync(true, fresh);',
+  '                    qa235CheckPickupArrival(fresh);',
+  '                });',
+  '        } catch (SecurityException | IllegalStateException error) {',
+  '            qa280PickupFixPending = false;',
+  '        }',
+  '    }',
+  ''
+].join("\n");
+s=once(s,'    private void startAsForeground() {',
+  qa280Method+'    private void startAsForeground() {',
+  "QA280 add fresh Android GPS sampling method");
+for(const must of ['qa280RequestFreshPickupFix()','setMaxUpdateAgeMillis(0L)','setDurationMillis(10_000L)','qa235CheckPickupArrival(fresh)','/rest/v1/rpc/driver_mark_arrived','qa235Fixes<3 || now-qa235FirstAt<6500L','queuePresenceSync(true, location);','START_REDELIVER_INTENT']){
+ if(!s.includes(must))throw Error("QA280 missing invariant "+must);
+}
+
 for(const must of ["qa235SendArrival(","qa235SendPush(\"ride.driver_arrived\"","/rest/v1/rpc/driver_mark_arrived","ContextCompat.registerReceiver","startForeground(",
   "START_REDELIVER_INTENT","queuePresenceSync(true, location);"]){
  if(!s.includes(must))throw Error("[FAIL] QA235 native preserved "+must);
