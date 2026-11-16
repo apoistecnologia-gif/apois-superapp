@@ -360,6 +360,10 @@ APOIS_QA241_ROLE=motorista node --test "$ROOT/scripts/qa/test-partner-qa241-prof
 # both pickup/arrival require deliberate PIN entry swipe.
 node "$ROOT/scripts/fix-partner-qa242-gps-distance-hud-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa242-pin-gps-distance.test.mjs"
+
+# QA280 Motorista only: GPS restoration during active ride and stationary pickup fix.
+node "$ROOT/scripts/fix-partner-qa280-driver-active-gps-recovery.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa280-stationary-gps.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
