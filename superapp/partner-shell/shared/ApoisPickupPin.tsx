@@ -43,7 +43,7 @@ export function ApoisPickupPin({onClose,onSubmit}:{
           style={{color:"#111827",WebkitTextFillColor:"#111827"}}/>
         {error?<p role="alert" className="mt-2 text-sm font-semibold text-[#B42318]">{error}</p>:null}
         <div className="mt-4">
-          <ApoisSlideAction label="Confirmar PIN e iniciar corrida" disabled={!valid||busy} busy={busy} onConfirm={confirm}/>
+          <ApoisSlideAction label="Confirmar PIN e iniciar" disabled={!valid||busy} busy={busy} onConfirm={confirm}/>
         </div>
       </div>
     </div>
