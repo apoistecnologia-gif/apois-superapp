@@ -160,16 +160,16 @@ s=once(s,'    private void startAsForeground() {',method+'    private void start
 // the authenticated arrival monitor is armed, not while idle/offline/courier.
 // Keep the original 3 accurate samples / 6.5s / backend RPC gates intact.
 s=once(s,'import com.google.android.gms.location.FusedLocationProviderClient;',
-  'import com.google.android.gms.location.CurrentLocationRequest;\\n'+
-  'import com.google.android.gms.tasks.CancellationTokenSource;\\n'+
+  'import com.google.android.gms.location.CurrentLocationRequest;\n'+
+  'import com.google.android.gms.tasks.CancellationTokenSource;\n'+
   'import com.google.android.gms.location.FusedLocationProviderClient;',
   "QA280 fresh current location Android imports");
 s=once(s,'    private long qa235FirstAt = 0L;',
-  '    private long qa235FirstAt = 0L;\\n    private boolean qa280PickupFixPending = false;',
+  '    private long qa235FirstAt = 0L;\n    private boolean qa280PickupFixPending = false;',
   "QA280 single pending fresh GPS request");
 s=once(s,'            // Continue o heartbeat mesmo antes do primeiro fix de GPS.',
-  '            // QA280: fresh fixes while parked at pickup (not cached 5m-throttled fixes).\\n'+
-  '            if (qa235RideId != null && !qa235RideId.isEmpty()) qa280RequestFreshPickupFix();\\n'+
+  '            // QA280: fresh fixes while parked at pickup (not cached 5m-throttled fixes).\n'+
+  '            if (qa235RideId != null && !qa235RideId.isEmpty()) qa280RequestFreshPickupFix();\n'+
   '            // Continue o heartbeat mesmo antes do primeiro fix de GPS.',
   "QA280 attach to existing 15-second heartbeat");
 const qa280Method=[
