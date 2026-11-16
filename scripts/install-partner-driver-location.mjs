@@ -36,6 +36,15 @@ function adaptJava(source) {
 let plugin = adaptJava(readFileSync(sourcePlugin, 'utf8'));
 let service = adaptJava(readFileSync(sourceService, 'utf8'));
 
+// QA280 Motorista: the arrival detector requires three DISTINCT real GPS fixes.
+// A 5m movement threshold can starve callbacks while the driver waits at pickup.
+// Preserve high accuracy / 5s interval and allow stationary fused GPS updates.
+const stationaryThreshold = '.setMinUpdateDistanceMeters(5f)';
+if (service.split(stationaryThreshold).length !== 2) {
+  throw new Error('QA280: expected exactly one Motorista GPS movement threshold');
+}
+service = service.replace(stationaryThreshold, '.setMinUpdateDistanceMeters(0f)');
+
 // O plugin protegido original resolvia started=true imediatamente após pedir
 // startForegroundService(). Isso não prova que o Service conseguiu entrar em
 // foreground nem registrar LocationUpdates. O host Parceiro exige ACK real do
@@ -109,6 +118,7 @@ for (const marker of [
   'private void setStartupConfirmed(boolean running)',
   'setStartupConfirmed(true);',
   'setStartupConfirmed(false);',
+  '.setMinUpdateDistanceMeters(0f)',
 ]) {
   if (!service.includes(marker)) throw new Error(`APOIS Parceiro: serviço protegido de localização do Motorista está incompleto (${marker}).`);
 }
