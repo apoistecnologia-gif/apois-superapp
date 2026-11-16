@@ -42,7 +42,18 @@ export function ApoisPickupPin({onClose,onSubmit}:{
           className="mt-2 h-16 w-full rounded-2xl border-2 border-[#D1D5DB] bg-white text-center text-[32px] font-extrabold tracking-[.55em] text-[#111827] outline-none focus:border-[#C91429]"
           style={{color:"#111827",WebkitTextFillColor:"#111827"}}/>
         {error?<p role="alert" className="mt-2 text-sm font-semibold text-[#B42318]">{error}</p>:null}
-        <div className="mt-4">
+        <div className="mt-4" data-apois-qa280-pin-legibility="true">
+          {/* QA280: fix clipped text ONLY in this PIN dialog; preserve full label,
+              the original deliberate swipe and server-side code verification. */}
+          <style>{`[data-apois-qa280-pin-legibility="true"] [data-apois-slide-action] span.truncate {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            letter-spacing: 0 !important;
+            font-size: 11px !important;
+            line-height: 1.15 !important;
+            max-width: 100%;
+          }`}</style>
           <ApoisSlideAction label="Confirmar PIN e iniciar corrida" disabled={!valid||busy} busy={busy} onConfirm={confirm}/>
         </div>
       </div>
