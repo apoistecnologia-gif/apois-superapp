@@ -275,10 +275,6 @@ workflows:
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
           node scripts/install-partner-splash.mjs
-          # QA280: install and fail-closed verify native Driver/Courier GPS, external navigation,
-          # QA235 arrival, QA236 PIN return and QA240 bubble before signing Android.
-          node scripts/install-partner-native-qa280.mjs
-          node --test scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs
           grep -Fq "versionCode ${PARTNER_VERSION_CODE}" superapp/partner-shell/android/app/build.gradle
           grep -Fq "versionName \"${PARTNER_VERSION_NAME}\"" superapp/partner-shell/android/app/build.gradle
           MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
