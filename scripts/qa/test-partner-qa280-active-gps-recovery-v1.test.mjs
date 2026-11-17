@@ -13,7 +13,7 @@ test("accepted ride always provides visible GPS recovery without leaving the rid
     '["motorista_a_caminho","motorista_chegou","em_viagem"].includes(active.status)',
     "Recuperar GPS e ficar ONLINE",
     "Verificar / recuperar GPS",
-    'if (!online) { toggleOnline(); return; }',
+    'if (!online) setDesiredOnline(true)',
   ]) assert.ok(source.includes(expected), "missing active GPS recovery: "+expected);
   assert.equal(source.split('data-apois-qa280-active-gps-recovery="true"').length - 1, 1);
 });
@@ -29,7 +29,10 @@ test("recovery reuses Android official permissions, FGS ACK and Supabase online 
     "await startNativeDriverLocation()", 'await setApoisOperationalNotification("motorista", true',
     'rpc("driver_set_presence"', "_online: true", "if (data?.is_online !== true)",
     "setGpsStatus(\"granted\")", "setPosition(", "startWatch()",
+    "if (!online) setDesiredOnline(true)",
   ]) assert.ok(method.includes(expected), "lost recovery requirement: "+expected);
+  assert.ok(!method.includes("toggleOnline();"), "no early return before GPS/FGS ACK during an OFFLINE ride");
+  assert.ok(method.indexOf("if (!online) setDesiredOnline(true)") > method.indexOf("if (data?.is_online !== true)"), "local ONLINE only after server ACK");
   for(const forbidden of ["callStart(", "callComplete(", "callCancel(", "setActive(", "qa236PinOpen", "stopNativeDriverLocation(", "_online: false"]) {
     assert.ok(!method.includes(forbidden), "recovery must not mutate ride/stop FGS: "+forbidden);
   }
