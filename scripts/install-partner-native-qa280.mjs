@@ -1,60 +1,51 @@
-// APOIS Parceiro QA280 — materialize the existing native runtimes in the
-// freshly generated Codemagic Android workspace. Never touches pinned sources.
-// Runs AFTER cap sync / configure-partner-android, BEFORE Gradle or signing.
-import { execFileSync } from "node:child_process";
+// QA280 — read-only post-install verification of Android native services.
+// IMPORTANT: install-partner-launcher.mjs ALREADY executes every native installer
+// (and verify-partner-native-plugins) through static imports. Never run them again:
+// the external navigation installer correctly rejects double registration.
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
-const androidRoot = resolve(root, "superapp/partner-shell/android");
-const javaRoot = resolve(androidRoot, "app/src/main/java/br/com/apois/parceiro");
-const manifestPath = resolve(androidRoot, "app/src/main/AndroidManifest.xml");
-if (!existsSync(manifestPath)) {
-  throw Error("[FAIL] QA280: Android Parceiro precisa existir antes da instalação nativa.");
-}
+const javaRoot = resolve(root, "superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro");
+const manifestPath = resolve(root, "superapp/partner-shell/android/app/src/main/AndroidManifest.xml");
+if (!existsSync(manifestPath)) throw Error("[FAIL] QA280: Android Parceiro ainda não existe.");
 
-// Preserve the approved ordering of prerequisites. QA235 requires the external
-// notification receiver; QA236 requires QA235; QA240 requires QA236.
-// Shared Courier code is materialized by its EXISTING installer, not modified.
-const steps = [
-  "scripts/install-partner-driver-location.mjs",
-  "scripts/install-partner-courier-location.mjs",
-  "scripts/harden-partner-location-startup-ack.mjs",
-  "scripts/harden-partner-location-session-sync.mjs",
-  "scripts/harden-partner-location-notification-routing.mjs",
-  "scripts/install-partner-external-navigation.mjs",
-  "scripts/install-partner-qa235-native-auto-arrival.mjs",
-  "scripts/install-partner-qa236-return-notification-v1.mjs",
-  "scripts/install-partner-qa239-native-bubble.mjs",
-  "scripts/verify-partner-native-plugins.mjs",
-];
-for (const script of steps) {
-  console.log("[QA280] Native Android: " + script);
-  execFileSync(process.execPath, [resolve(root, script)], {
-    cwd: root,
-    stdio: "inherit",
-    timeout: 120_000,
-  });
-}
-
-const readJava = (name) => readFileSync(resolve(javaRoot, name), "utf8");
+const readJava = (name) => {
+  const path = resolve(javaRoot, name);
+  if (!existsSync(path)) throw Error("[FAIL] QA280: componente nativo ausente: " + name);
+  return readFileSync(path, "utf8");
+};
 const driver = readJava("DriverLocationService.java");
+const driverPlugin = readJava("DriverLocationPlugin.java");
 const courier = readJava("CourierLocationService.java");
+const courierPlugin = readJava("CourierLocationPlugin.java");
 const main = readJava("MainActivity.java");
 const nav = readJava("APOISExternalNavigationPlugin.java");
 const manifest = readFileSync(manifestPath, "utf8");
+
 for (const marker of [
   ".setMinUpdateDistanceMeters(0f)",
   "qa235CheckPickupArrival(location)",
   "/rest/v1/rpc/driver_mark_arrived",
   "qa236PickupReady",
   "driver_set_presence",
+  "setStartupConfirmed(true);",
+  "private void loadPersistedSessionTokens()",
 ]) {
   if (!driver.includes(marker)) throw Error("[FAIL] QA280: GPS Motorista incompleto: " + marker);
 }
 if (!courier.includes(".setMinUpdateDistanceMeters(5f)") ||
     courier.includes(".setMinUpdateDistanceMeters(0f)")) {
-  throw Error("[FAIL] QA280: o GPS do Entregador não pode sofrer a mudança do Motorista.");
+  throw Error("[FAIL] QA280: GPS do Entregador sofreu alteração destinada apenas ao Motorista.");
+}
+for (const [role, plugin] of [["Motorista",driverPlugin],["Entregador",courierPlugin]]) {
+  for (const marker of [
+    "STARTUP_ACK_MAX_ATTEMPTS = 4",
+    "private void resolveStartup(PluginCall call, SharedPreferences startup, int attempt)",
+    "public void updateSession(PluginCall call)",
+  ]) {
+    if (!plugin.includes(marker)) throw Error("[FAIL] QA280: " + role + " plugin incompleto: " + marker);
+  }
 }
 for (const marker of [
   "registerPlugin(DriverLocationPlugin.class)",
@@ -69,7 +60,7 @@ for (const marker of [
   "public void setOperation(PluginCall call)",
   "qa235PickupLat",
 ]) {
-  if (!nav.includes(marker)) throw Error("[FAIL] QA280: navegação nativa sem " + marker);
+  if (!nav.includes(marker)) throw Error("[FAIL] QA280: navegação sem " + marker);
 }
 for (const marker of [
   'android:name=".DriverLocationService"',
@@ -77,9 +68,9 @@ for (const marker of [
   'android:foregroundServiceType="location"',
   "android.permission.FOREGROUND_SERVICE_LOCATION",
 ]) {
-  if (!manifest.includes(marker)) throw Error("[FAIL] QA280: Manifest Android sem " + marker);
+  if (!manifest.includes(marker)) throw Error("[FAIL] QA280: AndroidManifest.xml sem " + marker);
 }
 if (manifest.includes("android.permission.ACCESS_BACKGROUND_LOCATION")) {
   throw Error("[FAIL] QA280: permissão de localização background não autorizada foi incluída.");
 }
-console.log("[OK] QA280: Android Parceiro inclui GPS real parado, chegada QA235, PIN QA236, bubble QA240 e Entregador preservado.");
+console.log("[OK] QA280: componentes nativos preinstalados pelo launcher verificados sem reexecutar instaladores; Motorista 0 m, Entregador 5 m, chegada QA235, PIN QA236 e bolha QA240.");
