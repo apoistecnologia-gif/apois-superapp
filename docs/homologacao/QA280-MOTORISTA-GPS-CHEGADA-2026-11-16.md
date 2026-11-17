@@ -44,3 +44,14 @@
 ## Próximo gate
 
 Reproduzir `node --test` e `bun run typecheck` em checkout completo com fonte pinada, compilar/validar serviço nativo, auditar lacunas financeiras antes da finalização e depois analisar logs físicos do Android. Não instalar QA280 por cima da QA278 até haver estratégia de continuidade para a corrida ativa.
+
+## Adendo — 17/11/2026: cenário real e pipeline correto
+
+- **Teste doméstico:** Passageiro e Motorista usam dois celulares distintos na mesma residência, praticamente sem deslocamento. Coordenadas imóveis são normais; isso não é sinal de GPS quebrado. A chegada deve depender de GPS real, recente e suficientemente preciso, mesmo em repouso.
+- **Evidência Android QA278:** APK extraído contém DriverLocationService/Plugin e CourierLocationService/Plugin. Permissões de localização concedidas. Durante estado OFFLINE, não havia serviço nativo de localização na lista ativa. O histórico exit-info não revelou crash fatal após a aceitação da corrida. Causa inicial da parada ainda não demonstrada.
+- **Recuperação QA280 corrigida:** inclusive se a interface estiver OFFLINE, exige GPS real recente, confirmação de início do FGS nativo e confirmação da RPC driver_set_presence com is_online=true antes de atualizar o estado local. Removido atalho que chamava toggleOnline sem garantir esses ACKs.
+- **Pipeline real:** GitHub Actions no arquivo .github/workflows/apois-partner-android.yml, não Codemagic. O workflow agora instala/valida o runtime nativo com scripts/install-partner-native-qa280.mjs após cap sync e antes do Gradle.
+- O instalador reutiliza as rotinas existentes de GPS Motorista/Entregador, ACK, sessão, retorno da notificação, navegação externa, chegada QA235, PIN QA236 e bolha QA240. Exige o limiar de 0 m apenas no Motorista e preserva o 5 m do Entregador.
+- O GitHub Actions verifica os dois serviços presentes no manifesto do APK final com aapt dump xmltree, além da verificação de certificado existente. A alteração anterior em codemagic.yaml foi revertida.
+- A branch QA280 não foi adicionada à lista de gatilhos push, preservando o workflow para disparo manual. Nenhuma execução foi iniciada e nenhum novo APK foi gerado.
+- **Gates pendentes:** rodar testes Node em checkout completo com submódulos, efetuar Gradle no Actions, verificar artefato, planejar transição segura da corrida QA279 e testar fisicamente sem simular deslocamento. Sem SQL de escrita, PIN, merge ou deploy nesta revisão.
