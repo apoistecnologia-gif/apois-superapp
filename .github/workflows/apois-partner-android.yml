@@ -353,6 +353,11 @@ jobs:
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
           node scripts/install-partner-splash.mjs
+          # QA280: the APK is built by GitHub Actions (not Codemagic).
+          # Install protected existing GPS/navigation services in the fresh Capacitor host.
+          # Fails closed before Gradle if Driver/Courier service or QA235 pickup is absent.
+          node scripts/install-partner-native-qa280.mjs
+          node --test scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs
           node scripts/qa/verify-apois-mobile-viewport-v1.mjs parceiro --native
           MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
@@ -415,6 +420,14 @@ jobs:
           test -n "$AAPT" || { echo "::error::aapt missing; cannot verify Parceiro APK package/version"; exit 1; }
           "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$((28 + GITHUB_RUN_NUMBER))" "1.0.28-qa.${GITHUB_RUN_NUMBER}"
           echo "[OK] Parceiro APK package/version verified against QA configuration"
+          # Require both Android location services in the FINAL installable APK.
+          # A native runtime missing from the packaged Manifest must block release.
+          APK_MANIFEST="$(mktemp)"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$APK_MANIFEST"
+          grep -Fq 'br.com.apois.parceiro.DriverLocationService' "$APK_MANIFEST" || { echo "[FAIL] APK sem DriverLocationService"; rm -f "$APK_MANIFEST"; exit 1; }
+          grep -Fq 'br.com.apois.parceiro.CourierLocationService' "$APK_MANIFEST" || { echo "[FAIL] APK sem CourierLocationService"; rm -f "$APK_MANIFEST"; exit 1; }
+          rm -f "$APK_MANIFEST"
+          echo "[OK] APK final contém ambos os serviços nativos de localização"
           # Verify the ACTUAL APK ZIP payload, not only intermediate web/dist.
           TEMP_APK_ASSETS="$(mktemp -d)"
           trap 'rm -rf "$TEMP_APK_ASSETS"' EXIT
