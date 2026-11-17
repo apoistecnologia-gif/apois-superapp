@@ -102,8 +102,8 @@ const overlay=`      {/* QA280: keep GPS recovery reachable throughout an accept
       {!incoming && !ratingRide && active &&
         ["motorista_a_caminho","motorista_chegou","em_viagem"].includes(active.status) && (
         <div data-apois-qa280-active-gps-recovery="true"
-          className="absolute right-3 z-[39] max-w-[200px] rounded-[14px] border border-[#E7D6D9] bg-white/95 p-2 text-right shadow-lg"
-          style={{top:"calc(env(safe-area-inset-top) + 72px)"}}>
+          className="fixed left-3 z-[39] max-w-[200px] rounded-[14px] border border-[#E7D6D9] bg-white/95 p-2 text-left shadow-lg"
+          style={{top:"calc(env(safe-area-inset-top) + 214px)"}}>
           <button type="button" onClick={() => void recoverActiveRideGps()}
             disabled={qa280Recovering || gpsStatus === "loading"}
             className="min-h-[40px] w-full rounded-lg bg-[#E51B23] px-3 text-xs font-bold text-white disabled:opacity-60">
@@ -121,6 +121,7 @@ for (const required of [
   "APOIS_PARTNER_QA280_ACTIVE_GPS_RECOVERY_V1",
   "recoverActiveRideGps",
   "data-apois-qa280-active-gps-recovery",
+  'className="fixed left-3 z-[39] max-w-[200px]',
   "await startNativeDriverLocation()",
   'rpc("driver_set_presence"',
   "if (data?.is_online !== true)",
