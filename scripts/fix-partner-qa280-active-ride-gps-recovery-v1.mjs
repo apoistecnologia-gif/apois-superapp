@@ -33,9 +33,9 @@ const handler=`  // QA280: explicit user-initiated recovery while retaining the 
   const recoverActiveRideGps = useCallback(async () => {
     const ride = activeRef.current;
     if (!ride || !userId || !["motorista_a_caminho","motorista_chegou","em_viagem"].includes(ride.status) || qa280Recovering) return;
-    // Reuse the existing permission/GPS/authenticated presence lifecycle when
-    // the interface already knows it is OFFLINE, rather than inventing a second.
-    if (!online) { toggleOnline(); return; }
+    // An OFFLINE ride must follow the SAME fully verified GPS/FGS/presence
+    // recovery as an ONLINE ride. toggleOnline() would return before the native
+    // service ACK and might never re-arm QA235 pickup monitoring.
     setQa280Recovering(true);
     setGpsMessage("Verificando localização real e serviço em segundo plano...");
     try {
@@ -75,6 +75,9 @@ const handler=`  // QA280: explicit user-initiated recovery while retaining the 
       if (error) throw Error(error.message);
       if (data?.is_online !== true) throw Error("O servidor não confirmou o motorista ONLINE.");
       if (activeRef.current?.id !== ride.id) return;
+      // Publish ONLINE locally only AFTER authenticated native and server ACK.
+      // Existing broadcaster can now maintain GPS in the background.
+      if (!online) setDesiredOnline(true);
       setPosition({lat:coords.latitude,lng:coords.longitude,
         heading:Number.isFinite(coords.heading) ? coords.heading : null,
         speed:Number.isFinite(coords.speed) && Number(coords.speed)>=0 ? coords.speed : null});
@@ -89,7 +92,7 @@ const handler=`  // QA280: explicit user-initiated recovery while retaining the 
     } finally {
       setQa280Recovering(false);
     }
-  }, [userId,online,qa280Recovering,toggleOnline,startWatch]);
+  }, [userId,online,qa280Recovering,setDesiredOnline,startWatch]);
 
 `;
 once("  // realtime: ofertas (broadcast) + corrida ativa — canal estável",
@@ -124,6 +127,7 @@ for (const required of [
   "activeRef.current?.id !== ride.id",
   "await setApoisOperationalNotification(\"motorista\", true",
   "await Geolocation.getCurrentPosition({",
+  "if (!online) setDesiredOnline(true)",
   "await callStart({data:{rideId:ride.id,safety_code:code}})",
 ]) if (!source.includes(required)) throw Error("[FAIL] QA280 missing "+required);
 writeFileSync(path,source,"utf8");
