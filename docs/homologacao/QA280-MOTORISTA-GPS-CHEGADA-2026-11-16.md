@@ -55,3 +55,11 @@ Reproduzir `node --test` e `bun run typecheck` em checkout completo com fonte pi
 - O GitHub Actions verifica os dois serviços presentes no manifesto do APK final com aapt dump xmltree, além da verificação de certificado existente. A alteração anterior em codemagic.yaml foi revertida.
 - A branch QA280 não foi adicionada à lista de gatilhos push, preservando o workflow para disparo manual. Nenhuma execução foi iniciada e nenhum novo APK foi gerado.
 - **Gates pendentes:** rodar testes Node em checkout completo com submódulos, efetuar Gradle no Actions, verificar artefato, planejar transição segura da corrida QA279 e testar fisicamente sem simular deslocamento. Sem SQL de escrita, PIN, merge ou deploy nesta revisão.
+
+### Validação adicional dos instaladores (17/11, sem Gradle)
+
+- Simulação isolada do sistema de arquivos usando as fontes Java pinadas e scripts existentes do repositório: **11/11 transformações nativas concluídas sem erro**. Para manter o teste totalmente inofensivo, imports de módulos e operações de arquivo foram emulados; não houve compilação Java real.
+- Arquivos gerados na simulação contêm 0 m apenas no DriverLocationService; CourierLocationService preserva 5 m; método QA235 de chegada, sinal QA236 de PIN, plugin QA240 de bolha e registro da navegação presentes.
+- Testes estáticos de verificação do workflow GitHub Actions, sintaxe dos scripts QA280 e ordem de instalação verificados. Os checks não substituem node --test em checkout completo, TypeScript, Gradle, inspeção do APK final e E2E físico.
+- O controle de recuperação de GPS foi reposicionado à esquerda, abaixo do HUD e afastado do atalho do mapa externo; nenhuma alteração em ações de PIN, pagamentos ou estado da corrida.
+- **Conclusão:** pré-compilação mais sólida, mas Android APK ainda não gerado. GitHub Actions não foi disparado e a QA278 permanece instalada.
