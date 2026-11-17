@@ -13,6 +13,8 @@ test("accepted ride always provides visible GPS recovery without leaving the rid
     '["motorista_a_caminho","motorista_chegou","em_viagem"].includes(active.status)',
     "Recuperar GPS e ficar ONLINE",
     "Verificar / recuperar GPS",
+    'className="fixed left-3 z-[39] max-w-[200px]',
+    'style={{top:"calc(env(safe-area-inset-top) + 214px)"}}',
     'if (!online) setDesiredOnline(true)',
   ]) assert.ok(source.includes(expected), "missing active GPS recovery: "+expected);
   assert.equal(source.split('data-apois-qa280-active-gps-recovery="true"').length - 1, 1);
