@@ -75,6 +75,10 @@ on:
       - 'scripts/fix-partner-qa276-courier-auto-open-after-accept.mjs'
       - 'scripts/qa/test-partner-qa276-courier-auto-open-after-accept.test.mjs'
       - 'scripts/build-partner-release.sh'
+      - 'scripts/install-partner-native-qa280.mjs'
+      - 'scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs'
+      - 'scripts/fix-partner-qa280-active-ride-gps-recovery-v1.mjs'
+      - 'scripts/qa/test-partner-qa280-active-gps-recovery-v1.test.mjs'
       - 'scripts/fix-partner-driver-forward-camera-v1.mjs'
       - 'scripts/fix-partner-driver-qa186-navigation-layout-v1.mjs'
       - 'scripts/fix-partner-driver-qa190-physical-video-v1.mjs'
@@ -354,9 +358,8 @@ jobs:
           node scripts/configure-partner-android.mjs
           node scripts/install-partner-launcher.mjs
           node scripts/install-partner-splash.mjs
-          # QA280: the APK is built by GitHub Actions (not Codemagic).
-          # Install protected existing GPS/navigation services in the fresh Capacitor host.
-          # Fails closed before Gradle if Driver/Courier service or QA235 pickup is absent.
+          # QA280: launcher already installed GPS/navigation plugins once.
+          # Verify the native host without invoking a second installer; fail closed before Gradle.
           node scripts/install-partner-native-qa280.mjs
           node --test scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs
           node scripts/qa/verify-apois-mobile-viewport-v1.mjs parceiro --native
