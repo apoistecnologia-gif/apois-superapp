@@ -371,6 +371,9 @@ node "$ROOT/scripts/apply-partner-motorista-premium-home-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-motorista-premium-home-v1.test.mjs"
 # Final approved PDF screens: offer, active ride, real finance, history and profile.
 APOIS_MOTORISTA_WORKSPACE="$MOTORISTA" node "$ROOT/scripts/apply-partner-premium-all-screens-v1.mjs" motorista
+# QA283: profile uses existing authenticated ride-count aggregate, never missing column -> 0.
+node "$ROOT/scripts/fix-partner-qa283-profile-ride-count-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa283-profile-ride-count-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
