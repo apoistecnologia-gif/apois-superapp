@@ -9,7 +9,7 @@ const matrix=[
     'DriverActiveRideRecovery','PickupNavOverlay','ActiveTripNavOverlay','onAccept','onReject','onStart','onComplete','onClick={toggleOnline}'
   ]],
   ['.work/partner-motorista/src/routes/motorista.login.tsx',['Entrar','Continuar com Google','Esqueci minha senha']],
-  ['.work/partner-motorista/src/routes/motorista.ganhos.tsx',['data-apois-premium-screen="driver-finance"','payoutEnabled','loadDriverFinancialDashboard','Saques indisponíveis']],
+  ['.work/partner-motorista/src/routes/motorista.ganhos.tsx',['data-apois-premium-screen="driver-finance"','loadDriverFinancialDashboard','Saques indisponíveis']],
   ['.work/partner-motorista/src/routes/motorista.corridas.tsx',['data-apois-premium-screen="driver-rides"','RideCard','aria-label']],
   ['.work/partner-motorista/src/routes/motorista.perfil.tsx',['data-apois-premium-screen="driver-profile"','handleLogout']],
   ['.work/partner-motorista/src/apois-ui-hardening-round3.css',['APOIS_PREMIUM_ALL_SCREENS_V1','#F51D2A','#BB071D','driver-offer','driver-active','driver-finance']],
