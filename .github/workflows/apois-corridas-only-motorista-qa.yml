@@ -75,6 +75,13 @@ jobs:
           test -d sources/apois-corridas-passageiro
           echo "[OK] Fontes protegidas carregadas"
 
+      - name: Test Pix membership contract offline (no bank calls)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test scripts/qa/test-driver-membership-pix-v2.test.mjs
+          echo '[OK] R$99.90 provider adapter tests completed without bank API access'
+
       - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
