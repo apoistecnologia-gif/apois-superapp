@@ -121,11 +121,17 @@ function apply(file, fn, markers) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const driver = resolve(process.env.APOIS_MOTORISTA_WORKSPACE || ".work/partner-motorista");
   const courier = resolve(process.env.APOIS_ENTREGAS_WORKSPACE || ".work/partner-entregador");
-  apply(resolve(driver, "src/routes/motorista.app.tsx"), fixDriverReject,
-    [MARKER, "await callReject({ data: { rideId: offer.id } });",
-     'removeIncomingRequest(offer, "driver_rejected");']);
-  apply(resolve(courier, "src/components/CourierLocationTracker.tsx"), fixCourierWatcher,
-    [MARKER, "await Geolocation.clearWatch({ id: lateWatchId });"]);
-  apply(resolve(courier, "src/components/CourierOfferOverlay.tsx"), fixCourierOfferPolling,
-    [MARKER, "offersLoadingRef.current = false;", 'document.visibilityState === "visible"']);
+  const mode = process.argv[2];
+  if (mode === "driver") {
+    apply(resolve(driver, "src/routes/motorista.app.tsx"), fixDriverReject,
+      [MARKER, "await callReject({ data: { rideId: offer.id } });",
+       'removeIncomingRequest(offer, "driver_rejected");']);
+  } else if (mode === "courier") {
+    apply(resolve(courier, "src/components/CourierLocationTracker.tsx"), fixCourierWatcher,
+      [MARKER, "await Geolocation.clearWatch({ id: lateWatchId });"]);
+    apply(resolve(courier, "src/components/CourierOfferOverlay.tsx"), fixCourierOfferPolling,
+      [MARKER, "offersLoadingRef.current = false;", 'document.visibilityState === "visible"']);
+  } else {
+    throw Error("Usage: node scripts/fix-partner-qa283-operational-races-v1.mjs driver|courier");
+  }
 }
