@@ -4,6 +4,7 @@ on:
     branches:
       - fix/apois-parceiro-auditoria-20261123
       - fix/apois-integracoes-seguranca-20261123
+      - fix/apois-redispatch-recovery-20261123
     paths:
       - '.github/workflows/apois-parceiro-qa283-web-only-20261123.yml'
       - 'scripts/build-partner-release.sh'
@@ -13,6 +14,10 @@ on:
       - 'scripts/audit-apois-production-readiness-v1.mjs'
       - 'scripts/qa/test-apois-production-readiness-v1.test.mjs'
       - 'supabase/functions/dispatch-push-outbox/index.ts'
+      - 'supabase/functions/driver-reject-redispatch/index.ts'
+      - 'supabase/functions/driver-cancel-redispatch/index.ts'
+      - 'supabase/functions/driver-redispatch-recovery/index.ts'
+      - 'scripts/qa/test-apois-redispatch-recovery-v2.test.mjs'
       - 'docs/auditorias/apois-parte4-paridade-producao-20261123.md'
   workflow_dispatch:
 
@@ -65,6 +70,7 @@ jobs:
           node --test scripts/qa/test-partner-qa283-operational-races-v1.test.mjs
           node --check scripts/audit-apois-production-readiness-v1.mjs
           node --test scripts/qa/test-apois-production-readiness-v1.test.mjs
+          node --test scripts/qa/test-apois-redispatch-recovery-v2.test.mjs
       - name: Build isolated Partner web apps with full existing regression suite
         shell: bash
         run: |
