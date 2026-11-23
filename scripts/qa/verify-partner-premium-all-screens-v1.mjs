@@ -14,13 +14,15 @@ const matrix=[
   ['.work/partner-motorista/src/routes/motorista.perfil.tsx',['data-apois-premium-screen="driver-profile"','handleLogout','ApoisPremiumDriverNav active="perfil"']],
   ['.work/partner-motorista/src/components/ApoisPremiumDriverNav.tsx',['data-apois-premium-internal-nav','/motorista/app','/motorista/corridas','/motorista/ganhos','/motorista/perfil']],
   ['.work/partner-motorista/src/apois-ui-hardening-round3.css',['APOIS_PREMIUM_ALL_SCREENS_V1','#F51D2A','#BB071D','driver-offer','driver-active','driver-finance']],
-  ['.work/partner-entregador/src/routes/courier.tsx',['data-apois-premium-courier-summary','data-apois-premium-availability','CourierBottomNav','CourierRouteMap','CourierOfferCard','CourierCompletionSheet','onToggle={toggleOnline}']],
-  ['.work/partner-entregador/src/components/CourierPremiumViews.tsx',['data-apois-premium-screen="courier-offer"','data-apois-premium-screen="courier-active"','data-apois-premium-screen="courier-finance"','onRequestPayout','onConfirmSettlement']],
+  ['.work/partner-entregador/src/routes/courier.tsx',['data-apois-premium-courier-summary','data-apois-premium-availability','data-apois-courier-map-first-v2','data-apois-courier-calls-card-v2','CourierBottomNav','CourierRouteMap','CourierOfferCard','CourierCompletionSheet','onToggle={toggleOnline}']],
+  ['.work/partner-entregador/src/components/CourierPremiumViews.tsx',['data-apois-premium-screen="courier-offer"','data-apois-premium-screen="courier-active"','data-apois-premium-screen="courier-finance"','onRequestPayout','onConfirmSettlement','data-apois-courier-premium-status-v2','aria-checked={online}']],
   ['.work/partner-entregador/src/components/CourierPanels.tsx',['data-apois-premium-screen="courier-history"','data-apois-premium-screen="courier-profile"','CourierBottomNav']],
   ['.work/partner-entregador/src/components/CourierOfferOverlay.tsx',['data-apois-premium-screen="courier-offer-overlay"']],
   ['.work/partner-entregador/src/components/CourierActiveDeliveryOverlay.tsx',['data-apois-premium-screen="courier-active-overlay"']],
   ['.work/partner-entregador/src/components/CourierCompletionSupport.tsx',['data-apois-premium-screen="courier-completion"']],
-  ['.work/partner-entregador/src/system-theme.css',['APOIS_PREMIUM_ALL_SCREENS_V1','#F51D2A','#BB071D','courier-offer','courier-active','courier-finance','courier-profile']],
+  ['.work/partner-entregador/src/components/CourierRouteMap.tsx',['data-apois-courier-live-map-v2','data-apois-courier-map-canvas-v2','<RecenterControl']],
+  ['.work/partner-entregador/src/components/CourierLocationTracker.tsx',['data-apois-courier-gps-status-v2','status === "error"']],
+  ['.work/partner-entregador/src/system-theme.css',['APOIS_COURIER_MAP_FIRST_V2','APOIS_PREMIUM_ALL_SCREENS_V1','#F51D2A','#BB071D','courier-offer','courier-active','courier-finance','courier-profile']],
   ['superapp/partner-shell/dist/index.html',['--red:#F51D2A','--red-dark:#BB071D','VAMOS JUNTOS.']],
 ];
 let failures=0;
