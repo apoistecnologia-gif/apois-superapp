@@ -213,7 +213,11 @@ const timeoutPath = resolve(workspace, "src/hooks/rides/use-ride-request.tsx");
 }
 
 patch("supabase/functions/request-ride/index.ts", (s) => {
-  const anchor = "    const estimatedPrice = await loadFare(admin, categoryRow.id, category, metrics.distanceKm, metrics.durationMin, details);";
+  s = replaceOnce(s,
+    "  estimated_price?: number | null;",
+    "  estimated_price?: number | null;\n  expected_price_cents?: number;",
+    "tipar preco esperado no RequestBody");
+  const anchor = "    const estimatedPrice = fare.total;";
   return replaceOnce(s, anchor,
     anchor + '\n    // APOIS_PASSENGER_AUDIT_PRICE_V1: server recomputes; client cents only verify.\n    const expectedPriceCents = body?.expected_price_cents;\n    const authoritativePriceCents = Math.round(estimatedPrice * 100);\n    if (expectedPriceCents !== undefined) {\n      if (typeof expectedPriceCents !== "number" || !Number.isSafeInteger(expectedPriceCents) || expectedPriceCents <= 0) {\n        return json({ ok: false, error_code: "invalid_expected_price", message: "Valor de confirmação inválido." }, 422);\n      }\n      if (expectedPriceCents !== authoritativePriceCents) {\n        return json({ ok: false, error_code: "price_changed", message: "O valor da corrida mudou. Revise antes de confirmar.", estimated_price: estimatedPrice, fare_amount_cents: authoritativePriceCents }, 409);\n      }\n    }',
     "validação de preço no backend gerado");
