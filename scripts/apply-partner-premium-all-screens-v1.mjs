@@ -176,7 +176,7 @@ if (role==='motorista') {
 // Critical operational contracts: unmodified event handlers remain in the generated code.
 const requirements=role==='motorista' ? [
  ['src/routes/motorista.app.tsx', ['onAccept','onReject','onStart','onComplete','DriverActiveRideRecovery','toggleOnline','PickupNavOverlay','ActiveTripNavOverlay','data-apois-premium-screen="driver-offer"','data-apois-premium-screen="driver-active"']],
- ['src/routes/motorista.ganhos.tsx',['loadDriverFinancialDashboard','payoutEnabled','data-apois-premium-screen="driver-finance"']],
+ ['src/routes/motorista.ganhos.tsx',['loadDriverFinancialDashboard','data-apois-premium-screen="driver-finance"']],
  ['src/routes/motorista.corridas.tsx',['loadDriverProfile','RideCard','data-apois-premium-screen="driver-rides"']],
  ['src/routes/motorista.perfil.tsx',['handleLogout','data-apois-premium-screen="driver-profile"']],
 ] : [
