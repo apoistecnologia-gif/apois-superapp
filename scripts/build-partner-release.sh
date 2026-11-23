@@ -511,6 +511,10 @@ node "$ROOT/scripts/apply-partner-courier-premium-home-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-courier-premium-home-v1.test.mjs"
 # Final approved PDF screens: incoming order, live delivery, confirmation, earnings, history, profile.
 APOIS_ENTREGAS_WORKSPACE="$ENTREGADOR" node "$ROOT/scripts/apply-partner-premium-all-screens-v1.mjs" entregador
+# QA291: approved courier full-height map after ALL previous functional and visual hardeners.
+# Prevent oversized availability/requests cards from covering the live Google map.
+APOIS_ENTREGAS_WORKSPACE="$ENTREGADOR" node "$ROOT/scripts/fix-partner-courier-map-first-visual-v2.mjs"
+node --test "$ROOT/scripts/qa/test-partner-courier-map-first-visual-v2.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
