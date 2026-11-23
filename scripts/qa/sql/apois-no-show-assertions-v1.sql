@@ -1,3 +1,4 @@
+SET apois.test_auth_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 -- Real no-show RPC migration behavior in a dedicated throwaway database.
 DO $assert$
 DECLARE v_message text; v_ride public.rides%rowtype; v_result jsonb;
