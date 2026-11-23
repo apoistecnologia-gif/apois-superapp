@@ -56,6 +56,14 @@ export function auditProductionReadiness(inventory) {
     missing("motorista", "no_show_reason_contract_unverified",
       "ride.driver_no_show_code_v1 must be true only after the guarded DB migration");
   }
+  if (rides.checks?.dispatchSelfOfferAndGpsGuardsDeployed !== true) {
+    missing("motorista", "dispatch_candidate_guards_unverified",
+      "The deployed dispatch-ride must exclude rides.passenger_id and reject invalid GPS fixes");
+  }
+  if (rides.checks?.requestRidePriceConfirmationDeployed !== true) {
+    missing("passageiro", "price_confirmation_guard_unverified",
+      "The deployed request-ride must check expected_price_cents against server pricing");
+  }
 
   const orderEdge = asSet(orders.edgeFunctions);
   const orderRpc = asSet(orders.rpcFunctions);
@@ -84,11 +92,20 @@ export function auditProductionReadiness(inventory) {
     missing("seguranca", "push_lockscreen_privacy_unverified",
       "The published delivery Push must not expose message text in public lock-screen previews");
   }
+  if (inventory.qa?.partnerAndroidE2EPassed !== true) {
+    missing("homologacao_parceiro", "android_partner_e2e_unverified",
+      "Physical-device GPS, background, offers, push and navigation tests must pass");
+  }
+  if (inventory.qa?.passengerAndroidE2EPassed !== true) {
+    missing("homologacao_passageiro", "android_passenger_e2e_unverified",
+      "Physical-device pricing, ride state, cancellation and notification tests must pass");
+  }
 
   return {
     checkedAt: typeof inventory.checkedAt === "string" ? inventory.checkedAt : null,
     issues,
-    readyForPartnerLaunch: !issues.some((item) => item.scope === "motorista" || item.scope === "entregador"),
+    readyForPartnerLaunch: !issues.some((item) => item.scope === "motorista"
+      || item.scope === "entregador" || item.scope === "homologacao_parceiro"),
     readyForAtomicSafe2PayPromotion: !issues.some((item) => item.scope === "financeiro"),
     readyForSecuritySignoff: !issues.some((item) => item.scope === "seguranca"),
     readyForFullLaunch: issues.length === 0,
