@@ -28,7 +28,9 @@ test('Asaas/MP Pix stays one open driver charge without split',()=>{
  assert.match(schema,/WHERE status IN \('pending','confirmed'\)/);
  assert.match(checkout,/another_checkout_in_progress/);
  assert.match(checkout,/multiple_open_charges_need_reconciliation/);
- assert.match(checkout,/pendingGeneration:!c\.pix_payload/);
+ assert.match(checkout,/pendingGeneration:!pixPayload/);
+ assert.match(checkout,/recoverReservedPixForCharge/);
+ assert.match(checkout,/provider_payment_id===\"reservation:\"\+c\.id/);
  assert.match(adapter,/externalReference/);
  assert.match(adapter,/asaas_duplicate_reference_requires_reconciliation/);
  assert.ok(!checkout.includes('application_fee'));
