@@ -17,6 +17,7 @@ function observedInventory() {
         checks: {
           finishQueueContinuationDeployed: false,
           redispatchRecoveryScheduleActive: false,
+          noShowReasonCodeContractActive: false,
           safe2payAtomicWebhookDeployed: false,
         },
       },
