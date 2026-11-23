@@ -377,6 +377,10 @@ node --test "$ROOT/scripts/qa/test-partner-qa283-profile-ride-count-v1.test.mjs"
 # QA284: presentation-only history labels, complete fares and legible route cards.
 node "$ROOT/scripts/fix-partner-qa284-driver-history-ui-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa284-driver-history-ui-v1.test.mjs"
+# QA289: rescue incoming Motorista offers when Supabase rides Realtime publication is absent.
+# Bounded read-only polling runs solely ONLINE + visible, no backend changes.
+node "$ROOT/scripts/fix-partner-qa289-driver-offer-fallback-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa289-offer-fallback-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
