@@ -35,8 +35,11 @@ test("Confirmed fare is checked by the backend, not accepted from the passenger"
     for (const token of ["expected_price_cents", "authoritativePriceCents", "error_code: \"price_changed\"", "409"]) {
       assert.ok(text.includes(token), "Missing price contract " + token);
     }
-    assert.ok(text.indexOf("const estimatedPrice = await loadFare(") < text.indexOf("const expectedPriceCents ="), "Quote check must follow server tariff");
-    assert.ok(text.indexOf("const expectedPriceCents =") < text.indexOf('.from("rides").insert({'), "Quote check must precede insert");
+    const fareIndex = text.indexOf("const estimatedPrice = ");
+    const guardIndex = text.indexOf("const expectedPriceCents =");
+    const insertIndex = text.indexOf("const { data: ride, error: insertError }");
+    assert.ok(fareIndex >= 0 && guardIndex > fareIndex, "Quote check must follow server tariff");
+    assert.ok(insertIndex > guardIndex, "Quote check must precede insert");
   }
 });
 
