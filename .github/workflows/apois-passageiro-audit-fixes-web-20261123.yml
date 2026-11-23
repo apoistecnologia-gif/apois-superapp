@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/apois-passageiro-audit-fixes-web-20261123.yml'
       - 'scripts/harden-corridas-passenger-audit-20261123.mjs'
+      - 'scripts/fix-corridas-gps-watch-dispose-20261123.mjs'
       - 'scripts/qa/test-corridas-passenger-audit-20261123.test.mjs'
       - 'scripts/build-isolated-module.mjs'
       - 'supabase/functions/request-ride/index.ts'
@@ -53,6 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           node --check scripts/harden-corridas-passenger-audit-20261123.mjs
+          node --check scripts/fix-corridas-gps-watch-dispose-20261123.mjs
           node --check scripts/qa/test-corridas-passenger-audit-20261123.test.mjs
           node --check scripts/build-isolated-module.mjs
           npm run verify:pins
