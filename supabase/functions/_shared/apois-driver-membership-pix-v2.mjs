@@ -234,3 +234,104 @@ export async function fetchVerifiedBankPaymentForCharge({
     parsed.getTime()<=Date.now()+300000?parsed.toISOString():new Date().toISOString();
   return Object.freeze({ ...verified, bankStatus: "confirmed",bankConfirmedAt });
 }
+
+/**
+ * Reconcile an uncertain checkout (network timeout after bank POST).
+ * Read-only bank lookup; NEVER issue a second payment POST. The caller must
+ * persist the resulting payment ID against the original reserved charge
+ * before considering an authenticated webhook. This does not grant access.
+ */
+export async function recoverReservedPixForCharge({charge,accessToken,env,request=fetch}) {
+  requireChargeIdentity(charge);
+  if(charge.status!=="pending" ||
+     charge.providerPaymentId!=="reservation:"+charge.id)
+    throw Error("not_an_unresolved_membership_reservation");
+  if(typeof accessToken!=="string"||accessToken.length<15)
+    throw Error("provider_access_token_unavailable");
+  let rows,numberOfRecords,headers,base;
+  if(charge.provider==="asaas"){
+    base=asaasBase(env);
+    headers={"access_token":accessToken,"User-Agent":"APOIS-Membership/2"};
+    const list=await jsonRequest(base+"/payments?externalReference="+
+      encodeURIComponent(charge.id)+"&limit=20",{
+      method:"GET",headers
+    },request);
+    if(!Array.isArray(list.data)||list.hasMore===true)
+      throw Error("asaas_reference_reconciliation_inconclusive");
+    rows=list.data.filter(row=>row?.externalReference===charge.id);
+    numberOfRecords=rows.length;
+  }else if(charge.provider==="mercadopago"){
+    headers={"Authorization":"Bearer "+accessToken};
+    const list=await jsonRequest(
+      "https://api.mercadopago.com/v1/payments/search?external_reference="+
+        encodeURIComponent(charge.id)+"&limit=20&offset=0",{
+        method:"GET",headers
+      },request);
+    if(!Array.isArray(list.results)||
+       !Number.isSafeInteger(list.paging?.total)||
+       list.paging.total<list.results.length)
+      throw Error("mp_reference_reconciliation_inconclusive");
+    rows=list.results.filter(row=>row?.external_reference===charge.id);
+    numberOfRecords=list.paging.total;
+    if(rows.length!==numberOfRecords)
+      throw Error("mp_reference_reconciliation_inconclusive");
+  }else{
+    throw Error("unsupported_membership_provider");
+  }
+  if(numberOfRecords>1)throw Error("multiple_bank_payments_require_manual_review");
+  if(numberOfRecords===0)return Object.freeze({found:false});
+  const original=rows[0];
+  const paymentId=String(original.id??"");
+  if(charge.provider==="asaas"){
+    if(!/^pay_[a-z0-9_-]{3,80}$/i.test(paymentId))
+      throw Error("asaas_recovery_payment_id_invalid");
+  }else if(!/^[1-9][0-9]{4,30}$/.test(paymentId))
+    throw Error("mp_recovery_payment_id_invalid");
+  const detail=await jsonRequest(charge.provider==="asaas"
+      ?base+"/payments/"+encodeURIComponent(paymentId)
+      :"https://api.mercadopago.com/v1/payments/"+encodeURIComponent(paymentId),{
+      method:"GET",headers
+    },request);
+  const expectedRef=charge.provider==="asaas"?
+    detail.externalReference:detail.external_reference;
+  const expectedValue=charge.provider==="asaas"?detail.value:detail.transaction_amount;
+  const billingMethod=charge.provider==="asaas"?detail.billingType:detail.payment_method_id;
+  if(String(detail.id??"")!==paymentId||
+     expectedRef!==charge.id||
+     centsFromBRL(expectedValue)!==charge.amountCents||
+     String(billingMethod??"").toLowerCase()!=="pix")
+    throw Error("recovered_payment_does_not_match_driver_charge");
+  if(charge.provider==="asaas"?
+     ["REFUNDED","PARTIALLY_REFUNDED","REFUND_REQUESTED","CHARGEBACK_REQUESTED","CHARGEBACK_DISPUTE"].includes(detail.status):
+     ["refunded","charged_back"].includes(detail.status))
+    throw Error("recovered_payment_requires_refund_review");
+  let pixPayload=null,qrCodeBase64=null,expiresAt=null;
+  if(charge.provider==="asaas"){
+    // A settled or expired Pix can have no reusable QR; still reconcile its ID.
+    const qrResponse=await request(base+"/payments/"+encodeURIComponent(paymentId)+"/pixQrCode",{
+      method:"GET",headers
+    });
+    if(qrResponse?.ok){
+      const qr=await qrResponse.json();
+      if(typeof qr?.payload==="string"&&qr.payload.length>20)
+        pixPayload=qr.payload;
+      qrCodeBase64=typeof qr?.encodedImage==="string"?qr.encodedImage:null;
+      expiresAt=qr?.expirationDate??null;
+    }
+  }else{
+    const qr=detail?.point_of_interaction?.transaction_data;
+    pixPayload=typeof qr?.qr_code==="string"?qr.qr_code:null;
+    qrCodeBase64=typeof qr?.qr_code_base64==="string"?qr.qr_code_base64:null;
+    expiresAt=detail?.date_of_expiration??null;
+  }
+  if(expiresAt&&Number.isFinite(Date.parse(expiresAt))&&
+     Date.parse(expiresAt)<=Date.now()) {
+    pixPayload=null;qrCodeBase64=null;
+  }
+  return Object.freeze({
+    found:true,providerPaymentId:paymentId,pixPayload,qrCodeBase64,expiresAt,
+    alreadyBankApproved:charge.provider==="asaas"?
+      ["RECEIVED","CONFIRMED"].includes(detail.status):
+      detail.status==="approved"
+  });
+}
