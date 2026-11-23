@@ -497,6 +497,10 @@ node "$ROOT/scripts/apply-partner-courier-premium-home-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-courier-premium-home-v1.test.mjs"
 # Final approved PDF screens: incoming order, live delivery, confirmation, earnings, history, profile.
 APOIS_ENTREGAS_WORKSPACE="$ENTREGADOR" node "$ROOT/scripts/apply-partner-premium-all-screens-v1.mjs" entregador
+# User-device visual regression: approved full-screen live map and compact availability.
+# The new patch edits only the generated Courier workspace, NOT the pinned source.
+node "$ROOT/scripts/fix-partner-courier-map-first-visual-v2.mjs"
+node --test "$ROOT/scripts/qa/test-partner-courier-map-first-visual-v2.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
