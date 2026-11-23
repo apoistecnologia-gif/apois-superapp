@@ -33,7 +33,7 @@ function requireChargeIdentity(charge) {
   throw Error("invalid_membership_charge_identity");
  if(charge.amountCents!==MONTHLY_FEE_CENTS)throw Error("wrong_backend_membership_amount");
  if(!VALID_PROVIDERS.includes(charge.provider))throw Error("wrong_membership_provider");
- if(charge.status!=="pending")throw Error("membership_charge_not_pending");
+ if(!["pending","confirmed"].includes(charge.status))throw Error("membership_charge_not_open");
  return charge;
 }
 async function jsonRequest(url,options,request){
@@ -53,6 +53,7 @@ export async function createAsaasPixForCharge({settings,charge,customerId,dueDat
  const config=verifyMembershipConfiguration(settings);
  if(config.provider!=="asaas")throw Error("provider_selection_mismatch");
  requireChargeIdentity(charge);
+ if(charge.status!=="pending")throw Error("membership_charge_not_pending_for_creation");
  if(typeof accessToken!=="string"||accessToken.length<15)throw Error("asaas_secret_unavailable");
  if(!/^cus_[a-z0-9]+$/i.test(String(customerId??"")))throw Error("asaas_customer_not_registered");
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(dueDate??"")))throw Error("invalid_due_date");
@@ -93,6 +94,7 @@ export async function createMercadoPagoPixForCharge({settings,charge,payerEmail,
  const config=verifyMembershipConfiguration(settings);
  if(config.provider!=="mercadopago")throw Error("provider_selection_mismatch");
  requireChargeIdentity(charge);
+ if(charge.status!=="pending")throw Error("membership_charge_not_pending_for_creation");
  if(typeof accessToken!=="string"||accessToken.length<15)throw Error("mp_secret_unavailable");
  if(typeof payerEmail!=="string"||!/^.+@[^@]+\.[^@]+$/.test(payerEmail))throw Error("payer_email_required");
  const data=await jsonRequest("https://api.mercadopago.com/v1/payments",{
@@ -124,7 +126,7 @@ export function verifyProviderBankResult({charge,providerResult}) {
     ?["RECEIVED","CONFIRMED"].includes(providerResult?.status)
     :providerResult?.status==="approved";
  const reversed=charge.provider==="asaas"
-    ?["REFUNDED","CHARGEBACK_REQUESTED","CHARGEBACK_DISPUTE","REFUND_REQUESTED"].includes(providerResult?.status)
+    ?["REFUNDED","CHARGEBACK_REQUESTED","CHARGEBACK_DISPUTE","REFUND_REQUESTED","PARTIALLY_REFUNDED","REFUND_IN_PROGRESS","RECEIVED_IN_CASH_UNDONE"].includes(providerResult?.status)
     :["refunded","charged_back"].includes(providerResult?.status);
  if(reversed)throw Error("payment_reversal_requires_review");
  if(!approved)throw Error("bank_payment_not_confirmed");
