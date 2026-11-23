@@ -45,8 +45,9 @@ let premium=docs.get('premium');
  const status=`export function CourierStatusCard({ online, busy, activeJob, onToggle }: any) {
   return (
     <section data-apois-courier-availability data-apois-courier-premium-status-v2
+      data-apois-availability-state-v2={online ? "online" : "offline"}
       aria-label="Disponibilidade do entregador"
-      className="flex min-h-[54px] w-full items-center gap-3 rounded-full border border-[#D1EBD9] bg-[#E9FAEE] px-3 py-2 text-[#0D0F12] shadow-[0_6px_20px_rgba(13,15,18,.08)]">
+      className={"flex min-h-[54px] w-full items-center gap-3 rounded-full border px-3 py-2 text-[#0D0F12] shadow-[0_6px_20px_rgba(13,15,18,.08)] "+(online ? "border-[#D1EBD9] bg-[#E9FAEE]" : "border-[#E7E9ED] bg-white")}>
       <span className={"h-3 w-3 shrink-0 rounded-full ring-4 "+(online ? "bg-[#08A63B] ring-[#D1F4DA]" : "bg-[#737B85] ring-[#E5E7EB]")} aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <p className="text-[15px] font-extrabold leading-tight text-[#0D0F12]">{online ? "Disponível" : "Indisponível"}</p>
@@ -167,7 +168,10 @@ css+=String.raw`
 .apois-system-theme [data-apois-courier-premium-status-v2] {
   box-sizing:border-box!important;min-height:52px!important;border-radius:999px!important;
   padding:6px 12px!important;box-shadow:0 5px 16px rgba(13,15,18,.06)!important;
-  background:#E9FAEE!important;border:1px solid #D5EBDB!important;color:#0D0F12!important;
+  background:#FFFFFF!important;border:1px solid #E7E9ED!important;color:#0D0F12!important;
+}
+.apois-system-theme [data-apois-courier-premium-status-v2][data-apois-availability-state-v2="online"] {
+  background:#E9FAEE!important;border-color:#D5EBDB!important;
 }
 .apois-system-theme [data-apois-courier-premium-status-v2] button[data-apois-courier-availability-toggle] {
   min-height:36px!important;height:36px!important;min-width:66px!important;
