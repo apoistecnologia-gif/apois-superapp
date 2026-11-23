@@ -79,6 +79,14 @@ Deno.serve(async(req:Request)=>{
  try{
   const admin=service();
   const config=await readSettings(admin); // fails closed BEFORE any financial write
+  // Fail before reserving a charge when provider secrets are absent.
+  if(config.provider==="asaas"){
+   const base=Deno.env.get("ASAAS_API_BASE_URL")??"";
+   if(!["https://api-sandbox.asaas.com/v3","https://api.asaas.com/v3"].includes(base)||
+      (Deno.env.get("ASAAS_API_KEY")??"").length<15)
+    throw Error("asaas_provider_unconfigured");
+  }else if((Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")??"").length<15)
+   throw Error("mp_provider_unconfigured");
   const {data:auth,error:authError}=await admin.auth.getUser(token);
   if(authError||!auth.user)return respond({ok:false,error:"unauthorized"},401);
   const {data:profile,error:profileError}=await admin.from("users")
@@ -91,6 +99,11 @@ Deno.serve(async(req:Request)=>{
   if(driverError)throw driverError;
   if(!driver||driver.approval_status!=="aprovado"||driver.blocked_at||driver.suspended_at)
    return respond({ok:false,error:"driver_not_approved"},403);
+  if(config.provider==="asaas"&&
+    (!driver.name?.trim()||!/^\d{11}$/.test((driver.cpf??"").replace(/\D/g,""))))
+   return respond({ok:false,error:"driver_bank_identity_incomplete"},422);
+  if(config.provider==="mercadopago"&&!(driver.email??auth.user.email))
+   return respond({ok:false,error:"driver_email_required"},422);
   const {data:previousCharges,error:pendingError}=await admin
    .from("driver_membership_charges")
    .select("id,provider,provider_payment_id,amount_cents,status,due_date,pix_payload,pix_expiration_at,pix_qr_code_base64")
