@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
  MONTHLY_FEE_CENTS,verifyMembershipConfiguration,centsFromBRL,createAsaasPixForCharge,
  createMercadoPagoPixForCharge,verifyProviderBankResult,nextPaidThrough,
- authenticateAsaasWebhook,authenticateMercadoPagoWebhook
+ authenticateAsaasWebhook,authenticateMercadoPagoWebhook,fetchVerifiedBankPaymentForCharge
 } from '../../supabase/functions/_shared/apois-driver-membership-pix-v2.mjs';
 const chargeId='11111111-1111-4111-8111-111111111111';
 const driverId='22222222-2222-4222-8222-222222222222';
@@ -119,4 +119,52 @@ test('MP HMAC prevents spoofing, tampering and old notifications',async()=>{
  assert.equal(await authenticateMercadoPagoWebhook({headers,url,secret,now:now+600000}),false);
  assert.equal(await authenticateMercadoPagoWebhook({headers,url,secret:'wrong-signature-key-2026',now}),false);
  assert.equal(await authenticateMercadoPagoWebhook({headers:new Headers(),url,secret,now}),false);
+});
+
+
+test('Provider GET is bank-authoritative, fixed-host and fail-closed before settlement',async()=>{
+ const asaas=mkCharge('asaas');
+ let call;
+ const safeAsaas=async(url,options)=>{
+  call={url,options};
+  return {ok:true,status:200,json:async()=>({
+   id:asaas.providerPaymentId,externalReference:chargeId,
+   value:99.9,billingType:'PIX',status:'RECEIVED'
+  })};
+ };
+ const confirmation=await fetchVerifiedBankPaymentForCharge({
+  charge:asaas,accessToken:'test-asaas-api-token-not-real',
+  env:{ASAAS_API_BASE_URL:'https://api-sandbox.asaas.com/v3'},request:safeAsaas
+ });
+ assert.equal(confirmation.bankStatus,'confirmed');
+ assert.equal(confirmation.driverId,driverId);
+ assert.equal(call.url,'https://api-sandbox.asaas.com/v3/payments/pay_verified123');
+ assert.equal(call.options.method,'GET');
+ assert.ok(!call.options.body);
+ await assert.rejects(()=>fetchVerifiedBankPaymentForCharge({
+  charge:asaas,accessToken:'test-asaas-api-token-not-real',
+  env:{ASAAS_API_BASE_URL:'https://attacker.invalid'},
+  request:()=>{throw Error('unexpected network request')}
+ }),/not_authorized/);
+ await assert.rejects(()=>fetchVerifiedBankPaymentForCharge({
+  charge:asaas,accessToken:'test-asaas-api-token-not-real',
+  env:{ASAAS_API_BASE_URL:'https://api-sandbox.asaas.com/v3'},
+  request:async()=>({ok:true,json:async()=>({
+   id:asaas.providerPaymentId,externalReference:chargeId,
+   value:99.9,billingType:'PIX',status:'PENDING'
+  })})
+ }),/not_confirmed/);
+ const mp=mkCharge('mercadopago');
+ const result=await fetchVerifiedBankPaymentForCharge({
+  charge:mp,accessToken:'test-mp-api-token-not-real',
+  request:async(url,opts)=>{
+   assert.equal(url,'https://api.mercadopago.com/v1/payments/9999888777');
+   assert.ok(opts.headers.Authorization.startsWith('Bearer '));
+   return {ok:true,json:async()=>({
+    id:mp.providerPaymentId,external_reference:chargeId,
+    transaction_amount:99.9,payment_method_id:'pix',status:'approved'
+   })};
+  }
+ });
+ assert.equal(result.provider,'mercadopago');
 });
