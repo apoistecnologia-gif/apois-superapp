@@ -5,6 +5,7 @@ on:
     branches:
       - fix/motorista-ui-pdf-20261112
       - fix/motorista-mapa-rotacao-video-20261112
+      - feat/apois-motorista-premium-visual-20261122
     paths:
       - '.github/workflows/apois-motorista-pdf-qa-no-apk.yml'
       - 'scripts/fix-partner-driver-pdf-notes-20261112-v1.mjs'
@@ -12,6 +13,8 @@ on:
       - 'scripts/qa/test-partner-driver-video-map-rotation-20261112-v1.test.mjs'
       - 'scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs'
       - 'scripts/build-partner-release.sh'
+      - 'scripts/apply-partner-motorista-premium-home-v1.mjs'
+      - 'scripts/qa/test-partner-motorista-premium-home-v1.test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -61,6 +64,9 @@ jobs:
           node --check scripts/fix-partner-driver-video-map-rotation-20261112-v1.mjs
           node --check scripts/qa/test-partner-driver-video-map-rotation-20261112-v1.test.mjs
           node --check scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs
+          node --check scripts/apply-partner-motorista-premium-home-v1.mjs
+          node --check scripts/qa/test-partner-motorista-premium-home-v1.test.mjs
+          node --test scripts/qa/test-partner-motorista-premium-home-v1.test.mjs
           npm run verify:pins
       - name: Web-only build and PDF regressions (NO APK)
         run: |
@@ -69,6 +75,10 @@ jobs:
           # even baseline QA workflows; do not loosen its production policy.
           bash scripts/build-partner-release.sh
           grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'data-apois-premium-driver-header' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'data-apois-premium-driver-summary' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'data-apois-premium-driver-nav' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'aria-checked={online}' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'APOIS_DRIVER_VIDEO_20261112_ROTATION_V1' .work/partner-motorista/src/components/MovviMap.tsx
           grep -Fq 'driverCameraHistory.delete(map)' .work/partner-motorista/src/routes/motorista.app.tsx
