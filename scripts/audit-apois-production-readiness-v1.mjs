@@ -51,6 +51,11 @@ export function auditProductionReadiness(inventory) {
     missing("motorista", "recovery_schedule_unverified",
       "The durable driver-redispatch-recovery consumer must be scheduled and verifiably active");
   }
+  // No-show reason codes require the guarded DB migration first.
+  if (rides.checks?.noShowReasonCodeContractActive !== true) {
+    missing("motorista", "no_show_reason_contract_unverified",
+      "ride.driver_no_show_code_v1 must be true only after the guarded DB migration");
+  }
 
   const orderEdge = asSet(orders.edgeFunctions);
   const orderRpc = asSet(orders.rpcFunctions);
