@@ -18,56 +18,117 @@ Deno.serve(async(req:Request)=>{
   if(auth!==SERVICE)return json(req,{ok:false,error:"unauthorized"},401);
   try{
     const admin=createClient(URL,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
-    // Audit events are written INSIDE the existing RPC transaction. They
-    // survive a response loss after commit and identify the released ride.
-    const since=new Date(Date.now()-6*60*60*1000).toISOString();
-    const {data:events,error:eventsError}=await admin.from("audit_logs")
+    // The existing reject RPC does not write an audit event. Scan BOTH:
+    // (1) durable cancel/released-queue audit logs and (2) stale open searches.
+    // Never call reject/cancel/finish a second time: only redispatch the
+    // committed ride state, with dispatch-ride's CAS and eligibility guards.
+    const scanNowMs = Date.now();
+    const nowIso = new Date(scanNowMs).toISOString();
+    const since = new Date(scanNowMs - 6 * 60 * 60 * 1000).toISOString();
+    const staleBefore = new Date(scanNowMs - 10_000).toISOString();
+    const MAX_AUDIT_EVENTS = 75;
+    const MAX_STALE_RIDES = 75;
+    const MAX_REDISPATCH_ATTEMPTS = 60;
+    const { data: events, error: eventsError } = await admin.from("audit_logs")
       .select("id,entity_id,action,created_at")
-      .eq("entity_type","ride")
-      .in("action",[
+      .eq("entity_type", "ride")
+      .in("action", [
         "ride.queued_released_ineligible_driver",
         "ride.driver_cancelled_for_redispatch",
       ])
-      .gte("created_at",since)
-      .order("id",{ascending:false}).limit(200);
-    if(eventsError)return json(req,{ok:false,error:"audit_lookup_failed"},500);
-    const seen=new Set<string>();
-    const result={checked:0,skipped:0,retried:0,deferred:0,scan_limited:(events??[]).length>=200};
-    for(const event of events??[]){
-      const rideId=String(event.entity_id??"");
-      if(!UUID.test(rideId)||seen.has(rideId))continue;
+      .gte("created_at", since)
+      .order("id", { ascending: false })
+      .limit(MAX_AUDIT_EVENTS);
+    if (eventsError) return json(req, { ok: false, error: "audit_lookup_failed" }, 500);
+
+    // After rejection, a failed dispatcher leaves an unassigned ride searching
+    // and its existing offer window eventually expires. A second read catches
+    // that case, even though the reject RPC has no matching audit event.
+    // Never scan an active offer or a queued ride still assigned to a driver.
+    const { data: staleRides, error: staleError } = await admin.from("rides")
+      .select("id")
+      .eq("status", "procurar_motorista")
+      .is("driver_id", null)
+      .is("accepted_driver_id", null)
+      .is("queued_after_ride_id", null)
+      .lte("request_expires_at", staleBefore)
+      .gt("search_expires_at", nowIso)
+      .gte("created_at", since)
+      .order("request_expires_at", { ascending: true })
+      .limit(MAX_STALE_RIDES);
+    if (staleError) return json(req, { ok: false, error: "stale_lookup_failed" }, 500);
+
+    const candidates = [
+      ...(events ?? []).map((event) => ({
+        rideId: String(event.entity_id ?? ""),
+        action: String(event.action ?? ""),
+      })),
+      ...(staleRides ?? []).map((ride) => ({
+        rideId: String(ride.id ?? ""),
+        action: "ride.stale_search_recovery",
+      })),
+    ];
+    const seen = new Set<string>();
+    const result = {
+      checked: 0, skipped: 0, retried: 0, deferred: 0,
+      event_candidates: (events ?? []).length,
+      stale_candidates: (staleRides ?? []).length,
+      scan_limited: (events ?? []).length >= MAX_AUDIT_EVENTS
+        || (staleRides ?? []).length >= MAX_STALE_RIDES,
+      attempt_limited: false,
+    };
+    let attempts = 0;
+
+    for (const candidate of candidates) {
+      if (attempts >= MAX_REDISPATCH_ATTEMPTS) {
+        result.attempt_limited = true;
+        break;
+      }
+      const rideId = candidate.rideId;
+      if (!UUID.test(rideId) || seen.has(rideId)) continue;
       seen.add(rideId);
       result.checked++;
-      const {data:ride,error:rideError}=await admin.from("rides")
-        .select("status,driver_id,accepted_driver_id,search_expires_at,request_expires_at,offered_driver_ids")
-        .eq("id",rideId).maybeSingle();
-      if(rideError){result.deferred++;continue;}
-      if(!ride||ride.status!=="procurar_motorista"||ride.driver_id||ride.accepted_driver_id){
-        result.skipped++;continue;
+      const { data: ride, error: rideError } = await admin.from("rides")
+        .select("status,driver_id,accepted_driver_id,queued_after_ride_id,search_expires_at,request_expires_at,offered_driver_ids,candidate_driver_ids")
+        .eq("id", rideId).maybeSingle();
+      if (rideError) { result.deferred++; continue; }
+      if (!ride || ride.status !== "procurar_motorista" || ride.driver_id
+        || ride.accepted_driver_id || ride.queued_after_ride_id) {
+        result.skipped++; continue;
       }
-      const now=Date.now();
-      if(ride.search_expires_at && new Date(ride.search_expires_at).getTime()<=now){
-        result.skipped++;continue;
+      if (ride.search_expires_at && new Date(ride.search_expires_at).getTime() <= scanNowMs) {
+        result.skipped++; continue;
       }
-      const offerUntil=ride.request_expires_at?new Date(ride.request_expires_at).getTime():0;
-      if(Array.isArray(ride.offered_driver_ids)&&ride.offered_driver_ids.length>0&&offerUntil>now){
-        result.skipped++;continue;
+      const offerUntil = ride.request_expires_at
+        ? new Date(ride.request_expires_at).getTime() : 0;
+      if (Array.isArray(ride.offered_driver_ids)
+        && ride.offered_driver_ids.length > 0 && offerUntil > scanNowMs) {
+        result.skipped++; continue;
       }
-      // Released queue rebuilds candidate pool; ordinary cancellation keeps
-      // the remaining pool. Dispatch itself checks eligibility and CAS.
-      const mode=event.action==="ride.queued_released_ineligible_driver"?"initial":"redispatch";
-      try{
-        const response=await fetch(URL+"/functions/v1/dispatch-ride",{
-          method:"POST",
-          headers:{Authorization:"Bearer "+SERVICE,apikey:SERVICE,"content-type":"application/json"},
-          body:JSON.stringify({ride_id:rideId,mode}),
+
+      // Rebuilding from scratch is allowed only after the remaining pool is
+      // exhausted; rejected/offered drivers remain excluded by dispatch-engine.
+      const hasRemainingCandidates = Array.isArray(ride.candidate_driver_ids)
+        && ride.candidate_driver_ids.length > 0;
+      const mode = candidate.action === "ride.queued_released_ineligible_driver"
+        || !hasRemainingCandidates ? "initial" : "redispatch";
+      attempts++;
+      try {
+        const response = await fetch(URL + "/functions/v1/dispatch-ride", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + SERVICE,
+            apikey: SERVICE,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ ride_id: rideId, mode }),
         });
-        const payload=await response.json().catch(()=>({})) as {ok?:boolean};
-        if(response.ok&&payload.ok===true)result.retried++;
+        const payload = await response.json().catch(() => ({})) as { ok?: boolean };
+        if (response.ok && payload.ok === true) result.retried++;
         else result.deferred++;
-      }catch{result.deferred++;}
+      } catch { result.deferred++; }
     }
-    // A 6h/200 cap is intentional; report it as limited, never as full scan.
+    // Bounded scan and bounded dispatch attempts; report caps as partial coverage.
     return json(req,{ok:true,...result,recovery:"bounded_audit_replay"});
   }catch(error){
     console.error("[APOIS redispatch recovery] internal",error instanceof Error?error.name:"unknown");
