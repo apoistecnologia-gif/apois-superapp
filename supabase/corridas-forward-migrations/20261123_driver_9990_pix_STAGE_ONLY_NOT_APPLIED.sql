@@ -52,6 +52,17 @@ ALTER TABLE public.driver_membership_charges ADD CONSTRAINT driver_membership_ch
  CHECK (provider IN ('asaas','mercadopago'));
 ALTER TABLE public.driver_membership_charges ALTER COLUMN provider SET NOT NULL;
 
+-- Concurrent checkout requests MUST NOT create two open Pix invoices.
+-- Never discard old payments; finalized/reversed charges remain auditable.
+CREATE UNIQUE INDEX IF NOT EXISTS driver_membership_charges_one_open_per_driver
+ON public.driver_membership_charges(driver_id)
+WHERE status IN ('pending','confirmed');
+
+-- Preserve QR image for a safe repeated read of the SAME provider charge.
+-- QR content is served only to its authenticated driver through RLS.
+ALTER TABLE public.driver_membership_charges
+ ADD COLUMN IF NOT EXISTS pix_qr_code_base64 text;
+
 CREATE FUNCTION private.apois_guard_new_driver_membership_fee_9990()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $body$
