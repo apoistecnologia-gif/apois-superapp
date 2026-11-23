@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
  MONTHLY_FEE_CENTS,verifyMembershipConfiguration,centsFromBRL,createAsaasPixForCharge,
  createMercadoPagoPixForCharge,verifyProviderBankResult,nextPaidThrough,
- authenticateAsaasWebhook,authenticateMercadoPagoWebhook,fetchVerifiedBankPaymentForCharge
+ authenticateAsaasWebhook,authenticateMercadoPagoWebhook,fetchVerifiedBankPaymentForCharge,
+ recoverReservedPixForCharge
 } from '../../supabase/functions/_shared/apois-driver-membership-pix-v2.mjs';
 const chargeId='11111111-1111-4111-8111-111111111111';
 const driverId='22222222-2222-4222-8222-222222222222';
@@ -209,4 +210,69 @@ test('Asaas refuses ambiguous reconciliation, without POST charge duplication',a
   })};}
  }),/duplicate_reference/);
  assert.equal(count,1);
+});
+
+
+test('recovers Asaas reserved Pix by reference and never repeats bank POST',async()=>{
+ const reserve={...mkCharge('asaas'),providerPaymentId:'reservation:'+chargeId};
+ const requested=[];
+ const result=await recoverReservedPixForCharge({
+  charge:reserve,accessToken:'test-asaas-recovery-token',
+  env:{ASAAS_API_BASE_URL:'https://api-sandbox.asaas.com/v3'},
+  request:async(url,opts)=>{
+   requested.push({url,method:opts.method});
+   const payload=url.includes('?externalReference=')
+     ?{data:[{id:'pay_verified123',externalReference:chargeId}],hasMore:false}
+     :url.endsWith('/pixQrCode')
+       ?{payload:'000201PIX-COPIA-E-COLA-RECUPERADO',encodedImage:'QR'}
+       :{id:'pay_verified123',externalReference:chargeId,value:99.9,billingType:'PIX',status:'PENDING'};
+   return {ok:true,json:async()=>payload};
+  }
+ });
+ assert.equal(result.found,true);
+ assert.equal(result.providerPaymentId,'pay_verified123');
+ assert.equal(result.pixPayload,'000201PIX-COPIA-E-COLA-RECUPERADO');
+ assert.equal(result.alreadyBankApproved,false);
+ assert.equal(requested.length,3);
+ assert.ok(requested.every(call=>call.method==='GET'));
+});
+test('recovers MP reserved Pix without issuing a second payment',async()=>{
+ const reserve={...mkCharge('mercadopago'),providerPaymentId:'reservation:'+chargeId};
+ const requested=[];
+ const result=await recoverReservedPixForCharge({
+  charge:reserve,accessToken:'test-mp-recovery-token',
+  request:async(url,opts)=>{
+   requested.push({url,method:opts.method});
+   return {ok:true,json:async()=>url.includes('/search?')
+    ?{results:[{id:9999888777,external_reference:chargeId}],paging:{total:1}}
+    :{id:9999888777,external_reference:chargeId,transaction_amount:99.9,
+      payment_method_id:'pix',status:'approved',
+      point_of_interaction:{transaction_data:{qr_code:'000201MP-RECOVERED'}}}};
+  }
+ });
+ assert.equal(result.found,true);
+ assert.equal(result.providerPaymentId,'9999888777');
+ assert.equal(result.alreadyBankApproved,true);
+ assert.equal(result.pixPayload,'000201MP-RECOVERED');
+ assert.ok(requested.every(call=>call.method==='GET'));
+});
+test('bank reconciliation fails closed on multiple, mismatched, and inconclusive results',async()=>{
+ const args={charge:{...mkCharge('asaas'),providerPaymentId:'reservation:'+chargeId},
+   accessToken:'test-asaas-recovery-token',
+   env:{ASAAS_API_BASE_URL:'https://api-sandbox.asaas.com/v3'}};
+ await assert.rejects(()=>recoverReservedPixForCharge({...args,
+  request:async()=>({ok:true,json:async()=>({data:[],hasMore:true})})
+ }),/inconclusive/);
+ await assert.rejects(()=>recoverReservedPixForCharge({...args,
+  request:async()=>({ok:true,json:async()=>({data:[
+   {id:'pay_first',externalReference:chargeId},
+   {id:'pay_second',externalReference:chargeId}
+  ],hasMore:false})})
+ }),/multiple_bank_payments/);
+ await assert.rejects(()=>recoverReservedPixForCharge({...args,
+  request:async(url)=>({ok:true,json:async()=>url.includes('?externalReference=')
+   ?{data:[{id:'pay_first',externalReference:chargeId}],hasMore:false}
+   :{id:'pay_first',externalReference:driverId,value:99.9,
+    billingType:'PIX',status:'PENDING'}})
+ }),/does_not_match_driver_charge/);
 });
