@@ -54,7 +54,7 @@ let premium=docs.get('premium');
         <p className="text-[10px] font-medium leading-tight text-[#4C5963]">{activeJob && online ? "Conclua a entrega antes de ficar offline" : online ? "Pronto para receber entregas" : "Ative para receber entregas"}</p>
       </div>
       <button data-apois-courier-availability-toggle type="button" role="switch"
-        aria-checked={online} aria-pressed={online}
+        aria-checked={online} aria-pressed={online} aria-busy={busy || undefined}
         aria-label={online ? "Ficar offline" : "Ficar online"}
         disabled={busy || Boolean(activeJob && online)} onClick={onToggle}
         className={"relative h-9 w-[66px] min-h-9 shrink-0 rounded-full border transition-colors disabled:opacity-50 "+(online ? "border-[#08A63B] bg-[#08A63B]" : "border-[#B8C0C8] bg-[#D6DCE2]")}>

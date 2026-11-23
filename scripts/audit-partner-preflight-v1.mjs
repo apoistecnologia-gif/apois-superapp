@@ -191,7 +191,7 @@ if(process.argv.includes("--dist")){
   check(!courierLiveMap.includes("<AdvancedMarker"),"Courier home replaces advanced markers incompatible with styled classic map");
   all(courierOnlineToggle,["APOIS_COURIER_FAST_ONLINE_V4","Date.now() - currentPosition.recordedAt <= 20_000","accuracy <= 100","rpc(\"bootstrap_courier_location\"","rpc(\"set_courier_online\"","backgroundStarted = await startCourierNativeLocation();","ensureCourierPushRegistration(true)","setAvailability((previous: any) => ({ ...(previous ?? {}), is_online: true }))","setAvailability((previous: any) => ({ ...(previous ?? {}), is_online: false }))","void loadCourierOperations(courier.id).catch"],"Online activation is server-confirmed, non-blocking after validation and uses recent GPS safely");
   check(!courierOnlineToggle.includes("await loadCourierOperations(courier.id);"),"Online button does not await unrelated metrics, history, wallet and merchant queries");
-  all(courierStatusCard,["relative h-11 w-[3.7rem]","absolute top-1.5 grid h-8 w-8","aria-busy={busy || undefined}","aria-pressed={online}"],"Courier online switch compact and accessible without loss of controls");
+  all(courierStatusCard,["data-apois-courier-premium-status-v2","data-apois-availability-state-v2","role=\"switch\"","aria-checked={online}","aria-busy={busy || undefined}","aria-pressed={online}","disabled={busy || Boolean(activeJob && online)}","onClick={onToggle}"],"Courier online switch remains compact and accessible while preserving native online/offline lock");
 
   check((courierPatched.match(/<CourierStatusCard\b/g)||[]).length===1,"One online availability control in courier home");
   all(mapPatched,["h-[clamp(235px,36dvh,375px)]"],"Idle courier map uses responsive height fitting Android viewport");

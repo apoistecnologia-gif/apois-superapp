@@ -83,7 +83,7 @@ test('a live map dominates idle view; the same switch, GPS and request handlers 
  for(const required of ['data-apois-courier-map-first-root-v2','data-apois-courier-map-first-v2={!activeJob && !completedJob && offers.length === 0}',
   'data-apois-premium-courier-summary','data-apois-courier-calls-card-v2','onClick={()=>setAvailableCallsOpen(true)}',
   '<CourierOfferCard', '<CourierRouteMap', '<CourierCompletionSheet','APOIS_PARTNER_LOGO_DATA_URL'])assert.ok(route.includes(required),required);
- for(const required of ['data-apois-courier-premium-status-v2','role="switch"','aria-checked={online}',
+ for(const required of ['data-apois-courier-premium-status-v2','role="switch"','aria-checked={online}','aria-busy={busy || undefined}',
   'disabled={busy || Boolean(activeJob && online)} onClick={onToggle}','Ficar offline'])assert.ok(premium.includes(required),required);
  assert.ok(map.includes('<Map center={currentPosition}>'));
  assert.ok(map.includes('<RecenterControl'));
