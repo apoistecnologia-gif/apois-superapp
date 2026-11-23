@@ -31,10 +31,9 @@ const importToken = '  CourierWaitingSheet,\n';
 assertOnce(page, importToken, 'premium finance formatting import');
 page = page.replace(importToken,
   importToken + '  courierMoney,\n  formatCourierOnlineTime,\n');
-const iconsToken = 'import { Loader2, RefreshCw, UserRound, XCircle } from "lucide-react";';
-assertOnce(page, iconsToken, 'original icons import');
-page = page.replace(iconsToken, iconsToken +
-  '\nimport { PackageCheck as ApoisPremiumPackage, WalletCards as ApoisPremiumWallet, Clock3 as ApoisPremiumClock } from "lucide-react";');
+// The generated Courier icon import may be expanded by earlier QA patches.
+// Distinct aliases avoid collisions without depending on that import's text.
+page = 'import { PackageCheck as ApoisPremiumPackage, WalletCards as ApoisPremiumWallet, Clock3 as ApoisPremiumClock } from "lucide-react";\n' + page;
 
 const mainStart = page.indexOf('<main data-apois-courier-map-home');
 if (mainStart < 0 || page.indexOf('<main data-apois-courier-map-home', mainStart + 1) >= 0)
