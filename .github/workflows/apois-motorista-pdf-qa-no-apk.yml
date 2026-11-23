@@ -17,6 +17,9 @@ on:
       - 'scripts/qa/test-partner-motorista-premium-home-v1.test.mjs'
       - 'scripts/apply-partner-courier-premium-home-v1.mjs'
       - 'scripts/qa/test-partner-courier-premium-home-v1.test.mjs'
+      - 'superapp/partner-shell/index.html'
+      - 'scripts/audit-shell-branding-v21.mjs'
+      - 'scripts/audit-partner-red-visual-v16.mjs'
   workflow_dispatch:
 
 permissions:
@@ -73,11 +76,13 @@ jobs:
           node --test scripts/qa/test-partner-courier-premium-home-v1.test.mjs
           node --test scripts/qa/test-partner-motorista-premium-home-v1.test.mjs
           npm run verify:pins
+          npm run audit:partner
+          npm run audit:ui
       - name: Web-only build and PDF regressions (NO APK)
         run: |
           set -euo pipefail
-          # Test web builder directly: the global audit:ui gate rejects
-          # even baseline QA workflows; do not loosen its production policy.
+          # Build the exact shared Partner release web modules, without Gradle/APK.
+          # Audits run above before any transformations.
           bash scripts/build-partner-release.sh
           grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-premium-driver-header' .work/partner-motorista/src/routes/motorista.app.tsx
@@ -91,8 +96,33 @@ jobs:
           grep -Fq 'driverCameraHistory.delete(map)' .work/partner-motorista/src/routes/motorista.app.tsx
           test -s superapp/partner-shell/dist/modules/motorista/index.html
           test -s superapp/partner-shell/dist/modules/entregador/index.html
+          grep -Fq -- '--red:#F51D2A' superapp/partner-shell/dist/index.html
+          grep -Fq -- '--red-dark:#BB071D' superapp/partner-shell/dist/index.html
+          grep -Fq 'VAMOS JUNTOS.' superapp/partner-shell/dist/index.html
           if find . -type f -name '*.apk' -print -quit | grep -q .; then
             echo "::error::Proibido criar APK nesta homologação"
             exit 1
           fi
           echo "[OK] JS/CSS, fluxos motoristas e integração web compilados, sem APK"
+
+      - name: Prepare isolated Chromium screenshot QA
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/apois-browser-qa" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.62.1
+          "$RUNNER_TEMP/apois-browser-qa/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Verify anonymous selector and both login screens, no backend
+        env:
+          APOIS_PLAYWRIGHT_ROOT: ${{ runner.temp }}/apois-browser-qa
+        run: |
+          set -euo pipefail
+          node scripts/audit-browser-public-v1.mjs parceiro
+
+      - name: Preserve visual QA captures
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: apois-premium-parceiro-web-captures-${{ github.sha }}
+          path: qa-browser/parceiro/
+          if-no-files-found: warn
+          retention-days: 7
