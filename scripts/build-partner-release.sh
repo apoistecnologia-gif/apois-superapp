@@ -369,6 +369,8 @@ node --test "$ROOT/scripts/qa/test-partner-qa280-active-gps-recovery-v1.test.mjs
 # Sem alterar GPS, backend, PIN, corridas, pagamentos ou projetos de origem.
 node "$ROOT/scripts/apply-partner-motorista-premium-home-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-motorista-premium-home-v1.test.mjs"
+# Final approved PDF screens: offer, active ride, real finance, history and profile.
+APOIS_MOTORISTA_WORKSPACE="$MOTORISTA" node "$ROOT/scripts/apply-partner-premium-all-screens-v1.mjs" motorista
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
@@ -493,6 +495,8 @@ node --test "$ROOT/scripts/qa/test-partner-qa277-courier-overlay-autonav.test.mj
 # Visual aprovado: somente no workspace efemero do Entregador apos os patches de jornada.
 node "$ROOT/scripts/apply-partner-courier-premium-home-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-courier-premium-home-v1.test.mjs"
+# Final approved PDF screens: incoming order, live delivery, confirmation, earnings, history, profile.
+APOIS_ENTREGAS_WORKSPACE="$ENTREGADOR" node "$ROOT/scripts/apply-partner-premium-all-screens-v1.mjs" entregador
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
