@@ -583,5 +583,7 @@ test -s superapp/partner-shell/dist/index.html
 test -s superapp/partner-shell/dist/modules/motorista/index.html
 test -s superapp/partner-shell/dist/modules/entregador/index.html
 grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
+# QA285: exercise the actual motor/courier buttons from SOURCE and FINAL APK shell.
+node --test "$ROOT/scripts/qa/test-partner-qa285-role-selection-v1.test.mjs" --dist
 
 echo '[OK] APOIS Parceiro release build concluído sem gateway eletrônico ativo.'
