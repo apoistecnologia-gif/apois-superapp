@@ -2,9 +2,6 @@ name: APOIS Corridas-only Motorista QA APK
 # Preserves full Partner workflow in its original file; no public deploy.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feature/apois-corridas-only-mensalidade-9990-20261123
 
 permissions:
   contents: read
