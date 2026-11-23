@@ -64,7 +64,7 @@ p=once(p,'    private static final String GPS_STARTUP_PREFS',
  ].join("\n"),"native permission bridge");
 
 p=once(p,'                JSObject response = new JSObject();',
- '                APOISReturnBubble.externalNavigationLaunched();\n'+
+ '                APOISReturnBubble.externalNavigationLaunched(getContext());\n'+
  '                JSObject response = new JSObject();',
  "track only actual launched external navigation");
 p=once(p,'                call.reject("Não foi possível abrir a navegação externa. Confira os aplicativos instalados.", error);',
@@ -89,7 +89,7 @@ if(!xml.includes('android.permission.SYSTEM_ALERT_WINDOW')){
 for(const s of ["APOISReturnBubble.show","APOISReturnBubble.externalNavigationClosed","registerPlugin(APOISExternalNavigationPlugin.class)"]){
  if(!main.includes(s))throw Error("[FAIL] QA240 MainActivity lost "+s);
 }
-for(const s of ["bubbleStatus(","requestBubblePermission(","externalNavigationLaunched()","APOISReturnBubble.active(","sendBroadcast(update)"]){
+for(const s of ["bubbleStatus(","requestBubblePermission(","externalNavigationLaunched(getContext())","APOISReturnBubble.active(","sendBroadcast(update)"]){
  if(!p.includes(s))throw Error("[FAIL] QA240 plugin lost "+s);
 }
 writeFileSync(activity,main,"utf8");writeFileSync(plugin,p,"utf8");writeFileSync(manifest,xml,"utf8");
