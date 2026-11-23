@@ -411,6 +411,8 @@ forbid_bundle 'asaas-create-driver' dist/client 'Motorista sem provisionamento A
 forbid_bundle 'Aguardando pagamento do passageiro' dist/client 'Motorista sem estado Pix legado'
 forbid_bundle 'Solicitar saque' dist/client 'Motorista sem saque custodial legado'
 
+# ---------------- Entregador (preserved and compiled only in full-mode) ----------------
+if [ "${APOIS_LAUNCH_MODE:-corridas_only}" = "full" ]; then
 # ---------------- Entregador ----------------
 # Motorista-only Map ID must not enter the Vite/Nitro environment of Entregador.
 # Vite can embed all VITE_ variables in its import.meta.env runtime object.
@@ -585,13 +587,21 @@ if (html.includes('"/assets/') || html.includes("'/assets/")) throw new Error('E
 writeFileSync(path, html, 'utf8');
 NODE
 
+fi  # Full mode courier-only operations remain intact for future authorized reactivation.
+
 cd "$ROOT"
 node superapp/partner-shell/build.mjs
 test -s superapp/partner-shell/dist/index.html
 test -s superapp/partner-shell/dist/modules/motorista/index.html
-test -s superapp/partner-shell/dist/modules/entregador/index.html
-grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
-# QA285: exercise the actual motor/courier buttons from SOURCE and FINAL APK shell.
-node --test "$ROOT/scripts/qa/test-partner-qa285-role-selection-v1.test.mjs" --dist
+if [ "${APOIS_LAUNCH_MODE:-corridas_only}" = "corridas_only" ]; then
+  test ! -e superapp/partner-shell/dist/modules/entregador
+  grep -Fq 'APOIS_CORRIDAS_ONLY_PARTNER_BOOT_V1' superapp/partner-shell/dist/index.html
+  node --test "$ROOT/scripts/qa/test-corridas-only-launch-v1.test.mjs" --partner
+else
+  test -s superapp/partner-shell/dist/modules/entregador/index.html
+  grep -Fq 'apois-parceiro:pending-push' superapp/partner-shell/dist/index.html
+  # Legacy full-mode verification stays intact when a future release enables it.
+  node --test "$ROOT/scripts/qa/test-partner-qa285-role-selection-v1.test.mjs" --dist
+fi
 
 echo '[OK] APOIS Parceiro release build concluído sem gateway eletrônico ativo.'
