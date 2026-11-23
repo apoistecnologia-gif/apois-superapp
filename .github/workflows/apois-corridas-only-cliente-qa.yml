@@ -235,7 +235,8 @@ jobs:
           grep -Fq 'registerPlugin(APOISNativeGeocoderPlugin.class)' superapp/shell/android/app/src/main/java/br/com/apois/app/MainActivity.java
           grep -Fq 'APOIS_NATIVE_GEOCODER_RECOVERY_V1' .work/corridas/src/hooks/use-pickup-address.tsx
           echo '[OK] Android Cliente: fallback nativo de endereco instalado e registrado'
-          node scripts/qa/verify-apois-mobile-viewport-v1.mjs cliente --native
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --client
+          # The legacy viewport verifier expects the preserved Entregas module; public APK must not include it.
           MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
           echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
