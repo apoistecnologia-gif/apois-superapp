@@ -8,6 +8,7 @@ import { auditProductionReadiness } from "../audit-apois-production-readiness-v1
 function observedInventory() {
   return {
     checkedAt: "2026-11-23",
+    qa: { partnerAndroidE2EPassed: false, passengerAndroidE2EPassed: false },
     projects: {
       corridas: {
         edgeFunctions: ["request-ride", "cancel-ride", "send-ride-push",
@@ -18,6 +19,8 @@ function observedInventory() {
           finishQueueContinuationDeployed: false,
           redispatchRecoveryScheduleActive: false,
           noShowReasonCodeContractActive: false,
+          dispatchSelfOfferAndGpsGuardsDeployed: false,
+          requestRidePriceConfirmationDeployed: false,
           safe2payAtomicWebhookDeployed: false,
         },
       },
@@ -48,6 +51,10 @@ test("Observed production rejects incomplete ride orchestration and financial pr
     ["motorista", "edge_missing", "driver-redispatch-recovery"],
     ["motorista", "deployed_finish_missing_queue_continuation", null],
     ["motorista", "recovery_schedule_unverified", null],
+    ["motorista", "dispatch_candidate_guards_unverified", null],
+    ["passageiro", "price_confirmation_guard_unverified", null],
+    ["homologacao_parceiro", "android_partner_e2e_unverified", null],
+    ["homologacao_passageiro", "android_passenger_e2e_unverified", null],
     ["financeiro", "atomic_webhook_rpc_missing", "corridas"],
     ["financeiro", "atomic_webhook_rpc_missing", "entregas"],
     ["seguranca", "push_lockscreen_privacy_unverified", null],
@@ -69,7 +76,11 @@ test("Synthetic fully deployed environment clears each independent release gate"
   rides.checks.finishQueueContinuationDeployed = true;
   rides.checks.redispatchRecoveryScheduleActive = true;
   rides.checks.noShowReasonCodeContractActive = true;
+  rides.checks.dispatchSelfOfferAndGpsGuardsDeployed = true;
+  rides.checks.requestRidePriceConfirmationDeployed = true;
   rides.checks.safe2payAtomicWebhookDeployed = true;
+  ready.qa.partnerAndroidE2EPassed = true;
+  ready.qa.passengerAndroidE2EPassed = true;
   const orders = ready.projects.entregas;
   orders.rpcFunctions.push("apois_safe2pay_apply_event_atomic");
   orders.checks.safe2payAtomicWebhookDeployed = true;

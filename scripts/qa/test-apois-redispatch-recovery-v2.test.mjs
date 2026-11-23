@@ -26,6 +26,7 @@ function createRecoveryHarness({ events = [], stale = [], rides = {}, dispatch =
         gte(...a) { ops.push(["gte", ...a]); return this; },
         lte(...a) { ops.push(["lte", ...a]); return this; },
         gt(...a) { ops.push(["gt", ...a]); return this; },
+        or(...a) { ops.push(["or", ...a]); return this; },
         is(...a) { ops.push(["is", ...a]); return this; },
         order(...a) { ops.push(["order", ...a]); return this; },
         limit(num) {
@@ -71,6 +72,7 @@ const request = (auth = "Bearer service-test") => new Request("https://supabase.
 });
 const pending = (extra = {}) => ({
   status: "procurar_motorista", driver_id: null, accepted_driver_id: null,
+  created_at: new Date(Date.now() - 30_000).toISOString(),
   queued_after_ride_id: null, search_expires_at: new Date(Date.now() + 90_000).toISOString(),
   request_expires_at: new Date(Date.now() - 20_000).toISOString(),
   offered_driver_ids: [], candidate_driver_ids: [], ...extra,
@@ -89,9 +91,35 @@ test("Reject without audit event is recovered through bounded stale-search scan"
     ["eq", "status", "procurar_motorista"], ["is", "driver_id", null],
     ["is", "accepted_driver_id", null], ["is", "queued_after_ride_id", null],
   ]) assert.ok(staleRead.ops.some((op) => op.every((v, i) => v === predicate[i])), "Missing " + predicate);
-  assert.ok(staleRead.ops.some((op) => op[0] === "lte" && op[1] === "request_expires_at"));
+  assert.ok(staleRead.ops.some((op) => op[0] === "or" && op[1].includes("request_expires_at.is.null")));
+  assert.ok(staleRead.ops.some((op) => op[0] === "or" && op[1].includes("request_expires_at.lte.")));
+  assert.ok(staleRead.ops.some((op) => op[0] === "lte" && op[1] === "created_at"));
   assert.ok(staleRead.ops.some((op) => op[0] === "gt" && op[1] === "search_expires_at"));
   assert.ok(staleRead.limit <= 100);
+});
+
+test("Committed initial ride with NULL offer expiry recovers after creation grace", async () => {
+  const h = createRecoveryHarness({
+    stale: [{ id: R1 }],
+    rides: { [R1]: pending({ request_expires_at: null, offered_driver_ids: [] }) },
+  });
+  const body = await (await h.handler(request())).json();
+  assert.equal(body.retried, 1);
+  assert.deepEqual(h.dispatched.map(d => d.body), [{ ride_id: R1, mode: "initial" }]);
+});
+
+test("Brand-new ride is never redispatched while its initial dispatcher can be running", async () => {
+  const h = createRecoveryHarness({
+    stale: [{ id: R1 }],
+    rides: { [R1]: pending({
+      request_expires_at: null,
+      created_at: new Date(Date.now() - 3_000).toISOString(),
+    }) },
+  });
+  const body = await (await h.handler(request())).json();
+  assert.equal(body.skipped, 1);
+  assert.equal(body.retried, 0);
+  assert.equal(h.dispatched.length, 0);
 });
 
 test("Cancellation or release audited events: dedupe, correct pool mode and skip assigned queue", async () => {

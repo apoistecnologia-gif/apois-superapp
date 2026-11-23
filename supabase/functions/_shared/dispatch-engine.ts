@@ -22,6 +22,7 @@ export type DispatchActiveRide = {
 
 export type DispatchRide = {
   id: string;
+  passenger_id: string;
   category: string;
   origin_lat: number;
   origin_lng: number;
@@ -58,8 +59,15 @@ export type DispatchOptions = {
 };
 
 function finite(value: unknown): number | null {
+  // Number(null), Number("") and Number(" ") are all 0: those are NOT GPS fixes.
+  if (value === null || value === undefined || (typeof value === "string" && !value.trim())) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function validGeoPoint(lat: number | null, lng: number | null): boolean {
+  return lat !== null && lng !== null && lat >= -90 && lat <= 90
+    && lng >= -180 && lng <= 180 && !(lat === 0 && lng === 0);
 }
 
 export function haversineKm(
@@ -92,11 +100,14 @@ export function findEligibleDriversForRide(args: {
   const maxOffers = Math.max(1, options.maxOffers ?? 5);
   const nextRideRadiusKm = Math.max(0.5, Math.min(options.nextRideRadiusKm ?? 5, 20));
   const category = normalizeRideCategory(ride.category);
-  if (!category) return { eligible: [], offeredUserIds: [], remainingCandidateUserIds: [] };
+  const passengerId = String(ride.passenger_id ?? "").trim();
+  // Passenger and driver IDs share public.users.id. No self-dispatch even if
+  // the caller is registered in both apps, and fail closed on absent identity.
+  if (!category || !passengerId) return { eligible: [], offeredUserIds: [], remainingCandidateUserIds: [] };
 
   const originLat = finite(ride.origin_lat);
   const originLng = finite(ride.origin_lng);
-  if (originLat == null || originLng == null) {
+  if (originLat === null || originLng === null || !validGeoPoint(originLat, originLng)) {
     return { eligible: [], offeredUserIds: [], remainingCandidateUserIds: [] };
   }
 
@@ -113,7 +124,7 @@ export function findEligibleDriversForRide(args: {
   for (const driver of drivers) {
     const driverId = String(driver.id ?? "");
     const userId = String(driver.user_id ?? "");
-    if (!driverId || !userId) continue;
+    if (!driverId || !userId || userId === passengerId) continue;
     if (rejected.has(userId) || currentlyOffered.has(userId)) continue;
     if (remainingPool && !remainingPool.has(userId)) continue;
     if (driver.is_online !== true) continue;
@@ -135,7 +146,7 @@ export function findEligibleDriversForRide(args: {
       if (queued.has(driverId)) continue;
       const destinationLat = finite(currentRide.destination_lat);
       const destinationLng = finite(currentRide.destination_lng);
-      if (destinationLat == null || destinationLng == null) continue;
+      if (destinationLat === null || destinationLng === null || !validGeoPoint(destinationLat, destinationLng)) continue;
       const distanceKm = haversineKm(
         { lat: originLat, lng: originLng },
         { lat: destinationLat, lng: destinationLng },
@@ -148,7 +159,7 @@ export function findEligibleDriversForRide(args: {
 
     const lat = finite(driver.current_lat);
     const lng = finite(driver.current_lng);
-    if (lat == null || lng == null) continue;
+    if (lat === null || lng === null || !validGeoPoint(lat, lng)) continue;
     eligible.push({
       driverId,
       userId,

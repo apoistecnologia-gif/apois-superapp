@@ -51,9 +51,12 @@ Deno.serve(async(req:Request)=>{
       .is("driver_id", null)
       .is("accepted_driver_id", null)
       .is("queued_after_ride_id", null)
-      .lte("request_expires_at", staleBefore)
+      // request-ride can commit the ride before its initial offer is saved.
+      // Include null request_expires_at after a short creation grace period.
+      .or("request_expires_at.is.null,request_expires_at.lte." + staleBefore)
       .gt("search_expires_at", nowIso)
       .gte("created_at", since)
+      .lte("created_at", staleBefore)
       .order("request_expires_at", { ascending: true })
       .limit(MAX_STALE_RIDES);
     if (staleError) return json(req, { ok: false, error: "stale_lookup_failed" }, 500);
@@ -89,11 +92,15 @@ Deno.serve(async(req:Request)=>{
       seen.add(rideId);
       result.checked++;
       const { data: ride, error: rideError } = await admin.from("rides")
-        .select("status,driver_id,accepted_driver_id,queued_after_ride_id,search_expires_at,request_expires_at,offered_driver_ids,candidate_driver_ids")
+        .select("status,driver_id,accepted_driver_id,queued_after_ride_id,search_expires_at,request_expires_at,offered_driver_ids,candidate_driver_ids,created_at")
         .eq("id", rideId).maybeSingle();
       if (rideError) { result.deferred++; continue; }
       if (!ride || ride.status !== "procurar_motorista" || ride.driver_id
         || ride.accepted_driver_id || ride.queued_after_ride_id) {
+        result.skipped++; continue;
+      }
+      const createdAtMs = ride.created_at ? new Date(ride.created_at).getTime() : Number.NaN;
+      if (!Number.isFinite(createdAtMs) || createdAtMs > scanNowMs - 10_000) {
         result.skipped++; continue;
       }
       if (ride.search_expires_at && new Date(ride.search_expires_at).getTime() <= scanNowMs) {
