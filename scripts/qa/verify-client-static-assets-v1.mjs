@@ -5,8 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { verifyMobileBundleAssets } from './verify-partner-static-assets-v1.mjs';
 
 const entries=['index.html','modules/corridas/index.html','modules/entregas/index.html'];
-export function verifyClientBundleAssets(root='superapp/shell/dist'){
- return verifyMobileBundleAssets(root,entries,'Cliente');
+export function verifyClientBundleAssets(root='superapp/shell/dist',modules=['corridas','entregas']){
+ if(!modules.length||modules.some(m=>!['corridas','entregas'].includes(m)))throw Error('Invalid customer module allowlist');
+ return verifyMobileBundleAssets(root,['index.html',...modules.map(m=>`modules/${m}/index.html`)],'Cliente');
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  verifyClientBundleAssets(process.argv[2]);
