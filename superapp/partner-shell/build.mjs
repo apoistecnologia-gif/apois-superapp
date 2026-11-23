@@ -189,7 +189,8 @@ forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclat
 }
 
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
-requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
+if (onlyRides) requireMarker(finalShell, 'APOIS Motorista', 'shell público inicia no Motorista');
+else requireMarker(finalShell, 'APOIS Parceiro', 'shell full mode mantém identidade Parceiro');
 if (onlyRides) {
   requireMarker(finalShell, 'APOIS_CORRIDAS_ONLY_PARTNER_BOOT_V1', 'entrada direta ao Motorista');
   requireMarker(finalShell, 'apois-parceiro:pending-push', 'notificações de corrida');
