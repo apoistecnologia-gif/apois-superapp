@@ -32,7 +32,7 @@ const card=ui.slice(a,b+'</DSCard>'.length);
 if(!card.includes('Pagamento eletrônico temporariamente indisponível') ||
    !card.includes('Nenhum gateway de cobrança está ativo'))throw Error('[FAIL] Disabled CTA drift');
 ui=ui.slice(0,a)+
-  '{APOIS_PIX_V2_UI_ENABLED ? <DriverMembershipPixV2 /> : ('+card+')}' +
+  'APOIS_PIX_V2_UI_ENABLED ? <DriverMembershipPixV2 /> : ('+card+')' +
   ui.slice(b+'</DSCard>'.length);
 const label='// '+marker+'\n';
 const constant="const APOIS_PIX_V2_UI_ENABLED = import.meta.env.VITE_APOIS_MEMBERSHIP_PIX_V2_UI === 'true';\n";
