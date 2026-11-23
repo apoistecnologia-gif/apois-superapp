@@ -165,25 +165,6 @@ patch("src/services/routes/route-service.ts", (s) => replaceOnce(s,
   "abortar HTTP rota anterior",
 ), ["signal: controller.signal"]);
 
-patch("src/hooks/use-location.tsx", (s) => {
-  s = replaceOnce(s,
-    "  useEffect(() => {\n    mountedRef.current = true;",
-    "  useEffect(() => {\n    let disposed = false;\n    mountedRef.current = true;",
-    "lifecycle GPS");
-  s = replaceOnce(s,
-    "watchIdRef.current = await Geolocation.watchPosition(",
-    "const pendingWatchId = await Geolocation.watchPosition(",
-    "registrar GPS após await");
-  s = replaceOnce(s,
-    "        );\n      } catch (watchError) {",
-    '        );\n        if (disposed) {\n          await Geolocation.clearWatch({ id: pendingWatchId });\n        } else {\n          watchIdRef.current = pendingWatchId;\n        }\n      } catch (watchError) {',
-    "watch criado depois do unmount");
-  s = replaceOnce(s,
-    "    return () => {\n      mountedRef.current = false;",
-    "    return () => {\n      disposed = true;\n      mountedRef.current = false;",
-    "cleanup evita watcher tardio");
-  return s;
-}, ["let disposed = false;", "pendingWatchId", "disposed = true"]);
 
 const timeoutPath = resolve(workspace, "src/hooks/rides/use-ride-request.tsx");
 {
