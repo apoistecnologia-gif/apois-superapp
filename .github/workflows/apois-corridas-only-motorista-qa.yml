@@ -192,7 +192,8 @@ jobs:
           node --test scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs
           node scripts/strip-generated-courier-native-v1.mjs
           node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --native
-          node scripts/qa/verify-apois-mobile-viewport-v1.mjs parceiro --native
+          # Legacy viewport verifier intentionally requires isolated Entregador; use only-mode gate.
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --partner --native
           MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
           grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
           grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
