@@ -32,6 +32,9 @@ on:
       - 'supabase/corridas-forward-migrations/20261123_redispatch_recovery_cron_v1.sql'
       - 'scripts/qa/sql/apois-redispatch-cron-fixture-v1.sql'
       - 'scripts/qa/sql/apois-redispatch-cron-assertions-v1.sql'
+      - 'supabase/corridas-forward-migrations/20261109_report07_no_show_reason_code_QA_NOT_APPLIED.sql'
+      - 'scripts/qa/sql/apois-no-show-fixture-v1.sql'
+      - 'scripts/qa/sql/apois-no-show-assertions-v1.sql'
       - 'supabase/functions/_shared/dispatch-engine.ts'
       - 'docs/auditorias/apois-parte6-integridade-despacho-20261123.md'
       - 'docs/auditorias/apois-parte4-paridade-producao-20261123.md'
@@ -121,6 +124,10 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f scripts/qa/sql/apois-redispatch-cron-fixture-v1.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/corridas-forward-migrations/20261123_redispatch_recovery_cron_v1.sql
           psql -X -v ON_ERROR_STOP=1 -f scripts/qa/sql/apois-redispatch-cron-assertions-v1.sql
+          psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE apois_no_show_qa'
+          PGDATABASE=apois_no_show_qa psql -X -v ON_ERROR_STOP=1 -f scripts/qa/sql/apois-no-show-fixture-v1.sql
+          PGDATABASE=apois_no_show_qa psql -X -v ON_ERROR_STOP=1 -f supabase/corridas-forward-migrations/20261109_report07_no_show_reason_code_QA_NOT_APPLIED.sql
+          PGDATABASE=apois_no_show_qa psql -X -v ON_ERROR_STOP=1 -f scripts/qa/sql/apois-no-show-assertions-v1.sql
       - name: Build isolated Partner web apps with full existing regression suite
         shell: bash
         run: |
