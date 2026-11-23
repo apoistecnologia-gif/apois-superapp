@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
  MONTHLY_FEE_CENTS,verifyMembershipConfiguration,centsFromBRL,createAsaasPixForCharge,
- createMercadoPagoPixForCharge,verifyProviderBankResult,nextPaidThrough
+ createMercadoPagoPixForCharge,verifyProviderBankResult,nextPaidThrough,
+ authenticateAsaasWebhook,authenticateMercadoPagoWebhook
 } from '../../supabase/functions/_shared/apois-driver-membership-pix-v2.mjs';
 const chargeId='11111111-1111-4111-8111-111111111111';
 const driverId='22222222-2222-4222-8222-222222222222';
@@ -88,4 +89,32 @@ test('Early renewal preserves paid time and calendar-month edge',()=>{
  assert.equal(nextPaidThrough('2026-12-15T12:00:00.000Z','2026-11-23T12:00:00.000Z'),'2027-01-15T12:00:00.000Z');
  assert.equal(nextPaidThrough(null,'2026-01-31T10:00:00.000Z'),'2026-02-28T10:00:00.000Z');
  assert.throws(()=>nextPaidThrough(null,'garbage'));
+});
+
+test('Asaas webhook requires independent exact shared auth token',()=>{
+ const secret='apois-asaas-webhook-test-token-2026';
+ const h=new Headers({'asaas-access-token':secret});
+ assert.equal(authenticateAsaasWebhook(h,secret),true);
+ assert.equal(authenticateAsaasWebhook(new Headers({'asaas-access-token':secret+'x'}),secret),false);
+ assert.equal(authenticateAsaasWebhook(new Headers(),secret),false);
+ assert.equal(authenticateAsaasWebhook(h,'short'),false);
+});
+test('MP HMAC prevents spoofing, tampering and old notifications',async()=>{
+ const now=Date.UTC(2026,10,23,21,38,0);
+ const ts=String(now);
+ const secret='apois-mp-webhook-test-secret-2026';
+ const rid='0d48d2bd-a28c-400e-9e99-81ab36f61998';
+ const dataId='9999888777';
+ const url='https://example.invalid/functions/v1/member-webhook?data.id='+dataId+'&type=payment';
+ const msg=`id:${dataId};request-id:${rid};ts:${ts};`;
+ const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),
+  {name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(msg));
+ const hex=Array.from(new Uint8Array(sig),x=>x.toString(16).padStart(2,'0')).join('');
+ const headers=new Headers({'x-request-id':rid,'x-signature':'ts='+ts+',v1='+hex});
+ assert.equal(await authenticateMercadoPagoWebhook({headers,url,secret,now}),true);
+ assert.equal(await authenticateMercadoPagoWebhook({headers,url:url.replace(dataId,'9999888778'),secret,now}),false);
+ assert.equal(await authenticateMercadoPagoWebhook({headers,url,secret,now:now+600000}),false);
+ assert.equal(await authenticateMercadoPagoWebhook({headers,url,secret:'wrong-signature-key-2026',now}),false);
+ assert.equal(await authenticateMercadoPagoWebhook({headers:new Headers(),url,secret,now}),false);
 });
