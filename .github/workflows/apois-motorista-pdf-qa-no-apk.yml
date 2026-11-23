@@ -15,6 +15,8 @@ on:
       - 'scripts/build-partner-release.sh'
       - 'scripts/apply-partner-motorista-premium-home-v1.mjs'
       - 'scripts/qa/test-partner-motorista-premium-home-v1.test.mjs'
+      - 'scripts/apply-partner-courier-premium-home-v1.mjs'
+      - 'scripts/qa/test-partner-courier-premium-home-v1.test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -66,6 +68,9 @@ jobs:
           node --check scripts/qa/test-partner-driver-pdf-notes-20261112-v1.test.mjs
           node --check scripts/apply-partner-motorista-premium-home-v1.mjs
           node --check scripts/qa/test-partner-motorista-premium-home-v1.test.mjs
+          node --check scripts/apply-partner-courier-premium-home-v1.mjs
+          node --check scripts/qa/test-partner-courier-premium-home-v1.test.mjs
+          node --test scripts/qa/test-partner-courier-premium-home-v1.test.mjs
           node --test scripts/qa/test-partner-motorista-premium-home-v1.test.mjs
           npm run verify:pins
       - name: Web-only build and PDF regressions (NO APK)
@@ -78,6 +83,8 @@ jobs:
           grep -Fq 'data-apois-premium-driver-header' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-premium-driver-summary' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-premium-driver-nav' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'data-apois-premium-courier-summary' .work/partner-entregador/src/routes/courier.tsx
+          grep -Fq 'data-apois-premium-availability' .work/partner-entregador/src/routes/courier.tsx
           grep -Fq 'aria-checked={online}' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'APOIS_DRIVER_VIDEO_20261112_ROTATION_V1' .work/partner-motorista/src/components/MovviMap.tsx
