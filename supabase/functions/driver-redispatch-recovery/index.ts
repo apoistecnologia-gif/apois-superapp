@@ -15,9 +15,19 @@ Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
   if(!URL||!SERVICE)return json(req,{ok:false,error:"server_configuration_missing"},503);
   const auth=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"").trim();
-  if(auth!==SERVICE)return json(req,{ok:false,error:"unauthorized"},401);
+  // When verify_jwt=false, pg_cron may send only this Vault-generated token.
+  // Service-role invocations remain valid for controlled manual recovery.
+  // The token is never returned, logged or interpreted as DB credentials.
+  const cronToken=(req.headers.get("x-apois-redispatch-scheduler")??"").trim();
+  const isService=auth===SERVICE;
+  if(auth!==SERVICE&&!/^[0-9a-f]{64}$/.test(cronToken))
+    return json(req,{ok:false,error:"unauthorized"},401);
   try{
     const admin=createClient(URL,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
+    if(!isService){
+      const {data:allowed,error:tokenError}=await admin.rpc("apois_redispatch_cron_token_valid",{_token:cronToken});
+      if(tokenError||allowed!==true)return json(req,{ok:false,error:"unauthorized"},401);
+    }
     // The existing reject RPC does not write an audit event. Scan BOTH:
     // (1) durable cancel/released-queue audit logs and (2) stale open searches.
     // Never call reject/cancel/finish a second time: only redispatch the
