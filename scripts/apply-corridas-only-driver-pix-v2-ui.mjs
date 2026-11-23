@@ -18,17 +18,22 @@ for(const forbidden of ['asaas-create-driver-membership','mercadopago-create-dri
   if(ui.includes(forbidden))throw Error('[FAIL] Legacy checkout must stay disabled');
 const first='import { useEffect, useRef, useState } from "react";';
 if(ui.split(first).length!==2)throw Error('[FAIL] Driver React imports changed');
-const start='<DSCard className="min-w-0 border-[#F6BE1C]/20 bg-[#0D0F11] p-5" role="status">';
-const a=ui.indexOf(start);
-const b=ui.indexOf('</DSCard>',a);
-if(a<0||b<a||ui.indexOf(start,a+1)>=0)throw Error('[FAIL] Disabled gateway card changed');
+// CV07 and other presentation-only overlays may change card classes.
+ // Anchor on the unique disabled-gateway TEXT instead of visual class names.
+const heading='Pagamento eletrônico temporariamente indisponível';
+const occurrence=ui.indexOf(heading);
+if(occurrence<0||ui.indexOf(heading,occurrence+1)>=0)
+  throw Error('[FAIL] Missing or duplicated disabled gateway heading');
+const a=ui.lastIndexOf('<DSCard ',occurrence);
+const b=ui.indexOf('</DSCard>',occurrence);
+if(a<0||b<a||b-occurrence>4000)
+  throw Error('[FAIL] Disabled gateway card bounds changed');
 const card=ui.slice(a,b+'</DSCard>'.length);
 if(!card.includes('Pagamento eletrônico temporariamente indisponível') ||
    !card.includes('Nenhum gateway de cobrança está ativo'))throw Error('[FAIL] Disabled CTA drift');
 ui=ui.slice(0,a)+
   '{APOIS_PIX_V2_UI_ENABLED ? <DriverMembershipPixV2 /> : ('+card+')}' +
   ui.slice(b+'</DSCard>'.length);
-ui=ui.replace('export const Route = createFileRoute(" /','export const Route = createFileRoute(" /'); // no-op: never alter route registration
 const label='// '+marker+'\n';
 const constant="const APOIS_PIX_V2_UI_ENABLED = import.meta.env.VITE_APOIS_MEMBERSHIP_PIX_V2_UI === 'true';\n";
 ui=label+constant+ui;
