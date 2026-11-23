@@ -57,8 +57,19 @@ export async function createAsaasPixForCharge({settings,charge,customerId,dueDat
  if(!/^cus_[a-z0-9]+$/i.test(String(customerId??"")))throw Error("asaas_customer_not_registered");
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(dueDate??"")))throw Error("invalid_due_date");
  const base=asaasBase(env);
+ // Asaas documents that a timeout does NOT prove creation failed.
+ // First reconcile by stable externalReference; never rely solely on an
+ // idempotency header (not guaranteed to deduplicate all Asaas operations).
+ const list=await jsonRequest(base+"/payments?externalReference="+
+  encodeURIComponent(charge.id)+"&limit=20",{
+   method:"GET",headers:{"access_token":accessToken,"User-Agent":"APOIS-Membership/2"},
+ },request);
+ if(!Array.isArray(list.data)||list.hasMore===true)
+  throw Error("asaas_reference_reconciliation_inconclusive");
+ const matches=list.data.filter(row=>row?.externalReference===charge.id);
+ if(matches.length>1)throw Error("asaas_duplicate_reference_requires_reconciliation");
  const idempotencyKey="apois-membership-"+charge.id;
- const created=await jsonRequest(base+"/payments",{
+ const created=matches[0]??await jsonRequest(base+"/payments",{
   method:"POST",
   headers:{"Content-Type":"application/json","access_token":accessToken,
     "User-Agent":"APOIS-Membership/2","X-Idempotency-Key":idempotencyKey},
