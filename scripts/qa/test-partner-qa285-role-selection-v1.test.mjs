@@ -96,6 +96,40 @@ function verify(file){
  assert.deepEqual(env.nav.pop(),{kind:"replace",url:"https://localhost/modules/entregador/index.html#/courier"});
  console.log("[OK] QA285 "+file+": both CTAs preserve their target; conflicts explain active role; push still locked.");
 }
+function verifyActiveMotoristaRecovery(file){
+ const env=shellScenario(file);
+ // Reported real scenario: Entregador marker stayed behind, while Motorista
+ // was already ONLINE. The driver must regain ACCESS to its own module.
+ env.store.set("apois-parceiro:operational-role","entregador");
+ env.store.set("apois:driver:online","1");
+ env.click("motorista");
+ assert.deepEqual(env.nav.pop(),{
+  kind:"assign",
+  url:"https://localhost/modules/motorista/index.html#/motorista/app"
+ },"driver online recovery must open the actual Motorista module");
+ assert.equal(env.warning.hidden,true,"no courier-offline warning while already active as Motorista");
+ assert.equal(env.store.get("apois-parceiro:operational-role"),"entregador",
+  "the selector must not silently clear another module's backend-guarding lock");
+ assert.equal(env.store.get("apois-parceiro:last-module"),"motorista",
+  "last selected module must match user intent");
+
+ // A stale marker alone is NOT permission to start operating in another role.
+ // With no driver online evidence, the prior safe block is preserved.
+ env.store.set("apois:driver:online","0");
+ env.click("motorista");
+ assert.equal(env.nav.length,0,"no active evidence => retain explicit role lock");
+ assert.equal(env.warning.hidden,false,"uncertain cross-role state requires a warning");
+ assert.ok(env.description.textContent.includes("Entregador"));
+ assert.ok(env.description.textContent.includes("Motorista"));
+ console.log("[OK] QA287 "+file+": active Motorista re-entry, lock safety, and unknown-state fallback.");
+}
+test("QA287: active Motorista can reclaim correct login/app after stale Entregador marker",()=>{
+ verifyActiveMotoristaRecovery("superapp/partner-shell/index.html");
+});
+if(process.argv.includes("--dist"))
+ test("QA287: built Android shell preserves active Motorista re-entry without altering presence",()=>{
+  verifyActiveMotoristaRecovery("superapp/partner-shell/dist/index.html");
+ });
 test("Partner selector source buttons do not silently cross role",()=>verify("superapp/partner-shell/index.html"));
 if(process.argv.includes("--dist"))
  test("Partner final Android shell bundle preserves CTA routing",()=>verify("superapp/partner-shell/dist/index.html"));
