@@ -83,6 +83,8 @@ on:
       - 'scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs'
       - 'scripts/fix-partner-qa280-active-ride-gps-recovery-v1.mjs'
       - 'scripts/qa/test-partner-qa280-active-gps-recovery-v1.test.mjs'
+      - 'scripts/fix-partner-qa284-driver-history-ui-v1.mjs'
+      - 'scripts/qa/test-partner-qa284-driver-history-ui-v1.test.mjs'
       - 'scripts/fix-partner-driver-forward-camera-v1.mjs'
       - 'scripts/fix-partner-driver-qa186-navigation-layout-v1.mjs'
       - 'scripts/fix-partner-driver-qa190-physical-video-v1.mjs'
