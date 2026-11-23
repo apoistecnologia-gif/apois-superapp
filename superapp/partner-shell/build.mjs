@@ -1,4 +1,5 @@
 import { protectEmbeddedViewport } from '../../scripts/protect-apois-embedded-viewport-v1.mjs';
+import { enabledModules, isCorridasOnly } from '../../config/apois-launch-mode.mjs';
 import '../../scripts/harden-partner-shell-startup.mjs';
 import { verifyPartnerBundleAssets } from '../../scripts/qa/verify-partner-static-assets-v1.mjs';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -92,7 +93,8 @@ if (brandBytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
 let brandDataUrl = `data:image/png;base64,${brandBase64}`;
 console.log('[OK] seletor parceiro usa a logomarca oficial vermelha da nova identidade');
 
-const templatePath = resolve(root, 'index.html');
+const onlyRides = isCorridasOnly();
+const templatePath = resolve(root, onlyRides ? 'corridas-only.html' : 'index.html');
 let shellHtml = readFileSync(templatePath, 'utf8');
 if (!shellHtml.includes('__APOIS_BRAND_DATA_URL__')) {
   console.error('[FAIL] placeholder da logo APOIS não encontrado no shell parceiro');
@@ -104,10 +106,11 @@ writeFileSync(resolve(dist, 'index.html'), shellHtml, 'utf8');
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
 writeFileSync(resolve(dist, 'assets/apois-brand.png'), brandBytes);
 
-const modules = [
-  ['motorista', resolve(root, '../../.work/partner-motorista/dist/client')],
-  ['entregador', resolve(root, '../../.work/partner-entregador/.output/public')],
-];
+const sources = {
+  motorista: resolve(root, '../../.work/partner-motorista/dist/client'),
+  entregador: resolve(root, '../../.work/partner-entregador/.output/public'),
+};
+const modules = enabledModules('partner').map(name => [name, sources[name]]);
 
 for (const [name, source] of modules) {
   if (!existsSync(source)) {
@@ -160,6 +163,7 @@ requireMarker(driverBundle, 'Abrir menu lateral', 'Motorista disponibiliza o men
 forbidMarker(driverBundle, 'apois:splash:motorista', 'Motorista não mostra splash interna depois do seletor Parceiro');
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
 
+if (!onlyRides) {
 const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
 if (!courierBundle.toLowerCase().includes('#e51b23')) {
   console.error('[FAIL] bundle Parceiro: Entregador não leva vermelho APOIS ao bundle final');
@@ -182,9 +186,17 @@ requireMarker(courierBundle, 'updateSession', 'Entregador leva atualização da 
 requireMarker(courierBundle, 'apois-parceiro:operational-role', 'Entregador grava trava operacional do shell');
 forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saque legado ao APK');
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
+}
 
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
+if (onlyRides) {
+  requireMarker(finalShell, 'APOIS_CORRIDAS_ONLY_PARTNER_BOOT_V1', 'entrada direta ao Motorista');
+  requireMarker(finalShell, 'apois-parceiro:pending-push', 'notificações de corrida');
+  requireMarker(finalShell, 'app.getLaunchUrl()', 'callbacks nativos');
+  forbidMarker(finalShell, 'modules/entregador', 'shell sem Entregador');
+  if (existsSync(resolve(dist, 'modules/entregador'))) throw Error('Entregador indevidamente no pacote de Corridas');
+} else {
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 requireMarker(finalShell, 'apois-parceiro:operational-role', 'shell final mantém trava de função operacional');
 requireMarker(finalShell, 'function routeRole(requestedRole,target)', 'shell final protege seletor, push e deep link contra troca de função ativa');
@@ -201,6 +213,7 @@ if (!(launchIndex >= 0 && pendingIndex > launchIndex && lockIndex > pendingIndex
   process.exit(1);
 }
 
-protectEmbeddedViewport(dist, ['motorista','entregador']);
-verifyPartnerBundleAssets(dist);
+}
+protectEmbeddedViewport(dist, enabledModules('partner'));
+verifyPartnerBundleAssets(dist, enabledModules('partner'));
 console.log('[OK] APOIS Parceiro gerado e validado: finanças, UI operacional, GPS/background, sessão WebView/FGS, callbacks/Push, saídas secundárias, back guards e trava cruzada protegidos.');
