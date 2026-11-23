@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/apois-parceiro-qa283-web-only-20261123.yml'
       - 'scripts/build-partner-release.sh'
+      - 'scripts/audit-final-integration-v22.mjs'
       - 'scripts/fix-partner-qa283-operational-races-v1.mjs'
       - 'scripts/qa/test-partner-qa283-operational-races-v1.test.mjs'
   workflow_dispatch:
