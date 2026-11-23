@@ -6,18 +6,31 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const source = readFileSync(resolve(".work/partner-motorista/src/routes/motorista.app.tsx"), "utf8");
-test("accepted ride always provides visible GPS recovery without leaving the ride", () => {
+test("QA281: healthy GPS leaves map clear and recovery belongs to bottom operation controls", () => {
   for (const expected of [
     "APOIS_PARTNER_QA280_ACTIVE_GPS_RECOVERY_V1",
     'data-apois-qa280-active-gps-recovery="true"',
-    '["motorista_a_caminho","motorista_chegou","em_viagem"].includes(active.status)',
-    "Recuperar GPS e ficar ONLINE",
-    "Verificar / recuperar GPS",
-    'className="fixed left-3 z-[39] max-w-[200px]',
-    'style={{top:"calc(env(safe-area-inset-top) + 214px)"}}',
-    'if (!online) setDesiredOnline(true)',
-  ]) assert.ok(source.includes(expected), "missing active GPS recovery: "+expected);
+    'const qa280GpsRecoveryAction = (!online ||',
+    'gpsStatus === "error"',
+    'gpsStatus === "denied"',
+    'gpsStatus === "timeout"',
+    'gpsStatus === "unavailable"',
+    'qa280GpsRecoveryAction={qa280GpsRecoveryAction}',
+    '{qa280GpsRecoveryAction}',
+    "Recuperar GPS",
+    "if (!online) setDesiredOnline(true)",
+  ]) assert.ok(source.includes(expected), "missing QA281 bottom-panel recovery: "+expected);
   assert.equal(source.split('data-apois-qa280-active-gps-recovery="true"').length - 1, 1);
+  assert.equal(source.split('qa280GpsRecoveryAction={qa280GpsRecoveryAction}').length - 1, 2,
+    "pickup and trip receive the same emergency GPS recovery");
+  assert.ok(source.includes("{qa280GpsRecoveryAction}\n          <ActiveRidePanel"),
+    "arrival sheet embeds recovery before normal ride controls");
+  assert.ok(!source.includes('className="fixed left-3 z-[39] max-w-[200px]'),
+    "emergency GPS recovery must NEVER float over active map");
+  const action=source.slice(source.indexOf("const qa280GpsRecoveryAction ="),
+    source.indexOf("  // realtime: ofertas",source.indexOf("const qa280GpsRecoveryAction =")));
+  assert.ok(!action.includes("position: fixed")&&!action.includes("className=\"fixed"),
+    "GPS recovery layout must not use fixed positioning");
 });
 
 test("recovery reuses Android official permissions, FGS ACK and Supabase online acknowledgment", () => {
