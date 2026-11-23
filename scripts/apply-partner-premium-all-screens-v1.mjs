@@ -61,7 +61,11 @@ const driverCss=String.raw`
 [data-apois-premium-screen="driver-active"] [class*="bg-primary"] { background-color:#BB071D!important; color:#FFFFFF!important; }
 /* Real finance, rides and profile: align to page 4's white card hierarchy. */
 [data-apois-premium-screen="driver-finance"], [data-apois-premium-screen="driver-rides"], [data-apois-premium-screen="driver-profile"] { background:#F3F4F6!important; color:#0D0F12!important; min-height:100dvh; padding-bottom:max(84px,env(safe-area-inset-bottom)); }
-[data-apois-premium-screen="driver-finance"] > section:not([role="alert"]), [data-apois-premium-screen="driver-finance"] > div:not([role="alert"]) > section { background:#FFFFFF!important; border:1px solid #E7E9ED!important; border-radius:22px!important; box-shadow:0 8px 28px rgba(13,15,18,.05); color:#0D0F12!important; }
+[data-apois-premium-screen="driver-finance"] > header { background:#FFFFFF!important; color:#0D0F12!important; border-bottom:1px solid #E7E9ED!important; }
+[data-apois-premium-screen="driver-finance"] main section:not([role="alert"]) { background:#FFFFFF!important; border:1px solid #E7E9ED!important; border-radius:22px!important; box-shadow:0 8px 28px rgba(13,15,18,.05); color:#0D0F12!important; }
+[data-apois-premium-screen="driver-finance"] main section:not([role="alert"]) :is(p,h2,strong,span) { color:#0D0F12; }
+[data-apois-premium-screen="driver-finance"] button[aria-pressed="true"] {background:#BB071D!important;color:#FFFFFF!important;}
+[data-apois-premium-screen="driver-finance"] button[aria-pressed="false"] {background:#FFFFFF!important;color:#0D0F12!important; border:1px solid #E7E9ED!important;}
 [data-apois-premium-screen="driver-finance"] :is(h1,h2), [data-apois-premium-screen="driver-profile"] :is(h1,h2), [data-apois-premium-screen="driver-rides"] :is(h1,h2) { color:#0D0F12!important; }
 [data-apois-premium-screen="driver-finance"] [class*="text-[#F6BE1C]"] { color:#BB071D!important; }
 [data-apois-premium-screen="driver-finance"] [class*="bg-[#F6BE1C]"] { background:#BB071D!important; color:#FFFFFF!important; }
@@ -91,7 +95,9 @@ const courierCss=String.raw`
 .apois-system-theme [data-apois-premium-screen="courier-active"] :is(p,strong,h2,h3), .apois-system-theme [data-apois-premium-screen="courier-completion"] :is(p,strong,h2,h3) {color:#0D0F12;}
 .apois-system-theme [data-apois-premium-screen="courier-active"] button[class*="bg-primary"], .apois-system-theme [data-apois-premium-screen="courier-completion"] button[class*="bg-primary"] {background:#BB071D!important;color:#FFFFFF!important;}
 /* Finance, history, profile: real data only; do not expose disabled withdrawal. */
-.apois-system-theme [data-apois-premium-screen="courier-finance"], .apois-system-theme [data-apois-premium-screen="courier-history"], .apois-system-theme [data-apois-premium-screen="courier-profile"] {background:#F3F4F6!important;color:#0D0F12!important;min-height:100dvh;}
+.apois-system-theme [data-apois-premium-screen="courier-finance"], .apois-system-theme [data-apois-premium-screen="courier-history"], .apois-system-theme [data-apois-premium-screen="courier-profile"], .apois-system-theme [data-apois-premium-screen="courier-finance-root"], .apois-system-theme [data-apois-premium-screen="courier-history-root"], .apois-system-theme [data-apois-premium-screen="courier-profile-root"] {background:#F3F4F6!important;color:#0D0F12!important;min-height:100dvh;}
+.apois-system-theme [data-apois-premium-screen="courier-finance-root"] > header, .apois-system-theme [data-apois-premium-screen="courier-history-root"] > header, .apois-system-theme [data-apois-premium-screen="courier-profile-root"] > header {background:#FFFFFF!important;color:#0D0F12!important;border-bottom:1px solid #E7E9ED!important;}
+.apois-system-theme [data-apois-premium-screen="courier-finance-root"] button[aria-label="Voltar"] {background:#FFFFFF!important;color:#0D0F12!important;border:1px solid #E7E9ED!important;}
 .apois-system-theme [data-apois-premium-screen="courier-finance"] section, .apois-system-theme [data-apois-premium-screen="courier-history"] section, .apois-system-theme [data-apois-premium-screen="courier-profile"] section {background:#FFFFFF!important;color:#0D0F12!important;border:1px solid #E7E9ED!important;border-radius:22px!important;box-shadow:0 6px 22px rgba(13,15,18,.05)!important;}
 .apois-system-theme [data-apois-premium-screen="courier-finance"] :is(h1,h2,h3,p,strong), .apois-system-theme [data-apois-premium-screen="courier-history"] :is(h1,h2,h3,p,strong), .apois-system-theme [data-apois-premium-screen="courier-profile"] :is(h1,h2,h3,p,strong) {color:#0D0F12;}
 .apois-system-theme [data-apois-premium-screen="courier-finance"] input, .apois-system-theme [data-apois-premium-screen="courier-profile"] input {background:#FFFFFF!important;color:#0D0F12!important;border:1px solid #D8DCE2!important;}
@@ -149,6 +155,7 @@ if (role==='motorista') {
     ['export function CourierFinance(', 'function FinanceInput(', 'courier-finance','main'],
   ]) {
     s=markComponent(s,start,end,tag,name);
+    if(name==='courier-finance')s=markComponent(s,start,end,'div','courier-finance-root');
   }
   put(page,s);
   const panels='src/components/CourierPanels.tsx';let p=get(panels);
@@ -158,8 +165,13 @@ if (role==='motorista') {
   ]) {
     if(name==='courier-profile') {
       const a=p.indexOf(start);if(a<0)throw Error('[FAIL] Courier profile missing');
-      const sub=p.slice(a), m=markFirst(sub,start,'main',name,name);p=p.slice(0,a)+m;
-    } else p=markComponent(p,start,end,'main',name);
+      const sub=p.slice(a);
+      const m=markFirst(markFirst(sub,start,'main',name,name),start,'div','courier-profile-root','courier-profile-root');
+      p=p.slice(0,a)+m;
+    } else {
+      p=markComponent(p,start,end,'main',name);
+      p=markComponent(p,start,end,'div','courier-history-root');
+    }
   }
   put(panels,p);
   for(const [rel,from,name] of [
