@@ -192,6 +192,8 @@ Deno.serve(async (req) => {
 
     const ride: DispatchRide = {
       id: text(rawRide.id),
+      // Domain user ID, identical to drivers.user_id (NOT auth.users.id).
+      passenger_id: text(rawRide.passenger_id),
       category: text(rawRide.category),
       origin_lat: Number(rawRide.origin_lat),
       origin_lng: Number(rawRide.origin_lng),
