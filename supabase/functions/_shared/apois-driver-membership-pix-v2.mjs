@@ -22,7 +22,7 @@ export function verifyMembershipConfiguration(settings) {
  const provider=String(settings?.provider??"none");
  if(!Number.isSafeInteger(cents)||cents!==MONTHLY_FEE_CENTS)
   throw Error("membership_fee_backend_not_9990");
- if(!settings?.enabled||!settings?.operatorApproved)
+ if(settings?.enabled!==true||settings?.operatorApproved!==true)
   throw Error("membership_pix_not_enabled");
  if(!VALID_PROVIDERS.includes(provider))
   throw Error("membership_provider_not_configured");
