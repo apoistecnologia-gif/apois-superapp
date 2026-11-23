@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F7F7F8" />
+  <title>APOIS Motorista</title>
+  <style>
+    html,body{margin:0;min-height:100%;background:#F7F7F8;color:#111827;font-family:Inter,system-ui,sans-serif}
+    main{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:15px;text-align:center;padding:24px}
+    img{width:118px;height:118px;object-fit:contain}
+    h1{margin:0;font-size:22px;font-weight:900;letter-spacing:-.035em}
+    p{margin:0;font-size:14px;color:#4B5563}
+  </style>
+</head>
+<body>
+  <main role="status" aria-live="polite">
+    <img src="__APOIS_BRAND_DATA_URL__" alt="APOIS" />
+    <h1>APOIS <span style="color:#BB071D">Motorista</span></h1>
+    <p>Carregando sua área de corridas…</p>
+  </main>
+  <script>
+    // APOIS_CORRIDAS_ONLY_PARTNER_BOOT_V1
+    // No modal/service selector. Other modules have no files in this APK.
+    // Only driver callbacks and ride notifications are allowed.
+    (function () {
+      'use strict';
+      const home='./modules/motorista/index.html#/motorista/app';
+      const login='./modules/motorista/index.html#/motorista/login';
+      const membership='./modules/motorista/index.html#/motorista/assinatura';
+      const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
+      const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
+      const PARTNER_PENDING_PUSH_KEY='apois-parceiro:pending-push';
+      let launched=false;
+      const go=(url)=>{
+        if(launched)return false;
+        launched=true;
+        try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
+        window.location.replace(url);
+        return true;
+      };
+      function authParams(url){
+        const params=new URLSearchParams(url.search);
+        const fragment=url.hash.replace(/^#/,'');
+        if(fragment)new URLSearchParams(fragment).forEach((v,k)=>{if(!params.has(k))params.set(k,v);});
+        return params;
+      }
+      function routeUrl(raw){
+        if(typeof raw!=='string')return false;
+        const partner=raw.startsWith('br.com.apois.parceiro://');
+        const driver=raw.startsWith('apoismotorista://auth/');
+        if(!partner&&!driver)return false;
+        try{
+          const u=new URL(raw);
+          const path=u.pathname.replace(/^\//,'');
+          const params=authParams(u);
+          const suffix=params.toString()?'?'+params.toString():'';
+          if(partner&&u.host==='module'&&path==='motorista')return go(home);
+          if(partner&&u.host==='auth'&&path==='mercadopago')return go(membership+suffix);
+          if(partner&&u.host==='auth'&&(path==='google'||path==='motorista-google') ||
+             driver&&path==='google'){
+            try{sessionStorage.setItem(DRIVER_GOOGLE_KEY,raw);}catch{}
+            void window.Capacitor?.Plugins?.Browser?.close?.().catch(()=>undefined);
+            return go(login);
+          }
+          if(driver&&path==='redefinir-senha'){
+            try{sessionStorage.setItem(DRIVER_RECOVERY_KEY,raw);}catch{}
+            return go(login);
+          }
+        }catch(error){console.warn('[APOIS Motorista] callback inválido',error);}
+        // Unrecognized callbacks, including isolated module URLs: never open.
+        return false;
+      }
+      function routePush(data){
+        const payload=data&&typeof data==='object'?data:{};
+        const kind=String(payload.notificationType||payload.notification_type||'').toLowerCase();
+        const event=String(payload.event||'').toLowerCase();
+        const ride=String(payload.ride_id||payload.rideId||'').trim();
+        const order=String(payload.order_id||payload.orderId||payload.orderID||'').trim();
+        if(order||kind.includes('delivery')||kind.includes('order'))return false;
+        if(ride||event.startsWith('ride.')||event.startsWith('driver.')||event.includes('corrida'))return go(home);
+        return false;
+      }
+      function consumePendingPush(){
+        try{
+          const raw=sessionStorage.getItem(PARTNER_PENDING_PUSH_KEY);
+          if(!raw)return false;
+          sessionStorage.removeItem(PARTNER_PENDING_PUSH_KEY);
+          return routePush(JSON.parse(raw));
+        }catch{return false;}
+      }
+      async function boot(){
+        const app=window.Capacitor?.Plugins?.App;
+        if(app){
+          try{await app.addListener('appUrlOpen',({url})=>{routeUrl(url);});}catch{}
+        }
+        const push=window.Capacitor?.Plugins?.PushNotifications;
+        if(push){
+          try{await push.addListener('pushNotificationActionPerformed',action=>{
+            routePush(action?.notification?.data||{});
+          });}catch{}
+        }
+        if(app){
+          try{
+            const launch=await app.getLaunchUrl();
+            if(launch?.url && routeUrl(launch.url))return;
+          }catch{}
+        }
+        if(consumePendingPush())return;
+        go(home);
+      }
+      void boot();
+    })();
+  </script>
+</body>
+</html>
