@@ -554,6 +554,10 @@ if (name === 'corridas') {
       throw new Error('[FAIL] CV04 Corridas visual missing ' + marker + ' in ' + relative);
     }
   }
+  // APOIS_PASSENGER_AUDIT_20261123: apply only after all pinned snapshot patches and QA visuals.
+  // Protect Entregas and Motorista: changes stay exclusively inside .work/corridas.
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-passenger-audit-20261123.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-corridas-passenger-audit-20261123.test.mjs')]);
 }
 if (name === 'entregas') {
   run(process.execPath, [resolve(root, 'scripts/harden-entregas-supabase-runtime.mjs')]);
