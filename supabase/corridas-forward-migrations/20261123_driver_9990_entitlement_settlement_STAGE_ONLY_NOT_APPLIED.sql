@@ -116,7 +116,10 @@ BEGIN
  END IF;
  SELECT * INTO m FROM public.driver_memberships
  WHERE driver_memberships.driver_id=c.driver_id FOR UPDATE;
- IF NOT FOUND OR m.monthly_fee_cents<>9990 OR m.provider<>_provider THEN
+ -- The charge keeps the original provider, even after a later provider switch.
+ -- The driver membership may point to a newer provider; old verified Pix
+ -- must still settle, without attributing it to the new bank.
+ IF NOT FOUND OR m.monthly_fee_cents<>9990 THEN
   RAISE EXCEPTION 'bank_payment_does_not_match_driver_contract' USING ERRCODE='42501';
  END IF;
  IF c.status='received' THEN
