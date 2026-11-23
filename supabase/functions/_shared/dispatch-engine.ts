@@ -107,7 +107,7 @@ export function findEligibleDriversForRide(args: {
 
   const originLat = finite(ride.origin_lat);
   const originLng = finite(ride.origin_lng);
-  if (!validGeoPoint(originLat, originLng)) {
+  if (originLat === null || originLng === null || !validGeoPoint(originLat, originLng)) {
     return { eligible: [], offeredUserIds: [], remainingCandidateUserIds: [] };
   }
 
@@ -146,7 +146,7 @@ export function findEligibleDriversForRide(args: {
       if (queued.has(driverId)) continue;
       const destinationLat = finite(currentRide.destination_lat);
       const destinationLng = finite(currentRide.destination_lng);
-      if (!validGeoPoint(destinationLat, destinationLng)) continue;
+      if (destinationLat === null || destinationLng === null || !validGeoPoint(destinationLat, destinationLng)) continue;
       const distanceKm = haversineKm(
         { lat: originLat, lng: originLng },
         { lat: destinationLat, lng: destinationLng },
@@ -159,7 +159,7 @@ export function findEligibleDriversForRide(args: {
 
     const lat = finite(driver.current_lat);
     const lng = finite(driver.current_lng);
-    if (!validGeoPoint(lat, lng)) continue;
+    if (lat === null || lng === null || !validGeoPoint(lat, lng)) continue;
     eligible.push({
       driverId,
       userId,
