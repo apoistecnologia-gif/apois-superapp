@@ -100,7 +100,8 @@ async function sendAndroidPush(projectId: string, accessToken: string, push: Cla
           default_sound: true,
           default_vibrate_timings: true,
           notification_priority: urgent ? "PRIORITY_MAX" : "PRIORITY_HIGH",
-          visibility: "PUBLIC",
+          // Do not expose order/delivery details in lock-screen previews.
+          visibility: "PRIVATE",
           tag: urgent ? `delivery-offer-${push.notification_id}` : `apois-${target.courier ? "courier" : "customer"}-${push.notification_id}`,
         },
       },
