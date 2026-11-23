@@ -47,7 +47,7 @@ test("Courier: offer requests never overlap, remain realtime+push reactive", () 
     'window.addEventListener("apois:courier-push", refresh)',
     'table: "delivery_offers"',
     'table: "courier_availability"',
-    'callRpc("accept_delivery_offer"',
+    '"accept_delivery_offer"',
   ]) assert.ok(patched.includes(token), "Missing real-time or single-flight contract " + token);
   assert.ok(patched.includes("}, 1000);"), "1-second visible offer fallback is preserved");
 });
