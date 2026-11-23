@@ -7,13 +7,13 @@ test("QA284 history: completed and cancelled are distinct without dropping rows"
  "APOIS_PARCEIRO_QA284_DRIVER_HISTORY_UI_V1",
  'const completed = finished.length;',
  'const cancelled = list.filter((r) => r.status.toLowerCase().startsWith("cancel")).length;',
- "return { total, completed, cancelled, grossVolume, avgFare };",
+ "const summary = periodSummary;",
  "label=\"Concluídas\"",
  "{summary.total} solicitações no período: {summary.completed} concluídas e {summary.cancelled} canceladas.",
  '.from("rides")', '.eq("driver_id", driverId)',
  '<RideCard ride={ride} index={index} />'
  ])assert.ok(source.includes(key),"QA284 required historic contract: "+key);
- assert.ok(!source.includes('<SummaryCard label="Corridas" value={String(summary.total)} />'),"Unqualified total would confuse cancelled with finalized");
+ assert.ok(!source.includes('<SummaryCard label="Corridas" value={summaryLoading ? "…" : summary ? String(summary.total) : "—"} />'),"Unqualified total would confuse cancelled with finalized");
 });
 test("QA284 display gross fares without visual split or implying confirmed revenue",()=>{
  for(const key of [
