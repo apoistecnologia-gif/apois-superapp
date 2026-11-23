@@ -1,3 +1,5 @@
+> **REGISTRO HISTÓRICO — ETAPA INICIAL.** O escopo completo de Motorista e Entregador passou a ser documentado em [COBERTURA-PREMIUM-INTEGRAL-20261123.md](./APOIS-PARCEIRO-COBERTURA-PREMIUM-INTEGRAL-20261123.md). Não gerar APK com base somente nesta primeira etapa.
+
 # APOIS Parceiro — Pré-build do visual premium aprovado
 
 ## Status: APTO A SOLICITAR O BUILD ANDROID DE HOMOLOGAÇÃO
