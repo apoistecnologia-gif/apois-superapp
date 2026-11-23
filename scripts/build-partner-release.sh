@@ -365,6 +365,10 @@ node --test "$ROOT/scripts/qa/test-partner-qa242-pin-gps-distance.test.mjs"
 # QA280: user-initiated GPS recovery during active Motorista ride, after all prior UI hardeners.
 node "$ROOT/scripts/fix-partner-qa280-active-ride-gps-recovery-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa280-active-gps-recovery-v1.test.mjs"
+# Visual aprovado APOIS (Motorista): aplicar por ultimo apenas na copia descartavel.
+# Sem alterar GPS, backend, PIN, corridas, pagamentos ou projetos de origem.
+node "$ROOT/scripts/apply-partner-motorista-premium-home-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-motorista-premium-home-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
