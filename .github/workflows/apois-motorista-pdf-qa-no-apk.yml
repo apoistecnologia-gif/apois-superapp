@@ -19,6 +19,8 @@ on:
       - 'scripts/qa/test-partner-courier-premium-home-v1.test.mjs'
       - 'scripts/apply-partner-premium-all-screens-v1.mjs'
       - 'scripts/qa/verify-partner-premium-all-screens-v1.mjs'
+      - 'scripts/fix-partner-courier-map-first-visual-v2.mjs'
+      - 'scripts/qa/test-partner-courier-map-first-visual-v2.test.mjs'
       - 'superapp/partner-shell/index.html'
       - 'scripts/audit-shell-branding-v21.mjs'
       - 'scripts/audit-partner-red-visual-v16.mjs'
@@ -75,6 +77,9 @@ jobs:
           node --check scripts/qa/test-partner-motorista-premium-home-v1.test.mjs
           node --check scripts/apply-partner-courier-premium-home-v1.mjs
           node --check scripts/apply-partner-premium-all-screens-v1.mjs
+          node --check scripts/fix-partner-courier-map-first-visual-v2.mjs
+          node --check scripts/qa/test-partner-courier-map-first-visual-v2.test.mjs
+          node --test scripts/qa/test-partner-courier-map-first-visual-v2.test.mjs
           node --check scripts/qa/verify-partner-premium-all-screens-v1.mjs
           node --check scripts/qa/test-partner-courier-premium-home-v1.test.mjs
           node --test scripts/qa/test-partner-courier-premium-home-v1.test.mjs
@@ -89,6 +94,10 @@ jobs:
           # Audits run above before any transformations.
           bash scripts/build-partner-release.sh
           node scripts/qa/verify-partner-premium-all-screens-v1.mjs
+          grep -Fq 'data-apois-courier-map-first-v2' .work/partner-entregador/src/routes/courier.tsx
+          grep -Fq 'data-apois-courier-map-canvas-v2' .work/partner-entregador/src/components/CourierRouteMap.tsx
+          grep -Fq 'data-apois-courier-premium-status-v2' .work/partner-entregador/src/components/CourierPremiumViews.tsx
+          grep -Fq 'data-apois-courier-gps-status-v2' .work/partner-entregador/src/components/CourierLocationTracker.tsx
           grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-premium-driver-header' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'data-apois-premium-driver-summary' .work/partner-motorista/src/routes/motorista.app.tsx
