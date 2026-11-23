@@ -381,6 +381,10 @@ node --test "$ROOT/scripts/qa/test-partner-qa284-driver-history-ui-v1.test.mjs"
 # Bounded read-only polling runs solely ONLINE + visible, no backend changes.
 node "$ROOT/scripts/fix-partner-qa289-driver-offer-fallback-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa289-offer-fallback-v1.test.mjs"
+# QA290 physical screenshot: offer details (passenger/addresses/payment) must be
+# visible on an ordinary Android screen without expanding the sheet.
+node "$ROOT/scripts/fix-partner-qa290-compact-offer-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-qa290-compact-offer-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
