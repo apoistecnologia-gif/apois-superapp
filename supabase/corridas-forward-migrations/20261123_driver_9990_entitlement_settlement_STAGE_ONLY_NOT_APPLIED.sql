@@ -15,7 +15,8 @@ AS $function$
   JOIN public.drivers d ON d.id=m.driver_id
   WHERE m.driver_id=_driver_id
     AND m.status='active'
-    AND m.monthly_fee_cents=9990
+    -- Existing paid 49.90/59.90 contracts retain access for their paid period.
+    -- Only NEW memberships and NEW charges must use R$ 99,90.
     AND m.paid_through > now()
     AND d.approval_status='aprovado'
     AND d.blocked_at IS NULL
