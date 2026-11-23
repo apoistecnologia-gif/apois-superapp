@@ -180,3 +180,36 @@ export async function authenticateMercadoPagoWebhook({headers,url,secret,now=Dat
  for(let i=0;i<calculated.length;i++)diff|=calculated[i]^signatureBytes[i];
  return diff===0;
 }
+
+
+/**
+ * Query the bank directly. A webhook notification never carries trusted
+ * amount, driver identity or approval status by itself.
+ * The caller MUST compare this verified result with the locked database charge
+ * and commit settlement through the private service-only RPC.
+ */
+export async function fetchVerifiedBankPaymentForCharge({
+  charge, accessToken, env, request=fetch
+}) {
+  requireChargeIdentity(charge);
+  if(typeof accessToken!=="string"||accessToken.length<15)
+    throw Error("provider_access_token_unavailable");
+  const id=String(charge.providerPaymentId??"");
+  let url,headers;
+  if(charge.provider==="asaas"){
+    if(!/^pay_[a-z0-9_-]{3,80}$/i.test(id))
+      throw Error("asaas_payment_identifier_invalid");
+    url=asaasBase(env)+"/payments/"+encodeURIComponent(id);
+    headers={"access_token":accessToken,"User-Agent":"APOIS-Membership/2"};
+  }else if(charge.provider==="mercadopago"){
+    if(!/^[1-9][0-9]{4,30}$/.test(id))
+      throw Error("mp_payment_identifier_invalid");
+    url="https://api.mercadopago.com/v1/payments/"+encodeURIComponent(id);
+    headers={"Authorization":"Bearer "+accessToken};
+  }else{
+    throw Error("membership_provider_not_configured");
+  }
+  const bank=await jsonRequest(url,{method:"GET",headers},request);
+  const verified=verifyProviderBankResult({charge,providerResult:bank});
+  return Object.freeze({ ...verified, bankStatus: "confirmed" });
+}
