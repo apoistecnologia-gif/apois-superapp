@@ -109,6 +109,36 @@ const courierCss=String.raw`
 @media(max-width:360px){.apois-system-theme [data-apois-premium-screen="courier-offer"] {border-radius:22px!important;}.apois-system-theme [data-apois-premium-screen="courier-finance"] {padding-left:11px;padding-right:11px;}}
 `;
 
+const premiumNav = `
+/* APOIS_PREMIUM_ALL_SCREENS_V1: four actual routes, no offer/session/GPS mutation. */
+import { Link } from "@tanstack/react-router";
+import { House, CarFront, WalletCards, UserRound } from "lucide-react";
+const tabs = [
+ { key:"inicio", to:"/motorista/app", title:"Início", icon:House },
+ { key:"corridas", to:"/motorista/corridas", title:"Corridas", icon:CarFront },
+ { key:"ganhos", to:"/motorista/ganhos", title:"Ganhos", icon:WalletCards },
+ { key:"perfil", to:"/motorista/perfil", title:"Perfil", icon:UserRound },
+] as const;
+type NavKey=(typeof tabs)[number]["key"];
+export function ApoisPremiumDriverNav({active}: {active:NavKey}){
+ return (
+  <nav data-apois-premium-internal-nav aria-label="Navegação premium do motorista"
+    className="fixed inset-x-0 bottom-0 z-[35] border-t border-[#E7E9ED] bg-white/95 px-[max(8px,env(safe-area-inset-left))] pb-[max(7px,env(safe-area-inset-bottom))] pt-1 backdrop-blur-xl shadow-[0_-6px_24px_-14px_rgba(13,15,18,.24)]">
+   <div className="mx-auto grid min-h-[64px] max-w-md grid-cols-4 gap-1">
+    {tabs.map((tab)=><Link key={tab.key} to={tab.to}
+      aria-current={active===tab.key?"page":undefined}
+      aria-label={tab.title}
+      className={"flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BB071D] "+(active===tab.key?"text-[#F51D2A]":"text-[#0D0F12]")}>
+      <tab.icon aria-hidden="true" className="h-5 w-5"/>
+      <span className="text-[11px] font-bold">{tab.title}</span>
+      <span aria-hidden="true" className={"h-[3px] w-7 rounded-full "+(active===tab.key?"bg-[#F51D2A]":"bg-transparent")}/>
+    </Link>)}
+   </div>
+  </nav>
+ );
+}
+`;
+
 if (role==='motorista') {
   const app='src/routes/motorista.app.tsx'; let s=get(app);
   s=section(s,'function IncomingOffer(', 'function InfoCard(', chunk=>{
@@ -125,6 +155,9 @@ if (role==='motorista') {
     return chunk.replace(pattern,'data-apois-premium-screen="driver-active" className="flex flex-col gap-4 pt-1 animate-sheet-in"');
   },'Motorista active ride');
   put(app,s);
+  if (existsSync(resolve(base,'src/components/ApoisPremiumDriverNav.tsx')))
+    throw Error('[FAIL] Premium driver nav must be created only in the isolated workspace');
+  files.set('src/components/ApoisPremiumDriverNav.tsx',premiumNav);
   for(const [file,name,fn] of [
     ['src/routes/motorista.ganhos.tsx','driver-finance','function DriverEarningsPage()'],
     ['src/routes/motorista.corridas.tsx','driver-rides','function DriverRidesPage()'],
@@ -144,7 +177,14 @@ if (role==='motorista') {
       if(index<0)throw Error('[FAIL] Driver inner main missing: '+name);
       tail=tail.slice(0,index)+tail.slice(index).replace('<main','<main data-apois-premium-screen="'+name+'"');
     }
-    put(file,before+tail);
+    const navImport = 'import { ApoisDriverBottomNav } from "@/components/ApoisDriverBottomNav";';
+    if((before+tail).split(navImport).length!==2)throw Error('[FAIL] Driver nav import changed: '+name);
+    const current=before+tail;
+    const withImport=current.replace(navImport,navImport+'\nimport { ApoisPremiumDriverNav } from "@/components/ApoisPremiumDriverNav";');
+    const legacy='<ApoisDriverBottomNav />';
+    if(withImport.split(legacy).length!==2)throw Error('[FAIL] Driver safe recovery/nav boundary changed: '+name);
+    const activeTab=name==='driver-finance'?'ganhos':name==='driver-rides'?'corridas':'perfil';
+    put(file,withImport.replace(legacy,legacy+'\n      <ApoisPremiumDriverNav active="'+activeTab+'" />'));
   }
   const css='src/apois-ui-hardening-round3.css';put(css,get(css)+'\n'+driverCss);
 } else {
