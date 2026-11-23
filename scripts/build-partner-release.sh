@@ -371,6 +371,9 @@ node "$ROOT/scripts/apply-partner-motorista-premium-home-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-motorista-premium-home-v1.test.mjs"
 # Final approved PDF screens: offer, active ride, real finance, history and profile.
 APOIS_MOTORISTA_WORKSPACE="$MOTORISTA" node "$ROOT/scripts/apply-partner-premium-all-screens-v1.mjs" motorista
+# QA283: never dismiss a rejected offer before the authenticated backend confirms it.
+APOIS_MOTORISTA_WORKSPACE="$MOTORISTA" node "$ROOT/scripts/fix-partner-qa283-operational-races-v1.mjs" driver
+APOIS_QA283_ROLE=driver APOIS_MOTORISTA_WORKSPACE="$MOTORISTA" node --test "$ROOT/scripts/qa/test-partner-qa283-operational-races-v1.test.mjs"
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
@@ -497,6 +500,9 @@ node "$ROOT/scripts/apply-partner-courier-premium-home-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-courier-premium-home-v1.test.mjs"
 # Final approved PDF screens: incoming order, live delivery, confirmation, earnings, history, profile.
 APOIS_ENTREGAS_WORKSPACE="$ENTREGADOR" node "$ROOT/scripts/apply-partner-premium-all-screens-v1.mjs" entregador
+# QA283: clean a late native GPS watcher and prevent overlapping offer requests.
+APOIS_ENTREGAS_WORKSPACE="$ENTREGADOR" node "$ROOT/scripts/fix-partner-qa283-operational-races-v1.mjs" courier
+APOIS_QA283_ROLE=courier APOIS_ENTREGAS_WORKSPACE="$ENTREGADOR" node --test "$ROOT/scripts/qa/test-partner-qa283-operational-races-v1.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
