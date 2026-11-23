@@ -105,6 +105,15 @@ jobs:
           fi
           echo "[OK] JS/CSS, fluxos motoristas e integração web compilados, sem APK"
 
+      - name: Show limited generated Courier code around typecheck errors
+        if: ${{ failure() }}
+        run: |
+          if [ -f .work/partner-entregador/src/routes/courier.tsx ]; then
+            echo '--- Courier generated JSX around the final home (safe code excerpt) ---'
+            nl -ba .work/partner-entregador/src/routes/courier.tsx | sed -n '1480,1545p'
+            grep -nF 'APOIS_COURIER_PREMIUM_HOME_V1' .work/partner-entregador/src/routes/courier.tsx || true
+          fi
+
       - name: Prepare isolated Chromium screenshot QA
         run: |
           set -euo pipefail
