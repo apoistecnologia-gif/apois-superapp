@@ -154,79 +154,35 @@ async function loadFare(admin: any, categoryId: string, category: string, km: nu
   return total;
 }
 
-async function dispatch(admin: any, ride: any) {
-  const { data: drivers, error } = await admin
-    .from("drivers")
-    .select("id,user_id,category,is_online,approval_status,current_lat,current_lng,last_location_at");
-  if (error) throw error;
-  const origin = { lat: Number(ride.origin_lat), lng: Number(ride.origin_lng) };
-  const now = Date.now();
-  const previouslyOffered = new Set((ride.offered_driver_ids ?? []).map(String));
-  const rejected = new Set((ride.rejected_driver_ids ?? []).map(String));
-  const candidates = (drivers ?? [])
-    .filter((d: any) => d.is_online === true && d.approval_status === "aprovado")
-    .filter((d: any) => String(d.user_id) !== String(ride.passenger_id)) // APOIS_NO_SELF_DISPATCH_V1
-    .filter((d: any) => !previouslyOffered.has(String(d.user_id)) && !rejected.has(String(d.user_id)))
-    .filter((d: any) => String(d.category ?? "").trim().toLowerCase() === String(ride.category).trim().toLowerCase())
-    // Missing GPS was previously converted to (0,0) by Number(null).
-    // A missing/future/stale timestamp must never be treated as a current fix.
-    .filter((d: any) => {
-      const lat = d.current_lat, lng = d.current_lng;
-      if (lat == null || lng == null || (typeof lat === "string" && !lat.trim()) || (typeof lng === "string" && !lng.trim())) return false;
-      const latitude = Number(lat), longitude = Number(lng);
-      return finite(latitude) && finite(longitude) && Math.abs(latitude) <= 90
-        && Math.abs(longitude) <= 180 && !(latitude === 0 && longitude === 0);
-    })
-    .filter((d: any) => {
-      const lastGpsAt = d.last_location_at ? new Date(d.last_location_at).getTime() : Number.NaN;
-      return Number.isFinite(lastGpsAt) && lastGpsAt >= now - 120000 && lastGpsAt <= now + 30000;
-    })
-    .map((d: any) => ({ id: String(d.user_id), km: haversineKm(origin, { lat: Number(d.current_lat), lng: Number(d.current_lng) }) }))
-    .filter((d: any) => d.km <= 50)
-    .sort((a: any,b: any) => a.km-b.km)
-    .slice(0, 20);
-
-  const ids = candidates.map((d: any) => d.id);
-  if (ids.length) {
-    const { data: savedOffer, error: offerError } = await admin.from("rides").update({
-      candidate_driver_ids: ids,
-      offered_driver_ids: [...previouslyOffered, ...ids],
-      dispatch_attempts: Number(ride.dispatch_attempts ?? 0) + 1,
-      request_expires_at: new Date(Date.now()+60000).toISOString(),
-    })
-    .eq("id", ride.id)
-    .eq("status", "procurar_motorista")
-    .is("driver_id", null)
-    .is("accepted_driver_id", null)
-    .or("request_expires_at.is.null,request_expires_at.lte." + new Date().toISOString())
-    .select("id")
-    .maybeSingle();
-    if (offerError) throw offerError;
-    if (!savedOffer) return [];
+// APOIS_BACKEND_UNIFIED_DISPATCH_V1: all initial and retried offers use the
+// same CAS/eligibility/FCM engine as driver rejection and cron recovery.
+async function dispatch(ride: { id: string; candidate_driver_ids?: unknown }, requestedMode: "initial" | "redispatch" = "initial"): Promise<string[]> {
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!url || !key) throw new Error("dispatch_configuration_missing");
+  const mode = requestedMode === "redispatch" &&
+    Array.isArray(ride.candidate_driver_ids) && ride.candidate_driver_ids.length > 0
+    ? "redispatch" : "initial";
+  const response = await fetch(url + "/functions/v1/dispatch-ride", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + key,
+      apikey: key,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ ride_id: ride.id, mode }),
+  });
+  const payload = await response.json().catch(() => ({})) as {
+    ok?: boolean; offered_user_ids?: unknown;
+  };
+  if (!response.ok || payload.ok !== true) {
+    // Request creation has already committed; recovery scans the same row.
+    throw new Error("dispatch_deferred");
   }
-  return ids;
-}
-
-async function notifyRideCandidates(ride: any, ids: string[]): Promise<void> {
-  if (!ids.length) return;
-  try {
-    const url = Deno.env.get("SUPABASE_URL") ?? "";
-    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    if (!url || !key) return;
-    const response = await fetch(url + "/functions/v1/send-ride-push", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + key, apikey: key, "content-type": "application/json" },
-      body: JSON.stringify({
-        user_ids: ids, event: "driver.new_ride_request",
-        title: "APOIS • Nova corrida disponível",
-        body: String(ride.origin_name ?? "Origem") + " → " + String(ride.destination_name ?? "Destino"),
-        url: "/motorista/app", ride_id: String(ride.id)
-      })
-    });
-    if (!response.ok) console.error("[request-ride] push provider status", response.status);
-  } catch (error) {
-    console.error("[request-ride] push send failed", error instanceof Error ? error.message : "unknown");
-  }
+  // dispatch-ride owns notification delivery; never push this offer twice.
+  return Array.isArray(payload.offered_user_ids)
+    ? payload.offered_user_ids.filter((id): id is string => typeof id === "string").slice(0, 5)
+    : [];
 }
 
 Deno.serve(async (req: Request) => {
@@ -325,8 +281,7 @@ Deno.serve(async (req: Request) => {
       if (ride.request_expires_at && new Date(ride.request_expires_at).getTime() > Date.now()) {
         return json({ ok: true, rideId: ride.id, candidates: (ride.candidate_driver_ids ?? []).length, status: ride.status, skipped: "offer_active" });
       }
-      const ids = await dispatch(admin, ride);
-      if (ids.length) EdgeRuntime.waitUntil(notifyRideCandidates(ride, ids));
+      const ids = await dispatch(ride, "redispatch");
       return json({ ok: true, rideId: ride.id, candidates: ids.length, status: ride.status });
     }
 
@@ -446,8 +401,10 @@ Deno.serve(async (req: Request) => {
     }).select("*").single();
 
     if (insertError || !ride) throw insertError ?? new Error("ride_insert_failed");
-    const ids = await dispatch(admin, ride).catch(() => []);
-    if (ids.length) EdgeRuntime.waitUntil(notifyRideCandidates(ride, ids));
+    const ids = await dispatch(ride).catch((error) => {
+      console.error("[request-ride] initial dispatch deferred", error instanceof Error ? error.name : "unknown");
+      return [] as string[];
+    });
 
     return json({
       ok: true,
