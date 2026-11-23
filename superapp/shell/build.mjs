@@ -1,4 +1,5 @@
 import { protectEmbeddedViewport } from '../../scripts/protect-apois-embedded-viewport-v1.mjs';
+import { enabledModules, isCorridasOnly } from '../../config/apois-launch-mode.mjs';
 import '../../scripts/harden-superapp-shell-auth.mjs';
 import '../../scripts/harden-superapp-shell-mobile-ui.mjs';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -12,7 +13,8 @@ const officialBranding = resolve(root, '../branding/apois-client-red-logo.b64');
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
-cpSync(resolve(root, 'index.html'), resolve(dist, 'index.html'));
+const onlyRides = isCorridasOnly();
+cpSync(resolve(root, onlyRides ? 'corridas-only.html' : 'index.html'), resolve(dist, 'index.html'));
 
 if (!existsSync(officialBranding)) {
   console.error(`[FAIL] arte oficial APOIS não existe em ${officialBranding}`);
@@ -84,10 +86,11 @@ function brandCorridasStartupLoading(indexPath) {
   console.log('[OK] Corridas: fallback preto/amarelo substituído por logo oficial APOIS e texto vermelho; bootstrap React intacto');
 }
 
-const modules = [
-  ['corridas', resolve(root, '../../.work/corridas/dist')],
-  ['entregas', resolve(root, '../../.work/entregas/.output/public')],
-];
+const sources = {
+  corridas: resolve(root, '../../.work/corridas/dist'),
+  entregas: resolve(root, '../../.work/entregas/.output/public'),
+};
+const modules = enabledModules('client').map(name => [name, sources[name]]);
 
 for (const [name, source] of modules) {
   if (!existsSync(source)) {
@@ -249,7 +252,7 @@ if (!bridgeSource) throw Error('[FAIL] APOIS Cliente: missing bridge script payl
 new Script(bridgeSource, {filename:'apois-client-service-switcher.js'});
 console.log('[OK] APOIS Cliente: injected service-switcher script is valid JavaScript');
 
-for (const moduleName of ['corridas', 'entregas']) {
+if (!onlyRides) for (const moduleName of ['corridas', 'entregas']) {
   const moduleIndex = resolve(dist, `modules/${moduleName}/index.html`);
   if (!existsSync(moduleIndex)) continue;
   const html = readFileSync(moduleIndex, 'utf8');
@@ -267,5 +270,7 @@ for (const moduleName of ['corridas', 'entregas']) {
 // A navegação física do Android já é tratada pelo bridge injetado em
 // build-isolated-module.mjs. Não registrar um segundo listener aqui: dois
 // backButton handlers causam navegação dupla/race no módulo Entregas.
-protectEmbeddedViewport(dist, ['corridas','entregas']);
-console.log(`[OK] shell cliente gerado em ${dist}: Corridas + Entregas`);
+protectEmbeddedViewport(dist, enabledModules('client'));
+if (onlyRides && existsSync(resolve(dist, 'modules/entregas'))) throw Error('[FAIL] Customer Android includes isolated module');
+if (onlyRides && !readFileSync(resolve(dist,'index.html'),'utf8').includes('APOIS_CORRIDAS_ONLY_CLIENT_BOOT_V1')) throw Error('[FAIL] Customer launch is not direct Corridas');
+console.log(`[OK] shell cliente gerado em ${dist}: ${enabledModules('client').join(' + ')}`);
