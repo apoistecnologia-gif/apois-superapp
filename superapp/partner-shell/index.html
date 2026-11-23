@@ -9,7 +9,7 @@
     :root{
       font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       color:#111;background:#F7F7F8;
-      --red:#E51B23;--red-2:#FF2430;--red-dark:#C9141B;--ink:#111;--muted:#5F6670;--line:#E7E9ED;--paper:#fff;
+      --red:#F51D2A;--red-2:#F51D2A;--red-dark:#BB071D;--ink:#0D0F12;--muted:#686F79;--line:#E7E9ED;--paper:#fff;
     }
     *{box-sizing:border-box}
     html,body{margin:0;min-height:100%;background:#F7F7F8;color:#111}
@@ -84,7 +84,7 @@
     .partner-card p{position:relative;z-index:3;margin:16px 0 20px;max-width:58%;color:#565d66;font-size:16px;line-height:1.34}
     .action-row{position:relative;z-index:4;display:flex;align-items:center;gap:12px;width:100%;margin-top:4px}
     .primary-action{
-      flex:1;min-height:58px;border:0;border-radius:18px;background:linear-gradient(135deg,#D51722,#CE101A 58%,#C9141B);
+      flex:1;min-height:58px;border:0;border-radius:18px;background:#BB071D;
       color:#fff;font-weight:900;font-size:17px;box-shadow:0 16px 30px -20px rgba(229,27,35,.72);
     }
     .round-action{
@@ -107,6 +107,10 @@
       .partner-card{padding:18px}.card-title{max-width:76%}.card-title strong{font-size:22px}.partner-card p{max-width:62%;font-size:13px}
       .primary-action{font-size:14px}.round-action{width:46px;height:46px}
     }
+
+    /* APOIS_PARTNER_SHELL_APPROVED_PALETTE_V1: official PDF brand colors; preserve routing/controls. */
+    .primary-action:focus-visible,.round-action:focus-visible{outline-color:#F51D2A}
+    .tagline span{color:#BB071D}
 
     /* APOIS Partner mobile-fit V19: as duas opcoes cabem sem botoes cortados.
        A rolagem continua disponivel em telas baixas/teclado aberto. */
@@ -158,7 +162,7 @@
   <main class="screen">
     <section class="brand" aria-label="APOIS Parceiro">
       <div class="logo"><img src="__APOIS_BRAND_DATA_URL__" alt="APOIS" /></div>
-      <div class="tagline">APOIS, <span>VAMOS?</span></div>
+      <div class="tagline"><span>VAMOS JUNTOS.</span></div>
     </section>
 
     <section class="hero">
