@@ -46,8 +46,12 @@ public final class APOISReturnBubble {
         }
     }
 
-    public static void externalNavigationLaunched() {
+    // QA281: startActivity() may dispatch MainActivity.onPause() before its
+    // Java return completes. Show immediately on successful external launch as
+    // well as from onPause, so the APOIS return control does not race the OS.
+    public static void externalNavigationLaunched(Context context) {
         externalNavigatorVisible = true;
+        show(context);
     }
 
     public static void externalNavigationClosed() {
@@ -128,6 +132,7 @@ public final class APOISReturnBubble {
             manager = wm;
             bubble = container;
         } catch (Exception failure) {
+            android.util.Log.w("APOISReturnBubble", "Could not display Android overlay; permission/device policy may block it", failure);
             hide();
         }
     }
