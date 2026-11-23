@@ -23,6 +23,8 @@ test('backend price and provider config are fail-closed by default',()=>{
  assert.equal(centsFromBRL(99.901),null);
  assert.throws(()=>verifyMembershipConfiguration({provider:'asaas',feeCents:5990,enabled:true,operatorApproved:true}),/fee/);
  assert.throws(()=>verifyMembershipConfiguration({provider:'asaas',feeCents:9990,enabled:false,operatorApproved:true}),/not_enabled/);
+ assert.throws(()=>verifyMembershipConfiguration({provider:'asaas',feeCents:9990,enabled:'false',operatorApproved:true}),/not_enabled/);
+ assert.throws(()=>verifyMembershipConfiguration({provider:'asaas',feeCents:9990,enabled:true,operatorApproved:'false'}),/not_enabled/);
  assert.throws(()=>verifyMembershipConfiguration({provider:'asaas',feeCents:9990,enabled:true,operatorApproved:false}),/not_enabled/);
  assert.throws(()=>verifyMembershipConfiguration({provider:'other',feeCents:9990,enabled:true,operatorApproved:true}),/provider/);
 });
