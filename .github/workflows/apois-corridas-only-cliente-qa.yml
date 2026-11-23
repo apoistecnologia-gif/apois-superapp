@@ -2,9 +2,6 @@ name: APOIS Corridas-only Cliente QA APK
 # Own QA package; original dual-module workflow unchanged, no production deploy.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feature/apois-corridas-only-mensalidade-9990-20261123
 
 permissions:
   contents: read
