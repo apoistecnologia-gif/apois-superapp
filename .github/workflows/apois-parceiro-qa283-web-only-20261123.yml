@@ -1,0 +1,75 @@
+name: APOIS Parceiro - Auditoria QA283 Web Only
+on:
+  push:
+    branches:
+      - fix/apois-parceiro-auditoria-20261123
+    paths:
+      - '.github/workflows/apois-parceiro-qa283-web-only-20261123.yml'
+      - 'scripts/build-partner-release.sh'
+      - 'scripts/fix-partner-qa283-operational-races-v1.mjs'
+      - 'scripts/qa/test-partner-qa283-operational-races-v1.test.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  partner-audit-qa283:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - name: Load pinned protected sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$APOIS_REPO_TOKEN"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -s sources/apois-corridas-motorista-admin/src/routes/motorista.app.tsx
+          test -s sources/apois-entregas/src/components/CourierOfferOverlay.tsx
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.14"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Verify source locks and standalone patch behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/fix-partner-qa283-operational-races-v1.mjs
+          node --check scripts/qa/test-partner-qa283-operational-races-v1.test.mjs
+          npm run verify:pins
+          node --test scripts/qa/test-partner-qa283-operational-races-v1.test.mjs
+      - name: Build isolated Partner web apps with full existing regression suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run build:partner
+          test -s superapp/partner-shell/dist/index.html
+          test -s superapp/partner-shell/dist/modules/motorista/index.html
+          test -s superapp/partner-shell/dist/modules/entregador/index.html
+          APOIS_QA283_ROLE=driver node --test scripts/qa/test-partner-qa283-operational-races-v1.test.mjs
+          APOIS_QA283_ROLE=courier node --test scripts/qa/test-partner-qa283-operational-races-v1.test.mjs
+          if find . -name '*.apk' -type f -print -quit | grep -q .; then
+            echo "::error::QA283 is WEB-only; no Android artifact should be produced"
+            exit 1
+          fi
+          echo "[OK] Motorista + Entregador QA283 WEB and typechecks passed; no production or Android changes."
