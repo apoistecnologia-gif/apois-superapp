@@ -108,8 +108,11 @@ export function verifyMobileBundleAssets(bundleRoot, entries, label){
  console.log('[PASS] '+label+' bundle: '+entries.length+' entrypoints, '+inspected+' linked local assets verified');
  return {entries:entries.length,assetsChecked:inspected};
 }
-export function verifyPartnerBundleAssets(bundleRoot){
- return verifyMobileBundleAssets(bundleRoot,entrypoints,'Partner');
+export function verifyPartnerBundleAssets(bundleRoot, modules=['motorista','entregador']){
+ if (!Array.isArray(modules) || !modules.length || modules.some(name=>!['motorista','entregador'].includes(name)))
+  throw Error('[FAIL] Invalid Partner module allowlist');
+ const entries=['index.html',...modules.map(name=>`modules/${name}/index.html`)];
+ return verifyMobileBundleAssets(bundleRoot,entries,'Partner');
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  verifyPartnerBundleAssets(process.argv[2]||'superapp/partner-shell/dist');
