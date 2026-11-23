@@ -5,7 +5,7 @@ const root=resolve(process.cwd());
 const matrix=[
   ['.work/partner-motorista/src/routes/motorista.app.tsx',[
     'data-apois-premium-driver-header','data-apois-premium-driver-summary','data-apois-premium-driver-nav',
-    'data-apois-premium-screen="driver-offer"','data-apois-premium-screen="driver-active"',
+    'data-apois-premium-screen="driver-offer"','data-apois-premium-screen="driver-active"','data-apois-premium-screen="driver-rating"',
     'DriverActiveRideRecovery','PickupNavOverlay','ActiveTripNavOverlay','onAccept','onReject','onStart','onComplete','onClick={toggleOnline}'
   ]],
   ['.work/partner-motorista/src/routes/motorista.login.tsx',['Entrar','Esqueci minha senha']],
