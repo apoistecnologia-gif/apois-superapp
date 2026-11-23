@@ -95,25 +95,25 @@ jobs:
           # Audits run above before any transformations.
           bash scripts/build-partner-release.sh
           node scripts/qa/verify-partner-premium-all-screens-v1.mjs
-          grep -Fq 'data-apois-courier-map-first-v2' .work/partner-entregador/src/routes/courier.tsx
-          grep -Fq 'data-apois-courier-map-canvas-v2' .work/partner-entregador/src/components/CourierRouteMap.tsx
-          grep -Fq 'data-apois-courier-premium-status-v2' .work/partner-entregador/src/components/CourierPremiumViews.tsx
-          grep -Fq 'data-apois-courier-gps-status-v2' .work/partner-entregador/src/components/CourierLocationTracker.tsx
-          grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'data-apois-premium-driver-header' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'data-apois-premium-driver-summary' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'data-apois-premium-driver-nav' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'data-apois-premium-courier-summary' .work/partner-entregador/src/routes/courier.tsx
-          grep -Fq 'data-apois-premium-availability' .work/partner-entregador/src/routes/courier.tsx
-          grep -Fq 'aria-checked={online}' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'APOIS_DRIVER_VIDEO_20261112_ROTATION_V1' .work/partner-motorista/src/components/MovviMap.tsx
-          grep -Fq 'driverCameraHistory.delete(map)' .work/partner-motorista/src/routes/motorista.app.tsx
-          test -s superapp/partner-shell/dist/modules/motorista/index.html
-          test -s superapp/partner-shell/dist/modules/entregador/index.html
-          grep -Fq -- '--red:#F51D2A' superapp/partner-shell/dist/index.html
-          grep -Fq -- '--red-dark:#BB071D' superapp/partner-shell/dist/index.html
-          grep -Fq 'VAMOS JUNTOS.' superapp/partner-shell/dist/index.html
+          grep -Fq 'data-apois-courier-map-first-v2' .work/partner-entregador/src/routes/courier.tsx || { echo "[FAIL] QA291 post-build gate 1: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-courier-map-canvas-v2' .work/partner-entregador/src/components/CourierRouteMap.tsx || { echo "[FAIL] QA291 post-build gate 2: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-courier-premium-status-v2' .work/partner-entregador/src/components/CourierPremiumViews.tsx || { echo "[FAIL] QA291 post-build gate 3: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-courier-gps-status-v2' .work/partner-entregador/src/components/CourierLocationTracker.tsx || { echo "[FAIL] QA291 post-build gate 4: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 5: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-premium-driver-header' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 6: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-premium-driver-summary' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 7: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-premium-driver-nav' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 8: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-premium-courier-summary' .work/partner-entregador/src/routes/courier.tsx || { echo "[FAIL] QA291 post-build gate 9: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-premium-availability' .work/partner-entregador/src/routes/courier.tsx || { echo "[FAIL] QA291 post-build gate 10: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'aria-checked={online}' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 11: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-trip-one-metrics-v1' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 12: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'APOIS_DRIVER_VIDEO_20261112_ROTATION_V1' .work/partner-motorista/src/components/MovviMap.tsx || { echo "[FAIL] QA291 post-build gate 13: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'driverCameraHistory.delete(map)' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 14: generated source or bundle check missing"; exit 1; }
+          test -s superapp/partner-shell/dist/modules/motorista/index.html || { echo "[FAIL] QA291 post-build gate 15: generated source or bundle check missing"; exit 1; }
+          test -s superapp/partner-shell/dist/modules/entregador/index.html || { echo "[FAIL] QA291 post-build gate 16: generated source or bundle check missing"; exit 1; }
+          grep -Fq -- '--red:#F51D2A' superapp/partner-shell/dist/index.html || { echo "[FAIL] QA291 post-build gate 17: generated source or bundle check missing"; exit 1; }
+          grep -Fq -- '--red-dark:#BB071D' superapp/partner-shell/dist/index.html || { echo "[FAIL] QA291 post-build gate 18: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'VAMOS JUNTOS.' superapp/partner-shell/dist/index.html || { echo "[FAIL] QA291 post-build gate 19: generated source or bundle check missing"; exit 1; }
           if find . -type f -name '*.apk' -print -quit | grep -q .; then
             echo "::error::Proibido criar APK nesta homologação"
             exit 1
