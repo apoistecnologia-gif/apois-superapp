@@ -387,6 +387,8 @@ node "$ROOT/scripts/fix-partner-qa290-compact-offer-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa290-compact-offer-v1.test.mjs"
 if [ "${APOIS_LAUNCH_MODE:-corridas_only}" = "corridas_only" ]; then
   node "$ROOT/scripts/apply-corridas-only-driver-plan-display-v1.mjs"
+  node "$ROOT/scripts/apply-corridas-only-driver-pix-v2-ui.mjs"
+  node "$ROOT/scripts/qa/verify-staged-driver-pix-ui-v2.mjs"
 fi
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
