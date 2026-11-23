@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { isCorridasOnly } from '../../config/apois-launch-mode.mjs';
 
 const file = resolve(process.argv[2] || 'superapp/shell/dist/modules/corridas/index.html');
 const html = readFileSync(file, 'utf8');
@@ -28,5 +29,10 @@ assert.equal(bytes.readUInt32BE(20), 128, 'Unexpected official brand height');
 assert.ok(html.includes('id="root"'), 'React root missing');
 assert.match(html, /<script\b[^>]*src="[^"]+\.js"[^>]*><\/script>/, 'React entrypoint missing');
 assert.ok(html.includes('data-apois-superapp-bridge'), 'Preserve Corridas routing/session bridge');
-assert.ok(html.includes('apois-superapp-module-bridge'), 'Preserve selector button/return to other services');
+if (isCorridasOnly()) {
+  assert.ok(!html.includes('apois-superapp-module-bridge'), 'Corridas-only APK must NOT inject delivery selector');
+  assert.ok(!html.includes('apois-switch-service'), 'Corridas-only APK must NOT expose old service switcher');
+} else {
+  assert.ok(html.includes('apois-superapp-module-bridge'), 'Full-mode build retains original service selector');
+}
 console.log('[OK] APK Cliente Corridas: loading screen white/red with embedded APOIS PNG; React and bridges intact');
