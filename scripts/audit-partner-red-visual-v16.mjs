@@ -31,13 +31,14 @@ function forbidAll(path, markers, label) {
 }
 
 requireAll('superapp/partner-shell/index.html', [
-  '--red:#E51B23',
-  '--red-dark:#C9141B',
+  '--red:#F51D2A',
+  '--red-dark:#BB071D',
   'APOIS <em>Parceiro</em>',
   'Escolha como você deseja trabalhar na APOIS.',
   'Sou <em>Motorista</em>',
   'Sou <em>Entregador</em>',
-  'background:linear-gradient(135deg,#D51722,#CE101A 58%,#C9141B)',
+  'background:#BB071D',
+  'VAMOS JUNTOS.',
   'background:#F7F7F8',
 ], 'seletor Parceiro replica a referência aprovada com superfícies claras e CTA vermelho');
 
