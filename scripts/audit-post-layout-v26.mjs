@@ -196,7 +196,7 @@ for (const [label, source, markers] of [
   ['Motorista', driverTheme, ['applyThemeClass("light");', 'identidade visual clara vermelho/branco']],
   ['Entregador', courierTheme, ['APOIS_PARTNER_COURIER_RED_V2', '#E51B23', '#C9141B']],
   ['Hardener visual final', partnerVisual, ['APOIS_PARTNER_RED_VISUAL_V1', 'APOIS_PARTNER_COURIER_RED_VISUAL_V1']],
-  ['Seletor Parceiro', partnerShell, ['--red:#E51B23', '--red-dark:#C9141B', 'background:#F7F7F8']],
+  ['Seletor Parceiro', partnerShell, ['--red:#F51D2A', '--red-dark:#BB071D', 'background:#F7F7F8', 'VAMOS JUNTOS.']],
 ]) {
   const missing = markers.filter((marker) => !source.includes(marker));
   if (missing.length) fail(label + ' sem identidade vermelho/branco completa: ' + missing.join(' | '));
