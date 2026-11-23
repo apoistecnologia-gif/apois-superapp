@@ -93,6 +93,14 @@
     }
     .primary-action:active,.round-action:active{transform:translateY(1px)}
     .primary-action:focus-visible,.round-action:focus-visible{outline:3px solid rgba(229,27,35,.22);outline-offset:3px}
+    /* QA285: manual role entry must not silently open the wrong module. */
+    .role-conflict[hidden]{display:none!important}
+    .role-conflict{position:relative;z-index:5;display:grid;gap:10px;margin:14px 0 4px;padding:14px 16px;border:1px solid #E7B0B7;border-radius:18px;background:#FFF5F6;color:#891822;box-shadow:0 8px 18px rgba(27,27,27,.06)}
+    .role-conflict p{margin:0;font-size:13px;line-height:1.45;font-weight:600}
+    .role-conflict-actions{display:flex;flex-wrap:wrap;gap:8px}
+    .role-conflict-actions button{min-height:44px;border-radius:12px;padding:8px 14px;font-size:13px;font-weight:800}
+    .role-conflict-primary{border:0;background:#BB071D;color:#fff}
+    .role-conflict-dismiss{border:1px solid #E7B0B7;background:#fff;color:#891822}
     .foot{text-align:center;margin-top:26px;color:#4e545d;font-size:11px;letter-spacing:.34em;text-transform:uppercase}
     .foot:after{content:"";display:block;width:26px;height:4px;margin:10px auto 0;border-radius:999px;background:var(--red)}
     @media(max-height:760px){
@@ -171,6 +179,13 @@
       <p>Escolha como você deseja trabalhar na APOIS.<br />Motoristas e entregadores usam este aplicativo.</p>
     </section>
 
+    <section class="role-conflict" id="apois-role-conflict" role="alert" aria-live="assertive" tabindex="-1" hidden>
+      <p id="apois-role-conflict-text"></p>
+      <div class="role-conflict-actions">
+        <button id="apois-role-conflict-open" class="role-conflict-primary" type="button">Abrir função ativa</button>
+        <button id="apois-role-conflict-dismiss" class="role-conflict-dismiss" type="button">Fechar aviso</button>
+      </div>
+    </section>
     <section class="choices" aria-label="Escolha seu perfil de parceiro">
       <article class="partner-card motorista">
         <div class="card-title">
@@ -241,10 +256,37 @@
       return true;
     }
 
+    // APOIS_QA285_ROLE_SELECTION_GUARD: routeRole is reserved for internal
+    // push/deep-links and retains its fail-closed operational lock. A manual
+    // button must never silently navigate to the OTHER role's login.
+    function manualRouteRole(requestedRole,target){
+      const locked=operationalRole();
+      if(locked&&locked!==requestedRole){
+        const banner=document.getElementById('apois-role-conflict');
+        const description=document.getElementById('apois-role-conflict-text');
+        const open=document.getElementById('apois-role-conflict-open');
+        const dismiss=document.getElementById('apois-role-conflict-dismiss');
+        const activeName=locked==='motorista'?'Motorista':'Entregador';
+        const selectedName=requestedRole==='motorista'?'Motorista':'Entregador';
+        if(banner&&description&&open&&dismiss){
+          description.textContent='O '+activeName+' ainda está marcado como operacional. Para entrar em '+selectedName+', abra o '+activeName+' e confirme que está OFFLINE. Não alteramos sua função ativa automaticamente.';
+          open.textContent='Abrir '+activeName+' para ficar offline';
+          open.onclick=()=>window.location.assign(partnerModuleUrl(operationalHome(locked)));
+          dismiss.onclick=()=>{banner.hidden=true;};
+          banner.hidden=false;
+          banner.focus();
+        }else{
+          window.alert?.('Você precisa ficar OFFLINE no '+activeName+' para acessar '+selectedName+'.');
+        }
+        return false;
+      }
+      return routeRole(requestedRole,target);
+    }
+
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
       const moduleName=button.dataset.module;
       if(moduleName!=='motorista'&&moduleName!=='entregador')return;
-      routeRole(moduleName,urls[moduleName]);
+      manualRouteRole(moduleName,urls[moduleName]);
     }));
 
     function authParams(incoming){
