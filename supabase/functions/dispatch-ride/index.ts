@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
 
     const { data: driverRows, error: driversError } = await admin
       .from("drivers")
-      .select("id,user_id,category,is_online,approval_status,subscription_status,current_lat,current_lng,last_location_at")
+      .select("id,user_id,category,is_online,approval_status,suspended_at,subscription_status,current_lat,current_lng,last_location_at")
       .eq("is_online", true)
       .eq("approval_status", "aprovado");
     if (driversError) return json(req, { error: "driver_lookup_failed", detail: driversError.message }, 500);
@@ -145,6 +145,7 @@ Deno.serve(async (req) => {
       category: row.category == null ? null : text(row.category),
       is_online: row.is_online === true,
       approval_status: row.approval_status == null ? null : text(row.approval_status),
+      suspended_at: row.suspended_at == null ? null : text(row.suspended_at),
       subscription_status: row.subscription_status == null ? null : text(row.subscription_status),
       current_lat: numberOrNull(row.current_lat),
       current_lng: numberOrNull(row.current_lng),

@@ -6,6 +6,7 @@ export type DispatchDriver = {
   category: string | null;
   is_online: boolean;
   approval_status: string | null;
+  suspended_at: string | null;
   subscription_status: string | null;
   current_lat: number | null;
   current_lng: number | null;
@@ -129,6 +130,7 @@ export function findEligibleDriversForRide(args: {
     if (remainingPool && !remainingPool.has(userId)) continue;
     if (driver.is_online !== true) continue;
     if (String(driver.approval_status ?? "").toLowerCase() !== "aprovado") continue;
+    if (driver.suspended_at != null) continue;
     if (!["active", "ativa", "teste"].includes(String(driver.subscription_status ?? "").toLowerCase())) continue;
     if (normalizeRideCategory(driver.category) !== category) continue;
 

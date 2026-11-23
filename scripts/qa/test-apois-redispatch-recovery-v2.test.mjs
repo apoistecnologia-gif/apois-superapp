@@ -11,12 +11,16 @@ const cancel = source("supabase/functions/driver-cancel-redispatch/index.ts");
 const R1 = "00000000-0000-4000-8000-000000000001";
 const R2 = "00000000-0000-4000-8000-000000000002";
 
-function createRecoveryHarness({ events = [], stale = [], rides = {}, dispatch = async () => ({ ok: true, status: 200, body: { ok: true, action: "offered" } }) } = {}) {
+function createRecoveryHarness({ events = [], stale = [], rides = {}, cronValidToken = null, dispatch = async () => ({ ok: true, status: 200, body: { ok: true, action: "offered" } }) } = {}) {
   let handler;
   const filters = [];
   const dispatched = [];
   const Deno = { serve: (fn) => { handler = fn; } };
   const mockClient = {
+    rpc(name, input) {
+      assert.equal(name, "apois_redispatch_cron_token_valid");
+      return Promise.resolve({ data: input._token === cronValidToken, error: null });
+    },
     from(table) {
       const ops = [];
       const query = {
@@ -152,6 +156,35 @@ test("Active offer and completed ride are never redispatched; HTTP 200 logical f
   assert.equal(body.deferred, 1);
   assert.equal(body.retried, 0);
   assert.equal(h.dispatched.length, 1);
+});
+
+test("Vault-only cron bearer invokes recovery; invalid secret fails closed", async () => {
+  const valid = "a".repeat(64);
+  const h = createRecoveryHarness({
+    cronValidToken: valid, stale: [{ id: R1 }],
+    rides: { [R1]: pending() },
+  });
+  const cronReq = new Request("https://supabase.invalid", {
+    method: "POST", headers: { "x-apois-redispatch-scheduler": valid },
+  });
+  const res = await h.handler(cronReq);
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).retried, 1);
+  assert.deepEqual(h.dispatched.map(d => d.body), [{ ride_id: R1, mode: "initial" }]);
+
+  const wrong = createRecoveryHarness({
+    cronValidToken: "b".repeat(64), stale: [{ id: R1 }],
+    rides: { [R1]: pending() },
+  });
+  const bad = await wrong.handler(cronReq);
+  assert.equal(bad.status, 401);
+  assert.equal(wrong.dispatched.length, 0);
+  assert.equal(wrong.filters.length, 0);
+
+  const malformed = await wrong.handler(new Request("https://supabase.invalid", {
+    method: "POST", headers: { "x-apois-redispatch-scheduler": "123" },
+  }));
+  assert.equal(malformed.status, 401);
 });
 
 test("Recovery requires service role; user JWT cannot dispatch", async () => {
