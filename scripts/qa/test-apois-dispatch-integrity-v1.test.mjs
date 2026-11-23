@@ -111,3 +111,33 @@ test("Entry point forwards DB passenger_id, never an untrusted request payload",
   assert.doesNotMatch(source, /passenger_id:\s*text\(body\./);
   assert.match(source, /findEligibleDriversForRide\(/);
 });
+
+
+test("Legacy request-ride initial dispatch rejects null GPS and missing timestamps", () => {
+  const source = readFileSync("supabase/functions/request-ride/index.ts", "utf8");
+  const begin = source.indexOf("    // Missing GPS was previously converted to (0,0)");
+  const end = source.indexOf("    .map((d: any) => ({ id: String(d.user_id)", begin);
+  assert.ok(begin > 0 && end > begin, "real legacy initial GPS filters found");
+  const filterChain = source.slice(begin, end).replaceAll(": any", "");
+  const filter = new Function("drivers", "finite", "now",
+    "return drivers\n" + filterChain + ";");
+  const chooseGps = (candidate) => filter([candidate], Number.isFinite, now);
+  const good = { current_lat: nearLat, current_lng: nearLng,
+    last_location_at: new Date(now).toISOString() };
+  assert.equal(chooseGps(good).length, 1);
+  for (const fields of [
+    { current_lat: null },
+    { current_lng: null },
+    { current_lat: " " },
+    { current_lat: 0, current_lng: 0 },
+    { current_lat: 91 },
+    { current_lng: -181 },
+    { last_location_at: null },
+    { last_location_at: new Date(now - 121_000).toISOString() },
+    { last_location_at: new Date(now + 31_000).toISOString() },
+  ]) {
+    const candidate = { ...good, ...fields };
+    assert.deepEqual(chooseGps(candidate), [], "Bad initial GPS candidate: " + JSON.stringify(fields));
+  }
+  assert.match(source, /String\(d\.user_id\) !== String\(ride\.passenger_id\)/);
+});
