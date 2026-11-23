@@ -9,9 +9,10 @@ const matrix=[
     'DriverActiveRideRecovery','PickupNavOverlay','ActiveTripNavOverlay','onAccept','onReject','onStart','onComplete','onClick={toggleOnline}'
   ]],
   ['.work/partner-motorista/src/routes/motorista.login.tsx',['Entrar','Esqueci minha senha']],
-  ['.work/partner-motorista/src/routes/motorista.ganhos.tsx',['data-apois-premium-screen="driver-finance"','loadDriverFinancialDashboard','Saques indisponíveis']],
-  ['.work/partner-motorista/src/routes/motorista.corridas.tsx',['data-apois-premium-screen="driver-rides"','RideCard','aria-label']],
-  ['.work/partner-motorista/src/routes/motorista.perfil.tsx',['data-apois-premium-screen="driver-profile"','handleLogout']],
+  ['.work/partner-motorista/src/routes/motorista.ganhos.tsx',['data-apois-premium-screen="driver-finance"','loadDriverFinancialDashboard','Saques indisponíveis','ApoisDriverBottomNav','ApoisPremiumDriverNav active="ganhos"']],
+  ['.work/partner-motorista/src/routes/motorista.corridas.tsx',['data-apois-premium-screen="driver-rides"','RideCard','aria-label','ApoisPremiumDriverNav active="corridas"']],
+  ['.work/partner-motorista/src/routes/motorista.perfil.tsx',['data-apois-premium-screen="driver-profile"','handleLogout','ApoisPremiumDriverNav active="perfil"']],
+  ['.work/partner-motorista/src/components/ApoisPremiumDriverNav.tsx',['data-apois-premium-internal-nav','/motorista/app','/motorista/corridas','/motorista/ganhos','/motorista/perfil']],
   ['.work/partner-motorista/src/apois-ui-hardening-round3.css',['APOIS_PREMIUM_ALL_SCREENS_V1','#F51D2A','#BB071D','driver-offer','driver-active','driver-finance']],
   ['.work/partner-entregador/src/routes/courier.tsx',['data-apois-premium-courier-summary','data-apois-premium-availability','CourierBottomNav','CourierRouteMap','CourierOfferCard','CourierCompletionSheet','onToggle={toggleOnline}']],
   ['.work/partner-entregador/src/components/CourierPremiumViews.tsx',['data-apois-premium-screen="courier-offer"','data-apois-premium-screen="courier-active"','data-apois-premium-screen="courier-finance"','onRequestPayout','onConfirmSettlement']],
