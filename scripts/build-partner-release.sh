@@ -385,6 +385,9 @@ node --test "$ROOT/scripts/qa/test-partner-qa289-offer-fallback-v1.test.mjs"
 # visible on an ordinary Android screen without expanding the sheet.
 node "$ROOT/scripts/fix-partner-qa290-compact-offer-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa290-compact-offer-v1.test.mjs"
+if [ "${APOIS_LAUNCH_MODE:-corridas_only}" = "corridas_only" ]; then
+  node "$ROOT/scripts/apply-corridas-only-driver-plan-display-v1.mjs"
+fi
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
