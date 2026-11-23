@@ -1,0 +1,280 @@
+name: APOIS Corridas-only Motorista QA APK
+# Preserves full Partner workflow in its original file; no public deploy.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/apois-corridas-only-mensalidade-9990-20261123
+
+permissions:
+  contents: read
+
+jobs:
+  build-partner-apk:
+    if: github.ref == 'refs/heads/feature/apois-corridas-only-mensalidade-9990-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_LAUNCH_MODE: corridas_only
+      PARTNER_APP_PACKAGE: "br.com.apois.parceiro"
+      PARTNER_APP_LABEL: "APOIS Motorista"
+      PARTNER_VERSION_CODE: "28"
+      PARTNER_VERSION_NAME: "1.0.27"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      # QA-only, enabled after user published style and confirmed vector + rotation in Cloud.
+      # QA206: public Map ID created in Google Cloud project Movvi; no API keys or billing changed.
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64 }}
+      APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
+      APOIS_PARTNER_QA_CERT_SHA256: ${{ secrets.APOIS_PARTNER_QA_CERT_SHA256 }}
+
+    steps:
+      - name: Checkout APOIS Superapp
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Validate required GitHub secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64 APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 APOIS_PARTNER_QA_CERT_SHA256
+          do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::GitHub secret ausente: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::Cadastre os secrets acima em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "[OK] Secrets mínimos presentes"
+
+      - name: Checkout protected APOIS sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -d sources/apois-corridas-motorista-admin
+          test -d sources/apois-entregas
+          test -d sources/apois-corridas-passageiro
+          echo "[OK] Fontes protegidas carregadas"
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Validate Android SDK on runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_SDK_ROOT:-}"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager -perm -111 | sort -V | tail -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --list >/dev/null
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "[OK] Android SDK disponível no runner: $SDKMANAGER"
+
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.bun/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
+          java -version
+
+      - name: Verify source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run verify:pins
+
+      - name: Validate updated APOIS Parceiro map before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-apois-unified-maps.mjs
+          node --check scripts/harden-motorista-map-branding.mjs
+          node --check scripts/harden-partner-motorista-visual-v18.mjs
+          node --check scripts/harden-partner-driver-profile-logout-v3.mjs
+          node --check scripts/harden-partner-motorista-pin-ride-v4.mjs
+          node --check scripts/harden-partner-motorista-google-roadmap-v5.mjs
+          node --check scripts/harden-partner-motorista-arrival-voice-v5.mjs
+          node --check scripts/harden-partner-driver-trip-ux-v6.mjs
+          node --check scripts/harden-partner-driver-passenger-name-v6.mjs
+          grep -Fq 'data-apois-trip-top-v6' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'rounded-\[22px\]' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'data-apois-trip-bottom-v6' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'Ver perfil do passageiro' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'onClick=' scripts/harden-partner-driver-trip-ux-v6.mjs
+          grep -Fq 'driverAppPatched=read' scripts/audit-partner-preflight-v1.mjs
+          grep -Fq 'PIN V4 always visible' scripts/audit-partner-preflight-v1.mjs
+          grep -Fq 'Profile V3 logout handler boundary' scripts/harden-partner-driver-profile-logout-v3.mjs
+          grep -Fq 'replaceLogoutFunction' scripts/harden-partner-driver-profile-logout-v3.mjs
+          grep -Fq 'nav[aria-label="Navegação principal do motorista"]' scripts/harden-partner-driver-profile-logout-v3.mjs
+          grep -Fq 'signOutDriverOnThisDevice' scripts/harden-partner-driver-profile-logout-v3.mjs
+          node --check scripts/test-partner-map-visual.mjs
+          node scripts/test-partner-map-visual.mjs
+          node --test scripts/qa/test-extract-partner-apk-cert-sha256-v1.mjs
+          node scripts/audit-partner-motorista-brand-v4.mjs
+          echo "[OK] Mapa claro, marcador centralizado e contraste verificados"
+
+      - name: Build Motorista only — preserved QA290 code
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs
+          npm run verify:pins
+          node scripts/run-bash.mjs scripts/build-partner-release.sh
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --partner
+          echo '[OK] Partner generated only Motorista; Courier source/history untouched'
+
+      - name: Validate Motorista-only packaged assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s superapp/partner-shell/dist/modules/motorista/index.html
+          test ! -e superapp/partner-shell/dist/modules/entregador
+          grep -Fq 'APOIS_CORRIDAS_ONLY_PARTNER_BOOT_V1' superapp/partner-shell/dist/index.html
+          echo '[OK] Partner contains no delivery module or dual-role launcher'
+
+      - name: Create Android project
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          cd superapp/partner-shell
+          bun install
+          rm -rf android
+          bunx cap add android
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+          bunx cap sync android
+          # Native Camera is required: never deliver a WebView-only photo chooser again.
+          test -s android/app/src/main/assets/capacitor.plugins.json
+          grep -Fq 'CameraPlugin' android/app/src/main/assets/capacitor.plugins.json
+          cd ../..
+          node scripts/configure-partner-android.mjs
+          node scripts/install-partner-launcher.mjs
+          node scripts/install-partner-splash.mjs
+          # QA280: launcher already installed GPS/navigation plugins once.
+          # Verify the native host without invoking a second installer; fail closed before Gradle.
+          node scripts/install-partner-native-qa280.mjs
+          node --test scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs
+          node scripts/strip-generated-courier-native-v1.mjs
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --native
+          node scripts/qa/verify-apois-mobile-viewport-v1.mjs parceiro --native
+          MANIFEST="superapp/partner-shell/android/app/src/main/AndroidManifest.xml"
+          grep -Fq 'android.permission.ACCESS_FINE_LOCATION' "$MANIFEST"
+          grep -Fq 'android:scheme="br.com.apois.parceiro"' "$MANIFEST"
+          test -s superapp/partner-shell/android/app/google-services.json
+          echo "[OK] Projeto Android Parceiro criado"
+
+      - name: Restore original protected Partner QA signing identity
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64:?Protected original Partner QA keystore is required}"
+          : "${APOIS_PARTNER_QA_CERT_SHA256:?Partner QA certificate SHA256 pin is required}"
+          mkdir -p "$HOME/.android"
+          umask 077
+          printf '%s' "$APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
+          test -s "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+          node scripts/qa/configure-partner-qa-debug-signing-v1.mjs
+          echo "[OK] QA original signing identity pinned; no replacement keystore generated"
+
+      - name: Stamp monotonic Partner QA Android version
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLE_FILE="superapp/partner-shell/android/app/build.gradle"
+          VERSION_CODE="$((2000 + GITHUB_RUN_NUMBER))"
+          VERSION_NAME="1.0.28-corridas.${GITHUB_RUN_NUMBER}"
+          sed -i -E "s/(versionCode[[:space:]]+)[0-9]+/\\1${VERSION_CODE}/" "$GRADLE_FILE"
+          sed -i -E "s/(versionName[[:space:]]+)\"[^\"]*\"/\\1\"${VERSION_NAME}\"/" "$GRADLE_FILE"
+          grep -Fq "versionCode ${VERSION_CODE}" "$GRADLE_FILE"
+          grep -Fq "versionName \"${VERSION_NAME}\"" "$GRADLE_FILE"
+          echo "[OK] Partner QA Android versionCode=${VERSION_CODE} monotonic"
+
+      - name: Build installable debug APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd superapp/partner-shell/android
+          chmod +x gradlew
+          ./gradlew clean assembleDebug --no-daemon --stacktrace
+          cd ../../..
+          mkdir -p build
+          APK="$(find superapp/partner-shell/android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner -perm -111 | sort -V | tail -n 1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK" >/dev/null
+          APK_CERT="$("$APKSIGNER" verify --print-certs "$APK" | node scripts/qa/extract-partner-apk-cert-sha256-v1.mjs)"
+          EXPECTED_CERT="$(printf '%s' "$APOIS_PARTNER_QA_CERT_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+          if [ "${#EXPECTED_CERT}" -ne 64 ] || [ -z "$APK_CERT" ] || [ "$APK_CERT" != "$EXPECTED_CERT" ]; then
+            echo "::error::Partner APK signature mismatch: refusing incompatible update"
+            exit 1
+          fi
+          echo "[OK] Partner APK signature matches protected original QA certificate"
+          AAPT="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name aapt -perm -111 | sort -V | tail -n 1)"
+          test -n "$AAPT" || { echo "::error::aapt missing; cannot verify Parceiro APK package/version"; exit 1; }
+          "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$PARTNER_APP_PACKAGE" "$((2000 + GITHUB_RUN_NUMBER))" "1.0.28-corridas.${GITHUB_RUN_NUMBER}"
+          echo "[OK] Parceiro APK package/version verified against QA configuration"
+          # Require both Android location services in the FINAL installable APK.
+          # A native runtime missing from the packaged Manifest must block release.
+          APK_MANIFEST="$(mktemp)"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$APK_MANIFEST"
+          grep -Fq 'br.com.apois.parceiro.DriverLocationService' "$APK_MANIFEST" || { echo "[FAIL] APK sem DriverLocationService"; rm -f "$APK_MANIFEST"; exit 1; }
+          if grep -Fq 'br.com.apois.parceiro.CourierLocationService' "$APK_MANIFEST"; then echo '[FAIL] APK contém Entregador'; rm -f "$APK_MANIFEST"; exit 1; fi
+          rm -f "$APK_MANIFEST"
+          echo "[OK] APK contém GPS nativo do Motorista sem serviço de Entregador"
+          # Verify the ACTUAL APK ZIP payload, not only intermediate web/dist.
+          TEMP_APK_ASSETS="$(mktemp -d)"
+          trap 'rm -rf "$TEMP_APK_ASSETS"' EXIT
+          unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
+          test -s "$TEMP_APK_ASSETS/assets/public/index.html"
+          node --input-type=module -e "import {verifyPartnerBundleAssets} from './scripts/qa/verify-partner-static-assets-v1.mjs'; verifyPartnerBundleAssets(process.argv[1],['motorista'])" "$TEMP_APK_ASSETS/assets/public"
+          test ! -e "$TEMP_APK_ASSETS/assets/public/modules/entregador"
+          for path in index.html modules/motorista/index.html; do
+            grep -Fq 'data-apois-embedded-viewport-v1' "$TEMP_APK_ASSETS/assets/public/$path" || { echo "[FAIL] Parceiro APK: proteção global ausente: $path"; exit 1; }
+          done
+          echo '[OK] Corridas APK inclui viewport nas duas entradas Motorista'
+          echo "[OK] Parceiro APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
+          rm -rf "$TEMP_APK_ASSETS"
+          trap - EXIT
+          cp "$APK" build/APOIS-Motorista-Corridas-TESTE.apk
+          test -s build/APOIS-Motorista-Corridas-TESTE.apk
+          echo "[OK] APK de teste gerado"
+
+      - name: Upload APOIS Parceiro APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Motorista-Corridas-TESTE
+          path: build/APOIS-Motorista-Corridas-TESTE.apk
+          if-no-files-found: error
+          retention-days: 7
