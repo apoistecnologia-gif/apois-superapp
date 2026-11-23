@@ -53,22 +53,39 @@ CREATE OR REPLACE FUNCTION private.apois_guard_new_ride_accept_membership_v2()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $function$
 DECLARE enabled boolean;
+DECLARE new_assignment boolean := false;
+DECLARE proposed_driver_id uuid;
 BEGIN
  SELECT COALESCE(s.value='true'::jsonb,false) INTO enabled FROM public.app_settings s
  WHERE s.key='finance.driver_membership_pix_enabled';
- IF COALESCE(enabled,false)
- AND NEW.status='motorista_a_caminho'
- AND OLD.status IS DISTINCT FROM 'motorista_a_caminho'
- AND NEW.driver_id IS NOT NULL
- AND NOT private.apois_driver_membership_valid_for_new_ride(NEW.driver_id) THEN
-  RAISE EXCEPTION 'driver_subscription_expired_or_missing' USING ERRCODE='42501';
+ IF NOT COALESCE(enabled,false) THEN RETURN NEW; END IF;
+ proposed_driver_id:=COALESCE(NEW.driver_id,NEW.accepted_driver_id);
+ IF TG_OP='INSERT' THEN
+   new_assignment:=proposed_driver_id IS NOT NULL;
+ ELSE
+   -- No change of driver/status for an existing in-progress ride is blocked.
+   -- Queued follow-up rides can retain 'procurar_motorista' at acceptance:
+   -- checking only 'motorista_a_caminho' would miss that assignment.
+   new_assignment:=
+     (NEW.driver_id IS NOT NULL
+       AND NEW.driver_id IS DISTINCT FROM OLD.driver_id)
+     OR (NEW.accepted_driver_id IS NOT NULL
+       AND NEW.accepted_driver_id IS DISTINCT FROM OLD.accepted_driver_id)
+     OR (NEW.driver_id IS NOT NULL AND NEW.status='motorista_a_caminho'
+       AND OLD.status IS DISTINCT FROM 'motorista_a_caminho'
+       AND OLD.status NOT IN ('motorista_chegou','em_viagem'));
+ END IF;
+ IF new_assignment
+    AND (proposed_driver_id IS NULL
+      OR NOT private.apois_driver_membership_valid_for_new_ride(proposed_driver_id)) THEN
+   RAISE EXCEPTION 'driver_subscription_expired_or_missing' USING ERRCODE='42501';
  END IF;
  RETURN NEW;
 END
 $function$;
 DROP TRIGGER IF EXISTS apois_guard_new_ride_accept_membership_v2 ON public.rides;
 CREATE TRIGGER apois_guard_new_ride_accept_membership_v2
- BEFORE UPDATE OF status,driver_id ON public.rides
+ BEFORE INSERT OR UPDATE OF status,driver_id,accepted_driver_id ON public.rides
  FOR EACH ROW EXECUTE FUNCTION private.apois_guard_new_ride_accept_membership_v2();
 REVOKE ALL ON FUNCTION private.apois_guard_new_ride_accept_membership_v2() FROM PUBLIC;
 
