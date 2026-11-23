@@ -37,6 +37,7 @@ on:
       - fix/apois-parceiro-qa288-acesso-direto-perfis-20261123
       - fix/apois-parceiro-qa289-motorista-ofertas-fallback-20261123
       - fix/apois-parceiro-qa290-oferta-compacta-20261123
+      - fix/apois-parceiro-qa291-entregador-mapa-premium-20261123
       - fix/entregas-homologacao-ajustes-20261030
       - feat/apois-cliente-red-visual-20261003
       - fix/apois-partner-courier-gps-logo-push-20261027
@@ -84,6 +85,8 @@ on:
       - 'scripts/fix-partner-qa276-courier-auto-open-after-accept.mjs'
       - 'scripts/qa/test-partner-qa276-courier-auto-open-after-accept.test.mjs'
       - 'scripts/build-partner-release.sh'
+      - 'scripts/fix-partner-courier-map-first-visual-v2.mjs'
+      - 'scripts/qa/test-partner-courier-map-first-visual-v2.test.mjs'
       - 'scripts/install-partner-native-qa280.mjs'
       - 'scripts/qa/test-partner-qa280-native-build-gate-v1.test.mjs'
       - 'scripts/fix-partner-qa280-active-ride-gps-recovery-v1.mjs'
@@ -145,7 +148,7 @@ permissions:
 
 jobs:
   build-partner-apk:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112' || github.ref == 'refs/heads/feature/apois-partner-external-navigation-20261113' || github.ref == 'refs/heads/feature/apois-partner-qa234-swipe-autonav-cost-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa236-pin-retorno-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa239-bolha-economia-mapas-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa240-bolha-logo-permissao-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa241-perfil-bolha-entregador-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa243-entregador-metricas-mapa-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa276-autonav-entregador-20261115' || github.ref == 'refs/heads/fix/apois-parceiro-qa278-bolha-retorno-20261115' || github.ref == 'refs/heads/fix/apois-parceiro-qa280-motorista-gps-chegada-20261116' || github.ref == 'refs/heads/fix/apois-parceiro-qa281-gps-painel-bolha-retorno-20261122' || github.ref == 'refs/heads/build/apois-parceiro-premium-qa282-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa283-perfil-total-corridas-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa284-historico-resumo-legibilidade-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa285-seletor-perfis-botoes-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa287-reconcilia-seletor-motorista-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa288-acesso-direto-perfis-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa289-motorista-ofertas-fallback-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa290-oferta-compacta-20261123')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/audit/continuacao-20261107' || github.ref == 'refs/heads/build/qa218-android-homologacao-20261112' || github.ref == 'refs/heads/fix/motorista-qa219-video-20261112' || github.ref == 'refs/heads/feature/apois-partner-external-navigation-20261113' || github.ref == 'refs/heads/feature/apois-partner-qa234-swipe-autonav-cost-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa235-um-mapa-chegada-auto-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa236-pin-retorno-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa239-bolha-economia-mapas-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa240-bolha-logo-permissao-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa241-perfil-bolha-entregador-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa243-entregador-metricas-mapa-20261113' || github.ref == 'refs/heads/fix/apois-parceiro-qa276-autonav-entregador-20261115' || github.ref == 'refs/heads/fix/apois-parceiro-qa278-bolha-retorno-20261115' || github.ref == 'refs/heads/fix/apois-parceiro-qa280-motorista-gps-chegada-20261116' || github.ref == 'refs/heads/fix/apois-parceiro-qa281-gps-painel-bolha-retorno-20261122' || github.ref == 'refs/heads/build/apois-parceiro-premium-qa282-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa283-perfil-total-corridas-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa284-historico-resumo-legibilidade-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa285-seletor-perfis-botoes-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa287-reconcilia-seletor-motorista-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa288-acesso-direto-perfis-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa289-motorista-ofertas-fallback-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa290-oferta-compacta-20261123' || github.ref == 'refs/heads/fix/apois-parceiro-qa291-entregador-mapa-premium-20261123')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -319,6 +322,14 @@ jobs:
           grep -Fq 'data-apois-driver-menu-fullscreen-v4' .work/partner-motorista/src/components/DriverSideMenu.tsx
           grep -Fq 'data-apois-driver-settings-contrast-v4' .work/partner-motorista/src/routes/motorista.configuracoes.tsx
           grep -Fq 'rpc("request_own_account_deletion")' .work/partner-motorista/src/routes/motorista.configuracoes.tsx
+          # QA291: fail closed if the actual Android build input lacks the approved Courier map-first redesign.
+          grep -Fq 'data-apois-courier-map-first-v2' .work/partner-entregador/src/routes/courier.tsx || { echo "::error::QA291 tela inicial do Entregador sem layout do mapa"; exit 1; }
+          grep -Fq 'data-apois-courier-premium-status-v2' .work/partner-entregador/src/components/CourierPremiumViews.tsx || { echo "::error::QA291 disponibilidade compacta ausente"; exit 1; }
+          grep -Fq 'data-apois-courier-map-canvas-v2' .work/partner-entregador/src/components/CourierRouteMap.tsx || { echo "::error::QA291 mapa ampliado ausente"; exit 1; }
+          grep -Fq 'data-apois-courier-gps-status-v2' .work/partner-entregador/src/components/CourierLocationTracker.tsx || { echo "::error::QA291 banner GPS ainda ocupa espaco da tela"; exit 1; }
+          grep -Fq 'APOIS_COURIER_MAP_FIRST_V2' .work/partner-entregador/src/system-theme.css || { echo "::error::QA291 estilos do mapa ausentes"; exit 1; }
+          grep -R -Fq 'data-apois-courier-map-first-v2' superapp/partner-shell/dist/modules/entregador || { echo "::error::QA291 layout nao entrou no bundle final"; exit 1; }
+          echo '[OK] QA291: mapa integrado, disponibilidade compacta, chamadas reduzidas e CSS compilados'
           echo '[OK] APK Parceiro inclui correções acumuladas Entregador e Motorista'
           grep -Fq 'APOIS_COURIER_SEARCH_SCAN_V1' .work/partner-entregador/src/system-theme.css
           grep -Fq 'APOIS_ANDROID_DRIVER_PHOTO_CAPTURE_V2' .work/partner-motorista/src/components/DriverDocumentField.tsx
@@ -449,6 +460,10 @@ jobs:
           unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
           test -s "$TEMP_APK_ASSETS/assets/public/index.html"
           node scripts/qa/verify-partner-static-assets-v1.mjs "$TEMP_APK_ASSETS/assets/public"
+          # Verify the compiled APK contains the new authenticated Courier layout, not a stale QA290 build.
+          grep -R -Fq 'data-apois-courier-map-first-v2' "$TEMP_APK_ASSETS/assets/public/modules/entregador" || { echo "::error::QA291 layout premium ausente do APK instalado"; exit 1; }
+          grep -R -Fq 'data-apois-courier-premium-status-v2' "$TEMP_APK_ASSETS/assets/public/modules/entregador" || { echo "::error::QA291 faixa de disponibilidade ausente do APK"; exit 1; }
+          echo '[OK] APK QA291 contém mapa e faixa compacta do Entregador, não layout antigo'
           for path in index.html modules/motorista/index.html modules/entregador/index.html; do
             grep -Fq 'data-apois-embedded-viewport-v1' "$TEMP_APK_ASSETS/assets/public/$path" || { echo "[FAIL] Parceiro APK: proteção global ausente: $path"; exit 1; }
           done
@@ -464,7 +479,7 @@ jobs:
         if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         uses: actions/upload-artifact@v4
         with:
-          name: APOIS-Parceiro-TESTE
+          name: APOIS-Parceiro-TESTE-QA291-Mapa-Premium
           path: build/APOIS-Parceiro-TESTE.apk
           if-no-files-found: error
           retention-days: 7
