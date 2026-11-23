@@ -3,6 +3,12 @@ name: APOIS Corridas-only Cliente QA APK
 on:
   workflow_dispatch:
 
+# Avoid launching multiple costly Android builds for superseded commits.
+# Never cancel a different APK flavor, branch or a manual QA run on another ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
