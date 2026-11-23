@@ -71,6 +71,10 @@ CREATE TRIGGER apois_guard_new_ride_accept_membership_v2
  FOR EACH ROW EXECUTE FUNCTION private.apois_guard_new_ride_accept_membership_v2();
 REVOKE ALL ON FUNCTION private.apois_guard_new_ride_accept_membership_v2() FROM PUBLIC;
 
+-- IMPORTANT: checked against the live (read-only) driver_membership_charges_status_check:
+-- allowed states are pending, confirmed, received, overdue, refunded, cancelled, failed.
+-- Never use paid/processing as charge statuses; those values would cause CHECK violations.
+
 -- Service-role-only atomic settlement. Must be called ONLY by authenticated
 -- bank-verified Edge webhook handler using the result of GET provider payment.
 -- Never trust the incoming notification amount or driver id alone.
@@ -114,11 +118,11 @@ BEGIN
  IF NOT FOUND OR m.monthly_fee_cents<>9990 OR m.provider<>_provider THEN
   RAISE EXCEPTION 'bank_payment_does_not_match_driver_contract' USING ERRCODE='42501';
  END IF;
- IF c.status='paid' THEN
+ IF c.status='received' THEN
     driver_id:=c.driver_id;paid_through:=m.paid_through;was_duplicate:=true;RETURN NEXT;
     RETURN;
  END IF;
- IF c.status NOT IN ('pending','processing') THEN
+ IF c.status NOT IN ('pending','confirmed') THEN
   RAISE EXCEPTION 'charge_cancelled_or_reversed' USING ERRCODE='42501';
  END IF;
  event_name := _provider||':membership:'||_event_key;
@@ -131,8 +135,8 @@ BEGIN
  target_due:=GREATEST(COALESCE(m.paid_through,'epoch'::timestamptz),_bank_confirmed_at)
            + INTERVAL '1 month';
  UPDATE public.driver_membership_charges
- SET status='paid',paid_at=_bank_confirmed_at,updated_at=now()
- WHERE id=c.id AND status IN ('pending','processing');
+ SET status='received',paid_at=_bank_confirmed_at,updated_at=now()
+ WHERE id=c.id AND status IN ('pending','confirmed');
  IF NOT FOUND THEN RAISE EXCEPTION 'concurrent_charge_update' USING ERRCODE='40001'; END IF;
  UPDATE public.driver_memberships
  SET status='active',paid_through=target_due,next_due_date=(target_due AT TIME ZONE 'America/Recife')::date,
