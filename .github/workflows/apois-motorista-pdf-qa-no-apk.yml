@@ -99,7 +99,7 @@ jobs:
           grep -Fq 'data-apois-courier-map-canvas-v2' .work/partner-entregador/src/components/CourierRouteMap.tsx || { echo "[FAIL] QA291 post-build gate 2: generated source or bundle check missing"; exit 1; }
           grep -Fq 'data-apois-courier-premium-status-v2' .work/partner-entregador/src/components/CourierPremiumViews.tsx || { echo "[FAIL] QA291 post-build gate 3: generated source or bundle check missing"; exit 1; }
           grep -Fq 'data-apois-courier-gps-status-v2' .work/partner-entregador/src/components/CourierLocationTracker.tsx || { echo "[FAIL] QA291 post-build gate 4: generated source or bundle check missing"; exit 1; }
-          grep -Fq 'data-apois-offer-expandable-v1' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 5: generated source or bundle check missing"; exit 1; }
+          grep -Fq 'data-apois-qa290-compact-offer="true"' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 5: generated source or bundle check missing"; exit 1; }
           grep -Fq 'data-apois-premium-driver-header' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 6: generated source or bundle check missing"; exit 1; }
           grep -Fq 'data-apois-premium-driver-summary' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 7: generated source or bundle check missing"; exit 1; }
           grep -Fq 'data-apois-premium-driver-nav' .work/partner-motorista/src/routes/motorista.app.tsx || { echo "[FAIL] QA291 post-build gate 8: generated source or bundle check missing"; exit 1; }
