@@ -97,31 +97,64 @@ const handler=`  // QA280: explicit user-initiated recovery while retaining the 
 `;
 once("  // realtime: ofertas (broadcast) + corrida ativa — canal estável",
  handler+"  // realtime: ofertas (broadcast) + corrida ativa — canal estável", "recover method before stable realtime channel");
-const overlay=`      {/* QA280: keep GPS recovery reachable throughout an accepted ride,
-          even when the normal ONLINE/OFFLINE panel is hidden. */}
-      {!incoming && !ratingRide && active &&
-        ["motorista_a_caminho","motorista_chegou","em_viagem"].includes(active.status) && (
-        <div data-apois-qa280-active-gps-recovery="true"
-          className="fixed left-3 z-[39] max-w-[200px] rounded-[14px] border border-[#E7D6D9] bg-white/95 p-2 text-left shadow-lg"
-          style={{top:"calc(env(safe-area-inset-top) + 214px)"}}>
+// QA281: recovery never occupies the map. On GPS failure it is rendered only
+// INSIDE the current bottom ride controls (pickup, arrival sheet or trip).
+const action=`  const qa280GpsRecoveryAction = (!online ||
+    gpsStatus === "error" || gpsStatus === "denied" ||
+    gpsStatus === "timeout" || gpsStatus === "unavailable") ? (
+      <div data-apois-qa280-active-gps-recovery="true" role="alert"
+        className="rounded-xl border border-[#E7D6D9] bg-white px-3 py-2 text-[#891822]">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-semibold">Localização indisponível</span>
           <button type="button" onClick={() => void recoverActiveRideGps()}
             disabled={qa280Recovering || gpsStatus === "loading"}
-            className="min-h-[40px] w-full rounded-lg bg-[#E51B23] px-3 text-xs font-bold text-white disabled:opacity-60">
-            {qa280Recovering || gpsStatus === "loading" ? "Verificando GPS…" :
-              online ? "Verificar / recuperar GPS" : "Recuperar GPS e ficar ONLINE"}
+            className="shrink-0 rounded-lg bg-[#E51B23] px-3 py-2 text-xs font-bold text-white disabled:opacity-60">
+            {qa280Recovering || gpsStatus === "loading" ? "Verificando GPS…" : "Recuperar GPS"}
           </button>
-          {!online && <p className="mt-1 text-[11px] font-semibold text-[#9E1B2A]">
-            Corrida ativa com localização desconectada
-          </p>}
         </div>
-      )}
+        {gpsMessage && <p className="mt-1 text-[11px]">{gpsMessage}</p>}
+      </div>
+    ) : null;
+
 `;
-once("      {/* ===== Corrida ativa =====",overlay+"      {/* ===== Corrida ativa =====","active ride GPS control");
+once("  // realtime: ofertas (broadcast) + corrida ativa — canal estável",
+ action+"  // realtime: ofertas (broadcast) + corrida ativa — canal estável",
+ "QA281 emergency recovery in bottom controls");
+
+function patchBottomOverlay(startMarker, endMarker, label) {
+  const start=source.indexOf(startMarker);
+  const end=endMarker ? source.indexOf(endMarker,start) : source.length;
+  if(start<0||end<=start)throw Error("[FAIL] QA281 "+label+" component bounds");
+  let block=source.slice(start,end);
+  if(block.split("}: {").length!==2)
+    throw Error("[FAIL] QA281 "+label+" props block changed");
+  block=block.replace("}: {","  qa280GpsRecoveryAction,\n}: {");
+  if(!block.includes("  ride: RideRow;"))throw Error("[FAIL] QA281 "+label+" ride type missing");
+  block=block.replace("  ride: RideRow;","  ride: RideRow;\n  qa280GpsRecoveryAction?: ReactNode;");
+  const primary=block.lastIndexOf("<ApoisSlideAction");
+  if(primary<0)throw Error("[FAIL] QA281 "+label+" primary ride action absent");
+  block=block.slice(0,primary)+"{qa280GpsRecoveryAction}\n          "+block.slice(primary);
+  source=source.slice(0,start)+block+source.slice(end);
+}
+if(!source.includes("type ReactNode")&&!source.includes(", ReactNode"))
+  throw Error("[FAIL] QA281 ReactNode import missing");
+patchBottomOverlay("function PickupNavOverlay(","\nfunction CircleAction(","pickup");
+patchBottomOverlay("function ActiveTripNavOverlay(",null,"trip");
+once("        <PickupNavOverlay\n",
+ "        <PickupNavOverlay\n          qa280GpsRecoveryAction={qa280GpsRecoveryAction}\n",
+ "pickup action prop");
+once("        <ActiveTripNavOverlay\n",
+ "        <ActiveTripNavOverlay\n          qa280GpsRecoveryAction={qa280GpsRecoveryAction}\n",
+ "trip action prop");
+once("          <ActiveRidePanel\n",
+ "          {qa280GpsRecoveryAction}\n          <ActiveRidePanel\n",
+ "arrival recovery inside MovviSheet");
 for (const required of [
   "APOIS_PARTNER_QA280_ACTIVE_GPS_RECOVERY_V1",
   "recoverActiveRideGps",
   "data-apois-qa280-active-gps-recovery",
-  'className="fixed left-3 z-[39] max-w-[200px]',
+  'qa280GpsRecoveryAction={qa280GpsRecoveryAction}',
+  '{qa280GpsRecoveryAction}',
   "await startNativeDriverLocation()",
   'rpc("driver_set_presence"',
   "if (data?.is_online !== true)",
