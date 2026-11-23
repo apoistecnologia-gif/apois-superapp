@@ -4,6 +4,8 @@
 
 **Branch única de trabalho:** `feat/apois-motorista-premium-visual-20261122`.
 
+**Evidência da versão integral:** [GitHub Actions run 45106246859](https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/45106246859) — **concluída com sucesso**, incluindo compilação dos dois módulos, verificação de todas as telas estruturais e captura automatizada de seletor/logins.
+
 **Referências obrigatórias:** `APOIS_REDESIGN_PREMIUM_FIEL_A_REFERENCIA.pdf` (páginas 1–6, especialmente a fidelidade aprovada da p. 5) e `GUIA_IDENTIDADE_VISUAL_APOIS_PALETA_E_LOGO.pdf` (paleta e PNG oficial).
 
 ## Cobertura visual aplicada nos workspaces efêmeros
