@@ -10,8 +10,11 @@ const dir=resolve('.work/partner-motorista/src');
 const constants=resolve(dir,'lib/payments/types.ts');
 const page=resolve(dir,'routes/motorista.assinatura.tsx');
 let types=readFileSync(constants,'utf8'),ui=readFileSync(page,'utf8');
-const old='export const APOIS_MONTHLY_FEE_BRL = 49.9;';
-if(types.split(old).length!==2)throw Error('[FAIL] Source price changed; review before preparing 9990');
+const matches=[...types.matchAll(/export const APOIS_MONTHLY_FEE_BRL\\s*=\\s*([0-9]+(?:\\.[0-9]+)?);/g)];
+if(matches.length!==1)throw Error('[FAIL] Driver plan constant changed; review before preparing 9990');
+const old=matches[0][0];
+if (![49.9,59.9,99.9].includes(Number(matches[0][1])))
+ throw Error('[FAIL] Unexpected historical fee, refusing automatic rewrite');
 if(!ui.includes('Pagamento eletrônico temporariamente indisponível')||
    !ui.includes('Nenhum gateway de cobrança está ativo'))throw Error('[FAIL] Missing fail-closed electronic payment screen');
 types=types.replace(old,'// Display-only price; Pix amount must be validated by server.\nexport const APOIS_MONTHLY_FEE_BRL = 99.9;');
