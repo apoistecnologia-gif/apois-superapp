@@ -51,9 +51,12 @@ Deno.serve(async(req:Request)=>{
       .is("driver_id", null)
       .is("accepted_driver_id", null)
       .is("queued_after_ride_id", null)
-      .lte("request_expires_at", staleBefore)
+      // request-ride can commit the ride before its initial offer is saved.
+      // Include null request_expires_at after a short creation grace period.
+      .or("request_expires_at.is.null,request_expires_at.lte." + staleBefore)
       .gt("search_expires_at", nowIso)
       .gte("created_at", since)
+      .lte("created_at", staleBefore)
       .order("request_expires_at", { ascending: true })
       .limit(MAX_STALE_RIDES);
     if (staleError) return json(req, { ok: false, error: "stale_lookup_failed" }, 500);
