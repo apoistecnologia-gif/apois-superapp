@@ -168,8 +168,19 @@ async function dispatch(admin: any, ride: any) {
     .filter((d: any) => String(d.user_id) !== String(ride.passenger_id)) // APOIS_NO_SELF_DISPATCH_V1
     .filter((d: any) => !previouslyOffered.has(String(d.user_id)) && !rejected.has(String(d.user_id)))
     .filter((d: any) => String(d.category ?? "").trim().toLowerCase() === String(ride.category).trim().toLowerCase())
-    .filter((d: any) => finite(Number(d.current_lat)) && finite(Number(d.current_lng)))
-    .filter((d: any) => !d.last_location_at || now - new Date(d.last_location_at).getTime() <= 120000)
+    // Missing GPS was previously converted to (0,0) by Number(null).
+    // A missing/future/stale timestamp must never be treated as a current fix.
+    .filter((d: any) => {
+      const lat = d.current_lat, lng = d.current_lng;
+      if (lat == null || lng == null || (typeof lat === "string" && !lat.trim()) || (typeof lng === "string" && !lng.trim())) return false;
+      const latitude = Number(lat), longitude = Number(lng);
+      return finite(latitude) && finite(longitude) && Math.abs(latitude) <= 90
+        && Math.abs(longitude) <= 180 && !(latitude === 0 && longitude === 0);
+    })
+    .filter((d: any) => {
+      const lastGpsAt = d.last_location_at ? new Date(d.last_location_at).getTime() : Number.NaN;
+      return Number.isFinite(lastGpsAt) && lastGpsAt >= now - 120000 && lastGpsAt <= now + 30000;
+    })
     .map((d: any) => ({ id: String(d.user_id), km: haversineKm(origin, { lat: Number(d.current_lat), lng: Number(d.current_lng) }) }))
     .filter((d: any) => d.km <= 50)
     .sort((a: any,b: any) => a.km-b.km)
