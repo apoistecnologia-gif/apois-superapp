@@ -39,7 +39,7 @@ tracker=replaceOnce(tracker,'  return (\n    <div\n      className={`flex items-
 let premium=docs.get('premium');
 {
  const [a,b,old]=sliceFunction(premium,'export function CourierStatusCard(', 'export function CourierWaitingSheet(', 'availability');
- for(const required of ['onToggle','Boolean(activeJob && online)','aria-label={online ? "Ficar offline" : "Ficar online"}']){
+ for(const required of ['onToggle','Boolean(activeJob && online)','data-apois-courier-availability-toggle']){
   if(!old.includes(required))throw Error(`[FAIL] ${marker}: previous availability contract missing ${required}`);
  }
  const status=`export function CourierStatusCard({ online, busy, activeJob, onToggle }: any) {
