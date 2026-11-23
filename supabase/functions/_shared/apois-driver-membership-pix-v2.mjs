@@ -33,7 +33,7 @@ function requireChargeIdentity(charge) {
   throw Error("invalid_membership_charge_identity");
  if(charge.amountCents!==MONTHLY_FEE_CENTS)throw Error("wrong_backend_membership_amount");
  if(!VALID_PROVIDERS.includes(charge.provider))throw Error("wrong_membership_provider");
- if(!["pending","confirmed"].includes(charge.status))throw Error("membership_charge_not_open");
+ if(!["pending","confirmed","received"].includes(charge.status))throw Error("membership_charge_not_open");
  return charge;
 }
 async function jsonRequest(url,options,request){
