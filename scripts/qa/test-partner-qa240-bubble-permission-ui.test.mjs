@@ -33,6 +33,8 @@ test("QA240: official image on Android overlay, explicit MainActivity return, no
   "back.setAction(Intent.ACTION_VIEW)",
   '"br.com.apois.parceiro://module/motorista"',
   "app.startActivity(back)", "externalNavigatorVisible",
+  "public static void externalNavigationLaunched(Context context)",
+  "show(context)",
   "getBoolean(\"rideActive\", false)", "Settings.canDrawOverlays(context)",
   "WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY"])
    assert.ok(native.includes(marker),"Android "+marker);
@@ -41,7 +43,7 @@ test("QA240: official image on Android overlay, explicit MainActivity return, no
  assert.ok(!clickHandler.slice(0,clickHandler.indexOf("app.startActivity(back)")).includes("hide();"),"overlay must remain visible until Android accepts return");
  assert.ok(!native.includes('setText("A")'),"never use synthetic letter as logo");
  assert.ok(!native.includes("container.setOnClickListener(view -> {\n                hide();"),"cannot hide before launching Activity");
- for(const marker of ["APOISReturnBubble.externalNavigationLaunched()",
+ for(const marker of ["APOISReturnBubble.externalNavigationLaunched(getContext())",
   "APOISReturnBubble.externalNavigationClosed()",
   "public void requestBubblePermission(PluginCall call)",
   "android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION",
