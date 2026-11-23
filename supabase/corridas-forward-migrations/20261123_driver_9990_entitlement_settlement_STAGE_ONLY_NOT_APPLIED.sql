@@ -76,6 +76,9 @@ REVOKE ALL ON FUNCTION private.apois_guard_new_ride_accept_membership_v2() FROM 
 -- allowed states are pending, confirmed, received, overdue, refunded, cancelled, failed.
 -- Never use paid/processing as charge statuses; those values would cause CHECK violations.
 
+-- New memberships must be R$99.90; only already-contracted historical
+-- R$49.90/R$59.90 values are recognized, tied to their immutable contract.
+-- NEVER accept an amount submitted by the browser as verified bank amount.
 -- Service-role-only atomic settlement. Must be called ONLY by authenticated
 -- bank-verified Edge webhook handler using the result of GET provider payment.
 -- Never trust the incoming notification amount or driver id alone.
@@ -99,7 +102,7 @@ DECLARE event_name text;
 BEGIN
  IF _provider NOT IN ('asaas','mercadopago') OR
     _bank_status <> 'confirmed' OR
-    _verified_amount_cents<>9990 OR
+    _verified_amount_cents NOT IN (4990,5990,9990) OR
     _external_reference IS DISTINCT FROM _charge_id::text OR
     _bank_confirmed_at IS NULL OR
     _bank_confirmed_at > now() + INTERVAL '5 minutes' OR
@@ -111,7 +114,7 @@ BEGIN
  WHERE id=_charge_id FOR UPDATE;
  IF NOT FOUND OR c.provider IS DISTINCT FROM _provider
     OR c.provider_payment_id IS DISTINCT FROM _payment_id
-    OR c.amount_cents IS DISTINCT FROM 9990 THEN
+    OR c.amount_cents IS DISTINCT FROM _verified_amount_cents THEN
   RAISE EXCEPTION 'bank_payment_does_not_match_charge' USING ERRCODE='42501';
  END IF;
  SELECT * INTO m FROM public.driver_memberships
@@ -119,7 +122,7 @@ BEGIN
  -- The charge keeps the original provider, even after a later provider switch.
  -- The driver membership may point to a newer provider; old verified Pix
  -- must still settle, without attributing it to the new bank.
- IF NOT FOUND OR m.monthly_fee_cents<>9990 THEN
+ IF NOT FOUND OR m.monthly_fee_cents IS DISTINCT FROM c.amount_cents THEN
   RAISE EXCEPTION 'bank_payment_does_not_match_driver_contract' USING ERRCODE='42501';
  END IF;
  IF c.status='received' THEN
