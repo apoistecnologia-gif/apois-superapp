@@ -175,7 +175,26 @@ if (existsSync(workflowsDir)) {
     'apois-motorista-pdf-qa-no-apk.yml',
     'apois-passageiro-qa216-web-only.yml',
     'apois-passageiro-qa217-web-only.yml',
+    // Explicit isolated QA-only workflows; their contents are contract-checked below.
+    'apois-passageiro-audit-fixes-web-20261123.yml',
+    'apois-parceiro-qa283-web-only-20261123.yml',
   ]);
+  // QA283: permit only isolated non-release workflows; never loosen unknown-CI protection.
+  // Validate the contents, not only filenames: release and Android entrypoints remain prohibited.
+  const isolatedQa = [
+    ['apois-passageiro-audit-fixes-web-20261123.yml', 'npm run build:corridas'],
+    ['apois-parceiro-qa283-web-only-20261123.yml', 'npm run build:partner'],
+  ];
+  for (const [filename, expectedBuild] of isolatedQa) {
+    if (!workflows.includes(filename)) continue;
+    const contents = read('.github/workflows/' + filename);
+    for (const required of ['contents: read', 'submodules: false', 'npm run verify:pins', expectedBuild]) {
+      if (!contents.toLowerCase().includes(required.toLowerCase())) fail(filename + ' missing QA-only contract: ' + required);
+    }
+    for (const forbidden of ['gradlew', 'assembleRelease', 'assembleDebug', 'supabase functions deploy', 'supabase db push', 'vercel deploy', 'deployments: write', 'packages: write']) {
+      if (contents.toLowerCase().includes(forbidden.toLowerCase())) fail(filename + ' forbidden non-web operation: ' + forbidden);
+    }
+  }
   const unexpected = workflows.filter((name) => !allowedTestWorkflows.has(name));
   if (unexpected.length) {
     fail(`GitHub Actions de release/CI não autorizados reapareceram: ${unexpected.join(', ')}`);
