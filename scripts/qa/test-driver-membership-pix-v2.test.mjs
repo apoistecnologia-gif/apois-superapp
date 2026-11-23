@@ -32,7 +32,9 @@ test('Asaas 9990 Pix creation uses only provider API and validates charge refere
  let calls=[];
  const request=async(url,options)=>{
   calls.push({url,options});
-  return {ok:true,json:async()=>url.endsWith('pixQrCode')?
+  return {ok:true,json:async()=>url.includes('?externalReference=')?
+   {data:[],hasMore:false}:
+   url.endsWith('pixQrCode')?
    {payload:'000201PIX-COPIA-E-COLA-APOIS-9990',encodedImage:'BASE64',expirationDate:'2026-12-23'}:
    {id:'pay_verified123',externalReference:chargeId,value:99.9}};
  };
@@ -41,12 +43,14 @@ test('Asaas 9990 Pix creation uses only provider API and validates charge refere
   accessToken:'sandbox-test-token-only',env:{ASAAS_API_BASE_URL:'https://api-sandbox.asaas.com/v3'},request});
  assert.equal(a.providerPaymentId,'pay_verified123');
  assert.equal(a.provider,'asaas');
- assert.equal(calls.length,2);
- assert.equal(calls[0].options.headers['X-Idempotency-Key'],'apois-membership-'+chargeId);
- const body=JSON.parse(calls[0].options.body);
+ assert.equal(calls.length,3);
+ assert.ok(calls[0].url.includes('?externalReference='+chargeId));
+ assert.equal(calls[0].options.method,'GET');
+ assert.equal(calls[1].options.headers['X-Idempotency-Key'],'apois-membership-'+chargeId);
+ const body=JSON.parse(calls[1].options.body);
  assert.equal(body.value,99.9);assert.equal(body.billingType,'PIX');
  assert.equal(body.externalReference,chargeId);
- assert.match(calls[1].url,/\/payments\/pay_verified123\/pixQrCode$/);
+ assert.match(calls[2].url,/\/payments\/pay_verified123\/pixQrCode$/);
 });
 test('Asaas rejects unauthorized hosts and any amount/client mismatch before exposing Pix',async()=>{
  const args={settings:mkConfig('asaas'),charge:mkCharge('asaas'),customerId:'cus_registered123',
@@ -167,4 +171,42 @@ test('Provider GET is bank-authoritative, fixed-host and fail-closed before sett
   }
  });
  assert.equal(result.provider,'mercadopago');
+});
+
+
+test('Asaas creates no second Pix after provider timeout; externalReference resolves original',async()=>{
+ const urls=[];
+ const request=async(url)=>{
+  urls.push(url);
+  if(url.includes('?externalReference='))return {ok:true,json:async()=>({
+   data:[{id:'pay_verified123',externalReference:chargeId,value:99.9}],hasMore:false
+  })};
+  if(url.endsWith('/pixQrCode'))return {ok:true,json:async()=>({
+   payload:'000201PIX-ORIGINAL-APOIS-9990',encodedImage:'TESTQR'
+  })};
+  throw Error('POST MUST NEVER BE REPEATED');
+ };
+ const got=await createAsaasPixForCharge({
+  settings:mkConfig('asaas'),charge:mkCharge('asaas'),
+  customerId:'cus_registered123',dueDate:'2026-12-23',
+  accessToken:'sandbox-test-token-only',
+  env:{ASAAS_API_BASE_URL:'https://api-sandbox.asaas.com/v3'},request
+ });
+ assert.equal(got.providerPaymentId,'pay_verified123');
+ assert.equal(urls.length,2);
+ assert.ok(urls.every(u=>!u.includes('attacker')));
+});
+test('Asaas refuses ambiguous reconciliation, without POST charge duplication',async()=>{
+ let count=0;
+ await assert.rejects(()=>createAsaasPixForCharge({
+  settings:mkConfig('asaas'),charge:mkCharge('asaas'),
+  customerId:'cus_registered123',dueDate:'2026-12-23',
+  accessToken:'sandbox-test-token-only',
+  env:{ASAAS_API_BASE_URL:'https://api-sandbox.asaas.com/v3'},
+  request:async()=>{count++;return {ok:true,json:async()=>({
+   data:[{id:'pay_one',externalReference:chargeId},{id:'pay_two',externalReference:chargeId}],
+   hasMore:false
+  })};}
+ }),/duplicate_reference/);
+ assert.equal(count,1);
 });
