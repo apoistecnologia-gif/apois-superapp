@@ -1,0 +1,356 @@
+name: APOIS Corridas-only Cliente QA APK
+# Own QA package; original dual-module workflow unchanged, no production deploy.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/apois-corridas-only-mensalidade-9990-20261123
+
+permissions:
+  contents: read
+
+jobs:
+  build-client-apk:
+    if: github.ref == 'refs/heads/feature/apois-corridas-only-mensalidade-9990-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_LAUNCH_MODE: corridas_only
+      APP_PACKAGE: "br.com.apois.app"
+      APP_LABEL: "APOIS Cliente"
+      APP_VERSION_CODE: "12"
+      APP_VERSION_NAME: "1.0.11"
+      QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
+      QA_CERT_EXPECTED_SHA256: ${{ secrets.APOIS_CLIENT_QA_CERT_SHA256 }}
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      CORRIDAS_ANDROID_MAPS_API_KEY: ${{ secrets.CORRIDAS_ANDROID_MAPS_API_KEY }}
+      ENTREGAS_WEB_MAPS_API_KEY: ${{ secrets.ENTREGAS_WEB_MAPS_API_KEY }}
+      ENTREGAS_GOOGLE_MAPS_MAP_ID: ${{ vars.ENTREGAS_GOOGLE_MAPS_MAP_ID }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_SUPERAPP_GOOGLE_SERVICES_JSON_BASE64 }}
+      APOIS_SUPERAPP_RIDES_PUSH_ENABLED: "0"
+      CORRIDAS_PUBLIC_APP_URL: "https://tbbzkrfupmqdywnzgnms.supabase.co/functions/v1/public-ride-tracker"
+
+    steps:
+      - name: Checkout APOIS Superapp
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Validate required GitHub secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY CORRIDAS_ANDROID_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY
+          do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::GitHub secret ausente: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          test "${CORRIDAS_WEB_MAPS_API_KEY: -6}" = "yRViDk" || { echo "::error::CORRIDAS_WEB_MAPS_API_KEY não corresponde à chave WebView homologada"; exit 1; }
+          test "${CORRIDAS_ANDROID_MAPS_API_KEY: -6}" = "av01xU" || { echo "::error::CORRIDAS_ANDROID_MAPS_API_KEY não corresponde à chave Android homologada"; exit 1; }
+          echo "[OK] Secrets mínimos presentes e chaves Maps conferidas pelos sufixos esperados"
+
+      # Protect users and runner time: fail BEFORE costly builds when the
+      # original QA identity is unavailable. An APK cannot be updated with
+      # a new/random key, even if its Gradle compilation succeeds.
+      # Chave QA criptografada antes de entrar no cache do Actions.
+      # O token privado existente protege a chave, sem conceder novas permissões.
+      - name: Restore encrypted QA signing from Actions cache
+        id: qa_signing_restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .qa-signing/android-debug-keystore.enc
+          key: apois-client-qa-encrypted-signing-v1
+
+      - name: Require original Cliente QA signing BEFORE module compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${QA_DEBUG_KEYSTORE_BASE64:-}" ] && [ ! -s .qa-signing/android-debug-keystore.enc ]; then
+            echo "::error::Original Client QA signing identity missing. Restore protected APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 or original encrypted cache before compiling."
+            exit 1
+          fi
+          echo "[OK] Original QA keystore candidate available; pinned certificate still checked after restore"
+
+      - name: Checkout protected APOIS sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -d sources/apois-corridas-passageiro
+          test -d sources/apois-entregas
+          echo "[OK] Fontes protegidas carregadas"
+
+      - name: Setup Node 24 for address runtime regression tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Validate Android SDK on runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_SDK_ROOT:-}"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager -perm -111 | sort -V | tail -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --list >/dev/null
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "[OK] Android SDK disponível"
+
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.bun/bin:$PATH"
+          test "$(bun --version)" = "$BUN_VERSION"
+          java -version
+
+      - name: Verify source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          npm run verify:pins
+          node scripts/test-apois-unified-maps.mjs
+          node --check scripts/test-apois-maps-loader-callback.mjs
+          node scripts/test-apois-maps-loader-callback.mjs
+          node --check scripts/apois-maps-loader-callback.mjs
+          grep -Fq 'patchMapsJavaScriptLoader(loaderBefore)' scripts/harden-corridas-native-map.mjs
+          node --check scripts/harden-corridas-native-map.mjs
+          node --check scripts/harden-corridas-pickup-map-focus.mjs
+          grep -Fq 'pickupCameraCoordinate' scripts/harden-corridas-pickup-map-focus.mjs
+          node --check scripts/harden-corridas-trip-flow-ux.mjs
+          node --check scripts/qa/test-corridas-ride-footer-layout-v1.test.mjs
+          node --check scripts/harden-client-live-ride-camera-v2.mjs
+          node --check scripts/verify-client-live-ride-camera-v2.mjs
+          grep -Fq 'harden-client-live-ride-camera-v2.mjs' scripts/build-isolated-module.mjs
+          grep -Fq 'APOIS_PASSENGER_LIVE_FOCUS_V2' scripts/harden-corridas-pickup-map-focus.mjs
+          node --check scripts/harden-corridas-pickup-map-focus.mjs
+          node --check scripts/harden-corridas-pickup-timeout-v1.mjs
+          node --check scripts/fix-corridas-native-geocoder-recovery-v1.mjs
+          node --check scripts/install-apois-client-native-geocoder.mjs
+          node --check scripts/qa/test-corridas-native-geocoder-v1.test.mjs
+          grep -Fq 'relative flex h-full min-h-0' scripts/harden-corridas-trip-flow-ux.mjs
+          grep -Fq 'APOIS_PICKUP_STABLE_V1' scripts/harden-corridas-trip-flow-ux.mjs
+          node --check scripts/verify-corridas-trip-flow-ux.mjs
+          node --check scripts/harden-corridas-save-favorites-in-search.mjs
+          node --check scripts/harden-entregas-customer-current-visual-v5.mjs
+          node --check scripts/harden-corridas-driver-accept-pin-visibility.mjs
+          node --check scripts/verify-corridas-driver-accept-pin-visibility.mjs
+          node --check scripts/harden-corridas-profile-edit.mjs
+          grep -Fq "'scripts/harden-corridas-profile-actions.mjs'" scripts/build-isolated-module.mjs
+          grep -Fq 'APOIS_ACTIVE_RIDE_DOMAIN_USER_V1' scripts/harden-corridas-driver-accept-pin-visibility.mjs
+          node --check scripts/verify-corridas-profile-edit.mjs
+          grep -Fq 'r.status in (' supabase/corridas-forward-migrations/20261023211500_passenger_pin_available_after_accept.sql
+          grep -Fq 'get_passenger_ride_security_code' scripts/harden-corridas-driver-accept-pin-visibility.mjs
+
+      - name: Build Corridas + direct Cliente shell, exclude Entregas
+        shell: bash
+        env:
+          CORRIDAS_ANDROID_MAPS_API_KEY: ""
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          export APOIS_LAUNCH_MODE=corridas_only
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs
+          npm run build:corridas
+          node scripts/verify-corridas-trip-flow-ux.mjs
+          node scripts/verify-corridas-dispatch-ux-v1.mjs
+          node superapp/shell/build.mjs
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --client
+          test ! -e superapp/shell/dist/modules/entregas
+          test -s superapp/shell/dist/modules/corridas/index.html
+          node --input-type=module -e "import {verifyClientBundleAssets} from './scripts/qa/verify-client-static-assets-v1.mjs'; verifyClientBundleAssets('superapp/shell/dist',['corridas']);"
+          echo '[OK] Cliente Corridas-only: packaged without Entregas, all protected source pins kept'
+
+      - name: Diagnose generated Corridas TypeScript on failed build
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=".work/corridas/src"
+          print_range() {
+            local path="$1" start="$2" end="$3"
+            local target="$root/$path"
+            test -f "$target" || { echo "[DIAG] Missing $path"; return; }
+            echo "::group::[DIAG] $path L$start-$end"
+            sed -n "${start},${end}{=;p;}" "$target" | paste -d' ' - -
+            echo "::endgroup::"
+          }
+          # Only application snippets near compiler diagnostics: never dump .env or keys.
+          print_range components/pricing/CategorySelector.tsx 1 58
+          print_range components/profile/PassengerAccountDeletion.tsx 72 92
+          print_range lib/useApoisDeletionDialogFocus.ts 54 83
+          print_range 'routes/_authenticated.corrida.$rideId.tsx' 243 263
+          print_range 'routes/_authenticated.corrida.$rideId.tsx' 321 344
+          print_range routes/_authenticated.corridas.tsx 128 150
+          print_range routes/_authenticated.inicio.tsx 45 61
+          print_range routes/_authenticated.ocorrencias.tsx 1 28
+          print_range services/geocoding/geocoding-service.ts 158 175
+          print_range services/payments/payment-service.ts 1 86
+          print_range services/rides/active-ride-service.ts 15 50
+          print_range services/rides/active-ride-service.ts 170 184
+
+      - name: Create Android project
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        env:
+          CORRIDAS_ANDROID_MAPS_API_KEY: ""
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          cd superapp/shell
+          bun install
+          rm -rf android
+          bunx cap add android
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+          bunx cap sync android
+          cd ../..
+          node scripts/configure-superapp-android.mjs
+          node scripts/install-apois-client-native-geocoder.mjs
+          test -s superapp/shell/android/app/src/main/java/br/com/apois/app/APOISNativeGeocoderPlugin.java
+          grep -Fq 'registerPlugin(APOISNativeGeocoderPlugin.class)' superapp/shell/android/app/src/main/java/br/com/apois/app/MainActivity.java
+          grep -Fq 'APOIS_NATIVE_GEOCODER_RECOVERY_V1' .work/corridas/src/hooks/use-pickup-address.tsx
+          echo '[OK] Android Cliente: fallback nativo de endereco instalado e registrado'
+          node scripts/qa/verify-apois-mobile-viewport-v1.mjs cliente --native
+          MANIFEST="superapp/shell/android/app/src/main/AndroidManifest.xml"
+          grep -Fq 'com.google.android.geo.API_KEY' "$MANIFEST"
+          echo "[OK] Android Cliente de teste criado; mapa Corridas usa fallback web por causa da assinatura debug"
+
+      - name: Restore persistent QA Android debug signing
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android" .qa-signing
+          KEYSTORE="$HOME/.android/debug.keystore"
+          ENCRYPTED=".qa-signing/android-debug-keystore.enc"
+          if [ -n "${QA_DEBUG_KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+            echo "[OK] QA signing restored from protected GitHub Actions secret"
+          elif [ -s "$ENCRYPTED" ]; then
+            test -n "${GH_TOKEN:-}" || { echo "::error::QA encrypted key requires token"; exit 1; }
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$ENCRYPTED" -out "$KEYSTORE" -pass env:GH_TOKEN
+            echo "[OK] Reused encrypted QA signing identity"
+          else
+            echo "::error::Original Client QA signing key unavailable; no secret or encrypted cache. Never create another key."
+            exit 1
+          fi
+          test -s "$KEYSTORE"
+          keytool -list -keystore "$KEYSTORE" -alias androiddebugkey -storepass android >/dev/null
+          keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | grep 'SHA256:' | head -n 1
+          ACTUAL_FINGERPRINT="$(keytool -list -v -keystore "$KEYSTORE" -alias androiddebugkey -storepass android | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          REQUIRED_FINGERPRINT="$(printf '%s' "${QA_CERT_EXPECTED_SHA256:-}" | tr -cd '[:xdigit:]' | tr '[:upper:]' '[:lower:]')"
+          test "${#REQUIRED_FINGERPRINT}" -eq 64 || { echo "::error::Cliente QA certificado SHA-256 configurado invalido ou ausente"; exit 1; }
+          test "$ACTUAL_FINGERPRINT" = "$REQUIRED_FINGERPRINT" || { echo "::error::QA certificate changed or cache lost; do not rotate signature automatically"; exit 1; }
+          echo "[OK] Reusable QA signing identity verified"
+
+      - name: Stamp monotonic QA Android version
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLE_FILE="superapp/shell/android/app/build.gradle"
+          test -s "$GRADLE_FILE"
+          # Keep installable QA above historical 1.0.11-qa.1001 test builds.
+          QA_VERSION_CODE="$((3000 + GITHUB_RUN_NUMBER))"
+          sed -i -E "s/(versionCode[[:space:]]+)[0-9]+/\\1${QA_VERSION_CODE}/" "$GRADLE_FILE"
+          sed -i -E "s/(versionName[[:space:]]+)\"[^\"]*\"/\\1\"1.0.11-corridas.${GITHUB_RUN_NUMBER}\"/" "$GRADLE_FILE"
+          grep -Fq "versionCode ${QA_VERSION_CODE}" "$GRADLE_FILE"
+          grep -Fq "versionName \"1.0.11-corridas.${GITHUB_RUN_NUMBER}\"" "$GRADLE_FILE"
+          echo "[OK] Android QA versionCode=${QA_VERSION_CODE} stamped"
+
+      - name: Force persisted QA debug signing in generated Gradle
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/configure-apois-client-qa-debug-signing.mjs
+
+      - name: Build installable debug APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd superapp/shell/android
+          chmod +x gradlew
+          ./gradlew clean assembleDebug --no-daemon --stacktrace
+          cd ../../..
+          mkdir -p build
+          APK="$(find superapp/shell/android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner -perm -111 | sort -V | tail -n 1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK" >/dev/null
+          APK_CERT_DETAILS="$("$APKSIGNER" verify --print-certs "$APK")"
+          echo "[DIAG] Android signer certificate information:"
+          printf '%s\n' "$APK_CERT_DETAILS" | grep -Ei 'Signer|certificate' | head -n 8 || true
+          APK_CERT="$(printf '%s\n' "$APK_CERT_DETAILS" | grep -Eio '[[:xdigit:]]{64}' | head -n 1 | tr '[:upper:]' '[:lower:]' || true)"
+          QA_CERT="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -alias androiddebugkey -storepass android | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          echo "[DIAG] Expected QA certificate SHA-256: ${QA_CERT:-empty}"
+          echo "[DIAG] Actual APK certificate SHA-256: ${APK_CERT:-empty}"
+          if [ -z "$APK_CERT" ] || [ "$APK_CERT" != "$QA_CERT" ]; then
+            echo "::error::APK signer is not the persisted QA identity; blocking artifact"
+            exit 1
+          fi
+          echo "[OK] APK signer matches protected pinned QA signing certificate"
+          AAPT="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name aapt -perm -111 | sort -V | tail -n 1)"
+          test -n "$AAPT" || { echo "::error::aapt missing; cannot verify Cliente APK package/version"; exit 1; }
+          "$AAPT" dump badging "$APK" | node scripts/qa/verify-android-apk-badging-v1.mjs "$APP_PACKAGE" "$((3000 + GITHUB_RUN_NUMBER))" "1.0.11-corridas.${GITHUB_RUN_NUMBER}"
+          echo "[OK] Cliente APK package/version verified against QA configuration"
+          # Verify the ACTUAL APK ZIP payload, not only intermediate web/dist.
+          TEMP_APK_ASSETS="$(mktemp -d)"
+          trap 'rm -rf "$TEMP_APK_ASSETS"' EXIT
+          unzip -q "$APK" 'assets/public/*' -d "$TEMP_APK_ASSETS"
+          test -s "$TEMP_APK_ASSETS/assets/public/index.html"
+          node --input-type=module -e "import {verifyClientBundleAssets} from './scripts/qa/verify-client-static-assets-v1.mjs'; verifyClientBundleAssets(process.argv[1],['corridas'])" "$TEMP_APK_ASSETS/assets/public"
+          test ! -e "$TEMP_APK_ASSETS/assets/public/modules/entregas"
+          grep -Fq 'APOIS_CORRIDAS_ONLY_CLIENT_BOOT_V1' "$TEMP_APK_ASSETS/assets/public/index.html"
+          grep -R -Fq 'data-apois-corridas-auth-viewport-v2' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: correção global de viewport ausente'; exit 1; }
+          for path in index.html modules/corridas/index.html; do
+            grep -Fq 'data-apois-embedded-viewport-v1' "$TEMP_APK_ASSETS/assets/public/$path" || { echo "[FAIL] Cliente APK: proteção global ausente: $path"; exit 1; }
+          done
+          echo '[OK] Cliente APK contém apenas Corridas e seu bootstrap'
+          node scripts/qa/verify-client-corridas-loading-v1.mjs "$TEMP_APK_ASSETS/assets/public/modules/corridas/index.html"
+          grep -R -Fq 'Recalculando tarifa...' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: aviso de tarifa indisponível não empacotado'; exit 1; }
+          echo '[OK] APK Cliente tem tarifa pendente explícita sem liberar solicitação'
+          echo "[OK] Cliente APK verified after Capacitor packaging: entrypoints, CSS and JS dependency graph"
+          rm -rf "$TEMP_APK_ASSETS"
+          trap - EXIT
+          cp "$APK" build/APOIS-Cliente-Corridas-TESTE.apk
+          test -s build/APOIS-Cliente-Corridas-TESTE.apk
+          echo "[OK] APK Cliente de teste gerado"
+
+      - name: Upload APOIS Cliente APK
+        if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Cliente-Corridas-TESTE
+          path: build/APOIS-Cliente-Corridas-TESTE.apk
+          if-no-files-found: error
+          retention-days: 7
