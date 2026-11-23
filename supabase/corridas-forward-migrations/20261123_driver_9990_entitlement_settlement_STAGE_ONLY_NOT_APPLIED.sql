@@ -110,7 +110,7 @@ BEGIN
   RAISE EXCEPTION 'bank_payment_does_not_match_charge' USING ERRCODE='42501';
  END IF;
  SELECT * INTO m FROM public.driver_memberships
- WHERE m.driver_id=c.driver_id FOR UPDATE;
+ WHERE driver_memberships.driver_id=c.driver_id FOR UPDATE;
  IF NOT FOUND OR m.monthly_fee_cents<>9990 OR m.provider<>_provider THEN
   RAISE EXCEPTION 'bank_payment_does_not_match_driver_contract' USING ERRCODE='42501';
  END IF;
