@@ -3,12 +3,17 @@ on:
   push:
     branches:
       - fix/apois-parceiro-auditoria-20261123
+      - fix/apois-integracoes-seguranca-20261123
     paths:
       - '.github/workflows/apois-parceiro-qa283-web-only-20261123.yml'
       - 'scripts/build-partner-release.sh'
       - 'scripts/audit-final-integration-v22.mjs'
       - 'scripts/fix-partner-qa283-operational-races-v1.mjs'
       - 'scripts/qa/test-partner-qa283-operational-races-v1.test.mjs'
+      - 'scripts/audit-apois-production-readiness-v1.mjs'
+      - 'scripts/qa/test-apois-production-readiness-v1.test.mjs'
+      - 'supabase/functions/dispatch-push-outbox/index.ts'
+      - 'docs/auditorias/apois-parte4-paridade-producao-20261123.md'
   workflow_dispatch:
 
 permissions:
@@ -58,6 +63,8 @@ jobs:
           node --check scripts/qa/test-partner-qa283-operational-races-v1.test.mjs
           npm run verify:pins
           node --test scripts/qa/test-partner-qa283-operational-races-v1.test.mjs
+          node --check scripts/audit-apois-production-readiness-v1.mjs
+          node --test scripts/qa/test-apois-production-readiness-v1.test.mjs
       - name: Build isolated Partner web apps with full existing regression suite
         shell: bash
         run: |
