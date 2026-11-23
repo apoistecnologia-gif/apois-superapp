@@ -17,6 +17,7 @@ function observedInventory() {
         checks: {
           finishQueueContinuationDeployed: false,
           redispatchRecoveryScheduleActive: false,
+          noShowReasonCodeContractActive: false,
           safe2payAtomicWebhookDeployed: false,
         },
       },
@@ -67,6 +68,7 @@ test("Synthetic fully deployed environment clears each independent release gate"
   rides.rpcFunctions.push("apois_safe2pay_apply_event_atomic");
   rides.checks.finishQueueContinuationDeployed = true;
   rides.checks.redispatchRecoveryScheduleActive = true;
+  rides.checks.noShowReasonCodeContractActive = true;
   rides.checks.safe2payAtomicWebhookDeployed = true;
   const orders = ready.projects.entregas;
   orders.rpcFunctions.push("apois_safe2pay_apply_event_atomic");

@@ -31,8 +31,10 @@ async function triggerRedispatch(rideId: string): Promise<{ ok: boolean; action?
       },
       body: JSON.stringify({ ride_id: rideId, mode: "redispatch" }),
     });
-    const payload = await response.json().catch(() => ({})) as { action?: string };
-    return { ok: response.ok, action: payload.action, status: response.status };
+    const payload = await response.json().catch(() => ({})) as { ok?: boolean; action?: string };
+    // A resposta HTTP 200 pode trazer { ok: false }. Não declarar despacho
+    // concluído se o servidor não confirmou a transição.
+    return { ok: response.ok && payload.ok === true, action: payload.action, status: response.status };
   } catch (error) {
     // A RPC do motorista ja pode ter confirmado a rejeicao/cancelamento.
     // Devolver estado de redispatch adiado evita induzir o app a repetir a mutacao.
