@@ -5,8 +5,9 @@ const source=readFileSync(".work/partner-motorista/src/routes/motorista.corridas
 test("QA284 history: completed and cancelled are distinct without dropping rows",()=>{
  for(const key of [
  "APOIS_PARCEIRO_QA284_DRIVER_HISTORY_UI_V1",
- 'const completed = finished.length;',
- 'const cancelled = list.filter((r) => r.status.toLowerCase().startsWith("cancel")).length;',
+ 'let cancelledCount = 0;',
+ 'if (ride.status.toLowerCase().startsWith("cancel")) cancelledCount++;',
+ "setPeriodSummary({ total: seen.size, completed: completedCount, cancelled: cancelledCount, grossVolume,",
  "const summary = periodSummary;",
  "label=\"Concluídas\"",
  "{summary.total} solicitações no período: {summary.completed} concluídas e {summary.cancelled} canceladas.",
