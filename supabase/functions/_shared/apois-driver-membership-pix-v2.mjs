@@ -134,3 +134,49 @@ export function nextPaidThrough(paidThrough,confirmedAt) {
  result.setUTCDate(Math.min(previousDay,days));
  return result.toISOString();
 }
+
+
+/**
+ * Authenticate Asaas webhook before reading its JSON.
+ * authToken is a distinct webhook secret, never an API key.
+ */
+export function authenticateAsaasWebhook(headers,authToken) {
+ const received=String(headers?.get?.("asaas-access-token")??"");
+ if(typeof authToken!=="string"||authToken.length<20||received.length!==authToken.length)
+  return false;
+ let difference=0;
+ for(let i=0;i<authToken.length;i++)difference|=received.charCodeAt(i)^authToken.charCodeAt(i);
+ return difference===0;
+}
+/**
+ * WebCrypto HMAC for Mercado Pago notification Webhooks:
+ * manifest id:[data.id];request-id:[x-request-id];ts:[ts];
+ * data.id comes from URL, never accepted solely from an attacker-supplied JSON.
+ * A valid signature is still NOT bank payment confirmation: GET provider
+ * payment server-side + verifyProviderBankResult is mandatory.
+ */
+export async function authenticateMercadoPagoWebhook({headers,url,secret,now=Date.now()}) {
+ if(typeof secret!=="string"||secret.length<20)return false;
+ let input;
+ try{input=new URL(url);}catch{return false;}
+ const dataId=input.searchParams.get("data.id")??input.searchParams.get("data_id");
+ if(!dataId||!/^\d+$/.test(dataId))return false;
+ const rid=String(headers?.get?.("x-request-id")??"");
+ if(!rid||rid.length>200)return false;
+ const signature=String(headers?.get?.("x-signature")??"");
+ const ts=/\bts=(\d{10,13})\b/.exec(signature)?.[1];
+ const hex=/\bv1=([0-9a-f]{64})\b/i.exec(signature)?.[1]?.toLowerCase();
+ if(!ts||!hex)return false;
+ const numeric=Number(ts);
+ const timestamp=ts.length>=13?numeric:numeric*1000;
+ if(!Number.isFinite(timestamp)||Math.abs(now-timestamp)>300000)return false;
+ const manifest=`id:${dataId};request-id:${rid};ts:${ts};`;
+ const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),
+  {name:"HMAC",hash:"SHA-256"},false,["sign"]);
+ const calculated=new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(manifest)));
+ const signatureBytes=Uint8Array.from(hex.match(/.{2}/g)??[],x=>Number.parseInt(x,16));
+ if(calculated.length!==signatureBytes.length)return false;
+ let diff=0;
+ for(let i=0;i<calculated.length;i++)diff|=calculated[i]^signatureBytes[i];
+ return diff===0;
+}
