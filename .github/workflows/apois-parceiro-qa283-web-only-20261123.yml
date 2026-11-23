@@ -6,6 +6,7 @@ on:
       - fix/apois-integracoes-seguranca-20261123
       - fix/apois-redispatch-recovery-20261123
       - fix/apois-dispatch-integridade-20261123
+      - fix/apois-backend-corridas-integracao-20261123
     paths:
       - '.github/workflows/apois-parceiro-qa283-web-only-20261123.yml'
       - 'scripts/build-partner-release.sh'
@@ -22,6 +23,9 @@ on:
       - 'scripts/qa/test-apois-dispatch-integrity-v1.test.mjs'
       - 'supabase/functions/dispatch-ride/index.ts'
       - 'supabase/functions/request-ride/index.ts'
+      - 'supabase/corridas-forward-migrations/20261123_dispatch_candidate_trigger_guard.sql'
+      - 'scripts/qa/sql/apois-dispatch-trigger-fixture-v1.sql'
+      - 'scripts/qa/sql/apois-dispatch-trigger-assertions-v1.sql'
       - 'supabase/functions/_shared/dispatch-engine.ts'
       - 'docs/auditorias/apois-parte6-integridade-despacho-20261123.md'
       - 'docs/auditorias/apois-parte4-paridade-producao-20261123.md'
@@ -34,6 +38,20 @@ jobs:
   partner-audit-qa283:
     runs-on: ubuntu-24.04
     timeout-minutes: 50
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: apois_dispatch_qa
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_ephemeral_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d apois_dispatch_qa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
@@ -78,6 +96,19 @@ jobs:
           node --test scripts/qa/test-apois-production-readiness-v1.test.mjs
           node --test scripts/qa/test-apois-redispatch-recovery-v2.test.mjs
           node --experimental-strip-types --test scripts/qa/test-apois-dispatch-integrity-v1.test.mjs
+      - name: Validate real trigger migration in disposable PostgreSQL
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGDATABASE: apois_dispatch_qa
+          PGUSER: postgres
+          PGPASSWORD: ci_ephemeral_only
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f scripts/qa/sql/apois-dispatch-trigger-fixture-v1.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/corridas-forward-migrations/20261123_dispatch_candidate_trigger_guard.sql
+          psql -X -v ON_ERROR_STOP=1 -f scripts/qa/sql/apois-dispatch-trigger-assertions-v1.sql
       - name: Build isolated Partner web apps with full existing regression suite
         shell: bash
         run: |
