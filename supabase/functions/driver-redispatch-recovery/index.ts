@@ -92,11 +92,15 @@ Deno.serve(async(req:Request)=>{
       seen.add(rideId);
       result.checked++;
       const { data: ride, error: rideError } = await admin.from("rides")
-        .select("status,driver_id,accepted_driver_id,queued_after_ride_id,search_expires_at,request_expires_at,offered_driver_ids,candidate_driver_ids")
+        .select("status,driver_id,accepted_driver_id,queued_after_ride_id,search_expires_at,request_expires_at,offered_driver_ids,candidate_driver_ids,created_at")
         .eq("id", rideId).maybeSingle();
       if (rideError) { result.deferred++; continue; }
       if (!ride || ride.status !== "procurar_motorista" || ride.driver_id
         || ride.accepted_driver_id || ride.queued_after_ride_id) {
+        result.skipped++; continue;
+      }
+      const createdAtMs = ride.created_at ? new Date(ride.created_at).getTime() : Number.NaN;
+      if (!Number.isFinite(createdAtMs) || createdAtMs > scanNowMs - 10_000) {
         result.skipped++; continue;
       }
       if (ride.search_expires_at && new Date(ride.search_expires_at).getTime() <= scanNowMs) {
