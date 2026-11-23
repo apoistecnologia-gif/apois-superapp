@@ -105,7 +105,7 @@ Deno.serve(async(req:Request)=>{
    });
   }catch(e){
    const reason=e instanceof Error?e.message:"bank_verification_failed";
-   if(reason==="payment_reversal_requires_review"&&isReversal){
+   if(reason==="payment_reversal_requires_review"){
     // Preserve all historical settlements, require an explicit refund policy
     // before changing driver entitlement; record a minimal auditable event.
     const eventKey=provider+":membership:refund:"+eventId;
