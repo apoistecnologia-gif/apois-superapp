@@ -197,6 +197,18 @@ if (role==='motorista') {
     s=markComponent(s,start,end,tag,name);
     if(name==='courier-finance')s=markComponent(s,start,end,'div','courier-finance-root');
   }
+  // Financial presentation is truthful when the existing metrics RPC is unavailable:
+  // null is not a confirmed zero. No finance action, payout flag or query changes.
+  s=section(s,'export function CourierFinance(', 'function FinanceInput(', chunk=>{
+    let next=chunk, changes=0;
+    for (const [from,to] of [
+      ['{courierMoney(metrics?.earnings_today)}','{metrics?.earnings_today == null ? "—" : courierMoney(metrics.earnings_today)}'],
+      ['{courierMoney(metrics?.earnings_week)}','{metrics?.earnings_week == null ? "—" : courierMoney(metrics.earnings_week)}'],
+      ['{courierMoney(wallet?.available_balance)}','{wallet?.available_balance == null ? "—" : courierMoney(wallet.available_balance)}'],
+    ]) if(next.includes(from)){next=next.replaceAll(from,to);changes++;}
+    if(changes<2)throw Error('[FAIL] Courier finance amounts changed: refuse to infer fake zeros');
+    return next;
+  },'courier truthful finance metrics');
   put(page,s);
   const panels='src/components/CourierPanels.tsx';let p=get(panels);
   for(const [start,end,name] of [
