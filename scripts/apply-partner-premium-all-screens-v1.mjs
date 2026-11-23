@@ -59,6 +59,12 @@ const driverCss=String.raw`
 [data-apois-premium-screen="driver-active"] [class*="text-primary"] { color:#BB071D!important; }
 [data-apois-premium-screen="driver-active"] button:not(:disabled) { min-height:44px; }
 [data-apois-premium-screen="driver-active"] [class*="bg-primary"] { background-color:#BB071D!important; color:#FFFFFF!important; }
+/* After finalization, keep the original rating callbacks and the real fare. */
+[data-apois-premium-screen="driver-rating"] {background:rgba(13,15,18,.42)!important;}
+[data-apois-premium-screen="driver-rating"] > div {background:#FFFFFF!important;color:#0D0F12!important;max-width:430px;border-radius:28px 28px 0 0!important;box-shadow:0 -20px 48px rgba(13,15,18,.21)!important;max-height:95dvh;overflow-y:auto;}
+[data-apois-premium-screen="driver-rating"] :is(h1,h2,strong) {color:#0D0F12!important;}
+[data-apois-premium-screen="driver-rating"] button[class*="bg-primary"] {background:#BB071D!important;color:#FFFFFF!important;}
+[data-apois-premium-screen="driver-rating"] button {min-height:44px;}
 /* Real finance, rides and profile: align to page 4's white card hierarchy. */
 [data-apois-premium-screen="driver-finance"], [data-apois-premium-screen="driver-rides"], [data-apois-premium-screen="driver-profile"] { background:#F3F4F6!important; color:#0D0F12!important; min-height:100dvh; padding-bottom:max(84px,env(safe-area-inset-bottom)); }
 [data-apois-premium-screen="driver-finance"] > header { background:#FFFFFF!important; color:#0D0F12!important; border-bottom:1px solid #E7E9ED!important; }
@@ -154,6 +160,12 @@ if (role==='motorista') {
     if(n<1) throw Error('[FAIL] Driver active panels changed: missing phase sheets');
     return chunk.replace(pattern,'data-apois-premium-screen="driver-active" className="flex flex-col gap-4 pt-1 animate-sheet-in"');
   },'Motorista active ride');
+  s=section(s,'function RatingScreen(', '\nfunction SummaryRow(', chunk=>{
+    const i=chunk.indexOf('<div');
+    if(i<0 || !chunk.includes('Corrida concluída') || !chunk.includes('onSubmit'))
+      throw Error('[FAIL] Driver post-ride rating contract changed');
+    return chunk.slice(0,i)+chunk.slice(i).replace('<div','<div data-apois-premium-screen="driver-rating"');
+  },'Motorista rating and completion');
   put(app,s);
   if (existsSync(resolve(base,'src/components/ApoisPremiumDriverNav.tsx')))
     throw Error('[FAIL] Premium driver nav must be created only in the isolated workspace');
@@ -239,7 +251,7 @@ if (role==='motorista') {
 }
 // Critical operational contracts: unmodified event handlers remain in the generated code.
 const requirements=role==='motorista' ? [
- ['src/routes/motorista.app.tsx', ['onAccept','onReject','onStart','onComplete','DriverActiveRideRecovery','toggleOnline','PickupNavOverlay','ActiveTripNavOverlay','data-apois-premium-screen="driver-offer"','data-apois-premium-screen="driver-active"']],
+ ['src/routes/motorista.app.tsx', ['onAccept','onReject','onStart','onComplete','DriverActiveRideRecovery','toggleOnline','PickupNavOverlay','ActiveTripNavOverlay','data-apois-premium-screen="driver-offer"','data-apois-premium-screen="driver-active"','data-apois-premium-screen="driver-rating"']],
  ['src/routes/motorista.ganhos.tsx',['loadDriverFinancialDashboard','data-apois-premium-screen="driver-finance"']],
  ['src/routes/motorista.corridas.tsx',['loadDriverProfile','RideCard','data-apois-premium-screen="driver-rides"']],
  ['src/routes/motorista.perfil.tsx',['handleLogout','data-apois-premium-screen="driver-profile"']],
