@@ -88,19 +88,21 @@ let map=docs.get('map');
 // and visible offers preserve their original map sizes and action overlays.
 let route=docs.get('route');
 {
- const start=once(route,'  const online = Boolean(availability?.is_online);','home online state');
- const tail=route.slice(start);
- const rootPattern=/<div className="min-h-dvh[^\"]*"/;
- const rootMatch=tail.match(rootPattern);
- if(!rootMatch)throw Error(`[FAIL] ${marker}: courier home root changed`);
- const updated=tail.replace(rootPattern,rootMatch[0].replace('<div ','<div data-apois-courier-map-first-root-v2 '));
- route=route.slice(0,start)+updated;
+ // Final QA may rewrite the online-state expression. Find the actual home
+ // structurally through its live map + GPS tracker rather than that literal.
+ const mainAt=once(route,'<main data-apois-courier-map-home','home main');
+ const trackerAt=route.lastIndexOf('<CourierLocationTracker',mainAt);
+ const headerAt=route.lastIndexOf('<header',trackerAt);
+ const rootAt=route.lastIndexOf('<div className="min-h-dvh',headerAt);
+ if(trackerAt<0 || headerAt<0 || rootAt<0 || rootAt>=headerAt)
+   throw Error(`[FAIL] ${marker}: live home GPS/header/root boundaries changed`);
+ route=route.slice(0,rootAt)+route.slice(rootAt).replace('<div ','<div data-apois-courier-map-first-root-v2 ');
  route=replaceOnce(route,'<main data-apois-courier-map-home',
   '<main data-apois-courier-map-home data-apois-courier-map-first-v2={!activeJob && !completedJob && offers.length === 0}',
   'idle-only map scope');
  // Add the official brand typography under the existing official PNG, not a
  // recreated logo. Header menu/profile behavior stays exactly the same.
- const headerStart=route.indexOf('<header',start);
+ const headerStart=route.lastIndexOf('<header',route.indexOf('<main data-apois-courier-map-home'));
  const headerEnd=route.indexOf('</header>',headerStart);
  if(headerStart<0 || headerEnd<headerStart)throw Error(`[FAIL] ${marker}: header boundary changed`);
  const header=route.slice(headerStart,headerEnd);
