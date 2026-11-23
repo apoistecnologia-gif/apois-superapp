@@ -5,7 +5,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import {verifyMembershipConfiguration,createAsaasPixForCharge,
- createMercadoPagoPixForCharge} from "../_shared/apois-driver-membership-pix-v2.mjs";
+ createMercadoPagoPixForCharge,recoverReservedPixForCharge} from "../_shared/apois-driver-membership-pix-v2.mjs";
 
 const cors={
  "Access-Control-Allow-Origin":"*",
@@ -114,12 +114,48 @@ Deno.serve(async(req:Request)=>{
    return respond({ok:false,error:"multiple_open_charges_need_reconciliation"},409);
   if(previousCharges?.length){
    const c=previousCharges[0];
-   // Existing pending charges retain ORIGINAL bank and amount after switching
-   // providers. Never create a replacement until reconciliation is complete.
-   return respond({ok:true,pendingGeneration:!c.pix_payload,
+   // Never create a new Pix while the driver has an open charge.
+   // When the provider created Pix but HTTP timed out before DB update,
+   // reconcile the existing bank payment by immutable external reference.
+   let pixPayload=c.pix_payload??null;
+   let pixQrCodeBase64=c.pix_qr_code_base64??null;
+   let pixExpirationAt=c.pix_expiration_at??null;
+   let recoveredBankPaid=false;
+   if(c.provider_payment_id==="reservation:"+c.id){
+    const recoveryAccessToken=c.provider==="asaas"
+     ?Deno.env.get("ASAAS_API_KEY")??""
+     :Deno.env.get("MERCADOPAGO_ACCESS_TOKEN")??"";
+    const recovery=await recoverReservedPixForCharge({
+     charge:{id:c.id,driverId:driver.id,amountCents:Number(c.amount_cents),
+       status:c.status,provider:c.provider,providerPaymentId:c.provider_payment_id},
+     accessToken:recoveryAccessToken,
+     env:{ASAAS_API_BASE_URL:Deno.env.get("ASAAS_API_BASE_URL")??""}
+    });
+    if(recovery.found){
+     const {data:updated,error:recoveryError}=await admin
+      .from("driver_membership_charges").update({
+       provider_payment_id:recovery.providerPaymentId,
+       pix_payload:recovery.pixPayload,
+       pix_qr_code_base64:recovery.qrCodeBase64,
+       pix_expiration_at:recovery.expiresAt,
+       updated_at:new Date().toISOString()
+      }).eq("id",c.id).eq("driver_id",driver.id)
+       .eq("provider_payment_id",c.provider_payment_id)
+       .select("id").maybeSingle();
+     if(recoveryError)throw recoveryError;
+     if(!updated) return respond({ok:false,error:"reconciliation_race_retry"},409);
+     pixPayload=recovery.pixPayload;
+     pixQrCodeBase64=recovery.qrCodeBase64;
+     pixExpirationAt=recovery.expiresAt;
+     recoveredBankPaid=recovery.alreadyBankApproved;
+    }
+   }
+   // A recovered paid bank record is NEVER an entitlement by itself:
+   // settlement must still pass provider-verified service-role RPC.
+   return respond({ok:true,pendingGeneration:!pixPayload,
+    bankConfirmationAwaitingSettlement:recoveredBankPaid,
     chargeId:c.id,provider:c.provider,amountCents:Number(c.amount_cents),
-    pixPayload:c.pix_payload??null,pixQrCodeBase64:c.pix_qr_code_base64??null,
-    pixExpirationAt:c.pix_expiration_at??null});
+    pixPayload,pixQrCodeBase64,pixExpirationAt});
   }
 
   let {data:membership,error:membershipError}=await admin.from("driver_memberships")
