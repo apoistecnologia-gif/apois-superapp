@@ -259,9 +259,29 @@
     // APOIS_QA285_ROLE_SELECTION_GUARD: routeRole is reserved for internal
     // push/deep-links and retains its fail-closed operational lock. A manual
     // button must never silently navigate to the OTHER role's login.
+    // APOIS_QA287_ACTIVE_DRIVER_RECOVERY:
+    // Driver's independently persisted ONLINE flag is set by the Motorista
+    // module when the driver is active. The old Entregador marker can survive
+    // a reinstall/resume; it must not deny access to the already active driver
+    // who needs to view the map or turn OFFLINE. Navigation is not a presence
+    // change: the stale Entregador marker remains until an authenticated
+    // module successfully reconciles its backend state.
+    function hasRecordedActiveDriver(){
+      try{return localStorage.getItem('apois:driver:online')==='1';}
+      catch{return false;}
+    }
     function manualRouteRole(requestedRole,target){
       const locked=operationalRole();
       if(locked&&locked!==requestedRole){
+        if(requestedRole==='motorista'&&hasRecordedActiveDriver()){
+          const banner=document.getElementById('apois-role-conflict');
+          if(banner)banner.hidden=true;
+          try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
+          // Enter only the chosen Motorista app, which checks server presence.
+          // Do not clear the courier lock or change either backend's ONLINE state.
+          window.location.assign(partnerModuleUrl(operationalUrls.motorista));
+          return true;
+        }
         const banner=document.getElementById('apois-role-conflict');
         const description=document.getElementById('apois-role-conflict-text');
         const open=document.getElementById('apois-role-conflict-open');
