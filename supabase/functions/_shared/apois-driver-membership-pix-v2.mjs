@@ -222,5 +222,13 @@ export async function fetchVerifiedBankPaymentForCharge({
   }
   const bank=await jsonRequest(url,{method:"GET",headers},request);
   const verified=verifyProviderBankResult({charge,providerResult:bank});
-  return Object.freeze({ ...verified, bankStatus: "confirmed" });
+  const bankReported=charge.provider==="asaas"
+    ?bank.paymentDate??bank.confirmedDate??bank.clientPaymentDate
+    :bank.date_approved;
+  const parsed=typeof bankReported==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(bankReported)
+    ?new Date(bankReported+"T12:00:00-03:00")
+    :new Date(bankReported??"");
+  const bankConfirmedAt=Number.isFinite(parsed.getTime())&&
+    parsed.getTime()<=Date.now()+300000?parsed.toISOString():new Date().toISOString();
+  return Object.freeze({ ...verified, bankStatus: "confirmed",bankConfirmedAt });
 }
