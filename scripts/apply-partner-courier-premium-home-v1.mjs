@@ -58,9 +58,35 @@ if (cardStart <= mainOpeningEnd || cardEnd < cardStart || cardEnd > mainClose)
 const card = page.slice(cardStart, cardEnd + '        </div>'.length);
 if (!card.includes('onToggle={toggleOnline}') || !card.includes('activeJob={activeJob}'))
   throw Error('[FAIL] Courier availability callbacks/lock missing');
-const themedCard = card.replace('data-apois-courier-inline-status',
+// Original generated home wraps the availability card in a conditional.
+// Move the ENTIRE JSX expression; removing only the card leaves an empty
+// ternary expression that breaks TypeScript (TS1005) and the protected app.
+const closingDiv = '        </div>';
+const originalEnd = cardEnd + closingDiv.length;
+const conditionalOpen = '        {!activeJob && !completedJob ? (';
+const conditionalClose = '        ) : null}';
+const conditionalStart = page.lastIndexOf(conditionalOpen, cardStart);
+const conditionalEnd = page.indexOf(conditionalClose, originalEnd);
+let movable;
+let removeStart = cardStart, removeEnd = originalEnd;
+if (conditionalStart >= mainOpeningEnd && conditionalEnd > originalEnd &&
+    page.slice(conditionalStart + conditionalOpen.length, cardStart).trim() === '' &&
+    page.slice(originalEnd, conditionalEnd).trim() === '') {
+  removeStart = conditionalStart;
+  removeEnd = conditionalEnd + conditionalClose.length;
+  movable = page.slice(removeStart, removeEnd);
+} else {
+  // Older synthetic fixtures had an unguarded card. Preserve compatibility
+  // only when no adjacent conditional wrapper is present.
+  if (page.slice(Math.max(mainOpeningEnd,cardStart-70),cardStart).includes(conditionalOpen) ||
+      page.slice(originalEnd,originalEnd+65).includes(conditionalClose)) {
+    throw Error('[FAIL] Courier premium availability conditional wrapper changed');
+  }
+  movable = card;
+}
+const themedCard = movable.replace('data-apois-courier-inline-status',
   'data-apois-courier-inline-status data-apois-premium-availability={online ? "online" : "offline"}');
-page = page.slice(0, cardStart) + page.slice(cardEnd + '        </div>'.length);
+page = page.slice(0, removeStart) + page.slice(removeEnd);
 const insertAfterMain = page.indexOf('>', page.indexOf('<main data-apois-courier-map-home')) + 1;
 page = page.slice(0, insertAfterMain) + '\n' + themedCard + '\n' + page.slice(insertAfterMain);
 
