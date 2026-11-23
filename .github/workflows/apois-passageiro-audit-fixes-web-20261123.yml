@@ -1,0 +1,72 @@
+name: APOIS Passageiro - Correcoes Auditoria - Web QA
+on:
+  push:
+    branches:
+      - fix/apois-passageiro-auditoria-20261123
+    paths:
+      - '.github/workflows/apois-passageiro-audit-fixes-web-20261123.yml'
+      - 'scripts/harden-corridas-passenger-audit-20261123.mjs'
+      - 'scripts/fix-corridas-gps-watch-dispose-20261123.mjs'
+      - 'scripts/qa/test-corridas-passenger-audit-20261123.test.mjs'
+      - 'scripts/build-isolated-module.mjs'
+      - 'supabase/functions/request-ride/index.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-passenger-only:
+    name: Validate Passenger isolated web build (no deploy, no APK)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+    steps:
+      - name: Checkout changes
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - name: Get pinned protected source submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$APOIS_REPO_TOKEN"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -f sources/apois-corridas-passageiro/src/components/pricing/ServiceDetailsForm.tsx
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Bun
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.14"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Static verification of new patches and pinned sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/harden-corridas-passenger-audit-20261123.mjs
+          node --check scripts/fix-corridas-gps-watch-dispose-20261123.mjs
+          node --check scripts/qa/test-corridas-passenger-audit-20261123.test.mjs
+          node --check scripts/build-isolated-module.mjs
+          npm run verify:pins
+      - name: Build and test Passenger with all historical adapters
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build:corridas
+          test -s .work/corridas/dist/index.html
+          node --test scripts/qa/test-corridas-passenger-audit-20261123.test.mjs
+          if find . -type f -name '*.apk' -print -quit | grep -q .; then
+            echo "::error::An APK must not be built in the web-only review"
+            exit 1
+          fi
+          echo "[OK] Passenger web build, regression tests and TypeScript verification passed; no deployment performed."

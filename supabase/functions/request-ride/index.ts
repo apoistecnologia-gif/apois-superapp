@@ -377,6 +377,30 @@ Deno.serve(async (req: Request) => {
     const metrics = await routeMetrics(body.origin, body.destination, intermediates);
     const details = body?.service_details && typeof body.service_details === "object" && !Array.isArray(body.service_details) ? body.service_details : {};
     const estimatedPrice = await loadFare(admin, categoryRow.id, category, metrics.distanceKm, metrics.durationMin, details);
+    // APOIS_PASSENGER_AUDIT_PRICE_V1: server recomputes fare; client quote is only a comparison.
+    // Keep optional for legacy APK compatibility until a coordinated deployment.
+    const expectedPriceCents = body?.expected_price_cents;
+    const authoritativePriceCents = Math.round(estimatedPrice * 100);
+    if (expectedPriceCents !== undefined) {
+      if (
+        typeof expectedPriceCents !== "number" ||
+        !Number.isSafeInteger(expectedPriceCents) ||
+        expectedPriceCents <= 0
+      ) {
+        return json({
+          ok: false, error_code: "invalid_expected_price",
+          message: "Valor de confirmação inválido.",
+        }, 422);
+      }
+      if (expectedPriceCents !== authoritativePriceCents) {
+        return json({
+          ok: false, error_code: "price_changed",
+          message: "O valor da corrida mudou. Revise o preço antes de confirmar.",
+          estimated_price: estimatedPrice,
+          fare_amount_cents: authoritativePriceCents,
+        }, 409);
+      }
+    }
 
     const { data: ride, error: insertError } = await admin.from("rides").insert({
       passenger_id: userRow.id,
