@@ -32,8 +32,8 @@ function replaceOnce(oldText, newText, label) {
 replaceOnce(
   'import { DriverActiveRideRecovery } from "@/components/DriverActiveRideRecovery";',
   'import { DriverActiveRideRecovery } from "@/components/DriverActiveRideRecovery";\n' +
-  'import { APOIS_LOGO_DATA_URL } from "@/assets/apoisLogoData";\n' +
-  'import { Bell, CarFront, House, UserRound, WalletCards } from "lucide-react";',
+  'import { APOIS_LOGO_DATA_URL as APOIS_PREMIUM_HOME_LOGO_URL } from "@/assets/apoisLogoData";\n' +
+  'import { Bell as ApoisPremiumBell, CarFront as ApoisPremiumCar, House as ApoisPremiumHouse, UserRound as ApoisPremiumProfile, WalletCards as ApoisPremiumWallet } from "lucide-react";',
   'official brand and icons'
 );
 
@@ -48,10 +48,10 @@ const oldHeader = replaceBetween('      {/* Top bar', '      <DriverSideMenu', `
                 className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[#0D0F12] transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BB071D]">
                 <Menu className="h-6 w-6" aria-hidden="true" />
               </button>
-              <img src={APOIS_LOGO_DATA_URL} alt="APOIS" className="h-12 w-12 shrink-0 rounded-full object-contain" />
+              <img src={APOIS_PREMIUM_HOME_LOGO_URL} alt="APOIS" className="h-12 w-12 shrink-0 rounded-full object-contain" />
               <button type="button" onClick={() => void navigate({ to: "/motorista/notificacoes" })}
                 aria-label="Abrir notificações" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[#0D0F12] transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BB071D]">
-                <Bell className="h-[21px] w-[21px]" aria-hidden="true" />
+                <ApoisPremiumBell className="h-[21px] w-[21px]" aria-hidden="true" />
               </button>
             </header>
             <h1 className="mt-0.5 text-center text-[19px] font-black leading-6 tracking-tight">
@@ -101,8 +101,8 @@ const oldIdle = replaceBetween('function IdleBottomPanel(', 'function IncomingOf
         </span>
       </div>
       <div className="grid grid-cols-3 gap-1 divide-x divide-[#E5E7EB]">
-        <PremiumStat label="Corridas" ariaLabel="Corridas hoje" value={String(stats.rides)} icon={<CarFront className="h-[19px] w-[19px] text-[#F51D2A]" />} />
-        <PremiumStat label="Ganhos" ariaLabel="Ganhos hoje" value={formatBRL(stats.earnings || 0)} icon={<WalletCards className="h-[19px] w-[19px] text-[#08A63B]" />} />
+        <PremiumStat label="Corridas" ariaLabel="Corridas hoje" value={String(stats.rides)} icon={<ApoisPremiumCar className="h-[19px] w-[19px] text-[#F51D2A]" />} />
+        <PremiumStat label="Ganhos" ariaLabel="Ganhos hoje" value={formatBRL(stats.earnings || 0)} icon={<ApoisPremiumWallet className="h-[19px] w-[19px] text-[#08A63B]" />} />
         <PremiumStat label="Tempo online" ariaLabel="Tempo online indisponível" value="—" icon={<Clock className="h-[19px] w-[19px] text-[#F51D2A]" />} />
       </div>
       {gpsMessage && <p role="alert" className="mt-2 rounded-xl border border-[#F3C4C8] bg-[#FFF1F2] px-3 py-2 text-[12px] font-semibold text-[#891822]">{gpsMessage}</p>}
@@ -140,16 +140,16 @@ replaceOnce('      <DriverActiveRideRecovery />', `      <DriverActiveRideRecove
           className="fixed inset-x-0 bottom-0 z-[35] border-t border-[#E7E9ED] bg-white/95 px-[max(env(safe-area-inset-left),8px)] pb-[max(env(safe-area-inset-bottom),6px)] pt-1 shadow-[0_-6px_24px_-14px_rgba(13,15,18,.28)] backdrop-blur-xl">
           <div className="mx-auto grid min-h-[64px] max-w-md grid-cols-4">
             <button type="button" aria-current="page" className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl text-[#F51D2A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BB071D]">
-              <House className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-extrabold">Início</span><span aria-hidden="true" className="h-[3px] w-7 rounded-full bg-[#F51D2A]" />
+              <ApoisPremiumHouse className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-extrabold">Início</span><span aria-hidden="true" className="h-[3px] w-7 rounded-full bg-[#F51D2A]" />
             </button>
             <button type="button" onClick={() => void navigate({ to: "/motorista/corridas" })} className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[#0D0F12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BB071D]">
-              <CarFront className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-semibold">Corridas</span>
+              <ApoisPremiumCar className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-semibold">Corridas</span>
             </button>
             <button type="button" onClick={() => void navigate({ to: "/motorista/ganhos" })} className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[#0D0F12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BB071D]">
-              <WalletCards className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-semibold">Ganhos</span>
+              <ApoisPremiumWallet className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-semibold">Ganhos</span>
             </button>
             <button type="button" onClick={() => void navigate({ to: "/motorista/perfil" })} className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[#0D0F12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BB071D]">
-              <UserRound className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-semibold">Perfil</span>
+              <ApoisPremiumProfile className="h-5 w-5" aria-hidden="true" /><span className="text-[11px] font-semibold">Perfil</span>
             </button>
           </div>
         </nav>
