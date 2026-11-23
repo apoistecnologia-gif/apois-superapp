@@ -39,9 +39,11 @@ const mainStart = page.indexOf('<main data-apois-courier-map-home');
 if (mainStart < 0 || page.indexOf('<main data-apois-courier-map-home', mainStart + 1) >= 0)
   throw Error('[FAIL] Courier premium home main boundary missing or duplicated');
 const mainOpeningEnd = page.indexOf('>', mainStart);
-const mainClosingToken = '      </main>\n\n      <CourierSupportSheet';
-assertOnce(page, mainClosingToken, 'main closing');
-const mainClose = page.indexOf(mainClosingToken);
+// Later journey hardeners can insert content between </main> and the support sheet.
+// Anchor the actual home main tag rather than adjacent formatting/whitespace.
+const mainClose = page.indexOf('</main>', mainOpeningEnd);
+if (mainClose < 0 || page.indexOf('<CourierSupportSheet', mainClose) < mainClose)
+  throw Error('[FAIL] Courier premium home main or support boundary changed');
 if (mainOpeningEnd < mainStart || mainClose <= mainOpeningEnd)
   throw Error('[FAIL] Courier premium home main order invalid');
 
@@ -98,8 +100,11 @@ const summary = `
           </section>
         )}
 `;
-assertOnce(page, mainClosingToken, 'insert summary at main end');
-page = page.replace(mainClosingToken, summary + mainClosingToken);
+const currentMainOpen = page.indexOf('<main data-apois-courier-map-home');
+const currentMainClose = page.indexOf('</main>', currentMainOpen);
+if (currentMainOpen < 0 || currentMainClose < currentMainOpen)
+  throw Error('[FAIL] Courier premium home summary destination changed');
+page = page.slice(0, currentMainClose) + summary + page.slice(currentMainClose);
 
 // Scope the approved color treatments to the courier availability on THIS home.
 // Avoid global color/theme substitutions and keep focus/disabled state intact.
