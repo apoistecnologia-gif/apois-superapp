@@ -237,7 +237,20 @@ jobs:
           set -euo pipefail
           cd superapp/partner-shell/android
           chmod +x gradlew
-          ./gradlew clean assembleDebug --no-daemon --stacktrace
+          # Maven Central sometimes rate-limits CI with HTTP 429.
+          # Retry ONLY that transient failure; preserve genuine compile errors.
+          for attempt in 1 2 3; do
+            set +e
+            ./gradlew clean assembleDebug --no-daemon --stacktrace 2>&1 | tee "/tmp/apois-gradle-${attempt}.log"
+            gradle_status="${PIPESTATUS[0]}"
+            set -e
+            if [ "$gradle_status" -eq 0 ]; then break; fi
+            if [ "$attempt" -eq 3 ] || ! grep -Eq "Received status code 429|HTTP 429|Too Many Requests" "/tmp/apois-gradle-${attempt}.log"; then
+              echo "::error::Android build failed (not a retryable Maven HTTP 429)"
+              exit "$gradle_status"
+            fi
+            sleep "$((15 * attempt))"
+          done
           cd ../../..
           mkdir -p build
           APK="$(find superapp/partner-shell/android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
