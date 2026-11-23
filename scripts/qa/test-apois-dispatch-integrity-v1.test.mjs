@@ -24,6 +24,7 @@ const driver = (userId, extras = {}) => ({
   category: "carros",
   is_online: true,
   approval_status: "aprovado",
+  suspended_at: null,
   subscription_status: "active",
   current_lat: nearLat, current_lng: nearLng,
   last_location_at: new Date(now).toISOString(),
@@ -69,6 +70,7 @@ test("Valid nearby GPS and current category/subscription work unchanged", () => 
   assert.deepEqual(eligible.remainingCandidateUserIds, []);
   for (const invalid of [
     { is_online: false }, { approval_status: "pendente" },
+    { suspended_at: new Date(now).toISOString() },
     { subscription_status: "expired" }, { category: "motos" },
     { last_location_at: null },
     { last_location_at: new Date(now - 121_000).toISOString() },
@@ -113,31 +115,71 @@ test("Entry point forwards DB passenger_id, never an untrusted request payload",
 });
 
 
-test("Legacy request-ride initial dispatch rejects null GPS and missing timestamps", () => {
+function realRequestRideDispatch(fetchImpl, environment = {
+  SUPABASE_URL: "https://example.supabase.invalid",
+  SUPABASE_SERVICE_ROLE_KEY: "service-test-only",
+}) {
   const source = readFileSync("supabase/functions/request-ride/index.ts", "utf8");
-  const begin = source.indexOf("    // Missing GPS was previously converted to (0,0)");
-  const end = source.indexOf("    .map((d: any) => ({ id: String(d.user_id)", begin);
-  assert.ok(begin > 0 && end > begin, "real legacy initial GPS filters found");
-  const filterChain = source.slice(begin, end).replaceAll(": any", "");
-  const filter = new Function("drivers", "finite", "now",
-    "return drivers\n" + filterChain + ";");
-  const chooseGps = (candidate) => filter([candidate], Number.isFinite, now);
-  const good = { current_lat: nearLat, current_lng: nearLng,
-    last_location_at: new Date(now).toISOString() };
-  assert.equal(chooseGps(good).length, 1);
-  for (const fields of [
-    { current_lat: null },
-    { current_lng: null },
-    { current_lat: " " },
-    { current_lat: 0, current_lng: 0 },
-    { current_lat: 91 },
-    { current_lng: -181 },
-    { last_location_at: null },
-    { last_location_at: new Date(now - 121_000).toISOString() },
-    { last_location_at: new Date(now + 31_000).toISOString() },
-  ]) {
-    const candidate = { ...good, ...fields };
-    assert.deepEqual(chooseGps(candidate), [], "Bad initial GPS candidate: " + JSON.stringify(fields));
-  }
-  assert.match(source, /String\(d\.user_id\) !== String\(ride\.passenger_id\)/);
+  const begin = source.indexOf("async function dispatch(");
+  const end = source.indexOf("\nDeno.serve(", begin);
+  assert.ok(begin >= 0 && end > begin, "real request-ride dispatcher found");
+  const raw = source.slice(begin, end)
+    .replace("ride: { id: string; candidate_driver_ids?: unknown }", "ride")
+    .replace('requestedMode: "initial" | "redispatch" = "initial"', 'requestedMode = "initial"')
+    .replace(": Promise<string[]>", "")
+    .replace(" as {\n    ok?: boolean; offered_user_ids?: unknown;\n  }", "")
+    .replace("(id): id is string =>", "(id) =>");
+  assert.doesNotMatch(raw, /: Promise<| as \{|: id is string/);
+  return new Function("Deno", "fetch", raw + "\nreturn dispatch;")({
+    env: { get(name) { return environment[name] ?? ""; } },
+  }, fetchImpl);
+}
+const bodyFor = async (ride, mode, payload) => {
+  const seen = [];
+  const dispatch = realRequestRideDispatch(async (url, opts) => {
+    seen.push({ url, method: opts.method, headers: opts.headers, body: JSON.parse(opts.body) });
+    return { ok: true, status: 200, json: async () => payload };
+  });
+  const offered = await dispatch(ride, mode);
+  return { seen, offered };
+};
+
+test("Passenger initial offer now uses service-only CAS dispatch with no duplicate Push", async () => {
+  const ride = { id: "66666666-6666-4666-8666-666666666666", candidate_driver_ids: [] };
+  const { seen, offered } = await bodyFor(ride, "initial", { ok: true, action: "offered", offered_user_ids: [driverA] });
+  assert.deepEqual(offered, [driverA]);
+  assert.equal(seen.length, 1);
+  assert.match(seen[0].url, /\/functions\/v1\/dispatch-ride$/);
+  assert.equal(seen[0].method, "POST");
+  assert.equal(seen[0].headers.Authorization, "Bearer service-test-only");
+  assert.deepEqual(seen[0].body, { ride_id: ride.id, mode: "initial" });
+  const source = readFileSync("supabase/functions/request-ride/index.ts", "utf8");
+  assert.doesNotMatch(source, /notifyRideCandidates\(/);
+  assert.doesNotMatch(source, /EdgeRuntime\.waitUntil\(notifyRideCandidates/);
+  assert.doesNotMatch(source, /\.from\("drivers"\)\s*\.select\("id,user_id,category/);
+  assert.match(source, /const ids = await dispatch\(ride, "redispatch"\)/);
+  assert.match(source, /const ids = await dispatch\(ride\)\.catch/);
+});
+
+test("Passenger retry chooses remaining pool or fresh discovery according to committed ride", async () => {
+  const ride = { id: "66666666-6666-4666-8666-666666666666", candidate_driver_ids: [driverB] };
+  const a = await bodyFor(ride, "redispatch", { ok: true, action: "offered", offered_user_ids: [driverB] });
+  assert.deepEqual(a.seen[0].body, { ride_id: ride.id, mode: "redispatch" });
+  const b = await bodyFor({ ...ride, candidate_driver_ids: [] }, "redispatch", { ok: true, action: "no_candidate_yet", offered_user_ids: [] });
+  assert.deepEqual(b.seen[0].body, { ride_id: ride.id, mode: "initial" });
+  assert.deepEqual(b.offered, []);
+});
+
+test("False success or offline dispatch rejects instead of notifying the customer twice", async () => {
+  const ride = { id: "66666666-6666-4666-8666-666666666666" };
+  const softFail = realRequestRideDispatch(async () => ({
+    ok: true, status: 200, json: async () => ({ ok: false, action: "deferred" }),
+  }));
+  await assert.rejects(() => softFail(ride), /dispatch_deferred/);
+  const hardFail = realRequestRideDispatch(async () => ({
+    ok: false, status: 503, json: async () => ({ ok: false }),
+  }));
+  await assert.rejects(() => hardFail(ride), /dispatch_deferred/);
+  const offline = realRequestRideDispatch(async () => { throw Error("offline"); });
+  await assert.rejects(() => offline(ride), /offline/);
 });
