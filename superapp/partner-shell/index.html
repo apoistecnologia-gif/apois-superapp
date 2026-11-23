@@ -256,51 +256,20 @@
       return true;
     }
 
-    // APOIS_QA285_ROLE_SELECTION_GUARD: routeRole is reserved for internal
-    // push/deep-links and retains its fail-closed operational lock. A manual
-    // button must never silently navigate to the OTHER role's login.
-    // APOIS_QA287_ACTIVE_DRIVER_RECOVERY:
-    // Driver's independently persisted ONLINE flag is set by the Motorista
-    // module when the driver is active. The old Entregador marker can survive
-    // a reinstall/resume; it must not deny access to the already active driver
-    // who needs to view the map or turn OFFLINE. Navigation is not a presence
-    // change: the stale Entregador marker remains until an authenticated
-    // module successfully reconciles its backend state.
-    function hasRecordedActiveDriver(){
-      try{return localStorage.getItem('apois:driver:online')==='1';}
-      catch{return false;}
-    }
+    // APOIS_QA288_MANUAL_ENTRY_ALWAYS_SELECTS_REQUESTED_ROLE:
+    // The role lock is used to protect actual work (foreground service, push
+    // routing, ONLINE state), not to prevent reading or signing in to a profile.
+    // A stale local marker must NEVER turn a Motorista tap into an Entregador
+    // login (or vice versa). Protected routes keep their own auth guards.
+    // Do not change local operationalRole or either Supabase presence here.
     function manualRouteRole(requestedRole,target){
-      const locked=operationalRole();
-      if(locked&&locked!==requestedRole){
-        if(requestedRole==='motorista'&&hasRecordedActiveDriver()){
-          const banner=document.getElementById('apois-role-conflict');
-          if(banner)banner.hidden=true;
-          try{localStorage.setItem('apois-parceiro:last-module','motorista');}catch{}
-          // Enter only the chosen Motorista app, which checks server presence.
-          // Do not clear the courier lock or change either backend's ONLINE state.
-          window.location.assign(partnerModuleUrl(operationalUrls.motorista));
-          return true;
-        }
-        const banner=document.getElementById('apois-role-conflict');
-        const description=document.getElementById('apois-role-conflict-text');
-        const open=document.getElementById('apois-role-conflict-open');
-        const dismiss=document.getElementById('apois-role-conflict-dismiss');
-        const activeName=locked==='motorista'?'Motorista':'Entregador';
-        const selectedName=requestedRole==='motorista'?'Motorista':'Entregador';
-        if(banner&&description&&open&&dismiss){
-          description.textContent='O '+activeName+' ainda está marcado como operacional. Para entrar em '+selectedName+', abra o '+activeName+' e confirme que está OFFLINE. Não alteramos sua função ativa automaticamente.';
-          open.textContent='Abrir '+activeName+' para ficar offline';
-          open.onclick=()=>window.location.assign(partnerModuleUrl(operationalHome(locked)));
-          dismiss.onclick=()=>{banner.hidden=true;};
-          banner.hidden=false;
-          banner.focus();
-        }else{
-          window.alert?.('Você precisa ficar OFFLINE no '+activeName+' para acessar '+selectedName+'.');
-        }
-        return false;
-      }
-      return routeRole(requestedRole,target);
+      if(requestedRole!=='motorista'&&requestedRole!=='entregador')return false;
+      const banner=document.getElementById('apois-role-conflict');
+      if(banner)banner.hidden=true;
+      try{localStorage.setItem('apois-parceiro:last-module',requestedRole);}catch{}
+      const destination=operationalHome(requestedRole);
+      window.location.assign(partnerModuleUrl(destination));
+      return true;
     }
 
     document.querySelectorAll('[data-module]').forEach((button)=>button.addEventListener('click',()=>{
