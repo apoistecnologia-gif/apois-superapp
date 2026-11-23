@@ -132,7 +132,7 @@ BEGIN
   v_source := pg_get_functiondef('public.append_nearby_busy_driver_candidates()'::regprocedure);
   IF v_source NOT LIKE '%d.user_id IS DISTINCT FROM NEW.passenger_id%'
     OR v_source NOT LIKE '%d.last_location_at <= now()%'
-    OR v_source LIKE '%INTO new.offered_driver_ids%'
+    OR v_source ~* 'into[[:space:]]+new[.]offered_driver_ids'
   THEN
     RAISE EXCEPTION 'apois_dispatch_trigger_postcheck_failed';
   END IF;
