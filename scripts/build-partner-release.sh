@@ -490,6 +490,9 @@ node --test "$ROOT/scripts/qa/test-partner-qa276-courier-auto-open-after-accept.
 # QA277 — the global full-screen CourierOfferOverlay has its own acceptance RPC.
 node "$ROOT/scripts/fix-partner-qa277-courier-overlay-autonav.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa277-courier-overlay-autonav.test.mjs"
+# Visual aprovado: somente no workspace efemero do Entregador apos os patches de jornada.
+node "$ROOT/scripts/apply-partner-courier-premium-home-v1.mjs"
+node --test "$ROOT/scripts/qa/test-partner-courier-premium-home-v1.test.mjs"
 require_contains 'APOIS_CV14_AVAILABLE_CALLS_STATE_V1' "$ENTREGADOR/src/components/ApoisAvailableCalls.tsx" 'RV14 Entregador guarded call feedback/expiry'
 require_contains 'APOIS_PARTNER_EXTERNAL_NAV_UI_V1' "$ENTREGADOR/src/components/CourierRouteMap.tsx" 'Navegação externa compartilhada Google Maps/Waze sem chave do projeto APOIS'
 require_contains 'APOIS_COURIER_COMPLETION_LIGHT_V1' "$ENTREGADOR/src/system-theme.css" 'Confirmação final em identidade branca/vermelha'
