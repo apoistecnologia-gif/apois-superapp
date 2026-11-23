@@ -43,11 +43,13 @@ check('scripts/harden-superapp-shell-iconography.mjs', [
 ], 'Seletor usa veículos reais adesivados APOIS em vez de desenhos/emojis');
 
 check('superapp/partner-shell/index.html', [
-  '--red:#E51B23',
-  '--red-dark:#C9141B',
+  '--red:#F51D2A',
+  '--red-dark:#BB071D',
   'APOIS <em>Parceiro</em>',
   'Sou <em>Motorista</em>',
   'Sou <em>Entregador</em>',
+  'VAMOS JUNTOS.',
+  'background:#BB071D',
   'background:#F7F7F8',
   '@media(max-height:760px)',
   '@media(max-width:380px)',
