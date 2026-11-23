@@ -19,9 +19,11 @@ function CourierApp() {
     <main data-apois-courier-map-home className="example">
       {activeJob ? <CourierRouteMap /> : offers.length ? <CourierOfferCard /> : <CourierLiveMap />}
       <CourierCompletionSheet />
+        {!activeJob && !completedJob ? (
         <div data-apois-courier-inline-status className="mx-auto w-full max-w-lg py-2">
           <CourierStatusCard online={online} busy={busy === "online"} activeJob={activeJob} onToggle={toggleOnline} />
         </div>
+        ) : null}
       </main>
 
       <CourierSupportSheet />
@@ -47,6 +49,9 @@ test('courier availability and real daily indicators on approved layout',()=>wit
     'completed_deliveries_today', 'courierMoney(metrics.earnings_today)', 'formatCourierOnlineTime(metrics.online_seconds_today)',
     'metrics?.earnings_today == null', 'metrics?.online_seconds_today == null']) assert.ok(s.includes(token),token);
   assert.equal((s.match(/<CourierStatusCard/g)||[]).length,1);
+  assert.equal((s.match(/\{!activeJob && !completedJob \? \(/g)||[]).length,1,'one availability lock');
+  assert.ok(!/\{!activeJob && !completedJob \? \(\s*\) : null\}/.test(s),'never leave empty conditional');
+  assert.ok(s.indexOf('{!activeJob && !completedJob ? (')<s.indexOf('CourierRouteMap'),'availability lock moved with its card');
   assert.ok(readFileSync(css,'utf8').includes('background:#E6FAED!important'));
 }));
 test('courier premium transform is not repeated or allowed to corrupt output',()=>withFixture((dir,route,css)=>{
