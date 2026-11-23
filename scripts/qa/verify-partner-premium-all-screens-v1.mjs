@@ -8,7 +8,7 @@ const matrix=[
     'data-apois-premium-screen="driver-offer"','data-apois-premium-screen="driver-active"',
     'DriverActiveRideRecovery','PickupNavOverlay','ActiveTripNavOverlay','onAccept','onReject','onStart','onComplete','onClick={toggleOnline}'
   ]],
-  ['.work/partner-motorista/src/routes/motorista.login.tsx',['Entrar','Continuar com Google','Esqueci minha senha']],
+  ['.work/partner-motorista/src/routes/motorista.login.tsx',['Entrar','Esqueci minha senha']],
   ['.work/partner-motorista/src/routes/motorista.ganhos.tsx',['data-apois-premium-screen="driver-finance"','loadDriverFinancialDashboard','Saques indisponíveis']],
   ['.work/partner-motorista/src/routes/motorista.corridas.tsx',['data-apois-premium-screen="driver-rides"','RideCard','aria-label']],
   ['.work/partner-motorista/src/routes/motorista.perfil.tsx',['data-apois-premium-screen="driver-profile"','handleLogout']],
