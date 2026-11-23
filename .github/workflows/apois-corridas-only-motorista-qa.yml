@@ -80,6 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           node --test scripts/qa/test-driver-membership-pix-v2.test.mjs
+          node --test scripts/qa/test-apois-membership-staging-gates-v2.test.mjs
           echo '[OK] R$99.90 provider adapter tests completed without bank API access'
 
       - name: Setup Java 21
