@@ -152,6 +152,35 @@ REVOKE ALL ON FUNCTION private.apois_apply_verified_driver_membership_pix_v2(uui
 REVOKE ALL ON FUNCTION private.apois_apply_verified_driver_membership_pix_v2(uuid,text,text,text,bigint,text,text,timestamptz) FROM anon,authenticated;
 GRANT EXECUTE ON FUNCTION private.apois_apply_verified_driver_membership_pix_v2(uuid,text,text,text,bigint,text,text,timestamptz) TO service_role;
 
+-- PostgREST does NOT expose the private schema; service_role has no USAGE on it.
+-- Narrow public RPC wrapper permits server-side Edge Functions to settle only
+-- after *their own* authenticated webhook + GET bank payment verification.
+-- No direct table write, public client or anon access is allowed.
+CREATE OR REPLACE FUNCTION public.apois_apply_verified_driver_membership_pix_v2(
+  _charge_id uuid,
+  _provider text,
+  _payment_id text,
+  _external_reference text,
+  _verified_amount_cents bigint,
+  _bank_status text,
+  _event_key text,
+  _bank_confirmed_at timestamptz
+)
+RETURNS TABLE(driver_id uuid,paid_through timestamptz,was_duplicate boolean)
+LANGUAGE sql SECURITY DEFINER SET search_path=''
+AS $wrapper$
+  SELECT * FROM private.apois_apply_verified_driver_membership_pix_v2(
+    _charge_id,_provider,_payment_id,_external_reference,
+    _verified_amount_cents,_bank_status,_event_key,_bank_confirmed_at
+  );
+$wrapper$;
+REVOKE ALL ON FUNCTION public.apois_apply_verified_driver_membership_pix_v2(
+ uuid,text,text,text,bigint,text,text,timestamptz
+) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.apois_apply_verified_driver_membership_pix_v2(
+ uuid,text,text,text,bigint,text,text,timestamptz
+) TO service_role;
+
 -- Separate refund/reversal requires confirmed provider inquiry and manual
 -- policy for partial-month access; never blindly undo later confirmed renewals.
 -- Signature and event dedupe reside in the private webhook handler.
