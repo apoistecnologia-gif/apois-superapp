@@ -11,6 +11,7 @@ TESTE: scripts/qa/test-apois-dispatch-integrity-v1.test.mjs cobre autooferta, ca
 CONFIRMADO NO CÓDIGO. Number(null) e Number(' ') geravam zero em finite(). Coordenadas ausentes podiam entrar na seleção como número válido.
 CORREÇÃO: rejeitar null/undefined, texto vazio e whitespace; validar limites WGS84 e o par (0,0) para o ponto de origem, a posição do motorista e o destino de uma corrida ativa. Não altera raio de oferta, assinatura, modalidade nem regras de cancelamento.
 TESTE: importar o motor TypeScript real com Node 22 --experimental-strip-types e verificar GPS inválido, expiração, exclusões, categoria e motorista em viagem.
+CORREÇÃO COMPLEMENTAR: o fluxo de primeira oferta em supabase/functions/request-ride/index.ts também aceitava GPS sem data (last_location_at nulo) e coordenadas nulas convertidas a zero. O filtro dessa função agora requer posição WGS84 válida, timestamp presente, com máximo de 120 segundos de idade e tolerância de até 30 segundos no futuro. Os testes extraem e executam o filtro real da função versionada, não uma cópia manual.
 
 ## DISP-003 (P1): busca inserida sem oferta inicial
 CONFIRMADO POR CRUZAMENTO DE CÓDIGO. request-ride grava uma corrida com search_expires_at, inicialmente sem request_expires_at, e tolera falha de dispatch() com .catch(() => []). O recuperador anterior buscava somente request_expires_at vencido, deixando de fora NULL.
