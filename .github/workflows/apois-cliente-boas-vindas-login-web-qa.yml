@@ -83,6 +83,7 @@ jobs:
           grep -Fq 'data-apois-approved-branded-car-v2' superapp/shell/dist/index.html
           grep -Fq 'data-apois-enter-safe-area-v2' superapp/shell/dist/index.html
           grep -Fq 'APOIS_CLIENT_LOGIN_STABLE_V2' .work/corridas/src/styles.css
+          grep -Fq 'data-apois-client-login-stable-v2' .work/corridas/src/routes/_public.login.tsx
           grep -Fq 'data-apois-client-login-approved-v1' .work/corridas/src/routes/_public.login.tsx
           grep -Fq 'APOIS_CLIENT_LOGIN_APPROVED_V1' .work/corridas/src/styles.css
           grep -R -Fq 'data-apois-client-login-approved-v1' superapp/shell/dist/modules/corridas/assets
