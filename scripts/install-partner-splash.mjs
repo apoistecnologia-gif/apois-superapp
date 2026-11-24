@@ -12,6 +12,7 @@ mkdirSync(drawableDir, { recursive: true });
 // sem esticar a arte nem transformar o launcher em uma tela inteira borrada.
 // O atributo android:drawable de <item> espera referência de drawable; por isso
 // o fundo sólido é um <shape>, evitando erro de AAPT com literal #050505.
+const splashColor=process.env.APOIS_MOTORISTA_ONLY==='1' ? '#FFFFFF' : '#050505';
 const splashDrawable = `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
@@ -27,7 +28,7 @@ const splashDrawable = `<?xml version="1.0" encoding="utf-8"?>
 </layer-list>
 `;
 const splashPath = join(drawableDir, 'apois_partner_splash.xml');
-writeFileSync(splashPath, splashDrawable, 'utf8');
+writeFileSync(splashPath, splashColor==='#FFFFFF' ? splashDrawable.replaceAll('#050505','#FFFFFF') : splashDrawable, 'utf8');
 
 function walk(directory) {
   const files = [];
@@ -71,17 +72,18 @@ for (const path of styleFiles) {
     );
   }
 
+  if (splashColor==='#FFFFFF') xml=xml.replaceAll('#050505','#FFFFFF');
   writeFileSync(path, xml, 'utf8');
 }
 
 if (!launchThemeFound) throw new Error('Tema AppTheme.NoActionBarLaunch não encontrado no Android do Parceiro.');
 
 const finalSplash = readFileSync(splashPath, 'utf8');
-if (!finalSplash.includes('<solid android:color="#050505" />')) throw new Error('Drawable do splash não possui fundo sólido válido.');
+if (!finalSplash.includes(splashColor)) throw new Error('Drawable do splash não possui fundo sólido válido.');
 if (finalSplash.includes('android:drawable="#050505"')) throw new Error('Drawable do splash usa literal de cor inválido em android:drawable.');
 
 const allStyles = styleFiles.map((path) => readFileSync(path, 'utf8')).join('\n');
-if (!allStyles.includes('#050505')) throw new Error('Splash do Parceiro não ficou com fundo #050505.');
+if (!allStyles.includes(splashColor)) throw new Error('Splash do Parceiro não possui a cor de fundo exigida.');
 if (!allStyles.includes('@mipmap/ic_launcher')) throw new Error('Splash do Parceiro não usa o ícone oficial APOIS.');
 if (allStyles.includes('@drawable/splash')) throw new Error('Splash padrão do template Android permaneceu ativo no Parceiro.');
 
