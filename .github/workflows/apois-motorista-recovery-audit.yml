@@ -124,7 +124,8 @@ jobs:
           check_key 'partner' "$MOTORISTA_PARTNER_KEY"
           check_key 'cliente' "$MOTORISTA_CLIENT_KEY"
           if [ "$FOUND" -eq 0 ]; then
-            echo '::warning::Nenhuma chave conhecida corresponde ao APK atualmente instalado. Nao gerar APK de atualizacao.'
+            echo '::error::BLOQUEIO DE ATUALIZACAO: nenhum keystore protegido corresponde ao APK instalado (cert SHA-256 94A11563...).'
+            exit 1
           else
             echo '[OK] Uma chave privada original ainda esta disponivel para a instalacao atual.'
           fi
