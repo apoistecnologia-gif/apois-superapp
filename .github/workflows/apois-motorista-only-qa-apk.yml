@@ -278,6 +278,8 @@ jobs:
           NATIVE_MANIFEST="$RUNNER_TEMP/apois-motorista-manifest.txt"
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$NATIVE_MANIFEST"
           grep -Fq 'DriverLocationService' "$NATIVE_MANIFEST"
+          # Camera nativa existia no APK QA original e foi perdida no host novo.
+          grep -Fq 'IONCAMRFileProvider' "$NATIVE_MANIFEST"
           if grep -Fq 'CourierLocationService' "$NATIVE_MANIFEST"; then
             echo '::error::CourierLocationService presente no AndroidManifest final.'
             exit 1

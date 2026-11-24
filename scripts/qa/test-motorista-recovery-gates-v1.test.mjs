@@ -12,6 +12,7 @@ const sanitizer=read('scripts/sanitize-partner-launcher-resources.mjs');
 const shell=read('superapp/partner-shell/index-motorista-only.html');
 const approved=read('scripts/apply-driver-login-approved-qa-v1.mjs');
 const splash=read('scripts/install-partner-splash.mjs');
+const androidPackage=JSON.parse(read('superapp/partner-shell/package.json'));
 
 test('unknown or wrong signer blocks app update; original QA key only',()=>{
  assert.match(workflow,/APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64/);
@@ -59,6 +60,11 @@ test('Motorista-only has original red branding, approved login, and no courier a
  assert.match(approved,/<DriverGoogleLoginButton\s*\/>/);
  assert.match(approved,/recuperar-senha/);
 });
+test('Camera Android plugin restored to last previously packaged version',()=>{
+ assert.equal(androidPackage.dependencies['@capacitor/camera'],'8.2.1');
+ assert.match(workflow,/IONCAMRFileProvider/);
+});
+
 test('mixed Partner APK generator is retired; source and security audits stay versioned',()=>{
  assert.match(legacy,/if: \$\{\{ false \}\}/);
  assert.doesNotMatch(legacy,/secrets\.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64/);
