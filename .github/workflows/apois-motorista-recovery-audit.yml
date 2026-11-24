@@ -11,6 +11,8 @@ on:
       - scripts/qa/configure-partner-qa-debug-signing-v1.mjs
       - scripts/qa/extract-partner-apk-cert-sha256-v1.mjs
       - scripts/build-apois-motorista-only-qa.mjs
+      - scripts/build-partner-modules.sh
+      - superapp/partner-shell/build.mjs
       - scripts/install-partner-launcher.mjs
       - scripts/sanitize-partner-launcher-resources.mjs
       - scripts/install-partner-splash.mjs
@@ -31,7 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/build-partner-modules.sh
-          for file in scripts/build-apois-motorista-only-qa.mjs scripts/install-partner-launcher.mjs scripts/sanitize-partner-launcher-resources.mjs scripts/install-partner-splash.mjs scripts/qa/configure-partner-qa-debug-signing-v1.mjs scripts/qa/extract-partner-apk-cert-sha256-v1.mjs; do
+          for file in superapp/partner-shell/build.mjs scripts/build-apois-motorista-only-qa.mjs scripts/install-partner-launcher.mjs scripts/sanitize-partner-launcher-resources.mjs scripts/install-partner-splash.mjs scripts/qa/configure-partner-qa-debug-signing-v1.mjs scripts/qa/extract-partner-apk-cert-sha256-v1.mjs; do
             node --check "$file"
           done
           node --test scripts/qa/test-motorista-recovery-gates-v1.test.mjs

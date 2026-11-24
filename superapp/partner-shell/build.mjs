@@ -7,6 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)));
 const dist = resolve(root, 'dist');
 const branding = resolve(root, '../branding/apois-launcher.png');
 const driverLogoSource = resolve(root, '../../.work/partner-motorista/src/assets/apoisLogoData.ts');
+const motoristaOnly = process.env.APOIS_MOTORISTA_ONLY === '1';
 
 function readTextTree(directory) {
   let output = '';
@@ -59,13 +60,18 @@ if (existsSync(driverLogoSource)) {
   }
 }
 
-const templatePath = resolve(root, 'index.html');
+const templatePath = resolve(root, motoristaOnly ? 'index-motorista-only.html' : 'index.html');
 let shellHtml = readFileSync(templatePath, 'utf8');
-if (!shellHtml.includes('__APOIS_BRAND_DATA_URL__')) {
-  console.error('[FAIL] placeholder da logo APOIS não encontrado no shell parceiro');
-  process.exit(1);
+if (motoristaOnly) {
+  requireMarker(shellHtml, 'APOIS_MOTORISTA_APPROVED_WELCOME_RESTORED_V1', 'approved Motorista-only entry');
+  forbidMarker(shellHtml, 'modules/entregador', 'Entregador deep link/entry');
+} else {
+  if (!shellHtml.includes('__APOIS_BRAND_DATA_URL__')) {
+    console.error('[FAIL] placeholder da logo APOIS não encontrado no shell parceiro');
+    process.exit(1);
+  }
+  shellHtml = shellHtml.replace('__APOIS_BRAND_DATA_URL__', brandDataUrl);
 }
-shellHtml = shellHtml.replace('__APOIS_BRAND_DATA_URL__', brandDataUrl);
 writeFileSync(resolve(dist, 'index.html'), shellHtml, 'utf8');
 
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
@@ -73,7 +79,7 @@ cpSync(branding, resolve(dist, 'assets/apois-brand.png'));
 
 const modules = [
   ['motorista', resolve(root, '../../.work/partner-motorista/dist/client')],
-  ['entregador', resolve(root, '../../.work/partner-entregador/.output/public')],
+  ...(!motoristaOnly ? [['entregador', resolve(root, '../../.work/partner-entregador/.output/public')]] : []),
 ];
 
 for (const [name, source] of modules) {
@@ -109,6 +115,7 @@ forbidMarker(driverBundle, 'Abrir menu', 'Motorista não recompila menu lateral 
 forbidMarker(driverBundle, 'apois:splash:motorista', 'Motorista não mostra splash interna depois do seletor Parceiro');
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
 
+if (!motoristaOnly) {
 const courierBundle = readTextTree(resolve(dist, 'modules/entregador'));
 requireMarker(courierBundle, 'Entregas', 'Entregador usa nomenclatura correta de Entregas');
 requireMarker(courierBundle, 'Perfil indisponível durante a entrega', 'Entregador mantém foco na operação durante entrega ativa');
@@ -123,7 +130,16 @@ requireMarker(courierBundle, 'apois-parceiro:operational-role', 'Entregador grav
 forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saque legado ao APK');
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
 
+}
+
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
+if (motoristaOnly) {
+  requireMarker(finalShell, 'APOIS MOTORISTA', 'shell exclusivo da Corridas');
+  requireMarker(finalShell, 'apois-parceiro:motorista-google-url', 'callback Google preservado');
+  forbidMarker(finalShell, 'modules/entregador', 'sem Entregador no shell');
+  if (existsSync(resolve(dist, 'modules/entregador'))) throw Error('[FAIL] Delivery present in rides-only dist');
+  console.log('[OK] Motorista-only: nenhum bundle de Entregas, entrada e Google preservados');
+} else {
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 requireMarker(finalShell, 'apois-parceiro:operational-role', 'shell final mantém trava de função operacional');
@@ -142,3 +158,5 @@ if (!(launchIndex >= 0 && pendingIndex > launchIndex && lockIndex > pendingIndex
 }
 
 console.log('[OK] APOIS Parceiro gerado e validado: finanças, UI operacional, GPS/background, sessão WebView/FGS, callbacks/Push, saídas secundárias, back guards e trava cruzada protegidos.');
+
+}

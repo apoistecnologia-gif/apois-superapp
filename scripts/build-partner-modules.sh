@@ -191,6 +191,16 @@ if grep -R -Fq 'Solicitar saque' dist/client; then
 fi
 echo '[OK] validação Motorista: opção Solicitar saque ausente'
 
+# Corridas-only: delivery source stays in Git, but is not compiled or shipped.
+if [ "${APOIS_MOTORISTA_ONLY:-0}" = "1" ]; then
+  cd "$ROOT"
+  node superapp/partner-shell/build.mjs
+  test -s superapp/partner-shell/dist/modules/motorista/index.html
+  test ! -e superapp/partner-shell/dist/modules/entregador
+  echo '[OK] Motorista-only: no delivery bundle compiled or packaged.'
+  exit 0
+fi
+
 # ---------------- Entregador ----------------
 cd "$ROOT"
 export APOIS_ENTREGAS_WORKSPACE=".work/partner-entregador"

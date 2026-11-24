@@ -72,3 +72,16 @@ test('mixed Partner APK generator is retired; source and security audits stay ve
  assert.match(workflow,/npm run verify:pins/);
  assert.match(workflow,/npm run verify:partner-portability/);
 });
+
+test('Corridas-only build does not compile delivery module; full-mode path stays intact',()=>{
+ const script=read('scripts/build-partner-modules.sh');
+ const bundler=read('superapp/partner-shell/build.mjs');
+ assert.match(script,/APOIS_MOTORISTA_ONLY:-0/);
+ assert.match(script,/test ! -e superapp\/partner-shell\/dist\/modules\/entregador/);
+ assert.match(script,/exit 0\nfi\n\n# ---------------- Entregador ----------------/);
+ assert.match(bundler,/const motoristaOnly = process\.env\.APOIS_MOTORISTA_ONLY === '1'/);
+ assert.match(bundler,/motoristaOnly \? 'index-motorista-only\.html'/);
+ assert.match(bundler,/if \(!motoristaOnly\) \{/);
+ assert.match(script,/node "\$ROOT\/scripts\/harden-partner-motorista-native-gps\.mjs"/);
+ assert.match(script,/node "\$ROOT\/scripts\/apply-driver-login-approved-qa-v1\.mjs"/);
+});
