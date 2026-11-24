@@ -121,9 +121,24 @@ const permissionReplacement = `    if (isNativeDriverAndroid()) {
 
     const permsApi = (navigator as Navigator & { permissions?: { query: (p: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
     if (permsApi?.query) {`;
-if (!source.includes('if (isNativeDriverAndroid()) {\n      requestFastLocation();\n      return;')) {
-  if (!source.includes(permissionAnchor)) throw new Error('Motorista Parceiro: âncora de permissão web do toggle não encontrada.');
-  source = source.replace(permissionAnchor, permissionReplacement);
+// Only the explicit FICAR ONLINE interaction may request native GPS.
+// This anchor occurs twice in the original route (mount-time permission probe
+// and click-time toggle). Replacing its FIRST occurrence incorrectly called
+// requestFastLocation() from a different scope and could crash on Home mount.
+const toggleStart = source.indexOf('const toggleOnline = useCallback(');
+if (toggleStart < 0) throw new Error('[FAIL] Motorista: toggleOnline handler was altered');
+const clickPermissionAt = source.indexOf(permissionAnchor, toggleStart);
+const fastRequestAt = source.indexOf('const requestFastLocation = () => {', toggleStart);
+if (clickPermissionAt < 0 || fastRequestAt < 0 || fastRequestAt > clickPermissionAt) {
+  throw new Error('[FAIL] Motorista: GPS click-scoped request not found; refuse to insert an unbound callback');
+}
+const clickScope = source.slice(toggleStart, clickPermissionAt);
+if (!clickScope.includes('if (isNativeDriverAndroid()) {\n      requestFastLocation();\n      return;')) {
+  source = source.slice(0, clickPermissionAt) + permissionReplacement +
+    source.slice(clickPermissionAt + permissionAnchor.length);
+}
+if (source.slice(0, toggleStart).includes('requestFastLocation();')) {
+  throw new Error('[FAIL] Motorista: mount-time GPS call detected before click handler');
 }
 
 const activationEnd = `  const activateOnlineWithCoords = useCallback(
