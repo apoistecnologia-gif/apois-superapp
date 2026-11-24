@@ -12,6 +12,7 @@ const header=src("src/components/rides/active/RideStatusHeader.tsx");
 const arrival=src("src/hooks/rides/use-passenger-arrival-estimate.ts");
 const nearby=src("src/hooks/maps/use-nearby-passenger-drivers.ts");
 const sql=readFileSync(resolve("docs/QA217-PROPOSTA-RPC-MOTORISTAS-PROXIMOS.sql"),"utf8");
+const markerAsset=readFileSync(resolve(root,"public/assets/markers/apois-nearby-car-3d.webp"));
 
 test("QA217: real road ETA to pickup and then destination, with 90s quota throttle",()=>{
  for(const text of [
@@ -46,13 +47,22 @@ test("QA217: map has live car marker plus own driver-to-pickup route and preview
 });
 
 test("QA217: realistic 3D cars on JS and native, real-only presence and strict backend scope",()=>{
+ assert.ok(markerAsset.length>1000,"realist car image must be packaged");
+ assert.equal(markerAsset.toString("ascii",0,4),"RIFF");
+ assert.equal(markerAsset.toString("ascii",8,12),"WEBP");
+
  for(const text of [
   "APOIS_REALISTIC_DRIVER_CAR_V1",
+  "APOIS_SEARCH_CAMERA_BREATH_V1",
+  "pickupCameraCoordinate(",
+  "mapService.setCamera(nativeMapIdRef.current",
   "apois-nearby-car-3d.webp",
   "setNearbyDriverMarkers(nativeMapIdRef.current, points, false)",
  ])assert.ok(map.includes(text),text);
  for(const text of [
   "nearbyDriverMarkerIds","setNearbyDriverMarkers(","apois-nearby-car-3d.webp",
+  'iconUrl: "modules/corridas/assets/markers/apois-nearby-car-3d.webp"',
+  "iconSize: {width: 62, height: 44}",
   "opacity: 1"
  ])assert.ok(native.includes(text),text);
  for(const text of [
