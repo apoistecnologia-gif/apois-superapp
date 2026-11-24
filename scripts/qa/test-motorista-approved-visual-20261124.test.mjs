@@ -34,8 +34,8 @@ test('01 — login visual white/red with original logo and safe inputs',()=>{
   'to=\"/motorista/recuperar-senha\"',
   'to=\"/motorista/cadastro\"'
  ]);
- assert.equal(login.split('<DriverGoogleLoginButton />').length-1,2,
-  'Google must occur once in the input guard and once in final JSX');
+ assert.equal(login.split('<DriverGoogleLoginButton />').length-1,3,
+  'Google button must remain in patch guard, rendered JSX and final check');
  assert.ok(existsSync('superapp/branding/apois-client-red-logo.b64'),'Official logo missing');
 });
 test('02 — official welcome artwork extends behind action, same login destination',()=>{
