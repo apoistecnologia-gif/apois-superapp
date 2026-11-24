@@ -50,7 +50,7 @@ function distanceLabel(meters: number): string {
 function compactDestination(value: string): string {
   const clean=String(value||"Destino final").trim();
   const parts=clean.split(",").map(x=>x.trim()).filter(Boolean);
-  const choice=parts.length?parts[0]:clean;
+  const choice=parts[0] ?? clean;
   return choice.length>38 ? choice.slice(0,37)+"…" : choice;
 }
 function paymentName(value: string): string {
@@ -185,8 +185,8 @@ export function ApoisTripInProgressPremium({
   ride,isRefreshing,isRealtimeConnected,onBack,onRefresh
 }:TripProps){
   const driver=useMemo<Point|null>(()=>{
-    const p={lat:ride.driver_latitude as number,lng:ride.driver_longitude as number,
-      heading:ride.driver_heading};
+    const p:Point={lat:ride.driver_latitude as number,lng:ride.driver_longitude as number,
+      ...(typeof ride.driver_heading==="number" ? {heading:ride.driver_heading} : {})};
     return isPoint(p)?p:null;
   },[ride.driver_latitude,ride.driver_longitude,ride.driver_heading]);
   const route=useVerifiedRemainingRoute(ride,driver);
