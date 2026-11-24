@@ -2,8 +2,8 @@
       {!hasRideUI && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-40 bg-gradient-to-b from-white via-white/95 to-transparent px-3 pb-5 pt-[calc(env(safe-area-inset-top)+7px)] text-[#111418]">
           <div className="pointer-events-auto mx-auto flex h-[58px] max-w-xl items-center justify-between gap-2">
-            <button type="button" onClick={()=>setSideMenuOpen(true)} aria-label="Abrir opções do motorista" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/90">
-              <Menu size={26} strokeWidth={2.4}/>
+            <button type="button" onClick={()=>navigate({to:"/motorista/perfil"})} aria-label="Abrir área do motorista" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/90">
+              <ApoisHomeMenu size={26} strokeWidth={2.4}/>
             </button>
             <div className="flex min-w-0 items-center justify-center gap-2" aria-label="APOIS Motorista">
               <MovviLogo iconOnly size={43}/>
