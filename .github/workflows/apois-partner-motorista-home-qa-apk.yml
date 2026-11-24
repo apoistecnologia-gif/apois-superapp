@@ -65,6 +65,25 @@ jobs:
           git submodule update --init --recursive
           npm run verify:pins
 
+      - name: Utilizar backend publico fixado na fonte do Motorista
+        shell: bash
+        run: |
+          set -euo pipefail
+          ENVFILE="sources/apois-corridas-motorista-admin/.env.mobile"
+          test -s "$ENVFILE"
+          SOURCE_URL="$(sed -n 's/^VITE_SUPABASE_URL[[:space:]]*=[[:space:]]*//p' "$ENVFILE" | head -n1 | tr -d '\r')"
+          SOURCE_PUBLISHABLE="$(sed -n 's/^VITE_SUPABASE_PUBLISHABLE_KEY[[:space:]]*=[[:space:]]*//p' "$ENVFILE" | head -n1 | tr -d '\r')"
+          test -n "$SOURCE_URL"
+          test -n "$SOURCE_PUBLISHABLE"
+          case "$SOURCE_URL" in
+            https://vqtucstyduxrqjgyigfk.supabase.co) ;;
+            *) echo "::error::Projeto Supabase da fonte protegida inesperado"; exit 1 ;;
+          esac
+          # Fonte do Motorista exige que URL e publishable key sejam do mesmo projeto.
+          # Publishable key e publica por definicao; nao imprimir seu valor no log.
+          echo "CORRIDAS_VITE_SUPABASE_URL=$SOURCE_URL" >> "$GITHUB_ENV"
+          echo "CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY=$SOURCE_PUBLISHABLE" >> "$GITHUB_ENV"
+          echo '[OK] Backend do Motorista corresponde a fonte imutavel.'
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
