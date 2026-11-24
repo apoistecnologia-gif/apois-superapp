@@ -221,7 +221,7 @@
     <div class="foot">APOIS • PARCEIROS</div>
   </main>
   <script>
-    const urls={motorista:'./modules/motorista/index.html',entregador:'./modules/entregador/index.html#/courier'};
+    const urls={motorista:'./motorista-welcome.html',entregador:'./modules/entregador/index.html#/courier'};
     const operationalUrls={motorista:'./modules/motorista/index.html#/motorista/app',entregador:'./modules/entregador/index.html#/courier'};
     const COURIER_AUTH_KEY='apois-parceiro:entregador-auth-url';
     const DRIVER_RECOVERY_KEY='apois-parceiro:motorista-recovery-url';
@@ -267,7 +267,10 @@
       const banner=document.getElementById('apois-role-conflict');
       if(banner)banner.hidden=true;
       try{localStorage.setItem('apois-parceiro:last-module',requestedRole);}catch{}
-      const destination=operationalHome(requestedRole);
+      // Only a fresh, manually selected Motorista opens the approved welcome.
+      // Active shifts, Push, Google OAuth and password recovery keep their direct routes.
+      const activeRole=operationalRole();
+      const destination=requestedRole==='motorista' && !activeRole ? urls.motorista : operationalHome(requestedRole);
       window.location.assign(partnerModuleUrl(destination));
       return true;
     }
