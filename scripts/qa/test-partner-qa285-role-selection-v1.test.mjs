@@ -86,7 +86,10 @@ function verify(file){
    for(const role of ["motorista","entregador"]){
     env.warning.hidden=true;
     env.click(role);
-    assert.deepEqual(env.nav.pop(),{kind:"assign",url:urlFor(role)},
+    // Approved Motorista welcome precedes the real login only for fresh manual
+    // entry. If any operational role is active, keep the old direct route.
+    const expected=role==="motorista" && locked===null ? "./motorista-welcome.html" : urlFor(role);
+    assert.deepEqual(env.nav.pop(),{kind:"assign",url:expected},
      "wrong module from "+role+" with lock="+locked+" and local driver flag="+flag);
     assert.equal(env.nav.length,0,"a manual action may only navigate once");
     assert.equal(env.warning.hidden,true,"manual selector may not show a blocking role warning");
