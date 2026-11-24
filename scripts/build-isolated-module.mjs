@@ -549,6 +549,11 @@ if (name === 'corridas') {
   // Preserve native OAuth PKCE, password reset, signup, and protected pinned sources.
   run(process.execPath, [resolve(root, 'scripts/apply-client-corridas-approved-login-v1.mjs')]);
   run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-client-corridas-welcome-login-v1.test.mjs')]);
+  // Approved second revision: full APOIS-branded vehicle, real higher button, stable keyboard.
+  run(process.execPath, [resolve(root, 'scripts/apply-client-corridas-approved-v2.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-client-corridas-approved-v2.test.mjs')]);
+  const v2Welcome=readFileSync(resolve(root,'superapp/shell/corridas-only.html'),'utf8');
+  if(!v2Welcome.includes('data-apois-approved-branded-car-v2') || !v2Welcome.includes('data-apois-enter-safe-area-v2') || !v2Welcome.includes('data:image/webp;base64,'))throw Error('[FAIL] Corridas: approved branded car and safe-area button missing after V2 transform');
   const approvedLogin=readFileSync(resolve(root,'.work/corridas/src/routes/_public.login.tsx'),'utf8');
   const approvedLoginCss=readFileSync(resolve(root,'.work/corridas/src/styles.css'),'utf8');
   if (!approvedLogin.includes('data-apois-client-login-approved-v1') ||
