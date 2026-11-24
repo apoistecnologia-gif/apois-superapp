@@ -20,7 +20,7 @@ test('welcome preserves approved image and single real login button with camera 
 test('only manual Motorista selection opens welcome, courier, push, GPS operational lock and deep links remain unchanged',()=>{
  assert.match(shell,/motorista:'\.\/motorista-welcome\.html'/);
  assert.match(shell,/operationalUrls=\{motorista:/);
- assert.match(shell,/requestedRole==='motorista'.*operationalRole\(\)!=='motorista'/);
+ assert.match(shell,/requestedRole==='motorista' && !activeRole/);
  assert.match(shell,/function routeRole\(requestedRole,target\)/);
  assert.match(shell,/function manualRouteRole\(requestedRole,target\)/);
  assert.match(shell,/const DRIVER_GOOGLE_KEY=/);
@@ -39,7 +39,7 @@ test('driver approved login patch is presentation-only and retains all real call
  const DriverRecoveryLink=Link;
  function DriverLoginPage() {
  const loading=false; const error=null;const showPassword=false;const setShowPassword=()=>{};const onSubmit=()=>{};
-  return (<main>old login <DriverGoogleLoginButton /> <Link to="/motorista/cadastro" /><DriverRecoveryLink to="/motorista/recuperar-senha" /></main>
+  return (<main><form onSubmit={onSubmit}>old login</form> <DriverGoogleLoginButton /> <Link to="/motorista/cadastro" /><DriverRecoveryLink to="/motorista/recuperar-senha" /></main>
   );
 }`;
  const out=patchLogin(s);
