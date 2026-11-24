@@ -111,8 +111,18 @@ if (!finalIndex.includes('<base href="./">')) {
 if (!finalRouteIndex.includes('APP_ROLE === "driver"') || !finalRouteIndex.includes('to: "/motorista/login"')) {
   throw new Error('[FAIL] Motorista Parceiro: raiz não redireciona internamente ao login do Motorista.');
 }
-if (!finalShell.includes("motorista:'./modules/motorista/index.html'")) {
-  throw new Error('[FAIL] Motorista Parceiro: seletor ainda não abre a raiz limpa do módulo.');
+// The approved welcome is a static shell page with ONE button leading to
+// the existing Motorista module login. The operational root and deep-link
+// callbacks still bypass it, and neither Vite base nor protected auth changes.
+if (!finalShell.includes("motorista:'./modules/motorista/index.html'") &&
+    !finalShell.includes("motorista:'./motorista-welcome.html'")) {
+  throw new Error('[FAIL] Motorista Parceiro: seletor não abre nem raiz limpa nem boas-vindas aprovada.');
+}
+if (finalShell.includes("motorista:'./motorista-welcome.html'")) {
+  const approvedWelcome=readFileSync(resolve(root,'superapp/partner-shell/motorista-welcome.html'),'utf8');
+  if (!approvedWelcome.includes('APOIS_DRIVER_APPROVED_WELCOME_V1') ||
+      !approvedWelcome.includes('./modules/motorista/index.html#/motorista/login'))
+    throw new Error('[FAIL] Motorista Parceiro: boas-vindas não encaminha ao login real.');
 }
 if (finalShell.includes("motorista:'./modules/motorista/index.html#/motorista/login'")) {
   throw new Error('[FAIL] Motorista Parceiro: cold start ainda usa hash profundo de login.');
