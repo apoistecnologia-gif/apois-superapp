@@ -11,8 +11,11 @@ import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSyn
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const legacySource = resolve('superapp/branding/apois-launcher.png');
-const foregroundSource = resolve('superapp/branding/apois-launcher-foreground.png');
+const brandingDir=process.env.APOIS_MOTORISTA_ONLY==="1"
+  ? resolve(process.env.APOIS_MOTORISTA_QA_BRANDING_DIR||".work/motorista-only-branding")
+  : resolve("superapp/branding");
+const legacySource=resolve(brandingDir,"apois-launcher.png");
+const foregroundSource=resolve(brandingDir,"apois-launcher-foreground.png");
 const resRoot = resolve('superapp/partner-shell/android/app/src/main/res');
 const manifestPath = resolve('superapp/partner-shell/android/app/src/main/AndroidManifest.xml');
 const mainActivityPath = resolve('superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/MainActivity.java');

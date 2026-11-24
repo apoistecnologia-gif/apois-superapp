@@ -4,14 +4,16 @@ import {readFileSync,writeFileSync,existsSync,mkdirSync,rmSync,copyFileSync} fro
 import {resolve} from "node:path";
 const phase=process.argv[2];
 const root=process.cwd();
-const branding=resolve(root,"superapp/branding");
+const branding=resolve(root,process.env.APOIS_MOTORISTA_ONLY==="1" ? ".work/motorista-only-branding" : "superapp/branding");
+const officialRedLogo=resolve(root,"superapp/branding/apois-client-red-logo.b64");
 const dist=resolve(root,"superapp/partner-shell/dist");
 const androidRoot=resolve(root,"superapp/partner-shell/android");
 function must(ok,message){if(!ok)throw Error("[FAIL] APOIS MOTORISTA ONLY: "+message)}
 function read(path){must(existsSync(path),"ausente: "+path);return readFileSync(path,"utf8")}
 function write(path,txt){writeFileSync(path,txt,"utf8")}
 if(phase==="brand"){
-  const encoded=read(resolve(branding,"apois-client-red-logo.b64")).trim();
+  const encoded=read(officialRedLogo).trim();
+  mkdirSync(branding,{recursive:true});
   must(encoded.startsWith("iVBORw0KGgo"),"identidade oficial vermelha PNG nao encontrada");
   const png=Buffer.from(encoded,"base64");
   must(png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),"PNG invalido");
@@ -20,7 +22,7 @@ if(phase==="brand"){
   for(const filename of ["apois-launcher.png","apois-launcher-foreground.png"]){
     writeFileSync(resolve(branding,filename),png);
   }
-  console.log("[OK] Logo vermelha oficial do Cliente aplicada: "+w+"x"+h);
+  console.log("[OK] Logo oficial APOIS aplicada ao overlay descartavel: "+w+"x"+h);
 }else if(phase==="config"){
   // APOIS_MOTORISTA_APPNAME_QA_V2: alterar apenas o checkout descartável.
   // O packageId e a assinatura permanecem intactos para atualizar o app instalado.
