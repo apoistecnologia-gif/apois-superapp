@@ -15,6 +15,18 @@ small{color:#717681;font-size:13px}</style></head><body>
  const operational=app+"#/motorista/app";
  const mp=app+"#/motorista/assinatura";
  const key="apois-parceiro:operational-role";
+ // APOIS_MOTORISTA_APPROVED_WELCOME_RESTORED_V1
+ // Para login ja ativo, nao interromper o motorista com boas-vindas.
+ function openEntry(){
+   try{
+     const raw=localStorage.getItem("sb-tbbzkrfupmqdywnzgnms-auth-token");
+     if(raw){
+       const stored=JSON.parse(raw);
+       if(stored&&typeof stored.access_token==="string"&&stored.access_token.length>24)return go(app);
+     }
+   }catch{}
+   return go("./motorista-welcome.html");
+ }
  try{
    if(localStorage.getItem(key)==="entregador")localStorage.removeItem(key);
    localStorage.setItem("apois-parceiro:last-module","motorista");
@@ -70,9 +82,9 @@ small{color:#717681;font-size:13px}</style></head><body>
      const raw=sessionStorage.getItem("apois-parceiro:pending-push");
      if(raw){sessionStorage.removeItem("apois-parceiro:pending-push");if(isRidePush(JSON.parse(raw)))return go(operational);}
    }catch{}
-   if(!leaving)go(app);
+   if(!leaving)openEntry();
  }
- const timeout=window.setTimeout(()=>{if(!leaving)go(app)},2200);
+ const timeout=window.setTimeout(()=>{if(!leaving)openEntry()},3500);
  void boot().finally(()=>window.clearTimeout(timeout));
 })();
 </script></body></html>
