@@ -1,13 +1,6 @@
-name: APOIS Parceiro - APK TESTE Home Motorista
+name: APOIS Parceiro legado - build misto descontinuado
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/apois-partner-motorista-home-qa-apk.yml
-      - scripts/harden-partner-motorista-offer-premium-v1.mjs
-      - scripts/harden-partner-motorista-home-premium-v1.mjs
-      - scripts/sanitize-partner-launcher-resources.mjs
 
 permissions:
   contents: read
@@ -18,6 +11,9 @@ concurrency:
 
 jobs:
   build-partner-test-apk:
+    # Legacy mixed Motorista+Entregador deliberately retained for history only.
+    # Never sign or publish an ambiguous partner QA APK; use the exclusive workflow.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:

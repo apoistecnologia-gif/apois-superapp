@@ -1,0 +1,68 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {normalizeCertificateSha256,configurePartnerQaGradle,certificateFingerprintFromKeytool} from './configure-partner-qa-debug-signing-v1.mjs';
+import {extractPartnerApkCertSha256} from './extract-partner-apk-cert-sha256-v1.mjs';
+const read=p=>readFileSync(p,'utf8');
+const workflow=read('.github/workflows/apois-motorista-only-qa-apk.yml');
+const legacy=read('.github/workflows/apois-partner-motorista-home-qa-apk.yml');
+const only=read('scripts/build-apois-motorista-only-qa.mjs');
+const launcher=read('scripts/install-partner-launcher.mjs');
+const sanitizer=read('scripts/sanitize-partner-launcher-resources.mjs');
+const shell=read('superapp/partner-shell/index-motorista-only.html');
+const approved=read('scripts/apply-driver-login-approved-qa-v1.mjs');
+const splash=read('scripts/install-partner-splash.mjs');
+
+test('unknown or wrong signer blocks app update; original QA key only',()=>{
+ assert.match(workflow,/APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64/);
+ assert.match(workflow,/APOIS_PARTNER_QA_CERT_SHA256/);
+ assert.match(workflow,/APOIS_MOTORISTA_INSTALLED_CERT_SHA256/);
+ assert.match(workflow,/APOIS_MOTORISTA_INSTALLED_VERSION_CODE/);
+ assert.match(workflow,/node scripts\/qa\/configure-partner-qa-debug-signing-v1\.mjs/);
+ assert.match(workflow,/node scripts\/qa\/extract-partner-apk-cert-sha256-v1\.mjs/);
+ assert.match(workflow,/APK_CERT.*EXPECTED_CERT/);
+ assert.match(workflow,/INSTALLED.*ORIGINAL/);
+ assert.doesNotMatch(workflow,/secrets\.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64/);
+ assert.doesNotMatch(workflow,/assinatura debug temporaria/);
+ assert.equal(normalizeCertificateSha256('4A:34:76:B9:16:74:30:1E:B0:66:14:6B:6F:3B:83:84:D9:82:7A:B4:BD:B2:87:B6:F0:0C:BB:EA:B5:6A:33:F4'),
+ '4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbea b56a33f4'.replaceAll(' ',''));
+ assert.throws(()=>normalizeCertificateSha256('NOT_A_REAL_CERT'));
+});
+test('Gradle uses protected keystore explicitly for debug, no ephemeral fallback',()=>{
+ const source='plugins { id \'com.android.application\' }\nandroid { buildTypes { debug {} } }';
+ const gradle=configurePartnerQaGradle(source);
+ assert.match(gradle,/storeFile file\(System\.getenv\("HOME"\)/);
+ assert.match(gradle,/signingConfig signingConfigs\.apoisPartnerQaDebug/);
+ assert.equal(configurePartnerQaGradle(gradle),gradle);
+ assert.equal(certificateFingerprintFromKeytool('Certificate fingerprints:\nSHA256: 4A:34:76:B9:16:74:30:1E:B0:66:14:6B:6F:3B:83:84:D9:82:7A:B4:BD:B2:87:B6:F0:0C:BB:EA:B5:6A:33:F4'),
+ '4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbea b56a33f4'.replaceAll(' ',''));
+});
+test('APK certificate fingerprint extractor rejects ambiguous signers',()=>{
+ const expected='4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbea b56a33f4'.replaceAll(' ','');
+ assert.equal(extractPartnerApkCertSha256('V2 Signer: certificate SHA-256 digest: '+expected),expected);
+ assert.throws(()=>extractPartnerApkCertSha256(''),/exactly one/);
+ assert.throws(()=>extractPartnerApkCertSha256('Signer #1 certificate SHA-256 digest: '+expected+'\nSigner #2 certificate SHA-256 digest: '+'6b'.repeat(32)),/exactly one/);
+});
+test('Motorista-only has original red branding, approved login, and no courier assets',()=>{
+ assert.match(only,/rmSync\(courier,\{recursive:true,force:true\}\)/);
+ assert.match(only,/registerPlugin\(DriverLocationPlugin\.class\)/);
+ assert.match(only,/DriverVoicePlugin/);
+ assert.match(only,/apois-client-red-logo\.b64/);
+ assert.match(only,/\.work\/motorista-only-branding/);
+ assert.match(launcher,/APOIS_MOTORISTA_QA_BRANDING_DIR/);
+ assert.match(sanitizer,/APOIS_MOTORISTA_QA_BRANDING_DIR/);
+ assert.match(splash,/splashColor/);
+ assert.match(shell,/APOIS_MOTORISTA_APPROVED_WELCOME_RESTORED_V1/);
+ assert.doesNotMatch(shell,/modules\/entregador|Sou Entregador/);
+ assert.match(approved,/data-apois-driver-approved-login-v1/);
+ assert.match(approved,/supabase\.auth\.signInWithPassword/);
+ assert.match(approved,/<DriverGoogleLoginButton\s*\/>/);
+ assert.match(approved,/recuperar-senha/);
+});
+test('mixed Partner APK generator is retired; source and security audits stay versioned',()=>{
+ assert.match(legacy,/if: \$\{\{ false \}\}/);
+ assert.doesNotMatch(legacy,/secrets\.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64/);
+ assert.match(workflow,/npm run audit:partner/);
+ assert.match(workflow,/npm run verify:pins/);
+ assert.match(workflow,/npm run verify:partner-portability/);
+});

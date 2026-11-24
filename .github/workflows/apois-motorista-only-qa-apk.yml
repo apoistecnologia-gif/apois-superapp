@@ -1,16 +1,15 @@
 name: APOIS Motorista - APK EXCLUSIVO Corridas TESTE
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/apois-motorista-only-qa-apk.yml
-      - scripts/apply-driver-login-approved-qa-v1.mjs
-      - scripts/build-partner-modules.sh
-      - scripts/harden-partner-motorista-google-oauth-recovery-v1.mjs
-      - scripts/build-apois-motorista-only-qa.mjs
-      - superapp/partner-shell/index-motorista-only.html
-      - superapp/partner-shell/motorista-welcome.html
+    inputs:
+      installed_cert_sha256:
+        description: "SHA-256 certificado do APK atualmente instalado (obtido via ADB)"
+        required: true
+        type: string
+      installed_version_code:
+        description: "VersionCode atualmente instalado (obtido via ADB)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -42,6 +41,8 @@ jobs:
       APOIS_MOTORISTA_QA_BRANDING_DIR: ".work/motorista-only-branding"
       APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
       APOIS_PARTNER_QA_CERT_SHA256: ${{ secrets.APOIS_PARTNER_QA_CERT_SHA256 }}
+      APOIS_MOTORISTA_INSTALLED_CERT_SHA256: ${{ inputs.installed_cert_sha256 }}
+      APOIS_MOTORISTA_INSTALLED_VERSION_CODE: ${{ inputs.installed_version_code }}
 
     steps:
       - uses: actions/checkout@v4
@@ -198,6 +199,31 @@ jobs:
           test -s superapp/partner-shell/android/app/google-services.json
           grep -Fq "versionCode $PARTNER_VERSION_CODE" superapp/partner-shell/android/app/build.gradle
           grep -Fq "versionName \"$PARTNER_VERSION_NAME\"" superapp/partner-shell/android/app/build.gradle
+
+      - name: Comprovar compatibilidade com pacote ja instalado (sem reinstalar)
+        shell: bash
+        run: |
+          set -euo pipefail
+          normalize() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d ': -'; }
+          INSTALLED="$(normalize "$APOIS_MOTORISTA_INSTALLED_CERT_SHA256")"
+          ORIGINAL="$(normalize "$APOIS_PARTNER_QA_CERT_SHA256")"
+          if [[ ! "$INSTALLED" =~ ^[a-f0-9]{64}$ ]] || [[ ! "$ORIGINAL" =~ ^[a-f0-9]{64}$ ]]; then
+            echo '::error::Certificado instalado e protegido exigem SHA-256 valido; cancelando build.'
+            exit 1
+          fi
+          if [ "$INSTALLED" != "$ORIGINAL" ]; then
+            echo '::error::APK instalado possui certificado diferente do QA original; nao gerar atualizacao.'
+            exit 1
+          fi
+          if [[ ! "$APOIS_MOTORISTA_INSTALLED_VERSION_CODE" =~ ^[0-9]+$ ]]; then
+            echo '::error::VersionCode instalado invalido.'
+            exit 1
+          fi
+          if [ "$PARTNER_VERSION_CODE" -le "$APOIS_MOTORISTA_INSTALLED_VERSION_CODE" ]; then
+            echo '::error::VersionCode do novo APK nao supera o instalado.'
+            exit 1
+          fi
+          echo '[OK] Certificado instalado coincide com identidade protegida; versionCode superior.'
 
       - name: Exigir certificado original protegido e configurar assinatura Gradle
         shell: bash

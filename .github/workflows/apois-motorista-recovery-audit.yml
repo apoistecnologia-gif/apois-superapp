@@ -1,0 +1,39 @@
+name: APOIS Motorista - Auditoria recuperacao (sem APK)
+on:
+  push:
+    branches:
+      - fix/apois-motorista-assinatura-recuperacao-20261124
+    paths:
+      - .github/workflows/apois-motorista-recovery-audit.yml
+      - .github/workflows/apois-motorista-only-qa-apk.yml
+      - .github/workflows/apois-partner-motorista-home-qa-apk.yml
+      - scripts/qa/test-motorista-recovery-gates-v1.test.mjs
+      - scripts/qa/configure-partner-qa-debug-signing-v1.mjs
+      - scripts/qa/extract-partner-apk-cert-sha256-v1.mjs
+      - scripts/build-apois-motorista-only-qa.mjs
+      - scripts/install-partner-launcher.mjs
+      - scripts/sanitize-partner-launcher-resources.mjs
+      - scripts/install-partner-splash.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-no-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check source and signing regression gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/build-partner-modules.sh
+          for file in scripts/build-apois-motorista-only-qa.mjs scripts/install-partner-launcher.mjs scripts/sanitize-partner-launcher-resources.mjs scripts/install-partner-splash.mjs scripts/qa/configure-partner-qa-debug-signing-v1.mjs scripts/qa/extract-partner-apk-cert-sha256-v1.mjs; do
+            node --check "$file"
+          done
+          node --test scripts/qa/test-motorista-recovery-gates-v1.test.mjs
+      - name: Confirm no Android/keystore build was requested
+        run: echo '[OK] Apenas auditoria estÃ¡tica; nenhum APK foi criado nem assinado.'
