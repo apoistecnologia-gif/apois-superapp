@@ -13,17 +13,17 @@ function swap(src,oldValue,newValue,label){
 }
 let app=readFileSync(appPath,"utf8");
 if(app.includes("APOIS_DRIVER_HOME_PREMIUM_V1")){console.log("[OK] Home premium ja aplicada");process.exit(0);}
-for(const key of ["toggleOnline","setSideMenuOpen(true)","const hasRideUI","<MovviMap","function IdleBottomPanel({","<ApoisDriverBottomNav"]){
+for(const key of ["toggleOnline","const hasRideUI","<MovviMap","function IdleBottomPanel({","<ApoisDriverBottomNav"]){
  if(!app.includes(key))throw Error("[FAIL] fluxo operacional inesperado: "+key);
 }
 const top=readFileSync(resolve("scripts/templates/ApoisDriverHomePremiumTop.tsx.txt"),"utf8");
 const panel=readFileSync(resolve("scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt"),"utf8");
 const perf=readFileSync(resolve("scripts/templates/ApoisDriverPerformancePage.tsx.txt"),"utf8");
 app=swap(app,'import { createFileRoute, useNavigate } from "@tanstack/react-router";',
- 'import { createFileRoute, useNavigate } from "@tanstack/react-router";\nimport { MovviLogo } from "@/components/MovviLogo";\nimport { Bell as ApoisBell, CarFront as ApoisHomeCar, WalletCards as ApoisHomeWallet, Clock3 as ApoisHomeClock, BarChart3 as ApoisHomeChart, Radio as ApoisHomeSignal } from "lucide-react";',
+ 'import { createFileRoute, useNavigate } from "@tanstack/react-router";\nimport { MovviLogo } from "@/components/MovviLogo";\nimport { Menu as ApoisHomeMenu, Bell as ApoisBell, CarFront as ApoisHomeCar, WalletCards as ApoisHomeWallet, Clock3 as ApoisHomeClock, BarChart3 as ApoisHomeChart, Radio as ApoisHomeSignal } from "lucide-react";',
  "importações");
 const topBegin=app.indexOf("      {/* Top bar — glass flutuante premium");
-const topEnd=app.indexOf("      <DriverSideMenu",topBegin);
+const topEnd=app.indexOf("      {/* (status de GPS",topBegin);
 if(topBegin<0||topEnd<=topBegin)throw Error("[FAIL] cabeçalho inesperado");
 app=app.slice(0,topBegin)+top+app.slice(topEnd);
 const panelBegin=app.indexOf("function IdleBottomPanel({");
