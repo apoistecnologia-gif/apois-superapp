@@ -274,6 +274,23 @@ jobs:
           fi
           test -s superapp/branding/apois-client-red-logo.b64
           test -s superapp/partner-shell/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          # Inspeciona recursos e services do APK FINAL, nao apenas arquivos fontes.
+          NATIVE_MANIFEST="$RUNNER_TEMP/apois-motorista-manifest.txt"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$NATIVE_MANIFEST"
+          grep -Fq 'DriverLocationService' "$NATIVE_MANIFEST"
+          if grep -Fq 'CourierLocationService' "$NATIVE_MANIFEST"; then
+            echo '::error::CourierLocationService presente no AndroidManifest final.'
+            exit 1
+          fi
+          grep -Fq 'br.com.apois.parceiro.fileprovider' "$NATIVE_MANIFEST"
+          OFFICIAL_ICON_SHA="$(sha256sum .work/motorista-only-branding/apois-launcher.png | awk '{print $1}')"
+          WEB_ICON_SHA="$(unzip -p "$APK" assets/public/assets/apois-brand.png | sha256sum | awk '{print $1}')"
+          NATIVE_ICON_SHA="$(unzip -p "$APK" res/mipmap-mdpi-v4/ic_launcher.png | sha256sum | awk '{print $1}')"
+          if [ "$WEB_ICON_SHA" != "$OFFICIAL_ICON_SHA" ] || [ "$NATIVE_ICON_SHA" != "$OFFICIAL_ICON_SHA" ]; then
+            echo '::error::Logo de launcher diferente da arte vermelha oficial versionada.'
+            exit 1
+          fi
+          echo '[OK] APK final: Foreground Service GPS, provider proprio, sem Courier e com arte oficial identica.'
           echo '[OK] APK SOMENTE Corridas; iconografia vermelha oficial do Cliente; Courier removido.'
           mkdir -p build
           cp "$APK" build/APOIS-Motorista-Somente-Corridas-TESTE.apk
