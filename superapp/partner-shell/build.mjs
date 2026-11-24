@@ -199,7 +199,15 @@ forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclat
 
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
 requireMarker(readFileSync(resolve(dist,'motorista-welcome.html'),'utf8'), 'data-apois-driver-approved-welcome-v1', 'Motorista tem entrada aprovada antes do login');
-requireMarker(finalShell, "motorista:'./motorista-welcome.html'", 'seletor Motorista abre boas-vindas aprovada');
+requireMarker(finalShell, "motorista:'./motorista-welcome.html'", 'entrada manual legada mantém o destino de boas-vindas');
+requireMarker(finalShell, 'APOIS_MOTORISTA_DIRECT_WELCOME_BOOT_V2', 'entrada nativa mostra boas-vindas sem aguardar o Android');
+requireMarker(finalShell, '<main class="apois-driver-launch" data-apois-driver-direct-welcome-v2', 'Boas-vindas do Motorista são o primeiro elemento visível');
+requireMarker(finalShell, 'id="apois-driver-welcome-enter"', 'boas-vindas têm botão de login real');
+requireMarker(finalShell, 'src="./assets/apois-motorista-hero.webp"', 'imagem aprovada no primeiro paint nativo');
+if (finalShell.includes("window.location.replace('./motorista-welcome.html')")) {
+  console.error('[FAIL] Shell Motorista não pode depender de redirect assíncrono de uma tela oculta');
+  process.exit(1);
+}
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 requireMarker(finalShell, 'apois-parceiro:operational-role', 'shell final mantém trava de função operacional');
