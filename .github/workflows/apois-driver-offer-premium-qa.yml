@@ -32,12 +32,15 @@ jobs:
           tar --exclude=.git --exclude=node_modules -C sources/apois-corridas-motorista-admin -cf - . | tar -C .work/partner-motorista -xf -
       - name: Aplicar interface aprovada sem tocar no submódulo
         run: node scripts/harden-partner-motorista-offer-premium-v1.mjs
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.0'
       - name: Instalar dependências de validação
         working-directory: .work/partner-motorista
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: bun install --frozen-lockfile
       - name: Validar TypeScript completo do Motorista
         working-directory: .work/partner-motorista
-        run: npm run typecheck
+        run: bun run typecheck
       - name: Verificar que aceitar/recusar e as preferências estão presentes
         run: |
           grep -Fq 'APOIS_DRIVER_OFFER_PREMIUM_V1' .work/partner-motorista/src/routes/motorista.app.tsx
