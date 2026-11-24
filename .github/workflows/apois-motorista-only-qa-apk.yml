@@ -211,6 +211,13 @@ jobs:
             echo '::error::Certificado instalado e protegido exigem SHA-256 valido; cancelando build.'
             exit 1
           fi
+          # Pin the certificate independently of the workflow input and GitHub secrets.
+          # 9003 was verified from the extracted APK and original GitHub run 45494345094.
+          DEVICE_9003_CERT='94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132'
+          if [ "$INSTALLED" != "$DEVICE_9003_CERT" ] || [ "$ORIGINAL" != "$DEVICE_9003_CERT" ]; then
+            echo '::error::Certificado diferente do APK 9003 atualmente instalado. Atualizacao bloqueada; recuperar keystore 94A11563.'
+            exit 1
+          fi
           if [ "$INSTALLED" != "$ORIGINAL" ]; then
             echo '::error::APK instalado possui certificado diferente do QA original; nao gerar atualizacao.'
             exit 1
