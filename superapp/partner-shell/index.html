@@ -168,9 +168,60 @@
     .partner-card:after,.partner-card .vehicle-mark { display:none; }
     .partner-card .card-title { max-width:100%;min-width:0; }
     .partner-card p { max-width:100%; }
+
+    /* APOIS_MOTORISTA_DIRECT_WELCOME_BOOT_V2:
+       Render the approved Motorista welcome synchronously in Capacitor's
+       initial index.html. Never hide the only UI while awaiting App.getLaunchUrl.
+       Deep links, pending Push and active trips still take precedence. */
+    .apois-driver-launch{
+      width:100%;height:100dvh;max-width:540px;margin:0 auto;
+      display:flex;flex-direction:column;position:relative;isolation:isolate;
+      overflow:hidden;background:#0D0F12;color:#fff;
+      padding-top:max(54px,calc(env(safe-area-inset-top) + 28px));
+    }
+    .apois-driver-launch-hero{flex:1 1 auto;min-height:0;position:relative;overflow:hidden}
+    .apois-driver-launch-hero img{
+      display:block;width:100%;height:100%;object-fit:cover;object-position:center center;
+      user-select:none;-webkit-user-drag:none;
+    }
+    .apois-driver-launch-entry{
+      flex:0 0 auto;background:linear-gradient(180deg,#0B0B0F,#0D0F12);
+      padding:9px 22px max(70px,calc(env(safe-area-inset-bottom) + 45px));
+    }
+    .apois-driver-launch-entry button{
+      appearance:none;display:flex;align-items:center;justify-content:center;gap:22px;
+      width:100%;min-height:60px;border-radius:999px;border:1px solid rgba(255,255,255,.13);
+      background:linear-gradient(135deg,#F51D2A 0%,#E90A21 50%,#BB071D 100%);
+      color:#fff;font:900 clamp(20px,6vw,26px) Inter,system-ui,sans-serif;
+      box-shadow:0 11px 27px rgba(187,7,29,.25);cursor:pointer;touch-action:manipulation;
+    }
+    .apois-driver-launch-entry button:active{transform:scale(.985)}
+    .apois-driver-launch-entry button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+    .apois-driver-launch-entry svg{
+      width:24px;height:24px;stroke:currentColor;stroke-width:2.8;fill:none;
+      stroke-linecap:round;stroke-linejoin:round;
+    }
+    @media(max-height:690px){
+      .apois-driver-launch{padding-top:max(44px,calc(env(safe-area-inset-top) + 24px))}
+      .apois-driver-launch-entry{padding:6px 16px max(48px,calc(env(safe-area-inset-bottom) + 30px))}
+      .apois-driver-launch-entry button{min-height:54px}
+    }
   </style>
 </head>
 <body>
+  <!-- Immediate native WebView first paint: no async redirect/hidden white shell. -->
+  <main class="apois-driver-launch" data-apois-driver-direct-welcome-v2
+        data-apois-driver-approved-welcome-v1 aria-label="Boas-vindas APOIS Motorista">
+    <div class="apois-driver-launch-hero" role="img"
+         aria-label="APOIS Motorista. Dirija com liberdade e ganhe no seu ritmo. Carro branco adesivado com a logomarca APOIS Motorista.">
+      <img src="./assets/apois-motorista-hero.webp" alt="" aria-hidden="true" />
+    </div>
+    <div class="apois-driver-launch-entry" data-apois-driver-enter-safe-area-v1>
+      <button id="apois-driver-welcome-enter" type="button">Entrar
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </button>
+    </div>
+  </main>
   <main class="screen" data-apois-legacy-role-chooser hidden aria-hidden="true">
     <section class="brand" aria-label="APOIS Parceiro">
       <div class="logo"><img src="__APOIS_BRAND_DATA_URL__" alt="APOIS" /></div>
@@ -232,6 +283,11 @@
     const DRIVER_GOOGLE_KEY='apois-parceiro:motorista-google-url';
     const PARTNER_PENDING_PUSH_KEY='apois-parceiro:pending-push';
     const PARTNER_OPERATIONAL_ROLE_KEY='apois-parceiro:operational-role';
+    // The first visible screen is ready before any Capacitor plugin promise.
+    // Entrar navigates to the unchanged authenticated Motorista login route.
+    document.getElementById('apois-driver-welcome-enter')?.addEventListener?.('click',()=>{
+      window.location.assign(partnerModuleUrl('./modules/motorista/index.html#/motorista/login'));
+    });
 
     // Resolve módulos exclusivamente a partir da raiz HTTPS do Capacitor,
     // mesmo se um deep link/retorno abrir o seletor a partir de subdiretório.
@@ -433,10 +489,10 @@
         window.location.replace(partnerModuleUrl(operationalHome(lockedOnLaunch)));
         return;
       }
-      // APOIS_MOTORISTA_ONLY_ENTRY_V1: after native deep links and pending push,
-      // cold start without an active shift goes directly to approved Motorista welcome.
-      // Entregador stays isolated in source, never presented as a role choice.
-      window.location.replace('./motorista-welcome.html');
+      // APOIS_MOTORISTA_DIRECT_WELCOME_BOOT_V2: no navigation on cold start.
+      // Approved Motorista welcome is already painted in this index.html.
+      // Never allow an unresolved App.getLaunchUrl() promise to leave an empty UI.
+      // Courier remains isolated and hidden; old operational roles are preserved.
     }
 
     void bootPartnerShell();
