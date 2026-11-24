@@ -8,6 +8,9 @@ on:
       - scripts/apply-driver-login-approved-qa-v1.mjs
       - scripts/build-partner-modules.sh
       - scripts/harden-partner-motorista-google-oauth-recovery-v1.mjs
+      - scripts/build-apois-motorista-only-qa.mjs
+      - superapp/partner-shell/index-motorista-only.html
+      - superapp/partner-shell/motorista-welcome.html
 
 permissions:
   contents: read
@@ -143,6 +146,10 @@ jobs:
           node scripts/run-bash.mjs scripts/build-partner-modules.sh
           node scripts/build-apois-motorista-only-qa.mjs brand
           node scripts/build-apois-motorista-only-qa.mjs web
+          test -s superapp/partner-shell/dist/motorista-welcome.html
+          test -s superapp/partner-shell/dist/assets/apois-motorista-hero.webp
+          grep -Fq 'data-apois-driver-approved-welcome-v1' superapp/partner-shell/dist/motorista-welcome.html
+          grep -Fq 'APOIS_MOTORISTA_APPROVED_WELCOME_RESTORED_V1' superapp/partner-shell/dist/index.html
           test ! -e superapp/partner-shell/dist/modules/entregador
           grep -Fq 'APOIS MOTORISTA' superapp/partner-shell/dist/index.html
           grep -Fq 'APOIS_DRIVER_HOME_PREMIUM_V1' .work/partner-motorista/src/routes/motorista.app.tsx
