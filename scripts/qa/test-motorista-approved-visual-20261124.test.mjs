@@ -10,6 +10,7 @@ const read=(p)=>readFileSync(p,'utf8');
 const login=read('scripts/apply-driver-login-approved-qa-v1.mjs');
 const welcome=read('superapp/partner-shell/motorista-welcome.html');
 const offer=read('scripts/harden-partner-motorista-offer-premium-v1.mjs');
+const googleGenerator=read('scripts/harden-motorista-auth.mjs');
 const top=read('scripts/templates/ApoisDriverHomePremiumTop.tsx.txt');
 const panel=read('scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt');
 const home=read('scripts/harden-partner-motorista-home-premium-v1.mjs');
@@ -55,7 +56,7 @@ test('03 — dynamic ride offer with original accept/reject and real passenger p
   'APOIS_MOTORISTA_VISUAL_REF_20261124_OFFER',
   'APOIS_PARTNER_LOGO_DATA_URL',
   'Preferências do passageiro','preferencePending',
-  'supabase.from(', 'paymentLabelFor(ride.payment_method)',
+  'supabase.from(', 'MessageCircle', 'paymentLabelFor(ride.payment_method)',
   'formatBRL(expectedFare)','pickupKm','tripKm',
   'RIDE_OFFER_TIMEOUT_SECONDS','startRideRingtone()',
   'onClick={onAccept}', 'onClick={onReject}', 'onOpenProfile',
@@ -86,7 +87,12 @@ test('04 — bright Home uses same real online state, map and route destinations
  ]);
  assert.ok(!panel.includes('R$ 64,19')&&!panel.includes('100%'),'No fabricated metrics');
 });
-test('05 — Corridas-only source order and runtime safety unchanged',()=>{
+test('05 — login Google listener type preserved with supported Capacitor core type',()=>{
+ assert.ok(googleGenerator.includes('import type { PluginListenerHandle } from "@capacitor/core";'));
+ assert.ok(googleGenerator.includes('import { App } from "@capacitor/app";'));
+ assert.ok(googleGenerator.includes('supabase.auth.signInWithOAuth'));
+});
+test('06 — Corridas-only source order and runtime safety unchanged',()=>{
  const offerPos=build.indexOf('harden-partner-motorista-offer-premium-v1.mjs');
  const homePos=build.indexOf('harden-partner-motorista-home-premium-v1.mjs');
  const loginPos=build.indexOf('apply-driver-login-approved-qa-v1.mjs');
