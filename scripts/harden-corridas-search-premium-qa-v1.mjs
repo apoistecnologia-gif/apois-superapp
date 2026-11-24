@@ -18,4 +18,12 @@ const after = before.replace(importAnchor,importNearby).replace(anchor, anchor +
 for (const name of [marker, "focusPickup={true}", "onCancel", "CancellationDialog", "EMBARQUE", "VALOR ESTIMADO"])
   if (!after.includes(name)) throw new Error("[FAIL] Marcador esperado ausente: " + name);
 writeFileSync(path, after, "utf8");
+// Oculta o cartao de compartilhamento de regiao na home, sem ativar consentimento.
+const homePath = resolve(".work/corridas/src/routes/_authenticated.inicio.tsx");
+const homeBefore = readFileSync(homePath, "utf8");
+const optinAnchor = "showControl={!hasDestination}";
+if (homeBefore.split(optinAnchor).length !== 2) throw new Error("[FAIL] controle de regiao nao identificado");
+writeFileSync(homePath, homeBefore.replace(optinAnchor, "showControl={false}"), "utf8");
+// O componente conserva sua protecao de consentimento: sem opt-in nao publica a regiao.
+
 console.log("[OK] Corridas Cliente: tela premium preparada em .work.");
