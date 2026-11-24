@@ -385,6 +385,12 @@ node --test "$ROOT/scripts/qa/test-partner-qa289-offer-fallback-v1.test.mjs"
 # visible on an ordinary Android screen without expanding the sheet.
 node "$ROOT/scripts/fix-partner-qa290-compact-offer-v1.mjs"
 node --test "$ROOT/scripts/qa/test-partner-qa290-compact-offer-v1.test.mjs"
+# Driver-only approved welcome + real login: after all operational/visual patches.
+# Changes only disposable .work/partner-motorista; no submodule or backend edits.
+APOIS_MOTORISTA_WORKSPACE="$MOTORISTA" node "$ROOT/scripts/apply-driver-welcome-login-v1.mjs"
+(cd "$ROOT" && node --test "$ROOT/scripts/qa/test-driver-welcome-login-v1.test.mjs")
+require_contains 'data-apois-driver-approved-login-v1' "$MOTORISTA/src/routes/motorista.login.tsx" 'Login real do Motorista redesenhado'
+require_contains 'APOIS_DRIVER_APPROVED_AUTH_V1' "$MOTORISTA/src/styles.css" 'CSS do login aprovado integrado'
 # Recheck after later visual/hardener transforms before compiling.
 (cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")
 cd "$MOTORISTA"
