@@ -21,6 +21,17 @@ if(phase==="brand"){
     writeFileSync(resolve(branding,filename),png);
   }
   console.log("[OK] Logo vermelha oficial do Cliente aplicada: "+w+"x"+h);
+}else if(phase==="config"){
+  // APOIS_MOTORISTA_APPNAME_QA_V2: alterar apenas o checkout descartável.
+  // O packageId e a assinatura permanecem intactos para atualizar o app instalado.
+  const configPath=resolve(root,"superapp/partner-shell/capacitor.config.ts");
+  let config=read(configPath);
+  must(config.includes("appId: 'br.com.apois.parceiro'"),"identificador original deve ser preservado");
+  must(config.includes("appName: 'APOIS Parceiro'")||config.includes("appName: 'APOIS Motorista'"),"campo appName inesperado");
+  config=config.replace("appName: 'APOIS Parceiro'","appName: 'APOIS Motorista'");
+  must(config.includes("appName: 'APOIS Motorista'"),"appName não foi corrigido");
+  write(configPath,config);
+  console.log("[OK] Nome Capacitor do APK exclusivo: APOIS Motorista; packageId inalterado");
 }else if(phase==="web"){
   const courier=resolve(dist,"modules/entregador");
   must(existsSync(resolve(dist,"modules/motorista/index.html")),"modulo Motorista ausente");
@@ -46,6 +57,9 @@ if(phase==="brand"){
   const courierService=/<service\b(?=[^>]*android:name=["']\.CourierLocationService["'])[^>]*\/>/g;
   must(courierService.test(manifest),"servico Courier nao encontrado no Manifest");
   manifest=manifest.replace(courierService,"");
+  // Corrigir somente rótulos do app; nunca mudar seu identificador.
+  manifest=manifest.replace(/android:label="APOIS Parceiro"/g,'android:label="APOIS Motorista"');
+  must(!manifest.includes('android:label="APOIS Parceiro"'),"label legado permaneceu no Manifest");
   write(manifestPath,manifest);
   for(const file of ["CourierLocationPlugin.java","CourierLocationService.java"]){
     const path=resolve(javaDir,file);
@@ -64,5 +78,5 @@ if(phase==="brand"){
   write(splashPath,read(splashPath).replaceAll("#050505","#FFFFFF"));
   console.log("[OK] Android so Motorista: classes Courier excluidas, FGS Driver intacto, app_name APOIS Motorista");
 }else{
-  throw Error("Uso: node scripts/build-apois-motorista-only-qa.mjs brand|web|native");
+  throw Error("Uso: node scripts/build-apois-motorista-only-qa.mjs brand|config|web|native");
 }
