@@ -5,7 +5,8 @@ import {ArrowLeft,BarChart3,CarFront,WalletCards,Clock3} from "lucide-react";
 import {supabase} from "@/integrations/supabase/client";
 import {ApoisDriverBottomNav} from "@/components/ApoisDriverBottomNav";
 
-export const Route=createFileRoute("/motorista/desempenho")({component:ApoisDriverPerformance});
+// A árvore mobile é registrada manualmente; o gerador web legado não conhece este caminho.
+export const Route=createFileRoute("/motorista/desempenho" as any)({component:ApoisDriverPerformance});
 
 function ApoisDriverPerformance(){
   const [data,setData]=useState<{rides:number;earnings:number}|null>(null);
