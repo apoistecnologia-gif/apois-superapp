@@ -37,3 +37,43 @@ jobs:
           node --test scripts/qa/test-motorista-recovery-gates-v1.test.mjs
       - name: Confirm no Android/keystore build was requested
         run: echo '[OK] Apenas auditoria estÃ¡tica; nenhum APK foi criado nem assinado.'
+
+  verify-protected-partner-keystore:
+    name: Comprovar segredo de assinatura do Motorista (sem compilar)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PARTNER_QA_KEY_B64: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
+      PARTNER_QA_CERT_SHA256: ${{ secrets.APOIS_PARTNER_QA_CERT_SHA256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Confirmar integridade do keystore original protegido
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$PARTNER_QA_KEY_B64" ] || [ -z "$PARTNER_QA_CERT_SHA256" ]; then
+            echo '::error::Segredo de assinatura original do Motorista ausente.'
+            exit 1
+          fi
+          EXPECTED="$(printf '%s' "$PARTNER_QA_CERT_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ': -')"
+          KNOWN_PREVIOUS_APK_CERT='4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4'
+          if [[ ! "$EXPECTED" =~ ^[a-f0-9]{64}$ ]] || [ "$EXPECTED" != "$KNOWN_PREVIOUS_APK_CERT" ]; then
+            echo '::error::Certificado protegido difere do APK Parceiro QA historicamente assinado.'
+            exit 1
+          fi
+          KEY_FILE="$RUNNER_TEMP/apois-partner-recovery-debug.keystore"
+          umask 077
+          trap 'rm -f "$KEY_FILE"' EXIT
+          printf '%s' "$PARTNER_QA_KEY_B64" | base64 --decode > "$KEY_FILE"
+          test -s "$KEY_FILE"
+          ACTUAL="$(keytool -list -v -keystore "$KEY_FILE" -alias androiddebugkey -storepass android |
+            grep -m1 'SHA256:' | sed -E 's/.*SHA256:[[:space:]]*//;s/://g' | tr '[:upper:]' '[:lower:]')"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo '::error::Keystore atual nao corresponde ao APK antigo: bloqueada assinatura de atualizacao.'
+            exit 1
+          fi
+          echo '[OK] Keystore QA Motorista intacto, certificado confere com APK historico; nenhum APK foi gerado.'
