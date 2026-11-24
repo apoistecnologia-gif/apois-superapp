@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {patchLogin,MARKER} from './apply-driver-welcome-login-v1.mjs';
+import {patchLogin,MARKER} from '../apply-driver-welcome-login-v1.mjs';
 const root=process.cwd();
 const welcome=readFileSync(root+'/superapp/partner-shell/motorista-welcome.html','utf8');
 const shell=readFileSync(root+'/superapp/partner-shell/index.html','utf8');
