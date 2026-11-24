@@ -29,6 +29,46 @@
   }, [status, focusPickup, isTrip, approachMode, validDriverLocation,
       origin, destination, encodedPolyline, route?.encodedPolyline, displayedRoutePoints]);
 
+
+  // APOIS_SEARCH_CAMERA_BREATH_V1: zoom suave sobre o embarque real.
+  // Movimento independente dos motoristas, mas sem deslocar suas coordenadas.
+  // Nunca executar durante trajeto aceito, encerrado, ou quando passageiro move o mapa.
+  useEffect(() => {
+    if (status !== "ready" || !focusPickup || !approachMode || !origin || isStatic) return;
+    let disposed = false;
+    let timer: number | null = null;
+    let phase = 0;
+    const cycle = async () => {
+      if (disposed) return;
+      if (document.visibilityState !== "visible") {
+        if (!disposed) timer = window.setTimeout(() => void cycle(), 5500);
+        return;
+      }
+      if (mapService.isCameraMovedByUser()) return;
+      const zoom = phase++ % 2 === 0 ? 15.6 : 16;
+      const center = pickupCameraCoordinate(
+        origin, mapElementRef.current?.clientHeight ?? 480, zoom
+      );
+      try {
+        if (nativeModeRef.current) {
+          await mapService.setCamera(nativeMapIdRef.current, { coordinate: center, zoom }, true);
+        } else if (mapRef.current) {
+          mapRef.current.panTo(center);
+          mapRef.current.setZoom(zoom);
+        }
+      } catch {
+        // A câmera nao interrompe a solicitacao caso o Maps rejeite animacao.
+      } finally {
+        if (!disposed) timer = window.setTimeout(() => void cycle(), 5500);
+      }
+    };
+    timer = window.setTimeout(() => void cycle(), 2200);
+    return () => {
+      disposed = true;
+      if (timer !== null) window.clearTimeout(timer);
+    };
+  }, [status, focusPickup, approachMode, isStatic, origin?.lat, origin?.lng]);
+
   // Only real coarse dots from the protected RPC. No pins during an active
   // ride. Blink red on JavaScript and Capacitor-native maps.
   useEffect(() => {
