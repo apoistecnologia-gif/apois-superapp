@@ -86,7 +86,6 @@ jobs:
     timeout-minutes: 8
     env:
       MOTORISTA_PARTNER_KEY: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
-      MOTORISTA_CLIENT_KEY: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
     steps:
       - uses: actions/setup-java@v4
         with:
@@ -96,7 +95,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          EXPECTED_INSTALLED='94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132'
+          EXPECTED_INSTALLED='4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4'
           FOUND=0
           check_key() {
             local name="$1"
@@ -124,9 +123,8 @@ jobs:
             fi
           }
           check_key 'partner' "$MOTORISTA_PARTNER_KEY"
-          check_key 'cliente' "$MOTORISTA_CLIENT_KEY"
           if [ "$FOUND" -eq 0 ]; then
-            echo '::error::BLOQUEIO DE ATUALIZACAO: nenhum keystore protegido corresponde ao APK instalado (cert SHA-256 94A11563...).'
+            echo '::error::BLOQUEIO DE ATUALIZACAO: nenhum keystore protegido corresponde ao APK instalado (cert SHA-256 4A3476B9...).'
             exit 1
           else
             echo '[OK] Uma chave privada original ainda esta disponivel para a instalacao atual.'

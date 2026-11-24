@@ -17,6 +17,12 @@ const androidPackage=JSON.parse(read('superapp/partner-shell/package.json'));
 test('unknown or wrong signer blocks app update; original QA key only',()=>{
  assert.match(workflow,/APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64/);
  assert.match(workflow,/APOIS_PARTNER_QA_CERT_SHA256/);
+ assert.ok(workflow.includes('secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64'));
+ assert.ok(workflow.includes('4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4'));
+ assert.ok(!workflow.includes('94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132'));
+ assert.ok(!workflow.includes('APOIS_MOTORISTA_9003_KEYSTORE_BASE64'));
+ assert.ok(workflow.includes('9100+GITHUB_RUN_NUMBER'));
+ assert.ok(workflow.includes('1.0.29-qa.$GITHUB_RUN_NUMBER'));
  assert.match(workflow,/APOIS_MOTORISTA_INSTALLED_CERT_SHA256/);
  assert.match(workflow,/APOIS_MOTORISTA_INSTALLED_VERSION_CODE/);
  assert.match(workflow,/node scripts\/qa\/configure-partner-qa-debug-signing-v1\.mjs/);

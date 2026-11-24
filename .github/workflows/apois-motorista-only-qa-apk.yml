@@ -39,10 +39,10 @@ jobs:
       PARTNER_APP_LABEL: "APOIS Motorista"
       APOIS_MOTORISTA_ONLY: "1"
       APOIS_MOTORISTA_QA_BRANDING_DIR: ".work/motorista-only-branding"
-      # Chave do APK instalado 9003, independente da identidade historica 335.
-      # Nunca substituir APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 da base 335.
-      APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_MOTORISTA_9003_KEYSTORE_BASE64 }}
-      APOIS_PARTNER_QA_CERT_SHA256: "94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132"
+      # Chave historica confirmada no aparelho (versionCode 328) via apksigner e keytool.
+      # Usar exclusivamente o segredo protegido do Motorista; jamais o do Cliente.
+      APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
+      APOIS_PARTNER_QA_CERT_SHA256: "4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4"
       APOIS_MOTORISTA_INSTALLED_CERT_SHA256: ${{ inputs.installed_cert_sha256 }}
       APOIS_MOTORISTA_INSTALLED_VERSION_CODE: ${{ inputs.installed_version_code }}
 
@@ -127,8 +127,8 @@ jobs:
       - name: Configurar versao de teste
         shell: bash
         run: |
-          echo "PARTNER_VERSION_CODE=$((9000+GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
-          echo "PARTNER_VERSION_NAME=1.0.11-qa.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "PARTNER_VERSION_CODE=$((9100+GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          echo "PARTNER_VERSION_NAME=1.0.29-qa.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
 
       - name: Compilar fontes conservadas e isolar a distribuicao Motorista
         shell: bash
@@ -138,6 +138,7 @@ jobs:
           # A auditoria v22 reprova deliberadamente qualquer arquivo de GitHub Actions,
           # inclusive este workflow QA. Executamos todas as demais auditorias sem
           # desabilitar nem modificar a regra de release.
+          node --test scripts/qa/test-motorista-recovery-gates-v1.test.mjs scripts/qa/test-motorista-approved-visual-20261124.test.mjs
           npm run audit:partner
           node scripts/audit-mobile-ui-v16.mjs
           node scripts/audit-unified-app-surfaces-v17.mjs
@@ -214,10 +215,10 @@ jobs:
             exit 1
           fi
           # Pin the certificate independently of the workflow input and GitHub secrets.
-          # 9003 was verified from the extracted APK and original GitHub run 45494345094.
-          DEVICE_9003_CERT='94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132'
-          if [ "$INSTALLED" != "$DEVICE_9003_CERT" ] || [ "$ORIGINAL" != "$DEVICE_9003_CERT" ]; then
-            echo '::error::Certificado diferente do APK 9003 atualmente instalado. Atualizacao bloqueada; recuperar keystore 94A11563.'
+          # The installed APK (versionCode 328) and local PrivateKeyEntry match this fingerprint.
+          DEVICE_ORIGINAL_CERT='4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4'
+          if [ "$INSTALLED" != "$DEVICE_ORIGINAL_CERT" ] || [ "$ORIGINAL" != "$DEVICE_ORIGINAL_CERT" ]; then
+            echo '::error::Certificado diferente do APK original confirmado no aparelho. Atualizacao bloqueada.'
             exit 1
           fi
           if [ "$INSTALLED" != "$ORIGINAL" ]; then
@@ -274,6 +275,7 @@ jobs:
           "$AAPT" dump badging "$APK" | grep -F "application-label:'APOIS Motorista'"
           echo '[OK] Rótulo do launcher validado dentro do APK: APOIS Motorista.'
           "$AAPT" dump badging "$APK" | grep -F "versionCode='$PARTNER_VERSION_CODE'"
+          "$AAPT" dump badging "$APK" | grep -F "versionName='$PARTNER_VERSION_NAME'"
           "$APKSIGNER" verify --print-certs "$APK" | grep -Ei 'certificate .*digest' | head -n 3 || true
           # Critérios obrigatorios do APK isolado: sem Entregas nem Courier nativo.
           unzip -Z1 "$APK" > "$RUNNER_TEMP/apois-motorista-files.txt"
@@ -305,11 +307,14 @@ jobs:
           echo '[OK] APK SOMENTE Corridas; iconografia vermelha oficial do Cliente; Courier removido.'
           mkdir -p build
           cp "$APK" build/APOIS-Motorista-Somente-Corridas-TESTE.apk
+          (cd build && sha256sum APOIS-Motorista-Somente-Corridas-TESTE.apk > APOIS-Motorista-SHA256.txt)
           echo '[OK] APK APOIS Motorista exclusivo pronto para homologacao.'
 
       - uses: actions/upload-artifact@v4
         with:
           name: APOIS-Motorista-Somente-Corridas-TESTE
-          path: build/APOIS-Motorista-Somente-Corridas-TESTE.apk
+          path: |
+            build/APOIS-Motorista-Somente-Corridas-TESTE.apk
+            build/APOIS-Motorista-SHA256.txt
           if-no-files-found: error
           retention-days: 14
