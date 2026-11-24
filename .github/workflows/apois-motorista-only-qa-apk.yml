@@ -7,6 +7,7 @@ on:
       - .github/workflows/apois-motorista-only-qa-apk.yml
       - scripts/apply-driver-login-approved-qa-v1.mjs
       - scripts/build-partner-modules.sh
+      - scripts/harden-partner-motorista-google-oauth-recovery-v1.mjs
 
 permissions:
   contents: read
@@ -147,6 +148,10 @@ jobs:
           grep -Fq 'APOIS_DRIVER_HOME_PREMIUM_V1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'themeOverride={!active ? "client" : "dark"}' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'Preferências do passageiro' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'APOIS_MOTORISTA_GOOGLE_OAUTH_RECOVERY_V1' .work/partner-motorista/src/components/DriverGoogleLoginButton.tsx
+          grep -R -Fq 'O Google não respondeu' superapp/partner-shell/dist/modules/motorista
+          grep -Fq 'tbbzkrfupmqdywnzgnms.supabase.co' .work/partner-motorista/.env.mobile.local
+          ! grep -Fq 'vqtucstyduxrqjgyigfk.supabase.co' .work/partner-motorista/.env.mobile.local
           grep -Fq 'data-apois-driver-approved-login-v1' .work/partner-motorista/src/routes/motorista.login.tsx
           grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista
           if grep -Fq '#F6BE1C' .work/partner-motorista/src/routes/motorista.login.tsx || grep -Fq 'bg-[#030405]' .work/partner-motorista/src/routes/motorista.login.tsx; then
