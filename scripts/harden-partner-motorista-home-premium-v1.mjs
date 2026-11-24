@@ -48,8 +48,11 @@ writeFileSync(mapPath,map,"utf8");
 let nav=readFileSync(navPath,"utf8");
 nav=swap(nav,'import { Bell, CarFront, House, UserRound, WalletCards } from "lucide-react";',
  'import { BarChart3, CarFront, House, UserRound, WalletCards } from "lucide-react";',"ícones nav");
-nav=swap(nav,'  { to: "/motorista/carteira", label: "Carteira", icon: WalletCards },',
- '  { to: "/motorista/ganhos", label: "Ganhos", icon: WalletCards },',"Ganhos");
+if(nav.includes('  { to: "/motorista/carteira", label: "Carteira", icon: WalletCards },')){
+  nav=swap(nav,'  { to: "/motorista/carteira", label: "Carteira", icon: WalletCards },',
+   '  { to: "/motorista/ganhos", label: "Ganhos", icon: WalletCards },',"Ganhos");
+}
+if(!nav.includes('to: "/motorista/ganhos", label: "Ganhos"')) throw Error("[FAIL] navegação Ganhos ausente");
 nav=swap(nav,'  { to: "/motorista/notificacoes", label: "Notificações", icon: Bell },',
  '  { to: "/motorista/desempenho", label: "Desempenho", icon: BarChart3 },',"Desempenho");
 nav=swap(nav,'  const showNav = !hidden && !rideActive;',
