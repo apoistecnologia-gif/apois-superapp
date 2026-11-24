@@ -1,0 +1,110 @@
+// APOIS_DRIVER_HOME_PREMIUM_V1
+// Interface inicial do Motorista — sem alterar dispatch, GPS, aceite nem recusa.
+function IdleBottomPanel({
+  driverName,online,disabled,toggleOnline,stats,gpsMessage,loading,
+  canUseTestLocation,onUseTestLocation,
+}: {
+  driverName:string;online:boolean;disabled:boolean;toggleOnline:()=>void;
+  stats:{rides:number;earnings:number};gpsMessage:string|null;loading:boolean;
+  canUseTestLocation:boolean;onUseTestLocation:()=>void;
+}){
+  const navigate=useNavigate();
+  const [sessionStart,setSessionStart]=useState<number|null>(null);
+  const [clock,setClock]=useState(()=>Date.now());
+  useEffect(()=>{
+    // Mede somente a sessão ativa neste dispositivo, não inventa horas anteriores.
+    const key="apois:driver:online-session-start-v1";
+    if(!online){
+      try{sessionStorage.removeItem(key);}catch{}
+      setSessionStart(null);
+      return;
+    }
+    const now=Date.now();
+    let started=now;
+    try{
+      const raw=Number(sessionStorage.getItem(key));
+      if(Number.isFinite(raw)&&raw>0&&raw<=now)started=raw;
+      else sessionStorage.setItem(key,String(now));
+    }catch{}
+    setSessionStart(started);
+  },[online]);
+  useEffect(()=>{
+    if(!online)return;
+    const id=window.setInterval(()=>setClock(Date.now()),30_000);
+    return()=>window.clearInterval(id);
+  },[online]);
+  const minutes=online && sessionStart!==null
+    ? Math.max(0,Math.floor((clock-sessionStart)/60_000)):null;
+  const sessionTime=minutes===null?"—":
+    minutes>=60 ? Math.floor(minutes/60)+"h "+(minutes%60)+"min":minutes+"min";
+  const metrics=[
+    {label:"Corridas",value:String(stats.rides),icon:ApoisHomeCar,color:"#E51B23"},
+    {label:"Ganhos",value:formatBRL(stats.earnings||0),icon:ApoisHomeWallet,color:"#0BA34B"},
+    {label:"Tempo online",value:sessionTime,icon:ApoisHomeClock,color:"#E51B23"},
+    {label:"Aceitação",value:"—",icon:ApoisHomeChart,color:"#E51B23"}
+  ];
+  return(
+    <section data-apois-driver-home-v1="true"
+      aria-label="Resumo do motorista"
+      className="absolute inset-x-0 z-30 flex max-h-[min(45dvh,410px)] min-h-0 flex-col overflow-hidden rounded-t-[30px] bg-white text-[#14171B] shadow-[0_-13px_34px_rgba(0,0,0,.11)]"
+      style={{bottom:"calc(env(safe-area-inset-bottom) + 78px)"}}>
+      <div className="mx-auto mt-2.5 h-1.5 w-12 shrink-0 rounded-full bg-[#CBCDD1]"/>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4 pt-3 [scrollbar-width:none]">
+        <div className="flex items-center gap-2 rounded-[20px] border border-[#ECEDEF] bg-white p-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#F4D7DA] bg-red-50 text-[#E51B23]">
+            <ApoisHomeCar size={24}/>
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[17px] font-black leading-tight">
+              {online ? "Você está online":"Você está offline"}
+            </p>
+            <p className="mt-0.5 truncate text-[12px] font-medium text-[#6F7580]">
+              {online?"Disponível para novas corridas":"Ative seu status para receber corridas"}
+            </p>
+          </div>
+          <span className={"inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-[10px] font-black leading-tight "+(online?"bg-[#FFF0F2] text-[#D50923]":"bg-zinc-100 text-zinc-500")}>
+            <ApoisHomeSignal size={17}/>
+            {online?"Recebendo corridas":"Pausado"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-[20px] font-black">Resumo de hoje</h2>
+          <button type="button" onClick={()=>navigate({to:"/motorista/ganhos"})}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-2 text-[12px] font-black text-[#D50923]">
+            Ver ganhos <ChevronRight size={18}/>
+          </button>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {metrics.map((metric)=>(
+            <div key={metric.label} className="flex min-w-0 flex-col items-center gap-1 rounded-[18px] border border-[#E4E5E8] bg-white px-1 py-2.5 text-center">
+              <metric.icon size={22} style={{color:metric.color}}/>
+              <strong className="w-full truncate text-[clamp(11px,3.2vw,17px)] font-black tabular-nums leading-tight" title={metric.value}>{metric.value}</strong>
+              <span className="break-words text-[10px] font-semibold leading-tight text-[#656D77]">{metric.label}</span>
+            </div>
+          ))}
+        </div>
+        <p className="-mt-1 text-center text-[10px] text-[#757B84]">
+          Tempo desta sessão. Aceitação ainda não disponível.
+        </p>
+        {gpsMessage && (
+          <p role="status" className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-[#B70C24]">{gpsMessage}</p>
+        )}
+        {canUseTestLocation && (
+          <button type="button" onClick={onUseTestLocation}
+            className="min-h-10 w-full rounded-xl border border-dashed border-[#B70C24] px-3 text-[12px] font-bold text-[#B70C24]">
+            Usar localização de teste no Brasil
+          </button>
+        )}
+        <button type="button" onClick={()=>navigate({to:"/motorista/ganhos"})}
+          className="flex min-h-[58px] w-full items-center gap-3 rounded-[18px] bg-[#FFF0F2] px-4 text-left text-[#C50B25]">
+          <ApoisHomeChart size={24} className="shrink-0"/>
+          <span className="min-w-0 flex-1">
+            <strong className="block text-[14px] font-black">{online?"Acompanhe seus ganhos":"Pronto para voltar a dirigir?"}</strong>
+            <span className="block truncate text-[11px] font-semibold text-[#676F78]">{online?"Confira os resultados das suas corridas":"Ative o status online na parte superior"}</span>
+          </span>
+          <ChevronRight size={19}/>
+        </button>
+      </div>
+    </section>
+  );
+}
