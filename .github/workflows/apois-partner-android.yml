@@ -90,6 +90,7 @@ on:
       - 'scripts/apply-driver-welcome-login-v1.mjs'
       - 'scripts/qa/test-driver-welcome-login-v1.test.mjs'
       - 'scripts/qa/test-partner-qa285-role-selection-v1.test.mjs'
+      - 'scripts/test-partner-shell-navigation-v2.mjs'
       - 'superapp/partner-shell/motorista-welcome.html'
       - 'superapp/partner-shell/branding/apois-motorista-hero.webp.b64'
       - 'superapp/partner-shell/build.mjs'
