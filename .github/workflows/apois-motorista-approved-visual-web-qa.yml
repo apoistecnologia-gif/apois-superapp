@@ -1,0 +1,100 @@
+name: APOIS Motorista - Quatro telas aprovadas (sem APK)
+on:
+  push:
+    branches:
+      - fix/apois-motorista-assinatura-recuperacao-20261124
+    paths:
+      - .github/workflows/apois-motorista-approved-visual-web-qa.yml
+      - scripts/qa/test-motorista-approved-visual-20261124.test.mjs
+      - scripts/apply-driver-login-approved-qa-v1.mjs
+      - superapp/partner-shell/motorista-welcome.html
+      - scripts/harden-partner-motorista-offer-premium-v1.mjs
+      - scripts/harden-partner-motorista-home-premium-v1.mjs
+      - scripts/templates/ApoisDriverHomePremiumTop.tsx.txt
+      - scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt
+      - scripts/build-partner-modules.sh
+      - superapp/partner-shell/build.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: apois-visual-web-${ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-check:
+    name: Scripts e contratos visuais (sem APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check all visual patch scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/build-partner-modules.sh
+          node --check scripts/apply-driver-login-approved-qa-v1.mjs
+          node --check scripts/harden-partner-motorista-offer-premium-v1.mjs
+          node --check scripts/harden-partner-motorista-home-premium-v1.mjs
+          node --check superapp/partner-shell/build.mjs
+          node --test scripts/qa/test-motorista-approved-visual-20261124.test.mjs
+          echo '[OK] Apenas arquivos fonte verificados; nenhum APK gerado.'
+  motorista-web:
+    name: Compilar Motorista e verificar telas renderizaveis (sem Android)
+    needs: source-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_MOTORISTA_ONLY: "1"
+      APOIS_REPO_TOKEN: ${ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      VITE_SUPABASE_URL: ${ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      ENTREGAS_WEB_MAPS_API_KEY: ${ secrets.ENTREGAS_WEB_MAPS_API_KEY }}
+      ENTREGAS_GOOGLE_MAPS_MAP_ID: ${ vars.ENTREGAS_GOOGLE_MAPS_MAP_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Materializar fontes travadas no commit (somente leitura)
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${APOIS_REPO_TOKEN:?Github protected source token required}"
+          git config --global url."https://x-access-token:$APOIS_REPO_TOKEN@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          npm run verify:pins
+          npm run verify:partner-portability
+      - name: Instalar Bun fixado
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Checar fontes e compilar apenas Motorista
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:partner
+          node scripts/run-bash.mjs scripts/build-partner-modules.sh
+          test -s superapp/partner-shell/dist/modules/motorista/index.html
+          test ! -e superapp/partner-shell/dist/modules/entregador
+          test ! -e superapp/partner-shell/dist/courier
+          cd .work/partner-motorista
+          bun run typecheck
+          cd ../..
+          grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Preferências do passageiro' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Resumo de hoje' superapp/partner-shell/dist/modules/motorista
+          grep -R -Fq 'Siga online e aumente seus ganhos!' superapp/partner-shell/dist/modules/motorista
+          echo '[OK] WebView Motorista compilada; nenhum APK, keystore ou Entregador.'
