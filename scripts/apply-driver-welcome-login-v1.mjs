@@ -39,11 +39,11 @@ export function patchLogin(source){
           <p className="mx-auto mt-2 max-w-[310px] text-[13px] font-medium leading-[1.5] text-[#686F79]">Acesse com e-mail e senha para dirigir com a APOIS Motorista.</p>
         </section>
         <form onSubmit={onSubmit} method="post" aria-busy={loading} className="mt-6 flex flex-col gap-3.5">
-          <label className="relative flex h-[55px] items-center gap-3 rounded-full border border-[#B9BDC5] bg-white px-4 focus-within:border-[#F51D2A] focus-within:ring-2 focus-within:ring-red-100">
+          <label className="relative flex h-[55px] items-center gap-3 rounded-full border border-[#B9BDC5] bg-white px-4 focus-within:border-[#AEB7C4] focus-within:ring-1 focus-within:ring-[#AEB7C4]/20">
             <Mail className="h-5 w-5 shrink-0 text-[#BB071D]" aria-hidden="true" />
             <input name="email" type="email" required autoComplete="email" inputMode="email" aria-label="E-mail" placeholder="E-mail" className="h-full min-w-0 flex-1 bg-transparent text-base text-[#0D0F12] outline-none placeholder:text-[#686F79]" />
           </label>
-          <label className="relative flex h-[55px] items-center gap-3 rounded-full border border-[#B9BDC5] bg-white px-4 focus-within:border-[#F51D2A] focus-within:ring-2 focus-within:ring-red-100">
+          <label className="relative flex h-[55px] items-center gap-3 rounded-full border border-[#B9BDC5] bg-white px-4 focus-within:border-[#AEB7C4] focus-within:ring-1 focus-within:ring-[#AEB7C4]/20">
             <LockKeyhole className="h-5 w-5 shrink-0 text-[#BB071D]" aria-hidden="true" />
             <input name="password" type={showPassword ? "text" : "password"} required autoComplete="current-password" aria-label="Senha" placeholder="Senha" className="h-full min-w-0 flex-1 bg-transparent text-base text-[#0D0F12] outline-none placeholder:text-[#686F79]" />
             <button type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword} onClick={() => setShowPassword((v) => !v)} className="grid h-11 w-11 shrink-0 place-items-center text-[#686F79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F51D2A]">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
