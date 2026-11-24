@@ -65,25 +65,28 @@ jobs:
           git submodule update --init --recursive
           npm run verify:pins
 
-      - name: Utilizar backend publico fixado na fonte do Motorista
+      - name: Validar autenticação do Supabase Corridas ativo
         shell: bash
+        env:
+          APOIS_CORRIDAS_PUBLIC_KEY: sb_publishable_gbh4HsVrO-EaT5QeYbT8dQ_-dW19bVu
         run: |
           set -euo pipefail
-          ENVFILE="sources/apois-corridas-motorista-admin/.env.mobile"
-          test -s "$ENVFILE"
-          SOURCE_URL="$(sed -n 's/^VITE_SUPABASE_URL[[:space:]]*=[[:space:]]*//p' "$ENVFILE" | head -n1 | tr -d '\r')"
-          SOURCE_PUBLISHABLE="$(sed -n 's/^VITE_SUPABASE_PUBLISHABLE_KEY[[:space:]]*=[[:space:]]*//p' "$ENVFILE" | head -n1 | tr -d '\r')"
-          test -n "$SOURCE_URL"
-          test -n "$SOURCE_PUBLISHABLE"
-          case "$SOURCE_URL" in
-            https://vqtucstyduxrqjgyigfk.supabase.co) ;;
-            *) echo "::error::Projeto Supabase da fonte protegida inesperado"; exit 1 ;;
-          esac
-          # Fonte do Motorista exige que URL e publishable key sejam do mesmo projeto.
-          # Publishable key e publica por definicao; nao imprimir seu valor no log.
-          echo "CORRIDAS_VITE_SUPABASE_URL=$SOURCE_URL" >> "$GITHUB_ENV"
-          echo "CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY=$SOURCE_PUBLISHABLE" >> "$GITHUB_ENV"
-          echo '[OK] Backend do Motorista corresponde a fonte imutavel.'
+          PROD_URL='https://tbbzkrfupmqdywnzgnms.supabase.co'
+          test -n "$APOIS_CORRIDAS_PUBLIC_KEY"
+          echo "CORRIDAS_VITE_SUPABASE_URL=$PROD_URL" >> "$GITHUB_ENV"
+          echo "CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY=$APOIS_CORRIDAS_PUBLIC_KEY" >> "$GITHUB_ENV"
+          # Teste de URL REAL e do provedor antes de incluir login Google no APK.
+          curl -fSsL --retry 2 --connect-timeout 8 --max-time 22 \
+            -H "apikey: $APOIS_CORRIDAS_PUBLIC_KEY" \
+            "$PROD_URL/auth/v1/settings" > "$RUNNER_TEMP/apois-auth-settings.json"
+          node -e '
+            const fs=require("fs");
+            const obj=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
+            const enabled=obj?.external?.google===true;
+            console.log("[CHECK] OAuth Google habilitado: "+enabled);
+            if(!enabled)process.exit(16);
+          ' "$RUNNER_TEMP/apois-auth-settings.json"
+          echo '[OK] Supabase Corridas PRODUCTION acessivel; endpoint de login Google ativo.'
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
