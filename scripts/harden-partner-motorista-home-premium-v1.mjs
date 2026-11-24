@@ -66,7 +66,7 @@ nav=swap(nav,'text-zinc-400 transition-all duration-200',
 nav=swap(nav,'active ? "driver-nav-active bg-[#F6BE1C]/[.08] text-[#F6BE1C] ring-1 ring-inset ring-[#F6BE1C]/15" : ""',
  'active ? (isHome ? "driver-nav-active text-[#E51B23]" : "driver-nav-active bg-[#F6BE1C]/[.08] text-[#F6BE1C] ring-1 ring-inset ring-[#F6BE1C]/15") : ""',"ativo");
 nav=swap(nav,'active ? "w-5 bg-[#F6BE1C]" : "w-4 bg-transparent"',
- 'active ? (isHome ? "w-5 bg-[#E51B23]" : "w-5 bg-[#F6BE1C]") : "w-4 bg-transparent',"indicador");
+ 'active ? (isHome ? "w-5 bg-[#E51B23]" : "w-5 bg-[#F6BE1C]") : "w-4 bg-transparent"',"indicador");
 writeFileSync(navPath,nav,"utf8");
 writeFileSync(performancePath,perf,"utf8");
 console.log("[OK] APOIS Motorista: Home premium, mapa Cliente, status real e nav funcional.");
