@@ -17,7 +17,7 @@ function testFile(path, label) {
   const context=createContext({
     URL,URLSearchParams,JSON,console,
     localStorage,sessionStorage,
-    document:{querySelectorAll:()=>[]},
+    document:{querySelectorAll:()=>[],getElementById:()=>null},
     window:{
       location:{
         origin:"https://localhost",
@@ -29,10 +29,11 @@ function testFile(path, label) {
     }
   });
   runInContext(match[1],context,{timeout:1000});
-  // APOIS_MOTORISTA_ONLY_ENTRY_V1: native cold start must bypass the old
-  // two-role selector and enter the approved welcome before any manual click.
+  // APOIS_MOTORISTA_DIRECT_WELCOME_BOOT_V2: the initial WebView already
+  // contains the approved welcome. No async redirect may blank the UI.
+  assert.match(html,/<main class="apois-driver-launch" data-apois-driver-direct-welcome-v2/);
   assert.match(html,/<main class="screen" data-apois-legacy-role-chooser hidden aria-hidden="true">/);
-  assert.deepEqual(navigations.shift(),{kind:"replace",url:"./motorista-welcome.html"});
+  assert.equal(navigations.length,0,"cold startup must render welcome without navigation");
   const evaluate=src=>runInContext(src,context,{timeout:1000});
   assert.equal(evaluate("partnerModuleUrl('./modules/motorista/index.html#/motorista/app')"),"https://localhost/modules/motorista/index.html#/motorista/app");
   assert.equal(evaluate("partnerModuleUrl('./modules/entregador/index.html#/courier')"),"https://localhost/modules/entregador/index.html#/courier");
