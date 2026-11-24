@@ -9,6 +9,7 @@ on:
       - 'superapp/shell/corridas-only.html'
       - 'scripts/apply-client-corridas-approved-login-v1.mjs'
       - 'scripts/qa/test-client-corridas-welcome-login-v1.test.mjs'
+      - 'scripts/qa/audit-client-welcome-login-browser-v1.mjs'
       - 'scripts/build-isolated-module.mjs'
   workflow_dispatch:
 
@@ -86,3 +87,25 @@ jobs:
             exit 1
           fi
           echo '[OK] Cliente Corridas approved welcome -> real login, no Entregas, no APK'
+
+      - name: Install isolated Chromium browser QA
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/apois-browser-qa" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.62.1
+          "$RUNNER_TEMP/apois-browser-qa/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Capture welcome, enter click and actual login (no backend)
+        env:
+          APOIS_PLAYWRIGHT_ROOT: ${{ runner.temp }}/apois-browser-qa
+        run: |
+          set -euo pipefail
+          node scripts/qa/audit-client-welcome-login-browser-v1.mjs
+
+      - name: Preserve screenshots from approved Corridas public flow
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: apois-cliente-corridas-welcome-login-${{ github.sha }}
+          path: qa-browser/cliente-corridas-approved/
+          if-no-files-found: warn
+          retention-days: 7
