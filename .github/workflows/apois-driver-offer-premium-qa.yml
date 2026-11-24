@@ -1,0 +1,45 @@
+name: APOIS Parceiro — validar oferta premium
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/harden-partner-motorista-offer-premium-v1.mjs
+      - scripts/build-partner-modules.sh
+      - scripts/build-motorista-module.mjs
+      - .github/workflows/apois-driver-offer-premium-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-offer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sources/apois-corridas-motorista-admin/package-lock.json
+      - name: Preparar snapshot protegido do Motorista
+        run: |
+          mkdir -p .work/partner-motorista
+          tar --exclude=.git --exclude=node_modules -C sources/apois-corridas-motorista-admin -cf - . | tar -C .work/partner-motorista -xf -
+      - name: Aplicar interface aprovada sem tocar no submódulo
+        run: node scripts/harden-partner-motorista-offer-premium-v1.mjs
+      - name: Instalar dependências de validação
+        working-directory: .work/partner-motorista
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Validar TypeScript completo do Motorista
+        working-directory: .work/partner-motorista
+        run: npm run typecheck
+      - name: Verificar que aceitar/recusar e as preferências estão presentes
+        run: |
+          grep -Fq 'APOIS_DRIVER_OFFER_PREMIUM_V1' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'onClick={onAccept}' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'onClick={onReject}' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'Preferências do passageiro' .work/partner-motorista/src/routes/motorista.app.tsx
