@@ -40,7 +40,7 @@ function IdleBottomPanel({
     {label:"Corridas",value:String(stats.rides),icon:ApoisHomeCar,color:"#E51B23"},
     {label:"Ganhos",value:formatBRL(stats.earnings||0),icon:ApoisHomeWallet,color:"#0BA34B"},
     {label:"Tempo online",value:sessionTime,icon:ApoisHomeClock,color:"#E51B23"},
-    {label:"Aceitação",value:"—",icon:ApoisHomeChart,color:"#E51B23"}
+    {label:"Taxa de aceitação",value:"—",icon:ApoisHomeChart,color:"#E51B23"}
   ];
   return(
     <section data-apois-driver-home-v1="true"
@@ -67,7 +67,7 @@ function IdleBottomPanel({
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-[20px] font-black">Resumo de hoje</h2>
+          <h2 className="text-[21px] font-black">Resumo de hoje</h2>
           <button type="button" onClick={()=>navigate({to:"/motorista/ganhos"})}
             className="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-2 text-[12px] font-black text-[#D50923]">
             Ver ganhos <ChevronRight size={18}/>
@@ -98,8 +98,8 @@ function IdleBottomPanel({
           className="flex min-h-[58px] w-full items-center gap-3 rounded-[18px] bg-[#FFF0F2] px-4 text-left text-[#C50B25]">
           <ApoisHomeChart size={24} className="shrink-0"/>
           <span className="min-w-0 flex-1">
-            <strong className="block text-[14px] font-black">{online?"Acompanhe seus ganhos":"Pronto para voltar a dirigir?"}</strong>
-            <span className="block truncate text-[11px] font-semibold text-[#676F78]">{online?"Confira os resultados das suas corridas":"Ative o status online na parte superior"}</span>
+            <strong className="block text-[14px] font-black">{online?"Siga online e aumente seus ganhos!":"Pronto para voltar a dirigir?"}</strong>
+            <span className="block truncate text-[11px] font-semibold text-[#676F78]">{online?"Fique disponível para novas corridas":"Ative o status online na parte superior"}</span>
           </span>
           <ChevronRight size={19}/>
         </button>

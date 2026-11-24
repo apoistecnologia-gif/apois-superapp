@@ -20,7 +20,7 @@ const top=readFileSync(resolve("scripts/templates/ApoisDriverHomePremiumTop.tsx.
 const panel=readFileSync(resolve("scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt"),"utf8");
 const perf=readFileSync(resolve("scripts/templates/ApoisDriverPerformancePage.tsx.txt"),"utf8");
 app=swap(app,'import { createFileRoute, useNavigate } from "@tanstack/react-router";',
- 'import { createFileRoute, useNavigate } from "@tanstack/react-router";\nimport { MovviLogo } from "@/components/MovviLogo";\nimport { Menu as ApoisHomeMenu, Bell as ApoisBell, CarFront as ApoisHomeCar, WalletCards as ApoisHomeWallet, Clock3 as ApoisHomeClock, BarChart3 as ApoisHomeChart, Radio as ApoisHomeSignal } from "lucide-react";',
+ 'import { createFileRoute, useNavigate } from "@tanstack/react-router";\nimport { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";\nimport { Menu as ApoisHomeMenu, Bell as ApoisBell, CarFront as ApoisHomeCar, WalletCards as ApoisHomeWallet, Clock3 as ApoisHomeClock, BarChart3 as ApoisHomeChart, Radio as ApoisHomeSignal } from "lucide-react";',
  "importações");
 const topBegin=app.indexOf("      {/* Top bar — glass flutuante premium");
 const topEnd=app.indexOf("      {/* (status de GPS",topBegin);
