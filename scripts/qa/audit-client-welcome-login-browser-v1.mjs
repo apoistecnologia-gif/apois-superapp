@@ -38,12 +38,15 @@ try{
    visibleButtons:[...document.querySelectorAll('main button')].filter(b=>b.getBoundingClientRect().width>0).length,
    enterRect:document.querySelector('#apois-corridas-welcome-enter')?.getBoundingClientRect().toJSON(),
    horizontalOverflow:document.documentElement.scrollWidth>innerWidth+2,
-   label:document.querySelector('h1')?.textContent?.trim(),
+   label:document.querySelector('[data-apois-approved-branded-car-v2]')?.getAttribute('aria-label'),
+   heroLoaded:document.querySelector('[data-apois-approved-branded-car-v2] img')?.complete &&
+     document.querySelector('[data-apois-approved-branded-car-v2] img')?.naturalWidth>900,
   }));
   assert.equal(welcome.visibleButtons,1,'Only one CTA on welcome');
   assert.ok(welcome.enterRect?.height>=48&&welcome.enterRect.bottom<=height+5,'Welcome Entrar visible on '+width);
   assert.equal(welcome.horizontalOverflow,false,'Welcome horizontal overflow on '+width);
-  assert.equal(welcome.label,'APOIS');
+  assert.ok(welcome.label?.includes('APOIS Corridas'),'Approved visual hero must preserve accessible APOIS branding');
+  assert.equal(welcome.heroLoaded,true,'Approved branded car artwork failed to render');
   await page.screenshot({path:resolve(output,'boas-vindas-'+width+'.png'),fullPage:true});
   await page.getByRole('button',{name:'Entrar na minha conta APOIS Corridas'}).click();
   await page.waitForURL('**/modules/corridas/index.html#/login',{timeout:18000});
