@@ -1,0 +1,88 @@
+name: APOIS Cliente Corridas — Boas-vindas e Login (sem APK)
+
+on:
+  push:
+    branches:
+      - feat/apois-cliente-boas-vindas-login-corridas-20261123
+    paths:
+      - '.github/workflows/apois-cliente-boas-vindas-login-web-qa.yml'
+      - 'superapp/shell/corridas-only.html'
+      - 'scripts/apply-client-corridas-approved-login-v1.mjs'
+      - 'scripts/qa/test-client-corridas-welcome-login-v1.test.mjs'
+      - 'scripts/build-isolated-module.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-auth-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      BUN_VERSION: '1.3.14'
+      APOIS_LAUNCH_MODE: corridas_only
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      CORRIDAS_ANDROID_MAPS_API_KEY: ''
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      APOIS_SUPERAPP_RIDES_PUSH_ENABLED: '0'
+      CORRIDAS_PUBLIC_APP_URL: https://tbbzkrfupmqdywnzgnms.supabase.co/functions/v1/public-ride-tracker
+    steps:
+      - name: Checkout isolated Cliente builder
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - name: Load protected pinned Corridas sources
+        run: |
+          set -euo pipefail
+          test -n "$APOIS_REPO_TOKEN"
+          git config --global url."https://x-access-token:${APOIS_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -f sources/apois-corridas-passageiro/src/routes/_public.login.tsx
+          npm run verify:pins
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned Bun
+        run: |
+          set -euo pipefail
+          curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+          test "$HOME/.bun/bin/bun" --version = "$BUN_VERSION"
+      - name: Verify approved welcome, real login and OAuth routes without backend
+        run: |
+          set -euo pipefail
+          node --check scripts/apply-client-corridas-approved-login-v1.mjs
+          node --check scripts/qa/test-client-corridas-welcome-login-v1.test.mjs
+          node --test scripts/qa/test-client-corridas-welcome-login-v1.test.mjs
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs
+      - name: Build protected Corridas module and customer shell (no APK)
+        run: |
+          set -euo pipefail
+          npm run build:corridas
+          node superapp/shell/build.mjs
+          node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --client
+          node --test scripts/qa/test-client-corridas-welcome-login-v1.test.mjs --built
+          grep -Fq 'data-apois-client-welcome-v1' superapp/shell/dist/index.html
+          grep -Fq 'data-apois-client-login-approved-v1' .work/corridas/src/routes/_public.login.tsx
+          grep -Fq 'APOIS_CLIENT_LOGIN_APPROVED_V1' .work/corridas/src/styles.css
+          grep -R -Fq 'data-apois-client-login-approved-v1' superapp/shell/dist/modules/corridas/assets
+          grep -R -Fq '#F51D2A' superapp/shell/dist/modules/corridas/assets
+          test ! -e superapp/shell/dist/modules/entregas
+          node --input-type=module -e "import {verifyClientBundleAssets} from './scripts/qa/verify-client-static-assets-v1.mjs'; verifyClientBundleAssets('superapp/shell/dist',['corridas']);"
+          if find . -type f -name '*.apk' -print -quit | grep -q .; then
+            echo '::error::No APK should be created by welcome/login web-only QA'
+            exit 1
+          fi
+          echo '[OK] Cliente Corridas approved welcome -> real login, no Entregas, no APK'
