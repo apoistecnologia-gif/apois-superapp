@@ -5,6 +5,8 @@ on:
       - fix/apois-motorista-assinatura-recuperacao-20261124
     paths:
       - .github/workflows/apois-motorista-only-qa-apk.yml
+      - scripts/qa/test-motorista-approved-visual-20261124.test.mjs
+      - scripts/qa/test-motorista-recovery-gates-v1.test.mjs
   workflow_dispatch:
     inputs:
       installed_cert_sha256:

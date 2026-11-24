@@ -102,18 +102,21 @@ test('06 — RPC types match verified production only in disposable workspace',(
  ]);
  assert.ok(!typesScript.includes('execute_sql('));
 });
-test('07 — Android update signing is hard-pinned to the installed 9003 certificate',()=>{
+test('07 — Android update signing is hard-pinned to the ADB-confirmed installed certificate (versionCode 328)',()=>{
  const pipeline=read('.github/workflows/apois-motorista-only-qa-apk.yml');
  expect(pipeline,[
-   '94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132',
+   '4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4',
    'APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64',
-   'APOIS_MOTORISTA_9003_KEYSTORE_BASE64',
+   'secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64',
    'Exigir certificado original protegido',
    'APK_CERT','EXPECTED_CERT',
    'VersionCode do novo APK nao supera o instalado',
-   'if [ "$INSTALLED" != "$DEVICE_9003_CERT" ] || [ "$ORIGINAL" != "$DEVICE_9003_CERT" ]'
+   'if [ "$INSTALLED" != "$DEVICE_ORIGINAL_CERT" ] || [ "$ORIGINAL" != "$DEVICE_ORIGINAL_CERT" ]'
  ]);
  assert.ok(!pipeline.includes('APK usara assinatura debug temporaria'));
+ assert.ok(!pipeline.includes('94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132'));
+ assert.ok(!pipeline.includes('APOIS_MOTORISTA_9003_KEYSTORE_BASE64'));
+ assert.ok(!pipeline.includes('secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64'));
 });
 test('08 — Corridas-only source order and runtime safety unchanged',()=>{
  const offerPos=build.indexOf('harden-partner-motorista-offer-premium-v1.mjs');
