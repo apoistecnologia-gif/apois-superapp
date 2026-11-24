@@ -31,7 +31,7 @@ jobs:
       FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64 }}
       PARTNER_FIREBASE_PROJECT_ID: "movvi-4d041"
       PARTNER_APP_PACKAGE: "br.com.apois.parceiro"
-      PARTNER_APP_LABEL: "APOIS Parceiro"
+      PARTNER_APP_LABEL: "APOIS Motorista"
       QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
 
     steps:
@@ -152,6 +152,10 @@ jobs:
           set -euo pipefail
           cd superapp/partner-shell
           bun install
+          cd ../..
+          node scripts/build-apois-motorista-only-qa.mjs config
+          grep -Fq "appName: 'APOIS Motorista'" superapp/partner-shell/capacitor.config.ts
+          cd superapp/partner-shell
           rm -rf android
           bunx cap add android
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
@@ -164,6 +168,7 @@ jobs:
           test ! -e superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationPlugin.java
           test ! -e superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationService.java
           grep -Fq 'APOIS Motorista' superapp/partner-shell/android/app/src/main/res/values/strings.xml
+          ! grep -Fq '>APOIS Parceiro<' superapp/partner-shell/android/app/src/main/res/values/strings.xml
           test -s superapp/partner-shell/android/app/google-services.json
           grep -Fq "versionCode $PARTNER_VERSION_CODE" superapp/partner-shell/android/app/build.gradle
           grep -Fq "versionName \"$PARTNER_VERSION_NAME\"" superapp/partner-shell/android/app/build.gradle
@@ -195,6 +200,8 @@ jobs:
           AAPT="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name aapt -perm -111 | sort -V | tail -n 1)"
           "$APKSIGNER" verify --verbose "$APK"
           "$AAPT" dump badging "$APK" | grep -F "name='br.com.apois.parceiro'"
+          "$AAPT" dump badging "$APK" | grep -F "application-label:'APOIS Motorista'"
+          echo '[OK] Rótulo do launcher validado dentro do APK: APOIS Motorista.'
           "$AAPT" dump badging "$APK" | grep -F "versionCode='$PARTNER_VERSION_CODE'"
           "$APKSIGNER" verify --print-certs "$APK" | grep -Ei 'certificate .*digest' | head -n 3 || true
           # Critérios obrigatorios do APK isolado: sem Entregas nem Courier nativo.
