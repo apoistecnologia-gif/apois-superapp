@@ -87,7 +87,12 @@ export function apply(){
  const finalized=patched.replace('__APOIS_WELCOME_ART_V2__','data:image/webp;base64,'+img64);
  const l=readFileSync(login,'utf8'),c=readFileSync(styles,'utf8');
  const updatedCSS=rewriteLogin(c,l);
+ // Permanent JSX data attribute survives Vite and can be checked inside the APK.
+ const contract='data-apois-client-login-approved-v1 className=';
+ if(l.split(contract).length!==2)throw Error('[FAIL] '+MARKER+': login route root changed');
+ const stableRoute=l.replace(contract,'data-apois-client-login-approved-v1 data-apois-client-login-stable-v2="true" className=');
  if(finalized!==html)writeFileSync(welcome,finalized,'utf8');
+ if(stableRoute!==l)writeFileSync(login,stableRoute,'utf8');
  if(updatedCSS!==c)writeFileSync(styles,updatedCSS,'utf8');
  console.log(`[OK] ${MARKER}: approved car artwork, raised real Enter, keyboard-stable live login`);
 }
