@@ -45,15 +45,15 @@ test("QA217: map has live car marker plus own driver-to-pickup route and preview
  assert.ok(home.includes("route.distanceMeters/1000"));
 });
 
-test("QA217: red pulse pins on JS and native, real-only presence and strict backend scope",()=>{
+test("QA217: realistic 3D cars on JS and native, real-only presence and strict backend scope",()=>{
  for(const text of [
-  "setOpacity(bright ? 1 : 0.25)",
-  "setNearbyDriverMarkers(nativeMapIdRef.current, points, dim)",
-  "fillColor: \"#E51B23\"",
+  "APOIS_REALISTIC_DRIVER_CAR_V1",
+  "apois-nearby-car-3d.webp",
+  "setNearbyDriverMarkers(nativeMapIdRef.current, points, false)",
  ])assert.ok(map.includes(text),text);
  for(const text of [
-  "nearbyDriverMarkerIds","setNearbyDriverMarkers(","apois-nearby-red.svg",
-  "opacity: dim ? 0.3 : 1"
+  "nearbyDriverMarkerIds","setNearbyDriverMarkers(","apois-nearby-car-3d.webp",
+  "opacity: 1"
  ])assert.ok(native.includes(text),text);
  for(const text of [
   "useNearbyPassengerDrivers(","nearbyDrivers={nearby.points}",
