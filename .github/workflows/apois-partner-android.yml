@@ -92,6 +92,8 @@ on:
       - 'scripts/qa/test-driver-welcome-login-v1.test.mjs'
       - 'scripts/qa/test-partner-qa285-role-selection-v1.test.mjs'
       - 'scripts/test-partner-shell-navigation-v2.mjs'
+      - 'scripts/qa/test-motorista-boot-first-paint-v2.test.mjs'
+      - 'superapp/partner-shell/build.mjs'
       - 'superapp/partner-shell/index.html'
       - 'superapp/partner-shell/motorista-welcome.html'
       - 'superapp/partner-shell/branding/apois-motorista-hero.webp.b64'
@@ -346,9 +348,14 @@ jobs:
           grep -Fq 'data-apois-driver-approved-welcome-v1' superapp/partner-shell/dist/motorista-welcome.html
           grep -Fq 'data-apois-driver-approved-login-v1' .work/partner-motorista/src/routes/motorista.login.tsx
           grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista || { echo '::error::Motorista approved login missing from compiled bundle'; exit 1; }
-          grep -Fq 'APOIS_MOTORISTA_ONLY_ENTRY_V1' superapp/partner-shell/dist/index.html
+          node --test scripts/qa/test-motorista-boot-first-paint-v2.test.mjs
+          grep -Fq 'APOIS_MOTORISTA_DIRECT_WELCOME_BOOT_V2' superapp/partner-shell/dist/index.html
+          grep -Fq 'data-apois-driver-direct-welcome-v2' superapp/partner-shell/dist/index.html
+          grep -Fq 'id="apois-driver-welcome-enter"' superapp/partner-shell/dist/index.html
           grep -Fq 'data-apois-legacy-role-chooser hidden' superapp/partner-shell/dist/index.html
-          grep -Fq "window.location.replace('./motorista-welcome.html')" superapp/partner-shell/dist/index.html
+          if grep -Fq "window.location.replace('./motorista-welcome.html')" superapp/partner-shell/dist/index.html; then
+            echo '::error::Motorista ainda depende de redirect nativo com tela vazia'; exit 1
+          fi
           echo '[OK] Motorista-only launch: no public role selector, authentic welcome and login bundled'
           echo '[OK] QA291: mapa integrado, disponibilidade compacta, chamadas reduzidas e CSS compilados'
           echo '[OK] APK Parceiro inclui correções acumuladas Entregador e Motorista'
@@ -489,9 +496,13 @@ jobs:
           test -s "$TEMP_APK_ASSETS/assets/public/assets/apois-motorista-hero.webp" || { echo '::error::APK Motorista approved car missing'; exit 1; }
           grep -Fq 'data-apois-driver-approved-welcome-v1' "$TEMP_APK_ASSETS/assets/public/motorista-welcome.html" || { echo '::error::APK Motorista welcome outdated'; exit 1; }
           grep -R -Fq 'data-apois-driver-approved-login-v1' "$TEMP_APK_ASSETS/assets/public/modules/motorista" || { echo '::error::APK Motorista real approved login missing'; exit 1; }
-          grep -Fq 'APOIS_MOTORISTA_ONLY_ENTRY_V1' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '::error::APK still launches dual-role selector'; exit 1; }
-          grep -Fq 'data-apois-legacy-role-chooser hidden' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '::error::APK two-role menu not hidden'; exit 1; }
-          grep -Fq "window.location.replace('./motorista-welcome.html')" "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '::error::APK does not launch Motorista welcome'; exit 1; }
+          grep -Fq 'APOIS_MOTORISTA_DIRECT_WELCOME_BOOT_V2' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '::error::APK Motorista bootstrap sem correção de tela branca'; exit 1; }
+          grep -Fq 'data-apois-driver-direct-welcome-v2' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '::error::APK inicial não contém a arte aprovada no primeiro HTML'; exit 1; }
+          grep -Fq 'id="apois-driver-welcome-enter"' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '::error::APK sem botão Entrar acessível diretamente'; exit 1; }
+          grep -Fq 'data-apois-legacy-role-chooser hidden' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '::error::APK seletor antigo visível'; exit 1; }
+          if grep -Fq "window.location.replace('./motorista-welcome.html')" "$TEMP_APK_ASSETS/assets/public/index.html"; then
+            echo '::error::APK ainda usa redirecionamento da tela branca'; exit 1
+          fi
           echo '[OK] APK contains isolated Motorista startup and two approved screens'
           for path in index.html modules/motorista/index.html modules/entregador/index.html; do
             grep -Fq 'data-apois-embedded-viewport-v1' "$TEMP_APK_ASSETS/assets/public/$path" || { echo "[FAIL] Parceiro APK: proteção global ausente: $path"; exit 1; }
@@ -508,7 +519,7 @@ jobs:
         if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         uses: actions/upload-artifact@v4
         with:
-          name: APOIS-Parceiro-Motorista-Sem-Seletor-TESTE
+          name: APOIS-Motorista-Correcao-Tela-Branca-TESTE
           path: build/APOIS-Parceiro-TESTE.apk
           if-no-files-found: error
           retention-days: 7
