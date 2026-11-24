@@ -11,6 +11,7 @@ const login=read('scripts/apply-driver-login-approved-qa-v1.mjs');
 const welcome=read('superapp/partner-shell/motorista-welcome.html');
 const offer=read('scripts/harden-partner-motorista-offer-premium-v1.mjs');
 const googleGenerator=read('scripts/harden-motorista-auth.mjs');
+const typesScript=read('scripts/harden-motorista-supabase-types-20261124.mjs');
 const top=read('scripts/templates/ApoisDriverHomePremiumTop.tsx.txt');
 const panel=read('scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt');
 const home=read('scripts/harden-partner-motorista-home-premium-v1.mjs');
@@ -92,7 +93,16 @@ test('05 — login Google listener type preserved with supported Capacitor core 
  assert.ok(googleGenerator.includes('import { App } from "@capacitor/app";'));
  assert.ok(googleGenerator.includes('supabase.auth.signInWithOAuth'));
 });
-test('06 — Corridas-only source order and runtime safety unchanged',()=>{
+test('06 — RPC types match verified production only in disposable workspace',()=>{
+ expect(typesScript,[
+  'APOIS_MOTORISTA_VERIFIED_DB_TYPES_20261124',
+  'disconnect_my_mercadopago_driver: { Args: never; Returns: Json }',
+  '_lat?: number | null','_lng?: number | null',
+  'src/integrations/supabase/types.ts'
+ ]);
+ assert.ok(!typesScript.includes('execute_sql('));
+});
+test('07 — Corridas-only source order and runtime safety unchanged',()=>{
  const offerPos=build.indexOf('harden-partner-motorista-offer-premium-v1.mjs');
  const homePos=build.indexOf('harden-partner-motorista-home-premium-v1.mjs');
  const loginPos=build.indexOf('apply-driver-login-approved-qa-v1.mjs');

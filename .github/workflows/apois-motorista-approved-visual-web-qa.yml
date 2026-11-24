@@ -7,6 +7,8 @@ on:
       - .github/workflows/apois-motorista-approved-visual-web-qa.yml
       - scripts/qa/test-motorista-approved-visual-20261124.test.mjs
       - scripts/apply-driver-login-approved-qa-v1.mjs
+      - scripts/harden-motorista-supabase-types-20261124.mjs
+      - scripts/harden-partner-motorista-native-gps.mjs
       - superapp/partner-shell/motorista-welcome.html
       - scripts/harden-partner-motorista-offer-premium-v1.mjs
       - scripts/harden-partner-motorista-home-premium-v1.mjs
@@ -36,6 +38,8 @@ jobs:
           set -euo pipefail
           bash -n scripts/build-partner-modules.sh
           node --check scripts/apply-driver-login-approved-qa-v1.mjs
+          node --check scripts/harden-motorista-supabase-types-20261124.mjs
+          node --check scripts/harden-partner-motorista-native-gps.mjs
           node --check scripts/harden-partner-motorista-offer-premium-v1.mjs
           node --check scripts/harden-partner-motorista-home-premium-v1.mjs
           node --check superapp/partner-shell/build.mjs
