@@ -77,3 +77,55 @@ jobs:
             exit 1
           fi
           echo '[OK] Keystore QA Motorista intacto, certificado confere com APK historico; nenhum APK foi gerado.'
+
+  locate-installed-qa-key:
+    name: Verificar se existe chave compativel com o APK do aparelho (sem APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      MOTORISTA_PARTNER_KEY: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
+      MOTORISTA_CLIENT_KEY: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Conferir chaves protegidas sem expor chave ou certificado
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_INSTALLED='94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132'
+          FOUND=0
+          check_key() {
+            local name="$1"
+            local encoded="$2"
+            local keyfile="$RUNNER_TEMP/apois-motorista-compare-${name}.keystore"
+            if [ -z "$encoded" ]; then
+              echo "[INFO] Chave protegida ${name} nao disponivel."
+              return
+            fi
+            umask 077
+            if ! printf '%s' "$encoded" | base64 --decode > "$keyfile" 2>/dev/null; then
+              echo "[BLOCK] Chave ${name} indisponivel ou invalida."
+              rm -f "$keyfile"
+              return
+            fi
+            local actual=''
+            actual="$(keytool -list -v -keystore "$keyfile" -alias androiddebugkey -storepass android 2>/dev/null |
+              grep -m1 'SHA256:' | sed -E 's/.*SHA256:[[:space:]]*//;s/://g' | tr '[:upper:]' '[:lower:]')" || true
+            rm -f "$keyfile"
+            if [ "$actual" = "$EXPECTED_INSTALLED" ]; then
+              echo "[FOUND] Keystore ${name} compativel com certificado do APK instalado."
+              FOUND=1
+            else
+              echo "[NO MATCH] Keystore ${name} nao assina a instalacao atual."
+            fi
+          }
+          check_key 'partner' "$MOTORISTA_PARTNER_KEY"
+          check_key 'cliente' "$MOTORISTA_CLIENT_KEY"
+          if [ "$FOUND" -eq 0 ]; then
+            echo '::warning::Nenhuma chave conhecida corresponde ao APK atualmente instalado. Nao gerar APK de atualizacao.'
+          else
+            echo '[OK] Uma chave privada original ainda esta disponivel para a instalacao atual.'
+          fi
+          echo '[OK] Analise somente leitura: nenhum APK gerado, nenhuma chave enviada ou exibida.'
