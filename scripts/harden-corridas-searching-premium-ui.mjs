@@ -36,7 +36,7 @@ type SearchingDriverScreenProps = {
 };
 
 function shortAddress(value: string): string {
-  return String(value || "Endereço não informado").split(", Petrolina")[0].trim();
+  return String(value || "Endereço não informado").split(/,\\s*Petrolina|\\s+-\\s+Petrolina|,\\s*PE\\b/i)[0].trim();
 }
 
 export function SearchingDriverScreen({
@@ -73,13 +73,7 @@ export function SearchingDriverScreen({
 
       <div className="relative min-h-[165px] flex-[1_1_48%] overflow-hidden bg-[#e9e9e7]">
         <ActiveRideMap ride={ride} />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" aria-hidden="true">
-          <div className="absolute -inset-16 animate-ping rounded-full border border-[#F51D2A]/25 bg-[#F51D2A]/5" />
-          <div className="absolute -inset-9 rounded-full border border-[#F51D2A]/30 bg-[#F51D2A]/10" />
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-white bg-[#F51D2A] text-white shadow-lg">
-            <MapPin size={21} fill="currentColor" />
-          </div>
-        </div>
+        {/* O mapa usa os marcadores GPS reais; nao desenhar um embarque falso no centro. */}
       </div>
 
       <div className="app-safe-bottom relative z-10 -mt-5 min-h-0 flex-[1_1_52%] overflow-y-auto rounded-t-[30px] bg-white px-4 pb-5 pt-3 shadow-[0_-10px_30px_rgba(0,0,0,.08)] [scrollbar-width:none]">
