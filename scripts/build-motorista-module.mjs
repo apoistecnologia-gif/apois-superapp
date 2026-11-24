@@ -21,6 +21,7 @@ if (!corridasUrl || !corridasKey) {
 run(process.execPath, [resolve(root, 'scripts/prepare-workspace.mjs'), 'motorista']);
 run(process.execPath, [resolve(root, 'scripts/harden-motorista-superapp-mercadopago.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/harden-partner-motorista-offer-premium-v1.mjs')], root, {...process.env, APOIS_MOTORISTA_WORKSPACE: '.work/motorista'});
+run(process.execPath, [resolve(root, 'scripts/harden-partner-motorista-home-premium-v1.mjs')], root, {...process.env, APOIS_MOTORISTA_WORKSPACE: '.work/motorista'});
 
 const env = {
   ...process.env,
