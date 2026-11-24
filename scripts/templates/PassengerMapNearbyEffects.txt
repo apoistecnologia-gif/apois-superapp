@@ -44,53 +44,31 @@
       return;
     }
     if (nativeModeRef.current) {
-      let disposed = false;
-      let busy = false;
-      let dim = false;
-      const sync = async () => {
-        if (disposed || busy || document.visibilityState !== "visible") return;
-        busy = true;
-        try {
-          await mapService.setNearbyDriverMarkers(nativeMapIdRef.current, points, dim);
-        } catch {
-          // Never expose driver details in logs.
-        } finally {
-          busy = false;
-          dim = !dim;
-        }
-      };
-      void sync();
-      const timer = window.setInterval(() => { void sync(); }, 1600);
+      // One update per confirmed server response. Do not blink/replace markers every 1600ms.
+      void mapService.setNearbyDriverMarkers(nativeMapIdRef.current, points, false)
+        .catch(() => undefined);
       return () => {
-        disposed = true;
-        window.clearInterval(timer);
         void mapService.setNearbyDriverMarkers(nativeMapIdRef.current, []).catch(() => undefined);
       };
     }
     const maps = (window as any).google?.maps;
     if (!maps?.Marker) return;
+    // APOIS_REALISTIC_DRIVER_CAR_V1: foto-render 3D, sem simbolos desenhados.
+    // Localização aproximada e anônima, retornada pela RPC protegida.
     nearbyMarkerRefs.current = points.map(position => new maps.Marker({
       map: mapRef.current,
       position,
       clickable: false,
+      optimized: false,
       zIndex: 20,
-      title: "Motorista disponível (posição aproximada)",
+      title: "Motorista próximo (localização aproximada)",
       icon: {
-        path: maps.SymbolPath.CIRCLE,
-        scale: 7,
-        fillColor: "#E51B23",
-        fillOpacity: 1,
-        strokeColor: "#FFFFFF",
-        strokeWeight: 2,
+        url: "assets/markers/apois-nearby-car-3d.webp",
+        scaledSize: new maps.Size(54, 39),
+        anchor: new maps.Point(27, 19),
       },
     }));
-    let bright = true;
-    const timer = window.setInterval(() => {
-      bright = !bright;
-      nearbyMarkerRefs.current.forEach((marker) => marker.setOpacity(bright ? 1 : 0.25));
-    }, 1100);
     return () => {
-      window.clearInterval(timer);
       nearbyMarkerRefs.current.forEach((marker) => marker.setMap(null));
       nearbyMarkerRefs.current = [];
     };
