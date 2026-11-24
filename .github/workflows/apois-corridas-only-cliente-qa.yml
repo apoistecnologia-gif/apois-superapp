@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/apois-corridas-only-mensalidade-9990-20261123
+      - feat/apois-cliente-boas-vindas-login-corridas-20261123
 
 # Avoid launching multiple costly Android builds for superseded commits.
 # Never cancel a different APK flavor, branch or a manual QA run on another ref.
@@ -17,7 +18,7 @@ permissions:
 
 jobs:
   build-client-apk:
-    if: github.ref == 'refs/heads/feature/apois-corridas-only-mensalidade-9990-20261123'
+    if: github.ref == 'refs/heads/feature/apois-corridas-only-mensalidade-9990-20261123' || github.ref == 'refs/heads/feat/apois-cliente-boas-vindas-login-corridas-20261123'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -148,6 +149,9 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           npm run verify:pins
+          node --check scripts/apply-client-corridas-approved-login-v1.mjs
+          node --check scripts/qa/test-client-corridas-welcome-login-v1.test.mjs
+          node --test scripts/qa/test-client-corridas-welcome-login-v1.test.mjs
           node scripts/test-apois-unified-maps.mjs
           node --check scripts/test-apois-maps-loader-callback.mjs
           node scripts/test-apois-maps-loader-callback.mjs
@@ -195,6 +199,11 @@ jobs:
           node scripts/verify-corridas-dispatch-ux-v1.mjs
           node superapp/shell/build.mjs
           node --test scripts/qa/test-corridas-only-launch-v1.test.mjs --client
+          node --test scripts/qa/test-client-corridas-welcome-login-v1.test.mjs --built
+          grep -Fq 'data-apois-client-welcome-v1' superapp/shell/dist/index.html
+          grep -Fq 'id="apois-corridas-welcome-enter"' superapp/shell/dist/index.html
+          grep -Fq 'data-apois-client-login-approved-v1' .work/corridas/src/routes/_public.login.tsx
+          grep -R -Fq 'data-apois-client-login-approved-v1' superapp/shell/dist/modules/corridas/assets
           test ! -e superapp/shell/dist/modules/entregas
           test -s superapp/shell/dist/modules/corridas/index.html
           node --input-type=module -e "import {verifyClientBundleAssets} from './scripts/qa/verify-client-static-assets-v1.mjs'; verifyClientBundleAssets('superapp/shell/dist',['corridas']);"
@@ -359,7 +368,10 @@ jobs:
           node --input-type=module -e "import {verifyClientBundleAssets} from './scripts/qa/verify-client-static-assets-v1.mjs'; verifyClientBundleAssets(process.argv[1],['corridas'])" "$TEMP_APK_ASSETS/assets/public"
           test ! -e "$TEMP_APK_ASSETS/assets/public/modules/entregas"
           grep -Fq 'APOIS_CORRIDAS_ONLY_CLIENT_BOOT_V1' "$TEMP_APK_ASSETS/assets/public/index.html"
-          grep -R -Fq 'data-apois-corridas-auth-viewport-v2' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: correção global de viewport ausente'; exit 1; }
+          grep -Fq 'data-apois-client-welcome-v1' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '[FAIL] Cliente APK: boas-vindas aprovada ausente'; exit 1; }
+          grep -Fq 'id="apois-corridas-welcome-enter"' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '[FAIL] Cliente APK: botão Entrar funcional ausente'; exit 1; }
+          grep -R -Fq 'data-apois-client-login-approved-v1' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: login visual aprovado ausente'; exit 1; }
+          echo '[OK] Cliente APK contém boas-vindas e formulário de login real'          grep -R -Fq 'data-apois-corridas-auth-viewport-v2' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: correção global de viewport ausente'; exit 1; }
           for path in index.html modules/corridas/index.html; do
             grep -Fq 'data-apois-embedded-viewport-v1' "$TEMP_APK_ASSETS/assets/public/$path" || { echo "[FAIL] Cliente APK: proteção global ausente: $path"; exit 1; }
           done
@@ -378,7 +390,7 @@ jobs:
         if: ${{ !contains(github.event.head_commit.message, '[qa-only]') }}
         uses: actions/upload-artifact@v4
         with:
-          name: APOIS-Cliente-Corridas-TESTE
+          name: APOIS-Cliente-Corridas-BoasVindas-Login-TESTE
           path: build/APOIS-Cliente-Corridas-TESTE.apk
           if-no-files-found: error
           retention-days: 7
