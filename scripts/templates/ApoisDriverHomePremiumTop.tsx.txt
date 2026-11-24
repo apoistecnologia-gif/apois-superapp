@@ -33,7 +33,7 @@
             <strong className="text-[19px] font-black">{online?"Online":"Offline"}</strong>
             <span className="hidden h-7 w-px bg-zinc-200 min-[360px]:block"/>
             <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#767B84]">
-              {loading ? "Obtendo localização..." : online?"Recebendo corridas":"Não está recebendo corridas"}
+              {gpsStatus==="loading" ? "Obtendo localização..." : online?"Recebendo corridas":"Não está recebendo corridas"}
             </span>
             <button type="button" role="switch" aria-checked={online} aria-label={online?"Ficar offline":"Ficar online"}
               disabled={!!effectiveStatusBlock||gpsStatus==="loading"}
