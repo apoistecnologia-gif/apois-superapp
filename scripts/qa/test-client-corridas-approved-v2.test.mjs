@@ -6,6 +6,7 @@ const base='<html><head><style>.old{}</style></head><body><!-- APOIS_CLIENT_WELC
 test('welcome retains a single REAL entry action with approved brand car and safe bottom gap',()=>{
   const out=rewriteWelcome(base);
   assert.match(out,/data-apois-approved-branded-car-v2/);
+  assert.match(out,/object-fit:cover/,'logo must remain round without image distortion');
   assert.match(out,/data-apois-enter-safe-area-v2/);
   assert.match(out,/env\(safe-area-inset-bottom\)/);
   assert.match(out,/__APOIS_WELCOME_ART_V2__/);
