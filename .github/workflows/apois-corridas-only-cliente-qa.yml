@@ -375,7 +375,7 @@ jobs:
           grep -Fq 'data-apois-client-welcome-v1' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '[FAIL] Cliente APK: boas-vindas aprovada ausente'; exit 1; }
           grep -Fq 'data-apois-approved-branded-car-v2' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '[FAIL] APK: carro adesivado APOIS V2 ausente'; exit 1; }
           grep -Fq 'data-apois-enter-safe-area-v2' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '[FAIL] APK: botão de login em posição segura ausente'; exit 1; }
-          grep -R -Fq 'APOIS_CLIENT_LOGIN_STABLE_V2' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] APK: estabilização do login ausente'; exit 1; }
+          grep -R -Fq 'data-apois-client-login-stable-v2' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] APK: estabilização do login ausente'; exit 1; }
           grep -Fq 'id="apois-corridas-welcome-enter"' "$TEMP_APK_ASSETS/assets/public/index.html" || { echo '[FAIL] Cliente APK: botão Entrar funcional ausente'; exit 1; }
           grep -R -Fq 'data-apois-client-login-approved-v1' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: login visual aprovado ausente'; exit 1; }
           echo '[OK] Cliente APK contém boas-vindas e formulário de login real'          grep -R -Fq 'data-apois-corridas-auth-viewport-v2' "$TEMP_APK_ASSETS/assets/public/modules/corridas/assets" || { echo '[FAIL] Cliente APK: correção global de viewport ausente'; exit 1; }
