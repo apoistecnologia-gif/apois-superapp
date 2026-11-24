@@ -722,6 +722,7 @@ if (name === 'corridas') {
   // Renderiza somente a busca no build de Cliente, sem interferir em motorista/entregas.
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-search-premium-qa-v1.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/harden-corridas-driver-arrived-premium-v1.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/harden-corridas-trip-destination-premium-v1.mjs')]);
 }
 
 const config = manifest.modules[name];
