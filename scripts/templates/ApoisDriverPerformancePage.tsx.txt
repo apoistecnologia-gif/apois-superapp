@@ -1,0 +1,87 @@
+// APOIS_DRIVER_HOME_PERFORMANCE_V1 — only verified metrics from completed rides.
+import React, {useEffect,useState} from "react";
+import {createFileRoute,Link} from "@tanstack/react-router";
+import {ArrowLeft,BarChart3,CarFront,WalletCards,Clock3} from "lucide-react";
+import {supabase} from "@/integrations/supabase/client";
+import {ApoisDriverBottomNav} from "@/components/ApoisDriverBottomNav";
+
+export const Route=createFileRoute("/motorista/desempenho")({component:ApoisDriverPerformance});
+
+function ApoisDriverPerformance(){
+  const [data,setData]=useState<{rides:number;earnings:number}|null>(null);
+  const [error,setError]=useState<string|null>(null);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    let live=true;
+    void (async()=>{
+      try{
+        const {data:profile,error:profileError}=await supabase.rpc("driver_get_profile");
+        const id=profile&&typeof profile==="object"&&!Array.isArray(profile)&&
+          typeof profile.id==="string"?profile.id:null;
+        if(profileError||!id)throw Error("Seu perfil de motorista não está disponível.");
+        const from=new Date();from.setHours(0,0,0,0);
+        const {data:rows,error:ridesError}=await supabase.from("rides")
+          .select("id,final_price,estimated_price")
+          .eq("driver_id",id).eq("status","finalizada").gte("completed_at",from.toISOString());
+        if(ridesError)throw Error("Não foi possível consultar suas corridas concluídas.");
+        const total=(rows||[]).reduce((sum,ride)=>
+          sum+Number(ride.final_price??ride.estimated_price??0),0);
+        if(live){setData({rides:rows?.length??0,earnings:total});setError(null);}
+      }catch(e){
+        if(live){setError(e instanceof Error?e.message:"Não foi possível consultar os dados.");setData(null);}
+      }finally{if(live)setLoading(false);}
+    })();
+    return()=>{live=false;};
+  },[]);
+  const formatted=data===null?"—":new Intl.NumberFormat("pt-BR",{
+    style:"currency",currency:"BRL"
+  }).format(data.earnings);
+  return(
+    <main className="min-h-[100dvh] bg-[#F8F9FA] pb-[calc(env(safe-area-inset-bottom)+100px)] text-[#111418]">
+      <header className="flex items-center gap-3 bg-white px-4 pb-4 pt-[calc(env(safe-area-inset-top)+18px)] shadow-sm">
+        <Link to="/motorista/app" aria-label="Voltar ao mapa"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-zinc-100"><ArrowLeft size={21}/></Link>
+        <div><p className="text-[11px] font-bold uppercase tracking-widest text-[#CF0B27]">APOIS MOTORISTA</p>
+          <h1 className="text-[23px] font-black">Desempenho</h1></div>
+      </header>
+      <div className="mx-auto max-w-xl space-y-4 px-4 pt-5">
+        <div className="rounded-[24px] border border-zinc-200 bg-white p-4">
+          <h2 className="text-[17px] font-black">Seus resultados de hoje</h2>
+          <p className="mt-1 text-[12px] text-zinc-600">
+            Contabilizamos somente corridas concluídas e os valores registrados no sistema.
+          </p>
+          {loading&&<p role="status" className="mt-3 text-[13px] text-zinc-500">Carregando dados...</p>}
+          {error&&<p role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-[12px] text-[#AD1027]">{error}</p>}
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-[18px] bg-zinc-50 p-4">
+              <CarFront size={22} className="text-[#D50923]"/>
+              <p className="mt-2 text-[25px] font-black">{data?.rides??"—"}</p>
+              <p className="text-[12px] text-zinc-600">Corridas concluídas</p>
+            </div>
+            <div className="rounded-[18px] bg-zinc-50 p-4">
+              <WalletCards size={22} className="text-[#09AD4B]"/>
+              <p className="mt-2 text-[22px] font-black">{formatted}</p>
+              <p className="text-[12px] text-zinc-600">Ganhos registrados</p>
+            </div>
+            <div className="rounded-[18px] bg-zinc-50 p-4">
+              <Clock3 size={22} className="text-[#D50923]"/>
+              <p className="mt-2 text-[25px] font-black">—</p>
+              <p className="text-[12px] text-zinc-600">Tempo total online</p>
+              <p className="mt-1 text-[10px] text-zinc-500">Histórico ainda não disponível.</p>
+            </div>
+            <div className="rounded-[18px] bg-zinc-50 p-4">
+              <BarChart3 size={22} className="text-[#D50923]"/>
+              <p className="mt-2 text-[25px] font-black">—</p>
+              <p className="text-[12px] text-zinc-600">Taxa de aceitação</p>
+              <p className="mt-1 text-[10px] text-zinc-500">Sem histórico consolidado de ofertas.</p>
+            </div>
+          </div>
+        </div>
+        <Link to="/motorista/ganhos" className="flex min-h-14 items-center justify-center rounded-[18px] bg-[#D50923] px-4 text-[14px] font-black text-white">
+          Ver histórico de ganhos
+        </Link>
+      </div>
+      <ApoisDriverBottomNav/>
+    </main>
+  );
+}
