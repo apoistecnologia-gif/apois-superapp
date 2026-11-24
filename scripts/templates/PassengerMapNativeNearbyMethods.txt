@@ -1,4 +1,4 @@
-  // APOIS_PASSENGER_QA217_MAP_V1: red pins are anonymous and approximate.
+  // APOIS_SEARCH_NATIVE_CAR_PATH_V2: real anonymized driver coordinates, realistic markers.
   // Native marker refresh is serialized by the caller and limited to 12 points.
   public async setNearbyDriverMarkers(
     mapId: string,
@@ -14,7 +14,10 @@
     const ids = await map.addMarkers(positions.slice(0, 12).map(coordinate => ({
       coordinate,
       title: "Motorista disponível (posição aproximada)",
-      iconUrl: "assets/markers/apois-nearby-car-3d.webp",
+      // O plugin nativo resolve o caminho a partir de assets/public, nao do index do modulo.
+      // APK: assets/public/modules/corridas/assets/markers/apois-nearby-car-3d.webp
+      iconUrl: "modules/corridas/assets/markers/apois-nearby-car-3d.webp",
+      iconSize: {width: 62, height: 44},
       opacity: 1,
       zIndex: 20,
     })));
