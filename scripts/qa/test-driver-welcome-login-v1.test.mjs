@@ -39,9 +39,9 @@ test('driver approved login patch is presentation-only and retains all real call
  const DriverRecoveryLink=Link;
  function DriverLoginPage() {
  const loading=false; const error=null;const showPassword=false;const setShowPassword=()=>{};const onSubmit=()=>{};
-   return (<main>old login <DriverGoogleLoginButton /> <Link to="/motorista/cadastro" /><DriverRecoveryLink to="/motorista/recuperar-senha" /></main>
-   );
- }`;
+  return (<main>old login <DriverGoogleLoginButton /> <Link to="/motorista/cadastro" /><DriverRecoveryLink to="/motorista/recuperar-senha" /></main>
+  );
+}`;
  const out=patchLogin(s);
  for(const token of ['data-apois-driver-approved-login-v1','supabase.auth.signInWithPassword','<DriverGoogleLoginButton />','to="/motorista/cadastro"','to="/motorista/recuperar-senha"','onSubmit={onSubmit}','aria-busy={loading}','APOIS_PARTNER_LOGO_DATA_URL'])assert.ok(out.includes(token),token);
  assert.equal((out.match(/<DriverGoogleLoginButton\s*\/>/g)||[]).length,1);
