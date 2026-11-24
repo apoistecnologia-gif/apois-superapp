@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/apois-motorista-only-qa-apk.yml
+      - scripts/apply-driver-login-approved-qa-v1.mjs
+      - scripts/build-partner-modules.sh
 
 permissions:
   contents: read
@@ -142,6 +144,12 @@ jobs:
           grep -Fq 'APOIS_DRIVER_HOME_PREMIUM_V1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'themeOverride={!active ? "client" : "dark"}' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'Preferências do passageiro' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'data-apois-driver-approved-login-v1' .work/partner-motorista/src/routes/motorista.login.tsx
+          grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista
+          if grep -Fq '#F6BE1C' .work/partner-motorista/src/routes/motorista.login.tsx || grep -Fq 'bg-[#030405]' .work/partner-motorista/src/routes/motorista.login.tsx; then
+            echo "::error::Regressao: o login antigo preto/dourado reapareceu"; exit 1
+          fi
+          echo '[OK] Interface aprovada de login branco/vermelho incluida no APK.'
           test -s superapp/partner-shell/dist/modules/motorista/index.html
           test ! -e superapp/partner-shell/dist/modules/entregador
           echo '[OK] Bundle completo com nova Home.'
