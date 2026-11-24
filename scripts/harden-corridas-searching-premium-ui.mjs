@@ -49,7 +49,7 @@ export function SearchingDriverScreen({
     const timer = window.setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => window.clearInterval(timer);
   }, [ride.id]);
-  const timeText = \`${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}\`;
+  const timeText = String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
   const paymentLabel = paymentLabels[ride.payment_method] || ride.payment_method;
   const origin = shortAddress(ride.origin_name);
   const destination = shortAddress(ride.destination_name);
