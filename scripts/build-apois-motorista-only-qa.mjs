@@ -42,6 +42,19 @@ if(phase==="brand"){
   must(html.includes('APOIS MOTORISTA')&&html.includes('apois-parceiro:motorista-google-url'),"bootstrap Driver incompleto");
   must(!html.includes("modules/entregador")&&!html.includes("Sou Entregador"),"seletor antigo presente");
   write(resolve(dist,"index.html"),html);
+  // Tela de boas-vindas e arte aprovadas: copiadas sem qualquer geracao de IA.
+  const welcome=read(resolve(root,"superapp/partner-shell/motorista-welcome.html"));
+  if(!welcome.includes("data-apois-driver-approved-welcome-v1")||!welcome.includes("apois-driver-welcome-enter"))
+    throw Error("[FAIL] Boas-vindas oficial alterada");
+  const heroEncoded=read(resolve(root,"superapp/partner-shell/branding/apois-motorista-hero.webp.b64")).trim();
+  if(!heroEncoded.startsWith("UklGR"))throw Error("[FAIL] Arte oficial hero WebP ausente");
+  const hero=Buffer.from(heroEncoded,"base64");
+  if(hero.subarray(0,4).toString()!=="RIFF"||hero.subarray(8,12).toString()!=="WEBP")
+    throw Error("[FAIL] Arte hero inválida");
+  writeFileSync(resolve(dist,"assets/apois-motorista-hero.webp"),hero);
+  write(resolve(dist,"motorista-welcome.html"),welcome);
+  if(!html.includes("APOIS_MOTORISTA_APPROVED_WELCOME_RESTORED_V1"))
+    throw Error("[FAIL] Entrada nao abre boas-vindas aprovada");
   must(!existsSync(courier),"Entregador permaneceu no bundle");
   console.log("[OK] Bundle exclusivo Motorista: GPS/consulta/push/callback Driver mantidos");
 }else if(phase==="native"){
