@@ -28,16 +28,16 @@ export function rewriteWelcome(source){
   *{box-sizing:border-box}
   html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--black);color:#fff;overscroll-behavior:none;-webkit-text-size-adjust:100%}
   body{position:fixed;inset:0}
-  .apois-welcome{width:100%;height:100dvh;max-width:560px;margin:auto;display:flex;flex-direction:column;overflow:hidden;background:var(--black);isolation:isolate}
+  .apois-welcome{width:100%;height:100dvh;max-width:560px;margin:auto;display:flex;flex-direction:column;overflow:hidden;background:var(--black);isolation:isolate;padding-top:max(54px,calc(env(safe-area-inset-top) + 28px))}
   .apois-hero{flex:1 1 auto;min-height:0;overflow:hidden;position:relative}
   .apois-hero img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none}
-  .apois-enter-foot{flex:0 0 auto;background:linear-gradient(180deg,#09090C,#0D0F12);padding:9px 22px max(34px,calc(env(safe-area-inset-bottom) + 20px));}
+  .apois-enter-foot{flex:0 0 auto;background:linear-gradient(180deg,#09090C,#0D0F12);padding:9px 22px max(70px,calc(env(safe-area-inset-bottom) + 45px));}
   #apois-corridas-welcome-enter{width:100%;min-height:60px;border:1px solid rgba(255,255,255,.13);border-radius:999px;display:flex;gap:20px;align-items:center;justify-content:center;background:linear-gradient(135deg,#F51D2A 0%,#EC0920 50%,#BB071D 100%);box-shadow:0 10px 26px rgba(187,7,29,.25);color:#fff;font-size:clamp(20px,6vw,26px);font-weight:900;touch-action:manipulation;cursor:pointer}
   #apois-corridas-welcome-enter:active{transform:scale(.985)}
   #apois-corridas-welcome-enter:focus-visible{outline:3px solid #fff;outline-offset:4px}
   #apois-corridas-welcome-enter svg{width:24px;height:24px;stroke:currentColor;stroke-width:2.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .brand-asset-check{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-  @media(max-height:690px){.apois-enter-foot{padding-top:6px;padding-bottom:max(23px,calc(env(safe-area-inset-bottom) + 12px))}#apois-corridas-welcome-enter{min-height:54px}}
+  @media(max-height:690px){.apois-welcome{padding-top:max(44px,calc(env(safe-area-inset-top) + 24px))}.apois-enter-foot{padding-top:6px;padding-bottom:max(48px,calc(env(safe-area-inset-bottom) + 30px))}#apois-corridas-welcome-enter{min-height:54px}}
   @media(prefers-reduced-motion:reduce){#apois-corridas-welcome-enter{transition:none}}
   </style>`;
   let result=source.replace(regex,css);
