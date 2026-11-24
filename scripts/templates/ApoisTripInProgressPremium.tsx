@@ -156,23 +156,26 @@ function usePrivateDriverPhoto(rawPhoto:string|undefined,driverId:string|undefin
 }
 
 const StableTripMap=React.memo(function StableTripMap({
-  ride,driver,points
+  ride,driver,points,mapOrigin
 }:{
   ride:ActiveRide;driver:Point|null;points:Array<{lat:number;lng:number}>;
+  mapOrigin:{lat:number;lng:number};
 }){
   return <PassengerMap
-    origin={ride.origin}
+    origin={mapOrigin}
     destination={ride.destination}
     encodedPolyline={undefined}
     driverLocation={driver??undefined}
     isStatic={false}
     isTrip={true}
     focusPickup={false}
-    approachMode={false}
+    approachMode={points.length < 2}
     journeyRoutePoints={points}
   />;
 },(a,b)=>
   a.ride.id===b.ride.id &&
+  a.mapOrigin.lat===b.mapOrigin.lat &&
+  a.mapOrigin.lng===b.mapOrigin.lng &&
   a.driver?.lat===b.driver?.lat &&
   a.driver?.lng===b.driver?.lng &&
   a.driver?.heading===b.driver?.heading &&
@@ -189,6 +192,13 @@ export function ApoisTripInProgressPremium({
       ...(typeof ride.driver_heading==="number" ? {heading:ride.driver_heading} : {})};
     return isPoint(p)?p:null;
   },[ride.driver_latitude,ride.driver_longitude,ride.driver_heading]);
+  // Stable map focus: update initial camera only once as real driver GPS becomes available.
+  const cameraOriginRef=useRef<{lat:number;lng:number}|null>(null);
+  if (!cameraOriginRef.current && driver) {
+    cameraOriginRef.current={lat:driver.lat,lng:driver.lng};
+  }
+  const mapOrigin=cameraOriginRef.current ?? ride.origin;
+  const [mapRevision,setMapRevision]=useState(0);
   const route=useVerifiedRemainingRoute(ride,driver);
   const points=useMemo(()=>route?.points||[],[route]);
   const photo=usePrivateDriverPhoto(ride.driver_photo,ride.driver_id);
@@ -237,7 +247,7 @@ export function ApoisTripInProgressPremium({
       </header>
 
       <section aria-label="Mapa da viagem em andamento" className="relative min-h-[220px] flex-[1_1_54%] overflow-hidden bg-[#E9E7E1]">
-        <StableTripMap ride={ride} driver={driver} points={points}/>
+        <StableTripMap key={mapRevision} ride={ride} driver={driver} points={points} mapOrigin={mapOrigin}/>
         <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex justify-center px-3">
           <div className="flex min-w-[180px] max-w-[90%] items-center gap-3 rounded-[23px] border border-white/95 bg-white/95 px-4 py-3 shadow-[0_7px_30px_rgba(0,0,0,.16)]">
             <Navigation size={24} fill="#D50923" className="shrink-0 text-[#D50923]"/>
@@ -254,8 +264,8 @@ export function ApoisTripInProgressPremium({
             Reconectando localização
           </div>
         )}
-        <button type="button" aria-label="Centralizar no motorista" onClick={()=>window.dispatchEvent(new Event("apois-trip-recenter"))}
-          className="app-pressable absolute bottom-8 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#D50923] shadow-[0_5px_18px_rgba(0,0,0,.18)]">
+        <button type="button" aria-label="Centralizar no motorista" disabled={!driver} onClick={()=>{if(!driver)return;cameraOriginRef.current={lat:driver.lat,lng:driver.lng};setMapRevision(v=>v+1);}}
+          className="app-pressable absolute bottom-8 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#D50923] shadow-[0_5px_18px_rgba(0,0,0,.18)] disabled:opacity-40">
           <Crosshair size={23}/>
         </button>
       </section>
