@@ -44,6 +44,8 @@ require_contains() {
 # ---------------- Motorista ----------------
 export APOIS_MOTORISTA_WORKSPACE=".work/partner-motorista"
 node "$ROOT/scripts/harden-motorista-auth.mjs"
+node "$ROOT/scripts/harden-partner-motorista-google-oauth-recovery-v1.mjs"
+require_contains 'APOIS_MOTORISTA_GOOGLE_OAUTH_RECOVERY_V1' "$MOTORISTA/src/components/DriverGoogleLoginButton.tsx" 'Google retorna a estado clicavel apos falha OAuth'
 node "$ROOT/scripts/harden-motorista-field-runtime.mjs"
 node "$ROOT/scripts/harden-partner-motorista-onboarding.mjs"
 node "$ROOT/scripts/harden-motorista-field-mercadopago.mjs"
