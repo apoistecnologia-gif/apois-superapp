@@ -38,7 +38,8 @@ jobs:
       PARTNER_FIREBASE_PROJECT_ID: "movvi-4d041"
       PARTNER_APP_PACKAGE: "br.com.apois.parceiro"
       PARTNER_APP_LABEL: "APOIS Motorista"
-      QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_CLIENT_QA_DEBUG_KEYSTORE_BASE64 }}
+      APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
+      APOIS_PARTNER_QA_CERT_SHA256: ${{ secrets.APOIS_PARTNER_QA_CERT_SHA256 }}
 
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY CORRIDAS_ANDROID_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64; do
+          for key in APOIS_REPO_TOKEN CORRIDAS_VITE_SUPABASE_URL CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY CORRIDAS_WEB_MAPS_API_KEY CORRIDAS_ANDROID_MAPS_API_KEY VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY FIREBASE_PARTNER_GOOGLE_SERVICES_JSON_BASE64 APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 APOIS_PARTNER_QA_CERT_SHA256; do
             if [ -z "$(printenv "$key")" ]; then
               echo "::error::Variavel obrigatoria ausente: $key"
               missing=1
@@ -196,18 +197,20 @@ jobs:
           grep -Fq "versionCode $PARTNER_VERSION_CODE" superapp/partner-shell/android/app/build.gradle
           grep -Fq "versionName \"$PARTNER_VERSION_NAME\"" superapp/partner-shell/android/app/build.gradle
 
-      - name: Restaurar identidade de assinatura QA se disponivel
+      - name: Exigir certificado original protegido e configurar assinatura Gradle
         shell: bash
         run: |
           set -euo pipefail
+          : "${APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64:?Keystore original do Motorista obrigatorio}"
+          : "${APOIS_PARTNER_QA_CERT_SHA256:?SHA-256 do certificado QA Motorista obrigatorio}"
           mkdir -p "$HOME/.android"
-          if [ -n "$QA_DEBUG_KEYSTORE_BASE64" ]; then
-            printf '%s' "$QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
-            keytool -list -keystore "$HOME/.android/debug.keystore" -alias androiddebugkey -storepass android >/dev/null
-            echo '[OK] Certificado QA existente restaurado.'
-          else
-            echo '[WARN] Certificado QA nao configurado. APK usara assinatura debug temporaria, sem garantia de instalar sobre o app atual.'
-          fi
+          umask 077
+          printf '%s' "$APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
+          test -s "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+          # Chave somente do Motorista: o Gradle precisa usa-la explicitamente.
+          node scripts/qa/configure-partner-qa-debug-signing-v1.mjs
+          echo '[OK] Certificado original do APK Motorista confirmado antes da compilacao.'
 
       - name: Compilar e verificar APK assinado para teste
         shell: bash
@@ -221,7 +224,15 @@ jobs:
           test -s "$APK"
           APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner -perm -111 | sort -V | tail -n 1)"
           AAPT="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name aapt -perm -111 | sort -V | tail -n 1)"
-          "$APKSIGNER" verify --verbose "$APK"
+          "$APKSIGNER" verify --verbose "$APK" >/dev/null
+          APK_CERT="$("$APKSIGNER" verify --print-certs "$APK" | node scripts/qa/extract-partner-apk-cert-sha256-v1.mjs)"
+          EXPECTED_CERT="$(printf '%s' "$APOIS_PARTNER_QA_CERT_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+          if [ "${#EXPECTED_CERT}" -ne 64 ] || [ "$APK_CERT" != "$EXPECTED_CERT" ]; then
+            echo '::error::Certificado do APK Motorista divergente do original; artefato BLOQUEADO.'
+            exit 1
+          fi
+          echo '[OK] APK assinado com a identidade protegida e original do Motorista.'
+          test "$PARTNER_VERSION_CODE" -gt 335
           "$AAPT" dump badging "$APK" | grep -F "name='br.com.apois.parceiro'"
           "$AAPT" dump badging "$APK" | grep -F "application-label:'APOIS Motorista'"
           echo '[OK] Rótulo do launcher validado dentro do APK: APOIS Motorista.'
