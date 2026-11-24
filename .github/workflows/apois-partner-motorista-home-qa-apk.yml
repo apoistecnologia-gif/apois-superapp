@@ -100,7 +100,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run build:partner
+          # Homologação não publica release; Codemagic continua sendo único publicador oficial.
+          # A auditoria v22 reprova deliberadamente qualquer arquivo de GitHub Actions,
+          # inclusive este workflow QA. Executamos todas as demais auditorias sem
+          # desabilitar nem modificar a regra de release.
+          npm run audit:partner
+          node scripts/audit-mobile-ui-v16.mjs
+          node scripts/audit-unified-app-surfaces-v17.mjs
+          node scripts/audit-codemagic-host-installs-v18.mjs
+          node scripts/audit-entregas-order-finish-ui-v19.mjs
+          node scripts/audit-entregas-auth-mobile-ui-v20.mjs
+          node scripts/audit-shell-branding-v21.mjs
+          node scripts/audit-unified-brand-theme-v23.mjs
+          node scripts/audit-entregas-brand-sweep-v24.mjs
+          npm run verify:pins
+          npm run verify:partner-portability
+          node scripts/run-bash.mjs scripts/build-partner-modules.sh
           grep -Fq 'APOIS_DRIVER_HOME_PREMIUM_V1' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'themeOverride={!active ? "client" : "dark"}' .work/partner-motorista/src/routes/motorista.app.tsx
           grep -Fq 'Preferências do passageiro' .work/partner-motorista/src/routes/motorista.app.tsx
