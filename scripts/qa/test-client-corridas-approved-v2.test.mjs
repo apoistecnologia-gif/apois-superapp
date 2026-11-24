@@ -9,6 +9,8 @@ test('welcome retains a single REAL entry action with approved brand car and saf
   assert.match(out,/object-fit:cover/,'logo must remain round without image distortion');
   assert.match(out,/data-apois-enter-safe-area-v2/);
   assert.match(out,/env\(safe-area-inset-bottom\)/);
+  assert.match(out,/padding-top:max\(54px,calc\(env\(safe-area-inset-top\) \+ 28px\)\)/,'logo must clear Android status bar/camera');
+  assert.match(out,/padding:9px 22px max\(70px,calc\(env\(safe-area-inset-bottom\) \+ 45px\)\)/,'Enter button must sit safely above Android navigation');
   assert.match(out,/__APOIS_WELCOME_ART_V2__/);
   assert.equal((out.match(/<button\b/g)||[]).length,1);
   assert.equal((out.match(/id="apois-corridas-welcome-enter"/g)||[]).length,1);
