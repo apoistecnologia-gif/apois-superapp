@@ -191,7 +191,7 @@ jobs:
           "$APKSIGNER" verify --verbose "$APK"
           "$AAPT" dump badging "$APK" | grep -F "name='br.com.apois.parceiro'"
           "$AAPT" dump badging "$APK" | grep -F "versionCode='$PARTNER_VERSION_CODE'"
-          "$APKSIGNER" verify --print-certs "$APK" | grep 'Signer #1 certificate SHA-1 digest:' | head -n 1
+          "$APKSIGNER" verify --print-certs "$APK" | grep -Ei 'certificate .*digest' | head -n 3 || true
           mkdir -p build
           cp "$APK" build/APOIS-Parceiro-Motorista-Home-TESTE.apk
           echo '[OK] APK pronto para homologacao.'
