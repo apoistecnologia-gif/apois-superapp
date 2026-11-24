@@ -70,8 +70,8 @@ node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
 node "$ROOT/scripts/harden-partner-motorista-home-premium-v1.mjs"
 node "$ROOT/scripts/apply-driver-login-approved-qa-v1.mjs"
-require_contains 'data-apois-driver-approved-login-v1' src/routes/motorista.login.tsx 'login Motorista branco/vermelho aprovado presente'
-if grep -Fq 'bg-[#030405]' src/routes/motorista.login.tsx || grep -Fq '#F6BE1C' src/routes/motorista.login.tsx; then
+require_contains 'data-apois-driver-approved-login-v1' "$MOTORISTA/src/routes/motorista.login.tsx" 'login Motorista branco/vermelho aprovado presente'
+if grep -Fq 'bg-[#030405]' "$MOTORISTA/src/routes/motorista.login.tsx" || grep -Fq '#F6BE1C' "$MOTORISTA/src/routes/motorista.login.tsx"; then
   echo '[FAIL] Tela de login preta/dourada antiga detectada no APK Motorista'; exit 1
 fi
 
