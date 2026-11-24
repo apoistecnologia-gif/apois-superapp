@@ -91,7 +91,16 @@ jobs:
           test ! -e superapp/partner-shell/dist/modules/entregador
           test ! -e superapp/partner-shell/dist/courier
           cd .work/partner-motorista
-          bun run typecheck
+          if ! bun run typecheck; then
+            echo '::error::TypeScript legacy errors require explicit review; no APK allowed.'
+            echo '[DIAG] Motorista GPS generated closure (source only, no secrets):'
+            nl -ba src/routes/motorista.app.tsx | sed -n '702,746p'
+            echo '[DIAG] Menu metrics expected types:'
+            nl -ba src/components/DriverSideMenu.tsx | sed -n '152,184p'
+            echo '[DIAG] Existing Mercado Pago RPC signature:'
+            nl -ba src/components/payments/MercadoPagoSellerCard.tsx | sed -n '28,44p'
+            exit 1
+          fi
           cd ../..
           grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'Preferências do passageiro' superapp/partner-shell/dist/modules/motorista
