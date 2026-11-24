@@ -527,9 +527,15 @@ if (name === 'corridas') {
    run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-eta-qa217-v1.mjs')]);
    run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-home-qa217-v1.mjs')]);
    run(process.execPath,['--test',resolve(root,'scripts/qa/test-corridas-passenger-map-qa217-v1.test.mjs')]);
-   // QA218: only consent-driven, coarse passenger demand on Corridas home.
-   run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-optin-qa218-v1.mjs')]);
-   run(process.execPath,['--test',resolve(root,'scripts/qa/test-passenger-optin-zones-qa218.test.mjs')]);
+   // GPS remains mandatory for ride-origin acquisition. Do not expose optional
+   // aggregated demand sharing in the Corridas-only public customer app.
+   // Keep the consent-based module intact for other explicitly approved modes.
+   if (process.env.APOIS_LAUNCH_MODE === 'corridas_only') {
+     run(process.execPath,['--test',resolve(root,'scripts/qa/test-passenger-no-demand-optin-corridas-only-v1.test.mjs')]);
+   } else {
+     run(process.execPath,[resolve(root,'scripts/fix-corridas-passenger-optin-qa218-v1.mjs')]);
+     run(process.execPath,['--test',resolve(root,'scripts/qa/test-passenger-optin-zones-qa218.test.mjs')]);
+   }
   // RV-15: restore scoped public-form placeholder contrast, then only user-facing
   // auth error copy and field accessibility on disposable Corridas; do not change
   // password predicates, Supabase callback/session logic or email submission.
