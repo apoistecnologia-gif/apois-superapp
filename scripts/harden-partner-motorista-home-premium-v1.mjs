@@ -67,6 +67,24 @@ nav=swap(nav,'active ? "driver-nav-active bg-[#F6BE1C]/[.08] text-[#F6BE1C] ring
  'active ? (isHome ? "driver-nav-active text-[#E51B23]" : "driver-nav-active bg-[#F6BE1C]/[.08] text-[#F6BE1C] ring-1 ring-inset ring-[#F6BE1C]/15") : ""',"ativo");
 nav=swap(nav,'active ? "w-5 bg-[#F6BE1C]" : "w-4 bg-transparent"',
  'active ? (isHome ? "w-5 bg-[#E51B23]" : "w-5 bg-[#F6BE1C]") : "w-4 bg-transparent"',"indicador");
+nav=swap(nav, "to={item.to}", "to={item.to as any}", "router legado tipado sem caminho novo");
 writeFileSync(navPath,nav,"utf8");
 writeFileSync(performancePath,perf,"utf8");
+// A build mobile tem arvore manual separada da routeTree.gen.ts do site.
+const mobileTreePath=resolve(root,"src/mobile-route-tree.motorista.ts");
+let mobile=readFileSync(mobileTreePath,"utf8");
+mobile=swap(mobile,
+ "import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'",
+ "import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'\nimport { Route as MotoristaDesempenhoRouteImport } from './routes/motorista.desempenho'",
+ "import da rota nova");
+mobile=swap(mobile,
+ "const MotoristaLoginRoute = MotoristaLoginRouteImport.update({ id: '/motorista/login'",
+ "const MotoristaDesempenhoRoute = MotoristaDesempenhoRouteImport.update({ id: '/motorista/desempenho', path: '/motorista/desempenho', getParentRoute: () => rootRouteImport } as any)\nconst MotoristaLoginRoute = MotoristaLoginRouteImport.update({ id: '/motorista/login'",
+ "registro mobile");
+mobile=swap(mobile,
+ "  MotoristaGanhosRoute,\n  MotoristaLoginRoute,",
+ "  MotoristaGanhosRoute,\n  MotoristaDesempenhoRoute,\n  MotoristaLoginRoute,",
+ "filho do router mobile");
+writeFileSync(mobileTreePath,mobile,"utf8");
+
 console.log("[OK] APOIS Motorista: Home premium, mapa Cliente, status real e nav funcional.");
