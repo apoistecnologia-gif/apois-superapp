@@ -545,6 +545,19 @@ if (name === 'corridas') {
        !generated.includes('data-apois-corridas-public-form-contrast-v1'))
       throw Error('[FAIL] RV15 Passenger auth visual missing '+rel);
   }
+  // Approved APOIS Corridas login: presentation-only final transform.
+  // Preserve native OAuth PKCE, password reset, signup, and protected pinned sources.
+  run(process.execPath, [resolve(root, 'scripts/apply-client-corridas-approved-login-v1.mjs')]);
+  run(process.execPath, ['--test', resolve(root, 'scripts/qa/test-client-corridas-welcome-login-v1.test.mjs')]);
+  const approvedLogin=readFileSync(resolve(root,'.work/corridas/src/routes/_public.login.tsx'),'utf8');
+  const approvedLoginCss=readFileSync(resolve(root,'.work/corridas/src/styles.css'),'utf8');
+  if (!approvedLogin.includes('data-apois-client-login-approved-v1') ||
+      !approvedLoginCss.includes('APOIS_CLIENT_LOGIN_APPROVED_V1') ||
+      !approvedLogin.includes('supabase.auth.signInWithPassword') ||
+      !approvedLogin.includes('<PassengerGoogleLoginButton />') ||
+      !approvedLogin.includes('to="/recuperar-senha"') ||
+      !approvedLogin.includes('to="/cadastro"'))
+    throw Error('[FAIL] Cliente Corridas: approved real login did not survive source transforms');
   for (const [relative, marker] of [
     ['src/routes/_authenticated.buscar-destino.tsx', 'data-apois-visual04-clear-search-v1'],
     ['src/routes/_authenticated.revisar-solicitacao.tsx', 'APOIS_VISUAL04_REVIEW_DETAILS_V1'],
