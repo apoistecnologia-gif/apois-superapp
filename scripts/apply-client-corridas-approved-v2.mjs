@@ -30,7 +30,7 @@ export function rewriteWelcome(source){
   body{position:fixed;inset:0}
   .apois-welcome{width:100%;height:100dvh;max-width:560px;margin:auto;display:flex;flex-direction:column;overflow:hidden;background:var(--black);isolation:isolate}
   .apois-hero{flex:1 1 auto;min-height:0;overflow:hidden;position:relative}
-  .apois-hero img{display:block;width:100%;height:100%;object-fit:fill;object-position:center;user-select:none;-webkit-user-drag:none}
+  .apois-hero img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none}
   .apois-enter-foot{flex:0 0 auto;background:linear-gradient(180deg,#09090C,#0D0F12);padding:9px 22px max(34px,calc(env(safe-area-inset-bottom) + 20px));}
   #apois-corridas-welcome-enter{width:100%;min-height:60px;border:1px solid rgba(255,255,255,.13);border-radius:999px;display:flex;gap:20px;align-items:center;justify-content:center;background:linear-gradient(135deg,#F51D2A 0%,#EC0920 50%,#BB071D 100%);box-shadow:0 10px 26px rgba(187,7,29,.25);color:#fff;font-size:clamp(20px,6vw,26px);font-weight:900;touch-action:manipulation;cursor:pointer}
   #apois-corridas-welcome-enter:active{transform:scale(.985)}
