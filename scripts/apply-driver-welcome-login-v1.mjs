@@ -49,6 +49,10 @@ export function patchLogin(source){
             <button type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword} onClick={() => setShowPassword((v) => !v)} className="grid h-11 w-11 shrink-0 place-items-center text-[#686F79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F51D2A]">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
           </label>
           <div className="-mt-1 flex justify-end"><DriverRecoveryLink to="/motorista/recuperar-senha" className="inline-flex min-h-11 items-center px-1 text-[13px] font-bold text-[#BB071D]">Esqueci minha senha</DriverRecoveryLink></div>
+          {/* Existing auth notices remain mutually exclusive with errors and password resets. */}
+          {passwordUpdatedNotice ? <div data-apois-driver-password-updated-v2 role="status" aria-live="polite" className="rounded-2xl border border-[#99e5b9] bg-[#effcf4] p-3 text-xs font-semibold text-[#14532D]">Senha alterada com sucesso. Entre com sua nova senha. Esta alteração também atualiza o acesso da conta compartilhada com o APOIS Passageiro.</div> : null}
+          {registrationNotice && !error && !passwordUpdatedNotice ? <div role="status" aria-live="polite" className="rounded-2xl border border-[#99e5b9] bg-[#effcf4] p-3 text-xs font-semibold text-[#14532D]">Verifique seu e-mail. Se recebeu uma confirmação, conclua-a e depois entre. Se a conta já existia, use sua senha ou a recuperação de acesso.</div> : null}
+          {error?.includes("Continuar cadastro com esta conta") ? <button type="button" data-apois-existing-driver-cta-v7 onClick={()=>navigate({to:"/motorista/cadastro"})} className="min-h-12 w-full rounded-2xl border border-[#E7B0B7] bg-white px-3 py-2 text-sm font-bold text-[#BB071D]">Continuar cadastro de motorista com esta conta</button> : null}
           {error ? <div role="alert" aria-live="assertive" className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-xs font-medium text-red-800"><AlertTriangle className="h-4 w-4 shrink-0" /><span>{error}</span></div> : null}
           <button type="submit" disabled={loading} aria-busy={loading} className="flex min-h-[56px] items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#F51D2A] to-[#BB071D] px-4 text-[18px] font-black text-white shadow-[0_8px_20px_rgba(187,7,29,.18)] disabled:opacity-60">{loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}{loading ? "Entrando..." : "Entrar"}{!loading ? <ChevronRight className="h-5 w-5" strokeWidth={2.7} /> : null}</button>
         </form>
@@ -59,7 +63,7 @@ export function patchLogin(source){
     </main>
   );`;
  const next=source.slice(0,start)+jsx+source.slice(end+'\n  );'.length);
- check(next,['data-apois-driver-approved-login-v1','supabase.auth.signInWithPassword','<DriverGoogleLoginButton />','to="/motorista/recuperar-senha"','to="/motorista/cadastro"'],'new render');
+ check(next,['data-apois-driver-approved-login-v1','supabase.auth.signInWithPassword','<DriverGoogleLoginButton />','to="/motorista/recuperar-senha"','to="/motorista/cadastro"','registrationNotice && !error && !passwordUpdatedNotice','data-apois-driver-password-updated-v2','data-apois-existing-driver-cta-v7'],'new render');
  if((next.match(/<DriverGoogleLoginButton\s*\/>/g)||[]).length!==1)throw Error('[FAIL] duplicate Google');
  return next;
 }
