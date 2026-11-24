@@ -58,8 +58,9 @@ function shellScenario(file){
  new Script(inline[1],{filename:file}).runInContext(context,{timeout:1000});
  // Cold-start redirect is now automatic; legacy role buttons are hidden but
  // retained solely for old operational compatibility and regression coverage.
+ assert.match(html,/<main class="apois-driver-launch" data-apois-driver-direct-welcome-v2/);
  assert.match(html,/<main class="screen" data-apois-legacy-role-chooser hidden aria-hidden="true">/);
- assert.deepEqual(nav.shift(),{kind:"replace",url:"./motorista-welcome.html"});
+ assert.equal(nav.length,0,"initial screen must be visible before native boot resolves");
  const evalJS=js=>runInContext(js,context,{timeout:1000});
  const click=role=>{
   const button=buttons.find(b=>b.dataset.module===role);
