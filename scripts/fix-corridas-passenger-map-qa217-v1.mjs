@@ -15,6 +15,11 @@ const svgFile=file("public/assets/markers/apois-nearby-red.svg");
 mkdirSync(dirname(svgFile),{recursive:true});
 writeFileSync(svgFile,'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40"><circle cx="20" cy="20" r="15" fill="#E51B23" fill-opacity=".24"/><circle cx="20" cy="20" r="8" fill="#E51B23" stroke="#ffffff" stroke-width="3"/></svg>',"utf8");
 
+const carB64 = readFileSync(resolve("superapp/branding/categories/apois-nearby-car-3d.webp.b64"), "utf8").trim();
+const carTarget = file("public/assets/markers/apois-nearby-car-3d.webp");
+writeFileSync(carTarget, Buffer.from(carB64, "base64"));
+// Asset APOIS_REALISTIC_DRIVER_CAR_V1 is generated at build time, never from external URLs.
+
 const serviceFile=file("src/services/maps/map-service.ts");
 let m=readFileSync(serviceFile,"utf8");
 m=one(m,'  private driverMarkerId: Map<string, string> = new Map();',
