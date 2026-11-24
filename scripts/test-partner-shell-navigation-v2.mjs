@@ -29,6 +29,10 @@ function testFile(path, label) {
     }
   });
   runInContext(match[1],context,{timeout:1000});
+  // APOIS_MOTORISTA_ONLY_ENTRY_V1: native cold start must bypass the old
+  // two-role selector and enter the approved welcome before any manual click.
+  assert.match(html,/<main class="screen" data-apois-legacy-role-chooser hidden aria-hidden="true">/);
+  assert.deepEqual(navigations.shift(),{kind:"replace",url:"./motorista-welcome.html"});
   const evaluate=src=>runInContext(src,context,{timeout:1000});
   assert.equal(evaluate("partnerModuleUrl('./modules/motorista/index.html#/motorista/app')"),"https://localhost/modules/motorista/index.html#/motorista/app");
   assert.equal(evaluate("partnerModuleUrl('./modules/entregador/index.html#/courier')"),"https://localhost/modules/entregador/index.html#/courier");
