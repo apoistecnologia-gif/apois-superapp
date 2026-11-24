@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/apois-partner-motorista-home-qa-apk.yml
+      - scripts/harden-partner-motorista-offer-premium-v1.mjs
+      - scripts/harden-partner-motorista-home-premium-v1.mjs
 
 permissions:
   contents: read
