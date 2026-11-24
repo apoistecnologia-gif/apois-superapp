@@ -1,5 +1,5 @@
 // APOIS_DRIVER_HOME_PERFORMANCE_V1 — only verified metrics from completed rides.
-import React, {useEffect,useState} from "react";
+import {useEffect,useState} from "react";
 import {createFileRoute,Link} from "@tanstack/react-router";
 import {ArrowLeft,BarChart3,CarFront,WalletCards,Clock3} from "lucide-react";
 import {supabase} from "@/integrations/supabase/client";
