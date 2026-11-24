@@ -107,6 +107,7 @@ test('07 — Android update signing is hard-pinned to the installed 9003 certifi
  expect(pipeline,[
    '94a11563082e4f8e57f76b0a5d0982d4b88da93353753f87c732310e9d887132',
    'APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64',
+   'APOIS_MOTORISTA_9003_KEYSTORE_BASE64',
    'Exigir certificado original protegido',
    'APK_CERT','EXPECTED_CERT',
    'VersionCode do novo APK nao supera o instalado',
