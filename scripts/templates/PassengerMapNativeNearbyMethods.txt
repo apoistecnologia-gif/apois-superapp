@@ -14,8 +14,8 @@
     const ids = await map.addMarkers(positions.slice(0, 12).map(coordinate => ({
       coordinate,
       title: "Motorista disponível (posição aproximada)",
-      iconUrl: "assets/markers/apois-nearby-red.svg",
-      opacity: dim ? 0.3 : 1,
+      iconUrl: "assets/markers/apois-nearby-car-3d.webp",
+      opacity: 1,
       zIndex: 20,
     })));
     this.nearbyDriverMarkerIds.set(mapId, ids);
