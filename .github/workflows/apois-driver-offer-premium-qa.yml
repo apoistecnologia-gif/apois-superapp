@@ -19,14 +19,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: sources/apois-corridas-motorista-admin/package-lock.json
       - name: Preparar snapshot protegido do Motorista
         run: |
+          git clone --depth=1 --branch fix/apois-corridas-consolidacao https://github.com/apoistecnologia-gif/movvi-go-connect.git sources/apois-corridas-motorista-admin
+          git -C sources/apois-corridas-motorista-admin fetch --depth=1 origin 9fc171050d8b5703540c49d19a8f1e9f5162775f
+          git -C sources/apois-corridas-motorista-admin checkout --detach 9fc171050d8b5703540c49d19a8f1e9f5162775f
           mkdir -p .work/partner-motorista
           tar --exclude=.git --exclude=node_modules -C sources/apois-corridas-motorista-admin -cf - . | tar -C .work/partner-motorista -xf -
       - name: Aplicar interface aprovada sem tocar no submódulo
