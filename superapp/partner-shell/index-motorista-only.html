@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#ffffff"/><title>APOIS Motorista</title>
+<style>*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#fff;color:#11151a;font-family:Inter,system-ui,sans-serif}
+main{min-height:100dvh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+img{width:108px;height:108px;object-fit:contain}h1{margin:0;font-size:23px;font-weight:850}
+small{color:#717681;font-size:13px}</style></head><body>
+<main><img src="./assets/apois-brand.png" alt="APOIS"/><h1>APOIS MOTORISTA</h1><small>Conectando às suas corridas…</small></main>
+<script>
+(()=>{
+ "use strict";
+ const app="./modules/motorista/index.html";
+ const login=app+"#/motorista/login";
+ const operational=app+"#/motorista/app";
+ const mp=app+"#/motorista/assinatura";
+ const key="apois-parceiro:operational-role";
+ try{
+   if(localStorage.getItem(key)==="entregador")localStorage.removeItem(key);
+   localStorage.setItem("apois-parceiro:last-module","motorista");
+ }catch{}
+ let leaving=false;
+ function go(url){if(leaving)return true;leaving=true;window.location.replace(url);return true;}
+ function params(incoming){
+   const p=new URLSearchParams(incoming.search);
+   const fragment=incoming.hash.replace(/^#/,"");
+   if(fragment){const f=new URLSearchParams(fragment);f.forEach((v,k)=>{if(!p.has(k))p.set(k,v)})}
+   return p.toString();
+ }
+ function deepLink(raw){
+   if(typeof raw!=="string")return false;
+   try{
+     const u=new URL(raw),path=u.pathname.replace(/^\/+/,"");
+     const suffix=params(u),query=suffix?"?"+suffix:"";
+     if(u.protocol==="apoismotorista:"&&u.host==="auth"){
+       if(path==="google"){
+         try{sessionStorage.setItem("apois-parceiro:motorista-google-url",raw)}catch{}
+         return go(login);
+       }
+       if(path==="redefinir-senha"){
+         try{sessionStorage.setItem("apois-parceiro:motorista-recovery-url",raw)}catch{}
+         return go(login);
+       }
+     }
+     if(u.protocol==="br.com.apois.parceiro:"&&u.host==="auth"&&path==="mercadopago")return go(mp+query);
+     if(u.protocol==="br.com.apois.parceiro:"&&u.host==="module"&&path==="motorista")return go(operational);
+   }catch{}
+   return false;
+ }
+ function isRidePush(payload){
+   const obj=payload&&typeof payload==="object"?payload:{};
+   const type=String(obj.notificationType||obj.notification_type||"").toLowerCase();
+   const event=String(obj.event||"").toLowerCase();
+   return Boolean(obj.ride_id||obj.rideId)||event.startsWith("driver.")||event.startsWith("ride.")||
+     (event.includes("corrida")&&!type.includes("delivery")&&!type.includes("order"));
+ }
+ async function boot(){
+   const plugin=window.Capacitor?.Plugins?.App;
+   if(plugin){
+     try{await plugin.addListener("appUrlOpen",({url})=>{deepLink(url)})}catch{}
+     try{const launch=await plugin.getLaunchUrl();if(launch?.url&&deepLink(launch.url))return;}catch{}
+   }
+   const push=window.Capacitor?.Plugins?.PushNotifications;
+   if(push){
+     try{await push.addListener("pushNotificationActionPerformed",({notification})=>{
+       if(isRidePush(notification?.data))go(operational);
+     })}catch{}
+   }
+   try{
+     const raw=sessionStorage.getItem("apois-parceiro:pending-push");
+     if(raw){sessionStorage.removeItem("apois-parceiro:pending-push");if(isRidePush(JSON.parse(raw)))return go(operational);}
+   }catch{}
+   if(!leaving)go(app);
+ }
+ const timeout=window.setTimeout(()=>{if(!leaving)go(app)},2200);
+ void boot().finally(()=>window.clearTimeout(timeout));
+})();
+</script></body></html>
