@@ -1,8 +1,7 @@
 // APOIS_DRIVER_HOME_PREMIUM_V1
 // Interface inicial do Motorista — sem alterar dispatch, GPS, aceite nem recusa.
 function IdleBottomPanel({
-  driverName,online,disabled,toggleOnline,stats,gpsMessage,loading,
-  canUseTestLocation,onUseTestLocation,
+  online,stats,gpsMessage,canUseTestLocation,onUseTestLocation,
 }: {
   driverName:string;online:boolean;disabled:boolean;toggleOnline:()=>void;
   stats:{rides:number;earnings:number};gpsMessage:string|null;loading:boolean;
