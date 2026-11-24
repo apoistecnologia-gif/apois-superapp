@@ -62,10 +62,24 @@ for (const stale of [
 ]) rmSync(stale, { force: true });
 
 function render(size, output) {
-  const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(size), String(size), officialLauncher, '--out', output], { encoding: 'utf8' });
-  if (result.error || result.status !== 0 || !existsSync(output)) {
-    throw new Error(`APOIS Parceiro: falha ao materializar launcher oficial ${size}px: ${result.error?.message || result.stderr || result.stdout || 'erro desconhecido'}`);
+  // Codemagic executa no macOS (sips); a homologação GitHub executa no Linux.
+  // Nos dois sistemas a arte oficial APOIS é obrigatória, nunca recriada.
+  const jobs = [
+    ['sips', ['-s', 'format', 'png', '-z', String(size), String(size), officialLauncher, '--out', output]],
+    ['magick', [officialLauncher, '-resize', `${size}x${size}!`, output]],
+    ['convert', [officialLauncher, '-resize', `${size}x${size}!`, output]],
+  ];
+  for (const [command,args] of jobs) {
+    const result = spawnSync(command, args, { encoding: 'utf8' });
+    if (!result.error && result.status === 0 && existsSync(output)) return;
   }
+  // Fallback fiel: um PNG original maior é aceito pelo Android e preserva
+  // qualidade e identidade, sem gerar logotipo sintético ou gradiente falso.
+  copyFileSync(officialLauncher, output);
+  if (!existsSync(output)) {
+    throw new Error(`APOIS Parceiro: launcher oficial indisponível para ${size}px`);
+  }
+  console.warn(`[WARN] Launcher ${size}px copiado em resolução original: conversor de imagem indisponível no host.`);
 }
 
 const densities = [
