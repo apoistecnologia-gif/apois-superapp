@@ -103,6 +103,20 @@ writeFileSync(resolve(dist, 'index.html'), shellHtml, 'utf8');
 
 mkdirSync(resolve(dist, 'assets'), { recursive: true });
 writeFileSync(resolve(dist, 'assets/apois-brand.png'), brandBytes);
+// Approved Motorista welcome is separate from module routes: deep links, Push and
+// Google recovery remain on the direct existing Motorista authentication routes.
+const driverWelcomeHtml=readFileSync(resolve(root,'motorista-welcome.html'),'utf8');
+const driverWelcomeBase64=readFileSync(resolve(root,'branding/apois-motorista-hero.webp.b64'),'utf8').trim();
+const driverWelcomeImage=Buffer.from(driverWelcomeBase64,'base64');
+if(!driverWelcomeHtml.includes('APOIS_DRIVER_APPROVED_WELCOME_V1') ||
+   !driverWelcomeHtml.includes('./modules/motorista/index.html#/motorista/login') ||
+   driverWelcomeImage.length<20000 ||
+   driverWelcomeImage.toString('ascii',0,4)!=='RIFF' ||
+   driverWelcomeImage.toString('ascii',8,12)!=='WEBP')
+  throw Error('[FAIL] Approved Motorista welcome missing, altered route, or invalid artwork');
+writeFileSync(resolve(dist,'motorista-welcome.html'),driverWelcomeHtml,'utf8');
+writeFileSync(resolve(dist,'assets/apois-motorista-hero.webp'),driverWelcomeImage);
+console.log('[OK] Motorista welcome approved: car branded APOIS, real Entrar, camera and Android safe areas');
 
 const modules = [
   ['motorista', resolve(root, '../../.work/partner-motorista/dist/client')],
@@ -184,6 +198,8 @@ forbidMarker(courierBundle, 'Solicitar saque', 'Entregador não leva CTA de saqu
 forbidMarker(courierBundle, 'Carteira e saques', 'Entregador não leva nomenclatura financeira antiga ao APK');
 
 const finalShell = readFileSync(resolve(dist, 'index.html'), 'utf8');
+requireMarker(readFileSync(resolve(dist,'motorista-welcome.html'),'utf8'), 'data-apois-driver-approved-welcome-v1', 'Motorista tem entrada aprovada antes do login');
+requireMarker(finalShell, "motorista:'./motorista-welcome.html'", 'seletor Motorista abre boas-vindas aprovada');
 requireMarker(finalShell, 'APOIS Parceiro', 'shell final mantém identidade Parceiro');
 requireMarker(finalShell, 'apois-parceiro:pending-push', 'shell final preserva roteamento de Push cruzado');
 requireMarker(finalShell, 'apois-parceiro:operational-role', 'shell final mantém trava de função operacional');
