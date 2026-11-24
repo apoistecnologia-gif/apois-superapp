@@ -86,6 +86,7 @@ on:
       - 'scripts/fix-partner-qa276-courier-auto-open-after-accept.mjs'
       - 'scripts/qa/test-partner-qa276-courier-auto-open-after-accept.test.mjs'
       - 'scripts/build-partner-release.sh'
+      - 'scripts/harden-partner-motorista-entry-runtime.mjs'
       - 'scripts/apply-driver-welcome-login-v1.mjs'
       - 'scripts/qa/test-driver-welcome-login-v1.test.mjs'
       - 'superapp/partner-shell/motorista-welcome.html'
