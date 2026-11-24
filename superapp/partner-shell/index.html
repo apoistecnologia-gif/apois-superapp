@@ -158,6 +158,10 @@
       .round-action { width:42px;height:42px; }
     }
 
+    /* APOIS_MOTORISTA_ONLY_ENTRY_V1: courier stays in protected code, not in the public app selector.
+       Show no old role chooser during asynchronous native deep-link and push bootstrap. */
+    html,body{background:#0D0F12}
+    .screen[data-apois-legacy-role-chooser]{display:none!important}
     /* APOIS_PARTNER_CARD_READABILITY_V1: decorative silhouettes must not sit
        behind labels. Keep both entry buttons and all navigation unchanged. */
     .partner-card:before { opacity:.08; }
@@ -167,7 +171,7 @@
   </style>
 </head>
 <body>
-  <main class="screen">
+  <main class="screen" data-apois-legacy-role-chooser hidden aria-hidden="true">
     <section class="brand" aria-label="APOIS Parceiro">
       <div class="logo"><img src="__APOIS_BRAND_DATA_URL__" alt="APOIS" /></div>
       <div class="tagline"><span>VAMOS JUNTOS.</span></div>
@@ -424,9 +428,15 @@
 
       const lockedOnLaunch=operationalRole();
       if(lockedOnLaunch){
+        // Preserve already active Driver/Courier operations until they are
+        // safely OFFLINE. Never interrupt in-flight jobs or GPS foreground service.
         window.location.replace(partnerModuleUrl(operationalHome(lockedOnLaunch)));
         return;
       }
+      // APOIS_MOTORISTA_ONLY_ENTRY_V1: after native deep links and pending push,
+      // cold start without an active shift goes directly to approved Motorista welcome.
+      // Entregador stays isolated in source, never presented as a role choice.
+      window.location.replace('./motorista-welcome.html');
     }
 
     void bootPartnerShell();
