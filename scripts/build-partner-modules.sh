@@ -68,6 +68,7 @@ node "$ROOT/scripts/harden-partner-motorista-active-resume.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-gps.mjs"
 node "$ROOT/scripts/harden-partner-motorista-native-watch.mjs"
 node "$ROOT/scripts/harden-partner-motorista-mobile-base.mjs"
+node "$ROOT/scripts/harden-partner-motorista-home-premium-v1.mjs"
 
 cd "$MOTORISTA"
 require_contains 'appTarget: "partner"' src/components/payments/MercadoPagoSellerCard.tsx 'OAuth Mercado Pago usa callback exclusivo do APOIS Parceiro'
