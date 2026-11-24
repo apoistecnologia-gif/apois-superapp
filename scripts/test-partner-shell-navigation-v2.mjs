@@ -35,7 +35,8 @@ function testFile(path, label) {
   assert.equal(evaluate("partnerModuleUrl('https://accounts.google.com/oauth2')"),"https://accounts.google.com/oauth2");
   assert.equal(evaluate("partnerModuleUrl('br.com.apois.parceiro://auth/callback')"),"br.com.apois.parceiro://auth/callback");
   assert.equal(evaluate("routeRole('motorista', urls.motorista)"),true);
-  assert.deepEqual(navigations.pop(),{kind:"assign",url:"https://localhost/modules/motorista/index.html"});
+  // Fresh role entry shows the approved welcome; active rides/Push still bypass it.
+  assert.deepEqual(navigations.pop(),{kind:"assign",url:"./motorista-welcome.html"});
   localStorage.setItem("apois-parceiro:operational-role","motorista");
   assert.equal(evaluate("routeRole('entregador', urls.entregador)"),false);
   assert.deepEqual(navigations.pop(),{kind:"replace",url:"https://localhost/modules/motorista/index.html#/motorista/app"});
