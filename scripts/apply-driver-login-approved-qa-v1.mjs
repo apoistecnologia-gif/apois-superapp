@@ -78,7 +78,7 @@ export function apply(){
  const oldImport='import { MovviLogo } from "@/components/MovviLogo";';
  if(loginSource.split(oldImport).length!==2)throw Error('[FAIL] Login original alterado: exige analise antes de substituir a identidade');
  const logoModule=resolve(root,'src/assets/apoisPartnerLogoData.ts');
- writeFileSync(logoModule,'export const APOIS_PARTNER_LOGO_DATA_URL = "data:image/png;base64,'+logo+'";\\n','utf8');
+ writeFileSync(logoModule,'export const APOIS_PARTNER_LOGO_DATA_URL = "data:image/png;base64,'+logo+'";\n','utf8');
  const prepared=loginSource.replace(oldImport,'import { APOIS_PARTNER_LOGO_DATA_URL } from "@/assets/apoisPartnerLogoData";');
  const src=prepared;
  const before=readFileSync(cssPath,'utf8');
