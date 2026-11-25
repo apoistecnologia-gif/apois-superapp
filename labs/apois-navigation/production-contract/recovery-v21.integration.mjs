@@ -26,7 +26,7 @@ const a1=id(211),a2=id(212),a3=id(213)
 const s1=select(a1,key1),s2=select(a2,key2),s3=select(a3,key3)
 const lock=a=>"select public.apois_lock_passenger_ride_financial_gate("+lit(a)+")"
 const create=(a,s,k)=>"select apois_nav_lab.create_passenger_ride_v21("+[a,s,k].map(lit).join(',')+","+payload+"::jsonb)"
-const reconcile=(a,s,k,seal)=>"select public.apois_nav_lab.reconcile_selection_v21("+[a,s,k].map(lit).join(',')+","+seal+")"
+const reconcile=(a,s,k,seal)=>"select apois_nav_lab.reconcile_selection_v21("+[a,s,k].map(lit).join(',')+","+seal+")"
 const settle=async(first,second,firstSql,secondSql,appName)=>{
  await first.cmd('begin')
  const one=await first.cmd(firstSql)
