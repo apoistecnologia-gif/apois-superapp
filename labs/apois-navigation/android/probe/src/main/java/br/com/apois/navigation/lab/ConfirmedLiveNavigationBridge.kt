@@ -24,7 +24,7 @@ object ConfirmedLiveNavigationBridge {
         val route:Route, val target:RegionalPoint,
         val resolver:LiveRouteResolver, val verifiedCurrent:()->Boolean,
         val verify:suspend ()->VerifiedRouteEvidence?,
-        val online:()->Boolean, val acquireVoice:(()->NavigationVoicePermit?)?,
+        val online:()->Boolean, val audioAuthorization:(()->Boolean)?,
         val controller:NavigationSessionController,
         val lease:PreparedAuthorityLease,
         var evidence:VerifiedRouteEvidence,val sourceId:Long,val initialFix:InitialRouteFix
@@ -32,6 +32,7 @@ object ConfirmedLiveNavigationBridge {
         val ride:RideSnapshot get()=controller.snapshot
         var pending=false
         var opened=false
+        var audioClaimed=false
     }
     internal data class Screen(
         val id:String, val owner:Prepared, val token:LegToken,
@@ -68,7 +69,10 @@ object ConfirmedLiveNavigationBridge {
     // Activity can acquire its own consumer, without starting another GPS.
     internal suspend fun prepareFromGps(
         verify:suspend ()->VerifiedRouteEvidence?,resolver:LiveRouteResolver,
-        verifiedCurrent:()->Boolean,online:()->Boolean={false}
+        verifiedCurrent:()->Boolean,online:()->Boolean={false},
+        // Trusted host must explicitly attest Web Speech is stopped and the
+        // user's original voice preference permits speech. No JS/Intent flag.
+        audioAuthorization:(()->Boolean)?=null
     ):Boolean{
         main()
         if(prepared!=null||occupied()||LabNavigationBridge.screen.value!=null)return false
@@ -121,7 +125,7 @@ object ConfirmedLiveNavigationBridge {
                         after.verifiedAt<before.verifiedAt||
                         !routeEndpointsMatch(geometry,fix.point,before.target)||
                         !initialRouteMatches(after,last,geometry,SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
-                    val owner=Prepared(route,after.target,resolver,verifiedCurrent,verify,online,null,
+                    val owner=Prepared(route,after.target,resolver,verifiedCurrent,verify,online,audioAuthorization,
                         NavigationSessionController(after.ride),PreparedAuthorityLease(SystemClock::elapsedRealtime),after,sourceId,last)
                     attempt.installed=owner
                     prepared=owner
@@ -171,6 +175,20 @@ object ConfirmedLiveNavigationBridge {
         main()
         val s=screen.value?:return false
         return s.id==id && s.token==token && current(s.owner) && s.owner.controller.acceptsNavigationEvent(token)
+    }
+
+    internal fun acquireVoice(id:String):NavigationVoicePermit?{
+        main()
+        val s=screen.value?:return null
+        val p=s.owner
+        if(s.id!=id||p.audioClaimed||!accepts(id,s.token))return null
+        val approved=p.audioAuthorization?:return null
+        // One attempt per opened session. An operational interruption or
+        // failed stop never causes automatic reacquisition or repeated speech.
+        p.audioClaimed=true
+        fun allowed()=accepts(id,s.token)&&runCatching{approved()}.getOrDefault(false)
+        if(!allowed())return null
+        return SharedGuidanceAudio.acquire(webStopped=true,stillCurrent=::allowed)
     }
 
     internal fun submit(id:String,intent:RideIntent){
