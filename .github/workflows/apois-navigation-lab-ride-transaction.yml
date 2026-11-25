@@ -1,0 +1,72 @@
+name: APOIS Navegacao - transacao de corrida sintetica
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths:
+      - '.github/workflows/apois-navigation-lab-ride-transaction.yml'
+      - 'labs/apois-navigation/passenger-provenance-snapshot/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ride-transaction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verificar rollback da corrida em PostgreSQL descartavel
+        run: |
+          set -euo pipefail
+          container="apois-ride-transaction"
+          trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+          docker run --detach --network none --name "$container" -e POSTGRES_PASSWORD=fixture postgres:17
+          for attempt in {1..30}; do
+            if docker exec "$container" pg_isready -h 127.0.0.1 -U postgres; then break; fi
+            sleep 1
+          done
+          root=labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation
+          run_sql() { docker exec -i "$container" psql -X -U postgres -v ON_ERROR_STOP=1; }
+          run_sql < "$root/fixture.sql"
+          run_sql < "$root/schema.sql"
+          run_sql <<'SQL'
+          insert into apois_nav_lab.catalog values
+            ('00000000-0000-4000-8000-000000000021',1,'node',1,repeat('a',64),'Ponto A',-9.4,-40.5,true),
+            ('00000000-0000-4000-8000-000000000022',1,'node',2,repeat('a',64),'Ponto B',-9.42,-40.51,true);
+          set role service_role;
+          select apois_nav_lab.confirm_selection(
+            '00000000-0000-4000-8000-000000000011',
+            '00000000-0000-4000-8000-000000000031',
+            '00000000-0000-4000-8000-000000000021',1,
+            '00000000-0000-4000-8000-000000000022',1);
+          do $$
+          declare
+            actor constant uuid := '00000000-0000-4000-8000-000000000011';
+            passenger constant uuid := '00000000-0000-4000-8000-000000000001';
+            request_id constant uuid := '00000000-0000-4000-8000-000000000031';
+            ride constant uuid := '00000000-0000-4000-8000-000000000041';
+            selection_id uuid;
+          begin
+            select id into strict selection_id from apois_nav_lab.selection where request_key=request_id;
+            begin
+              if apois_nav_lab.prepare_selection(actor,selection_id,request_id) is null then
+                raise exception 'prepare rejected valid selection';
+              end if;
+              insert into public.rides(id,passenger_id,request_key,category,status,origin_lat,origin_lng,destination_lat,destination_lng,waypoints)
+              values(ride,passenger,request_id,'carros','procurar_motorista',-9.4,-40.5,-9.43,-40.51,'[]');
+              if not apois_nav_lab.bind_selection(actor,selection_id,ride) then
+                raise exception using errcode='P3101', message='binding rejected';
+              end if;
+              raise exception 'invalid coordinates accepted';
+            exception when sqlstate 'P3101' then
+              null;
+            end;
+            if exists(select 1 from public.rides where id=ride) or
+               exists(select 1 from apois_nav_lab.selection where id=selection_id
+                 and (prepared_xid is not null or ride_id is not null)) then
+              raise exception 'failed binding left a partial write';
+            end if;
+          end $$;
+          select 'APOIS_RIDE_TRANSACTION_ROLLBACK_OK';
+          SQL
