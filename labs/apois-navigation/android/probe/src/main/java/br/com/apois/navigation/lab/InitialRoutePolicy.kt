@@ -33,3 +33,23 @@ internal fun InitialRouteFix.usable(now:Long):Boolean =
 internal fun initialRouteMatches(
     evidence:VerifiedRouteEvidence, fix:InitialRouteFix, geometry:List<RegionalPoint>, now:Long
 ):Boolean = evidence.usable(now) && fix.usable(now) && routeEndpointsMatch(geometry,fix.point,evidence.target)
+
+// A newer authoritative read can renew an unchanged revision (heartbeat), but
+// must not smuggle a changed snapshot under the same revision. A changed
+// identity, target, phase or provenance always revokes the prepared owner.
+internal fun mayRenewRouteEvidence(previous:VerifiedRouteEvidence,next:VerifiedRouteEvidence,now:Long):Boolean =
+    next.usable(now) && sameRoutingLeg(previous,next) &&
+    next.verifiedAt>previous.verifiedAt && next.ride.revision>=previous.ride.revision &&
+    (next.ride.revision>previous.ride.revision||next.ride==previous.ride)
+
+// Temporary conservative cap until a fresh re-entry path shares the leg's
+// budget. No coordinates, tokens or disk storage. A failed request consumes
+// its admission too; the original external map is still available.
+internal class InitialRouteAdmission(private val capacity:Int=256){
+    private val attempted=mutableSetOf<Pair<String,RidePhase>>()
+    init{require(capacity>0)}
+    fun available(evidence:VerifiedRouteEvidence):Boolean =
+        attempted.size<capacity && (evidence.ride.rideId to evidence.ride.phase) !in attempted
+    fun reserve(evidence:VerifiedRouteEvidence):Boolean =
+        available(evidence) && attempted.add(evidence.ride.rideId to evidence.ride.phase)
+}

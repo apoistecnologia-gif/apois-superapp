@@ -30,6 +30,27 @@ class InitialRoutePolicyTest{
         assertFalse(sameRoutingLeg(evidence,evidence.copy(source=RoutingTargetSource.INDEPENDENT_OSM)))
         assertTrue(sameRoutingLeg(evidence,evidence.copy(ride=ride.copy(revision=1),verifiedAt=2000)))
     }
+    @Test fun heartbeatNeedsFreshEvidenceAndUnchangedSnapshot(){
+        val next=evidence.copy(verifiedAt=2000)
+        assertTrue(mayRenewRouteEvidence(evidence,next,2000))
+        assertFalse(mayRenewRouteEvidence(evidence,evidence,2000))
+        assertFalse(mayRenewRouteEvidence(evidence,next.copy(ride=ride.copy(destination="Outro")),2000))
+        assertTrue(mayRenewRouteEvidence(evidence,next.copy(ride=ride.copy(revision=1,destination="Outro")),2000))
+        assertFalse(mayRenewRouteEvidence(evidence.copy(ride=ride.copy(revision=2)),next,2000))
+        assertFalse(mayRenewRouteEvidence(evidence,next.copy(ride=ride.copy(phase=RidePhase.TRIP)),2000))
+        assertFalse(mayRenewRouteEvidence(evidence,next,8000))
+    }
+    @Test fun oneInitialRequestPerLegInProcessEvenAfterFailure(){
+        val admission=InitialRouteAdmission(2)
+        assertTrue(admission.reserve(evidence))
+        assertFalse(admission.available(evidence))
+        assertFalse(admission.reserve(evidence.copy(verifiedAt=2000)))
+        val trip=evidence.copy(ride=ride.copy(phase=RidePhase.TRIP))
+        assertTrue(admission.reserve(trip))
+        assertFalse(admission.reserve(trip))
+        val another=evidence.copy(ride=ride.copy(rideId="00000000-0000-4000-8000-000000000009"))
+        assertFalse(admission.reserve(another))
+    }
     @Test fun impreciseStaleOrMovedOriginRejected(){
         assertFalse(initialRouteMatches(evidence,fix.copy(accuracy=25.1),listOf(origin,target),2000))
         assertFalse(initialRouteMatches(evidence.copy(verifiedAt=12000),fix,listOf(origin,target),12000))

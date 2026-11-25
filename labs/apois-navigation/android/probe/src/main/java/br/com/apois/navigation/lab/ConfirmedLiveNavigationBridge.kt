@@ -17,12 +17,13 @@ import java.util.function.Consumer
  * accepts a ride reference; route data and authority must be prepared by a
  * trusted host inside this library. No synthetic replay, GPS acquisition, auth
  * token, network endpoint, or ride mutation is accepted via the bridge.
- * No real host calls prepare yet. Process death deliberately loses everything.
+ * No real host calls prepareFromGps yet. Process death deliberately loses everything.
  */
 object ConfirmedLiveNavigationBridge {
     internal class Prepared(
         val route:Route, val target:RegionalPoint,
         val resolver:LiveRouteResolver, val verifiedCurrent:()->Boolean,
+        val verify:suspend ()->VerifiedRouteEvidence?,
         val online:()->Boolean, val acquireVoice:(()->NavigationVoicePermit?)?,
         val controller:NavigationSessionController,
         val lease:PreparedAuthorityLease,
@@ -38,7 +39,7 @@ object ConfirmedLiveNavigationBridge {
     )
     internal val screen=MutableStateFlow<Screen?>(null)
     private var prepared:Prepared?=null
-    private class Preparation { var job:Job?=null;var invalidated=false }
+    private class Preparation { var job:Job?=null;var invalidated=false;var installed:Prepared?=null }
     private var preparing:Preparation?=null
     private var callback:Consumer<JSONObject>?=null
     private var closing:Screen?=null
@@ -46,8 +47,9 @@ object ConfirmedLiveNavigationBridge {
     private var waiter:Consumer<Boolean>?=null
     private val handler=Handler(Looper.getMainLooper())
     private var expiryTask:Runnable?=null
+    private var renewalJob:Job?=null
+    private val initialAdmission=InitialRouteAdmission()
     internal fun occupied():Boolean=screen.value!=null||closing!=null||preparing!=null
-    private val rideIdPattern=Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
     private fun current(p:Prepared)=prepared===p && p.lease.current() && DriverGpsFeed.currentSourceId()==p.sourceId && runCatching{p.verifiedCurrent()}.getOrDefault(false)
 
@@ -72,6 +74,7 @@ object ConfirmedLiveNavigationBridge {
         if(prepared!=null||occupied()||LabNavigationBridge.screen.value!=null)return false
         val attempt=Preparation()
         preparing=attempt
+        var success=false
         try{
             return withTimeoutOrNull(25_000L){
                 attempt.job=coroutineContext[Job]
@@ -80,7 +83,8 @@ object ConfirmedLiveNavigationBridge {
                     DriverGpsFeed.currentSourceId()==sourceId&&runCatching{verifiedCurrent()}.getOrDefault(false)
                 fun connected()=runCatching{online()}.getOrDefault(false)
                 val firstEvidence=verify()?:return@withTimeoutOrNull false
-                if(!current()||!connected()||!firstEvidence.usable(SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
+                if(!current()||!connected()||!firstEvidence.usable(SystemClock.elapsedRealtime())||
+                    !initialAdmission.available(firstEvidence))return@withTimeoutOrNull false
                 var latest:InitialRouteFix?=null
                 var quality=GpsQuality.WAITING
                 val first=CompletableDeferred<Unit>()
@@ -105,26 +109,35 @@ object ConfirmedLiveNavigationBridge {
                         before.ride.revision!=firstEvidence.ride.revision||before.verifiedAt<firstEvidence.verifiedAt)return@withTimeoutOrNull false
                     // Exactly one initial route request. No retry, persisted
                     // location, cached Google polyline or invented destination.
+                    if(!initialAdmission.reserve(before))return@withTimeoutOrNull false
                     val route=withTimeoutOrNull(15_000L){resolver.resolve(fix.point,before.target)}
                         ?:return@withTimeoutOrNull false
                     val after=verify()?:return@withTimeoutOrNull false
                     val last=latest?:return@withTimeoutOrNull false
+                    val geometry=route.geometry.map{RegionalPoint(it.lat,it.lng)}
+                    ensureActive()
                     if(!current()||quality!=GpsQuality.AVAILABLE||
                         !sameRoutingLeg(before,after)||after.ride.revision!=before.ride.revision||
                         after.verifiedAt<before.verifiedAt||
-                        !initialRouteMatches(after,last,route.geometry.map{RegionalPoint(it.lat,it.lng)},SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
-                    prepared=Prepared(route,after.target,resolver,verifiedCurrent,online,null,
+                        !routeEndpointsMatch(geometry,fix.point,before.target)||
+                        !initialRouteMatches(after,last,geometry,SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
+                    val owner=Prepared(route,after.target,resolver,verifiedCurrent,verify,online,null,
                         NavigationSessionController(after.ride),PreparedAuthorityLease(SystemClock::elapsedRealtime),after,sourceId,last)
+                    attempt.installed=owner
+                    prepared=owner
                     prepared?.let(::scheduleExpiry)
                     true
                 }finally{DriverGpsFeed.unsubscribe(id)}
-            }?:false
+            }.let{it?:false}.also{success=it}
         }catch(e:CancellationException){
             currentCoroutineContext().ensureActive()
             if(attempt.invalidated)return false
             throw e
         }catch(_:Exception){return false}
-        finally{if(preparing===attempt)preparing=null}
+        finally{
+            if(preparing===attempt)preparing=null
+            if(!success&&attempt.installed!=null&&prepared===attempt.installed)revoke()
+        }
     }
 
     // null is a definitive no-open result; exceptions are ambiguous to JS.
@@ -150,6 +163,7 @@ object ConfirmedLiveNavigationBridge {
             close(id)
             throw e // never advertise definitive unavailable after attempting start
         }
+        startRenewal(p)
         return id
     }
 
@@ -169,23 +183,40 @@ object ConfirmedLiveNavigationBridge {
         // Operational intents remain blocked until original UI integration.
     }
 
-    // Only the trusted host may acknowledge an intent with a newer verified
-    // same-leg row. Changed phase revokes rather than reusing the old route.
-    internal fun refreshPrepared(evidence:VerifiedRouteEvidence):Boolean{
+    // Renew from the same trusted native verifier that supplied the route.
+    // No WebView message or GPS callback may extend authority. The operation
+    // is scoped to the visible session, not a new Android service.
+    private fun startRenewal(p:Prepared){
+        stopRenewal()
+        renewalJob=CoroutineScope(Dispatchers.Main.immediate).launch{
+            while(isActive&&screen.value?.owner===p){
+                delay(15_000L)
+                if(screen.value?.owner!==p)return@launch
+                if(!current(p)){revoke();return@launch}
+                val next=try{withTimeoutOrNull(5_000L){p.verify()}}
+                    catch(e:CancellationException){throw e}
+                    catch(_:Exception){null}
+                ensureActive()
+                if(screen.value?.owner!==p||prepared!==p)return@launch
+                if(next==null||!refreshPrepared(p,next)){revoke();return@launch}
+            }
+        }
+    }
+    private fun stopRenewal(){renewalJob?.cancel();renewalJob=null}
+
+    private fun refreshPrepared(p:Prepared,evidence:VerifiedRouteEvidence):Boolean{
         main()
-        val p=prepared?:return false
-        if(!current(p)){revoke();return false}
-        if(!evidence.usable(SystemClock.elapsedRealtime())||!sameRoutingLeg(p.evidence,evidence)){revoke();return false}
+        if(!current(p)||!mayRenewRouteEvidence(p.evidence,evidence,SystemClock.elapsedRealtime()))return false
         val ride=evidence.ride
-        if(ride.revision<=p.ride.revision||evidence.verifiedAt<=p.evidence.verifiedAt)return false
-        p.controller.update(ride)
-        if(p.controller.snapshot!==ride)return false
-        if(!p.lease.renew()){revoke();return false}
+        if(ride.revision>p.ride.revision){
+            p.controller.update(ride)
+            if(p.controller.snapshot!==ride)return false
+        }
+        if(!p.lease.renew())return false
         p.evidence=evidence
         scheduleExpiry(p)
         p.pending=false
         screen.value?.takeIf{it.owner===p}?.let{
-            // New Screen identity ensures Compose sees the refreshed snapshot.
             screen.value=it.copy(ride=ride)
         }
         return true
@@ -199,6 +230,7 @@ object ConfirmedLiveNavigationBridge {
         if(closing?.id==id)return true
         val s=screen.value?:return false
         if(s.id!=id)return false
+        stopRenewal()
         closing=s
         closingCallback=callback
         callback=null
@@ -241,6 +273,7 @@ object ConfirmedLiveNavigationBridge {
     fun revoke(){
         main()
         preparing?.let{it.invalidated=true;it.job?.cancel()}
+        stopRenewal()
         expiryTask?.let{handler.removeCallbacks(it)}
         expiryTask=null
         val p=prepared
