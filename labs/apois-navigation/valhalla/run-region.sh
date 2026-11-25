@@ -14,7 +14,7 @@ mkdir -p "$WORK/custom"
 curl --fail --location --retry 3 --max-time 240 "$URL" -o "$WORK/nordeste.osm.pbf"
 sha256sum "$WORK/nordeste.osm.pbf" | awk '{print $1}' >"$OUT/source-sha256.txt"
 # Bounding box covers the two cities, airport and neighbouring routes.
-osmium extract --strategy complete_ways -b=-40.80,-9.65,-40.20,-9.10 "$WORK/nordeste.osm.pbf" -o "$WORK/custom/vale.osm.pbf"
+osmium extract --strategy complete_ways --bbox=-40.80,-9.65,-40.20,-9.10 "$WORK/nordeste.osm.pbf" -o "$WORK/custom/vale.osm.pbf"
 osmium fileinfo "$WORK/custom/vale.osm.pbf" >"$OUT/extract-info.txt"
 chmod 777 "$WORK/custom" # disposable runner directory; not production configuration
 docker pull "$IMAGE"
