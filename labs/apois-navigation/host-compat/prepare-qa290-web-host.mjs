@@ -23,7 +23,8 @@ type Request={rideId:string;phase:ConfirmedPhase};
 type OpenResult={state:"opened";sessionId:string}|{state:"unavailable"};
 export class ConfirmedNavigationLaunch {
   constructor(options:{enabled?:boolean;verify:(r:Request)=>Promise<ConfirmedLaunchProof|null>;
-    openNative:(r:Request & {revision:number})=>Promise<OpenResult>;
+    openNative:(r:Request & {revision:number},current:()=>boolean)=>Promise<OpenResult>;
+    cancelNativePreparation?:(r:Request & {revision:number})=>Promise<boolean>;
     closeNative:(sessionId:string)=>Promise<boolean>;prepareAudio?:()=>Promise<(()=>void)|null>});
   invalidate():Promise<boolean>;
   onNativeClosed(event:unknown):boolean;
@@ -65,6 +66,7 @@ type ConfirmedRequest={rideId:string;phase:ConfirmedPhase;revision:number};
 type ConfirmedNativePlugin={
   openConfirmed(request:ConfirmedRequest):Promise<{state:"opened";sessionId:string}|{state:"unavailable"}>;
   closeConfirmed(request:{sessionId:string}):Promise<{closed:boolean}>;
+  cancelConfirmedPreparation(request:ConfirmedRequest):Promise<{cancelled:boolean}>;
   addListener(eventName:"confirmedRideIntent",listener:(event:unknown)=>void):Promise<PluginListenerHandle>;
 };
 const nativeName="ApoisNavigationLab";
@@ -95,14 +97,15 @@ async function boundedVerify(request:{rideId:string;phase:ConfirmedPhase}):Promi
 const launch=new ConfirmedNavigationLaunch({
   enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify:boundedVerify,
   prepareAudio:beginConfirmedVoiceHandoff,
-  openNative:async request=>{
+  openNative:async (request,current)=>{
     if(!Capacitor.isNativePlatform()||Capacitor.getPlatform()!=="android"||
        !Capacitor.isPluginAvailable(nativeName))return {state:"unavailable"};
-    if(!await ensureNativeListener())return {state:"unavailable"};
+    if(!current()||!await ensureNativeListener()||!current())return {state:"unavailable"};
     // A rejection or malformed response is NOT proof of no Activity.
     // Pass it to the controller's ambiguity guard, never convert to fallback.
     return native.openConfirmed(request);
   },
+  cancelNativePreparation:async request=>(await native.cancelConfirmedPreparation(request)).cancelled===true,
   closeNative:async sessionId=>(await native.closeConfirmed({sessionId})).closed===true,
 });
 

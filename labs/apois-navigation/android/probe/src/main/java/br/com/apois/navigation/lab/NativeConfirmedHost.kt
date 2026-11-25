@@ -48,7 +48,7 @@ object NativeConfirmedHost{
         if(ConfirmedLiveNavigationBridge.occupied()||LabNavigationBridge.screen.value!=null){uncertain.run();return}
         val ticket=gate.begin(req)?:run{uncertain.run();return}
         pendingTicket=ticket
-        val job=CoroutineScope(Dispatchers.Main.immediate).launch(start=CoroutineStart.LAZY){
+        val job=CoroutineScope(Dispatchers.Main.immediate).launch(start=CoroutineStart.UNDISPATCHED){
             var prepared=false
             var startAttempted=false
             var session:String?=null
@@ -80,8 +80,7 @@ object NativeConfirmedHost{
                 if(ambiguous)uncertain.run() else opened.accept(session)
             }
         }
-        pending=job
-        job.start()
+        if(pendingTicket===ticket)pending=job
     }
     // Cancellation is tied to the exact pending request. No new request can
     // begin before cleanup. Active sessions use closeAcknowledged instead.

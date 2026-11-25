@@ -170,3 +170,33 @@ test("confirmed close acknowledgement releases audio once",async()=>{
   assert.equal(releases,1);assert.equal(x.onNativeClosed({sessionId:"audio",rideId,revision:0,action:"SESSION_CLOSED"}),false);
   assert.equal(releases,1);
 });
+
+test("logout during native preparation cancels exact request, then closes late opening",async()=>{
+  const d=deferred(),entered=deferred(),cancelled=[],closed=[];let external=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),
+    openNative:()=>{entered.resolve();return d.promise;},
+    cancelNativePreparation:async r=>{cancelled.push(r);return true;},
+    closeNative:async id=>{closed.push(id);return true;}});
+  const p=x.launch(request(async()=>{external++;}));await entered.promise;
+  assert.equal(await x.invalidate(),false);
+  assert.deepEqual(cancelled,[{rideId,phase:"PICKUP",revision:0}]);
+  d.resolve({state:"opened",sessionId:"late"});
+  assert.equal(await p,"stale");assert.deepEqual(closed,["late"]);assert.equal(external,0);
+});
+test("late listener setup observes revoked epoch before starting native",async()=>{
+  const d=deferred(),entered=deferred();let opens=0,external=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),
+    openNative:async(_r,current)=>{entered.resolve();await d.promise;if(!current())return {state:"unavailable"};opens++;return {state:"opened",sessionId:"late"};},
+    cancelNativePreparation:async()=>false});
+  const p=x.launch(request(async()=>{external++;}));await entered.promise;
+  await x.invalidate();d.resolve();
+  assert.equal(await p,"stale");assert.equal(opens,0);assert.equal(external,0);
+});
+test("failed cancellation does not unlock ambiguous open",async()=>{
+  const d=deferred(),entered=deferred();let external=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),
+    openNative:()=>{entered.resolve();return d.promise;},cancelNativePreparation:async()=>{throw Error("unavailable");}});
+  const p=x.launch(request(async()=>{external++;}));await entered.promise;
+  await x.invalidate();d.reject(Error("timeout"));
+  assert.equal(await p,"stale");assert.equal(await x.launch(request()),"uncertain");assert.equal(external,0);
+});

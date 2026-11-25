@@ -8,9 +8,9 @@ const statusFor = {PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
 const uuid = v => typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export class ConfirmedNavigationLaunch {
   #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null;
-  constructor({enabled=false,verify,openNative,closeNative,prepareAudio}) {
+  constructor({enabled=false,verify,openNative,closeNative,prepareAudio,cancelNativePreparation}) {
     this.#enabled=enabled===true;
-    this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;this.prepareAudio=prepareAudio;
+    this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;this.prepareAudio=prepareAudio;this.cancelNativePreparation=cancelNativePreparation;
   }
   // Session closure notifications originate only from the dedicated Capacitor
   // listener. Bind all fields, including revision. An unrelated replay event
@@ -68,7 +68,13 @@ export class ConfirmedNavigationLaunch {
   async invalidate() {
     ++this.#epoch;
     const native=this.#native;
+    const pending=this.#busy;
     this.#native=null;
+    if(pending?.opening&&pending.request&&this.cancelNativePreparation){
+      // Best-effort cancellation is NOT confirmation of no Activity. The
+      // original open acknowledgement still controls cleanup/fallback.
+      try {void Promise.resolve(this.cancelNativePreparation(pending.request)).catch(()=>{});}catch{}
+    }
     if(native) {
       this.#blocked=true;
       try {
@@ -111,8 +117,9 @@ export class ConfirmedNavigationLaunch {
         if(!current())return "stale";
       }
       nativeUncertain=true;
+      ticket.request=request;
       ticket.opening=true;
-      const result=await this.openNative(request);
+      const result=await this.openNative(request,current);
       ticket.opening=false;
       if(!current()){
         if(result?.state==="unavailable"||result?.state==="opened"&&ticket.closed.has(result.sessionId)){nativeUncertain=false;}
