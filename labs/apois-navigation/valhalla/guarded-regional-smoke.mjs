@@ -73,7 +73,7 @@ try{
    const route=data.routes[0];assert.ok(route.distance>500&&route.distance<25000)
    const steps=route.legs.flatMap(l=>l.steps)
    const voice=steps.flatMap(s=>s.voiceInstructions??[]).map(v=>v.announcement).filter(Boolean)
-   assert.ok(voice.some(v=>/\\b(vire|siga|continue|chegou|destino|direita|esquerda|metros|pegue|mantenha|dirija)\\b/i.test(v)))
+   assert.ok(voice.some(v=>/\b(vire|siga|continue|chegou|destino|direita|esquerda|metros|pegue|mantenha|dirija)\b/i.test(v)))
    assert.ok(steps.some(s=>s.bannerInstructions?.length))
    writeFileSync(join(process.argv[2],'guarded_'+name+'.json'),JSON.stringify(data))
    assert.equal((await post(token,body)).status,403)
