@@ -47,3 +47,11 @@ test("verified regional evidence feeds projected payload without claiming produc
   assert.equal(r.productionCapacityVerified,false);
   assert.equal(r.estimatedCostBrl,null);
 });
+
+test("extended verified evidence preserves same traffic projection and no production claim",()=>{
+  const e=JSON.parse(readFileSync(new URL("./evidence-45618935238.json",import.meta.url),"utf8"));
+  assert.equal(e.source.runId,45618935238);assert.equal(e.report.requests,1200);
+  const r=planCapacity({...assumptions,activeDrivers:1000,localEvidence:e.report});
+  assert.equal(r.routePayloadGb,11.88);assert.equal(r.configuredQuotaFits,false);
+  assert.equal(r.productionCapacityVerified,false);assert.equal(r.withinBudget,null);
+});

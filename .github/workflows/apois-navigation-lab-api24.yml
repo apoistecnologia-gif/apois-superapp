@@ -55,6 +55,7 @@ jobs:
           printf '{"appId":"br.com.apois.navigation.external.lab","appName":"APOIS external API24 lab","webDir":"www"}' > capacitor.config.json
           npx cap add android
           node "$GITHUB_WORKSPACE/labs/apois-navigation/api24/prepare.mjs" "$H" "$GITHUB_WORKSPACE/.navigation-driver-source" "$GITHUB_WORKSPACE"
+          node "$GITHUB_WORKSPACE/labs/apois-navigation/api24/prepare-qa290-native.mjs" "$H" "$GITHUB_WORKSPACE/.navigation-driver-source" "$GITHUB_WORKSPACE" | tee "$RUNNER_TEMP/apois-api24-native-chain.log"
       - name: Compilar Java e validar manifesto API 24 sem APK
         run: |
           set -euo pipefail
@@ -80,7 +81,12 @@ jobs:
               root=ET.parse(path).getroot()
               assert root.find('uses-sdk').get(ns+'minSdkVersion')=='24', path
               xml=path.read_text().lower()
-              assert not any(v in xml for v in ('overridelibrary','ferrostar','maplibre','confirmedlivenavigation','labnavigationactivity')), path
+              assert not any(v in xml for v in ('overridelibrary','ferrostar','maplibre','confirmedlivenavigation','labnavigationactivity','access_background_location')), path
+              app=root.find('application')
+              assert app.get(ns+'allowBackup')=='false' and app.get(ns+'usesCleartextTraffic')=='false', path
+              for name in ('DriverLocationService','CourierLocationService'):
+                  services=[s for s in app.findall('service') if s.get(ns+'name','').endswith('.'+name)]
+                  assert len(services)==1 and services[0].get(ns+'exported')=='false' and services[0].get(ns+'foregroundServiceType')=='location', (name,path)
           print('[OK] merged manifest minSdk=24; no navigation SDK/Activity or override')
           PY
           test -z "$(find . -name '*.apk' -o -name '*.aab' | head -n 1)"
@@ -91,4 +97,5 @@ jobs:
           path: |
             ${{ runner.temp }}/apois-api24-compile.log
             ${{ runner.temp }}/apois-api24-dependencies.log
+            ${{ runner.temp }}/apois-api24-native-chain.log
           retention-days: 7
