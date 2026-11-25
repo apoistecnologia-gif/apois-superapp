@@ -36,7 +36,7 @@ jobs:
           gradle-version: '9.2.1'
       - name: Resolver e compilar SDK real (biblioteca, nao aplicativo)
         run: |
-          gradle -p labs/apois-navigation/android :probe:compileDebugKotlin --no-daemon --stacktrace
+          gradle -p labs/apois-navigation/android :probe:compileDebugKotlin :probe:testDebugUnitTest --no-daemon --stacktrace
           gradle -p labs/apois-navigation/android :probe:dependencies --configuration debugCompileClasspath --no-daemon > /tmp/apois-navigation-dependencies.txt
           grep -F 'com.stadiamaps.ferrostar:core:0.59.0' /tmp/apois-navigation-dependencies.txt
           grep -F 'com.stadiamaps.ferrostar:ui-maplibre:0.59.0' /tmp/apois-navigation-dependencies.txt
