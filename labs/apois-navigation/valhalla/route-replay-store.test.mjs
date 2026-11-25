@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdtempSync,rmSync} from "node:fs";
+import {mkdtempSync,rmSync,writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {spawn} from "node:child_process";
@@ -12,7 +12,8 @@ const claim=(n,sub="a",time=100000)=>({jti:String(n).padStart(24,"0"),sub:sub.re
 function fixture(t,options={}){
   const dir=mkdtempSync(join(tmpdir(),"apois-replay-"));
   const path=join(dir,"replay.sqlite"),opened=[];
-  const open=()=>{const s=openRouteReplayStore({path,...options});opened.push(s);return s;};
+  let initialize=true;
+  const open=()=>{const s=openRouteReplayStore({path,...options,initialize});initialize=false;opened.push(s);return s;};
   t.after(()=>{for(const s of opened)s.close();rmSync(dir,{recursive:true,force:true});});
   return {path,open};
 }
@@ -108,4 +109,22 @@ test("busy SQLite writer fails closed without consuming or forwarding the creden
     assert.equal(grant.status,200);grant.release();
     assert.equal(store.admit(claim(1),100001).status,403);
   }finally{locked.close();}
+});
+
+test("missing replay database after restart is not silently reprovisioned",t=>{
+  const {open,path}=fixture(t);const store=open();
+  const grant=store.admit(claim(1),100000);assert.equal(grant.status,200);grant.release();store.close();
+  rmSync(path);
+  assert.throws(()=>openRouteReplayStore({path}));
+  assert.throws(()=>open());
+  writeFileSync(path,"");
+  assert.throws(()=>openRouteReplayStore({path}));
+  assert.throws(()=>openRouteReplayStore({path,initialize:true}));
+});
+test("existing replay metadata is never recreated or overwritten",t=>{
+  const {open,path}=fixture(t);const store=open();
+  const grant=store.admit(claim(1),100000);assert.equal(grant.status,200);grant.release();store.close();
+  assert.throws(()=>openRouteReplayStore({path,initialize:true}));
+  const db=new DatabaseSync(path);db.exec("DELETE FROM route_meta");db.close();
+  assert.throws(()=>openRouteReplayStore({path}));
 });

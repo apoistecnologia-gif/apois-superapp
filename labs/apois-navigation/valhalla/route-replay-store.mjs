@@ -3,13 +3,19 @@
 // multiple machines requires a different, reviewed atomic store.
 import {DatabaseSync} from "node:sqlite";
 import {randomBytes} from "node:crypto";
+import {openSync,closeSync,lstatSync} from "node:fs";
 const tokenId=/^[A-Za-z0-9_-]{22,64}$/;
 const hash=/^[a-f0-9]{64}$/;
-export function openRouteReplayStore({path,maxEntries=4096,maxPrincipals=1024,
+export function openRouteReplayStore({path,initialize=false,maxEntries=4096,maxPrincipals=1024,
   perMinute=6,parallel=1,globalPerMinute=60,globalParallel=4,activeMs=30000}){
-  if(typeof path!=="string"||!path||![maxEntries,maxPrincipals,perMinute,parallel,globalPerMinute,globalParallel,activeMs]
+  if(typeof path!=="string"||!path||path===":memory:"||typeof initialize!=="boolean"||![maxEntries,maxPrincipals,perMinute,parallel,globalPerMinute,globalParallel,activeMs]
       .every(n=>Number.isSafeInteger(n)&&n>0)||activeMs<15000||activeMs>60000)
     throw Error("Invalid local replay store configuration");
+  // First provisioning is explicit and exclusive. Reopening a missing or
+  // empty file must never silently reset replay and consumption history.
+  // The operator must keep this file and its WAL in a private directory.
+  if(initialize){const fd=openSync(path,"wx",0o600);closeSync(fd);}
+  if(!lstatSync(path).isFile())throw Error("Replay storage must be a regular file");
   const db=new DatabaseSync(path,{timeout:100,allowExtension:false});
   let closed=false;
   const config=JSON.stringify([maxEntries,maxPrincipals,perMinute,parallel,globalPerMinute,globalParallel,activeMs]);
@@ -29,17 +35,22 @@ export function openRouteReplayStore({path,maxEntries=4096,maxPrincipals=1024,
   try{
     db.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA trusted_schema=OFF;");
     const ready=transaction(()=>{
-      db.exec(`CREATE TABLE IF NOT EXISTS route_meta(
+      if(initialize){
+        db.exec(`CREATE TABLE route_meta(
           id INTEGER PRIMARY KEY CHECK(id=1),config TEXT NOT NULL,last_ms INTEGER NOT NULL
         ) STRICT;
-        CREATE TABLE IF NOT EXISTS route_uses(
+        CREATE TABLE route_uses(
           jti TEXT PRIMARY KEY, sub TEXT NOT NULL, expires INTEGER NOT NULL,
           started INTEGER NOT NULL, active_until INTEGER NOT NULL, lease TEXT NOT NULL
         ) STRICT;
-        CREATE INDEX IF NOT EXISTS route_uses_sub ON route_uses(sub);`);
-      db.prepare("INSERT OR IGNORE INTO route_meta(id,config,last_ms) VALUES(1,?,0)").run(config);
-      if(db.prepare("SELECT config FROM route_meta WHERE id=1").get()?.config!==config)
-        throw Error("Replay configuration mismatch");
+        CREATE INDEX route_uses_sub ON route_uses(sub);`);
+        db.prepare("INSERT INTO route_meta(id,config,last_ms) VALUES(1,?,0)").run(config);
+      }
+      const meta=db.prepare("SELECT config,last_ms FROM route_meta WHERE id=1").get();
+      if(meta?.config!==config||!Number.isSafeInteger(meta.last_ms)||meta.last_ms<0)
+        throw Error("Replay configuration or metadata mismatch");
+      // Refuse incomplete schema; do not repair or initialize on restart.
+      db.prepare("SELECT jti,sub,expires,started,active_until,lease FROM route_uses LIMIT 0").all();
       return {status:200};
     });
     if(ready.status!==200)throw Error("Replay storage unavailable or incompatible");

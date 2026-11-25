@@ -22,7 +22,7 @@ const issue=createRouteIssuer({privateKey,principalKey:randomBytes(32),audience,
     targetEvidence:{id:id(5),version:1,rideId:id(4),phase:"PICKUP",source:"INDEPENDENT_OSM",point:target}};
 }});
 const dir=mkdtempSync(join(tmpdir(),"apois-regional-replay-"));
-const store=openRouteReplayStore({path:join(dir,"replay.sqlite")});
+const store=openRouteReplayStore({path:join(dir,"replay.sqlite"),initialize:true});
 const gateway=createRouteGateway({authorize:createRouteAuthorization({publicKey,audience,store})});
 try{
   await new Promise((r,j)=>{gateway.once("error",j);gateway.listen(0,"127.0.0.1",r);});
