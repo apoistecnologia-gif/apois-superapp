@@ -52,6 +52,8 @@ jobs:
     timeout-minutes: 40
     env:
       BUN_VERSION: "1.3.14"
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"
       APOIS_MOTORISTA_ONLY: "1"
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
@@ -90,22 +92,12 @@ jobs:
         run: |
           set -euo pipefail
           npm run audit:partner
-          node scripts/run-bash.mjs scripts/build-partner-modules.sh
+          node --test scripts/qa/test-motorista-qa290-canonical-build.test.mjs
+          bash scripts/recover-motorista-qa290-web.sh
           test -s superapp/partner-shell/dist/modules/motorista/index.html
           test ! -e superapp/partner-shell/dist/modules/entregador
           test ! -e superapp/partner-shell/dist/courier
-          cd .work/partner-motorista
-          if ! bun run typecheck; then
-            echo '::error::TypeScript legacy errors require explicit review; no APK allowed.'
-            echo '[DIAG] Motorista GPS generated closure (source only, no secrets):'
-            nl -ba src/routes/motorista.app.tsx | sed -n '702,746p'
-            echo '[DIAG] Menu metrics expected types:'
-            nl -ba src/components/DriverSideMenu.tsx | sed -n '152,184p'
-            echo '[DIAG] Existing Mercado Pago RPC signature:'
-            nl -ba src/components/payments/MercadoPagoSellerCard.tsx | sed -n '28,44p'
-            exit 1
-          fi
-          cd ../..
+          # Typecheck already runs on the exact QA290 workspace before bundling.
           grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'Preferências do passageiro' superapp/partner-shell/dist/modules/motorista
           grep -R -Fq 'Resumo de hoje' superapp/partner-shell/dist/modules/motorista

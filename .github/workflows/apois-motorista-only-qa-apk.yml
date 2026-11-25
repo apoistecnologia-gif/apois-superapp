@@ -39,6 +39,8 @@ jobs:
       PARTNER_APP_PACKAGE: "br.com.apois.parceiro"
       PARTNER_APP_LABEL: "APOIS Motorista"
       APOIS_MOTORISTA_ONLY: "1"
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"
       APOIS_MOTORISTA_QA_BRANDING_DIR: ".work/motorista-only-branding"
       # Chave historica confirmada no aparelho (versionCode 328 original; QA 9110 subsequent) via apksigner e keytool.
       # Usar exclusivamente o segredo protegido do Motorista; jamais o do Cliente.
@@ -151,9 +153,8 @@ jobs:
           node scripts/audit-entregas-brand-sweep-v24.mjs
           npm run verify:pins
           npm run verify:partner-portability
-          node scripts/run-bash.mjs scripts/build-partner-modules.sh
-          node scripts/build-apois-motorista-only-qa.mjs brand
-          node scripts/build-apois-motorista-only-qa.mjs web
+          node --test scripts/qa/test-motorista-qa290-canonical-build.test.mjs
+          bash scripts/recover-motorista-qa290-web.sh
           test -s superapp/partner-shell/dist/motorista-welcome.html
           test -s superapp/partner-shell/dist/assets/apois-motorista-hero.webp
           grep -Fq 'data-apois-driver-approved-welcome-v1' superapp/partner-shell/dist/motorista-welcome.html
@@ -161,12 +162,17 @@ jobs:
           test ! -e superapp/partner-shell/dist/modules/entregador
           grep -Fq 'APOIS MOTORISTA' superapp/partner-shell/dist/index.html
           grep -Fq 'APOIS_DRIVER_HOME_PREMIUM_V1' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'themeOverride={!active ? "client" : "dark"}' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'themeOverride="light"' .work/partner-motorista/src/routes/motorista.app.tsx
+          grep -Fq 'APOIS_PARCEIRO_QA283_PROFILE_COMPLETED_RIDES_V1' .work/partner-motorista/src/routes/motorista.perfil.tsx
+          grep -Fq 'APOIS_PARCEIRO_QA284_DRIVER_HISTORY_UI_V1' .work/partner-motorista/src/routes/motorista.corridas.tsx
+          grep -Fq 'data-apois-premium-screen="driver-finance"' .work/partner-motorista/src/routes/motorista.ganhos.tsx
           grep -Fq 'Preferências do passageiro' .work/partner-motorista/src/routes/motorista.app.tsx
-          grep -Fq 'APOIS_MOTORISTA_GOOGLE_OAUTH_RECOVERY_V1' .work/partner-motorista/src/components/DriverGoogleLoginButton.tsx
-          grep -R -Fq 'O Google não respondeu' superapp/partner-shell/dist/modules/motorista
-          grep -Fq 'tbbzkrfupmqdywnzgnms.supabase.co' .work/partner-motorista/.env.mobile.local
-          ! grep -Fq 'vqtucstyduxrqjgyigfk.supabase.co' .work/partner-motorista/.env.mobile.local
+          grep -Fq 'googleCallbackProcessingRef' .work/partner-motorista/src/components/DriverGoogleLoginButton.tsx
+          grep -Fq 'exchangeCodeForSession' .work/partner-motorista/src/components/DriverGoogleLoginButton.tsx
+          grep -Fq 'resetGoogleLoading' .work/partner-motorista/src/components/DriverGoogleLoginButton.tsx
+          grep -Fq 'flowType: "pkce"' .work/partner-motorista/src/integrations/supabase/client.ts
+          grep -R -Fq 'tbbzkrfupmqdywnzgnms.supabase.co' superapp/partner-shell/dist/modules/motorista
+          ! grep -R -Fq 'vqtucstyduxrqjgyigfk.supabase.co' superapp/partner-shell/dist/modules/motorista
           grep -Fq 'data-apois-driver-approved-login-v1' .work/partner-motorista/src/routes/motorista.login.tsx
           grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista
           if grep -Fq '#F6BE1C' .work/partner-motorista/src/routes/motorista.login.tsx || grep -Fq 'bg-[#030405]' .work/partner-motorista/src/routes/motorista.login.tsx; then

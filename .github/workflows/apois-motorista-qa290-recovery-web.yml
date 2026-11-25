@@ -6,6 +6,9 @@ on:
     paths:
       - scripts/recover-motorista-qa290-web.sh
       - scripts/reconcile-motorista-qa290-visual.mjs
+      - scripts/qa/test-motorista-qa290-canonical-build.test.mjs
+      - superapp/partner-shell/build.mjs
+      - scripts/build-apois-motorista-only-qa.mjs
       - scripts/templates/ApoisDriverHomePremiumTop.tsx.txt
       - scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt
       - scripts/templates/ApoisDriverPerformancePage.tsx.txt
@@ -23,6 +26,7 @@ jobs:
     timeout-minutes: 40
     env:
       BUN_VERSION: "1.3.14"
+      APOIS_MOTORISTA_ONLY: "1"
       APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
       CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
       CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -51,6 +55,7 @@ jobs:
           echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
       - name: Recuperar QA290 integral sem Android
         run: |
+          node --test scripts/qa/test-motorista-qa290-canonical-build.test.mjs
           node --check scripts/reconcile-motorista-qa290-visual.mjs
           bash -n scripts/recover-motorista-qa290-web.sh
           bash scripts/recover-motorista-qa290-web.sh

@@ -66,4 +66,25 @@ printf '%s\n' "$BASE" > "$OUT/QA290-COMMIT.txt"
 for marker in APOIS_PARCEIRO_QA283_PROFILE_COMPLETED_RIDES_V1 APOIS_PARCEIRO_QA284_DRIVER_HISTORY_UI_V1; do
   grep -R -Fq "$marker" "$OUT/src/routes"
 done
-echo '[OK] QA290 Motorista web reconstructed; no Android APK or delivery bundle.'
+# Export only the exact, typechecked generated source and browser distribution.
+# Do not transfer .env, dependency trees or the historical Entregas workspace.
+DEST="$ROOT/.work/partner-motorista"
+rm -rf "$DEST"
+mkdir -p "$DEST/dist"
+cp -a .work/partner-motorista/src "$DEST/src"
+cp -a .work/partner-motorista/dist/client "$DEST/dist/client"
+cd "$ROOT"
+export APOIS_MOTORISTA_ONLY=1
+node superapp/partner-shell/build.mjs
+node scripts/build-apois-motorista-only-qa.mjs brand
+node scripts/build-apois-motorista-only-qa.mjs web
+test -s superapp/partner-shell/dist/modules/motorista/index.html
+test -s superapp/partner-shell/dist/motorista-welcome.html
+test -s superapp/partner-shell/dist/assets/apois-motorista-hero.webp
+test ! -e superapp/partner-shell/dist/modules/entregador
+test ! -e superapp/partner-shell/dist/courier
+grep -R -Fq 'data-apois-driver-approved-login-v1' superapp/partner-shell/dist/modules/motorista
+grep -R -Fq 'data-apois-premium-screen' superapp/partner-shell/dist/modules/motorista
+grep -R -Fq 'Resumo de hoje' superapp/partner-shell/dist/modules/motorista
+grep -R -Fq 'tbbzkrfupmqdywnzgnms.supabase.co' superapp/partner-shell/dist/modules/motorista
+echo '[OK] QA290 Motorista web reconstructed; canonical shell ready; no Android APK or delivery bundle.'
