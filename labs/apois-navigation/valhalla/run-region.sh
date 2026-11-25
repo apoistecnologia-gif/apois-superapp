@@ -6,7 +6,17 @@ OUT="$(realpath -m "${1:-$BASE/results}")"
 mkdir -p "$OUT"
 WORK="$(mktemp -d)"
 NAME="apois-valhalla-lab-$$"
-cleanup(){ docker logs "$NAME" >"$OUT/valhalla.log" 2>&1 || true; docker rm -f "$NAME" >/dev/null 2>&1 || true; rm -rf "$WORK"; }
+cleanup(){
+  local code=$?
+  trap - EXIT
+  docker logs "$NAME" >"$OUT/valhalla.log" 2>&1 || true
+  docker rm -f "$NAME" >/dev/null 2>&1 || true
+  # Docker builds graph files as root; remove only our own generated directory.
+  if [[ "$WORK" == /tmp/tmp.* && -d "$WORK" && ! -L "$WORK" ]]; then
+    rm -rf -- "$WORK" 2>/dev/null || sudo rm -rf -- "$WORK" || { echo "Temporary cleanup failed" >&2; if [ "$code" = 0 ]; then code=1; fi; }
+  fi
+  exit "$code"
+}
 trap cleanup EXIT
 IMAGE='ghcr.io/valhalla/valhalla-scripted@sha256:0e559e57b19e293bcf62e10c64163f2fe60c42902a760152c9238307e13e7257'
 URL='https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf'

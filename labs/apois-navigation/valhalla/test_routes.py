@@ -47,6 +47,28 @@ for case in cases:
     result,data=route(case);results.append(result)
     (OUT/(case[0]+".json")).write_text(json.dumps(data,ensure_ascii=False,indent=2))
     print(json.dumps(result,ensure_ascii=False),flush=True)
+# Verify actual regional OSRM responses including pt-BR voice/banner data.
+def sdk_route(case):
+    name,a,b,lo,hi=case
+    req={"locations":[{"lat":lat,"lon":lon,"type":"break"} for lat,lon in (a,b)],
+        "costing":"auto","units":"kilometers","language":"pt-BR","format":"osrm",
+        "voice_instructions":True,"banner_instructions":True,"shape_format":"polyline6"}
+    with urllib.request.urlopen(urllib.request.Request(URL,data=json.dumps(req).encode(),headers={"Content-Type":"application/json"}),timeout=15) as response:
+        data=json.load(response)
+    assert data.get("code")=="Ok",(name,data)
+    route=data["routes"][0]
+    assert lo*1000<=route["distance"]<=hi*1000 and route["duration"]>0,(name,route["distance"])
+    steps=[step for leg in route["legs"] for step in leg["steps"]]
+    voice=[v["announcement"] for step in steps for v in step.get("voiceInstructions",[]) if v.get("announcement")]
+    banners=[b for step in steps for b in step.get("bannerInstructions",[])]
+    assert voice and banners,(name,"missing SDK guidance")
+    import re
+    assert any(re.search(r"\b(vire|siga|continue|chegou|destino|direita|esquerda|metros|pegue|mantenha|dirija)\b",v,re.I) for v in voice),(name,voice)
+    (OUT/("sdk_"+name+".json")).write_text(json.dumps(data,ensure_ascii=False))
+    return {"case":name,"distance_m":route["distance"],"voice_count":len(voice),"banner_count":len(banners),"example_voice":voice[0]}
+sdk=[sdk_route(case) for case in cases]
+(OUT/"sdk-report.json").write_text(json.dumps(sdk,ensure_ascii=False,indent=2))
+print("APOIS_REGIONAL_SDK_OK",json.dumps(sdk,ensure_ascii=False),flush=True)
 # Small reproducible local load test, not a production capacity certification.
 start=time.monotonic()
 with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:

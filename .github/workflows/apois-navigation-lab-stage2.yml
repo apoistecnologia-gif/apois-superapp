@@ -23,6 +23,14 @@ jobs:
         run: |
           bash -n labs/apois-navigation/valhalla/run-region.sh
           bash labs/apois-navigation/valhalla/run-region.sh "$RUNNER_TEMP/apois-route-report"
+      - name: Reproduzir rotas regionais no Ferrostar
+        run: |
+          set -euo pipefail
+          rustup update stable && rustup default stable
+          for name in petrolina_urban crossing_pe_ba crossing_ba_pe; do
+            cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- "$RUNNER_TEMP/apois-route-report/sdk_$name.json" | tee "$RUNNER_TEMP/apois-route-report/sdk_$name-replay.txt"
+            grep -E 'APOIS_REPLAY_OK.*spoken_instruction_fixes=[1-9][0-9]*' "$RUNNER_TEMP/apois-route-report/sdk_$name-replay.txt"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
