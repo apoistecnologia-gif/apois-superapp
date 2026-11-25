@@ -83,6 +83,9 @@ try {
   assert.ok(original.includes("qa235CheckPickupArrival(location);"));
   const patched=instrumentDriverService(original);
   assert.ok(patched.includes("qa235CheckPickupArrival(location);\n                labGpsPublish(location);"));
+  assert.ok(patched.includes("if (!br.com.apois.navigation.lab.NativeDriverReadSource.INSTANCE.bind("),"rejected bind must clean up GPS epoch");
+  assert.ok(patched.includes("catch (RuntimeException | LinkageError ignored) { labGpsEnd(); }"),"failed bind must clean up");
+  assert.match(patched,/unbind\(old\);[\s\S]*?catch \(RuntimeException \| LinkageError ignored\) \{ \}[\s\S]*?try \{ br\.com\.apois\.navigation\.lab\.DriverGpsFeed\.endSource\(old\); \}/,"GPS epoch cleanup independent from read adapter");
   for(const marker of ["qa236PickupReady","/rest/v1/rpc/driver_mark_arrived","private void loadPersistedSessionTokens()","INICIAR CORRIDA • PIN","driver_set_presence","ContextCompat.RECEIVER_NOT_EXPORTED"])
     assert.ok(patched.includes(marker),"lost QA290 marker "+marker);
   // Compare shared components untouched by the passive driver instrumentation.

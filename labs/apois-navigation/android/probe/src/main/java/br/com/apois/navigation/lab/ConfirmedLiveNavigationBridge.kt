@@ -43,7 +43,10 @@ object ConfirmedLiveNavigationBridge {
     private class Preparation { var job:Job?=null;var invalidated=false;var installed:Prepared?=null }
     private var preparing:Preparation?=null
     private var callback:Consumer<JSONObject>?=null
-    private var closing:Screen?=null
+    // Retain only the acknowledgement reference, not route geometry, GPS fix,
+    // verifier, map, target or the credential issuer after closing.
+    private data class Closing(val id:String,val rideId:String,val openingRevision:Long)
+    private var closing:Closing?=null
     private var closingCallback:Consumer<JSONObject>?=null
     private var waiter:Consumer<Boolean>?=null
     private val handler=Handler(Looper.getMainLooper())
@@ -272,7 +275,7 @@ object ConfirmedLiveNavigationBridge {
         val s=screen.value?:return false
         if(s.id!=id)return false
         stopRenewal()
-        closing=s
+        closing=Closing(s.id,s.ride.rideId,s.openingRevision)
         closingCallback=callback
         callback=null
         // No reopened prepared route is allowed; release immediately so a
@@ -314,7 +317,7 @@ object ConfirmedLiveNavigationBridge {
         closing=null
         closingCallback=null
         waiter=null
-        val event=JSONObject().put("sessionId",id).put("rideId",s.ride.rideId)
+        val event=JSONObject().put("sessionId",id).put("rideId",s.rideId)
             .put("revision",s.openingRevision).put("action","SESSION_CLOSED")
         runCatching{notify?.accept(event)}
         runCatching{done?.accept(true)}

@@ -27,11 +27,13 @@ export function instrumentDriverService(source) {
             labGpsSource = ${FEED}.beginSource();
             // Read the already synchronized driver session only. Never read
             // courier tokens, persist a copy, or initiate token renewal.
-            br.com.apois.navigation.lab.NativeDriverReadSource.INSTANCE.bind(
+            if (!br.com.apois.navigation.lab.NativeDriverReadSource.INSTANCE.bind(
                 labGpsSource, supabaseUrl, publishableKey,
-                () -> getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).getString(SESSION_ACCESS_KEY, ""));
+                () -> getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).getString(SESSION_ACCESS_KEY, ""))) {
+                labGpsEnd();
+            }
         }
-        catch (RuntimeException | LinkageError ignored) { labGpsSource = 0L; }
+        catch (RuntimeException | LinkageError ignored) { labGpsEnd(); }
     }
     private void labGpsEnd() {
         final long old = labGpsSource;
@@ -39,8 +41,11 @@ export function instrumentDriverService(source) {
         if (old == 0L) return;
         try {
             br.com.apois.navigation.lab.NativeDriverReadSource.INSTANCE.unbind(old);
-            ${FEED}.endSource(old);
         }
+        catch (RuntimeException | LinkageError ignored) { }
+        // Even if the optional read adapter fails to unbind, invalidate
+        // the passive GPS epoch. The existing tracking service is untouched.
+        try { ${FEED}.endSource(old); }
         catch (RuntimeException | LinkageError ignored) { }
     }
     private void labGpsPublish(Location location) {
