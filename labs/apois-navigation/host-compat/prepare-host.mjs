@@ -1,0 +1,36 @@
+// Disposable actual Capacitor 8.5.0 template. Never edit superapp/partner-shell.
+import {readFileSync,writeFileSync,cpSync,existsSync} from "node:fs";
+import {resolve,join} from "node:path";
+import assert from "node:assert/strict";
+const host=resolve(process.argv[2]??"");
+const lab=resolve(process.argv[3]??"");
+assert.ok(host.startsWith(resolve(process.env.RUNNER_TEMP??"/tmp")+"/"),"disposable host only");
+assert.ok(existsSync(join(host,"android/app/build.gradle")));
+const android=join(host,"android");
+const get=p=>readFileSync(join(android,p),"utf8");
+const put=(p,s)=>writeFileSync(join(android,p),s);
+const root=get("build.gradle"), vars=get("variables.gradle"), wrapper=get("gradle/wrapper/gradle-wrapper.properties");
+assert.match(root,/com\.android\.tools\.build:gradle:8\.13\.0/);
+assert.match(wrapper,/gradle-8\.14\.3-all\.zip/);
+assert.match(vars,/minSdkVersion\s*=\s*24/);
+assert.match(vars,/compileSdkVersion\s*=\s*36/);
+assert.match(vars,/targetSdkVersion\s*=\s*36/);
+console.log("[OK] exact Capacitor 8.5.0 host: AGP 8.13.0, Gradle 8.14.3, API 24 baseline");
+const source=join(lab,"android/probe");
+const target=join(android,"navigation-probe");
+cpSync(source,target,{recursive:true,filter:p=>!p.includes("/build/")&&!p.endsWith("/build")});
+let module=get("navigation-probe/build.gradle");
+assert.ok(module.includes("id 'com.android.library' version '9.0.1'"));
+module=module.replace("id 'com.android.library' version '9.0.1'","id 'com.android.library'")
+ .replace("id 'org.jetbrains.kotlin.plugin.compose' version '2.3.20'","id 'org.jetbrains.kotlin.android' version '2.3.20'\n id 'org.jetbrains.kotlin.plugin.compose' version '2.3.20'");
+module+="\nkotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17 } }\n";
+put("navigation-probe/build.gradle",module);
+put("settings.gradle","pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }\n"+get("settings.gradle")+"\ninclude ':navigation-probe'\n");
+let app=get("app/build.gradle");
+assert.ok(app.includes("minSdkVersion rootProject.ext.minSdkVersion"));
+app=app.replace("minSdkVersion rootProject.ext.minSdkVersion","minSdkVersion 25 // lab only; do not change the production baseline");
+app=app.replace("    defaultConfig {","    compileOptions { coreLibraryDesugaringEnabled true }\n    defaultConfig {");
+app=app.replace("dependencies {","dependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'\n    implementation project(':navigation-probe')");
+put("app/build.gradle",app);
+assert.equal(get("variables.gradle"),vars,"production-like template baseline preserved");
+console.log("[OK] lab-only API 25 host; no production files modified");
