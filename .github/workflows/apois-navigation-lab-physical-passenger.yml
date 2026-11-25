@@ -1,0 +1,51 @@
+name: APOIS Passageiro - APK fisico isolado WebView
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/physical-passenger/**','.github/workflows/apois-navigation-lab-physical-passenger.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  physical-passenger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-cartography-regional
+          run-id: 45539272618
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-map-assets
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-v21-regional-evidence
+          run-id: 45707496288
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-route-assets
+      - run: bash labs/apois-navigation/physical-passenger/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-Passageiro-Teste-Fisico
+          path: ${{ runner.temp }}/apois-passenger-apk/
+          retention-days: 7
+          if-no-files-found: error
