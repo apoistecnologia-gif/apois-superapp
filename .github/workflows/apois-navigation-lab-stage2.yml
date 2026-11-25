@@ -1,0 +1,31 @@
+name: APOIS Navegacao - Valhalla regional (sem APK)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/valhalla/**', '.github/workflows/apois-navigation-lab-stage2.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: navigation-regional-lab
+  cancel-in-progress: true
+jobs:
+  regional:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Instalar utilitario de extracao OSM
+        run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool
+      - name: Testar rotas locais em portugues
+        run: |
+          bash -n labs/apois-navigation/valhalla/run-region.sh
+          bash labs/apois-navigation/valhalla/run-region.sh "$RUNNER_TEMP/apois-route-report"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-valhalla-regional-report
+          path: ${{ runner.temp }}/apois-route-report/
+          retention-days: 7

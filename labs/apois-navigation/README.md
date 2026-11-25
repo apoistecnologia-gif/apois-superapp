@@ -22,3 +22,7 @@ Gradle 9.2.1, AGP 9.0.1, Kotlin Compose 2.3.20 conforme a tag upstream; não imp
 3. Replay de rota sintética em emulador; voz pt-BR, desvios, perda de sinal, bateria, latência, interrupções.
 4. Activity nativa privada e bridge Capacitor; sobreposição de controles operacionais, mesma autoridade do backend, GPS compartilhado sem segundo serviço; canário e fallback.
 5. Orçamento medido e limites: orçamento alvo R$5/motorista ativo/mês em escala, sem cobrança por corrida; nunca usar serviço pago por fallback automático.
+
+## Etapa 1 aprovada / etapa 2
+
+Compilação real da biblioteca Android aprovada em https://github.com/apoistecnologia-gif/apois-superapp/actions/runs/45532717659 (6 testes de política e Ferrostar + MapLibre). Isso não comprova integração com o Gradle 8.14.3 do Motorista. O laboratório regional `valhalla/run-region.sh` usa dados Geofabrik, extrato local de Petrolina/Juazeiro, imagem oficial fixada por digest, português brasileiro e 100 consultas locais de carga. Sem serviço exposto, sem dados pessoais, sem API de pagamento. OSM © OpenStreetMap contributors, ODbL. Sem trânsito real, sem validação de campo. Testar resultados antes de qualquer implantação.
