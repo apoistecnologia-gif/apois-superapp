@@ -1,0 +1,17 @@
+import {readFileSync,writeFileSync,mkdirSync,realpathSync} from "node:fs";
+import {join} from "node:path";
+import {execFileSync} from "node:child_process";
+import assert from "node:assert/strict";
+import {instrumentWebVoice} from "./instrument-web-voice.mjs";
+const [sourceArg,outArg]=process.argv.slice(2);
+const source=realpathSync(sourceArg),out=outArg;
+assert.ok(out.startsWith(realpathSync(process.env.RUNNER_TEMP)+"/"));
+assert.equal(execFileSync("git",["-C",source,"rev-parse","HEAD"],{encoding:"utf8"}).trim(),"9fc171050d8b5703540c49d19a8f1e9f5162775f");
+const path=join(source,"src/lib/voiceNav.ts");
+assert.equal(execFileSync("git",["hash-object",path],{encoding:"utf8"}).trim(),"45930a3d203bd76d7a36332f886edbda9a2193a1");
+const raw=readFileSync(path,"utf8"),patched=instrumentWebVoice(raw);
+assert.throws(()=>instrumentWebVoice(patched));
+mkdirSync(out,{recursive:true});
+writeFileSync(join(out,"voiceNav.ts"),patched.replace('from "@capacitor/core"','from "./capacitor-stub.mjs"'));
+writeFileSync(join(out,"capacitor-stub.mjs"),`export const Capacitor={isNativePlatform:()=>globalThis.__voiceTest.native,getPlatform:()=>"android"};export const registerPlugin=()=>globalThis.__voiceTest.plugin;`);
+console.log("[OK] actual voiceNav.ts patched in disposable test copy only");

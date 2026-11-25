@@ -58,6 +58,13 @@ jobs:
           node "$GITHUB_WORKSPACE/labs/apois-navigation/host-compat/prepare-host.mjs" "$H" "$GITHUB_WORKSPACE/labs/apois-navigation"
       - name: Instrumentar copia descartavel do GPS QA290
         run: node labs/apois-navigation/host-compat/prepare-driver-gps.mjs "$RUNNER_TEMP/apois-compat-host" "$GITHUB_WORKSPACE/.navigation-driver-source" "$GITHUB_WORKSPACE"
+      - name: Testar fallback Web Speech sobre fonte real descartavel
+        run: |
+          set -euo pipefail
+          V="$GITHUB_WORKSPACE/labs/apois-navigation/host-compat"
+          export APOIS_WEB_VOICE_TEST_DIR="$RUNNER_TEMP/apois-web-voice"
+          node "$V/prepare-web-voice.mjs" "$GITHUB_WORKSPACE/.navigation-driver-source" "$APOIS_WEB_VOICE_TEST_DIR"
+          node --test "$V/web-voice.test.mjs"
       - name: Testar e instrumentar voz real em copia descartavel
         run: |
           set -euo pipefail
