@@ -2,7 +2,7 @@ name: APOIS Navegacao - compatibilidade Capacitor (sem APK)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/host-compat/**', '.github/workflows/apois-navigation-lab-host-compat.yml']
+    paths: ['labs/apois-navigation/host-compat/**', 'labs/apois-navigation/android/**', '.github/workflows/apois-navigation-lab-host-compat.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,6 +30,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.14.3'
+      - name: Testar cenarios ficticios do host
+        run: node --test labs/apois-navigation/host-compat/demo/scenario.test.mjs
       - name: Gerar host real e isolado
         run: |
           set -euo pipefail
@@ -38,7 +40,7 @@ jobs:
           cd "$H"
           npm init -y >/dev/null
           npm install --save-exact --no-audit --no-fund @capacitor/core@8.5.0 @capacitor/cli@8.5.0 @capacitor/android@8.5.0
-          printf '<!doctype html><title>APOIS lab</title>' > www/index.html
+          cp "$GITHUB_WORKSPACE/labs/apois-navigation/host-compat/demo/"{index.html,main.mjs,scenario.mjs} www/
           printf '{"appId":"br.com.apois.navigation.compat.lab","appName":"APOIS navigation lab","webDir":"www"}' > capacitor.config.json
           npx cap add android
           node "$GITHUB_WORKSPACE/labs/apois-navigation/host-compat/prepare-host.mjs" "$H" "$GITHUB_WORKSPACE/labs/apois-navigation"

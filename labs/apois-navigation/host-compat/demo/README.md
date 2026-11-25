@@ -1,0 +1,2 @@
+# Synthetic end-to-end host
+Buttons launch complete, cancellation or trip scenarios through the actual disposable Capacitor plugin. The pickup transition is timed, PIN is explicitly simulated, and rating/finish never write to any backend. The pure JS tests run with a fake bridge; they do not prove WebView delivery, Android timer behaviour in background, visual rendering or audio. A separate APK is required for device validation and has not been authorized or generated. No actual Waze/Google launch. No production registration.
