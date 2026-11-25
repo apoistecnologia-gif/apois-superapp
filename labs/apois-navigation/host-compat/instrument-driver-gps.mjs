@@ -23,14 +23,24 @@ export function instrumentDriverService(source) {
   s=once(s,"    public void onDestroy() {",
     "    public void onDestroy() {\n        labGpsEnd();");
   s=once(s,"    private void startLocationUpdates() {",`    private void labGpsBegin() {
-        try { labGpsSource = ${FEED}.beginSource(); }
+        try {
+            labGpsSource = ${FEED}.beginSource();
+            // Read the already synchronized driver session only. Never read
+            // courier tokens, persist a copy, or initiate token renewal.
+            br.com.apois.navigation.lab.NativeDriverReadSource.INSTANCE.bind(
+                labGpsSource, supabaseUrl, publishableKey,
+                () -> getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).getString(SESSION_ACCESS_KEY, ""));
+        }
         catch (RuntimeException | LinkageError ignored) { labGpsSource = 0L; }
     }
     private void labGpsEnd() {
         final long old = labGpsSource;
         labGpsSource = 0L;
         if (old == 0L) return;
-        try { ${FEED}.endSource(old); }
+        try {
+            br.com.apois.navigation.lab.NativeDriverReadSource.INSTANCE.unbind(old);
+            ${FEED}.endSource(old);
+        }
         catch (RuntimeException | LinkageError ignored) { }
     }
     private void labGpsPublish(Location location) {
