@@ -120,6 +120,15 @@ jobs:
           output.write_text(payload + "\n", encoding="utf-8")
           print("APOIS_OSM_ADDRESS_COVERAGE", payload)
           ' "$D/address-coverage.json"
+      - name: Extrair enderecos OSM para catalogo desativado
+        run: |
+          set -euo pipefail
+          C="$GITHUB_WORKSPACE/labs/apois-navigation/valhalla/.regional-cache"
+          D="$RUNNER_TEMP/apois-osm-catalog"
+          python3 labs/apois-navigation/osm-search/import_addresses.py \
+            --verified-extract "$C/vale.osm.pbf" \
+            --sha256 "$(cut -d' ' -f1 "$C/extract.sha256")" \
+            --version 1 --out "$D/address-catalog.json"
       - uses: actions/upload-artifact@v4
         with:
           name: apois-independent-regional-catalog
