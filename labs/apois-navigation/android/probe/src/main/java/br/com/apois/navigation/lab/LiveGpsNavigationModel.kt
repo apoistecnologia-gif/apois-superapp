@@ -6,6 +6,7 @@ import android.os.SystemClock
 import com.stadiamaps.ferrostar.core.NavigationState
 import com.stadiamaps.ferrostar.core.NavigationUiState
 import com.stadiamaps.ferrostar.core.NavigationViewModel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import uniffi.ferrostar.*
@@ -26,6 +27,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
     private var voice: LiveNavigationVoice? = null
     private var foreground = false
     private var rerouteGate: NativeRerouteGate? = null
+    private var routeJob: Job? = null
+    private var scope: CoroutineScope? = null
     private val _routeNotice = MutableStateFlow<String?>(null)
     val routeNotice = _routeNotice.asStateFlow()
 
@@ -54,6 +57,10 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         subscriber = null
         voice?.close()
         voice = null
+        routeJob?.cancel()
+        routeJob = null
+        scope?.cancel()
+        scope = null
         rerouteGate?.close()
         rerouteGate = null
         _routeNotice.value = null
@@ -61,13 +68,17 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         navigationUiState.value = NavigationUiState.empty().copy(isMuted = muted)
     }
 
-    fun start(route: Route, stillCurrent: () -> Boolean, context: Context? = null, permit: NavigationVoicePermit? = null) {
+    fun start(route: Route, stillCurrent: () -> Boolean, context: Context? = null, permit: NavigationVoicePermit? = null,
+              resolver: LiveRouteResolver? = null, target: RegionalPoint? = null,
+              online: () -> Boolean = { false }) {
         main()
         stopNavigation()
         if (!stillCurrent()) { permit?.let { runCatching { it.release() } }; _quality.value = GpsQuality.LOST; return }
         val active = generation
         val budget = NativeRerouteGate()
         rerouteGate = budget
+        val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        scope = sessionScope
         val config = NavigationControllerConfig(
             WaypointAdvanceMode.WaypointWithinRange(30.0),
             stepAdvanceDistanceToEndOfStep(15u, 25u),
@@ -75,7 +86,11 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
             RouteDeviationTracking.StaticThreshold(25u, 50.0),
             CourseFiltering.SNAP_TO_ROUTE
         )
-        val navigator = createNavigator(route, config, false)
+        var activeRoute = route
+        var navigator = createNavigator(activeRoute, config, false)
+        var latest: UserLocation? = null
+        var latestCaptured = 0L
+        var stillOffRoute = false
         // The first accepted physical fix initializes the Rust navigator.
         // No simulated location or last persisted location is used.
         var nextFix: ((UserLocation, Long) -> Unit)? = null
@@ -86,19 +101,57 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
             val kind = (ui.routeDeviation as? RouteDeviation.Deviation)?.kind
             val offRoute = kind is DeviationKind.CompletelyOffRoute
             val offStep = kind is DeviationKind.OffStepOnRoute
+            stillOffRoute = offRoute
             val deviation = when (kind) {
                 is DeviationKind.CompletelyOffRoute -> kind.deviationFromRouteLine
-                is DeviationKind.OffStepOnRoute -> kind.deviationFromStepLine
+                is DeviationKind.OffStepOnRoute -> 0.0
                 else -> if (ui.routeDeviation != null) 0.0 else null
             }
-            // The endpoint/provider is not wired yet. Evaluate the native policy
-            // in offline mode and do not spend a route request authorization.
+            val canRequest = resolver != null && target?.valid() == true &&
+                RegionalPoint(raw.coordinates.lat,raw.coordinates.lng).valid() &&
+                foreground && runCatching { online() }.getOrDefault(false)
             val decision = budget.evaluate(SystemClock.elapsedRealtime(), captured,
-                raw.horizontalAccuracy, deviation, online = false)
+                raw.horizontalAccuracy, deviation, online = canRequest)
+            if (!offRoute) routeJob?.cancel()
+            if (offRoute && decision is NativeRerouteGate.Decision.Request && resolver != null && target != null) {
+                val origin = RegionalPoint(raw.coordinates.lat,raw.coordinates.lng)
+                val ticket = decision.ticket
+                // Scope and gate belong to the whole leg, not the individual route.
+                // Start lazily so the job reference is installed before callbacks.
+                val job = sessionScope.launch(start = CoroutineStart.LAZY) {
+                    try {
+                        val replacement = withTimeout(15_000) { resolver.resolve(origin,target) }
+                        val fix = latest
+                        if (!current() || !foreground || !stillOffRoute || _quality.value != GpsQuality.AVAILABLE ||
+                            fix == null || SystemClock.elapsedRealtime() - latestCaptured !in 0..10_000 ||
+                            !routeEndpointsMatch(replacement.geometry.map { RegionalPoint(it.lat,it.lng) },
+                                RegionalPoint(fix.coordinates.lat,fix.coordinates.lng),target)) return@launch
+                        val freshNavigator = createNavigator(replacement, config, false)
+                        activeRoute = replacement
+                        navigator = freshNavigator
+                        nextFix = null // initialize only from the next accepted GPS fix
+                        stillOffRoute = false
+                        voice?.setGpsAvailable(false)
+                        navigationUiState.value = NavigationUiState.empty().copy(
+                            routeGeometry = replacement.geometry, destination = destination, isMuted = muted)
+                        _routeNotice.value = "Rota atualizada. Aguardando posição."
+                    } catch (e: CancellationException) { throw e }
+                    catch (_: Exception) {
+                        if (current() && stillOffRoute) _routeNotice.value = "Não foi possível recalcular. Confira o trajeto."
+                    } finally {
+                        budget.settle(ticket)
+                    }
+                }
+                routeJob = job
+                job.start()
+            }
             val hold = offRoute || offStep || (decision is NativeRerouteGate.Decision.Hold &&
                 decision.reason == NativeRerouteGate.Reason.UNRELIABLE && ui.isNavigating())
             _routeNotice.value = when {
-                offRoute -> "Fora da rota. Recálculo ainda indisponível no laboratório."
+                offRoute && decision is NativeRerouteGate.Decision.OfferExternal -> "Limite de recálculos atingido. Use outro mapa se necessário."
+                offRoute && routeJob?.isActive == true -> "Recalculando rota…"
+                offRoute && !canRequest -> "Fora da rota. Recálculo indisponível."
+                offRoute -> "Fora da rota. Conferindo desvio."
                 offStep -> "Conferindo o trajeto."
                 hold -> "Conferindo a precisão da rota."
                 else -> null
@@ -113,14 +166,16 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
             current = ::current,
             onFix = { location, captured ->
                 if (current()) {
+                    latest = location
+                    latestCaptured = captured
                     val update = nextFix
                     if (update == null) {
                         var state = navigator.getInitialState(location)
-                        show(NavigationState(state.tripState, route.geometry, false), location, captured)
+                        show(NavigationState(state.tripState, activeRoute.geometry, false), location, captured)
                         nextFix = { fix, fixCaptured ->
                             if (current() && state.tripState !is TripState.Complete) {
                                 state = navigator.updateUserLocation(fix, state)
-                                show(NavigationState(state.tripState, route.geometry, false), fix, fixCaptured)
+                                show(NavigationState(state.tripState, activeRoute.geometry, false), fix, fixCaptured)
                             }
                         }
                     } else update(location, captured)
@@ -132,6 +187,9 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                     voice?.setGpsAvailable(status == GpsQuality.AVAILABLE)
                     if (status != GpsQuality.AVAILABLE) {
                         budget.invalidateFix()
+                        stillOffRoute = false
+                        latest = null
+                        routeJob?.cancel()
                         _routeNotice.value = null
                         // Keep geometry for context, but do not present stale
                         // instructions or synthesize speech on a lost fix.

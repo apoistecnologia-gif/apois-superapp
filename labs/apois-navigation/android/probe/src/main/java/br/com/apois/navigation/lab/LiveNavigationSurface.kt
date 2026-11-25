@@ -22,7 +22,9 @@ internal fun LiveNavigationSurface(
     baseStyle: BaseStyle, route: Route?, token: LegToken?, ride: RideSnapshot,
     foreground: Boolean, stillCurrent: (LegToken) -> Boolean,
     onIntent: (RideIntent) -> Unit, modifier: Modifier = Modifier,
-    acquireVoice: (() -> NavigationVoicePermit?)? = null
+    acquireVoice: (() -> NavigationVoicePermit?)? = null,
+    resolver: LiveRouteResolver? = null, target: RegionalPoint? = null,
+    online: () -> Boolean = { false }
 ) {
     val context = LocalContext.current.applicationContext
     val model = remember { LiveGpsNavigationModel() }
@@ -34,11 +36,12 @@ internal fun LiveNavigationSurface(
     }
     val quality by model.quality.collectAsState()
     val routeNotice by model.routeNotice.collectAsState()
-    DisposableEffect(model, route, validLeg) {
+    // A replacement is owned by the model. Do not reset the leg budget for a new route object.
+    DisposableEffect(model, route != null, validLeg) {
         if (route != null && validLeg != null && current(validLeg)) {
             val lease = runCatching { acquireVoice?.invoke()?.let(::OnceNavigationVoicePermit) }.getOrNull()
             // Transfer ownership only when model.start succeeds; otherwise release.
-            try { model.start(route, { current(validLeg) }, context, lease) }
+            try { model.start(route, { current(validLeg) }, context, lease, resolver, target, online) }
             catch (_: Exception) {
                 model.stopNavigation()
                 lease?.let { runCatching { it.release() } }
