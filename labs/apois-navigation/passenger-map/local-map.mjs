@@ -24,10 +24,11 @@ export function localPackReader({base,origin,fetcher=fetch}){
   const bytes=new Uint8Array(n);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}return bytes.buffer
  }
 }
-export async function verifyLocalPack({read,expectedPackId,signal}){
+export async function verifyLocalPack({read,expectedPackId,expectedManifestSha256,signal}){
  if(!hash.test(expectedPackId))throw Error('Trusted pack ID required')
  const raw=await read('manifest.json',MAX_MANIFEST,signal)
  if(raw.byteLength>MAX_MANIFEST)throw Error('Manifest too large')
+ if(expectedManifestSha256!==undefined&&(!hash.test(expectedManifestSha256)||await sha(raw)!==expectedManifestSha256))throw Error('Manifest identity mismatch')
  const m=JSON.parse(dec.decode(raw))
  if(m.schema!==1||m.region!=='vale-pe-ba'||m.pack_id!==expectedPackId||!hash.test(m.extract_sha256)||!Array.isArray(m.files)||m.files.length>36)throw Error('Invalid pack manifest')
  const entries=m.files,paths=new Set();let total=0
@@ -49,9 +50,9 @@ export function localTileSource(bytes,key){
   return {data:bytes.slice(offset,Math.min(offset+length,bytes.byteLength))}
  }}
 }
-export async function mountLocalPassengerMap(root,{maplibre,PMTiles,read,expectedPackId,signal,loadTimeout=15000}){
+export async function mountLocalPassengerMap(root,{maplibre,PMTiles,read,expectedPackId,expectedManifestSha256,signal,loadTimeout=15000}){
  if(!root||!maplibre?.Map||typeof maplibre.addProtocol!=='function'||typeof maplibre.removeProtocol!=='function'||typeof PMTiles!=='function')throw Error('Missing map dependency')
- const {files,extractHash}=await verifyLocalPack({read,expectedPackId,signal})
+ const {files,extractHash}=await verifyLocalPack({read,expectedPackId,expectedManifestSha256,signal})
  const archive=new PMTiles(localTileSource(files.get('vale.pmtiles'),expectedPackId))
  const header=await archive.getHeader()
  if(header.specVersion!==3||header.tileType!==1||header.minZoom!==8||header.maxZoom!==15)throw Error('Unexpected regional tile format')

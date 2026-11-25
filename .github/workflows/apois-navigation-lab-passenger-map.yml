@@ -34,6 +34,8 @@ jobs:
           cp -a labs/apois-navigation/passenger-provenance-snapshot "$S/snapshot"
           cp -a "$RUNNER_TEMP/apois-map-assets/android-assets/apois-regional" "$S/site/"
           cd "$S"
+          echo APOIS_PACK_MANIFEST_SHA256="$(sha256sum site/apois-regional/manifest.json | cut -d ' ' -f 1)"
+          node -e 'const m=require("./site/apois-regional/manifest.json"); console.log("APOIS_PACK_PROVENANCE",JSON.stringify({packId:m.pack_id,extractHash:m.extract_sha256,sourceHash:m.source_sha256}))'
           npm init -y >/dev/null
           npm install --ignore-scripts --no-audit --no-fund --save-exact maplibre-gl@4.7.1 pmtiles@3.2.0 esbuild@0.25.0 playwright-core@1.51.1
           ./node_modules/.bin/esbuild entry.mjs --bundle --format=esm --outfile=site/bundle.js

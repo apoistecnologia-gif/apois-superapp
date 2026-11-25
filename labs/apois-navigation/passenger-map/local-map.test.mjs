@@ -25,3 +25,13 @@ test('manifest is bound to trusted ID and every byte is checked',async()=>{
  await assert.rejects(()=>verifyLocalPack({read,expectedPackId:'b'.repeat(64)}))
  await assert.rejects(()=>verifyLocalPack({read:async p=>p==='style.json'?new Uint8Array(data.length).buffer:read(p),expectedPackId:pack_id}))
 })
+
+test('manifest pin covers file mapping, source and extract metadata, not just byte digests',async()=>{
+ const data=new TextEncoder().encode('synthetic'),names=['vale.pmtiles','style.json','OSM-NOTICE.txt','LICENSE-Open-Sans.txt','glyphs/Open Sans Regular/0-255.pbf']
+ const files=names.map(path=>({path,bytes:data.byteLength,sha256:sha(data)})),pack_id=sha(files.map(f=>f.sha256).join(''))
+ const manifest={schema:1,region:'vale-pe-ba',extract_sha256:'a'.repeat(64),pack_id,files}
+ const raw=JSON.stringify(manifest),expectedManifestSha256=sha(raw)
+ const read=async path=>path==='manifest.json'?new TextEncoder().encode(raw).buffer:data.slice().buffer
+ assert.equal((await verifyLocalPack({read,expectedPackId:pack_id,expectedManifestSha256})).extractHash,'a'.repeat(64))
+ await assert.rejects(()=>verifyLocalPack({read:async path=>path==='manifest.json'?new TextEncoder().encode(JSON.stringify({...manifest,extract_sha256:'b'.repeat(64)})).buffer:read(path),expectedPackId:pack_id,expectedManifestSha256}),/Manifest identity mismatch/)
+})
