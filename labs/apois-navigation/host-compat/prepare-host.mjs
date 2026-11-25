@@ -42,4 +42,5 @@ assert.match(main,/public class MainActivity extends BridgeActivity\s*\{\s*\}/);
 put(mainPath,main.replace(/public class MainActivity extends BridgeActivity\s*\{\s*\}/,
 "public class MainActivity extends BridgeActivity {\n @Override public void onCreate(android.os.Bundle savedInstanceState) {\n  registerPlugin(ApoisNavigationLabPlugin.class);\n  super.onCreate(savedInstanceState);\n }\n}"));
 cpSync(join(lab,"host-compat/ApoisNavigationLabPlugin.java"),join(android,javaRoot,"ApoisNavigationLabPlugin.java"));
+cpSync(join(lab,"host-compat/ConfirmedNavigationRequest.java"),join(android,javaRoot,"ConfirmedNavigationRequest.java"));
 console.log("[OK] native laboratory plugin registered in disposable host only");
