@@ -17,6 +17,7 @@ import {createVerifiedHostTransport} from '../passenger-provenance-snapshot/expe
 import {createDurableRideHost} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/durable-ride-host.mjs'
 import {loadFare} from './observed-fare-v21.ts'
 import {createDriverAuthority} from '../passenger-provenance-snapshot/driver-authority.mjs'
+import {createDriverControl} from './driver-control-v21.mjs'
 import {createGuardedAuthorization} from '../passenger-provenance-snapshot/guarded-authorization.mjs'
 import {fixtureBarrier} from '../passenger-provenance-snapshot/postgres-revocation-barrier.mjs'
 import {createRouteIssuer,routeBody} from '../valhalla/route-issuer.mjs'
@@ -91,7 +92,7 @@ const ride=recovered.snapshot().ride.rideId
 assert.equal(quoteTls.stats().metricRequests,2)
 assert.equal(sql("select to_jsonb(count(*)) from public.rides where id=$1 and fare_amount_cents=$2 and payment_method='cash' and pickup_source='osm_lab'",[ride,quote.fare_amount_cents]),1)
 sql("update public.rides set driver_id=$1,accepted_driver_id=$1,accepted_at=clock_timestamp(),status='motorista_a_caminho' where id=$2",[driver,ride])
-const authority=createDriverAuthority({verifySession:async s=>s==='driver-a'?driverAuth:s==='driver-b'?id(62):null,readDriverProof:async({authUserId,rideId,phase})=>sql('select apois_nav_lab.read_driver_proof_v21($1,$2,$3)',[authUserId,rideId,phase])})
+const authority=createDriverAuthority({verifySession:async s=>s==='driver-a'?driverAuth:s==='driver-b'?id(62):null,readDriverProof:async({authUserId,rideId,phase})=>sql('select public.apois_nav_lab_driver_proof_v21($1,$2,$3)',[authUserId,rideId,phase])})
 const host=new MotoristaAuthority();assert.ok(host.bind({authUserId:driverAuth,profileUserId:profile,driverId:driver}))
 let revision=0
 const refresh=()=>assert.ok(host.accept(sql("select jsonb_build_object('id',id,'driver_id',driver_id,'accepted_driver_id',accepted_driver_id,'status',status) from public.rides where id=$1",[ride]),{authUserId:driverAuth,driverId:driver,epoch:host.epoch,revision:++revision}))
@@ -99,6 +100,7 @@ refresh()
 const keys=generateKeyPairSync('ed25519'),principalKey=randomBytes(32),audience='apois-v21-regional-fixture'
 const dir=mkdtempSync(join(tmpdir(),'apois-v21-region-')),store=openRouteReplayStore({path:join(dir,'replay.sqlite'),initialize:true,requireIssued:true,requireScoped:true})
 const issue=createRouteIssuer({privateKey:keys.privateKey,principalKey,audience,readAuthority:authority,issuanceStore:store,scopedIssuance:true})
+const driverControl=createDriverControl({enabled:true,authority,issuePermit:issue,allowPilot:u=>u===driverAuth})
 const authorize=createGuardedAuthorization({publicKey:keys.publicKey,audience,principalKey,store,withBarrier:fixtureBarrier})
 const gateway=createRouteGateway({authorize})
 const routes=[]
@@ -108,7 +110,14 @@ try{
  const post=(token,request)=>fetch(endpoint,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify(routeBody(request.origin,request.target)),signal:AbortSignal.timeout(15000)})
  const point=r=>({lat:r.lat,lon:r.lng})
  const request=(origin,target)=>({rideId:ride,phase:host.snapshot.phase,origin,target})
- async function permit(req){const result=await issue('driver-a',req);assert.equal(result.status,200);return result.token}
+ async function permit(req){
+  const read=await driverControl('driver-a',{action:'target',rideId:req.rideId,phase:req.phase})
+  assert.equal(read.status,200);assert.deepEqual(read.body.target.identity,{authUserId:driverAuth,profileUserId:profile,driverId:driver})
+  assert.deepEqual(read.body.target.evidence.point,req.target)
+  const e=read.body.target.evidence
+  const result=await driverControl('driver-a',{action:'permit',rideId:req.rideId,phase:req.phase,origin:req.origin,evidenceId:e.id,evidenceVersion:e.version})
+  assert.equal(result.status,200);return result.body.token
+ }
  async function route(name,req){
   const token=await permit(req),response=await post(token,req);assert.equal(response.status,200)
   const data=await response.json();assert.equal(data.code,'Ok')
@@ -121,6 +130,7 @@ try{
  }
  const pickupReq=request({lat:-9.3990,lon:-40.5220},point(pickup))
  assert.equal((await issue('driver-b',pickupReq)).status,403)
+ assert.equal((await driverControl('driver-b',{action:'target',rideId:ride,phase:'PICKUP'})).status,403)
  await route('pickup',pickupReq)
  await route('reroute',request({lat:-9.403901,lon:-40.5040233},point(pickup)))
  const pending=await permit(pickupReq)
@@ -132,8 +142,9 @@ try{
  sql("update public.rides set status='finalizada',completed_at=clock_timestamp() where id=$1",[ride]);refresh()
  assert.equal((await post(finalPending,trip)).status,403)
  assert.equal((await issue('driver-a',trip)).status,403)
+ assert.equal((await driverControl('driver-a',{action:'target',rideId:ride,phase:'TRIP'})).status,403)
  assert.ok(await recovered.recover());assert.equal(record,null);assert.ok(recovered.canReturnToLegacy());assert.equal(sent,1)
- const report={privateQuote:quoteTls.stats(),recoveredWithoutDuplicate:true,source:'OSM_PBF',extract_sha256:manifest.extract_sha256,selectedPublicNodes:2,auth:'synthetic',dispatch:'synthetic after commit',tariffs:'synthetic inputs to observed v21 formula',quote,driverAuthority:'v21 fixture',routes}
+ const report={privateQuote:quoteTls.stats(),recoveredWithoutDuplicate:true,source:'OSM_PBF',extract_sha256:manifest.extract_sha256,selectedPublicNodes:2,auth:'synthetic',dispatch:'synthetic after commit',tariffs:'synthetic inputs to observed v21 formula',quote,driverAuthority:'v21 service-only RPC and target/permit control',routes}
  writeFileSync(join(out,'v21-regional-report.json'),JSON.stringify(report,null,2))
  console.log('APOIS_V21_OSM_TO_FERROSTAR_INPUT_OK',JSON.stringify(report))
 }finally{panel.close();host.close();gateway.closeAllConnections();await new Promise(res=>gateway.close(res));store.close();rmSync(dir,{recursive:true,force:true})}

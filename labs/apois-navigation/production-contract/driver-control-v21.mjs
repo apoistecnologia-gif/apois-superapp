@@ -17,10 +17,11 @@ export function trustedTarget(proof,rideId,phase,now){
     e.rideId!==rideId||e.phase!==phase||e.source!=='INDEPENDENT_OSM'||!point(e.point))return null
  return Object.freeze({rideId,phase,identity:Object.freeze({authUserId:proof.authUserId,profileUserId:proof.profileUserId,driverId:proof.driverId}),evidence:Object.freeze({id:e.id,version:e.version,source:e.source,point:Object.freeze({...e.point})})})
 }
-export function createDriverControl({enabled=false,authority,issuePermit,allowPilot=()=>false,now=Date.now}={}){
+export function createDriverControl({enabled=false,authority,issuePermit,allowPilot=()=>false,now=Date.now,timeout=5000,maxPending=4}={}){
  if(enabled!==true)return async()=>fail(409,'experimental_navigation_disabled')
- if(![authority,issuePermit,allowPilot,now].every(f=>typeof f==='function'))throw Error('Trusted driver dependencies required')
- return async(session,request,signal=AbortSignal.timeout(5000))=>{
+ if(![authority,issuePermit,allowPilot,now].every(f=>typeof f==='function')||!Number.isSafeInteger(timeout)||timeout<1||timeout>5000||!Number.isSafeInteger(maxPending)||maxPending<1||maxPending>32)throw Error('Trusted driver dependencies required')
+ let pending=0
+ const handle=async(session,request,signal)=>{
   if(!(signal instanceof AbortSignal)||signal.aborted)return fail(503,'navigation_unavailable')
   const target=request?.action==='target',permit=request?.action==='permit'
   if(!target&&!permit)return fail(422,'invalid_driver_request')
@@ -29,6 +30,7 @@ export function createDriverControl({enabled=false,authority,issuePermit,allowPi
    (permit&&(!point(request.origin)||!uuid(request.evidenceId)||!Number.isSafeInteger(request.evidenceVersion)||request.evidenceVersion<1)))return fail(422,'invalid_driver_request')
   if(typeof session!=='string'||!session.length||session.length>8192||/\s|[\x00-\x1f\x7f]/.test(session))return fail(401,'unauthorized')
   const req={rideId:request.rideId,phase:request.phase}
+  const input=permit?{origin:{...request.origin},evidenceId:request.evidenceId,evidenceVersion:request.evidenceVersion}:null
   try{
    const proof=await authority(session,req,signal)
    const result=trustedTarget(proof,req.rideId,req.phase,now())
@@ -36,13 +38,29 @@ export function createDriverControl({enabled=false,authority,issuePermit,allowPi
    if(!result||await allowPilot(result.identity.authUserId)!==true)return fail(403,'driver_not_authorized')
    if(signal.aborted)return fail(503,'navigation_unavailable')
    if(target)return {status:200,body:{ok:true,target:result}}
-   if(request.evidenceId!==result.evidence.id||request.evidenceVersion!==result.evidence.version)return fail(409,'target_changed')
+   if(input.evidenceId!==result.evidence.id||input.evidenceVersion!==result.evidence.version)return fail(409,'target_changed')
    // The issuer independently authenticates and loads fresh proof again.
    // Client cannot choose the target, driver, provenance or scope.
-   const issued=await issuePermit(session,{...req,origin:{...request.origin},target:{...result.evidence.point}},signal)
+   const issued=await issuePermit(session,{...req,origin:input.origin,target:{...result.evidence.point}},signal)
    if(signal.aborted)return fail(503,'navigation_unavailable')
    if(issued?.status!==200||typeof issued.token!=='string'||!tokenFormat.test(issued.token))return fail(issued?.status===429?429:issued?.status===403?403:503,'permit_unavailable')
    return {status:200,body:{ok:true,rideId:req.rideId,phase:req.phase,evidenceId:result.evidence.id,evidenceVersion:result.evidence.version,token:issued.token}}
   }catch{return fail(503,'navigation_unavailable')}
+ }
+ return async(session,request,signal)=>{
+  if(signal!==undefined&&(!(signal instanceof AbortSignal)||signal.aborted))return fail(503,'navigation_unavailable')
+  if(pending>=maxPending)return fail(429,'navigation_busy')
+  const controller=new AbortController();let timer,onAbort
+  pending++
+  const work=handle(session,request,controller.signal)
+  // Non-cooperative adapters occupy capacity until they actually settle.
+  work.then(()=>pending--,()=>pending--)
+  try{
+   const deadline=new Promise(resolve=>{
+    onAbort=()=>{controller.abort();resolve(fail(503,'navigation_unavailable'))}
+    timer=setTimeout(onAbort,timeout);signal?.addEventListener('abort',onAbort,{once:true});if(signal?.aborted)onAbort()
+   })
+   return await Promise.race([work,deadline])
+  }finally{clearTimeout(timer);if(onAbort)signal?.removeEventListener('abort',onAbort)}
  }
 }

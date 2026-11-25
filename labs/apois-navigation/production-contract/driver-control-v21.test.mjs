@@ -47,3 +47,11 @@ test('proof and permit only for independently confirmed ride, exact route, singl
 test('revocation between target lookup and issuer authority read denies permit',async()=>{
  const f=fixture();f.change(true);assert.equal((await f.control('synthetic-session',permit)).status,403);assert.equal(f.reads(),2)
 })
+
+test('non-cooperative read times out, occupies capacity, cannot issue later',async()=>{
+ let unblock,issued=0
+ const f=createDriverControl({enabled:true,timeout:15,maxPending:1,allowPilot:()=>true,authority:()=>new Promise(r=>unblock=r),issuePermit:async()=>{issued++;return {status:503}}})
+ assert.equal((await f('synthetic-session',permit)).status,503)
+ assert.equal((await f('synthetic-session',target)).status,429)
+ unblock(null);await new Promise(r=>setImmediate(r));assert.equal(issued,0)
+})
