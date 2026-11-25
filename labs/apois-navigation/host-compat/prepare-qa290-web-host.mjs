@@ -26,12 +26,15 @@ export class ConfirmedNavigationLaunch {
     openNative:(r:Request & {revision:number})=>Promise<OpenResult>;
     closeNative:(sessionId:string)=>Promise<boolean>});
   invalidate():Promise<boolean>;
+  onNativeClosed(event:unknown):boolean;
+  recheck():Promise<string>;
+  observeRide(rideId:string|null,status:string|null):Promise<string>|undefined;
   launch(r:Request & {openExternal:()=>Promise<void>}):Promise<"external"|"internal"|"busy"|"stale"|"unverified"|"uncertain">;
 }
 `,{flag:"wx"});
 writeFileSync(join(lib,"host.ts"),`// APOIS_NAVIGATION_QA290_CONFIRMED_HOST
 import {supabase} from "@/integrations/supabase/client";
-import {Capacitor,registerPlugin} from "@capacitor/core";
+import {Capacitor,registerPlugin,type PluginListenerHandle} from "@capacitor/core";
 import {ConfirmedNavigationLaunch,type ConfirmedPhase,type ConfirmedLaunchProof} from "./confirmed-navigation-launch.mjs";
 
 // Hard disabled. Do not expose a preference, remote flag or deep link until
@@ -61,14 +64,39 @@ type ConfirmedRequest={rideId:string;phase:ConfirmedPhase;revision:number};
 type ConfirmedNativePlugin={
   openConfirmed(request:ConfirmedRequest):Promise<{state:"opened";sessionId:string}|{state:"unavailable"}>;
   closeConfirmed(request:{sessionId:string}):Promise<{closed:boolean}>;
+  addListener(eventName:"confirmedRideIntent",listener:(event:unknown)=>void):Promise<PluginListenerHandle>;
 };
 const nativeName="ApoisNavigationLab";
 const native=registerPlugin<ConfirmedNativePlugin>(nativeName);
+let listenerReady:Promise<boolean>|null=null;
+let listenerEpoch=0;
+let listener:PluginListenerHandle|null=null;
+function ensureNativeListener():Promise<boolean>{
+  if(listener)return Promise.resolve(true);
+  if(listenerReady)return listenerReady;
+  const epoch=listenerEpoch;
+  const pending=native.addListener("confirmedRideIntent",event=>{
+    if(epoch===listenerEpoch)launch.onNativeClosed(event);
+  }).then(async handle=>{
+    if(epoch!==listenerEpoch){await handle.remove();return false;}
+    listener=handle;return true;
+  }).catch(()=>false);
+  listenerReady=pending;
+  void pending.finally(()=>{if(listenerReady===pending)listenerReady=null;});
+  return pending;
+}
+async function boundedVerify(request:{rideId:string;phase:ConfirmedPhase}):Promise<ConfirmedLaunchProof|null>{
+  let timeout:ReturnType<typeof setTimeout>|undefined;
+  try{
+    return await Promise.race([verify(request),new Promise<null>(resolve=>{timeout=setTimeout(()=>resolve(null),5000);})]);
+  }finally{if(timeout!==undefined)clearTimeout(timeout);}
+}
 const launch=new ConfirmedNavigationLaunch({
-  enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify,
+  enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify:boundedVerify,
   openNative:async request=>{
     if(!Capacitor.isNativePlatform()||Capacitor.getPlatform()!=="android"||
        !Capacitor.isPluginAvailable(nativeName))return {state:"unavailable"};
+    if(!await ensureNativeListener())return {state:"unavailable"};
     // A rejection or malformed response is NOT proof of no Activity.
     // Pass it to the controller's ambiguity guard, never convert to fallback.
     return native.openConfirmed(request);
@@ -85,20 +113,38 @@ export async function launchConfirmedApoisNavigation(rideId:string,phase:Confirm
 // data reads in the default mode. Invalidation never runs a ride operation.
 export function bindConfirmedNavigationLifecycle():()=>void {
   if(!EXPERIMENTAL_INTERNAL_NAVIGATION)return ()=>{};
-  let previous:string|null=null;
+  let previous:string|null|undefined;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
     const current=session?.user.id??null;
-    if(event==="SIGNED_OUT"||current!==previous){previous=current;void launch.invalidate();}
+    if(event==="SIGNED_OUT"||(previous!==undefined&&current!==previous))void launch.invalidate();
+    previous=current;
   });
-  return ()=>{subscription.unsubscribe();void launch.invalidate();};
+  // Poll only while the controller owns a native session.
+  // Background WebView timers are best-effort, not a native authority lease.
+  const timer=window.setInterval(()=>{void launch.recheck();},20000);
+  return ()=>{
+    subscription.unsubscribe();
+    window.clearInterval(timer);
+    ++listenerEpoch;
+    const old=listener;
+    listener=null;listenerReady=null;
+    if(old)void old.remove().catch(()=>undefined);
+    void launch.invalidate();
+  };
+}
+
+export function observeConfirmedNavigationRide(rideId:string|null,status:string|null):void{
+  if(EXPERIMENTAL_INTERNAL_NAVIGATION)void launch.observeRide(rideId,status);
 }
 `,{flag:"wx"});
 const appPath=join(root,"src/routes/motorista.app.tsx");
 let app=readFileSync(appPath,"utf8");
 const replaceExact=(a,b)=>{assert.equal(app.split(a).length,2,"QA290 host anchor: "+a);app=app.replace(a,()=>b);};
 assert.ok(app.includes("APOIS_DRIVER_HOME_PREMIUM_V1")&&app.includes("APOIS_DRIVER_RIDE_VIDEO_AUDIT_V1"));
-app='// APOIS_NAVIGATION_QA290_CONFIRMED_LAUNCH\nimport {launchConfirmedApoisNavigation,bindConfirmedNavigationLifecycle} from "@/lib/apois-navigation-lab/host";\n'+app;
+app='// APOIS_NAVIGATION_QA290_CONFIRMED_LAUNCH\nimport {launchConfirmedApoisNavigation,bindConfirmedNavigationLifecycle,observeConfirmedNavigationRide} from "@/lib/apois-navigation-lab/host";\n'+app;
 replaceExact("function MotoristaApp() {","function MotoristaApp() {\n  useEffect(() => bindConfirmedNavigationLifecycle(), []);");
+replaceExact("  const [active, setActive] = useState<RideRow | null>(null);",
+  "  const [active, setActive] = useState<RideRow | null>(null);\n  useEffect(() => { observeConfirmedNavigationRide(active?.id ?? null,active?.status ?? null); }, [active?.id,active?.status]);");
 const pickup="launchApoisNavigationAfterRideStart(accepted.origin_lat, accepted.origin_lng)";
 replaceExact(pickup,'launchConfirmedApoisNavigation(accepted.id, "PICKUP", () => '+pickup+')');
 const trip="launchApoisNavigationAfterRideStart(ride.destination_lat, ride.destination_lng)";
