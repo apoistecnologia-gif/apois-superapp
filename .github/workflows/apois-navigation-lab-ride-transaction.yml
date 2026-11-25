@@ -69,4 +69,68 @@ jobs:
             end if;
           end $$;
           select 'APOIS_RIDE_TRANSACTION_ROLLBACK_OK';
+          -- Fixture-only adapter for the PostgreSQL transaction contract.
+          reset role;
+          create function apois_nav_lab.create_fixture_ride(
+            actor uuid, selection_id uuid, request_id uuid, ride uuid
+          ) returns uuid language plpgsql security invoker set search_path = '' as $
+          declare
+            prepared jsonb;
+            passenger uuid;
+            existing_ride uuid;
+          begin
+            select u.id, s.ride_id into passenger, existing_ride
+              from public.users u join apois_nav_lab.selection s on s.passenger_id=u.id
+              where u.auth_user_id=actor and s.id=selection_id and s.request_key=request_id
+                and u.deleted_at is null and u.blocked_at is null
+                and (u.suspended_until is null or u.suspended_until<=clock_timestamp())
+              for share of u for update of s;
+            if not found then return null; end if;
+            if existing_ride is not null then return existing_ride; end if;
+
+            prepared := apois_nav_lab.prepare_selection(actor,selection_id,request_id);
+            if prepared is null then return null; end if;
+            insert into public.rides(
+              id,passenger_id,request_key,category,status,
+              origin_lat,origin_lng,destination_lat,destination_lng,waypoints
+            ) values (
+              ride,passenger,request_id,'carros','procurar_motorista',
+              (prepared->'origin'->>'lat')::double precision,
+              (prepared->'origin'->>'lng')::double precision,
+              (prepared->'destination'->>'lat')::double precision,
+              (prepared->'destination'->>'lng')::double precision,'[]'
+            );
+            if not apois_nav_lab.bind_selection(actor,selection_id,ride) then
+              raise exception 'fixture ride binding rejected';
+            end if;
+            return ride;
+          end $;
+          revoke all on function apois_nav_lab.create_fixture_ride(uuid,uuid,uuid,uuid) from public;
+          grant execute on function apois_nav_lab.create_fixture_ride(uuid,uuid,uuid,uuid) to service_role;
+          set role service_role;
+          do $
+          declare
+            actor constant uuid := '00000000-0000-4000-8000-000000000011';
+            other_actor constant uuid := '00000000-0000-4000-8000-000000000012';
+            request_id constant uuid := '00000000-0000-4000-8000-000000000031';
+            ride constant uuid := '00000000-0000-4000-8000-000000000041';
+            retry_ride constant uuid := '00000000-0000-4000-8000-000000000042';
+            selection_id uuid;
+          begin
+            select id into strict selection_id from apois_nav_lab.selection where request_key=request_id;
+            if apois_nav_lab.create_fixture_ride(other_actor,selection_id,request_id,ride) is not null then
+              raise exception 'other passenger accepted';
+            end if;
+            if apois_nav_lab.create_fixture_ride(actor,selection_id,request_id,ride) is distinct from ride then
+              raise exception 'fixture ride was not created';
+            end if;
+            if apois_nav_lab.create_fixture_ride(actor,selection_id,request_id,retry_ride) is distinct from ride then
+              raise exception 'retry did not return the linked ride';
+            end if;
+            if (select count(*) from public.rides where request_key=request_id) <> 1
+               or (select ride_id from apois_nav_lab.selection where id=selection_id) is distinct from ride then
+              raise exception 'ride and selection state diverged';
+            end if;
+          end $;
+          select 'APOIS_RIDE_TRANSACTION_CREATE_OK';
           SQL
