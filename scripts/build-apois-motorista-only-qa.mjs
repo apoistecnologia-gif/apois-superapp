@@ -68,6 +68,24 @@ if(phase==="brand"){
   must(main.includes("registerPlugin(DriverVoicePlugin.class)"),"voz Motorista nao registrada");
   must(main.includes("registerPlugin(CourierLocationPlugin.class)"),"registro Courier esperado ausente");
   main=main.replace(/\s*registerPlugin\(CourierLocationPlugin\.class\);/g,"");
+  // Keep QA290 external navigation/return bubble, but disallow courier roles
+  // in the final Motorista-only native bridge and remove delivery deep links.
+  const navPath=resolve(javaDir,"APOISExternalNavigationPlugin.java");
+  const bubblePath=resolve(javaDir,"APOISReturnBubble.java");
+  let nav=read(navPath),bubble=read(bubblePath);
+  must(main.includes("registerPlugin(APOISExternalNavigationPlugin.class)")&&main.includes("APOISReturnBubble")&&main.includes("APOIS_ANDROID_WEBVIEW_OVERSCROLL_V1"),"QA290 native recovery missing");
+  must(nav.includes('!"motorista".equals(role) && !"entregador".equals(role)')&&bubble.includes('!"motorista".equals(role) && !"entregador".equals(role)'),"role guard missing");
+  nav=nav.replaceAll('!"motorista".equals(role) && !"entregador".equals(role)','!"motorista".equals(role)')
+    .replace('String key = "motorista".equals(role) ? "driver_running" : "courier_running";','String key = "driver_running";')
+    .replace('("motorista".equals(role) ? "DRIVER" : "COURIER")','"DRIVER"');
+  bubble=bubble.replaceAll('!"motorista".equals(role) && !"entregador".equals(role)','!"motorista".equals(role)')
+    .replace(/String target = "entregador"\.equals\(role\)\s*\? "br\.com\.apois\.parceiro:\/\/module\/entregador"\s*:\s*"br\.com\.apois\.parceiro:\/\/module\/motorista";/,'String target = "br.com.apois.parceiro://module/motorista";')
+    .replace('brand.setContentDescription("APOIS Parceiro")','brand.setContentDescription("APOIS Motorista")');
+  must(!nav.includes('"entregador"')&&!nav.includes('"courier_running"')&&!nav.includes('"COURIER"')&&!bubble.includes('module/entregador')&&!bubble.includes('"entregador"'),"legacy courier role still exposed");
+  write(navPath,nav);write(bubblePath,bubble);
+  const driver=read(resolve(javaDir,"DriverLocationService.java"));
+  for(const marker of [".setMinUpdateDistanceMeters(0f)","qa235CheckPickupArrival(location)","/rest/v1/rpc/driver_mark_arrived","qa236PickupReady","driver_set_presence","setStartupConfirmed(true);","private void loadPersistedSessionTokens()"])must(driver.includes(marker),"QA290 GPS missing "+marker);
+  must(nav.includes("public void bubbleStatus(PluginCall call)")&&nav.includes("public void setOperation(PluginCall call)")&&nav.includes("qa235PickupLat"),"QA290 external navigation missing");
   write(mainPath,main);
   const courierService=/<service\b(?=[^>]*android:name=["']\.CourierLocationService["'])[^>]*\/>/g;
   must(courierService.test(manifest),"servico Courier nao encontrado no Manifest");

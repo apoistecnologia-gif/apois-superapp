@@ -142,12 +142,12 @@ test('09 — idle map has reserved viewport, compact summary and usable navigati
  assert.ok(!panel.includes('45dvh'));
 });
 
-test('10 — reference map palette and directional GPS marker; APK generation remains manual',()=>{
+test('10 — reference map palette and directional GPS marker; APK generation requires explicit commit or dispatch',()=>{
  const marker=read('scripts/harden-motorista-map-branding.mjs');
  const pipeline=read('.github/workflows/apois-motorista-only-qa-apk.yml');
  expect(home,['#E5E2D9','#E9C4B9','#18394C','variant={hasRideUI ? "brand" : "direction"}','featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "on" }]']);
  expect(marker,['APOIS_DRIVER_HOME_DIRECTION_V1','displayHeading','Number.isFinite(heading)','variant === "direction"']);
- assert.ok(!pipeline.includes('  push:\n'));
+ assert.ok(pipeline.includes("contains(github.event.head_commit.message, '[motorista-apk]')"));
  assert.ok(pipeline.includes("github.event_name == 'workflow_dispatch'"));
 });
 
