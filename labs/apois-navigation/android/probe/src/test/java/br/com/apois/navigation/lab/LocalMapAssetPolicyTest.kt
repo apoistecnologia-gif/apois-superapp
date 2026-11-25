@@ -3,6 +3,7 @@ package br.com.apois.navigation.lab
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 class LocalMapAssetPolicyTest {
     private val data="test".toByteArray()
@@ -25,6 +26,16 @@ class LocalMapAssetPolicyTest {
         val e=entries()
         assertFalse(LocalMapAssetPolicy.valid(e.drop(1)+e.first().copy(bytes=LocalMapAssetPolicy.MAX_BYTES)))
         assertFalse(LocalMapAssetPolicy.valid(e.drop(1)+e.first().copy(sha256="bad")))
+    }
+    @Test fun verifiedCopyDoesNotAcceptCorruptOrOversizedSource() {
+        val e=entry("vale.pmtiles")
+        val out=ByteArrayOutputStream()
+        assertTrue(LocalMapAssetPolicy.verify(ByteArrayInputStream(data),e,out))
+        assertArrayEquals(data,out.toByteArray())
+        val oversized=ByteArrayOutputStream()
+        assertFalse(LocalMapAssetPolicy.verify(ByteArrayInputStream("tests".toByteArray()),e,oversized))
+        assertEquals(0,oversized.size())
+        assertFalse(LocalMapAssetPolicy.verify(ByteArrayInputStream("xxxx".toByteArray()),e,ByteArrayOutputStream()))
     }
     @Test fun verifiesExactBytesAndHash() {
         val e=entry("style.json")

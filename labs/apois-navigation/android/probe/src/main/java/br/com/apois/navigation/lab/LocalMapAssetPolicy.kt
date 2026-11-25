@@ -1,6 +1,7 @@
 package br.com.apois.navigation.lab
 
 import java.io.InputStream
+import java.io.OutputStream
 import java.security.MessageDigest
 
 internal data class MapAssetEntry(val path: String, val bytes: Long, val sha256: String)
@@ -32,7 +33,7 @@ internal object LocalMapAssetPolicy {
     }
     fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(bytes).toHex()
     private fun ByteArray.toHex() = joinToString("") { "%02x".format(it.toInt() and 255) }
-    fun verify(input: InputStream, entry: MapAssetEntry): Boolean {
+    fun verify(input: InputStream, entry: MapAssetEntry, copyTo: OutputStream? = null): Boolean {
         if (entry.bytes !in 1..MAX_BYTES || !hex.matches(entry.sha256)) return false
         val digest = MessageDigest.getInstance("SHA-256")
         val buf = ByteArray(8192)
@@ -44,6 +45,7 @@ internal object LocalMapAssetPolicy {
             read += n
             if (read > entry.bytes) return false
             digest.update(buf,0,n)
+            copyTo?.write(buf,0,n)
         }
         return read == entry.bytes && digest.digest().toHex() == entry.sha256
     }
