@@ -20,3 +20,11 @@ begin
  raise exception 'RPC grants incorrect';
  end if;
 end $$;
+
+-- Additional service-only RPC for the driver control/issuer candidate.
+create function public.apois_nav_lab_driver_proof_v21(p_auth_user uuid,p_ride uuid,p_phase text)
+returns jsonb language sql stable security invoker set search_path='' as $$
+ select apois_nav_lab.read_driver_proof_v21(p_auth_user,p_ride,p_phase)
+$$;
+revoke all on function public.apois_nav_lab_driver_proof_v21(uuid,uuid,text) from public,anon,authenticated;
+grant execute on function public.apois_nav_lab_driver_proof_v21(uuid,uuid,text) to service_role;
