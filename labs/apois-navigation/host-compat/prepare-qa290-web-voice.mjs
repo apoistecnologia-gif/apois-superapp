@@ -5,8 +5,7 @@ import {join} from "node:path";
 import {createHash} from "node:crypto";
 import assert from "node:assert/strict";
 import {instrumentWebVoice} from "./instrument-web-voice.mjs";
-import {instrumentVoice} from "./instrument-driver-voice.mjs";
-import {instrumentSharedAudio} from "./instrument-shared-audio.mjs";
+import {instrumentGeneratedJavaVoice} from "./instrument-generated-java-voice.mjs";
 
 function once(s,a,b) {
   assert.equal(s.split(a).length,2,"QA290 generated voice anchor: "+a);
@@ -72,14 +71,6 @@ export function setApoisExternalNavigationOwnsVoice(value:boolean){
   s=once(s,"if (!current()) return;\n      console.warn(\"[APOIS VOICE] fala nativa falhou; tentando Web Speech\", error);","if (!current() || confirmedVoiceScope) return;\n      console.warn(\"[APOIS VOICE] fala nativa falhou; tentando Web Speech\", error);");
   s=once(s,"const s = synth();\n  if (!s) return;\n  await loadVoices();","if (confirmedVoiceScope) return;\n  const s = synth();\n  if (!s) return;\n  await loadVoices();");
   return s;
-}
-export function instrumentGeneratedJavaVoice(raw) {
-  // Historical hardener changed both 900ms startup delays to 2200ms.
-  // Reuse the compiled original generation guard, then restore exact package
-  // and delay. No second TTS service or new plugin identifier.
-  assert.equal(raw.split("2200L").length,3,"QA290 historical TTS startup delay");
-  const s=instrumentSharedAudio(instrumentVoice(raw.replaceAll("2200L","900L")));
-  return once(s,"package br.com.apois.navigation.compat.lab;","package com.apois.motorista;").replaceAll("900L","2200L");
 }
 const root=realpathSync(process.argv[2]);
 const repo=realpathSync(process.argv[3]);
