@@ -37,9 +37,19 @@ fn main() {
     let mut off = location.current_location.clone();
     off.coordinates.lat += 0.01;
     off.horizontal_accuracy = 5.0;
-    let deviated = controller.update_user_location(off, initial.clone());
+    // Upstream 0.59.0 checks deviation against the previous TripState.
+    // Require detection by the next independent GPS fix, and verify stale
+    // turn guidance is suppressed once detected. Never skip the assertion.
+    off.timestamp = SystemTime::now() + Duration::from_secs(1);
+    let first_off = controller.update_user_location(off, initial.clone());
+    assert!(matches!(first_off.trip_state(), TripState::Navigating { .. }));
+    off.timestamp += Duration::from_secs(1);
+    let deviated = controller.update_user_location(off, first_off);
     match deviated.trip_state() {
-        TripState::Navigating { deviation, .. } => assert!(deviation.is_completely_off_route()),
+        TripState::Navigating { deviation, spoken_instruction, visual_instruction, .. } => {
+            assert!(deviation.is_completely_off_route(), "two precise off-route fixes must be detected");
+            assert!(spoken_instruction.is_none() && visual_instruction.is_none(), "stale turn instructions must be suppressed");
+        },
         _ => panic!("off-route sample must not complete navigation"),
     };
     let mut state = initial;
