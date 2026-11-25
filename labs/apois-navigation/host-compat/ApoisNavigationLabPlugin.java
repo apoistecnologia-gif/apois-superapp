@@ -1,6 +1,7 @@
 package br.com.apois.navigation.compat.lab;
 
 import br.com.apois.navigation.lab.LabNavigationBridge;
+import br.com.apois.navigation.lab.ConfirmedLiveNavigationBridge;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -20,10 +21,22 @@ public class ApoisNavigationLabPlugin extends Plugin {
                 JSObject data=call.getData();
                 if(data==null||data.length()!=3||!data.has("rideId")||!data.has("phase")||!data.has("revision"))
                     throw new IllegalArgumentException("Invalid request");
-                ConfirmedNavigationRequest.validate(data.opt("rideId"),data.opt("phase"),data.opt("revision"));
-                call.resolve(new JSObject().put("state","unavailable"));
+                ConfirmedNavigationRequest request=ConfirmedNavigationRequest.validate(data.opt("rideId"),data.opt("phase"),data.opt("revision"));
+                if(!hasListeners("confirmedRideIntent")){
+                    call.resolve(new JSObject().put("state","unavailable"));
+                    return;
+                }
+                String id=ConfirmedLiveNavigationBridge.INSTANCE.openPrepared(getActivity(),request.rideId,request.phase,request.revision,event -> {
+                    try {notifyListeners("confirmedRideIntent",JSObject.fromJSONObject(event),false);}
+                    catch(Exception ignored) { /* No business action executed. */ }
+                });
+                JSObject result=new JSObject().put("state",id==null?"unavailable":"opened");
+                if(id!=null)result.put("sessionId",id);
+                call.resolve(result);
             } catch(IllegalArgumentException e) {
                 call.reject("Invalid confirmed navigation request");
+            } catch(Exception e) {
+                call.reject("Confirmed navigation opening not acknowledged");
             }
         });
     }
@@ -31,7 +44,10 @@ public class ApoisNavigationLabPlugin extends Plugin {
     // Never close a synthetic replay using a real-ride transport call.
     @PluginMethod
     public void closeConfirmed(PluginCall call) {
-        call.resolve(new JSObject().put("closed",false));
+        getActivity().runOnUiThread(() -> {
+            String id=call.getString("sessionId");
+            call.resolve(new JSObject().put("closed",id!=null&&ConfirmedLiveNavigationBridge.INSTANCE.close(id)));
+        });
     }
 
     @PluginMethod
@@ -66,6 +82,9 @@ public class ApoisNavigationLabPlugin extends Plugin {
         });
     }
     @Override protected void handleOnDestroy(){
-        getActivity().runOnUiThread(() -> LabNavigationBridge.INSTANCE.closeActive());
+        getActivity().runOnUiThread(() -> {
+            ConfirmedLiveNavigationBridge.INSTANCE.revoke();
+            LabNavigationBridge.INSTANCE.closeActive();
+        });
     }
 }
