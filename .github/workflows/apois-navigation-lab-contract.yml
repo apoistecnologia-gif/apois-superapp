@@ -1,0 +1,50 @@
+name: APOIS Navegacao - contrato Valhalla Ferrostar pt-BR (sem APK)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/contract/**', '.github/workflows/apois-navigation-lab-contract.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar engine Valhalla oficial, sem servico contratado
+        run: |
+          python -m pip install --only-binary=:all: pyvalhalla==3.9.3
+          sudo apt-get update -qq && sudo apt-get install -y osmium-tool
+      - name: Gerar mapa ficticio e solicitar duas rotas reais ao engine
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/apois-contract"
+          mkdir -p "$W"
+          python labs/apois-navigation/contract/generate_graph.py "$W/grid.osm"
+          osmium cat "$W/grid.osm" -o "$W/grid.osm.pbf"
+          python labs/apois-navigation/contract/test_contract.py "$W"
+      - name: Reproduzir ambas as rotas no Ferrostar real
+        run: |
+          set -euo pipefail
+          rustup update stable && rustup default stable
+          W="$RUNNER_TEMP/apois-contract"
+          for name in initial recalculated; do
+            cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- "$W/$name.json" | tee "$W/$name-replay.txt"
+            grep -E 'APOIS_REPLAY_OK.*spoken_instruction_fixes=[1-9][0-9]*' "$W/$name-replay.txt"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-navigation-contract-report
+          path: |
+            ${{ runner.temp }}/apois-contract/contract-report.json
+            ${{ runner.temp }}/apois-contract/initial.json
+            ${{ runner.temp }}/apois-contract/recalculated.json
+            ${{ runner.temp }}/apois-contract/*-replay.txt
+          retention-days: 7

@@ -1,0 +1,3 @@
+# Contrato Valhalla–Ferrostar
+Teste local independente do download regional. Usa pyvalhalla 3.9.3 oficial, malha fictícia gerada por script, nenhuma API remota de rotas. Verifica rotas iniciais e alternativas, mesmo destino, geometria diferente, texto de voz pt-BR e banners; passa respostas reais ao parser e simulador Ferrostar. Exige eventos de voz, não reproduz áudio. Não comprova recálculo automático no Android nem qualidade de ruas reais. A versão do pacote e a imagem Docker regional podem diferir; validar ambas antes da produção.
+Referências: https://pypi.org/project/pyvalhalla/3.9.3/ e https://valhalla.github.io/valhalla/api/route/api-reference/
