@@ -40,12 +40,12 @@ test('01 — login visual white/red with original logo and safe inputs',()=>{
   'Google button must remain in patch guard, rendered JSX and final check');
  assert.ok(existsSync('superapp/branding/apois-client-red-logo.b64'),'Official logo missing');
 });
-test('02 — official welcome artwork extends behind action, same login destination',()=>{
+test('02 — official welcome artwork fits without cropping, same login destination',()=>{
  expect(welcome,[
   'APOIS_MOTORISTA_VISUAL_REF_20261124_WELCOME',
   './assets/apois-motorista-hero.webp',
   'data-apois-driver-approved-welcome-v1',
-  'position:absolute', 'bottom:0',
+  'position:absolute', 'bottom:0', 'object-fit:contain', 'padding-bottom:calc(72px + env(safe-area-inset-bottom))',
   'apois-driver-welcome-enter',
   "window.location.assign('./modules/motorista/index.html#/motorista/login')",
   'env(safe-area-inset-bottom)'
@@ -132,4 +132,12 @@ test('08 — Corridas-only source order and runtime safety unchanged',()=>{
   'apois-parceiro:motorista-google-url',
   'apois-parceiro:motorista-recovery-url']);
  assert.ok(!shell.includes('modules/entregador'),'Delivery selector must never load');
+});
+
+test('09 — idle map has reserved viewport, compact summary and usable navigation',()=>{
+ expect(home,['viewport mapa livre','+ 174px','+ 198px','m.setHeading(0)','m.setTilt(0)','altura nav home','rotulos sem quebra','labels.icon']);
+ expect(top,['h-[46px]','h-[44px]','setSideMenuOpen(true)']);
+ expect(panel,['"116px"','aria-expanded={expanded}','aria-controls="apois-driver-summary-details"','+ 58px','hidden={!expanded}']);
+ assert.ok(!welcome.includes('object-fit:cover'));
+ assert.ok(!panel.includes('45dvh'));
 });

@@ -7,6 +7,10 @@ on:
       - .github/workflows/apois-motorista-only-qa-apk.yml
       - scripts/qa/test-motorista-approved-visual-20261124.test.mjs
       - scripts/qa/test-motorista-recovery-gates-v1.test.mjs
+      - superapp/partner-shell/motorista-welcome.html
+      - scripts/harden-partner-motorista-home-premium-v1.mjs
+      - scripts/templates/ApoisDriverHomePremiumTop.tsx.txt
+      - scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt
   workflow_dispatch:
     inputs:
       installed_cert_sha256:
@@ -47,12 +51,12 @@ jobs:
       PARTNER_APP_LABEL: "APOIS Motorista"
       APOIS_MOTORISTA_ONLY: "1"
       APOIS_MOTORISTA_QA_BRANDING_DIR: ".work/motorista-only-branding"
-      # Chave historica confirmada no aparelho (versionCode 328) via apksigner e keytool.
+      # Chave historica confirmada no aparelho (versionCode 328 original; QA 9110 subsequent) via apksigner e keytool.
       # Usar exclusivamente o segredo protegido do Motorista; jamais o do Cliente.
       APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64: ${{ secrets.APOIS_PARTNER_QA_DEBUG_KEYSTORE_BASE64 }}
       APOIS_PARTNER_QA_CERT_SHA256: "4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4"
       APOIS_MOTORISTA_INSTALLED_CERT_SHA256: ${{ github.event_name == 'push' && '4a3476b91674301eb066146b6f3b8384d9827ab4bdb287b6f00cbbeab56a33f4' || inputs.installed_cert_sha256 }}
-      APOIS_MOTORISTA_INSTALLED_VERSION_CODE: ${{ github.event_name == 'push' && '328' || inputs.installed_version_code }}
+      APOIS_MOTORISTA_INSTALLED_VERSION_CODE: ${{ github.event_name == 'push' && '9110' || inputs.installed_version_code }}
 
     steps:
       - uses: actions/checkout@v4

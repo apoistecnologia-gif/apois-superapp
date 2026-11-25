@@ -10,18 +10,19 @@
     *{box-sizing:border-box}
     html,body{margin:0;width:100%;height:100%;background:#0D0F12;overscroll-behavior:none;overflow:hidden;-webkit-text-size-adjust:100%}
     body{position:fixed;inset:0}
-    .page{position:relative;width:100%;height:100dvh;margin:auto;max-width:540px;display:flex;flex-direction:column;overflow:hidden;padding-top:0;background:#0D0F12}
-    .hero{flex:1 1 auto;min-height:0;position:relative;overflow:hidden}
-    .hero img{display:block;width:100%;height:100%;object-fit:cover;object-position:center center;user-select:none;-webkit-user-drag:none}
-    .entry{position:absolute;z-index:2;inset-inline:0;bottom:0;background:linear-gradient(180deg,transparent 0%,rgba(4,6,9,.10) 100%);padding:10px 22px max(60px,calc(env(safe-area-inset-bottom) + 36px))}
-    .entry button{appearance:none;width:100%;min-height:60px;display:flex;align-items:center;justify-content:center;gap:22px;border-radius:999px;border:1px solid rgba(255,255,255,.13);background:linear-gradient(135deg,#F51D2A 0%,#E90A21 50%,#BB071D 100%);color:#fff;font:900 clamp(20px,6vw,26px) Inter,system-ui,sans-serif;box-shadow:0 11px 27px rgba(187,7,29,.25);cursor:pointer;touch-action:manipulation}
+    .page{position:relative;width:100%;height:100dvh;margin:auto;max-width:480px;display:flex;flex-direction:column;overflow:hidden;padding-top:max(28px,env(safe-area-inset-top));padding-bottom:calc(72px + env(safe-area-inset-bottom));background:#0D0F12}
+    .page::before{content:"";position:absolute;inset:0 0 auto;height:max(28px,env(safe-area-inset-top));background:#fff;z-index:3}
+    .hero{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;display:grid;place-items:center;padding:6px 12px 0}
+    .hero img{display:block;width:100%;height:100%;min-height:0;object-fit:contain;object-position:center center;user-select:none;-webkit-user-drag:none}
+    .entry{position:absolute;z-index:2;inset-inline:0;bottom:0;background:#0D0F12;padding:8px 22px max(14px,env(safe-area-inset-bottom))}
+    .entry button{appearance:none;width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:22px;border-radius:999px;border:1px solid rgba(255,255,255,.13);background:linear-gradient(135deg,#F51D2A 0%,#E90A21 50%,#BB071D 100%);color:#fff;font:800 clamp(16px,4.6vw,20px) Inter,system-ui,sans-serif;box-shadow:0 11px 27px rgba(187,7,29,.25);cursor:pointer;touch-action:manipulation}
     .entry button:active{transform:scale(.985)}.entry button:focus-visible{outline:3px solid #fff;outline-offset:3px}
     .entry svg{width:24px;height:24px;stroke:currentColor;stroke-width:2.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
-    @media(max-height:690px){.page{padding-top:0}.entry{padding:6px 16px max(34px,calc(env(safe-area-inset-bottom) + 16px))}.entry button{min-height:54px}}
+    @media(max-height:690px){.hero{padding-inline:8px}.entry{padding-inline:16px}.entry button{min-height:46px}}
   </style>
 </head>
 <body>
-  <!-- APOIS_DRIVER_APPROVED_WELCOME_V1 / APOIS_MOTORISTA_VISUAL_REF_20261124_WELCOME: original artwork untouched; CTA overlays image; native safe areas retained -->
+  <!-- APOIS_DRIVER_APPROVED_WELCOME_V1 / APOIS_MOTORISTA_VISUAL_REF_20261124_WELCOME: original artwork contained without cropping; CTA has reserved space; native safe areas retained -->
   <main class="page" data-apois-driver-approved-welcome-v1>
     <div class="hero" role="img" aria-label="APOIS Motorista. Dirija com liberdade e ganhe no seu ritmo. Carro branco adesivado com a logomarca APOIS Motorista.">
       <img src="./assets/apois-motorista-hero.webp" alt="" aria-hidden="true" />

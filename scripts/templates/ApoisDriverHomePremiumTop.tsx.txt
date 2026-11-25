@@ -1,14 +1,14 @@
       {/* APOIS_DRIVER_HOME_PREMIUM_V1 — cabeçalho compacto e status operacional real. */}
       {!hasRideUI && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 bg-gradient-to-b from-white via-white/98 to-transparent px-3 pb-5 pt-[calc(env(safe-area-inset-top)+7px)] text-[#111418]">
-          <div className="pointer-events-auto mx-auto flex h-[58px] max-w-xl items-center justify-between gap-2">
-            <button type="button" onClick={()=>navigate({to:"/motorista/perfil"})} aria-label="Abrir área do motorista" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/90">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 bg-gradient-to-b from-white via-white/98 to-transparent px-3 pb-1 pt-[calc(env(safe-area-inset-top)+4px)] text-[#111418]">
+          <div className="pointer-events-auto mx-auto flex h-[46px] max-w-xl items-center justify-between gap-2">
+            <button type="button" onClick={()=>setSideMenuOpen(true)} aria-label="Abrir menu do motorista" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/90">
               <ApoisHomeMenu size={26} strokeWidth={2.4}/>
             </button>
             <div className="flex min-w-0 items-center justify-center gap-2" aria-label="APOIS Motorista">
-              <img src={APOIS_PARTNER_LOGO_DATA_URL} alt="APOIS" className="h-[45px] w-[45px] shrink-0 rounded-full border border-[#F4C8CE] bg-white object-contain shadow-sm"/>
+              <img src={APOIS_PARTNER_LOGO_DATA_URL} alt="APOIS" className="h-[36px] w-[36px] shrink-0 rounded-full border border-[#F4C8CE] bg-white object-contain shadow-sm"/>
               <div className="min-w-0 leading-none">
-                <p className="whitespace-nowrap text-[clamp(18px,5.1vw,25px)] font-black tracking-tight">
+                <p className="whitespace-nowrap text-[clamp(16px,4.5vw,21px)] font-black tracking-tight">
                   AP<span className="text-[#E51B23]">O</span>IS
                 </p>
                 <p className="mt-1 text-[10px] font-black uppercase tracking-[0.26em] text-[#747986]">
@@ -19,18 +19,18 @@
             <div className="flex items-center gap-1">
               <button type="button" onClick={()=>navigate({to:"/motorista/notificacoes"})}
                 aria-label="Notificações"
-                className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_14px_rgba(0,0,0,.08)]">
+                className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_14px_rgba(0,0,0,.08)]">
                 <ApoisBell size={23}/>
               </button>
               <button type="button" onClick={()=>navigate({to:"/motorista/perfil"})} aria-label="Abrir perfil"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E0E2E6] bg-[#F1F2F4] text-[17px] font-black text-[#D50923]">
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E0E2E6] bg-[#F1F2F4] text-[17px] font-black text-[#D50923]">
                 {driverName.trim().charAt(0).toLocaleUpperCase("pt-BR")||"M"}
               </button>
             </div>
           </div>
-          <div className="pointer-events-auto mx-auto mt-2 flex min-h-[64px] max-w-xl items-center gap-3 rounded-[24px] border border-[#ECECEF] bg-white/98 px-4 py-2.5 shadow-[0_5px_21px_rgba(0,0,0,.10)]">
+          <div className="pointer-events-auto mx-auto mt-1 flex h-[44px] max-w-xl items-center gap-2 rounded-[16px] border border-[#ECECEF] bg-white/98 px-3 py-1 shadow-[0_5px_21px_rgba(0,0,0,.10)]">
             <span className={"h-3 w-3 shrink-0 rounded-full "+(online?"bg-[#06BE5A]":"bg-zinc-400")}/>
-            <strong className="text-[19px] font-black">{online?"Online":"Offline"}</strong>
+            <strong className="text-[16px] font-black">{online?"Online":"Offline"}</strong>
             <span className="hidden h-7 w-px bg-zinc-200 min-[360px]:block"/>
             <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#767B84]">
               {gpsStatus==="loading" ? "Obtendo localização..." : online?"Recebendo corridas":"Não está recebendo corridas"}
@@ -38,8 +38,8 @@
             <button type="button" role="switch" aria-checked={online} aria-label={online?"Ficar offline":"Ficar online"}
               disabled={!!effectiveStatusBlock||gpsStatus==="loading"}
               onClick={toggleOnline}
-              className={"relative h-[44px] w-[74px] shrink-0 rounded-full p-1 transition-colors disabled:opacity-50 "+(online?"bg-[#EC102E]":"bg-zinc-300")}>
-              <span className={"block h-9 w-9 rounded-full bg-white shadow-md transition-transform "+(online?"translate-x-[30px]":"translate-x-0")}/>
+              className={"relative h-[34px] w-[56px] shrink-0 rounded-full p-1 transition-colors disabled:opacity-50 "+(online?"bg-[#EC102E]":"bg-zinc-300")}>
+              <span className={"block h-[26px] w-[26px] rounded-full bg-white shadow-md transition-transform "+(online?"translate-x-[22px]":"translate-x-0")}/>
             </button>
           </div>
         </div>

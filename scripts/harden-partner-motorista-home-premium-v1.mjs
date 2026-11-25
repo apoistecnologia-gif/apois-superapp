@@ -30,6 +30,11 @@ const panelBegin=app.indexOf("function IdleBottomPanel({");
 const panelEnd=app.indexOf("/* ============================================================\n   OFERTA ENTRANTE",panelBegin);
 if(panelBegin<0||panelEnd<=panelBegin)throw Error("[FAIL] painel inicial inesperado");
 app=app.slice(0,panelBegin)+panel+"\n\n"+app.slice(panelEnd);
+// Keep the idle Google map in its own viewport; ride/offer navigation remains full screen.
+app=swap(app,'<div className="absolute inset-0">\n        <MovviMap','<div className="absolute inset-x-0" style={hasRideUI ? {top:0,bottom:0} : {top:"calc(env(safe-area-inset-top) + 102px)",bottom:"calc(max(env(safe-area-inset-bottom), 7px) + 174px)"}}>\n        <MovviMap',"viewport mapa livre");
+app=swap(app,'            : "calc(env(safe-area-inset-bottom) + 260px)";','            : "calc(max(env(safe-area-inset-bottom), 7px) + 198px)";',"centralizar acima do painel");
+app=swap(app,'background: "color-mix(in oklab, #111418 72%, transparent)",','background: !active ? "#FFFFFF" : "color-mix(in oklab, #111418 72%, transparent)",\n              color: !active ? "#24272C" : undefined,',"contraste GPS");
+app=swap(app,'              applyNavigationCamera(m, position, polyline, activeNavigationDestination, true);\n            }','              applyNavigationCamera(m, position, polyline, activeNavigationDestination, true);\n            } else if (!active) {\n              m.setHeading(0);\n              m.setTilt(0);\n            }',"mapa idle norte e plano");
 app=swap(app,'themeOverride="dark"','themeOverride={!active ? "client" : "dark"}',"tema do mapa");
 app=swap(app,'color={online ? "#F6BE1C" : "#94a3b8"}',
  'color={online && !active ? "#E51B23" : online ? "#F6BE1C" : "#94a3b8"}',"cor do marcador");
@@ -41,7 +46,7 @@ map=swap(map,'themeOverride?: "light" | "dark";','themeOverride?: "light" | "dar
 map=swap(map,'const theme: "light" | "dark" = themeOverride ?? (isDriverRole ? "dark" : resolved);',
  'const theme: "light" | "dark" = (themeOverride === "client" ? "light" : themeOverride) ?? (isDriverRole ? "dark" : resolved);',"tema");
 map=swap(map,'const styles = useMemo(() => getMapStyleForTheme(theme), [theme]);',
- 'const styles = useMemo(() => themeOverride === "client" ? [] : getMapStyleForTheme(theme), [theme, themeOverride]);',"estilo Google padrao");
+ 'const styles = useMemo<google.maps.MapTypeStyle[]>(() => themeOverride === "client" ? [{ featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "off" }] }, { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "off" }] }] : getMapStyleForTheme(theme), [theme, themeOverride]);',"estilo Google padrao");
 map=swap(map,'const bgColor = useMemo(() => getMapBackgroundForTheme(theme), [theme]);',
  'const bgColor = useMemo(() => themeOverride === "client" ? "#E7E4DE" : getMapBackgroundForTheme(theme), [theme, themeOverride]);',"fundo mapa");
 writeFileSync(mapPath,map,"utf8");
@@ -70,6 +75,11 @@ nav=swap(nav,'active ? "driver-nav-active bg-[#F6BE1C]/[.08] text-[#F6BE1C] ring
  'active ? (isHome ? "driver-nav-active text-[#E51B23]" : "driver-nav-active bg-[#F6BE1C]/[.08] text-[#F6BE1C] ring-1 ring-inset ring-[#F6BE1C]/15") : ""',"ativo");
 nav=swap(nav,'active ? "w-5 bg-[#F6BE1C]" : "w-4 bg-transparent"',
  'active ? (isHome ? "w-5 bg-[#E51B23]" : "w-5 bg-[#F6BE1C]") : "w-4 bg-transparent"',"indicador");
+// Fixed compact home navigation matches reserved map/panel space.
+nav=swap(nav,'className="mx-auto grid min-h-[70px] w-full max-w-md grid-cols-5 gap-1"','className={isHome ? "mx-auto grid h-[52px] w-full max-w-md grid-cols-5 gap-0" : "mx-auto grid min-h-[70px] w-full max-w-md grid-cols-5 gap-1"}',"altura nav home");
+nav=swap(nav,'driver-nav-active text-[#E51B23]','text-[#E51B23]',"remove tema dourado CSS home");
+nav=swap(nav,'className="driver-nav-icon relative mt-1 flex h-8 w-10 items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"','className={isHome ? "relative mt-1 flex h-6 w-8 items-center justify-center" : "driver-nav-icon relative mt-1 flex h-8 w-10 items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"}',"icone home compacto");
+nav=swap(nav,'className="max-w-full break-words text-center text-[11px] font-extrabold leading-3 tracking-tight"','className={isHome ? "max-w-full whitespace-nowrap text-center text-[clamp(9px,2.55vw,11px)] font-bold leading-3 tracking-tight" : "max-w-full break-words text-center text-[11px] font-extrabold leading-3 tracking-tight"}',"rotulos sem quebra");
 nav=swap(nav, "to={item.to}", "to={item.to as any}", "router legado tipado sem caminho novo");
 writeFileSync(navPath,nav,"utf8");
 writeFileSync(performancePath,perf,"utf8");
