@@ -10,7 +10,7 @@ import java.util.UUID
 // Synthetic laboratory only; all calls serialized on Android main thread.
 // No production IDs, real coordinates, network or privileged ride actions.
 object LabNavigationBridge {
-    internal data class Screen(val sessionId:String,val ride:RideSnapshot)
+    internal data class Screen(val sessionId:String,val ride:RideSnapshot,val token:LegToken?)
     internal val screen=MutableStateFlow<Screen?>(null)
     private var controller:NavigationSessionController?=null
     private var callback:java.util.function.Consumer<JSONObject>?=null
@@ -32,7 +32,7 @@ object LabNavigationBridge {
         val id=UUID.randomUUID().toString()
         controller=NavigationSessionController(ride).also{it.enable()}
         callback=events
-        screen.value=Screen(id,ride)
+        screen.value=Screen(id,ride,controller?.token)
         try{activity.startActivity(Intent(activity,LabNavigationActivity::class.java).putExtra("labSession",id))}
         catch(e:Exception){close(id);throw e}
         return id
@@ -45,9 +45,10 @@ object LabNavigationBridge {
         val next=parse(data)
         c.update(next)
         if(c.snapshot!==next)return false
-        screen.value=Screen(sessionId,c.snapshot)
+        screen.value=Screen(sessionId,c.snapshot,c.token)
         return true
     }
+    internal fun accepts(sessionId:String,token:LegToken):Boolean = screen.value?.sessionId==sessionId && controller?.acceptsNavigationEvent(token)==true
     internal fun submit(sessionId:String,intent:RideIntent){
         main()
         if(screen.value?.sessionId!=sessionId)return

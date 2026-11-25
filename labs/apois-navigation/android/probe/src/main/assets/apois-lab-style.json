@@ -1,14 +1,1 @@
-{
-  "version": 8,
-  "name": "APOIS synthetic offline laboratory",
-  "sources": {},
-  "layers": [
-    {
-      "id": "background",
-      "type": "background",
-      "paint": {
-        "background-color": "#E5E2D9"
-      }
-    }
-  ]
-}
+{"version":8,"name":"APOIS fictional offline grid","center":[-19.997,-1.997],"zoom":15,"sources":{"grid":{"type":"geojson","data":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-20,-2],[-19.994,-2]]}},{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-20,-2],[-20,-1.994]]}},{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-20,-1.997],[-19.994,-1.997]]}},{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-19.997,-2],[-19.997,-1.994]]}},{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-20,-1.994],[-19.994,-1.994]]}},{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-19.994,-2],[-19.994,-1.994]]}}]}}},"layers":[{"id":"background","type":"background","paint":{"background-color":"#E5E2D9"}},{"id":"road-border","type":"line","source":"grid","paint":{"line-color":"#C8C6BF","line-width":12}},{"id":"road","type":"line","source":"grid","paint":{"line-color":"#FFFFFF","line-width":9}}]}

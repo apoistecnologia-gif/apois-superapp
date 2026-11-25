@@ -30,7 +30,7 @@ if [ -s "$CACHE/vale.osm.pbf" ] && [ -s "$CACHE/source-sha256.txt" ] && [ -s "$C
   (cd "$CACHE" && sha256sum -c extract.sha256) && osmium fileinfo "$CACHE/vale.osm.pbf" >/dev/null; then
   echo '[OK] Reusing verified local regional extract'
 else
-  curl --fail --location --retry 4 --retry-all-errors --retry-delay 5 --retry-max-time 300 --connect-timeout 15 --max-time 240 "$URL" -o "$WORK/nordeste.osm.pbf"
+  curl --fail --location --retry 1 --retry-all-errors --retry-delay 5 --retry-max-time 900 --connect-timeout 20 --max-time 780 "$URL" -o "$WORK/nordeste.osm.pbf"
   sha256sum "$WORK/nordeste.osm.pbf" | awk '{print $1}' >"$CACHE/source-sha256.txt"
   osmium extract --strategy complete_ways --bbox=-40.80,-9.65,-40.20,-9.10 "$WORK/nordeste.osm.pbf" -o "$WORK/vale.osm.pbf"
   mv "$WORK/vale.osm.pbf" "$CACHE/vale.osm.pbf"

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   regional:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,7 +22,8 @@ jobs:
       - name: Mes do cache regional
         id: cache-month
         run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: regional-cache
         with:
           path: labs/apois-navigation/valhalla/.regional-cache
           key: apois-valhalla-petrolina-juazeiro-bbox-v1-${{ steps.cache-month.outputs.month }}
@@ -30,6 +31,11 @@ jobs:
         run: |
           bash -n labs/apois-navigation/valhalla/run-region.sh
           bash labs/apois-navigation/valhalla/run-region.sh "$RUNNER_TEMP/apois-route-report"
+      - uses: actions/cache/save@v4
+        if: always() && steps.regional-cache.outputs.cache-hit != 'true' && hashFiles('labs/apois-navigation/valhalla/.regional-cache/extract.sha256') != ''
+        with:
+          path: labs/apois-navigation/valhalla/.regional-cache
+          key: apois-valhalla-petrolina-juazeiro-bbox-v1-${{ steps.cache-month.outputs.month }}
       - name: Reproduzir rotas regionais no Ferrostar
         run: |
           set -euo pipefail
