@@ -1,7 +1,6 @@
 package br.com.apois.navigation.compat.lab;
 
 import java.util.regex.Pattern;
-import org.json.JSONObject;
 
 // Transport validation only. A UUID is NOT evidence of authentication or
 // assignment. No operation or Activity may be authorized by this parser.
@@ -14,16 +13,6 @@ final class ConfirmedNavigationRequest {
 
     private ConfirmedNavigationRequest(String id, String phase, long revision) {
         this.rideId=id;this.phase=phase;this.revision=revision;
-    }
-
-    static ConfirmedNavigationRequest parse(JSONObject data) {
-        if(data==null || data.length()!=3) throw new IllegalArgumentException("Invalid request");
-        for(java.util.Iterator<String> it=data.keys();it.hasNext();) {
-            String key=it.next();
-            if(!"rideId".equals(key)&&!"phase".equals(key)&&!"revision".equals(key))
-                throw new IllegalArgumentException("Unknown field");
-        }
-        return validate(data.opt("rideId"),data.opt("phase"),data.opt("revision"));
     }
 
     static ConfirmedNavigationRequest validate(Object id,Object phase,Object revision) {
