@@ -89,7 +89,7 @@ end $$;
 -- Trusted creator must acquire the confirmed selection before INSERT, inside
 -- the same transaction that creates the ride. Never expose as a client RPC.
 create function apois_nav_lab.prepare_selection(p_auth_user uuid,p_selection uuid,p_request_key uuid)
-returns jsonb language plpgsql security invoker set search_path = '' as $
+returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare
   v_user uuid; v_s apois_nav_lab.selection%rowtype;
   v_pick apois_nav_lab.catalog%rowtype; v_dest apois_nav_lab.catalog%rowtype;
@@ -109,7 +109,7 @@ begin
     'origin',jsonb_build_object('lat',v_pick.lat,'lng',v_pick.lng,'label',v_pick.label),
     'destination',jsonb_build_object('lat',v_dest.lat,'lng',v_dest.lng,'label',v_dest.label));
 exception when no_data_found or too_many_rows then return null;
-end $;
+end $$;
 
 -- Only the trusted creation adapter may call this after inserting the ride.
 -- No retroactive conversion of historic rides. No coordinate rewriting.

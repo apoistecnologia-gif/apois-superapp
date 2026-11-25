@@ -1,10 +1,10 @@
 {
   "source": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
-  "commit": "c463fae7bb670003dfa16c3487d6627340679b21",
+  "commit": "62fdfc5abcd77f536ce7c070806e7b80b5306c5e",
   "blobs": [
     {
       "path": "experimental/apois-navigation/schema.sql",
-      "sha": "df9cd5c667aee79ac3807104e26252af5dadc686"
+      "sha": "02d85d0e7661a0433dc70ceeeae555a6db5c2c40"
     },
     {
       "path": "experimental/apois-navigation/fixture.sql",

@@ -5,7 +5,7 @@ import {fileURLToPath} from "node:url";
 const root=new URL("./",import.meta.url);
 const manifest=JSON.parse(readFileSync(new URL("snapshot.json",root),"utf8"));
 assert.equal(manifest.source,"apoistecnologia-gif/say-hello-buddy-23-84b5dcbf");
-assert.equal(manifest.commit,"c463fae7bb670003dfa16c3487d6627340679b21");
+assert.equal(manifest.commit,"62fdfc5abcd77f536ce7c070806e7b80b5306c5e");
 assert.equal(manifest.blobs.length,7);
 for(const {path,sha} of manifest.blobs){
   assert.ok(/^(experimental\/apois-navigation\/[a-z_.]+|src\/services\/navigation\/independent-selection\.ts)$/.test(path),path);
