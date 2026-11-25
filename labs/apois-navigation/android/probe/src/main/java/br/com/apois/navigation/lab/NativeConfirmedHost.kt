@@ -13,10 +13,11 @@ import java.util.function.Consumer
 internal data class NativeHostGrant(
     val identity:RoutingIdentity,val target:ApprovedIndependentTarget,
     val current:()->Boolean,val targetCurrent:()->Boolean,
+    val issuer:RouteCapabilityIssuer,
     val audioAuthorization:(()->Boolean)?=null
 )
 internal data class NativeHostConfiguration(
-    val approvedBackendHost:String,val resolver:LiveRouteResolver,
+    val approvedBackendHost:String,val routeEndpoint:String,val routeHost:String,
     val online:()->Boolean,
     val grant:suspend (ConfirmedHostRequest)->NativeHostGrant?
 )
@@ -30,7 +31,10 @@ object NativeConfirmedHost{
         main()
         if(configuration!=null||pending!=null||ConfirmedLiveNavigationBridge.occupied())return false
         // Validate the exact backend origin at setup, before any read.
-        if(runCatching{approvedReadBase("https://"+config.approvedBackendHost,config.approvedBackendHost)}.isFailure)return false
+        if(runCatching{
+            approvedReadBase("https://"+config.approvedBackendHost,config.approvedBackendHost)
+            validatedRouteEndpoint(config.routeEndpoint,config.routeHost)
+        }.isFailure)return false
         configuration=config
         return true
     }
@@ -71,7 +75,7 @@ object NativeConfirmedHost{
                     load={withTimeoutOrNull(8_000L){BundledRegionalMap.VerifiedMap.load(activity.applicationContext)}}
                 )?:return@launch
                 prepared=prepareConfirmedWithNativeReads(config.approvedBackendHost,grant.identity,grant.target,
-                    config.resolver,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization)
+                    config.routeEndpoint,config.routeHost,grant.issuer,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization)
                 ensureActive()
                 if(!prepared||!available()||!authorized())return@launch
                 startAttempted=true

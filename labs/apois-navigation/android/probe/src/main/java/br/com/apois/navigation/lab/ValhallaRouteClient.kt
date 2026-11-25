@@ -58,10 +58,13 @@ internal fun interface LiveRouteResolver {
  * the regional lab. No retries, redirects, coordinates in logs, or public demo.
  * Only invoked by the explicitly enabled host through a LiveRouteResolver.
  */
-internal class ValhallaRouteClient(endpoint: String, authorizedHost: String) : LiveRouteResolver {
+internal class ValhallaRouteClient(endpoint: String, authorizedHost: String, private val authorization:RouteCapabilityScope) : LiveRouteResolver {
     private val uri = validatedRouteEndpoint(endpoint, authorizedHost)
-    override suspend fun resolve(origin: RegionalPoint, destination: RegionalPoint): Route =
-        runInterruptible(Dispatchers.IO) {
+    override suspend fun resolve(origin: RegionalPoint, destination: RegionalPoint): Route {
+        // Main-dispatcher scope must still be current before and after issuing.
+        val permit=checkNotNull(authorization.acquire(origin,destination)){"Route authorization unavailable"}
+        check(authorization.authorized(origin,destination)){"Route authorization revoked"}
+        val result=runInterruptible(Dispatchers.IO) {
             require(origin.valid() && destination.valid())
             val body = JSONObject().put("locations", JSONArray().apply {
                 for (p in listOf(origin, destination)) put(JSONObject().put("lat", p.lat)
@@ -81,6 +84,7 @@ internal class ValhallaRouteClient(endpoint: String, authorizedHost: String) : L
                 conn.useCaches = false
                 conn.setRequestProperty("Content-Type", "application/json")
                 conn.setRequestProperty("Accept", "application/json")
+                conn.setRequestProperty("Authorization",permit.header())
                 conn.setFixedLengthStreamingMode(body.size)
                 conn.outputStream.use { it.write(body) }
                 check(conn.responseCode == HttpURLConnection.HTTP_OK) { "Route unavailable" }
@@ -105,4 +109,7 @@ internal class ValhallaRouteClient(endpoint: String, authorizedHost: String) : L
                 route
             } finally { conn.disconnect() }
         }
+        check(authorization.authorized(origin,destination)){"Route authorization revoked"}
+        return result
+    }
 }

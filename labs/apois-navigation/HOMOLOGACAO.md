@@ -8,7 +8,8 @@ Base preservada: cb970bbb2d4fe5358b64d24dc31de8fcbcc3bff4. Antes deste documento
 | WebView QA290 e voz gerada | SUCCESS 45609766294 (6224805) |
 | Valhalla regional, 7 testes gateway, 5 rotas OSRM e 3 replays | SUCCESS 45609195768 / 45608869135 |
 | Capacitor, integração anterior | SUCCESS 45609195883 (82bd703) |
-| Capacitor exato e nova revogação de áudio | 45609956915 e 45609956849 em andamento na consulta; sem afirmar sucesso antes de concluir |
+| Capacitor exato e nova revogação de áudio | SUCCESS 45609956915 e 45609956849 |
+| Isolamento integral | SUCCESS 45610200514 |
 | Testes físicos | NÃO EXECUTADOS |
 | Destinos independentes e infraestrutura real | NÃO CONFIGURADOS |
 
@@ -24,3 +25,8 @@ Base preservada: cb970bbb2d4fe5358b64d24dc31de8fcbcc3bff4. Antes deste documento
 - Testar rede desligada, GPS impreciso, desvio, ponte nos dois sentidos, mudança de fase, logout, token renovado, segundo plano, recriação e fechamento atrasado. Validar voz pt-BR física, preferência do usuário, interrupção por oferta, ausência de duas vozes e de dois navegadores.
 - Medir bateria, dados, latência remota, recursos do servidor, rejeições e limites reais. Sem extrapolar benchmark local de 100 solicitações para capacidade de produção.
 - Reprovação de qualquer gate mantém feature desligada. Não fazer merge/deploy automático.
+
+
+## Compatibilidade e avanço em autorização
+A documentação oficial do Ferrostar confirma suporte a API 25+: https://stadiamaps.github.io/ferrostar/platform-support-targets.html. Android 7.0 (API 24) não é suportado pelo SDK atual. Não usar tools:overrideLibrary nem mascarar minSdk; uma variante sem módulo Ferrostar preserva o fluxo externo em API 24. A seleção/distribuição dessas variantes ainda precisa de autorização e teste, não é configuração de produção implementada.
+O verificador de capacidades do gateway e a aquisição no Android foram preparados no laboratório. O emissor confiável, a fonte independente e o serviço remoto continuam ausentes. Sem esses requisitos, não liberar nem fabricar uma autorização.
