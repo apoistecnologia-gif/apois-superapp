@@ -1,0 +1,53 @@
+name: APOIS Navegacao - catalogo OSM regional (sem deploy)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['.github/workflows/apois-navigation-lab-osm-catalog.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node labs/apois-navigation/passenger-provenance-snapshot/verify.mjs
+      - name: Mes do cache regional
+        id: cache-month
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        with:
+          path: labs/apois-navigation/valhalla/.regional-cache
+          key: apois-valhalla-petrolina-juazeiro-bbox-v1-${{ steps.cache-month.outputs.month }}
+          fail-on-cache-miss: true
+      - run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool
+      - name: Derivar catalogo do extrato regional ja verificado
+        run: |
+          set -euo pipefail
+          C="$GITHUB_WORKSPACE/labs/apois-navigation/valhalla/.regional-cache"
+          D="$RUNNER_TEMP/apois-osm-catalog"
+          mkdir -p "$D"
+          (cd "$C" && sha256sum -c extract.sha256)
+          osmium fileinfo "$C/vale.osm.pbf" > "$D/extract-info.txt"
+          cp "$C/source-sha256.txt" "$C/extract.sha256" "$D/"
+          python3 labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/import_catalog.py --extract "$C/vale.osm.pbf" --expected-sha256 "$(cut -d' ' -f1 "$C/extract.sha256")" --version 1 --out "$D/catalog.json"
+          python3 - "$D/catalog.json" <<'PY'
+          import json,sys,pathlib
+          p=pathlib.Path(sys.argv[1]); c=json.loads(p.read_text())
+          assert c["source"]=="OSM_PBF" and c["count"]==len(c["rows"]) and c["count"]>0
+          assert len({r["id"] for r in c["rows"]})==c["count"]
+          assert all(r["active"] is False and r["extract_sha256"]==c["extract_sha256"] for r in c["rows"])
+          print("APOIS_REAL_CATALOG_VALIDATED",json.dumps({"count":c["count"],"bytes":p.stat().st_size,"extract_sha256":c["extract_sha256"],"active":0}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-independent-regional-catalog
+          path: ${{ runner.temp }}/apois-osm-catalog/
+          retention-days: 7
