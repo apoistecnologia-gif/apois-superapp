@@ -76,10 +76,43 @@ nav=swap(nav,'active ? "driver-nav-active bg-[#F6BE1C]/[.08] text-[#F6BE1C] ring
 nav=swap(nav,'active ? "w-5 bg-[#F6BE1C]" : "w-4 bg-transparent"',
  'active ? (isHome ? "w-5 bg-[#E51B23]" : "w-5 bg-[#F6BE1C]") : "w-4 bg-transparent"',"indicador");
 // Fixed compact home navigation matches reserved map/panel space.
-nav=swap(nav,'className="mx-auto grid min-h-[70px] w-full max-w-md grid-cols-5 gap-1"','className={isHome ? "mx-auto grid h-[52px] w-full max-w-md grid-cols-5 gap-0" : "mx-auto grid min-h-[70px] w-full max-w-md grid-cols-5 gap-1"}',"altura nav home");
+const legacyNavHeight=nav.includes('min-h-[82px] w-full max-w-md grid-cols-5')?82:70;
+const legacyNavIcon=nav.includes('driver-nav-icon relative mt-1 flex h-9 w-11')?'h-9 w-11':'h-8 w-10';
+const legacyNavLabel=nav.includes('max-w-full break-words text-center text-xs font-extrabold')?'text-xs':'text-[11px]';
+const legacyNavPadding=nav.includes('paddingBottom: "max(env(safe-area-inset-bottom), 10px)"')?10:7;
+nav=swap(nav,'paddingBottom: "max(env(safe-area-inset-bottom), '+legacyNavPadding+'px)"','paddingBottom: isHome ? "max(env(safe-area-inset-bottom), 7px)" : "max(env(safe-area-inset-bottom), '+legacyNavPadding+'px)"',"safe area nav home");
+const legacyNavItem=nav.includes('group relative flex min-h-[60px]')?'min-h-[60px]':'min-h-12';
+nav=swap(nav,'group relative flex '+legacyNavItem,'group relative flex '+ '
+nav=swap(nav,'className="mx-auto grid min-h-['+legacyNavHeight+'px] w-full max-w-md grid-cols-5 gap-1"','className={isHome ? "mx-auto grid h-[52px] w-full max-w-md grid-cols-5 gap-0" : "mx-auto grid min-h-['+legacyNavHeight+'px] w-full max-w-md grid-cols-5 gap-1"}',"altura nav home");
 nav=swap(nav,'driver-nav-active text-[#E51B23]','text-[#E51B23]',"remove tema dourado CSS home");
-nav=swap(nav,'className="driver-nav-icon relative mt-1 flex h-8 w-10 items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"','className={isHome ? "relative mt-1 flex h-6 w-8 items-center justify-center" : "driver-nav-icon relative mt-1 flex h-8 w-10 items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"}',"icone home compacto");
-nav=swap(nav,'className="max-w-full break-words text-center text-[11px] font-extrabold leading-3 tracking-tight"','className={isHome ? "max-w-full whitespace-nowrap text-center text-[clamp(9px,2.55vw,11px)] font-bold leading-3 tracking-tight" : "max-w-full break-words text-center text-[11px] font-extrabold leading-3 tracking-tight"}',"rotulos sem quebra");
+nav=swap(nav,'className="driver-nav-icon relative mt-1 flex '+legacyNavIcon+' items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"','className={isHome ? "relative mt-1 flex h-6 w-8 items-center justify-center" : "driver-nav-icon relative mt-1 flex '+legacyNavIcon+' items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"}',"icone home compacto");
+nav=swap(nav,'className="max-w-full break-words text-center '+legacyNavLabel+' font-extrabold leading-3 tracking-tight"','className={isHome ? "max-w-full whitespace-nowrap text-center text-[clamp(9px,2.55vw,11px)] font-bold leading-3 tracking-tight" : "max-w-full break-words text-center '+legacyNavLabel+' font-extrabold leading-3 tracking-tight"}',"rotulos sem quebra");
+nav=swap(nav, "to={item.to}", "to={item.to as any}", "router legado tipado sem caminho novo");
+writeFileSync(navPath,nav,"utf8");
+writeFileSync(performancePath,perf,"utf8");
+// A build mobile tem arvore manual separada da routeTree.gen.ts do site.
+const mobileTreePath=resolve(root,"src/mobile-route-tree.motorista.ts");
+let mobile=readFileSync(mobileTreePath,"utf8");
+mobile=swap(mobile,
+ "import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'",
+ "import { Route as MotoristaGanhosRouteImport } from './routes/motorista.ganhos'\nimport { Route as MotoristaDesempenhoRouteImport } from './routes/motorista.desempenho'",
+ "import da rota nova");
+mobile=swap(mobile,
+ "const MotoristaLoginRoute = MotoristaLoginRouteImport.update({ id: '/motorista/login'",
+ "const MotoristaDesempenhoRoute = MotoristaDesempenhoRouteImport.update({ id: '/motorista/desempenho', path: '/motorista/desempenho', getParentRoute: () => rootRouteImport } as any)\nconst MotoristaLoginRoute = MotoristaLoginRouteImport.update({ id: '/motorista/login'",
+ "registro mobile");
+mobile=swap(mobile,
+ "  MotoristaGanhosRoute,\n  MotoristaLoginRoute,",
+ "  MotoristaGanhosRoute,\n  MotoristaDesempenhoRoute,\n  MotoristaLoginRoute,",
+ "filho do router mobile");
+writeFileSync(mobileTreePath,mobile,"utf8");
+
+console.log("[OK] APOIS Motorista: Home premium, mapa Cliente, status real e nav funcional.");
++'{isHome ? "min-h-0" : "'+legacyNavItem+'"}',"altura itens nav home");
+nav=swap(nav,'className="mx-auto grid min-h-['+legacyNavHeight+'px] w-full max-w-md grid-cols-5 gap-1"','className={isHome ? "mx-auto grid h-[52px] w-full max-w-md grid-cols-5 gap-0" : "mx-auto grid min-h-['+legacyNavHeight+'px] w-full max-w-md grid-cols-5 gap-1"}',"altura nav home");
+nav=swap(nav,'driver-nav-active text-[#E51B23]','text-[#E51B23]',"remove tema dourado CSS home");
+nav=swap(nav,'className="driver-nav-icon relative mt-1 flex '+legacyNavIcon+' items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"','className={isHome ? "relative mt-1 flex h-6 w-8 items-center justify-center" : "driver-nav-icon relative mt-1 flex '+legacyNavIcon+' items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"}',"icone home compacto");
+nav=swap(nav,'className="max-w-full break-words text-center '+legacyNavLabel+' font-extrabold leading-3 tracking-tight"','className={isHome ? "max-w-full whitespace-nowrap text-center text-[clamp(9px,2.55vw,11px)] font-bold leading-3 tracking-tight" : "max-w-full break-words text-center '+legacyNavLabel+' font-extrabold leading-3 tracking-tight"}',"rotulos sem quebra");
 nav=swap(nav, "to={item.to}", "to={item.to as any}", "router legado tipado sem caminho novo");
 writeFileSync(navPath,nav,"utf8");
 writeFileSync(performancePath,perf,"utf8");
