@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/apois-navigation-lab-ride-transaction.yml'
       - 'labs/apois-navigation/passenger-provenance-snapshot/**'
+      - 'labs/apois-navigation/passenger-ride-transaction/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -161,4 +162,94 @@ jobs:
             end if;
           end $$;
           select 'APOIS_PASSENGER_RIDE_COLUMNS_OK';
+          SQL
+          docker rm -f "$container" >/dev/null
+          docker run --detach --network none --name "$container" -e POSTGRES_PASSWORD=fixture postgres:17
+          for attempt in {1..30}; do
+            if docker exec "$container" pg_isready -h 127.0.0.1 -U postgres; then break; fi
+            sleep 1
+          done
+          run_sql < "$root/fixture.sql"
+          run_sql <<'SQL'
+          alter table public.rides rename column waypoints to intermediates;
+          alter table public.rides
+            alter column origin_lat type numeric(10,8),
+            alter column origin_lng type numeric(11,8),
+            alter column destination_lat type numeric(10,8),
+            alter column destination_lng type numeric(11,8);
+          alter table public.rides alter column id set default gen_random_uuid();
+          alter table public.rides
+            add column scheduled_for timestamptz,
+            add column origin_name text,
+            add column destination_name text,
+            add column distance_km numeric(10,2),
+            add column duration_min numeric(10,2),
+            add column estimated_price numeric(10,2),
+            add column payment_method text,
+            add column service_details jsonb,
+            add column pickup_label text,
+            add column pickup_short_label text,
+            add column pickup_address text,
+            add column pickup_place_id text,
+            add column pickup_source text,
+            add column search_expires_at timestamptz,
+            add unique (request_key);
+          SQL
+          run_sql < "$root/schema.sql"
+          run_sql < labs/apois-navigation/passenger-ride-transaction/create-passenger-ride.sql
+          run_sql <<'SQL'
+          insert into apois_nav_lab.catalog values
+            ('00000000-0000-4000-8000-000000000021',1,'node',1,repeat('a',64),'Ponto A',-9.4,-40.5,true),
+            ('00000000-0000-4000-8000-000000000022',1,'node',2,repeat('a',64),'Ponto B',-9.42,-40.51,true);
+          set role service_role;
+          do $test$
+          declare
+            actor constant uuid := '00000000-0000-4000-8000-000000000011';
+            request_id constant uuid := '00000000-0000-4000-8000-000000000033';
+            ordinary_key constant uuid := '00000000-0000-4000-8000-000000000034';
+            point_a constant uuid := '00000000-0000-4000-8000-000000000021';
+            point_b constant uuid := '00000000-0000-4000-8000-000000000022';
+            selection_id uuid;
+            ordinary_selection uuid;
+            created public.rides;
+            retried public.rides;
+            payload jsonb;
+          begin
+            selection_id := (apois_nav_lab.confirm_selection(actor,request_id,point_a,1,point_b,1)->>'selectionId')::uuid;
+            payload := jsonb_build_object(
+              'passenger_id','00000000-0000-4000-8000-000000000001',
+              'request_key',request_id,'category','carros','status','procurar_motorista',
+              'intermediates','[]'::jsonb,'origin_lat',-9.4,'origin_lng',-40.5,
+              'destination_lat',-9.42,'destination_lng',-40.51,'origin_name','Ponto A',
+              'destination_name','Ponto B','estimated_price',12.34,'payment_method','pix',
+              'distance_km',2.10,'duration_min',8,'pickup_source','gps',
+              'service_details','{"pricing_breakdown":{"total":12.34}}'::jsonb);
+            begin
+              perform apois_nav_lab.create_passenger_ride(actor,selection_id,request_id,
+                payload || '{"destination_lat":-9.43}'::jsonb);
+              raise exception 'mismatched fare coordinates accepted';
+            exception when raise_exception then
+              if sqlerrm <> 'confirmed points differ from fare inputs' then raise; end if;
+            end;
+            if exists(select 1 from public.rides where request_key=request_id) or
+               exists(select 1 from apois_nav_lab.selection where id=selection_id and prepared_xid is not null) then
+              raise exception 'partial write after coordinate rejection';
+            end if;
+            select * into created from apois_nav_lab.create_passenger_ride(actor,selection_id,request_id,payload);
+            select * into retried from apois_nav_lab.create_passenger_ride(actor,selection_id,request_id,payload);
+            if created.id is null or retried.id is distinct from created.id or
+               created.estimated_price is distinct from 12.34 or created.payment_method is distinct from 'pix' or
+               created.service_details is distinct from payload->'service_details' then
+              raise exception 'creation, retry or pricing persistence failed';
+            end if;
+            ordinary_selection := (apois_nav_lab.confirm_selection(actor,ordinary_key,point_a,1,point_b,1)->>'selectionId')::uuid;
+            insert into public.rides(passenger_id,request_key,category,status,origin_lat,origin_lng,destination_lat,destination_lng,intermediates)
+              values(created.passenger_id,ordinary_key,'carros','procurar_motorista',-9.4,-40.5,-9.42,-40.51,'[]');
+            select * into retried from apois_nav_lab.create_passenger_ride(actor,ordinary_selection,ordinary_key,
+              payload || jsonb_build_object('request_key',ordinary_key));
+            if retried.id is not null or exists(select 1 from apois_nav_lab.selection where id=ordinary_selection and ride_id is not null) then
+              raise exception 'ordinary ride was reclassified';
+            end if;
+          end $test$;
+          select 'APOIS_PASSENGER_ADAPTER_OK';
           SQL
