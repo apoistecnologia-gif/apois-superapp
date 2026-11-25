@@ -54,6 +54,11 @@ small{color:#717681;font-size:13px}</style></head><body>
          return go(login);
        }
      }
+     // QA290 uses PKCE with this current native callback, not only the old scheme.
+     if(u.protocol==="br.com.apois.parceiro:"&&u.host==="auth"&&path==="motorista-google"){
+       try{sessionStorage.setItem("apois-parceiro:motorista-google-url",raw)}catch{}
+       return go(login);
+     }
      if(u.protocol==="br.com.apois.parceiro:"&&u.host==="auth"&&path==="mercadopago")return go(mp+query);
      if(u.protocol==="br.com.apois.parceiro:"&&u.host==="module"&&path==="motorista")return go(operational);
    }catch{}

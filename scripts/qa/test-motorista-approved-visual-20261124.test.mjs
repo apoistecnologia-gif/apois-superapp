@@ -3,6 +3,7 @@
  * Safety: no native APK / Supabase / production mutation; no fake ride metrics.
  */
 import test from 'node:test';
+import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 
@@ -158,4 +159,34 @@ test('11 — stable login and restored preceding welcome, callback routes bypass
  expect(welcome,["sessionStorage.setItem('apois-driver-welcome-entered-v2','1')"]);
  assert.ok(!login.includes('transform:rotate(-12deg)'));
  assert.ok(!login.includes('transform:rotate(-7deg)'));
+});
+
+test('12 — exclusive startup routes welcome, current Google PKCE and password recovery correctly',async()=>{
+ const script=shell.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(script);
+ async function boot({launchUrl=null,authenticated=false,pendingPush=null}={}){
+   const local=new Map(), session=new Map(), redirects=[];
+   if(authenticated)local.set('sb-tbbzkrfupmqdywnzgnms-auth-token',JSON.stringify({access_token:'test-only-placeholder-not-a-real-token'}));
+   if(pendingPush)session.set('apois-parceiro:pending-push',JSON.stringify(pendingPush));
+   const storage=m=>({getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k)});
+   const localStorage=storage(local),sessionStorage=storage(session);
+   const window={location:{replace:url=>redirects.push(url)},setTimeout:()=>1,clearTimeout:()=>{},Capacitor:{Plugins:{App:{addListener:async()=>{},getLaunchUrl:async()=>launchUrl?{url:launchUrl}:null}}}};
+   runInNewContext(script,{window,localStorage,sessionStorage,URL,URLSearchParams});
+   await new Promise(resolve=>setImmediate(resolve));
+   return {redirects,session};
+ }
+ const login='./modules/motorista/index.html#/motorista/login';
+ assert.deepEqual((await boot()).redirects,['./motorista-welcome.html']);
+ assert.deepEqual((await boot({authenticated:true})).redirects,['./modules/motorista/index.html']);
+ const google='br.com.apois.parceiro://auth/motorista-google?code=test-only';
+ const g=await boot({launchUrl:google});
+ assert.deepEqual(g.redirects,[login]);
+ assert.equal(g.session.get('apois-parceiro:motorista-google-url'),google);
+ const reset='apoismotorista://auth/redefinir-senha?code=test-only';
+ const r=await boot({launchUrl:reset});
+ assert.deepEqual(r.redirects,[login]);
+ assert.equal(r.session.get('apois-parceiro:motorista-recovery-url'),reset);
+ assert.deepEqual((await boot({launchUrl:'br.com.apois.parceiro://module/motorista'})).redirects,['./modules/motorista/index.html#/motorista/app']);
+ assert.deepEqual((await boot({pendingPush:{ride_id:'test-ride'}})).redirects,['./modules/motorista/index.html#/motorista/app']);
+ assert.deepEqual((await boot({launchUrl:'br.com.apois.parceiro://module/entregador'})).redirects,['./motorista-welcome.html']);
 });

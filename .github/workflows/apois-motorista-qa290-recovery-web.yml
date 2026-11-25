@@ -14,6 +14,8 @@ on:
       - scripts/templates/ApoisDriverPerformancePage.tsx.txt
       - scripts/apply-driver-login-approved-qa-v1.mjs
       - superapp/partner-shell/motorista-welcome.html
+      - superapp/partner-shell/index-motorista-only.html
+      - scripts/qa/test-motorista-approved-visual-20261124.test.mjs
       - .github/workflows/apois-motorista-qa290-recovery-web.yml
   workflow_dispatch:
 permissions:
