@@ -2,7 +2,7 @@ name: APOIS Navegacao - laboratorio etapa 1 (sem APK)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/**', '.github/workflows/apois-navigation-lab-stage1.yml']
+    paths: ['labs/apois-navigation/android/**', 'labs/apois-navigation/policy.mjs', 'labs/apois-navigation/policy.test.mjs', '.github/workflows/apois-navigation-lab-stage1.yml']
   workflow_dispatch:
 permissions:
   contents: read
