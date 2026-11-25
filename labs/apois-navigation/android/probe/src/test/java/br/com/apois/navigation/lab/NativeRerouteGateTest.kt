@@ -14,6 +14,32 @@ class NativeRerouteGateTest {
         assertTrue(g.fix(2000) is Decision.Request)
         assertEquals(1,g.requests)
     }
+    @Test fun valid750msCadenceDoesNotEraseDeviation() {
+        val g = NativeRerouteGate()
+        assertEquals(Decision.Hold(Reason.CONFIRM_DEVIATION), g.fix(1000))
+        assertEquals(Decision.Hold(Reason.CONFIRM_DEVIATION), g.fix(1750))
+        assertTrue(g.fix(2500) is Decision.Request)
+        assertEquals(1, g.requests)
+    }
+    @Test fun closeOnRouteFixClearsDeviationImmediately() {
+        val g = NativeRerouteGate()
+        g.fix(1000)
+        assertEquals(Decision.Continue, g.fix(1750, deviation=5.0))
+        assertEquals(Decision.Hold(Reason.CONFIRM_DEVIATION), g.fix(2500))
+        assertEquals(Decision.Hold(Reason.CONFIRM_DEVIATION), g.fix(3250))
+        assertEquals(Decision.Hold(Reason.CONFIRM_DEVIATION), g.fix(4000))
+        assertTrue(g.fix(4750) is Decision.Request)
+    }
+    @Test fun closeInvalidFixStillClearsDeviationAndOrdering() {
+        val g = NativeRerouteGate()
+        g.fix(1000)
+        g.fix(1750)
+        assertEquals(Decision.Hold(Reason.UNRELIABLE), g.fix(1500))
+        assertEquals(Decision.Hold(Reason.CONFIRM_DEVIATION), g.fix(2500))
+        assertEquals(Decision.Hold(Reason.UNRELIABLE), g.fix(3250, accuracy=35.0))
+        assertEquals(Decision.Hold(Reason.CONFIRM_DEVIATION), g.fix(4000))
+        assertTrue(g.fix(5500) is Decision.Request)
+    }
     @Test fun offlineAndImpreciseDoNotSpendBudget() {
         val g=NativeRerouteGate()
         g.fix(1000,online=false)
