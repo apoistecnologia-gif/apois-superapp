@@ -13,14 +13,17 @@ import kotlinx.coroutines.delay
 // After process death or a stale intent there is no matching state: finish.
 class ConfirmedLiveNavigationActivity:ComponentActivity(){
     private var sessionId:String?=null
+    private var claimed=false
     private var foreground by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState:Bundle?){
         super.onCreate(savedInstanceState)
         val id=intent.getStringExtra("confirmedSession")
         sessionId=id
+        if(id==null||!ConfirmedLiveNavigationBridge.claimActivity(id,this)){finish();return}
+        claimed=true
         val initial=ConfirmedLiveNavigationBridge.screen.value
-        if(id==null||initial?.id!=id||!ConfirmedLiveNavigationBridge.accepts(id,initial.token)){
+        if(initial?.id!=id||!ConfirmedLiveNavigationBridge.accepts(id,initial.token)){
             finish();return
         }
         setContent{
@@ -55,8 +58,12 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
     override fun onResume(){super.onResume();foreground=true}
     override fun onPause(){foreground=false;super.onPause()}
     override fun onDestroy(){
-        if(!isChangingConfigurations)sessionId?.let{ConfirmedLiveNavigationBridge.close(it)}
+        // Configuration recreation is deliberately a new entry, not an
+        // inherited route/voice authority. Close this owner and acknowledge
+        // only after super.onDestroy; any recreated stale Intent is inert.
+        if(claimed)sessionId?.let{ConfirmedLiveNavigationBridge.close(it)}
         super.onDestroy()
-        if(!isChangingConfigurations)sessionId?.let{ConfirmedLiveNavigationBridge.activityDestroyed(it)}
+        if(claimed)sessionId?.let{ConfirmedLiveNavigationBridge.activityDestroyed(it,this)}
+        claimed=false
     }
 }

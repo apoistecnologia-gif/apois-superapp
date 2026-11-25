@@ -50,6 +50,7 @@ object ConfirmedLiveNavigationBridge {
     private var expiryTask:Runnable?=null
     private var renewalJob:Job?=null
     private val initialAdmission=InitialRouteAdmission()
+    private val activityOwnership=ConfirmedActivityOwnership()
     internal fun occupied():Boolean=screen.value!=null||closing!=null||preparing!=null
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
     private fun current(p:Prepared)=prepared===p && p.lease.current() && DriverGpsFeed.currentSourceId()==p.sourceId && runCatching{p.verifiedCurrent()}.getOrDefault(false)
@@ -158,6 +159,7 @@ object ConfirmedLiveNavigationBridge {
         val resources=p.controller.routingFor(token,p.target,p.resolver)
         if(resources==null){p.controller.disable();return null}
         val id=UUID.randomUUID().toString()
+        check(activityOwnership.begin(id)){"Navigation Activity ownership occupied"}
         p.opened=true // no stale initial route on re-entry; use original map until fresh re-entry is implemented
         callback=events
         screen.value=Screen(id,p,token,resources,p.ride,p.ride.revision)
@@ -169,6 +171,15 @@ object ConfirmedLiveNavigationBridge {
         }
         startRenewal(p)
         return id
+    }
+
+    // Claim before rendering or installing any GPS/audio consumer. A late
+    // Activity for a closing session may claim only to finish and acknowledge
+    // destruction; it cannot pass accepts(). Duplicate intents are inert.
+    internal fun claimActivity(id:String,activity:Any):Boolean{
+        main()
+        if(screen.value?.id!=id&&closing?.id!=id)return false
+        return activityOwnership.claim(id,activity)
     }
 
     internal fun accepts(id:String,token:LegToken):Boolean{
@@ -267,6 +278,7 @@ object ConfirmedLiveNavigationBridge {
 
     fun closeAcknowledged(id:String,completion:Consumer<Boolean>){
         main()
+        if(activityOwnership.acknowledged(id)){completion.accept(true);return}
         if(waiter!=null||!close(id)){completion.accept(false);return}
         waiter=completion
         handler.postDelayed({
@@ -278,11 +290,12 @@ object ConfirmedLiveNavigationBridge {
         },5_000)
     }
 
-    internal fun activityDestroyed(id:String){
+    internal fun activityDestroyed(id:String,activity:Any){
         main()
+        if(!activityOwnership.owns(id,activity))return
         if(screen.value?.id==id)close(id)
         val s=closing?:return
-        if(s.id!=id)return
+        if(s.id!=id||!activityOwnership.destroyed(id,activity))return
         val notify=closingCallback
         val done=waiter
         closing=null
