@@ -1,4 +1,5 @@
 import {readFileSync,writeFileSync,cpSync,mkdirSync,mkdtempSync,rmSync,realpathSync} from "node:fs";
+import {createHash} from "node:crypto";
 import {join,resolve} from "node:path";
 import {spawnSync} from "node:child_process";
 import assert from "node:assert/strict";
@@ -28,23 +29,78 @@ try {
   assert.ok(gradle.includes("implementation project(':capacitor-android')"));
   writeFileSync(join(android,"app/build.gradle"),gradle);
   writeFileSync(join(java,"MainActivity.java"),"        registerPlugin(DriverVoicePlugin.class);\n");
-  const install=spawnSync(process.execPath,[join(repo,"scripts/install-motorista-qa290-driver-location.mjs")],{cwd:stage,stdio:"inherit"});
-  assert.equal(install.status,0,"QA290 installer failed");
+  // Provide the launcher prerequisite package-visibility block only in the
+  // temporary scaffold. No Firebase config or production signing credentials.
+  const manifestPath=join(android,"app/src/main/AndroidManifest.xml");
+  let xml=readFileSync(manifestPath,"utf8");
+  if(!xml.includes("</queries>")) {
+    assert.ok(xml.includes("</manifest>"));
+    xml=xml.replace("</manifest>","    <queries><package android:name=\"com.google.android.tts\" /></queries>\n</manifest>");
+    writeFileSync(manifestPath,xml);
+  }
+  cpSync(join(host,"android/variables.gradle"),join(android,"variables.gradle"));
+  for(const file of ["scripts/android/APOISExternalNavigationPlugin.java","scripts/android/APOISReturnBubble.java","superapp/branding/apois-client-red-logo.b64"]){
+    mkdirSync(join(stage,file,".."),{recursive:true});
+    cpSync(join(repo,file),join(stage,file));
+  }
+  const chain=[
+    "harden-partner-android-security.mjs",
+    "install-motorista-qa290-driver-location.mjs",
+    "install-partner-courier-location.mjs",
+    "harden-partner-location-startup-ack.mjs",
+    "harden-partner-location-session-sync.mjs",
+    "harden-partner-location-notification-routing.mjs",
+    "install-partner-external-navigation.mjs",
+    "install-partner-qa235-native-auto-arrival.mjs",
+    "install-partner-qa236-return-notification-v1.mjs",
+    "install-partner-qa239-native-bubble.mjs",
+    "install-partner-native-qa280.mjs"
+  ];
+  // Validate the actual installer ordering against the canonical launcher.
+  const launcher=readFileSync(join(repo,"scripts/install-motorista-qa290-launcher.mjs"),"utf8");
+  let previous=-1;
+  for(const name of chain){
+    const index=launcher.indexOf("'./"+name+"'");
+    assert.ok(index>previous,"QA290 launcher order changed: "+name);previous=index;
+    const run=spawnSync(process.execPath,[join(repo,"scripts",name)],{
+      cwd:stage,stdio:"inherit",env:{...process.env,PARTNER_VERSION_CODE:"1",PARTNER_VERSION_NAME:"0.0.1-lab"}
+    });
+    assert.equal(run.status,0,"QA290 chain failed: "+name);
+  }
+  const hash=file=>createHash("sha256").update(readFileSync(file)).digest("hex");
+  const shared=["CourierLocationService.java","CourierLocationPlugin.java","APOISExternalNavigationPlugin.java","APOISReturnBubble.java","DriverLocationPlugin.java"];
+  const before=Object.fromEntries(shared.map(name=>[name,hash(join(java,name))]));
   const original=readFileSync(join(java,"DriverLocationService.java"),"utf8");
+  assert.ok(original.includes("qa235CheckPickupArrival(location);"));
   const patched=instrumentDriverService(original);
-  // Also check the exact QA235 insertion point, without pretending the full
-  // QA235/QA236/QA239 production chain was built in this disposable host.
-  const shaped=original.replace("                queuePresenceSync(true, location);","                queuePresenceSync(true, location);\n                qa235CheckPickupArrival(location);");
-  assert.ok(instrumentDriverService(shaped).includes("qa235CheckPickupArrival(location);\n                labGpsPublish(location);"));
+  assert.ok(patched.includes("qa235CheckPickupArrival(location);\n                labGpsPublish(location);"));
+  for(const marker of ["qa236PickupReady","/rest/v1/rpc/driver_mark_arrived","private void loadPersistedSessionTokens()","INICIAR CORRIDA • PIN","driver_set_presence","ContextCompat.RECEIVER_NOT_EXPORTED"])
+    assert.ok(patched.includes(marker),"lost QA290 marker "+marker);
+  // Remove only the injected statements and compare shared components untouched.
+  for(const name of shared)assert.equal(hash(join(java,name)),before[name],name);
+  writeFileSync(join(java,"DriverLocationService.java"),patched);
+  const recheck=spawnSync(process.execPath,[join(repo,"scripts/install-partner-native-qa280.mjs")],{cwd:stage,stdio:"inherit"});
+  assert.equal(recheck.status,0,"QA280 post-instrumentation gate failed");
   assert.throws(()=>instrumentDriverService(patched));
   assert.throws(()=>instrumentDriverService(original.replace("        startLocationUpdates();","")));
   assert.equal(original.split("requestLocationUpdates(").length,patched.split("requestLocationUpdates(").length);
-  const target=join(app,"src/main/java/br/com/apois/navigation/compat/lab/DriverLocationService.java");
-  writeFileSync(target,patched.replace("package br.com.apois.parceiro;","package br.com.apois.navigation.compat.lab;"));
+  // Compile all real generated native components, but don't copy the scaffold
+  // MainActivity or manifest registrations to the actual disposable host.
+  const target=join(app,"src/main/java/br/com/apois/navigation/compat/lab");
+  for(const name of ["DriverLocationService.java",...shared]){
+    const code=readFileSync(join(java,name),"utf8");
+    assert.ok(code.includes("package br.com.apois.parceiro;"),name);
+    writeFileSync(join(target,name),code.replace("package br.com.apois.parceiro;","package br.com.apois.navigation.compat.lab;"));
+  }
   mkdirSync(join(app,"src/main/res/drawable"),{recursive:true});
+  mkdirSync(join(app,"src/main/res/drawable-nodpi"),{recursive:true});
   cpSync(join(src,"res/drawable/ic_stat_apois_notification.xml"),join(app,"src/main/res/drawable/ic_stat_apois_notification.xml"));
+  cpSync(join(android,"app/src/main/res/drawable-nodpi/apois_return_logo.png"),join(app,"src/main/res/drawable-nodpi/apois_return_logo.png"));
   const hostGradle=join(app,"build.gradle");
   writeFileSync(hostGradle,readFileSync(hostGradle,"utf8").replace("dependencies {","dependencies {\n    implementation 'com.google.android.gms:play-services-location:21.3.0'"));
   assert.ok(!readFileSync(join(app,"src/main/AndroidManifest.xml"),"utf8").includes("DriverLocationService"),"service must remain unregistered");
-  console.log("[OK] real pinned source + actual QA290 installer + passive callback, no manifest service, no additional GPS request");
+  const liveMain=readFileSync(join(target,"MainActivity.java"),"utf8");
+  for(const name of ["DriverLocationPlugin","CourierLocationPlugin","APOISExternalNavigationPlugin"])
+    assert.ok(!liveMain.includes("registerPlugin("+name+".class)"),"runtime must remain unregistered");
+  console.log("[OK] actual QA290 native GPS chain through QA280; passive callback after arrival; shared files unchanged by instrumentation; no registration or additional GPS request");
 } finally {rmSync(stage,{recursive:true,force:true});}
