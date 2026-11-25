@@ -1,0 +1,42 @@
+name: APOIS Navegacao - cartografia regional (sem APK)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/cartography/**', '.github/workflows/apois-navigation-lab-cartography.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: apois-navigation-cartography
+  cancel-in-progress: true
+jobs:
+  tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Instalar extrator OSM
+        run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool time
+      - name: Mes do cache regional
+        id: cache-month
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        with:
+          path: labs/apois-navigation/valhalla/.regional-cache
+          key: apois-valhalla-petrolina-juazeiro-bbox-v1-${{ steps.cache-month.outputs.month }}
+      - name: Gerar PMTiles regional e verificar metadados
+        run: |
+          bash -n labs/apois-navigation/cartography/build-region.sh
+          bash labs/apois-navigation/cartography/build-region.sh "$RUNNER_TEMP/apois-cartography-report"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-cartography-regional
+          path: ${{ runner.temp }}/apois-cartography-report/
+          retention-days: 7

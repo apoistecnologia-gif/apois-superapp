@@ -1,0 +1,145 @@
+{
+  "version": 8,
+  "name": "APOIS Vale — laboratório",
+  "center": [
+    -40.504,
+    -9.41
+  ],
+  "zoom": 13,
+  "sources": {
+    "regional": {
+      "type": "vector",
+      "url": "pmtiles://https://maps.example.invalid/vale.pmtiles",
+      "attribution": "© OpenStreetMap contributors",
+      "bounds": [
+        -40.8,
+        -9.65,
+        -40.2,
+        -9.1
+      ],
+      "minzoom": 8,
+      "maxzoom": 15
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#F4F2ED"
+      }
+    },
+    {
+      "id": "green",
+      "type": "fill",
+      "source": "regional",
+      "source-layer": "green",
+      "paint": {
+        "fill-color": "#DDE9D8"
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "regional",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "#B2D8E5"
+      }
+    },
+    {
+      "id": "waterway",
+      "type": "line",
+      "source": "regional",
+      "source-layer": "waterway",
+      "paint": {
+        "line-color": "#A5CDD9",
+        "line-width": 1.4
+      }
+    },
+    {
+      "id": "buildings",
+      "type": "fill",
+      "source": "regional",
+      "source-layer": "buildings",
+      "minzoom": 14,
+      "paint": {
+        "fill-color": "#E5E1DB",
+        "fill-opacity": 0.85
+      }
+    },
+    {
+      "id": "roads-outline",
+      "type": "line",
+      "source": "regional",
+      "source-layer": "roads",
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#C2BDB6",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          1.4,
+          12,
+          3,
+          15,
+          8,
+          18,
+          20
+        ]
+      }
+    },
+    {
+      "id": "roads",
+      "type": "line",
+      "source": "regional",
+      "source-layer": "roads",
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "motorway",
+            "trunk",
+            "primary"
+          ],
+          "#F8D8AA",
+          "#FFFFFF"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.8,
+          12,
+          2,
+          15,
+          6,
+          18,
+          17
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+schema_name: APOIS Vale do Sao Francisco lab
+schema_description: Regional navigation geometry from OSM only
+attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>'
+sources:
+  osm:
+    type: osm
+    local_path: vale.osm.pbf
+layers:
+- id: water
+  features:
+  - source: osm
+    geometry: polygon
+    min_zoom: 8
+    include_when:
+      natural: water
+- id: waterway
+  features:
+  - source: osm
+    geometry: line
+    min_zoom: 9
+    include_when:
+      waterway: [river, canal, stream]
+- id: green
+  features:
+  - source: osm
+    geometry: polygon
+    min_zoom: 12
+    include_when:
+      leisure: [park, garden]
+- id: buildings
+  features:
+  - source: osm
+    geometry: polygon
+    min_zoom: 14
+    include_when:
+      building: __any__
+- id: roads
+  features:
+  - source: osm
+    geometry: line
+    min_zoom: 8
+    include_when:
+      highway: [motorway, trunk, primary, secondary, tertiary, motorway_link, trunk_link, primary_link, secondary_link, tertiary_link]
+    attributes:
+    - key: class
+      tag_value: highway
+    - key: name
+    - key: bridge
+    - key: tunnel
+  - source: osm
+    geometry: line
+    min_zoom: 12
+    include_when:
+      highway: [residential, unclassified, living_street, service, road, track]
+    attributes:
+    - key: class
+      tag_value: highway
+    - key: name
+    - key: bridge
+    - key: tunnel
+- id: places
+  features:
+  - source: osm
+    geometry: point
+    min_zoom: 9
+    include_when:
+      place: [city, town, village, suburb, neighbourhood]
+    attributes:
+    - key: name
+    - key: class
+      tag_value: place
