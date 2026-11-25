@@ -1,0 +1,47 @@
+name: APOIS Navegacao - QA290 WebView isolado (sem APK)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/host-compat/*qa290-web*', '.github/workflows/apois-navigation-lab-qa290-web.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: apois-navigation-qa290-web
+  cancel-in-progress: true
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - name: Materializar QA290 historico e fontes publicas fixadas
+        run: |
+          set -euo pipefail
+          S="$RUNNER_TEMP/apois-qa290-web"
+          git clone --no-checkout --filter=blob:none https://github.com/apoistecnologia-gif/apois-superapp.git "$S"
+          git -C "$S" fetch --no-tags --depth=1 origin 6b0d31dcad5be9b7c7b9a8c651deeca98104b65f
+          git -C "$S" checkout --detach FETCH_HEAD
+          for spec in "apois-corridas-motorista-admin movvi-go-connect 9fc171050d8b5703540c49d19a8f1e9f5162775f" "apois-entregas apois-entregas 2f4606e0fb52dffb49f2e6aebbe921ce687ab625"; do
+            read -r dir repository pin <<< "$spec"
+            git clone --no-checkout --filter=blob:none "https://github.com/apoistecnologia-gif/$repository.git" "$S/sources/$dir"
+            git -C "$S/sources/$dir" fetch --no-tags --depth=1 origin "$pin"
+            git -C "$S/sources/$dir" checkout --detach FETCH_HEAD
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - name: Reconstruir somente Motorista com ambiente ficticio
+        run: bash labs/apois-navigation/host-compat/run-qa290-web.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/apois-qa290-web" "$RUNNER_TEMP/qa290-web-report"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-navigation-qa290-web-evidence
+          path: ${{ runner.temp }}/qa290-web-report/report.json
+          retention-days: 7
