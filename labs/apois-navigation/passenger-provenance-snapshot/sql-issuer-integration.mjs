@@ -8,7 +8,8 @@ import {mkdtempSync,rmSync} from "node:fs";
 import {join} from "node:path";
 import {tmpdir} from "node:os";
 import {createDriverAuthority} from "./driver-authority.mjs";
-import {createRouteIssuer,routeBody,routeLegScope} from "../valhalla/route-issuer.mjs";
+import {createRevocationReconciler} from "./revocation-reconciler.mjs";
+import {createRouteIssuer,routeBody} from "../valhalla/route-issuer.mjs";
 import {createRouteAuthorization} from "../valhalla/route-authorization.mjs";
 import {openRouteReplayStore} from "../valhalla/route-replay-store.mjs";
 const a="00000000-0000-4000-8000-000000000061",b="00000000-0000-4000-8000-000000000062",
@@ -35,6 +36,12 @@ const dir=mkdtempSync(join(tmpdir(),"apois-pg-proof-"));
 const store=openRouteReplayStore({path:join(dir,"replay.sqlite"),initialize:true,requireIssued:true,requireScoped:true});
 const issue=createRouteIssuer({privateKey:keys.privateKey,principalKey,audience,readAuthority:authority,issuanceStore:store,scopedIssuance:true});
 const authorize=createRouteAuthorization({publicKey:keys.publicKey,audience,store});
+const reconcile=createRevocationReconciler({principalKey,audience,store,readSnapshot:async(limit,signal)=>{
+  assert.ok(Number.isSafeInteger(limit)&&limit===4097);
+  if(signal.aborted)return null;
+  return JSON.parse(sql("set role service_role; select coalesce(jsonb_agg(jsonb_build_object('rideId',ride_id,'phase',phase)),'[]'::jsonb) from (select ride_id,phase from apois_nav_lab.revoked_leg order by ride_id,phase limit "+limit+") t;"));
+}});
+const sync=()=>reconcile(new AbortController().signal);
 const pickup={rideId:ride,phase:"PICKUP",origin:{lat:-9.41,lon:-40.505},target:{lat:-9.4,lon:-40.5}};
 const trip={...pickup,phase:"TRIP",target:{lat:-9.42,lon:-40.51}};
 const admit=(token,req)=>authorize("Bearer "+token,routeBody(req.origin,req.target));
@@ -50,14 +57,19 @@ try{
   const pending=await issue("fixture-driver-a",pickup);assert.equal(pending.status,200);
   phase("motorista_chegou");
   assert.equal((await issue("fixture-driver-a",pickup)).status,403);
-  // Explicit synthetic lifecycle notification: not a real event consumer.
-  assert.equal(store.revokeScope(routeLegScope(principalKey,audience,ride,"PICKUP"),Date.now()).status,200);
+  // Trigger writes the tombstone automatically on committed phase change.
+  assert.equal((await sync()).status,200);
   assert.equal(admit(pending.token,pickup).status,403);
   phase("em_viagem");
   const next=await issue("fixture-driver-a",trip);assert.equal(next.status,200);
   assert.equal(admit(next.token,pickup).status,403);
   const g=admit(next.token,trip);assert.equal(g.status,200);g.release();
+  const outstanding=await issue("fixture-driver-a",trip);assert.equal(outstanding.status,200);
   phase("finalizada");
+  assert.equal((await sync()).status,200);
+  assert.equal(admit(outstanding.token,trip).status,403);
   assert.equal((await issue("fixture-driver-a",trip)).status,403);
-  console.log("APOIS_SQL_ISSUER_INTEGRATION_OK",{sqlReads:reads,realPostgres:true,syntheticAuthentication:true,manualRevocation:true});
+  // Rollback cannot create a durable tombstone; actual commit above does.
+  assert.equal(Number(sql("select count(*) from apois_nav_lab.revoked_leg;")),2);
+  console.log("APOIS_SQL_ISSUER_INTEGRATION_OK",{sqlReads:reads,realPostgres:true,syntheticAuthentication:true,automaticSqlTombstones:true,explicitReconciliation:true});
 }finally{store.close();rmSync(dir,{recursive:true,force:true});}

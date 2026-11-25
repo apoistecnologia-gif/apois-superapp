@@ -23,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           node verify.mjs
-          node --test driver-authority.test.mjs supabase-session.test.mjs
+          node --test driver-authority.test.mjs supabase-session.test.mjs revocation-reconciler.test.mjs
           node --test experimental/apois-navigation/client.test.mjs
           python3 -m unittest discover -s experimental/apois-navigation -p 'test_import_catalog.py' -v
       - name: PostgreSQL descartavel sem rede
@@ -42,7 +42,10 @@ jobs:
           done
       - name: Integrar consulta SQL ao emissor criptografico
         working-directory: labs/apois-navigation/passenger-provenance-snapshot
-        run: node sql-issuer-integration.mjs
+        run: |
+          set -euo pipefail
+          docker exec -i apois-provenance-fixture psql -X -U postgres -d apois_navigation_fixture -v ON_ERROR_STOP=1 < revocation-fixture.sql
+          node sql-issuer-integration.mjs
       - name: Encerrar fixture
         if: always()
         run: |
