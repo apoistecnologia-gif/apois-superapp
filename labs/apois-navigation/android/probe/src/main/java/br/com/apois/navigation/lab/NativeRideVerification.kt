@@ -22,7 +22,7 @@ internal val nativeRideUuid=Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-
 // No trust in client status, local JWT claims or the WebView ride row.
 internal suspend fun verifyNativeRide(
     reads:NativeRideReads,rideId:String,phase:RidePhase,
-    expected:RoutingIdentity?,current:()->Boolean,clock:()->Long
+    expected:RoutingIdentity,current:()->Boolean,clock:()->Long
 ):NativeVerifiedRide?{
     if(!nativeRideUuid.matches(rideId)||phase !in setOf(RidePhase.PICKUP,RidePhase.TRIP))return null
     val began=clock()
@@ -36,7 +36,7 @@ internal suspend fun verifyNativeRide(
     val profile=reads.profile()?:return null
     if(!live()||!nativeRideUuid.matches(profile.driverId)||!nativeRideUuid.matches(profile.profileUserId))return null
     val identity=RoutingIdentity(auth,profile.profileUserId,profile.driverId)
-    if(expected!=null&&expected!=identity)return null
+    if(expected!=identity)return null
     val row=reads.ride(rideId)?:return null
     if(!live()||row.id!=rideId)return null
     val owner=row.acceptedDriverId?:row.driverId

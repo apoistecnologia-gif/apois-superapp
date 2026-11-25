@@ -21,7 +21,7 @@ internal fun approvedReadBase(raw:String,authorizedHost:String):URI{
 internal class NativeSupabaseRideReader(private val approvedHost:String){
     // Call on main; only the network operation moves to IO. Existing GPS
     // service remains the sole owner of login persistence and token refresh.
-    suspend fun verify(rideId:String,phase:RidePhase,expected:RoutingIdentity?):NativeVerifiedRide?{
+    suspend fun verify(rideId:String,phase:RidePhase,expected:RoutingIdentity):NativeVerifiedRide?{
         val capture=NativeDriverReadSource.capture()?:return null
         return try{
             val base=approvedReadBase(capture.base,approvedHost)
