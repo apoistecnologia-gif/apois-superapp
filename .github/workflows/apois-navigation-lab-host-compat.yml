@@ -28,6 +28,8 @@ jobs:
           test -n "$SDKMANAGER"
           "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
       - name: Gerar host real e isolado
         run: |
           set -euo pipefail
@@ -44,8 +46,8 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/apois-compat-host/android"
-          chmod +x gradlew
-          ./gradlew :app:checkDebugAarMetadata :app:processDebugMainManifest :app:compileDebugJavaWithJavac :navigation-probe:compileDebugKotlin :navigation-probe:testDebugUnitTest --no-daemon --stacktrace | tee "$RUNNER_TEMP/apois-host-compat.log"
+          gradle --version
+          gradle :app:checkDebugAarMetadata :app:processDebugMainManifest :app:compileDebugJavaWithJavac :navigation-probe:compileDebugKotlin :navigation-probe:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/apois-host-compat.log"
           test -z "$(find . -name '*.apk' -print -quit)"
       - uses: actions/upload-artifact@v4
         if: always()
