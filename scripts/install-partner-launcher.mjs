@@ -1,23 +1,11 @@
-// Exclusive Motorista restores the native sequence of the approved QA290.
-const motoristaQa290 = process.env.APOIS_MOTORISTA_ONLY === "1";
-if (!motoristaQa290) await import('./harden-partner-mercadopago-callback.mjs');
-await import('./harden-partner-android-security.mjs');
-await import('./configure-partner-firebase.mjs');
-if (motoristaQa290) await import('./install-motorista-qa290-driver-location.mjs');
-else await import('./install-partner-driver-location.mjs');
-await import('./install-partner-courier-location.mjs');
-await import('./harden-partner-location-startup-ack.mjs');
-await import('./harden-partner-location-session-sync.mjs');
-await import('./harden-partner-location-notification-routing.mjs');
-if (motoristaQa290) {
-  await import('./install-partner-external-navigation.mjs');
-  await import('./install-partner-qa235-native-auto-arrival.mjs');
-  await import('./install-partner-qa236-return-notification-v1.mjs');
-  await import('./install-partner-qa239-native-bubble.mjs');
-  await import('./install-partner-native-qa280.mjs');
-  const {protectNativeWebView}=await import('./harden-apois-native-webview-scroll-v1.mjs');
-  protectNativeWebView('parceiro');
-}
+import './harden-partner-mercadopago-callback.mjs';
+import './harden-partner-android-security.mjs';
+import './configure-partner-firebase.mjs';
+import './install-partner-driver-location.mjs';
+import './install-partner-courier-location.mjs';
+import './harden-partner-location-startup-ack.mjs';
+import './harden-partner-location-session-sync.mjs';
+import './harden-partner-location-notification-routing.mjs';
 // verify-partner-native-plugins roda via await no fim, depois de todos os hardeners.
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';

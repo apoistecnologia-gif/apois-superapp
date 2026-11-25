@@ -5,7 +5,7 @@ on:
       - fix/apois-motorista-assinatura-recuperacao-20261124
     paths:
       - .github/workflows/apois-motorista-only-qa-apk.yml
-      - scripts/install-partner-launcher.mjs
+      - scripts/install-motorista-qa290-launcher.mjs
       - scripts/install-motorista-qa290-driver-location.mjs
       - scripts/build-apois-motorista-only-qa.mjs
       - scripts/recover-motorista-qa290-web.sh
@@ -209,7 +209,7 @@ jobs:
           bunx cap sync android
           cd ../..
           node scripts/configure-partner-android.mjs
-          node scripts/install-partner-launcher.mjs
+          node scripts/install-motorista-qa290-launcher.mjs
           node scripts/install-partner-splash.mjs
           node scripts/build-apois-motorista-only-qa.mjs native
           test ! -e superapp/partner-shell/android/app/src/main/java/br/com/apois/parceiro/CourierLocationPlugin.java
