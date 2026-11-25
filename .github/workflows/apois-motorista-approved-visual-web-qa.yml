@@ -7,6 +7,8 @@ on:
       - .github/workflows/apois-motorista-approved-visual-web-qa.yml
       - scripts/qa/test-motorista-approved-visual-20261124.test.mjs
       - scripts/apply-driver-login-approved-qa-v1.mjs
+      - scripts/fix-motorista-visible-offer-v2.mjs
+      - scripts/reconcile-motorista-qa290-visual.mjs
       - scripts/harden-motorista-supabase-types-20261124.mjs
       - scripts/harden-partner-motorista-native-gps.mjs
       - superapp/partner-shell/motorista-welcome.html

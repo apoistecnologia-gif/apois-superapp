@@ -61,4 +61,5 @@ login=once(login,'          {error?.includes("Continuar cadastro com esta conta"
 write(loginPath,login);
 write('src/styles.css',read('src/styles.css')+style);
 for(const [p,m] of [['src/routes/motorista.perfil.tsx','APOIS_PARCEIRO_QA283_PROFILE_COMPLETED_RIDES_V1'],['src/routes/motorista.corridas.tsx','APOIS_PARCEIRO_QA284_DRIVER_HISTORY_UI_V1'],['src/routes/motorista.ganhos.tsx','data-apois-premium-screen="driver-finance"']])if(!read(p).includes(m))throw Error('Lost historical screen '+p);
+await import(pathToFileURL(resolve(current,'scripts/fix-motorista-visible-offer-v2.mjs')).href);
 console.log('[OK] QA290 preserved: current compact Home, shared navigation, directional map and approved login with historical auth notices.');
