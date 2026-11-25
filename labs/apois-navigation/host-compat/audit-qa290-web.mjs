@@ -22,6 +22,10 @@ const generation=read(javaRoot+"VoiceGeneration.java");
 for(const marker of ['@CapacitorPlugin(name = "DriverVoice")','generation.accepts(ticket)','result.put("stopped", stopped)','2200L'])assert.ok(java.includes(marker),marker);
 const hash=s=>createHash("sha256").update(s).digest("hex");
 const voiceEvidence={web:hash(voice),java:hash(java),generation:hash(generation),mode:"QA235 external default preserved; strict stop acknowledgement and generation guard; no native registration change or physical audio test"};
+const host=read("src/lib/apois-navigation-lab/host.ts");
+for(const marker of ["APOIS_NAVIGATION_QA290_CONFIRMED_HOST","const EXPERIMENTAL_INTERNAL_NAVIGATION:boolean=false","supabase.auth.getUser()",'supabase.rpc("driver_get_profile")','select("id,status,driver_id,accepted_driver_id")','openNative:async()=>({state:"unavailable"})'])assert.ok(host.includes(marker),marker);
+for(const marker of ["APOIS_NAVIGATION_QA290_CONFIRMED_LAUNCH","bindConfirmedNavigationLifecycle()",'launchConfirmedApoisNavigation(accepted.id, "PICKUP"','launchConfirmedApoisNavigation(ride.id, "TRIP"'])assert.ok(app.includes(marker),marker);
+const launchEvidence={host:hash(host),authority:hash(read("src/lib/apois-navigation-lab/motorista-authority.mjs")),policy:hash(read("src/lib/apois-navigation-lab/confirmed-navigation-launch.mjs")),mode:"hard disabled, original external callback preserved, mocked policy tests; no native plugin registered"};
 const launchSites=app.split("\n").map((line,index)=>({line:index+1,code:line.trim()})).filter(x=>x.code.includes("launchApoisNavigationAfterRideStart("));
 assert.ok(launchSites.some(x=>x.code.includes("accepted.origin_lat")),"confirmed accept pickup launch");
 assert.ok(launchSites.some(x=>x.code.includes("ride.destination_lat")),"confirmed PIN destination launch");
@@ -29,6 +33,6 @@ function files(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.is
 const dist=join(root,"dist/client");
 const bundle=files(dist).map(f=>({path:relative(dist,f),bytes:statSync(f).size,sha256:createHash("sha256").update(readFileSync(f)).digest("hex")}));
 assert.ok(bundle.length>0);
-const report={sourceCommit:"9fc171050d8b5703540c49d19a8f1e9f5162775f",historicalBuilder:"6b0d31dcad5be9b7c7b9a8c651deeca98104b65f",reconciliationCommit:"a19fc0bc8e68c94dae0f1d48ff7cef2dba8ad94d",files:bundle.length,bytes:bundle.reduce((s,x)=>s+x.bytes,0),markers:checks,voiceEvidence,launchSites,hashes:bundle,limits:"Compile-only synthetic config; no APK, real auth, runtime navigation or production integration."};
+const report={sourceCommit:"9fc171050d8b5703540c49d19a8f1e9f5162775f",historicalBuilder:"6b0d31dcad5be9b7c7b9a8c651deeca98104b65f",reconciliationCommit:"a19fc0bc8e68c94dae0f1d48ff7cef2dba8ad94d",files:bundle.length,bytes:bundle.reduce((s,x)=>s+x.bytes,0),markers:checks,voiceEvidence,launchEvidence,launchSites,hashes:bundle,limits:"Compile-only synthetic config; no APK, real auth, runtime navigation or production integration."};
 writeFileSync(out,JSON.stringify(report,null,2)+"\n");
 console.log("[OK] generated QA290 WebView source/bundle evidence, "+bundle.length+" files");
