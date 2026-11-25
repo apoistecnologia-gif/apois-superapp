@@ -79,7 +79,7 @@ jobs:
             pickup:{id:pickupId,version:1},destination:{id:destinationId,version:1}})
           console.log('APOIS_SELECTION_CLIENT_CONTRACT_OK')
           JS
-      - run: node --test labs/apois-navigation/osm-search/passenger-flow.test.mjs
+      - run: node --test labs/apois-navigation/osm-search/passenger-flow.test.mjs labs/apois-navigation/osm-search/passenger-panel.test.mjs
       - name: Mes do cache regional
         id: cache-month
         run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
