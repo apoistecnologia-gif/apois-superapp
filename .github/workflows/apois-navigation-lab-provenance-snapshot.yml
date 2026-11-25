@@ -46,6 +46,7 @@ jobs:
           set -euo pipefail
           docker exec -i apois-provenance-fixture psql -X -U postgres -d apois_navigation_fixture -v ON_ERROR_STOP=1 < revocation-fixture.sql
           node sql-issuer-integration.mjs
+          node postgres-revocation-barrier.integration.mjs
       - name: Encerrar fixture
         if: always()
         run: |
