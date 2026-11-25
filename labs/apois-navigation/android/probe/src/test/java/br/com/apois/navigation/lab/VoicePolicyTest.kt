@@ -14,6 +14,35 @@ class VoicePolicyTest {
     assertNull(p.accept("1","In 300 metros, vire.",true,false))
     assertNotNull(p.accept("2","In 300 metros, vire.",true,false))
  }
+ @Test fun replacementDefersIdenticalPhraseButDoesNotConsumeId(){
+    val p=VoicePolicy()
+    assertNotNull(p.accept("1","In 300 metros, vire.",true,false,1000))
+    p.routeReplaced(2000)
+    assertNull(p.accept("1","Em 300 metros, vire.",true,false,3000))
+    assertNotNull(p.accept("1","Em 300 metros, vire.",true,false,5000))
+    assertNull(p.accept("1","Em 300 metros, vire.",true,false,6000))
+ }
+ @Test fun differentInstructionCanReuseIdImmediatelyAfterReplacement(){
+    val p=VoicePolicy()
+    assertNotNull(p.accept("1","Vire à esquerda.",true,false,1000))
+    p.routeReplaced(2000)
+    assertNotNull(p.accept("1","Vire à direita.",true,false,2100))
+    assertNotNull(p.accept("2","Vire à esquerda.",true,false,2200))
+ }
+ @Test fun repeatedRecalculationsCannotExtendSpeechHold(){
+    val p=VoicePolicy()
+    p.accept("1","Siga.",true,false,1000)
+    p.routeReplaced(2000)
+    assertNull(p.accept("2","Siga.",true,false,2200))
+    p.routeReplaced(4500)
+    assertNotNull(p.accept("2","Siga.",true,false,5000))
+ }
+ @Test fun budgetDoesNotResetWithReplacement(){
+    val p=VoicePolicy(1)
+    assertNotNull(p.accept("1","Siga.",true,false,1000))
+    p.routeReplaced(2000)
+    assertNull(p.accept("1","Vire.",true,false,3000))
+ }
  @Test fun unavailableOrMutedDoesNotSpeak(){
     val p=VoicePolicy()
     assertNull(p.accept("1","Vire.",false,false))

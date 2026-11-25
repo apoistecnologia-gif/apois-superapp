@@ -44,6 +44,11 @@ internal class LiveNavigationVoice(context: Context, private val permit: Navigat
     fun setForeground(value: Boolean) = update(gate.copy(foreground = value))
     fun setGpsAvailable(value: Boolean) = update(gate.copy(gpsAvailable = value))
     fun setMuted(value: Boolean) = update(gate.copy(muted = value))
+    fun routeReplaced() {
+        if (gate.closed) return
+        if (!authorized()) { close(); return }
+        speech.routeReplaced()
+    }
     fun speak(instruction: SpokenInstruction) {
         if (gate.closed) return
         if (!authorized()) { close(); return }

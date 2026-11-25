@@ -5,18 +5,47 @@ package br.com.apois.navigation.lab
 private val mixedDistancePrefix=Regex("^In(?=\\s+\\d+(?:[.,]\\d+)?\\s+(?:metros?|quilômetros?|quilometros?|km)\\b)",RegexOption.IGNORE_CASE)
 internal fun normalizeNavigationSpeech(text:String):String = text.trim().replace(mixedDistancePrefix,"Em")
 
-// One instance per navigation leg. A new route can produce new utterance IDs.
-// Keep a bounded set; never deduplicate by street name or instruction text.
+// One policy per active navigation voice. Utterance IDs may be reused by a
+// replacement navigator. Scope IDs to the route while bounding total accepts.
+// Only defer the immediately previous identical phrase for a short interval
+// after replacement; never deduplicate permanently by street name or text.
 internal class VoicePolicy(private val maxUtterances:Int=4096) {
     private val seen=LinkedHashSet<String>()
+    private var total=0
     private var closed=false
+    private var lastText:String?=null
+    private var lastAt:Long?=null
+    private var replacementText:String?=null
+    private var suppressUntil:Long?=null
     init { require(maxUtterances>0) }
-    @Synchronized fun accept(id:String,text:String,ready:Boolean,muted:Boolean):String? {
-        if(closed||!ready||muted||id.isBlank()||text.isBlank()||id in seen)return null
-        // Once full, fail silent rather than replay old instructions.
-        if(seen.size>=maxUtterances)return null
-        seen.add(id)
-        return normalizeNavigationSpeech(text)
+
+    @Synchronized fun routeReplaced(now:Long) {
+        if(closed)return
+        seen.clear()
+        val previous=lastAt
+        // At most four seconds from the previous queued instruction, not
+        // from each reroute. Unknown time or an older instruction is not held.
+        replacementText=if(previous!=null && now>=previous && now-previous<4_000L)lastText else null
+        suppressUntil=if(replacementText!=null)previous!!+4_000L else null
     }
-    @Synchronized fun close(){closed=true;seen.clear()}
+
+    @Synchronized fun accept(id:String,text:String,ready:Boolean,muted:Boolean,now:Long=0L):String? {
+        if(closed||!ready||muted||id.isBlank()||text.isBlank()||id in seen)return null
+        if(total>=maxUtterances)return null
+        val normalized=normalizeNavigationSpeech(text)
+        val until=suppressUntil
+        if(replacementText==normalized && until!=null && now>=0 && now<until) {
+            // Do not spend the ID: if it is still the SDK's instruction after
+            // the hold expires, it must be eligible to speak.
+            return null
+        }
+        replacementText=null
+        suppressUntil=null
+        seen.add(id)
+        total++
+        lastText=normalized
+        lastAt=now.takeIf{it>0}
+        return normalized
+    }
+    @Synchronized fun close(){closed=true;seen.clear();lastText=null;lastAt=null;replacementText=null;suppressUntil=null}
 }

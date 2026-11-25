@@ -165,6 +165,7 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                         nextFix = null // initialize only from the next accepted GPS fix
                         stillOffRoute = false
                         voice?.setGpsAvailable(false)
+                        voice?.routeReplaced()
                         navigationUiState.value = NavigationUiState.empty().copy(
                             routeGeometry = replacement.geometry, destination = destination, isMuted = muted)
                         _routeNotice.value = "Rota atualizada. Aguardando posição."

@@ -1,6 +1,7 @@
 package br.com.apois.navigation.lab
 
 import android.content.Context
+import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import com.stadiamaps.ferrostar.core.AndroidTtsObserver
 import com.stadiamaps.ferrostar.core.AndroidTtsStatusListener
@@ -44,13 +45,18 @@ internal class PortugueseVoiceObserver(context:Context):SpokenInstructionObserve
     override val muteState:StateFlow<Boolean> get()=delegate.muteState
     @Synchronized override fun onSpokenInstructionTrigger(spokenInstruction:SpokenInstruction){
         if(closed)return
-        val text=policy.accept(spokenInstruction.utteranceId.toString(),spokenInstruction.text,_ready.value,delegate.isMuted)?:return
+        val text=policy.accept(spokenInstruction.utteranceId.toString(),spokenInstruction.text,_ready.value,delegate.isMuted,SystemClock.elapsedRealtime())?:return
         delegate.onSpokenInstructionTrigger(spokenInstruction.copy(text=text))
     }
     @Synchronized override fun setMuted(isMuted:Boolean){
         if(closed)return
         delegate.setMuted(isMuted)
         if(isMuted)delegate.stopAndClearQueue()
+    }
+    @Synchronized fun routeReplaced(){
+        if(closed)return
+        delegate.stopAndClearQueue()
+        policy.routeReplaced(SystemClock.elapsedRealtime())
     }
     @Synchronized override fun stopAndClearQueue(){if(!closed)delegate.stopAndClearQueue()}
     @Synchronized override fun close(){
