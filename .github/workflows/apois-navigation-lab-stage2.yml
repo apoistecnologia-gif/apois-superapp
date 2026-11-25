@@ -35,7 +35,7 @@ jobs:
       - name: Testar rotas locais em portugues
         run: |
           bash -n labs/apois-navigation/valhalla/run-region.sh
-          bash labs/apois-navigation/valhalla/run-region.sh "$RUNNER_TEMP/apois-route-report" compact
+          APOIS_LAB_GUARDED_REGIONAL=1 bash labs/apois-navigation/valhalla/run-region.sh "$RUNNER_TEMP/apois-route-report" compact
       - uses: actions/cache/save@v4
         if: always() && steps.regional-cache.outputs.cache-hit != 'true' && hashFiles('labs/apois-navigation/valhalla/.regional-cache/extract.sha256') != ''
         with:
@@ -48,6 +48,10 @@ jobs:
           for name in petrolina_urban crossing_pe_ba crossing_ba_pe; do
             cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- "$RUNNER_TEMP/apois-route-report/sdk_$name.json" | tee "$RUNNER_TEMP/apois-route-report/sdk_$name-replay.txt"
             grep -E 'APOIS_REPLAY_OK.*spoken_instruction_fixes=[1-9][0-9]*' "$RUNNER_TEMP/apois-route-report/sdk_$name-replay.txt"
+          done
+          for name in pickup reroute trip; do
+            cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- "$RUNNER_TEMP/apois-route-report/guarded_$name.json" | tee "$RUNNER_TEMP/apois-route-report/guarded_$name-replay.txt"
+            grep -E 'APOIS_REPLAY_OK.*spoken_instruction_fixes=[1-9][0-9]*' "$RUNNER_TEMP/apois-route-report/guarded_$name-replay.txt"
           done
       - uses: actions/upload-artifact@v4
         if: always()

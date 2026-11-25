@@ -90,6 +90,10 @@ done
 test "$GATEWAY_READY" = 1
 python3 "$BASE/test_routes.py" "$OUT"
 node --max-old-space-size="$NODE_HEAP" "$BASE/authenticated-regional-smoke.mjs" "$OUT"
+# Optional, CI-only end-to-end fixture; no effect on the default benchmark.
+if [[ "${APOIS_LAB_GUARDED_REGIONAL:-0}" == 1 ]]; then
+  bash "$BASE/run-guarded-fixture.sh" "$OUT"
+fi
 node --max-old-space-size="$NODE_HEAP" "$BASE/authenticated-capacity.mjs" "$OUT" "$NAME" extended
 test "$(docker inspect -f '{{.State.Running}} {{.State.OOMKilled}}' "$NAME")" = "true false"
 # On cgroup v2 capture evidence of subprocess OOM too, not only container exit.
