@@ -35,9 +35,7 @@ const invoke=async(name,{body,headers})=>{
  return result.status===200?{data:result.body}:{error:{context:new Response(JSON.stringify(result.body),{status:result.status})}}
 }
 const adapter=createVerifiedHostTransport({enabled:true,account,auth,invoke,controlFunction:'apois-navigation-control'})
-const catalogResult=await control('synthetic-token',{action:'apois_navigation_catalog'})
-assert.equal(catalogResult.status,200)
-const catalog=catalogResult.body.catalog;assert.equal(catalog.rows.length,2)
+const catalog=await adapter.readCatalog({version:1,extractHash:digest},AbortSignal.timeout(10000));assert.equal(catalog.rows.length,2)
 const panel=createPassengerPanel({enabled:true,catalog,newKey:()=>key,confirm:adapter.confirm})
 assert.ok(panel.open());assert.ok(panel.selectSearch(catalog.rows.find(r=>r.id===id(21)).label,id(21)));assert.ok(panel.focus('destination'));assert.ok(panel.selectSearch(catalog.rows.find(r=>r.id===id(22)).label,id(22)))
 assert.ok(await panel.confirm())

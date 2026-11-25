@@ -1,7 +1,8 @@
+import {validCatalogPolicy,validateCatalog} from './catalog-validation.mjs'
 // Host-side Supabase adapter; no URL/key defaults and no token persistence.
 // The verified account is bound when the host opens, not read from request JSON.
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
-const controls=new Set(['apois_navigation_confirm','apois_navigation_active','apois_navigation_recover','apois_navigation_seal'])
+const controls=new Set(['apois_navigation_catalog','apois_navigation_confirm','apois_navigation_active','apois_navigation_recover','apois_navigation_seal'])
 const requests=new Set(['apois_navigation_quote','apois_navigation_create'])
 export function createVerifiedHostTransport({auth,invoke,account,controlFunction,enabled=false}={}){
  if(enabled!==true)return null
@@ -51,5 +52,13 @@ export function createVerifiedHostTransport({auth,invoke,account,controlFunction
   const result=await transport({action:'apois_navigation_active'},AbortSignal.timeout(10000))
   return result.status===200&&result.body?.verified===true?result.body:{verified:false}
  }
- return {verifyIdentity,transport,confirm,activeRide,verifiedAuthorization:async()=>({Authorization:'Bearer '+await session()})}
+ async function readCatalog(policy,signal){
+  if(!validCatalogPolicy(policy)||signal?.aborted)return null
+  try{
+   const response=await transport({action:'apois_navigation_catalog'},signal)
+   if(response.status!==200||response.body?.ok!==true||signal?.aborted)return null
+   return validateCatalog(response.body.catalog,policy)
+  }catch{return null}
+ }
+ return {verifyIdentity,transport,confirm,activeRide,readCatalog,verifiedAuthorization:async()=>({Authorization:'Bearer '+await session()})}
 }

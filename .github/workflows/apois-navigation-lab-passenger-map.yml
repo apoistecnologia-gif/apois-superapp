@@ -34,6 +34,7 @@ jobs:
           cp -a labs/apois-navigation/passenger-provenance-snapshot "$S/snapshot"
           cp -a "$RUNNER_TEMP/apois-map-assets/android-assets/apois-regional" "$S/site/"
           cd "$S"
+          test "$(sha256sum site/apois-regional/manifest.json | cut -d ' ' -f 1)" = 367c0104a8a5de7f11bdf2c965eb91a73e1cf21b5a3809f78f53e7170b7cdebb
           echo APOIS_PACK_MANIFEST_SHA256="$(sha256sum site/apois-regional/manifest.json | cut -d ' ' -f 1)"
           node -e 'const m=require("./site/apois-regional/manifest.json"); console.log("APOIS_PACK_PROVENANCE",JSON.stringify({packId:m.pack_id,extractHash:m.extract_sha256,sourceHash:m.source_sha256}))'
           npm init -y >/dev/null

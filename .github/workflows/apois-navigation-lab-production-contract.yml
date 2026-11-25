@@ -48,7 +48,7 @@ jobs:
           run_sql < "$root/test-catalog-v21.sql"
           node --test "$root/navigation-control-v21.test.mjs"
           node "$root/verified-host-v21.integration.mjs"
-          node --test labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/durable-ride-host.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/verified-host-transport.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/pilot-runtime.test.mjs
+          node --test labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/durable-ride-host.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/verified-host-transport.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/pilot-runtime.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/approved-map-provider.test.mjs
           node labs/apois-navigation/passenger-provenance-snapshot/verify.mjs
           run_sql < "$root/least-privilege-trigger-fixture.sql"
           run_sql < "$root/test-least-privilege-trigger.sql"

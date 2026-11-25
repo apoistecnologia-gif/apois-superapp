@@ -15,7 +15,7 @@ const server=createServer((req,res)=>{
 })
 await new Promise(r=>server.listen(0,'127.0.0.1',r))
 const origin='http://127.0.0.1:'+server.address().port,id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0')
-let browser,selection=null,ride=null,creates=0,confirms=0,quotes=0,terminal=false
+let browser,selection=null,ride=null,creates=0,confirms=0,quotes=0,catalogReads=0,terminal=false
 const selectionPoints={origin:{lat:-9.41,lng:-40.504,label:'Embarque sintético'},destination:{lat:-9.414,lng:-40.51,label:'Destino sintético'}}
 try{
  browser=await chromium.launch({executablePath:process.env.CHROME_BIN,headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']})
@@ -26,6 +26,11 @@ try{
  await page.exposeFunction('labRpc',async(name,opts)=>{
   assert.equal(opts.headers.Authorization,'Bearer synthetic-local-browser-token')
   const b=opts.body
+  if(b.action==='apois_navigation_catalog'){
+   assert.equal(name,'apois-navigation-control');assert.deepEqual(b,{action:'apois_navigation_catalog'});catalogReads++
+   const hash='c50dd021ab11518b230c191bc9fa85f683c9b82810f605476532c16172f55238',common={active:true,version:1,extract_sha256:hash}
+   return {data:{ok:true,catalog:{source:'OSM_PBF',version:1,extract_sha256:hash,rows:[{...common,id:id(792),...selectionPoints.origin},{...common,id:id(793),...selectionPoints.destination}]}}}
+  }
   if(b.action==='apois_navigation_active'){assert.equal(name,'apois-navigation-control');return {data:{verified:true,ride:terminal?null:ride}}}
   if(b.action==='apois_navigation_confirm'){
    assert.equal(name,'apois-navigation-control');assert.deepEqual(b.pickup,{id:id(792),version:1});assert.deepEqual(b.destination,{id:id(793),version:1})
@@ -43,8 +48,8 @@ try{
  })
  await page.goto(origin)
  await page.waitForFunction(()=>typeof window.startHost==='function')
- await page.evaluate(()=>window.startMap())
  assert.equal((await page.evaluate(()=>window.startHost(true))).state,'ready')
+ assert.equal(catalogReads,1)
  // Real map click only suggests a point. No confirmation or creation.
  const point=await page.evaluate(()=>{const p=window.apoisMap.map.project([-40.504,-9.41]);const r=document.getElementById('map').getBoundingClientRect();return {x:p.x+r.left,y:p.y+r.top}})
  await page.mouse.click(point.x,point.y)
@@ -79,6 +84,6 @@ try{
  await page.getByRole('button',{name:'Voltar ao fluxo atual',exact:true}).click()
  await page.waitForFunction(()=>window.returned===1)
  assert.equal(await page.evaluate(()=>window.readJournal()),null)
- assert.equal(creates,1);assert.equal(external.length,0)
- console.log('APOIS_LOCAL_MAP_PASSENGER_BROWSER_FLOW_OK',JSON.stringify({realMap:true,realDom:true,indexedDB:true,webLocks:true,explicitConfirm:true,creates,confirms,quotes,reloadRecovery:true,noMapRecovery:true,terminalReleased:true,externalRequests:external.length}))
+ assert.equal(creates,1);assert.equal(external.length,0);assert.equal(catalogReads,1)
+ console.log('APOIS_LOCAL_MAP_PASSENGER_BROWSER_FLOW_OK',JSON.stringify({realMap:true,realDom:true,indexedDB:true,webLocks:true,explicitConfirm:true,creates,confirms,quotes,reloadRecovery:true,noMapRecovery:true,terminalReleased:true,catalogReads,externalRequests:external.length}))
 }finally{await browser?.close();await new Promise(r=>server.close(r))}

@@ -1,0 +1,2 @@
+export type PilotMapPolicy={packId:string;manifestSha256:string;mapExtractHash:string;catalog:{version:number;extractHash:string}};
+export function prepareApprovedPilotMap(root:HTMLElement,options:{enabled:boolean;account:string;auth:unknown;invoke:unknown;maplibre:unknown;PMTiles:unknown;base:string;origin:string;policy:PilotMapPolicy;signal:AbortSignal}):Promise<{map:unknown;catalog:unknown;dispose:()=>void;metrics:()=>unknown;extractHash:string}|null>;

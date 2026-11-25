@@ -44,3 +44,18 @@ test('missing lock implementation and uncertain active lookup fail closed',async
  const guard=createCreationInterlock({enabled:true,locks:{request:(_,__,f)=>f()},journal:{read:async()=>null},verifyIdentity:async()=>a,activeRide:async()=>({verified:false})})
  assert.equal(await guard.canReturn(),false);await assert.rejects(()=>guard.legacy(()=>{throw Error('must not run')}))
 })
+
+test('catalog is read-only and bound to the build-approved version and extract',async()=>{
+ const policy={version:1,extractHash:'a'.repeat(64)}
+ const row=n=>({id:id(n),version:1,extract_sha256:policy.extractHash,label:'Ponto '+n,lat:-9.4,lng:-40.5,active:true})
+ let response={source:'OSM_PBF',version:1,extract_sha256:policy.extractHash,rows:[row(3),row(4)]},calls=0
+ const auth={getSession:async()=>({data:{session:{user:{id:a},access_token:'synthetic-'+a}}}),getUser:async()=>({data:{user:{id:a}}})}
+ const adapter=createVerifiedHostTransport({enabled:true,account:a,auth,controlFunction:'apois-navigation-control',invoke:async(name,options)=>{
+  calls++;assert.equal(name,'apois-navigation-control');assert.deepEqual(options.body,{action:'apois_navigation_catalog'})
+  return {data:{ok:true,catalog:response}}
+ }})
+ assert.equal(await adapter.readCatalog({},undefined),null);assert.equal(calls,0)
+ const good=await adapter.readCatalog(policy);assert.equal(good.rows.length,2);assert.ok(Object.isFrozen(good.rows[0]))
+ response={...response,rows:[row(3),{...row(4),extract_sha256:'b'.repeat(64)}]};assert.equal(await adapter.readCatalog(policy),null)
+ const abort=new AbortController();abort.abort();assert.equal(await adapter.readCatalog(policy,abort.signal),null);assert.equal(calls,2)
+})
