@@ -31,6 +31,7 @@ export class ConfirmedNavigationLaunch {
 `,{flag:"wx"});
 writeFileSync(join(lib,"host.ts"),`// APOIS_NAVIGATION_QA290_CONFIRMED_HOST
 import {supabase} from "@/integrations/supabase/client";
+import {Capacitor,registerPlugin} from "@capacitor/core";
 import {ConfirmedNavigationLaunch,type ConfirmedPhase,type ConfirmedLaunchProof} from "./confirmed-navigation-launch.mjs";
 
 // Hard disabled. Do not expose a preference, remote flag or deep link until
@@ -56,12 +57,23 @@ async function verify({rideId}: {rideId:string;phase:ConfirmedPhase}):Promise<Co
     row:result.data as unknown as ConfirmedLaunchProof["row"]};
 }
 
+type ConfirmedRequest={rideId:string;phase:ConfirmedPhase;revision:number};
+type ConfirmedNativePlugin={
+  openConfirmed(request:ConfirmedRequest):Promise<{state:"opened";sessionId:string}|{state:"unavailable"}>;
+  closeConfirmed(request:{sessionId:string}):Promise<{closed:boolean}>;
+};
+const nativeName="ApoisNavigationLab";
+const native=registerPlugin<ConfirmedNativePlugin>(nativeName);
 const launch=new ConfirmedNavigationLaunch({
   enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify,
-  // Deliberately no native plugin registered yet. This is definitive
-  // unavailable, not a failed call that might have opened an Activity.
-  openNative:async()=>({state:"unavailable"}),
-  closeNative:async()=>false,
+  openNative:async request=>{
+    if(!Capacitor.isNativePlatform()||Capacitor.getPlatform()!=="android"||
+       !Capacitor.isPluginAvailable(nativeName))return {state:"unavailable"};
+    // A rejection or malformed response is NOT proof of no Activity.
+    // Pass it to the controller's ambiguity guard, never convert to fallback.
+    return native.openConfirmed(request);
+  },
+  closeNative:async sessionId=>(await native.closeConfirmed({sessionId})).closed===true,
 });
 
 export async function launchConfirmedApoisNavigation(rideId:string,phase:ConfirmedPhase,openExternal:()=>Promise<void>):Promise<void>{
@@ -98,4 +110,4 @@ app=app.replaceAll(trip,()=> 'launchConfirmedApoisNavigation(ride.id, "TRIP", ()
 assert.equal(app.split(pickup).length-1,1);
 assert.equal(app.split(trip).length-1,tripCount);
 writeFileSync(appPath,app);
-console.log("[OK] QA290 confirmed-navigation host attached: pickup=1 destination="+tripCount+"; hard disabled; external callback unchanged; no native registration");
+console.log("[OK] QA290 confirmed-navigation host attached: pickup=1 destination="+tripCount+"; hard disabled; external callback unchanged; native transport connected, live provider unavailable, no production registration");

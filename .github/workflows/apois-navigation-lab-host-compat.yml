@@ -44,6 +44,13 @@ jobs:
         run: |
           node labs/apois-navigation/host-compat/verify-motorista-authority.mjs "$GITHUB_WORKSPACE/.navigation-driver-source" "$GITHUB_WORKSPACE"
           node --test labs/apois-navigation/host-compat/motorista-authority.test.mjs labs/apois-navigation/host-compat/motorista-intent-dispatcher.test.mjs labs/apois-navigation/host-compat/guidance-handoff.test.mjs
+      - name: Testar contrato do transporte confirmado
+        run: |
+          set -euo pipefail
+          V="$GITHUB_WORKSPACE/labs/apois-navigation/host-compat"
+          javac -d "$RUNNER_TEMP/confirmed-request-tests" "$V/ConfirmedNavigationRequest.java" "$V/ConfirmedNavigationRequestTest.java"
+          java -cp "$RUNNER_TEMP/confirmed-request-tests" br.com.apois.navigation.compat.lab.ConfirmedNavigationRequestTest
+          node --test "$V/confirmed-navigation-launch.test.mjs"
       - name: Gerar host real e isolado
         run: |
           set -euo pipefail
