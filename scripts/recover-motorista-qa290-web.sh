@@ -18,7 +18,12 @@ test "$(git -C "$STAGE" rev-parse HEAD)" = "$BASE"
 for module in apois-corridas-motorista-admin apois-entregas; do
   expected="$(git -C "$STAGE" ls-tree HEAD "sources/$module" | awk '{print $3}')"
   test -n "$expected"
-  test "$(git -C "$ROOT/sources/$module" rev-parse HEAD)" = "$expected"
+  # The delivery pin has advanced since QA290. Read the old object without
+  # changing the current checkout, ref, source files or remote repository.
+  if ! git -C "$ROOT/sources/$module" cat-file -e "$expected^{commit}" 2>/dev/null; then
+    git -C "$ROOT/sources/$module" fetch --no-tags origin "$expected"
+  fi
+  test "$(git -C "$ROOT/sources/$module" rev-parse "$expected^{commit}")" = "$expected"
   mkdir -p "$STAGE/sources/$module"
   git -C "$ROOT/sources/$module" archive "$expected" | tar -x -C "$STAGE/sources/$module"
 done
