@@ -1,0 +1,41 @@
+name: APOIS Navegacao - mapa local Passageiro WebView
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/passenger-map/**','.github/workflows/apois-navigation-lab-passenger-map.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  browser-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test labs/apois-navigation/passenger-map/local-map.test.mjs
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-cartography-regional
+          run-id: 45539272618
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-map-assets
+      - name: Renderizar pacote PMTiles real sem rede externa
+        run: |
+          set -euo pipefail
+          S="$RUNNER_TEMP/apois-passenger-map"
+          mkdir -p "$S/site"
+          cp -a labs/apois-navigation/passenger-map/*.mjs "$S/"
+          cp -a "$RUNNER_TEMP/apois-map-assets/android-assets/apois-regional" "$S/site/"
+          cd "$S"
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund --save-exact maplibre-gl@4.7.1 pmtiles@3.2.0 esbuild@0.25.0 playwright-core@1.51.1
+          ./node_modules/.bin/esbuild entry.mjs --bundle --format=esm --outfile=site/bundle.js
+          printf '%s' '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="./bundle.css"><style>body{margin:0}#map{width:420px;height:740px}</style><div id="map"></div><script type="module" src="./bundle.js"></script>' > site/index.html
+          export CHROME_BIN="$(command -v google-chrome || command -v chromium)"
+          node render.integration.mjs site
