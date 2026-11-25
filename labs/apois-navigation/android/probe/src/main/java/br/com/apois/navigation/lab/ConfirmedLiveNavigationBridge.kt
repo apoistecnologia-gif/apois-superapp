@@ -6,6 +6,7 @@ import android.os.Looper
 import android.os.Handler
 import android.os.SystemClock
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.*
 import org.json.JSONObject
 import uniffi.ferrostar.Route
 import java.util.UUID
@@ -24,10 +25,12 @@ object ConfirmedLiveNavigationBridge {
         val resolver:LiveRouteResolver, val verifiedCurrent:()->Boolean,
         val online:()->Boolean, val acquireVoice:(()->NavigationVoicePermit?)?,
         val controller:NavigationSessionController,
-        val lease:PreparedAuthorityLease
+        val lease:PreparedAuthorityLease,
+        var evidence:VerifiedRouteEvidence,val sourceId:Long,val initialFix:InitialRouteFix
     ) {
         val ride:RideSnapshot get()=controller.snapshot
         var pending=false
+        var opened=false
     }
     internal data class Screen(
         val id:String, val owner:Prepared, val token:LegToken,
@@ -35,16 +38,18 @@ object ConfirmedLiveNavigationBridge {
     )
     internal val screen=MutableStateFlow<Screen?>(null)
     private var prepared:Prepared?=null
+    private class Preparation { var job:Job?=null;var invalidated=false }
+    private var preparing:Preparation?=null
     private var callback:Consumer<JSONObject>?=null
     private var closing:Screen?=null
     private var closingCallback:Consumer<JSONObject>?=null
     private var waiter:Consumer<Boolean>?=null
     private val handler=Handler(Looper.getMainLooper())
     private var expiryTask:Runnable?=null
-    internal fun occupied():Boolean=screen.value!=null||closing!=null
+    internal fun occupied():Boolean=screen.value!=null||closing!=null||preparing!=null
     private val rideIdPattern=Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
-    private fun current(p:Prepared)=prepared===p && p.lease.current() && runCatching{p.verifiedCurrent()}.getOrDefault(false)
+    private fun current(p:Prepared)=prepared===p && p.lease.current() && DriverGpsFeed.currentSourceId()==p.sourceId && runCatching{p.verifiedCurrent()}.getOrDefault(false)
 
     // Also expire a prepared owner while no Activity is visible. A stale
     // callback cannot revoke a newer owner. Elapsed-time checks still gate
@@ -56,23 +61,70 @@ object ConfirmedLiveNavigationBridge {
         handler.postDelayed(task,30_000L)
     }
 
-    // Must be called ONLY after host verified identity, assignment, phase,
-    // source provenance and route. Geometry checks alone do not prove any of
-    // those things. No API exposed to JS, intents, or replay.
-    internal fun prepare(
-        ride:RideSnapshot, route:Route, origin:RegionalPoint,target:RegionalPoint,
-        resolver:LiveRouteResolver,verifiedCurrent:()->Boolean,
-        online:()->Boolean={false},acquireVoice:(()->NavigationVoicePermit?)?=null
+    // Native-only entry. No default resolver or evidence source; the trusted
+    // host must provide both. The passive subscription is released before the
+    // Activity can acquire its own consumer, without starting another GPS.
+    internal suspend fun prepareFromGps(
+        verify:suspend ()->VerifiedRouteEvidence?,resolver:LiveRouteResolver,
+        verifiedCurrent:()->Boolean,online:()->Boolean={false}
     ):Boolean{
         main()
-        if(prepared!=null||occupied()||!rideIdPattern.matches(ride.rideId)||
-            acquireVoice!=null|| // until the explicit native audio stop ACK is wired
-            ride.phase !in setOf(RidePhase.PICKUP,RidePhase.TRIP)||ride.busy||
-            !runCatching{verifiedCurrent()}.getOrDefault(false)||
-            !routeEndpointsMatch(route.geometry.map{RegionalPoint(it.lat,it.lng)},origin,target))return false
-        prepared=Prepared(route,target,resolver,verifiedCurrent,online,acquireVoice,NavigationSessionController(ride),PreparedAuthorityLease(SystemClock::elapsedRealtime))
-        prepared?.let(::scheduleExpiry)
-        return true
+        if(prepared!=null||occupied()||LabNavigationBridge.screen.value!=null)return false
+        val attempt=Preparation()
+        preparing=attempt
+        try{
+            return withTimeoutOrNull(25_000L){
+                attempt.job=coroutineContext[Job]
+                val sourceId=DriverGpsFeed.currentSourceId()?:return@withTimeoutOrNull false
+                fun current()=preparing===attempt&&!attempt.invalidated&&
+                    DriverGpsFeed.currentSourceId()==sourceId&&runCatching{verifiedCurrent()}.getOrDefault(false)
+                fun connected()=runCatching{online()}.getOrDefault(false)
+                val firstEvidence=verify()?:return@withTimeoutOrNull false
+                if(!current()||!connected()||!firstEvidence.usable(SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
+                var latest:InitialRouteFix?=null
+                var quality=GpsQuality.WAITING
+                val first=CompletableDeferred<Unit>()
+                val id=DriverGpsFeed.subscribe(
+                    current=::current,
+                    onFix={location,captured->
+                        val candidate=InitialRouteFix(RegionalPoint(location.coordinates.lat,location.coordinates.lng),
+                            location.horizontalAccuracy,captured)
+                        latest=candidate.takeIf{it.usable(SystemClock.elapsedRealtime())}
+                        if(latest!=null)first.complete(Unit)
+                    },
+                    onQuality={value->quality=value;if(value!=GpsQuality.AVAILABLE)latest=null},
+                    onRevoked={attempt.invalidated=true;attempt.job?.cancel()}
+                )?:return@withTimeoutOrNull false
+                try{
+                    first.await()
+                    val before=verify()?:return@withTimeoutOrNull false
+                    val fix=latest?:return@withTimeoutOrNull false
+                    val now=SystemClock.elapsedRealtime()
+                    if(!current()||!connected()||quality!=GpsQuality.AVAILABLE||!fix.usable(now)||
+                        !before.usable(now)||!sameRoutingLeg(firstEvidence,before)||
+                        before.ride.revision!=firstEvidence.ride.revision||before.verifiedAt<firstEvidence.verifiedAt)return@withTimeoutOrNull false
+                    // Exactly one initial route request. No retry, persisted
+                    // location, cached Google polyline or invented destination.
+                    val route=withTimeoutOrNull(15_000L){resolver.resolve(fix.point,before.target)}
+                        ?:return@withTimeoutOrNull false
+                    val after=verify()?:return@withTimeoutOrNull false
+                    val last=latest?:return@withTimeoutOrNull false
+                    if(!current()||quality!=GpsQuality.AVAILABLE||
+                        !sameRoutingLeg(before,after)||after.ride.revision!=before.ride.revision||
+                        after.verifiedAt<before.verifiedAt||
+                        !initialRouteMatches(after,last,route.geometry.map{RegionalPoint(it.lat,it.lng)},SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
+                    prepared=Prepared(route,after.target,resolver,verifiedCurrent,online,null,
+                        NavigationSessionController(after.ride),PreparedAuthorityLease(SystemClock::elapsedRealtime),after,sourceId,last)
+                    prepared?.let(::scheduleExpiry)
+                    true
+                }finally{DriverGpsFeed.unsubscribe(id)}
+            }?:false
+        }catch(e:CancellationException){
+            currentCoroutineContext().ensureActive()
+            if(attempt.invalidated)return false
+            throw e
+        }catch(_:Exception){return false}
+        finally{if(preparing===attempt)preparing=null}
     }
 
     // null is a definitive no-open result; exceptions are ambiguous to JS.
@@ -82,12 +134,14 @@ object ConfirmedLiveNavigationBridge {
         check(!occupied()&&LabNavigationBridge.screen.value==null){"Navigation already open or closing"}
         val p=prepared?:return null
         if(!current(p)){revoke();return null}
-        if(p.pending||p.ride.rideId!=rideId||p.ride.phase.name!=phase||p.ride.revision!=revision)return null
+        if(p.pending||p.opened||p.ride.rideId!=rideId||p.ride.phase.name!=phase||p.ride.revision!=revision)return null
+        if(!p.initialFix.usable(SystemClock.elapsedRealtime())){revoke();return null}
         p.controller.enable()
         val token=p.controller.token?:return null
         val resources=p.controller.routingFor(token,p.target,p.resolver)
         if(resources==null){p.controller.disable();return null}
         val id=UUID.randomUUID().toString()
+        p.opened=true // no stale initial route on re-entry; use original map until fresh re-entry is implemented
         callback=events
         screen.value=Screen(id,p,token,resources,p.ride,p.ride.revision)
         try{
@@ -117,15 +171,17 @@ object ConfirmedLiveNavigationBridge {
 
     // Only the trusted host may acknowledge an intent with a newer verified
     // same-leg row. Changed phase revokes rather than reusing the old route.
-    internal fun refreshPrepared(ride:RideSnapshot):Boolean{
+    internal fun refreshPrepared(evidence:VerifiedRouteEvidence):Boolean{
         main()
         val p=prepared?:return false
         if(!current(p)){revoke();return false}
-        if(ride.rideId!=p.ride.rideId||ride.revision<=p.ride.revision)return false
-        if(ride.phase!=p.ride.phase){revoke();return false}
+        if(!evidence.usable(SystemClock.elapsedRealtime())||!sameRoutingLeg(p.evidence,evidence)){revoke();return false}
+        val ride=evidence.ride
+        if(ride.revision<=p.ride.revision||evidence.verifiedAt<=p.evidence.verifiedAt)return false
         p.controller.update(ride)
         if(p.controller.snapshot!==ride)return false
         if(!p.lease.renew()){revoke();return false}
+        p.evidence=evidence
         scheduleExpiry(p)
         p.pending=false
         screen.value?.takeIf{it.owner===p}?.let{
@@ -184,6 +240,7 @@ object ConfirmedLiveNavigationBridge {
     // cached resources; no reopening from a saved intent or previous process.
     fun revoke(){
         main()
+        preparing?.let{it.invalidated=true;it.job?.cancel()}
         expiryTask?.let{handler.removeCallbacks(it)}
         expiryTask=null
         val p=prepared

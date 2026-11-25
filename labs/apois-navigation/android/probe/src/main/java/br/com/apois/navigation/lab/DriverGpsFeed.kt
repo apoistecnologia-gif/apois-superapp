@@ -80,6 +80,7 @@ object DriverGpsFeed {
         val s = subscription ?: return 0L
         return if (source == sourceId && live(s)) s.id else 0L
     }
+    internal fun currentSourceId():Long? { main();return source }
     internal fun subscribe(
         current: () -> Boolean, onFix: (UserLocation, Long) -> Unit,
         onQuality: (GpsQuality) -> Unit, onRevoked: () -> Unit
