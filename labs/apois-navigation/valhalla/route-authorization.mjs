@@ -21,10 +21,11 @@ function decode(s,max){
 // All mutable state is bounded and process-local. A restart loses replay
 // history; a real deployment MUST supply shared atomic replay/quota storage.
 export function createRouteAuthorization({publicKey,audience,now=()=>Date.now(),
-  maxEntries=4096,maxPrincipals=1024,perMinute=6,parallel=1}){
+  maxEntries=4096,maxPrincipals=1024,perMinute=6,parallel=1,store=null}){
   if(publicKey?.type!=="public"||publicKey.asymmetricKeyType!=="ed25519"||
     typeof audience!=="string"||!audience||audience.length>128||
-    ![maxEntries,maxPrincipals,perMinute,parallel].every(n=>Number.isInteger(n)&&n>0))throw Error("Invalid lab authorization configuration");
+    ![maxEntries,maxPrincipals,perMinute,parallel].every(n=>Number.isInteger(n)&&n>0)||
+    (store!==null&&typeof store.admit!=="function"))throw Error("Invalid lab authorization configuration");
   const consumed=new Map(),principals=new Map();
   let last=0;
   return function authorize(header,body){
@@ -43,6 +44,12 @@ export function createRouteAuthorization({publicKey,audience,now=()=>Date.now(),
       !Number.isSafeInteger(claim.iat)||!Number.isSafeInteger(claim.exp)||
       claim.iat<0||claim.iat>t||claim.exp<=t||claim.exp<=claim.iat||claim.exp-claim.iat>30_000||
       claim.route!==routeDigest(body))return {status:403};
+    // Only authenticated claims can enter the optional atomic store.
+    // Storage failure must not silently fall back to process memory.
+    if(store){
+      try{return store.admit({jti:claim.jti,sub:claim.sub,exp:claim.exp},t);}
+      catch{return {status:503};}
+    }
     for(const [id,exp] of consumed)if(exp<=t)consumed.delete(id);
     if(consumed.has(claim.jti))return {status:403};
     for(const [id,p] of principals){

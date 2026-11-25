@@ -2,7 +2,9 @@
 // geographic test points and fake server authority. No actual users or issuer API.
 import assert from "node:assert/strict";
 import {generateKeyPairSync,randomBytes} from "node:crypto";
-import {writeFileSync} from "node:fs";
+import {writeFileSync,mkdtempSync,rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {openRouteReplayStore} from "./route-replay-store.mjs";
 import {join} from "node:path";
 import {createRouteIssuer,routeBody} from "./route-issuer.mjs";
 import {createRouteAuthorization} from "./route-authorization.mjs";
@@ -19,7 +21,9 @@ const issue=createRouteIssuer({privateKey,principalKey:randomBytes(32),audience,
     assignedDriverId:id(3),acceptedDriverId:id(3),category:"carros",intermediateStops:0,verifiedAt:Date.now(),
     targetEvidence:{id:id(5),version:1,rideId:id(4),phase:"PICKUP",source:"INDEPENDENT_OSM",point:target}};
 }});
-const gateway=createRouteGateway({authorize:createRouteAuthorization({publicKey,audience})});
+const dir=mkdtempSync(join(tmpdir(),"apois-regional-replay-"));
+const store=openRouteReplayStore({path:join(dir,"replay.sqlite")});
+const gateway=createRouteGateway({authorize:createRouteAuthorization({publicKey,audience,store})});
 try{
   await new Promise((r,j)=>{gateway.once("error",j);gateway.listen(0,"127.0.0.1",r);});
   const url="http://127.0.0.1:"+gateway.address().port+"/route";
@@ -38,4 +42,5 @@ try{
   console.log("APOIS_AUTHENTICATED_REGIONAL_OK",JSON.stringify(report));
 }finally{
   gateway.closeAllConnections();await new Promise(r=>gateway.close(r));
+  store.close();rmSync(dir,{recursive:true,force:true});
 }
