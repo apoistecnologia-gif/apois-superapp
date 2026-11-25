@@ -18,6 +18,6 @@ function files(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.is
 const dist=join(root,"dist/client");
 const bundle=files(dist).map(f=>({path:relative(dist,f),bytes:statSync(f).size,sha256:createHash("sha256").update(readFileSync(f)).digest("hex")}));
 assert.ok(bundle.length>0);
-const report={sourceCommit:"9fc171050d8b5703540c49d19a8f1e9f5162775f",historicalBuilder:"6b0d31dcad5be9b7c7b9a8c651deeca98104b65f",files:bundle.length,bytes:bundle.reduce((s,x)=>s+x.bytes,0),markers:checks,hashes:bundle,limits:"Compile-only synthetic config; no APK, real auth, runtime navigation or production integration."};
+const report={sourceCommit:"9fc171050d8b5703540c49d19a8f1e9f5162775f",historicalBuilder:"6b0d31dcad5be9b7c7b9a8c651deeca98104b65f",reconciliationCommit:"a19fc0bc8e68c94dae0f1d48ff7cef2dba8ad94d",files:bundle.length,bytes:bundle.reduce((s,x)=>s+x.bytes,0),markers:checks,hashes:bundle,limits:"Compile-only synthetic config; no APK, real auth, runtime navigation or production integration."};
 writeFileSync(out,JSON.stringify(report,null,2)+"\n");
 console.log("[OK] generated QA290 WebView source/bundle evidence, "+bundle.length+" files");
