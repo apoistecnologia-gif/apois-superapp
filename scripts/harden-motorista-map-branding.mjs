@@ -37,7 +37,19 @@ patch('src/components/mapMarkers.tsx', (source) => {
     next = next.replace(oldReturn, brandedReturn);
   }
 
+  const signature = "export function InterpolatedDriverMarker({ position, heading, color = \"#2563eb\", scale = 1.7 }: { position: LatLng; heading?: number | null; color?: string; scale?: number }) {";
+  const directionalSignature = "export function InterpolatedDriverMarker({ position, heading, color = \"#2563eb\", scale = 1.7, variant = \"brand\" }: { position: LatLng; heading?: number | null; color?: string; scale?: number; variant?: \"brand\" | \"direction\" }) {";
+  if (!next.includes(directionalSignature)) {
+    if (!next.includes(signature)) throw Error("mapMarkers.tsx: assinatura do marcador inesperada");
+    next = next.replace(signature, () => directionalSignature);
+  }
+  const markerAnchor = '  const brandedScale = Math.max(1.45, Math.min(2.15, safeDriverScale));';
+  const direction = "  // APOIS_DRIVER_HOME_DIRECTION_V1 — position and heading come from the existing GPS interpolation.\n  if (variant === \"direction\") {\n    const hasHeading = typeof heading === \"number\" && Number.isFinite(heading);\n    return <>\n      <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol(\"CIRCLE\"), scale: 17, fillColor: safeDriverColor, fillOpacity: 0.09, strokeColor: safeDriverColor, strokeOpacity: 0.25, strokeWeight: 1 }} />\n      <Marker position={display} clickable={false} zIndex={10000} icon={{ path: safeSymbol(\"CIRCLE\"), scale: 12, fillColor: \"#FFFFFF\", fillOpacity: 1, strokeColor: \"#FFFFFF\", strokeWeight: 1 }} />\n      <Marker position={display} clickable={false} title=\"Localização do motorista\" zIndex={10001} icon={{ path: hasHeading ? \"M 0,-8 L 6,7 L 0,3 L -6,7 Z\" : safeSymbol(\"CIRCLE\"), scale: hasHeading ? 1 : 5, rotation: hasHeading ? displayHeading : 0, fillColor: safeDriverColor, fillOpacity: 1, strokeColor: \"#FFFFFF\", strokeWeight: 1, anchor: safePoint(0, 0) }} />\n    </>;\n  }\n";
+  if (!next.includes("APOIS_DRIVER_HOME_DIRECTION_V1")) {
+    if (!next.includes(markerAnchor)) throw Error("mapMarkers.tsx: ponto de inserção ausente");
+    next = next.replace(markerAnchor, () => direction + markerAnchor);
+  }
   return next;
-}, 'motorista: marcador de localização APOIS com A dourado');
+}, 'motorista: marcador de localização com variante direcional exclusiva da Home');
 
 console.log(`[OK] branding de mapa do Motorista concluído em ${workspace}`);

@@ -38,6 +38,8 @@ app=swap(app,'              applyNavigationCamera(m, position, polyline, activeN
 app=swap(app,'themeOverride="dark"','themeOverride={!active ? "client" : "dark"}',"tema do mapa");
 app=swap(app,'color={online ? "#F6BE1C" : "#94a3b8"}',
  'color={online && !active ? "#E51B23" : online ? "#F6BE1C" : "#94a3b8"}',"cor do marcador");
+// Only the idle Home uses the direction indicator; active navigation keeps its original pin.
+app=swap(app,'heading={position.heading ?? 0}', 'heading={!hasRideUI ? position.heading : position.heading ?? 0}\n              variant={hasRideUI ? "brand" : "direction"}',"marcador direcional Home");
 if(!app.includes('role="switch" aria-checked={online}')||!app.includes("toggleOnline={toggleOnline}"))
  throw Error("[FAIL] controle online original não preservado");
 writeFileSync(appPath,app,"utf8");
@@ -46,9 +48,9 @@ map=swap(map,'themeOverride?: "light" | "dark";','themeOverride?: "light" | "dar
 map=swap(map,'const theme: "light" | "dark" = themeOverride ?? (isDriverRole ? "dark" : resolved);',
  'const theme: "light" | "dark" = (themeOverride === "client" ? "light" : themeOverride) ?? (isDriverRole ? "dark" : resolved);',"tema");
 map=swap(map,'const styles = useMemo(() => getMapStyleForTheme(theme), [theme]);',
- 'const styles = useMemo<google.maps.MapTypeStyle[]>(() => themeOverride === "client" ? [{ featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "off" }] }, { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "off" }] }] : getMapStyleForTheme(theme), [theme, themeOverride]);',"estilo Google padrao");
+ 'const styles = useMemo<google.maps.MapTypeStyle[]>(() => themeOverride === "client" ? [{ elementType: "geometry", stylers: [{ color: "#E5E2D9" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#41454B" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#F7F5EE" }, { weight: 2 }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFFFF" }] }, { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#D6D3C9" }] }, { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#E9C4B9" }] }, { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#BFA39A" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#18394C" }] }, { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#CDDCC0" }] }, { featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "on" }] }, { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "on" }] }] : getMapStyleForTheme(theme), [theme, themeOverride]);',"estilo Google padrao");
 map=swap(map,'const bgColor = useMemo(() => getMapBackgroundForTheme(theme), [theme]);',
- 'const bgColor = useMemo(() => themeOverride === "client" ? "#E7E4DE" : getMapBackgroundForTheme(theme), [theme, themeOverride]);',"fundo mapa");
+ 'const bgColor = useMemo(() => themeOverride === "client" ? "#E5E2D9" : getMapBackgroundForTheme(theme), [theme, themeOverride]);',"fundo mapa");
 writeFileSync(mapPath,map,"utf8");
 let nav=readFileSync(navPath,"utf8");
 nav=swap(nav,'import { Bell, CarFront, House, UserRound, WalletCards } from "lucide-react";',
