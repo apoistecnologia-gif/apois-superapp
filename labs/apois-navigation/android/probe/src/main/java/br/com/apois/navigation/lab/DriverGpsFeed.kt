@@ -18,16 +18,17 @@ object DriverGpsFeed {
     private val handler = Handler(Looper.getMainLooper())
     private var sequence = 0L
     private var source: Long? = null
+    private var sourceStartedAt = 0L
     private var subscription: Subscription? = null
     private data class Subscription(
-        val id: Long, val current: () -> Boolean,
+        val id: Long, val sourceId: Long, val startedAt: Long, val current: () -> Boolean,
         val onFix: (UserLocation) -> Unit, val onQuality: (GpsQuality) -> Unit,
         val gate: GpsFixGate = GpsFixGate(),
         var quality: GpsQuality? = null
     )
     private fun main() = check(Looper.myLooper() == Looper.getMainLooper())
     private fun live(s: Subscription): Boolean {
-        if (subscription !== s) return false
+        if (subscription !== s || source != s.sourceId) return false
         if (!runCatching { s.current() }.getOrDefault(false)) {
             unsubscribe(s.id)
             return false
@@ -43,23 +44,38 @@ object DriverGpsFeed {
         override fun run() {
             val s = subscription ?: return
             if (!live(s)) return
-            if (source == null || !s.gate.hasFreshFix(SystemClock.elapsedRealtime()))
+            val now = SystemClock.elapsedRealtime()
+            if ((s.quality != GpsQuality.WAITING || now - s.startedAt > 15_000) && !s.gate.hasFreshFix(now))
                 status(s, GpsQuality.LOST)
             if (subscription === s) handler.postDelayed(this, 1_000)
         }
     }
     @JvmStatic fun beginSource(): Long {
         main()
+        invalidateSource()
         val id = ++sequence
+        sourceStartedAt = SystemClock.elapsedRealtime()
         source = id
-        subscription?.let { status(it, GpsQuality.WAITING) }
         return id
     }
     @JvmStatic fun endSource(id: Long) {
         main()
         if (source != id) return
+        invalidateSource()
+    }
+    // A source change (including account restart) never inherits a consumer.
+    @JvmStatic fun invalidateSource() {
+        main()
+        val old = subscription
         source = null
-        subscription?.let { status(it, GpsQuality.LOST) }
+        subscription = null
+        handler.removeCallbacks(watchdog)
+        if (old != null && runCatching { old.current() }.getOrDefault(false))
+            runCatching { old.onQuality(GpsQuality.LOST) }
+    }
+    @JvmStatic fun hasConsumer(sourceId: Long): Boolean {
+        main()
+        return source == sourceId && subscription?.let { live(it) } == true
     }
     internal fun subscribe(
         current: () -> Boolean, onFix: (UserLocation) -> Unit,
@@ -67,7 +83,8 @@ object DriverGpsFeed {
     ): Long {
         main()
         check(subscription == null) { "GPS navigation consumer already active" }
-        val s = Subscription(++sequence, current, onFix, onQuality)
+        val activeSource = checkNotNull(source) { "GPS source is not active" }
+        val s = Subscription(++sequence, activeSource, SystemClock.elapsedRealtime(), current, onFix, onQuality)
         subscription = s
         status(s, GpsQuality.WAITING)
         if (subscription === s) handler.postDelayed(watchdog, 1_000)
@@ -84,6 +101,7 @@ object DriverGpsFeed {
         if (source != sourceId) return
         val s = subscription ?: return
         if (!live(s)) return
+        if (original.elapsedRealtimeNanos / 1_000_000L < sourceStartedAt) return
         val fix = Location(original)
         @Suppress("DEPRECATION")
         val mock = if (Build.VERSION.SDK_INT >= 31) fix.isMock else fix.isFromMockProvider
