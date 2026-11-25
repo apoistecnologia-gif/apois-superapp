@@ -212,3 +212,26 @@ test("revoked scope prevents future issue even if there was no previous token",t
   assert.equal(a.register({...claim(1),scope},100001).status,403);
   assert.throws(()=>openRouteReplayStore({path,requireIssued:true}));
 });
+
+test("scoped issuance quotas persist across connections, consumption, revocation and credential expiry",t=>{
+  const {open}=fixture(t,{requireIssued:true,requireScoped:true,perMinute:2,globalPerMinute:3});
+  const a=open(),b=open(),scope="c".repeat(64);
+  const p={...claim(1),scope},q={...claim(2),scope};
+  assert.equal(a.register(p,100000).status,200);
+  const g=b.admit(p,100000);assert.equal(g.status,200);g.release();
+  assert.equal(b.register(q,100001).status,200);
+  assert.equal(a.revoke(q.jti,100002).status,200);
+  assert.equal(a.register({...claim(3,"a",130001),scope},130001).status,429);
+  assert.equal(b.register({...claim(4,"b",130001),scope},130001).status,200);
+  a.close();b.close();const reopened=open();
+  assert.equal(reopened.register({...claim(5,"c",130002),scope},130002).status,429);
+  assert.equal(reopened.admit(p,130002).status,403);
+  assert.equal(reopened.register({...claim(6,"a",160001),scope},160001).status,200);
+});
+test("scoped issuance principal capacity cannot be exhausted by arbitrary new identities silently",t=>{
+  const {open}=fixture(t,{requireIssued:true,requireScoped:true,maxPrincipals:1});
+  const a=open(),scope="c".repeat(64);
+  assert.equal(a.register({...claim(1),scope},100000).status,200);
+  assert.equal(a.register({...claim(2,"b",130000),scope},130000).status,429);
+  assert.equal(a.register({...claim(3,"b",160000),scope},160000).status,200);
+});

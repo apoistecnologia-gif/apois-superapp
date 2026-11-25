@@ -38,10 +38,11 @@ function reply(res,status,value){
     "Cache-Control":"no-store","Connection":"close","X-Content-Type-Options":"nosniff"});
   res.end(body);
 }
-export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000,authorize=null}={}){
+export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000,inputTimeout=5000,authorize=null}={}){
+  if(!Number.isInteger(inputTimeout)||inputTimeout<50||inputTimeout>5000)throw Error("Invalid local input timeout");
   if(!Number.isInteger(upstreamPort)||upstreamPort<1||upstreamPort>65535)throw Error("Invalid local upstream port");
   const upstream="http://127.0.0.1:"+upstreamPort+"/route";
-  const server=createServer(async(req,res)=>{
+  const server=createServer({requestTimeout:inputTimeout,headersTimeout:inputTimeout,connectionsCheckingInterval:Math.min(250,inputTimeout),maxHeaderSize:8192},async(req,res)=>{
     if(req.url==="/healthz"&&req.method==="GET"){reply(res,200,{ok:true,scope:"local-lab"});return;}
     if(req.url!=="/route"){reply(res,404,{error:"not_found"});return;}
     if(req.method!=="POST"){reply(res,405,{error:"method_not_allowed"});return;}
@@ -54,12 +55,16 @@ export function createRouteGateway({upstreamPort=8002,budget=createBudget(),time
     }
     if(Number(len)<1||Number(len)>MAX_BODY){reply(res,413,{error:"request_size"});return;}
     let body;
+    // An absolute body deadline, not a resettable inactivity timer. Never
+    // authorize/forward an incomplete or expired body.
+    const bodyDeadline=setTimeout(()=>req.destroy(),inputTimeout);
     try{
       const chunks=[];let n=0;
       for await(const chunk of req){n+=chunk.length;if(n>MAX_BODY)throw Error("size");chunks.push(chunk);}
       if(n!==Number(len))throw Error("size");
       body=normalizeRoute(JSON.parse(Buffer.concat(chunks).toString("utf8")));
     }catch{reply(res,400,{error:"invalid_route"});return;}
+    finally{clearTimeout(bodyDeadline);}
     if(!body){reply(res,400,{error:"invalid_route"});return;}
     if(res.destroyed)return;
     // Optional verifier is for the isolated authenticated test only. The
@@ -99,7 +104,7 @@ export function createRouteGateway({upstreamPort=8002,budget=createBudget(),time
     }catch{reply(res,502,{error:"route_unavailable"});}
     finally{clearTimeout(timer);res.removeListener("close",disconnected);done();grant?.release();}
   });
-  server.requestTimeout=5000;server.headersTimeout=5000;server.keepAliveTimeout=1000;
+  server.keepAliveTimeout=1000;
   server.maxConnections=16;
   return server;
 }

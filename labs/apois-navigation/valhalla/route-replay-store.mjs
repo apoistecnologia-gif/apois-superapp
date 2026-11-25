@@ -48,8 +48,11 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
         CREATE INDEX route_uses_sub ON route_uses(sub);
         CREATE TABLE route_issued(
           jti TEXT PRIMARY KEY, sub TEXT NOT NULL, expires INTEGER NOT NULL,
-          revoked INTEGER NOT NULL CHECK(revoked IN (0,1)), scope TEXT
+          revoked INTEGER NOT NULL CHECK(revoked IN (0,1)), scope TEXT,
+          issued_at INTEGER NOT NULL
         ) STRICT;
+        CREATE INDEX route_issued_sub_time ON route_issued(sub,issued_at);
+        CREATE INDEX route_issued_time ON route_issued(issued_at);
         CREATE TABLE route_revoked_scopes(scope TEXT PRIMARY KEY) STRICT;`);
         db.prepare("INSERT INTO route_meta(id,config,last_ms,halted) VALUES(1,?,0,0)").run(config);
       }
@@ -58,7 +61,7 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
         throw Error("Replay configuration or metadata mismatch");
       // Refuse incomplete schema; do not repair or initialize on restart.
       db.prepare("SELECT jti,sub,expires,started,active_until,lease FROM route_uses LIMIT 0").all();
-      db.prepare("SELECT jti,sub,expires,revoked,scope FROM route_issued LIMIT 0").all();
+      db.prepare("SELECT jti,sub,expires,revoked,scope,issued_at FROM route_issued LIMIT 0").all();
       db.prepare("SELECT scope FROM route_revoked_scopes LIMIT 0").all();
       return {status:200};
     });
@@ -73,7 +76,10 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
     const meta=db.prepare("SELECT last_ms,halted FROM route_meta WHERE id=1").get();
     if(!meta||meta.halted!==0||t<meta.last_ms)return false;
     db.prepare("UPDATE route_meta SET last_ms=? WHERE id=1").run(t);
-    db.prepare("DELETE FROM route_issued WHERE expires<=?").run(t);
+    // Scoped mode retains even consumed/revoked/expired permits for the full
+    // issuance minute. Expiry still denies admission after at most 30s.
+    if(requireScoped)db.prepare("DELETE FROM route_issued WHERE expires<=? AND issued_at<=?").run(t,t-60000);
+    else db.prepare("DELETE FROM route_issued WHERE expires<=?").run(t);
     return true;
   }
   // Trusted issuer/operator only; never exposed as a client endpoint. The
@@ -91,7 +97,13 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
       if(db.prepare("SELECT 1 FROM route_issued WHERE jti=?").get(jti)||
          db.prepare("SELECT 1 FROM route_uses WHERE jti=?").get(jti))return {status:403};
       if(count("SELECT COUNT(*) AS n FROM route_issued")>=maxEntries)return {status:429};
-      db.prepare("INSERT INTO route_issued(jti,sub,expires,revoked,scope) VALUES(?,?,?,0,?)").run(jti,sub,exp,scope);
+      if(requireScoped){
+        if(!db.prepare("SELECT 1 FROM route_issued WHERE sub=? LIMIT 1").get(sub)&&
+           count("SELECT COUNT(DISTINCT sub) AS n FROM route_issued")>=maxPrincipals)return {status:429};
+        if(count("SELECT COUNT(*) AS n FROM route_issued WHERE sub=? AND issued_at>?",sub,t-60000)>=perMinute||
+           count("SELECT COUNT(*) AS n FROM route_issued WHERE issued_at>?",t-60000)>=globalPerMinute)return {status:429};
+      }
+      db.prepare("INSERT INTO route_issued(jti,sub,expires,revoked,scope,issued_at) VALUES(?,?,?,0,?,?)").run(jti,sub,exp,scope,t);
       return {status:200};
     });
   }
@@ -119,7 +131,7 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
       if(!advance(t))return {status:503};
       // Admission already won the race; no claim of upstream cancellation.
       if(db.prepare("SELECT 1 FROM route_uses WHERE jti=?").get(jti))return {status:409};
-      if(!db.prepare("SELECT 1 FROM route_issued WHERE jti=?").get(jti))return {status:404};
+      if(!db.prepare("SELECT 1 FROM route_issued WHERE jti=? AND expires>?").get(jti,t))return {status:404};
       db.prepare("UPDATE route_issued SET revoked=1 WHERE jti=?").run(jti);
       return {status:200};
     });

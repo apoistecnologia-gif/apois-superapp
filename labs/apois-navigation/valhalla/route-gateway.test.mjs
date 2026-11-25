@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createServer} from "node:http";
+import {createConnection} from "node:net";
 import {normalizeRoute,createBudget,createRouteGateway} from "./route-gateway.mjs";
 const fixture=()=>({locations:[{lat:-9.4039,lon:-40.504,type:"break"},{lat:-9.4165,lon:-40.5035,type:"break"}],
   costing:"auto",units:"kilometers",language:"pt-BR",format:"osrm",voice_instructions:true,banner_instructions:true,shape_format:"polyline6"});
@@ -67,4 +68,28 @@ test("rate limit rejects further route work without leaking payload",async t=>{
   let calls=0;const {post}=await fixtureServer(t,(_req,res)=>{calls++;res.end(JSON.stringify({code:"Ok",routes:[{}]}));},{budget:createBudget({limit:1})});
   assert.equal((await post(fixture())).status,200);
   const r=await post(fixture());assert.equal(r.status,429);assert.deepEqual(await r.json(),{error:"route_budget"});assert.equal(calls,1);
+});
+
+test("incomplete HTTP headers and body cannot hold connections or reach upstream",async t=>{
+  let calls=0;
+  const {post,url}=await fixtureServer(t,(_req,res)=>{calls++;res.end(JSON.stringify({code:"Ok",routes:[{}]}));},{inputTimeout:150});
+  async function incomplete(raw){
+    const socket=createConnection({host:"127.0.0.1",port:Number(new URL(url).port)});
+    let response="";
+    try{
+      await new Promise((resolve,reject)=>{
+        const deadline=setTimeout(()=>reject(Error("incomplete request was not closed")),2000);
+        socket.on("data",b=>response+=b);
+        socket.on("error",e=>{if(e.code!=="ECONNRESET"){clearTimeout(deadline);reject(e);}});
+        socket.once("close",()=>{clearTimeout(deadline);resolve();});
+        socket.once("connect",()=>socket.write(raw));
+      });
+      assert.ok(response===""||/HTTP\/1\.1 (408|400)/.test(response),response);
+    }finally{socket.destroy();}
+  }
+  await incomplete("POST /route HTTP/1.1\r\nHost: localhost\r\n");
+  await incomplete("POST /route HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n{");
+  assert.equal(calls,0);
+  assert.equal((await post(fixture())).status,200);
+  assert.equal(calls,1);
 });
