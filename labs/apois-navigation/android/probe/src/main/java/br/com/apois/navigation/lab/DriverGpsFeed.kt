@@ -23,6 +23,7 @@ object DriverGpsFeed {
     private data class Subscription(
         val id: Long, val sourceId: Long, val startedAt: Long, val current: () -> Boolean,
         val onFix: (UserLocation) -> Unit, val onQuality: (GpsQuality) -> Unit,
+        val onRevoked: () -> Unit,
         val gate: GpsFixGate = GpsFixGate(),
         var quality: GpsQuality? = null
     )
@@ -30,7 +31,7 @@ object DriverGpsFeed {
     private fun live(s: Subscription): Boolean {
         if (subscription !== s || source != s.sourceId) return false
         if (!runCatching { s.current() }.getOrDefault(false)) {
-            unsubscribe(s.id)
+            revoke(s)
             return false
         }
         return true
@@ -38,7 +39,7 @@ object DriverGpsFeed {
     private fun status(s: Subscription, quality: GpsQuality) {
         if (!live(s) || s.quality == quality) return
         s.quality = quality
-        if (runCatching { s.onQuality(quality) }.isFailure) unsubscribe(s.id)
+        if (runCatching { s.onQuality(quality) }.isFailure) revoke(s)
     }
     private val watchdog = object : Runnable {
         override fun run() {
@@ -70,8 +71,8 @@ object DriverGpsFeed {
         source = null
         subscription = null
         handler.removeCallbacks(watchdog)
-        if (old != null && runCatching { old.current() }.getOrDefault(false))
-            runCatching { old.onQuality(GpsQuality.LOST) }
+        // Cleanup must also run if the host token already expired.
+        if (old != null) runCatching { old.onRevoked() }
     }
     // Capture both IDs before posting work; a later leg must not inherit a queued fix.
     @JvmStatic fun consumerTicket(sourceId: Long): Long {
@@ -81,12 +82,12 @@ object DriverGpsFeed {
     }
     internal fun subscribe(
         current: () -> Boolean, onFix: (UserLocation) -> Unit,
-        onQuality: (GpsQuality) -> Unit
+        onQuality: (GpsQuality) -> Unit, onRevoked: () -> Unit
     ): Long? {
         main()
         check(subscription == null) { "GPS navigation consumer already active" }
         val activeSource = source ?: return null
-        val s = Subscription(++sequence, activeSource, SystemClock.elapsedRealtime(), current, onFix, onQuality)
+        val s = Subscription(++sequence, activeSource, SystemClock.elapsedRealtime(), current, onFix, onQuality, onRevoked)
         subscription = s
         status(s, GpsQuality.WAITING)
         if (subscription === s) handler.postDelayed(watchdog, 1_000)
@@ -97,6 +98,11 @@ object DriverGpsFeed {
         if (subscription?.id != id) return
         subscription = null
         handler.removeCallbacks(watchdog)
+    }
+    private fun revoke(s: Subscription) {
+        if (subscription !== s) return
+        unsubscribe(s.id)
+        runCatching { s.onRevoked() }
     }
     @JvmStatic fun publish(sourceId: Long, consumerId: Long, original: Location) {
         main()
@@ -140,8 +146,7 @@ object DriverGpsFeed {
                 status(s, GpsQuality.AVAILABLE)
                 if (!live(s) || source != sourceId) return
                 if (runCatching { s.onFix(clean.toUserLocation()) }.isFailure) {
-                    status(s, GpsQuality.LOST)
-                    unsubscribe(s.id)
+                    revoke(s)
                 }
             }
         }

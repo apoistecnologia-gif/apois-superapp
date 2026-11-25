@@ -1,6 +1,7 @@
 package br.com.apois.navigation.lab
 
 import android.os.Looper
+import android.content.Context
 import com.stadiamaps.ferrostar.core.NavigationState
 import com.stadiamaps.ferrostar.core.NavigationUiState
 import com.stadiamaps.ferrostar.core.NavigationViewModel
@@ -21,6 +22,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
     private var generation = 0L
     private var muted = false
     private var destination: String? = null
+    private var voice: LiveNavigationVoice? = null
+    private var foreground = false
 
     private fun main() = check(Looper.myLooper() == Looper.getMainLooper())
 
@@ -32,21 +35,29 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
     override fun toggleMute() {
         main()
         muted = !muted
+        voice?.setMuted(muted)
         navigationUiState.value = navigationUiState.value.copy(isMuted = muted)
+    }
+    fun setForeground(value: Boolean) {
+        main()
+        foreground = value
+        voice?.setForeground(value)
     }
     override fun stopNavigation() {
         main()
         ++generation
         subscriber?.let(DriverGpsFeed::unsubscribe)
         subscriber = null
+        voice?.close()
+        voice = null
         _quality.value = GpsQuality.WAITING
         navigationUiState.value = NavigationUiState.empty().copy(isMuted = muted)
     }
 
-    fun start(route: Route, stillCurrent: () -> Boolean) {
+    fun start(route: Route, stillCurrent: () -> Boolean, context: Context? = null, permit: NavigationVoicePermit? = null) {
         main()
         stopNavigation()
-        check(stillCurrent()) { "Navigation leg no longer active" }
+        if (!stillCurrent()) { permit?.let { runCatching { it.release() } }; _quality.value = GpsQuality.LOST; return }
         val active = generation
         val config = NavigationControllerConfig(
             WaypointAdvanceMode.WaypointWithinRange(30.0),
@@ -62,8 +73,10 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         fun current() = generation == active && stillCurrent()
         fun show(state: NavigationState) {
             if (!current()) return
-            navigationUiState.value = NavigationUiState.fromFerrostar(state, muted)
-                .copy(destination = destination)
+            val ui = NavigationUiState.fromFerrostar(state, muted).copy(destination = destination)
+            navigationUiState.value = ui
+            if (ui.tripState is TripState.Complete) voice?.setGpsAvailable(false)
+            else ui.spokenInstruction?.let { voice?.speak(it) }
         }
         subscriber = DriverGpsFeed.subscribe(
             current = ::current,
@@ -85,6 +98,7 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
             onQuality = { status ->
                 if (current()) {
                     _quality.value = status
+                    voice?.setGpsAvailable(status == GpsQuality.AVAILABLE)
                     if (status != GpsQuality.AVAILABLE) {
                         // Keep geometry for context, but do not present stale
                         // instructions or synthesize speech on a lost fix.
@@ -96,8 +110,27 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                         )
                     }
                 }
+            },
+            onRevoked = {
+                if (generation == active) {
+                    stopNavigation()
+                    _quality.value = GpsQuality.LOST
+                }
             }
         )
-        if (subscriber == null) _quality.value = GpsQuality.LOST
+        val id = subscriber
+        if (id == null || !current()) {
+            stopNavigation()
+            permit?.let { runCatching { it.release() } }
+            _quality.value = GpsQuality.LOST
+        } else if (permit != null) {
+            // No implicit grant: the future host must first stop its legacy voice.
+            if (context != null && runCatching { permit.isCurrent() }.getOrDefault(false)) {
+                voice = try { LiveNavigationVoice(context, permit) }
+                catch (_: Exception) { runCatching { permit.release() }; null }
+                voice?.setMuted(muted)
+                voice?.setForeground(foreground)
+            } else runCatching { permit.release() }
+        }
     }
 }

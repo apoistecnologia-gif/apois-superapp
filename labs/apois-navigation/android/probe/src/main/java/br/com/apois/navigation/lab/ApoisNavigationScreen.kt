@@ -39,7 +39,8 @@ internal fun ApoisNavigationScreen(
     model: NavigationViewModel,
     ride: RideSnapshot,
     onIntent: (RideIntent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    gpsQuality: GpsQuality? = null
 ) {
     val ui by model.navigationUiState.collectAsState()
     // Lock immediately on local action until host changes revision, confirms busy/error.
@@ -54,7 +55,7 @@ internal fun ApoisNavigationScreen(
             val active=ride.phase in setOf(RidePhase.PICKUP,RidePhase.WAITING_PIN,RidePhase.TRIP)
             val sdkShowingProgress=ui.isNavigating() && active
             val components=NavigationViewComponentBuilder.Default().withProgressView { m,state,_ ->
-                if(sdkShowingProgress) RidePanel(ride,state,disabled,dispatch,m.fillMaxWidth())
+                if(sdkShowingProgress) RidePanel(ride,state,disabled,dispatch,m.fillMaxWidth(),gpsQuality)
             }
             // Keep one map instance. Ferrostar's own camera, guidance, mute and recenter
             // remain in use, and custom progress size is measured by its overlay.
@@ -67,7 +68,7 @@ internal fun ApoisNavigationScreen(
             )
             if(!sdkShowingProgress) {
                 Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=12.dp,vertical=8.dp)) {
-                    RidePanel(ride,ui,disabled,dispatch,Modifier.fillMaxWidth())
+                    RidePanel(ride,ui,disabled,dispatch,Modifier.fillMaxWidth(),gpsQuality)
                 }
             }
         }
@@ -76,7 +77,7 @@ internal fun ApoisNavigationScreen(
 
 @Composable
 private fun RidePanel(ride: RideSnapshot, ui: NavigationUiState, disabled: Boolean,
-                      dispatch:(RideAction,Int?)->Unit, modifier: Modifier=Modifier) {
+                      dispatch:(RideAction,Int?)->Unit, modifier: Modifier=Modifier, gpsQuality: GpsQuality?=null) {
     val arrived=ui.tripState is TripState.Complete
     val title=when(ride.phase) {
         RidePhase.PICKUP -> if(arrived) "Próximo ao embarque • aguardando confirmação" else "Indo ao passageiro"
@@ -89,6 +90,9 @@ private fun RidePanel(ride: RideSnapshot, ui: NavigationUiState, disabled: Boole
         Column(Modifier.heightIn(max=300.dp).verticalScroll(rememberScrollState()).padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text(title,fontWeight=FontWeight.Bold,fontSize=17.sp,color=Ink)
             if(ride.phase in setOf(RidePhase.PICKUP,RidePhase.WAITING_PIN,RidePhase.TRIP)) {
+                if(ride.phase != RidePhase.WAITING_PIN) gpsQuality?.let { quality ->
+                    gpsStatusLabel(quality)?.let { Text(it, color=Muted, fontSize=13.sp) }
+                }
                 ui.progress?.let { progress ->
                     if(progress.distanceRemaining.isFinite() && progress.durationRemaining.isFinite() && progress.distanceRemaining>=0 && progress.durationRemaining>=0) {
                         val distance=if(progress.distanceRemaining<1000) "${progress.distanceRemaining.toInt()} m"
