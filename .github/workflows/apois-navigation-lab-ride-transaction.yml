@@ -73,7 +73,7 @@ jobs:
           reset role;
           create function apois_nav_lab.create_fixture_ride(
             actor uuid, selection_id uuid, request_id uuid, ride uuid
-          ) returns uuid language plpgsql security invoker set search_path = '' as $
+          ) returns uuid language plpgsql security invoker set search_path = '' as $$
           declare
             prepared jsonb;
             passenger uuid;
@@ -104,11 +104,11 @@ jobs:
               raise exception 'fixture ride binding rejected';
             end if;
             return ride;
-          end $;
+          end $$;
           revoke all on function apois_nav_lab.create_fixture_ride(uuid,uuid,uuid,uuid) from public;
           grant execute on function apois_nav_lab.create_fixture_ride(uuid,uuid,uuid,uuid) to service_role;
           set role service_role;
-          do $
+          do $$
           declare
             actor constant uuid := '00000000-0000-4000-8000-000000000011';
             other_actor constant uuid := '00000000-0000-4000-8000-000000000012';
@@ -131,7 +131,7 @@ jobs:
                or (select ride_id from apois_nav_lab.selection where id=selection_id) is distinct from ride then
               raise exception 'ride and selection state diverged';
             end if;
-          end $;
+          end $$;
           select 'APOIS_RIDE_TRANSACTION_CREATE_OK';
           -- Exercise the Passenger column name and baseline coordinate scales.
           reset role;
@@ -142,7 +142,7 @@ jobs:
             alter column destination_lat type numeric(10,8),
             alter column destination_lng type numeric(11,8);
           set role service_role;
-          do $
+          do $$
           declare
             ride constant uuid := '00000000-0000-4000-8000-000000000041';
             driver constant uuid := '00000000-0000-4000-8000-000000000071';
@@ -159,6 +159,6 @@ jobs:
             if apois_nav_lab.read_driver_proof(driver_auth,ride,'PICKUP') is not null then
               raise exception 'unknown Passenger stops accepted';
             end if;
-          end $;
+          end $$;
           select 'APOIS_PASSENGER_RIDE_COLUMNS_OK';
           SQL
