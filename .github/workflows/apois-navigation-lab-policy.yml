@@ -1,0 +1,20 @@
+name: APOIS Navegacao - protecao de consumo (sem APK)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/*mjs', '.github/workflows/apois-navigation-lab-policy.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test labs/apois-navigation/policy.test.mjs labs/apois-navigation/reroute-budget.test.mjs

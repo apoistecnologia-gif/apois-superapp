@@ -1,0 +1,16 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {createRerouteGate} from "./reroute-budget.mjs";
+const gate=(limits={})=>createRerouteGate({rideId:"lab-only",stage:"pickup",limits});
+const fix=(now,more={})=>({now,fixTime:now,accuracyM:5,deviationM:80,online:true,...more});
+test("first off-route fix suppresses stale guidance without spending a request",()=>{const g=gate();assert.deepEqual(g.evaluate(fix(1000)),{action:"hold",reason:"confirm_deviation",suppressGuidance:true});assert.equal(g.snapshot().total,0);});
+test("two independent reliable fixes permit one request",()=>{const g=gate();g.evaluate(fix(1000));const r=g.evaluate(fix(2000));assert.equal(r.action,"request_route");assert.equal(g.snapshot().total,1);assert.equal(g.snapshot().inFlight,true);assert.equal(g.settle(r.token),true);});
+test("inaccurate, stale, repeated or future fixes cannot trigger reroute",()=>{const g=gate();g.evaluate(fix(1000));for(const f of [fix(2000,{accuracyM:90}),fix(3000,{fixTime:1000}),fix(4000,{fixTime:5000}),fix(20000,{fixTime:2000})])assert.equal(g.evaluate(f).action,"hold");assert.equal(g.snapshot().total,0);});
+test("loss of internet never triggers a route call",()=>{const g=gate();for(let i=1;i<5;i++)g.evaluate(fix(i*1000,{online:false}));assert.equal(g.snapshot().total,0);});
+test("return to route clears deviation confirmation",()=>{const g=gate();g.evaluate(fix(1000));assert.equal(g.evaluate(fix(2000,{deviationM:10})).action,"continue");assert.equal(g.evaluate(fix(3000)).reason,"confirm_deviation");});
+test("single in-flight request even with new GPS fixes",()=>{const g=gate();g.evaluate(fix(1000));g.evaluate(fix(2000));g.evaluate(fix(3000));assert.equal(g.evaluate(fix(4000)).reason,"in_flight");assert.equal(g.snapshot().total,1);});
+test("cooldown also applies after failures",()=>{const g=gate();g.evaluate(fix(1000));g.settle(g.evaluate(fix(2000)).token);g.evaluate(fix(3000));assert.equal(g.evaluate(fix(4000)).reason,"rate_limit");assert.equal(g.evaluate(fix(18000)).action,"request_route");});
+test("minute window caps repeated recalculation",()=>{const g=gate({cooldownMs:1000,maxPerWindow:2});g.evaluate(fix(1000));g.settle(g.evaluate(fix(2000)).token);g.evaluate(fix(3000));g.settle(g.evaluate(fix(4000)).token);g.evaluate(fix(5000));assert.equal(g.evaluate(fix(6000)).reason,"rate_limit");assert.equal(g.evaluate(fix(63000)).action,"request_route");});
+test("leg budget offers explicit fallback and never auto-switches",()=>{const g=gate({maxRequestsPerLeg:1});g.evaluate(fix(1000));g.settle(g.evaluate(fix(2000)).token);g.evaluate(fix(20000));const r=g.evaluate(fix(21000));assert.equal(r.action,"offer_external");assert.equal(r.requiresDriverConfirmation,true);assert.equal(g.snapshot().total,1);});
+test("cancel or phase transition invalidates pending response",()=>{const g=gate();g.evaluate(fix(1000));const r=g.evaluate(fix(2000));g.close();assert.equal(g.settle(r.token),false);assert.equal(g.evaluate(fix(4000)).reason,"closed");});
+test("previous or forged response cannot settle new request",()=>{const g=gate();g.evaluate(fix(1000));const a=g.evaluate(fix(2000));assert.equal(g.settle({...a.token}),false);assert.equal(g.settle(a.token),true);g.evaluate(fix(20000));const b=g.evaluate(fix(21000));assert.equal(g.settle(a.token),false);assert.equal(g.settle(b.token),true);});
