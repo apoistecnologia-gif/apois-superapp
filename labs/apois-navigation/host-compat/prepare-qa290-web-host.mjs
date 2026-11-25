@@ -24,7 +24,7 @@ type OpenResult={state:"opened";sessionId:string}|{state:"unavailable"};
 export class ConfirmedNavigationLaunch {
   constructor(options:{enabled?:boolean;verify:(r:Request)=>Promise<ConfirmedLaunchProof|null>;
     openNative:(r:Request & {revision:number})=>Promise<OpenResult>;
-    closeNative:(sessionId:string)=>Promise<boolean>});
+    closeNative:(sessionId:string)=>Promise<boolean>;prepareAudio?:()=>Promise<(()=>void)|null>});
   invalidate():Promise<boolean>;
   onNativeClosed(event:unknown):boolean;
   recheck():Promise<string>;
@@ -34,6 +34,7 @@ export class ConfirmedNavigationLaunch {
 `,{flag:"wx"});
 writeFileSync(join(lib,"host.ts"),`// APOIS_NAVIGATION_QA290_CONFIRMED_HOST
 import {supabase} from "@/integrations/supabase/client";
+import {beginConfirmedVoiceHandoff} from "@/lib/voiceNav";
 import {Capacitor,registerPlugin,type PluginListenerHandle} from "@capacitor/core";
 import {ConfirmedNavigationLaunch,type ConfirmedPhase,type ConfirmedLaunchProof} from "./confirmed-navigation-launch.mjs";
 
@@ -93,6 +94,7 @@ async function boundedVerify(request:{rideId:string;phase:ConfirmedPhase}):Promi
 }
 const launch=new ConfirmedNavigationLaunch({
   enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify:boundedVerify,
+  prepareAudio:beginConfirmedVoiceHandoff,
   openNative:async request=>{
     if(!Capacitor.isNativePlatform()||Capacitor.getPlatform()!=="android"||
        !Capacitor.isPluginAvailable(nativeName))return {state:"unavailable"};

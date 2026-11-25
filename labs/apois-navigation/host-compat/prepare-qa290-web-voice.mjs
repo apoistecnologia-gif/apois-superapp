@@ -6,6 +6,7 @@ import {createHash} from "node:crypto";
 import assert from "node:assert/strict";
 import {instrumentWebVoice} from "./instrument-web-voice.mjs";
 import {instrumentVoice} from "./instrument-driver-voice.mjs";
+import {instrumentSharedAudio} from "./instrument-shared-audio.mjs";
 
 function once(s,a,b) {
   assert.equal(s.split(a).length,2,"QA290 generated voice anchor: "+a);
@@ -26,6 +27,33 @@ export function instrumentGeneratedWebVoice(raw) {
   const signature='export async function speak(text: string, opts?: { dedupKey?: string; interrupt?: boolean; guidance?: boolean }) {';
   s=once(s,signature,`// APOIS_NAVIGATION_QA290_GENERATED_VOICE_GUARD
 let qa235ExternalVoice=false;
+// This scoped gate is not native authorization. It only prevents competing
+// Web Speech while the confirmed native session may own the shared engine.
+let confirmedVoiceScope: {ready:boolean} | null=null;
+function confirmedSpeechAllowed(guidance?:boolean):boolean {
+  return confirmedVoiceScope ? confirmedVoiceScope.ready && !guidance : !qa235ExternalVoice;
+}
+export async function beginConfirmedVoiceHandoff():Promise<(()=>void)|null>{
+  if(confirmedVoiceScope||!nativeVoiceAvailable())return null;
+  const scope={ready:false};
+  confirmedVoiceScope=scope;
+  voiceEpoch++;
+  const release=()=>{
+    if(confirmedVoiceScope!==scope)return;
+    confirmedVoiceScope=null;
+    voiceEpoch++;
+  };
+  try{
+    if(ordinaryReset)await ordinaryReset;
+    const stopping=stopVoiceForHandoff();
+    const epoch=voiceEpoch;
+    const stopped=await stopping;
+    if(stopped!==true||epoch!==voiceEpoch||confirmedVoiceScope!==scope||
+       synth()?.speaking===true||synth()?.pending===true){release();return null;}
+    scope.ready=true;
+    return release;
+  }catch{release();return null;}
+}
 export function setApoisExternalNavigationOwnsVoice(value:boolean){
   if (qa235ExternalVoice===value) return;
   qa235ExternalVoice=value;
@@ -38,9 +66,11 @@ export function setApoisExternalNavigationOwnsVoice(value:boolean){
     void pending.finally(() => { if (ordinaryReset === pending) ordinaryReset = null; });
   }
 }
-`+signature+'\n  if(qa235ExternalVoice)return;');
-  s=once(s,'if (beforeReset !== voiceEpoch || !enabled','if (qa235ExternalVoice || beforeReset !== voiceEpoch || !enabled');
-  s=once(s,'const current = () => enabled &&','const current = () => !qa235ExternalVoice && enabled &&');
+`+signature+'\n  if(!confirmedSpeechAllowed(opts?.guidance))return;');
+  s=once(s,'if (beforeReset !== voiceEpoch || !enabled','if (!confirmedSpeechAllowed(opts?.guidance) || beforeReset !== voiceEpoch || !enabled');
+  s=once(s,'const current = () => enabled &&','const current = () => confirmedSpeechAllowed(opts?.guidance) && enabled &&');
+  s=once(s,"if (!current()) return;\n      console.warn(\"[APOIS VOICE] fala nativa falhou; tentando Web Speech\", error);","if (!current() || confirmedVoiceScope) return;\n      console.warn(\"[APOIS VOICE] fala nativa falhou; tentando Web Speech\", error);");
+  s=once(s,"const s = synth();\n  if (!s) return;\n  await loadVoices();","if (confirmedVoiceScope) return;\n  const s = synth();\n  if (!s) return;\n  await loadVoices();");
   return s;
 }
 export function instrumentGeneratedJavaVoice(raw) {
@@ -48,7 +78,7 @@ export function instrumentGeneratedJavaVoice(raw) {
   // Reuse the compiled original generation guard, then restore exact package
   // and delay. No second TTS service or new plugin identifier.
   assert.equal(raw.split("2200L").length,3,"QA290 historical TTS startup delay");
-  const s=instrumentVoice(raw.replaceAll("2200L","900L"));
+  const s=instrumentSharedAudio(instrumentVoice(raw.replaceAll("2200L","900L")));
   return once(s,"package br.com.apois.navigation.compat.lab;","package com.apois.motorista;").replaceAll("900L","2200L");
 }
 const root=realpathSync(process.argv[2]);
@@ -80,11 +110,13 @@ writeFileSync(join(testRoot,"capacitor-stub.mjs"),'export const Capacitor={isNat
 const spoken=[];
 let rejectOld;
 let calls=0;
+let stopOk=true;
+let storedPreference=null;
 globalThis.__qa290Voice={plugin:{
-  prime:async()=>({ready:true}),stop:async()=>({stopped:true}),
-  speak:({text})=>{calls++; if(text==="old")return new Promise((_,reject)=>{rejectOld=reject}); spoken.push(text);return Promise.resolve({spoken:true});}
+  prime:async()=>({ready:true}),stop:async()=>({stopped:stopOk}),
+  speak:({text})=>{calls++; if(text==="old")return new Promise((_,reject)=>{rejectOld=reject}); if(text==="falha operacional")return Promise.reject(Error("native unavailable")); spoken.push(text);return Promise.resolve({spoken:true});}
 }};
-globalThis.window={localStorage:{getItem:()=>null,setItem:()=>{}},speechSynthesis:{cancel(){},getVoices:()=>[],speak:()=>{throw Error("stale Web Speech");}}};
+globalThis.window={localStorage:{getItem:()=>storedPreference,setItem:(_key,value)=>{storedPreference=value;}},speechSynthesis:{cancel(){},getVoices:()=>[],speak:()=>{throw Error("stale Web Speech");}}};
 globalThis.SpeechSynthesisUtterance=class {};
 const voice=await import(join(testRoot,"voiceNav.ts"));
 const old=voice.speak("old");
@@ -102,6 +134,31 @@ voice.setLegacyGuidanceAllowed(false);
 await voice.speak("maneuver",{guidance:true});
 await voice.speak("Nova corrida");
 assert.deepEqual(spoken,["Nova corrida"]);
+voice.setApoisExternalNavigationOwnsVoice(true);
+const release=await voice.beginConfirmedVoiceHandoff();
+assert.equal(typeof release,"function");
+await voice.speak("manobra antiga",{guidance:true});
+await voice.speak("Nova oferta");
+await voice.speak("falha operacional"); // native rejection must not fall into Web Speech
+assert.deepEqual(spoken,["Nova corrida","Nova oferta"]);
+assert.equal(await voice.beginConfirmedVoiceHandoff(),null);
+assert.equal(storedPreference,null);
+release();
+await voice.speak("suprimida pelo mapa externo");
+assert.deepEqual(spoken,["Nova corrida","Nova oferta"]);
+stopOk=false;
+assert.equal(await voice.beginConfirmedVoiceHandoff(),null);
+stopOk=true;
+voice.setApoisExternalNavigationOwnsVoice(false);
+const recovered=await voice.beginConfirmedVoiceHandoff();
+assert.equal(typeof recovered,"function");
+release(); // stale release must not clear the new gate
+await voice.speak("falha operacional");
+voice.setVoiceEnabled(false);
+await voice.speak("preferência desativada");
+assert.equal(storedPreference,"false");
+recovered();
+assert.deepEqual(spoken,["Nova corrida","Nova oferta"]);
 const sha=s=>createHash("sha256").update(s).digest("hex");
-console.log("[OK] QA290 final voice guard: delayed fallback blocked, operational speech retained after external release, legacy maneuver gated");
+console.log("[OK] QA290 final voice guard: delayed fallback blocked, operational speech retained after external release, legacy maneuver gated; confirmed scope uses native-only alerts, rejects ambiguous stop and preserves preference");
 console.log("[OK] QA290 generated voice SHA256 web="+sha(patchedWeb)+" java="+sha(patchedJava)+" generation="+sha(generation));
