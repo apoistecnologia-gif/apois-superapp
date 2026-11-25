@@ -9,13 +9,13 @@ const sql=(statement)=>{let x=execFileSync('docker',args,{input:statement+';\n',
 const lit=v=>"'"+String(v).replaceAll("'","''")+"'"
 function session(){
  const child=spawn('docker',args,{stdio:['pipe','pipe','pipe']})
- let error='';child.stderr.on('data',c=>error+=c);child.stdin.on('error',()=>{})
+ let error='';child.stderr.on('data',c=>error+=c);child.stdin.on('error',()=>{});const closed=new Promise(resolve=>child.once('close',resolve))
  const lines=createInterface({input:child.stdout})[Symbol.asyncIterator]();let seq=0
  return {async cmd(statement){
   const mark='APOIS_DONE_'+(++seq)
   child.stdin.write(statement+';\n\\echo '+mark+'\n')
   let out=[]
-  while(true){const {value,done}=await lines.next();if(done)throw Error(error||'psql ended');if(value===mark)return out.length?JSON.parse(out.join('\n')):null;out.push(value)}
+  while(true){const {value,done}=await lines.next();if(done){const code=await closed;throw Error('psql ended '+code+' during '+statement.slice(0,100)+': '+error)}if(value===mark){const text=out.join('\n').trim();return text?JSON.parse(text):null;}out.push(value)}
  },close(){child.stdin.end('rollback;\n\\q\n');child.kill()}}
 }
 const payload=lit(JSON.stringify({origin:{lat:-9.4,lng:-40.5},destination:{lat:-9.42,lng:-40.51},category:'carros',intermediates:[],payment_method:'cash',estimated_price:12.34,distance_km:2.1,duration_min:8,expected_price_cents:1234}))
@@ -31,14 +31,14 @@ const settle=async(first,second,firstSql,secondSql,appName)=>{
  await first.cmd('begin')
  const one=await first.cmd(firstSql)
  await second.cmd("set application_name="+lit(appName))
- const two=second.cmd(secondSql)
+ const two=second.cmd(secondSql).then(value=>({value}),error=>({error}))
  let waited=false
  for(let n=0;n<80;n++){
   if(sql("select to_jsonb(count(*)) from pg_stat_activity where application_name="+lit(appName)+" and wait_event_type='Lock'")===1){waited=true;break}
   await new Promise(r=>setTimeout(r,25))
  }
- assert.ok(waited,'second transaction must wait on lock')
- await first.cmd('commit');return [one,await two]
+ if(!waited){await first.cmd('rollback');const result=await two;if(result.error)throw result.error;throw Error('second transaction did not wait: '+appName+' '+JSON.stringify(result.value))}
+ await first.cmd('commit');const result=await two;if(result.error)throw result.error;return [one,result.value]
 }
 const one=session(),two=session()
 try{
