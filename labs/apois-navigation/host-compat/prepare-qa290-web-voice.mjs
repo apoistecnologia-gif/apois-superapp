@@ -111,14 +111,20 @@ const spoken=[];
 let rejectOld;
 let calls=0;
 let stopOk=true;
-let storedPreference=null;
+const preferenceKey="apois:motorista:voice-enabled";
+const migrationKey="apois:motorista:voice-guidance-v2";
+const storage=new Map();
 globalThis.__qa290Voice={plugin:{
   prime:async()=>({ready:true}),stop:async()=>({stopped:stopOk}),
   speak:({text})=>{calls++; if(text==="old")return new Promise((_,reject)=>{rejectOld=reject}); if(text==="falha operacional")return Promise.reject(Error("native unavailable")); spoken.push(text);return Promise.resolve({spoken:true});}
 }};
-globalThis.window={localStorage:{getItem:()=>storedPreference,setItem:(_key,value)=>{storedPreference=value;}},speechSynthesis:{cancel(){},getVoices:()=>[],speak:()=>{throw Error("stale Web Speech");}}};
+globalThis.window={localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>{storage.set(key,String(value));}},speechSynthesis:{cancel(){},getVoices:()=>[],speak:()=>{throw Error("stale Web Speech");}}};
 globalThis.SpeechSynthesisUtterance=class {};
 const voice=await import(join(testRoot,"voiceNav.ts"));
+// Historical migration intentionally initializes both distinct keys.
+assert.equal(storage.get(migrationKey),"1");
+assert.equal(storage.get(preferenceKey),"true");
+const initialStorage=[...storage];
 const old=voice.speak("old");
 assert.equal(calls,1);
 voice.setApoisExternalNavigationOwnsVoice(true);
@@ -142,7 +148,7 @@ await voice.speak("Nova oferta");
 await voice.speak("falha operacional"); // native rejection must not fall into Web Speech
 assert.deepEqual(spoken,["Nova corrida","Nova oferta"]);
 assert.equal(await voice.beginConfirmedVoiceHandoff(),null);
-assert.equal(storedPreference,null);
+assert.deepEqual([...storage],initialStorage);
 release();
 await voice.speak("suprimida pelo mapa externo");
 assert.deepEqual(spoken,["Nova corrida","Nova oferta"]);
@@ -156,7 +162,8 @@ release(); // stale release must not clear the new gate
 await voice.speak("falha operacional");
 voice.setVoiceEnabled(false);
 await voice.speak("preferência desativada");
-assert.equal(storedPreference,"false");
+assert.equal(storage.get(preferenceKey),"false");
+assert.equal(storage.get(migrationKey),"1");
 recovered();
 assert.deepEqual(spoken,["Nova corrida","Nova oferta"]);
 const sha=s=>createHash("sha256").update(s).digest("hex");
