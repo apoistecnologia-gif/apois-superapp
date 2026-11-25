@@ -6,6 +6,7 @@ on:
       - '.github/workflows/apois-navigation-lab-ride-transaction.yml'
       - 'labs/apois-navigation/passenger-provenance-snapshot/**'
       - 'labs/apois-navigation/passenger-ride-transaction/**'
+      - 'labs/apois-navigation/osm-search/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,6 +18,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Verificar rollback da corrida em PostgreSQL descartavel
         run: |
           set -euo pipefail
@@ -259,3 +263,31 @@ jobs:
           end $test$;
           select 'APOIS_PASSENGER_ADAPTER_OK';
           SQL
+          APOIS_TEST_CONTAINER="$container" node --input-type=module <<'JS'
+          import {spawn} from 'node:child_process'
+          import {verifyPassengerDatabaseFlow} from './labs/apois-navigation/passenger-ride-transaction/database-flow.mjs'
+
+          function query(sql, parameters) {
+            return new Promise((resolve, reject) => {
+              const args = ['exec','-i',process.env.APOIS_TEST_CONTAINER,'psql','-X','-qAt',
+                '-U','postgres','-v','ON_ERROR_STOP=1']
+              parameters.forEach((value, index) => args.push('-v', `p${index+1}=${value}`))
+              const child = spawn('docker', args, {stdio:['pipe','pipe','inherit']})
+              let output = ''
+              child.stdout.setEncoding('utf8').on('data', data => { output += data })
+              child.on('error', reject)
+              child.stdin.on('error', reject)
+              child.on('close', code => {
+                try {
+                  if (code !== 0) throw new Error(`psql exited with status ${code}`)
+                  resolve(output.trim() ? JSON.parse(output) : null)
+                } catch (error) { reject(error) }
+              })
+              const statement = sql.replace(/\$(\d+)/g, (_, index) => `:'p${index}'`)
+              child.stdin.end(`set role service_role;\n${statement};\n`)
+            })
+          }
+
+          await verifyPassengerDatabaseFlow(query)
+          console.log('APOIS_PASSENGER_SELECTION_TO_SQL_OK')
+          JS
