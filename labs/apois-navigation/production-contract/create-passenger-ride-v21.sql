@@ -64,3 +64,33 @@ begin
 end $$;
 revoke all on function apois_nav_lab.create_passenger_ride_v21(uuid,uuid,uuid,jsonb) from public,anon,authenticated;
 grant execute on function apois_nav_lab.create_passenger_ride_v21(uuid,uuid,uuid,jsonb) to service_role;
+
+-- Read-only preflight for the trusted request handler. All authorization is
+-- rechecked by the atomic insertion. Existing linked rides can be recovered
+-- after the confirmation expires, without re-quoting or dispatching again.
+create function apois_nav_lab.read_selection_v21(p_auth_user uuid,p_selection uuid,p_request_key uuid)
+returns jsonb language plpgsql stable security invoker set search_path='' as $$
+declare v_s apois_nav_lab.selection; v_p apois_nav_lab.catalog; v_d apois_nav_lab.catalog; v_r public.rides;
+begin
+ select s.* into v_s from apois_nav_lab.selection s join public.users u on u.id=s.passenger_id
+ where u.auth_user_id=p_auth_user and s.id=p_selection and s.request_key=p_request_key
+ and u.deleted_at is null and u.blocked_at is null
+ and (u.suspended_until is null or u.suspended_until<=statement_timestamp())
+ and (u.suspended_at is null or u.suspended_until<=statement_timestamp());
+ if not found then return null; end if;
+ if v_s.ride_id is not null then
+  select * into v_r from public.rides where id=v_s.ride_id and passenger_id=v_s.passenger_id and request_key=p_request_key;
+  if not found then return null; end if;
+  return jsonb_build_object('linked',true);
+ end if;
+ if v_s.expires_at<=statement_timestamp() then return null; end if;
+ select * into v_p from apois_nav_lab.catalog where id=v_s.pickup_id and version=v_s.pickup_version and active;
+ if not found then return null; end if;
+ select * into v_d from apois_nav_lab.catalog where id=v_s.destination_id and version=v_s.destination_version and active;
+ if not found then return null; end if;
+ return jsonb_build_object('linked',false,'expiresAt',v_s.expires_at,
+ 'origin',jsonb_build_object('lat',v_p.lat,'lng',v_p.lng),
+ 'destination',jsonb_build_object('lat',v_d.lat,'lng',v_d.lng));
+end $$;
+revoke all on function apois_nav_lab.read_selection_v21(uuid,uuid,uuid) from public,anon,authenticated;
+grant execute on function apois_nav_lab.read_selection_v21(uuid,uuid,uuid) to service_role;
