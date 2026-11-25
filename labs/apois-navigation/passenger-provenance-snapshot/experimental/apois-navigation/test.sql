@@ -88,3 +88,54 @@ begin
 end $$;
 reset role;
 select 'APOIS_PROVENANCE_SQL_OK' as result;
+
+-- Driver access: synthetic IDs distinguish auth user, user profile, driver.
+do $$
+begin
+  if has_function_privilege('authenticated','apois_nav_lab.read_driver_proof(uuid,uuid,text)','EXECUTE')
+    or has_function_privilege('anon','apois_nav_lab.read_driver_proof(uuid,uuid,text)','EXECUTE') then
+    raise exception 'driver proof exposed';
+  end if;
+end $$;
+set role service_role;
+do $$
+declare a uuid:='00000000-0000-4000-8000-000000000061'; b uuid:='00000000-0000-4000-8000-000000000062';
+  profile uuid:='00000000-0000-4000-8000-000000000051'; driver uuid:='00000000-0000-4000-8000-000000000071';
+  other_driver uuid:='00000000-0000-4000-8000-000000000072'; r uuid:='00000000-0000-4000-8000-000000000041';
+  ordinary uuid:='00000000-0000-4000-8000-000000000045'; proof jsonb;
+begin
+  if apois_nav_lab.read_driver_proof(a,r,'PICKUP') is not null then raise exception 'unassigned accepted'; end if;
+  update public.rides set driver_id=driver,accepted_driver_id=driver,accepted_at=clock_timestamp(),status='motorista_a_caminho' where id in (r,ordinary);
+  proof:=apois_nav_lab.read_driver_proof(a,r,'PICKUP');
+  if proof is null or proof->>'authUserId'<>a::text or proof->>'profileUserId'<>profile::text or proof->>'driverId'<>driver::text
+    or proof->'targetEvidence'->'point' is distinct from '{"lat":-9.4,"lon":-40.5}'::jsonb or proof ? 'passengerId' then raise exception 'pickup proof invalid'; end if;
+  if apois_nav_lab.read_driver_proof(b,r,'PICKUP') is not null or apois_nav_lab.read_driver_proof(profile,r,'PICKUP') is not null
+    or apois_nav_lab.read_driver_proof(null,r,'PICKUP') is not null or apois_nav_lab.read_driver_proof(a,r,'TRIP') is not null
+    or apois_nav_lab.read_driver_proof(a,ordinary,'PICKUP') is not null then raise exception 'unauthorized read'; end if;
+  update public.rides set accepted_driver_id=other_driver where id=r;
+  if apois_nav_lab.read_driver_proof(a,r,'PICKUP') is not null then raise exception 'conflicting identity'; end if;
+  update public.rides set accepted_driver_id=driver,status='motorista_chegou' where id=r;
+  if apois_nav_lab.read_driver_proof(a,r,'PICKUP') is not null then raise exception 'arrival pickup still valid'; end if;
+  update public.rides set status='em_viagem' where id=r;
+  proof:=apois_nav_lab.read_driver_proof(a,r,'TRIP');
+  if proof is null or proof->'targetEvidence'->'point' is distinct from '{"lat":-9.42,"lon":-40.51}'::jsonb then raise exception 'trip proof invalid'; end if;
+  update public.rides set destination_lat=-9.43 where id=r;
+  if apois_nav_lab.read_driver_proof(a,r,'TRIP') is not null then raise exception 'changed coordinate accepted'; end if;
+  update public.rides set destination_lat=-9.42,waypoints=null where id=r;
+  if apois_nav_lab.read_driver_proof(a,r,'TRIP') is not null then raise exception 'unknown stops accepted'; end if;
+  update public.rides set waypoints='[]' where id=r;
+  update public.drivers set blocked_at=clock_timestamp() where id=driver;
+  if apois_nav_lab.read_driver_proof(a,r,'TRIP') is not null then raise exception 'blocked driver accepted'; end if;
+  update public.drivers set blocked_at=null,subscription_status='inactive' where id=driver;
+  if apois_nav_lab.read_driver_proof(a,r,'TRIP') is not null then raise exception 'inactive subscription accepted'; end if;
+  update public.drivers set subscription_status='active' where id=driver;
+  update apois_nav_lab.catalog set active=false where osm_id=2;
+  if apois_nav_lab.read_driver_proof(a,r,'TRIP') is not null then raise exception 'inactive catalog accepted'; end if;
+  update apois_nav_lab.catalog set active=true where osm_id=2;
+  update public.rides set driver_id=other_driver,accepted_driver_id=other_driver where id=r;
+  if apois_nav_lab.read_driver_proof(a,r,'TRIP') is not null or apois_nav_lab.read_driver_proof(b,r,'TRIP') is null then raise exception 'assignment change not reflected'; end if;
+  update public.rides set status='finalizada' where id=r;
+  if apois_nav_lab.read_driver_proof(b,r,'TRIP') is not null then raise exception 'terminal ride accepted'; end if;
+end $$;
+reset role;
+select 'APOIS_DRIVER_PROOF_SQL_OK' as result;

@@ -145,8 +145,52 @@ begin
   return true;
 exception when no_data_found or too_many_rows or unique_violation then return false;
 end $$;
+-- Server-only, single-statement snapshot. p_auth_user MUST be derived
+-- from a verified session by a trusted server, not an untrusted request.
+-- Returns the issuer proof contract, never passenger identity or address.
+create function apois_nav_lab.read_driver_proof(p_auth_user uuid,p_ride uuid,p_phase text)
+returns jsonb language plpgsql stable security invoker set search_path = '' as $$
+declare v_proof jsonb;
+begin
+  if p_auth_user is null or p_ride is null or p_phase is null or p_phase not in ('PICKUP','TRIP') then return null; end if;
+  select jsonb_build_object(
+    'authUserId',u.auth_user_id,'profileUserId',u.id,'driverId',d.id,
+    'rideId',r.id,'status',r.status,'assignedDriverId',r.driver_id,'acceptedDriverId',r.accepted_driver_id,
+    'category',r.category,'intermediateStops',0,
+    'verifiedAt',floor(extract(epoch from statement_timestamp())*1000)::bigint,
+    'targetEvidence',jsonb_build_object('id',s.id,'version',case when p_phase='PICKUP' then p.version else t.version end,
+      'rideId',r.id,'phase',p_phase,'source','INDEPENDENT_OSM',
+      'point',case when p_phase='PICKUP' then jsonb_build_object('lat',p.lat,'lon',p.lng)
+        else jsonb_build_object('lat',t.lat,'lon',t.lng) end))
+  into strict v_proof
+  from public.users u
+  join public.drivers d on d.user_id=u.id
+  join public.rides r on r.driver_id=d.id and r.accepted_driver_id=d.id
+  join apois_nav_lab.selection s on s.ride_id=r.id and s.passenger_id=r.passenger_id
+      and s.request_key::text=r.request_key::text
+  join apois_nav_lab.catalog p on p.id=s.pickup_id and p.version=s.pickup_version
+  join apois_nav_lab.catalog t on t.id=s.destination_id and t.version=s.destination_version
+  where u.auth_user_id=p_auth_user and r.id=p_ride
+    and u.blocked_at is null and u.deleted_at is null
+    and (u.suspended_until is null or u.suspended_until<=statement_timestamp())
+    and d.blocked_at is null and d.suspended_at is null
+    and d.approval_status='aprovado' and lower(d.subscription_status) in ('active','ativa','teste')
+    and d.category::text='carros' and r.category::text='carros'
+    and r.status::text=case when p_phase='PICKUP' then 'motorista_a_caminho' else 'em_viagem' end
+    and r.accepted_at is not null
+    and s.prepared_xid is null and p.active and t.active
+    and r.created_at>=s.confirmed_at and r.created_at<=s.expires_at
+    and (r.origin_lat,r.origin_lng,r.destination_lat,r.destination_lng)=(p.lat,p.lng,t.lat,t.lng)
+    and coalesce(to_jsonb(r)->'waypoints',to_jsonb(r)->'intermediates')='[]'::jsonb
+    and (not(to_jsonb(r) ? 'waypoints' and to_jsonb(r) ? 'intermediates')
+      or to_jsonb(r)->'intermediates'='[]'::jsonb);
+  return v_proof;
+exception when no_data_found or too_many_rows then return null;
+end $$;
+
 revoke all on all functions in schema apois_nav_lab from public, anon, authenticated;
 grant execute on function apois_nav_lab.confirm_selection(uuid,uuid,uuid,integer,uuid,integer) to service_role;
 grant execute on function apois_nav_lab.prepare_selection(uuid,uuid,uuid) to service_role;
 grant execute on function apois_nav_lab.bind_selection(uuid,uuid,uuid) to service_role;
+grant execute on function apois_nav_lab.read_driver_proof(uuid,uuid,text) to service_role;
 commit;

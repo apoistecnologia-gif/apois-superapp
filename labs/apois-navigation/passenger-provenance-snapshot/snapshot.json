@@ -1,18 +1,18 @@
 {
   "source": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
-  "commit": "62fdfc5abcd77f536ce7c070806e7b80b5306c5e",
+  "commit": "b3a1fad946494ac35c76fe2dbc207e72bd5e916c",
   "blobs": [
     {
       "path": "experimental/apois-navigation/schema.sql",
-      "sha": "02d85d0e7661a0433dc70ceeeae555a6db5c2c40"
+      "sha": "fae364dbc1fad5fd40650a40bcae4a9cc980341c"
     },
     {
       "path": "experimental/apois-navigation/fixture.sql",
-      "sha": "1a707a5a041bbdf904b86ff8c74b362b64a951fd"
+      "sha": "9accc30d167988c52af55dc23ba29e1117e51ef7"
     },
     {
       "path": "experimental/apois-navigation/test.sql",
-      "sha": "483d89fd5238ca4a6c861dd3d1100265a1c9674b"
+      "sha": "1608525eda6356e68c154c5a54273a3cfc723fd3"
     },
     {
       "path": "experimental/apois-navigation/import_catalog.py",
