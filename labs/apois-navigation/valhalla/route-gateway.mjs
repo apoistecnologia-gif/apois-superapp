@@ -38,7 +38,7 @@ function reply(res,status,value){
     "Cache-Control":"no-store","Connection":"close","X-Content-Type-Options":"nosniff"});
   res.end(body);
 }
-export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000}={}){
+export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000,authorize=null}={}){
   if(!Number.isInteger(upstreamPort)||upstreamPort<1||upstreamPort>65535)throw Error("Invalid local upstream port");
   const upstream="http://127.0.0.1:"+upstreamPort+"/route";
   const server=createServer(async(req,res)=>{
@@ -62,8 +62,18 @@ export function createRouteGateway({upstreamPort=8002,budget=createBudget(),time
     }catch{reply(res,400,{error:"invalid_route"});return;}
     if(!body){reply(res,400,{error:"invalid_route"});return;}
     if(res.destroyed)return;
+    // Optional verifier is for the isolated authenticated test only. The
+    // standalone CLI remains loopback-only synthetic benchmark mode.
+    let grant=null;
+    if(authorize){
+      try{grant=authorize(req.headers.authorization,body);}catch{reply(res,503,{error:"authorization_unavailable"});return;}
+      if(grant?.status!==200||typeof grant.release!=="function"){
+        const status=[401,403,429,503].includes(grant?.status)?grant.status:503;
+        reply(res,status,{error:"route_not_authorized"});return;
+      }
+    }
     const done=budget.enter();
-    if(!done){reply(res,429,{error:"route_budget"});return;}
+    if(!done){grant?.release();reply(res,429,{error:"route_budget"});return;}
     const controller=new AbortController();
     const disconnected=()=>controller.abort();
     res.once("close",disconnected);
@@ -87,7 +97,7 @@ export function createRouteGateway({upstreamPort=8002,budget=createBudget(),time
       if(Buffer.byteLength(payload)>MAX_RESPONSE)throw Error("size");
       reply(res,200,data);
     }catch{reply(res,502,{error:"route_unavailable"});}
-    finally{clearTimeout(timer);res.removeListener("close",disconnected);done();}
+    finally{clearTimeout(timer);res.removeListener("close",disconnected);done();grant?.release();}
   });
   server.requestTimeout=5000;server.headersTimeout=5000;server.keepAliveTimeout=1000;
   server.maxConnections=16;
