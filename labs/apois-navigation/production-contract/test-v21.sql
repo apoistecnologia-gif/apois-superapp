@@ -40,7 +40,7 @@ begin
  if response->>'rideId'<>r::text or response->>'reused'<>'true' or response->>'fare_amount_cents'<>'1234' then raise exception 'retry mutated'; end if;
  -- Real state-machine transition constraints: no direct jump to trip.
  begin
-   update public.rides set status='em_viagem' where id=r;
+   update public.rides set status='em_viagem',driver_id=d,accepted_driver_id=d,accepted_at=clock_timestamp(),driver_arrived_at=clock_timestamp(),started_at=clock_timestamp() where id=r;
    raise exception 'invalid transition accepted';
  exception when check_violation then null; end;
  update public.drivers set is_online=false where id=d;
