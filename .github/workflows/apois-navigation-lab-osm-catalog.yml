@@ -43,6 +43,42 @@ jobs:
           assert.throws(()=>createOsmSearch({source:'GOOGLE',rows:[]}),TypeError)
           console.log('APOIS_OSM_SEARCH_OK')
           JS
+      - name: Testar selecao no mapa com o contrato do Passageiro
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict'
+          import {createSelectionCatalog} from './labs/apois-navigation/osm-search/map-selection.mjs'
+          import {confirmIndependentSelection} from './labs/apois-navigation/passenger-provenance-snapshot/src/services/navigation/independent-selection.ts'
+
+          const digest = 'a'.repeat(64)
+          const row = {version:1,active:true,extract_sha256:digest,lng:-40.5}
+          const [pickupId,destinationId,requestKey,selectionId,inactiveId] =
+            [1,2,3,4,5].map(n=>'00000000-0000-4000-8000-00000000000'+n)
+          const catalog = createSelectionCatalog({source:'OSM_PBF',version:1,extract_sha256:digest,rows:[
+            {...row,id:pickupId,lat:-9.4,label:'Embarque'},
+            {...row,id:destinationId,lat:-9.41,label:'Destino'},
+            {...row,id:inactiveId,lat:-9.42,label:'Desativado',active:false},
+          ]})
+          assert.equal(catalog.suggestForMapTap({lat:-9.4002,lng:-40.5}).id,pickupId)
+          assert.equal(catalog.suggestForMapTap({lat:-9.42,lng:-40.5}),null)
+          assert.equal(catalog.suggestForMapTap({lat:-9.405,lng:-40.5}),null)
+          const draft = {requestKey,pickupId,destinationId}
+          assert.equal(catalog.prepareConfirmation(draft),null)
+          assert.equal(catalog.prepareConfirmation({...draft,confirmed:true,destinationId:inactiveId}),null)
+          const payload = catalog.prepareConfirmation({...draft,confirmed:true})
+          const now = Date.now()
+          let sent
+          const result = await confirmIndependentSelection(payload,async body=>{
+            sent = body
+            return {selectionId,requestKey,expiresAt:new Date(now+120000).toISOString(),
+              origin:{lat:-9.4,lng:-40.5,label:'Embarque'},
+              destination:{lat:-9.41,lng:-40.5,label:'Destino'}}
+          },undefined,()=>now)
+          assert.equal(result?.selectionId,selectionId)
+          assert.deepEqual(sent,{requestKey,confirmed:true,
+            pickup:{id:pickupId,version:1},destination:{id:destinationId,version:1}})
+          console.log('APOIS_SELECTION_CLIENT_CONTRACT_OK')
+          JS
       - name: Mes do cache regional
         id: cache-month
         run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
