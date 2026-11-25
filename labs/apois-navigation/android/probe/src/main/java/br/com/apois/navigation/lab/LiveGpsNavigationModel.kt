@@ -89,11 +89,15 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                         // Keep geometry for context, but do not present stale
                         // instructions or synthesize speech on a lost fix.
                         navigationUiState.value = navigationUiState.value.copy(
-                            visualInstruction = null, spokenInstruction = null
+                            location = null, heading = null, tripState = null,
+                            visualInstruction = null, spokenInstruction = null, progress = null,
+                            routeDeviation = null, currentStepRoadName = null,
+                            currentStepGeometryIndex = null, remainingSteps = null, currentAnnotation = null
                         )
                     }
                 }
             }
         )
+        if (subscriber == null) _quality.value = GpsQuality.LOST
     }
 }

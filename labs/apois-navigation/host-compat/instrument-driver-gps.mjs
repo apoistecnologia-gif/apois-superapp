@@ -37,12 +37,13 @@ export function instrumentDriverService(source) {
         final long epoch = labGpsSource;
         if (!tracking || epoch == 0L) return;
         try {
-            if (!${FEED}.hasConsumer(epoch)) return;
+            final long consumer = ${FEED}.consumerTicket(epoch);
+            if (consumer == 0L) return;
             final Location copy = new Location(location);
             // Existing presence / arrival callbacks finish first. Never replay the disk buffer.
             mainHandler.post(() -> {
                 if (!tracking || labGpsSource != epoch) return;
-                try { ${FEED}.publish(epoch, copy); }
+                try { ${FEED}.publish(epoch, consumer, copy); }
                 catch (RuntimeException | LinkageError ignored) { labGpsEnd(); }
             });
         } catch (RuntimeException | LinkageError ignored) { labGpsEnd(); }

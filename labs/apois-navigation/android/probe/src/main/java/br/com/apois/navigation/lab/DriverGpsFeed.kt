@@ -45,7 +45,7 @@ object DriverGpsFeed {
             val s = subscription ?: return
             if (!live(s)) return
             val now = SystemClock.elapsedRealtime()
-            if ((s.quality != GpsQuality.WAITING || now - s.startedAt > 15_000) && !s.gate.hasFreshFix(now))
+            if (now - s.startedAt > 15_000 && !s.gate.hasFreshFix(now))
                 status(s, GpsQuality.LOST)
             if (subscription === s) handler.postDelayed(this, 1_000)
         }
@@ -73,17 +73,19 @@ object DriverGpsFeed {
         if (old != null && runCatching { old.current() }.getOrDefault(false))
             runCatching { old.onQuality(GpsQuality.LOST) }
     }
-    @JvmStatic fun hasConsumer(sourceId: Long): Boolean {
+    // Capture both IDs before posting work; a later leg must not inherit a queued fix.
+    @JvmStatic fun consumerTicket(sourceId: Long): Long {
         main()
-        return source == sourceId && subscription?.let { live(it) } == true
+        val s = subscription ?: return 0L
+        return if (source == sourceId && live(s)) s.id else 0L
     }
     internal fun subscribe(
         current: () -> Boolean, onFix: (UserLocation) -> Unit,
         onQuality: (GpsQuality) -> Unit
-    ): Long {
+    ): Long? {
         main()
         check(subscription == null) { "GPS navigation consumer already active" }
-        val activeSource = checkNotNull(source) { "GPS source is not active" }
+        val activeSource = source ?: return null
         val s = Subscription(++sequence, activeSource, SystemClock.elapsedRealtime(), current, onFix, onQuality)
         subscription = s
         status(s, GpsQuality.WAITING)
@@ -96,12 +98,13 @@ object DriverGpsFeed {
         subscription = null
         handler.removeCallbacks(watchdog)
     }
-    @JvmStatic fun publish(sourceId: Long, original: Location) {
+    @JvmStatic fun publish(sourceId: Long, consumerId: Long, original: Location) {
         main()
         if (source != sourceId) return
         val s = subscription ?: return
         if (!live(s)) return
-        if (original.elapsedRealtimeNanos / 1_000_000L < sourceStartedAt) return
+        val ticket = GpsCallbackTicket(s.sourceId, s.id, maxOf(sourceStartedAt, s.startedAt))
+        if (!ticket.accepts(sourceId, consumerId, original.elapsedRealtimeNanos / 1_000_000L)) return
         val fix = Location(original)
         @Suppress("DEPRECATION")
         val mock = if (Build.VERSION.SDK_INT >= 31) fix.isMock else fix.isFromMockProvider
