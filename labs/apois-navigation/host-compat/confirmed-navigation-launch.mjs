@@ -8,9 +8,9 @@ const statusFor = {PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
 const uuid = v => typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export class ConfirmedNavigationLaunch {
   #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null; #closing=null;
-  constructor({enabled=false,verify,openNative,closeNative,prepareAudio,cancelNativePreparation}) {
+  constructor({enabled=false,verify,openNative,closeNative,prepareAudio,cancelNativePreparation,canOpenNative}) {
     this.#enabled=enabled===true;
-    this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;this.prepareAudio=prepareAudio;this.cancelNativePreparation=cancelNativePreparation;
+    this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;this.prepareAudio=prepareAudio;this.cancelNativePreparation=cancelNativePreparation;this.canOpenNative=canOpenNative;
   }
   // Session closure notifications originate only from the dedicated Capacitor
   // listener. Bind all fields, including revision. An unrelated replay event
@@ -72,7 +72,7 @@ export class ConfirmedNavigationLaunch {
       if(this.#native!==n)return "stale";
       const authority=new MotoristaAuthority();
       const same=p&&["authUserId","driverId","profileUserId"].every(k=>p.identity?.[k]===n.identity[k]);
-      if(!same||p.row?.id!==n.rideId||p.row.status!==statusFor[n.phase]||
+      if(!same||p.row?.id!==n.rideId||p.row.status!==statusFor[n.phase]||p.row.category!=="carros"||
         !authority.bind(p.identity)||!authority.accept(p.row,{epoch:authority.epoch,
           authUserId:n.identity.authUserId,driverId:n.identity.driverId,revision:0})){
         await this.invalidate();
@@ -102,7 +102,9 @@ export class ConfirmedNavigationLaunch {
     if(pending?.opening&&pending.request&&this.cancelNativePreparation){
       // Best-effort cancellation is NOT confirmation of no Activity. The
       // original open acknowledgement still controls cleanup/fallback.
-      try {void Promise.resolve(this.cancelNativePreparation(pending.request)).catch(()=>{});}catch{}
+      if(!pending.cancel){
+        try {pending.cancel=Promise.resolve(this.cancelNativePreparation(pending.request)).catch(()=>false);}catch{}
+      }
     }
     if(native) {
       this.#blocked=true;
@@ -119,7 +121,7 @@ export class ConfirmedNavigationLaunch {
     if(!uuid(rideId)||!Object.hasOwn(statusFor,phase))return "unverified";
     if(this.#busy||this.#native)return "busy";
     if(this.#blocked)return "uncertain";
-    const ticket={epoch:this.#epoch,rideId,opening:false,closed:new Set()};
+    const ticket={epoch:this.#epoch,rideId,opening:false,closed:new Set(),cancel:null};
     this.#busy=ticket;
     const current=()=>this.#busy===ticket&&this.#epoch===ticket.epoch;
     let nativeUncertain=false;
@@ -133,6 +135,29 @@ export class ConfirmedNavigationLaunch {
         epoch:authority.epoch,authUserId:proof.identity.authUserId,
         driverId:proof.identity.driverId,revision:0
       })||authority.snapshot?.phase!==phase)return "unverified";
+      // The existing external route remains available for all categories.
+      // Only a verified passenger-car ride may use the auto-costing resolver.
+      if(proof.row.category!=="carros"){
+        await openExternal();
+        return current()?"external":"stale";
+      }
+      // No TTS handoff or extra native opening when the native host is not
+      // configured. A capability error is safe here: no opening was attempted.
+      if(this.canOpenNative){
+        let available=false;
+        try{available=await this.canOpenNative()===true;}catch{}
+        if(!current())return "stale";
+        if(!available){
+          const again=await this.verify({rideId,phase});
+          if(!current())return "stale";
+          if(!again||again.row?.id!==rideId||again.row.status!==statusFor[phase]||
+             ["authUserId","driverId","profileUserId"].some(k=>again.identity?.[k]!==proof.identity[k])||
+             !authority.accept(again.row,{epoch:authority.epoch,authUserId:proof.identity.authUserId,
+               driverId:proof.identity.driverId,revision:1}))return "unverified";
+          await openExternal();
+          return current()?"external":"stale";
+        }
+      }
       // Pass only a host-approved immutable reference. PIN, pricing, Google
       // geocoding/polyline, account IDs and tokens are never bridge arguments.
       // A future adapter must independently prove target provenance before routing.
@@ -198,6 +223,9 @@ export class ConfirmedNavigationLaunch {
       // A possibly-open Activity retains the audio suppression. Do not silently
       // resume Web Speech on native timeout/rejection or ambiguous closure.
       if(!nativeUncertain)releaseAudio?.();
+      // Do not dispatch a later identical three-field request until the
+      // cancellation of the old one has settled; no stale cancel may target it.
+      if(ticket.cancel)await ticket.cancel;
       if(this.#busy===ticket)this.#busy=null;
     }
   }

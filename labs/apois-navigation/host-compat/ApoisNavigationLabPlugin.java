@@ -16,6 +16,14 @@ public class ApoisNavigationLabPlugin extends Plugin {
     // Without a trusted prepared live session and a dedicated event listener,
     // this method cannot start an Activity, GPS subscription, TTS or route request.
     @PluginMethod
+    public void confirmedAvailability(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            if(call.getData()==null||call.getData().length()!=0){call.reject("Invalid capability request");return;}
+            call.resolve(new JSObject().put("configured",NativeConfirmedHost.INSTANCE.configured()));
+        });
+    }
+
+    @PluginMethod
     public void openConfirmed(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             try {

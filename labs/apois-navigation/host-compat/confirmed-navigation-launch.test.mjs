@@ -4,7 +4,7 @@ import {ConfirmedNavigationLaunch} from "./confirmed-navigation-launch.mjs";
 const rideId="00000000-0000-4000-8000-000000000001";
 const driverId="00000000-0000-4000-8000-000000000002";
 const identity={authUserId:"00000000-0000-4000-8000-000000000003",profileUserId:"00000000-0000-4000-8000-000000000004",driverId};
-const proof=(status="motorista_a_caminho",owner=driverId)=>({identity:{...identity},row:{id:rideId,status,driver_id:owner,accepted_driver_id:owner}});
+const proof=(status="motorista_a_caminho",owner=driverId)=>({identity:{...identity},row:{id:rideId,status,driver_id:owner,accepted_driver_id:owner,category:"carros"}});
 const request=(openExternal=async()=>{},phase="PICKUP")=>({rideId,phase,openExternal});
 const deferred=()=>{let resolve,reject;const promise=new Promise((r,j)=>{resolve=r;reject=j;});return {promise,resolve,reject};};
 test("disabled preserves original external call and does not query or touch native",async()=>{
@@ -239,4 +239,44 @@ test("late opened revoked attempt recovers only from matching destruction",async
   assert.equal(await x.launch(request()),"uncertain");assert.equal(releases,0);
   assert.equal(x.onNativeClosed({sessionId:"late",rideId,revision:0,action:"SESSION_CLOSED"}),true);
   assert.equal(releases,1);
+});
+
+test("unsupported categories retain original external callback without voice handoff",async()=>{
+  for(const category of ["motos","fretes","guincho","envios",null,"CARROS"]){
+    let external=0;const p=proof();p.row.category=category;
+    const never=()=>{throw Error("must not open experimental navigation");};
+    const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>p,prepareAudio:never,canOpenNative:never,openNative:never});
+    assert.equal(await x.launch(request(async()=>{external++;})),"external");assert.equal(external,1);
+  }
+});
+test("unconfigured native host bypasses voice handoff and verifies before original external launch",async()=>{
+  let external=0,reads=0;const never=()=>{throw Error("must not open");};
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>{reads++;return proof();},canOpenNative:async()=>false,
+    prepareAudio:never,openNative:never});
+  assert.equal(await x.launch(request(async()=>{external++;})),"external");
+  assert.equal(reads,2);assert.equal(external,1);
+});
+test("changed category during active session revokes authority",async()=>{
+  let reads=0,closed=0;
+  const p=proof();p.row.category="motos";
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>++reads===1?proof():p,
+    openNative:async()=>({state:"opened",sessionId:"s"}),closeNative:async()=>{closed++;return true;}});
+  await x.launch(request());assert.equal(await x.recheck(),"revoked");assert.equal(closed,1);
+});
+test("cancel acknowledgement must settle before another identical request",async()=>{
+  const d=deferred(),entered=deferred(),cancel=deferred();let opens=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),
+    openNative:async()=>{opens++;entered.resolve();return d.promise;},cancelNativePreparation:()=>cancel.promise});
+  const old=x.launch(request());await entered.promise;await x.invalidate();
+  d.resolve({state:"unavailable"});
+  await Promise.resolve();await Promise.resolve();
+  assert.equal(await x.launch(request()),"busy");assert.equal(opens,1);
+  cancel.resolve(true);assert.equal(await old,"stale");
+});
+test("capability check never enables after logout or identity change",async()=>{
+  const d=deferred(),entered=deferred();let external=0;
+  const never=()=>{throw Error("must not open");};
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),canOpenNative:()=>{entered.resolve();return d.promise;},openNative:never});
+  const p=x.launch(request(async()=>{external++;}));await entered.promise;await x.invalidate();d.resolve(false);
+  assert.equal(await p,"stale");assert.equal(external,0);
 });

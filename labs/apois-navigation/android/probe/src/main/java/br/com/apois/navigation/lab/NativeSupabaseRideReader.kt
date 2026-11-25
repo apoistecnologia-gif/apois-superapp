@@ -40,7 +40,7 @@ internal class NativeSupabaseRideReader(private val approvedHost:String){
                 Endpoint.PROFILE->"/rest/v1/rpc/driver_get_profile"
                 Endpoint.RIDE->{
                     require(rideId!=null&&nativeRideUuid.matches(rideId))
-                    "/rest/v1/rides?select=id,status,driver_id,accepted_driver_id,intermediates&id=eq."+rideId+"&limit=2"
+                    "/rest/v1/rides?select=id,status,driver_id,accepted_driver_id,intermediates,category&id=eq."+rideId+"&limit=2"
                 }
             }
             require(session.access.length in 1..16384&&session.key.length in 1..16384)
@@ -91,7 +91,7 @@ internal class NativeSupabaseRideReader(private val approvedHost:String){
             for(key in listOf("driver_id","accepted_driver_id"))
                 if(!row.has(key)||!row.isNull(key)&&row.opt(key) !is String)return null
             return NativeRideRow(row.stringOrNull("id")?:return null,row.stringOrNull("status")?:return null,
-                row.stringOrNull("driver_id"),row.stringOrNull("accepted_driver_id"),row.optJSONArray("intermediates")?.length())
+                row.stringOrNull("driver_id"),row.stringOrNull("accepted_driver_id"),row.optJSONArray("intermediates")?.length(),row.stringOrNull("category"))
         }
     }
 }

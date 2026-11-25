@@ -19,7 +19,7 @@ internal fun routeEvidenceFromRead(
     read:NativeVerifiedRide,target:ApprovedIndependentTarget,now:Long
 ):VerifiedRouteEvidence?{
     if(!target.usable()||read.identity!=target.identity||read.rideId!=target.rideId||
-        read.phase!=target.phase||read.intermediateStops!=0)return null
+        read.phase!=target.phase||read.intermediateStops!=0||read.category!="carros")return null
     // Navigation-only generic label, no passenger profile or Google content.
     val label=if(read.phase==RidePhase.PICKUP)"Embarque" else "Destino"
     val ride=RideSnapshot(read.rideId,read.phase,0,label,null,null)

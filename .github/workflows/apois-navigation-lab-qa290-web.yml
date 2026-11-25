@@ -2,7 +2,7 @@ name: APOIS Navegacao - QA290 WebView isolado (sem APK)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/host-compat/*qa290-web*', '.github/workflows/apois-navigation-lab-qa290-web.yml']
+    paths: ['labs/apois-navigation/host-compat/*qa290-web*', 'labs/apois-navigation/host-compat/confirmed-navigation-launch*.mjs', 'labs/apois-navigation/host-compat/instrument-*voice.mjs', 'labs/apois-navigation/host-compat/instrument-shared-audio.mjs', '.github/workflows/apois-navigation-lab-qa290-web.yml']
   workflow_dispatch:
 permissions:
   contents: read

@@ -7,7 +7,7 @@ import org.junit.Test
 class NativeRideVerificationTest{
     private val identity=RoutingIdentity("00000000-0000-4000-8000-000000000001","00000000-0000-4000-8000-000000000002","00000000-0000-4000-8000-000000000003")
     private val id="00000000-0000-4000-8000-000000000004"
-    private val row=NativeRideRow(id,"motorista_a_caminho",identity.driverId,identity.driverId,0)
+    private val row=NativeRideRow(id,"motorista_a_caminho",identity.driverId,identity.driverId,0,"carros")
     private class Reads(var auth:String?,var driver:NativeDriverProfile?,var row:NativeRideRow?):NativeRideReads{
         var calls=0
         var afterUser:(()->String?)?=null
@@ -20,7 +20,7 @@ class NativeRideVerificationTest{
     @Test fun authenticatedIdentityAndCurrentAssignment()=runBlocking{
         val r=reads()
         val proof=verifyNativeRide(r,id,RidePhase.PICKUP,identity,{true},{1000L})
-        assertEquals(NativeVerifiedRide(identity,id,RidePhase.PICKUP,0,1000),proof)
+        assertEquals(NativeVerifiedRide(identity,id,RidePhase.PICKUP,0,1000,"carros"),proof)
         assertEquals(4,r.calls)
     }
     @Test fun rejectWrongAccountOrMissingProfile()=runBlocking{
@@ -33,6 +33,12 @@ class NativeRideVerificationTest{
             row.copy(driverId=identity.authUserId),row.copy(status="motorista_chegou"),
             row.copy(intermediateStops=null),row.copy(intermediateStops=1),row.copy(id=identity.driverId))){
             assertNull(verifyNativeRide(reads().apply{this.row=invalid},id,RidePhase.PICKUP,identity,{true},{1000L}))
+        }
+    }
+    @Test fun onlyCanonicalPassengerCarCategoryIsSupported()=runBlocking{
+        for(category in listOf(null,"motos","fretes","guincho","envios","car","CARROS","")){
+            val r=reads().apply{this.row=this@NativeRideVerificationTest.row.copy(category=category)}
+            assertNull(verifyNativeRide(r,id,RidePhase.PICKUP,identity,{true},{1000L}))
         }
     }
     @Test fun cancellationOrAccountChangeDuringRead()=runBlocking{

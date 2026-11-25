@@ -5,11 +5,11 @@ package br.com.apois.navigation.lab
 internal data class NativeDriverProfile(val driverId:String,val profileUserId:String)
 internal data class NativeRideRow(
     val id:String,val status:String,val driverId:String?,val acceptedDriverId:String?,
-    val intermediateStops:Int?
+    val intermediateStops:Int?,val category:String?
 )
 internal data class NativeVerifiedRide(
     val identity:RoutingIdentity,val rideId:String,val phase:RidePhase,
-    val intermediateStops:Int,val verifiedAt:Long
+    val intermediateStops:Int,val verifiedAt:Long,val category:String
 )
 internal interface NativeRideReads{
     suspend fun userId():String?
@@ -42,7 +42,9 @@ internal suspend fun verifyNativeRide(
     val owner=row.acceptedDriverId?:row.driverId
     if(owner!=profile.driverId||row.driverId!=null&&row.driverId!=owner)return null
     val status=when(phase){RidePhase.PICKUP->"motorista_a_caminho";RidePhase.TRIP->"em_viagem";else->return null}
-    if(row.status!=status||row.intermediateStops!=0)return null
+    // Current Valhalla resolver uses auto. Never route motorcycles, freight,
+    // tow trucks or deliveries as passenger cars without a validated profile.
+    if(row.status!=status||row.intermediateStops!=0||row.category!="carros")return null
     if(reads.userId()!=auth||!live())return null
-    return NativeVerifiedRide(identity,rideId,phase,0,clock())
+    return NativeVerifiedRide(identity,rideId,phase,0,clock(),row.category)
 }

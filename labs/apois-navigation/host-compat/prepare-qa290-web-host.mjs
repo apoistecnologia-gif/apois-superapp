@@ -17,7 +17,7 @@ writeFileSync(join(lib,"confirmed-navigation-launch.d.mts"),`
 export type ConfirmedPhase = "PICKUP" | "TRIP";
 export type ConfirmedLaunchProof = {
   identity:{authUserId:string;driverId:string;profileUserId:string};
-  row:{id:string;status:string;driver_id:string|null;accepted_driver_id:string|null};
+  row:{id:string;status:string;driver_id:string|null;accepted_driver_id:string|null;category:string};
 };
 type Request={rideId:string;phase:ConfirmedPhase};
 type OpenResult={state:"opened";sessionId:string}|{state:"unavailable"};
@@ -25,7 +25,7 @@ export class ConfirmedNavigationLaunch {
   constructor(options:{enabled?:boolean;verify:(r:Request)=>Promise<ConfirmedLaunchProof|null>;
     openNative:(r:Request & {revision:number},current:()=>boolean)=>Promise<OpenResult>;
     cancelNativePreparation?:(r:Request & {revision:number})=>Promise<boolean>;
-    closeNative:(sessionId:string)=>Promise<boolean>;prepareAudio?:()=>Promise<(()=>void)|null>});
+    closeNative:(sessionId:string)=>Promise<boolean>;prepareAudio?:()=>Promise<(()=>void)|null>;canOpenNative?:()=>Promise<boolean>});
   invalidate():Promise<boolean>;
   onNativeClosed(event:unknown):boolean;
   recheck():Promise<string>;
@@ -54,7 +54,7 @@ async function verify({rideId}: {rideId:string;phase:ConfirmedPhase}):Promise<Co
   const record=profile.data as Record<string,unknown>;
   if(typeof record.id!=="string"||typeof record.user_id!=="string")return null;
   const result=await supabase.from("rides")
-    .select("id,status,driver_id,accepted_driver_id").eq("id",rideId).maybeSingle();
+    .select("id,status,driver_id,accepted_driver_id,category").eq("id",rideId).maybeSingle();
   if(result.error||!result.data)return null;
   const after=await supabase.auth.getUser();
   if(after.error||after.data.user?.id!==authId)return null;
@@ -64,6 +64,7 @@ async function verify({rideId}: {rideId:string;phase:ConfirmedPhase}):Promise<Co
 
 type ConfirmedRequest={rideId:string;phase:ConfirmedPhase;revision:number};
 type ConfirmedNativePlugin={
+  confirmedAvailability():Promise<{configured:boolean}>;
   openConfirmed(request:ConfirmedRequest):Promise<{state:"opened";sessionId:string}|{state:"unavailable"}>;
   closeConfirmed(request:{sessionId:string}):Promise<{closed:boolean}>;
   cancelConfirmedPreparation(request:ConfirmedRequest):Promise<{cancelled:boolean}>;
@@ -97,6 +98,8 @@ async function boundedVerify(request:{rideId:string;phase:ConfirmedPhase}):Promi
 const launch=new ConfirmedNavigationLaunch({
   enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify:boundedVerify,
   prepareAudio:beginConfirmedVoiceHandoff,
+  canOpenNative:async()=>Capacitor.isNativePlatform()&&Capacitor.getPlatform()==="android"&&
+    Capacitor.isPluginAvailable(nativeName)&&(await native.confirmedAvailability()).configured===true,
   openNative:async (request,current)=>{
     if(!Capacitor.isNativePlatform()||Capacitor.getPlatform()!=="android"||
        !Capacitor.isPluginAvailable(nativeName))return {state:"unavailable"};

@@ -34,6 +34,8 @@ object NativeConfirmedHost{
         configuration=config
         return true
     }
+    // Read-only capability check. It never configures the host or starts GPS.
+    fun configured():Boolean{main();return configuration!=null}
     private fun request(id:String,phase:String,revision:Long):ConfirmedHostRequest?{
         val leg=when(phase){"PICKUP"->RidePhase.PICKUP;"TRIP"->RidePhase.TRIP;else->return null}
         return ConfirmedHostRequest(id,leg,revision).takeIf{it.valid()}
