@@ -18,11 +18,11 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
     override fun onCreate(savedInstanceState:Bundle?){
         super.onCreate(savedInstanceState)
         val id=intent.getStringExtra("confirmedSession")
+        sessionId=id
         val initial=ConfirmedLiveNavigationBridge.screen.value
         if(id==null||initial?.id!=id||!ConfirmedLiveNavigationBridge.accepts(id,initial.token)){
             finish();return
         }
-        sessionId=id
         setContent{
             val state by ConfirmedLiveNavigationBridge.screen.collectAsState()
             LaunchedEffect(state?.id){if(state?.id!=id)finish()}
@@ -42,7 +42,7 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
             state?.takeIf{it.id==id}?.let{s->
                 Column(Modifier.fillMaxSize().statusBarsPadding()){
                     BundledLiveNavigationSurface(
-                        route=s.owner.route,token=s.token,ride=s.owner.ride,
+                        route=s.owner.route,token=s.token,ride=s.ride,
                         foreground=foreground,stillCurrent={ConfirmedLiveNavigationBridge.accepts(id,it)},
                         onIntent={ConfirmedLiveNavigationBridge.submit(id,it)},
                         modifier=Modifier.weight(1f),acquireVoice=s.owner.acquireVoice,
@@ -57,5 +57,6 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
     override fun onDestroy(){
         if(!isChangingConfigurations)sessionId?.let{ConfirmedLiveNavigationBridge.close(it)}
         super.onDestroy()
+        if(!isChangingConfigurations)sessionId?.let{ConfirmedLiveNavigationBridge.activityDestroyed(it)}
     }
 }

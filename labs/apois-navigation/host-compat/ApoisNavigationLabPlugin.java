@@ -12,8 +12,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name="ApoisNavigationLab")
 public class ApoisNavigationLabPlugin extends Plugin {
     // Confirmed ride transport is intentionally separate from synthetic replay.
-    // Until the live route/provenance/authority owner is installed, this method
-    // guarantees no Activity, GPS subscription, TTS, or request was created.
+    // Without a trusted prepared live session and a dedicated event listener,
+    // this method cannot start an Activity, GPS subscription, TTS or route request.
     @PluginMethod
     public void openConfirmed(PluginCall call) {
         getActivity().runOnUiThread(() -> {
@@ -46,7 +46,9 @@ public class ApoisNavigationLabPlugin extends Plugin {
     public void closeConfirmed(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             String id=call.getString("sessionId");
-            call.resolve(new JSObject().put("closed",id!=null&&ConfirmedLiveNavigationBridge.INSTANCE.close(id)));
+            if(id==null){call.resolve(new JSObject().put("closed",false));return;}
+            ConfirmedLiveNavigationBridge.INSTANCE.closeAcknowledged(id,closed ->
+                call.resolve(new JSObject().put("closed",closed)));
         });
     }
 

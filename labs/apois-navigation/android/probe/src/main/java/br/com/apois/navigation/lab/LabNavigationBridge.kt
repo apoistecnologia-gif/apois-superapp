@@ -26,7 +26,7 @@ object LabNavigationBridge {
             if(data.isNull("error"))null else data.optString("error","").take(160).ifBlank{null})
     }
     fun open(activity:Activity,data:JSONObject,events:java.util.function.Consumer<JSONObject>):String {
-        main();check(screen.value==null){"lab session already active"}
+        main();check(screen.value==null&&!ConfirmedLiveNavigationBridge.occupied()){"lab session already active"}
         val ride=parse(data)
         require(ride.phase in setOf(RidePhase.PICKUP,RidePhase.WAITING_PIN,RidePhase.TRIP))
         val id=UUID.randomUUID().toString()

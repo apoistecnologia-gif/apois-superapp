@@ -3,6 +3,7 @@ package br.com.apois.navigation.lab
 import android.app.Activity
 import android.content.Intent
 import android.os.Looper
+import android.os.Handler
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.json.JSONObject
 import uniffi.ferrostar.Route
@@ -18,18 +19,26 @@ import java.util.function.Consumer
  */
 object ConfirmedLiveNavigationBridge {
     internal class Prepared(
-        val ride:RideSnapshot, val route:Route, val target:RegionalPoint,
+        val route:Route, val target:RegionalPoint,
         val resolver:LiveRouteResolver, val verifiedCurrent:()->Boolean,
         val online:()->Boolean, val acquireVoice:(()->NavigationVoicePermit?)?,
         val controller:NavigationSessionController
-    )
+    ) {
+        val ride:RideSnapshot get()=controller.snapshot
+        var pending=false
+    }
     internal data class Screen(
         val id:String, val owner:Prepared, val token:LegToken,
-        val resources:LegRouteResources<Route>
+        val resources:LegRouteResources<Route>,val ride:RideSnapshot
     )
     internal val screen=MutableStateFlow<Screen?>(null)
     private var prepared:Prepared?=null
     private var callback:Consumer<JSONObject>?=null
+    private var closing:Screen?=null
+    private var closingCallback:Consumer<JSONObject>?=null
+    private var waiter:Consumer<Boolean>?=null
+    private val handler=Handler(Looper.getMainLooper())
+    internal fun occupied():Boolean=screen.value!=null||closing!=null
     private val rideIdPattern=Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
     private fun current(p:Prepared)=prepared===p && runCatching{p.verifiedCurrent()}.getOrDefault(false)
@@ -43,11 +52,12 @@ object ConfirmedLiveNavigationBridge {
         online:()->Boolean={false},acquireVoice:(()->NavigationVoicePermit?)?=null
     ):Boolean{
         main()
-        if(prepared!=null||screen.value!=null||!rideIdPattern.matches(ride.rideId)||
+        if(prepared!=null||occupied()||!rideIdPattern.matches(ride.rideId)||
+            acquireVoice!=null|| // until the explicit native audio stop ACK is wired
             ride.phase !in setOf(RidePhase.PICKUP,RidePhase.TRIP)||ride.busy||
             !runCatching{verifiedCurrent()}.getOrDefault(false)||
             !routeEndpointsMatch(route.geometry.map{RegionalPoint(it.lat,it.lng)},origin,target))return false
-        prepared=Prepared(ride,route,target,resolver,verifiedCurrent,online,acquireVoice,NavigationSessionController(ride))
+        prepared=Prepared(route,target,resolver,verifiedCurrent,online,acquireVoice,NavigationSessionController(ride))
         return true
     }
 
@@ -55,17 +65,17 @@ object ConfirmedLiveNavigationBridge {
     // No native Activity can start from a bare UUID or a fabricated phase.
     fun openPrepared(activity:Activity,rideId:String,phase:String,revision:Long,events:Consumer<JSONObject>):String?{
         main()
-        check(screen.value==null){"Confirmed navigation already open"}
+        check(!occupied()&&LabNavigationBridge.screen.value==null){"Navigation already open or closing"}
         val p=prepared?:return null
         if(!current(p)){revoke();return null}
-        if(p.ride.rideId!=rideId||p.ride.phase.name!=phase||p.ride.revision!=revision)return null
+        if(p.pending||p.ride.rideId!=rideId||p.ride.phase.name!=phase||p.ride.revision!=revision)return null
         p.controller.enable()
         val token=p.controller.token?:return null
         val resources=p.controller.routingFor(token,p.target,p.resolver)
         if(resources==null){p.controller.disable();return null}
         val id=UUID.randomUUID().toString()
         callback=events
-        screen.value=Screen(id,p,token,resources)
+        screen.value=Screen(id,p,token,resources,p.ride)
         try{
             activity.startActivity(Intent(activity,ConfirmedLiveNavigationActivity::class.java).putExtra("confirmedSession",id))
         }catch(e:Exception){
@@ -85,6 +95,7 @@ object ConfirmedLiveNavigationBridge {
         main()
         val s=screen.value?:return
         if(s.id!=id||!accepts(id,s.token)||s.owner.controller.submit(intent).isEmpty())return
+        s.owner.pending=true
         // UI intents only. The original host must revalidate and use its own
         // PIN/finish/rating UI; no RPC or arrival authority lives here.
         val event=JSONObject().put("sessionId",id).put("rideId",intent.rideId)
@@ -93,21 +104,67 @@ object ConfirmedLiveNavigationBridge {
         runCatching{callback?.accept(event)}
     }
 
-    // Closing UI does not reset the leg budget. The prepared owner remains
-    // only until the trusted host revokes it; a new preparation cannot replace
-    // it silently. Clear pending intents before re-entry via explicit host revoke.
+    // Only the trusted host may acknowledge an intent with a newer verified
+    // same-leg row. Changed phase revokes rather than reusing the old route.
+    internal fun refreshPrepared(ride:RideSnapshot):Boolean{
+        main()
+        val p=prepared?:return false
+        if(!current(p)){revoke();return false}
+        if(ride.rideId!=p.ride.rideId||ride.revision<=p.ride.revision)return false
+        if(ride.phase!=p.ride.phase){revoke();return false}
+        p.controller.update(ride)
+        if(p.controller.snapshot!==ride)return false
+        p.pending=false
+        screen.value?.takeIf{it.owner===p}?.let{
+            // New Screen identity ensures Compose sees the refreshed snapshot.
+            screen.value=it.copy(ride=ride)
+        }
+        return true
+    }
+
+    // Immediately revoke navigation token and detach the surface, but do not
+    // acknowledge closure until the actual Activity destruction callback.
+    // Closing UI retains the leg budget and pending intent until refresh.
     fun close(id:String):Boolean{
         main()
+        if(closing?.id==id)return true
         val s=screen.value?:return false
         if(s.id!=id)return false
-        val notify=callback
+        closing=s
+        closingCallback=callback
         callback=null
         s.owner.controller.disable()
         screen.value=null
-        val event=JSONObject().put("sessionId",id).put("rideId",s.owner.ride.rideId)
-            .put("revision",s.owner.ride.revision).put("action","SESSION_CLOSED")
-        runCatching{notify?.accept(event)}
         return true
+    }
+
+    fun closeAcknowledged(id:String,completion:Consumer<Boolean>){
+        main()
+        if(waiter!=null||!close(id)){completion.accept(false);return}
+        waiter=completion
+        handler.postDelayed({
+            if(waiter===completion&&closing?.id==id){
+                waiter=null
+                completion.accept(false)
+                // Keep closing occupied until actual destruction; no new UI.
+            }
+        },5_000)
+    }
+
+    internal fun activityDestroyed(id:String){
+        main()
+        if(screen.value?.id==id)close(id)
+        val s=closing?:return
+        if(s.id!=id)return
+        val notify=closingCallback
+        val done=waiter
+        closing=null
+        closingCallback=null
+        waiter=null
+        val event=JSONObject().put("sessionId",id).put("rideId",s.ride.rideId)
+            .put("revision",s.ride.revision).put("action","SESSION_CLOSED")
+        runCatching{notify?.accept(event)}
+        runCatching{done?.accept(true)}
     }
 
     // Host logout/ownership/phase loss must destroy the prepared leg and
