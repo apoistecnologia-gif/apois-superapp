@@ -58,6 +58,13 @@ jobs:
           node "$GITHUB_WORKSPACE/labs/apois-navigation/host-compat/prepare-host.mjs" "$H" "$GITHUB_WORKSPACE/labs/apois-navigation"
       - name: Instrumentar copia descartavel do GPS QA290
         run: node labs/apois-navigation/host-compat/prepare-driver-gps.mjs "$RUNNER_TEMP/apois-compat-host" "$GITHUB_WORKSPACE/.navigation-driver-source" "$GITHUB_WORKSPACE"
+      - name: Testar e instrumentar voz real em copia descartavel
+        run: |
+          set -euo pipefail
+          V="$GITHUB_WORKSPACE/labs/apois-navigation/host-compat"
+          javac -d "$RUNNER_TEMP/voice-tests" "$V/VoiceGeneration.java" "$V/VoiceGenerationTest.java"
+          java -cp "$RUNNER_TEMP/voice-tests" br.com.apois.navigation.compat.lab.VoiceGenerationTest
+          node "$V/prepare-driver-voice.mjs" "$RUNNER_TEMP/apois-compat-host" "$GITHUB_WORKSPACE/.navigation-driver-source" "$GITHUB_WORKSPACE"
       - name: Compilar no Gradle original, checar manifesto e dependencias
         run: |
           set -euo pipefail
