@@ -39,11 +39,13 @@ jobs:
           run_sql < "$root/service-rpc-v21.sql"
           run_sql < "$root/recovery-v21.sql"
           run_sql < "$root/confirmation-v21.sql"
+          run_sql < "$root/catalog-v21.sql"
           run_sql < "$root/test-v21.sql"
           node "$root/request-ride-v21.integration.mjs"
           node --test "$root/v21-edge-adapter.test.mjs"
           node "$root/recovery-v21.integration.mjs"
           run_sql < "$root/test-confirmation-v21.sql"
+          run_sql < "$root/test-catalog-v21.sql"
           node --test "$root/navigation-control-v21.test.mjs"
           node "$root/verified-host-v21.integration.mjs"
           node --test labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/durable-ride-host.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/verified-host-transport.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/pilot-runtime.test.mjs

@@ -8,6 +8,7 @@ const origins=new Set((Deno.env.get("APOIS_NAVIGATION_ALLOWED_ORIGINS")??"").spl
 const pilots=new Set((Deno.env.get("APOIS_NAVIGATION_PILOT_AUTH_IDS")??"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean));
 const confirmationEnabled=Deno.env.get("APOIS_NAVIGATION_EXPERIMENTAL_ENABLED")==="true";
 const recoveryEnabled=Deno.env.get("APOIS_NAVIGATION_RECOVERY_ENABLED")==="true";
+const catalogPolicy={version:Number(Deno.env.get("APOIS_NAVIGATION_CATALOG_VERSION")??"0"),extractHash:Deno.env.get("APOIS_NAVIGATION_CATALOG_EXTRACT_SHA256")??""};
 const url=Deno.env.get("SUPABASE_URL")??"",anon=Deno.env.get("SUPABASE_ANON_KEY")??"",service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 
 Deno.serve(async req=>{
@@ -40,7 +41,7 @@ Deno.serve(async req=>{
   const token=authorization.slice(7);
   const client=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
   const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
-  const handler=createNavigationControl({confirmationEnabled,recoveryEnabled,
+  const handler=createNavigationControl({confirmationEnabled,recoveryEnabled,catalogPolicy,
    verifySession:async()=>{const {data,error}=await client.auth.getUser(token);return error?null:data.user?.id??null},
    allowPilot:(id:string)=>pilots.has(id.toLowerCase()),
    rpc:async(name:string,args:Record<string,unknown>)=>{const {data,error}=await admin.rpc(name,args);if(error)throw Error("navigation RPC failed");return data}

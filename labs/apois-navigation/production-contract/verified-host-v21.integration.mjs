@@ -11,16 +11,16 @@ const args=['exec','-i','apois-v21-fixture','psql','-X','-qAt','-U','postgres','
 const lit=v=>"'"+String(v).replaceAll("'","''")+"'"
 const sql=(statement,service=true)=>{const x=execFileSync('docker',args,{input:(service?'set role service_role;\n':'')+statement+';\n',encoding:'utf8',timeout:5000}).trim();return x?JSON.parse(x):null}
 sql("insert into public.users(id,auth_user_id) values("+lit(passenger)+","+lit(account)+")",false)
-const digest='a'.repeat(64),catalog={source:'OSM_PBF',version:1,extract_sha256:digest,rows:sql("select jsonb_agg(to_jsonb(c)) from apois_nav_lab.catalog c where id in ("+lit(id(21))+","+lit(id(22))+")")}
-assert.equal(catalog.rows.length,2)
+const digest='a'.repeat(64)
 const rpc=async(name,p)=>{
  assert.equal(p.p_auth_user,account)
  if(name==='apois_nav_lab_active_v21')return sql('select public.'+name+'('+lit(account)+')')
- if(name==='apois_nav_lab_confirm_v21')return sql('select public.'+name+'('+[account,p.p_request_key,p.p_pickup].map(lit).join(',')+','+p.p_pickup_version+','+lit(p.p_destination)+','+p.p_destination_version+')')
+ if(name==='apois_nav_lab_catalog_v21')return sql('select public.'+name+'('+lit(account)+','+p.p_version+','+lit(p.p_extract)+')')
+ if(name==='apois_nav_lab_confirm_catalog_v21')return sql('select public.'+name+'('+[account,p.p_request_key,p.p_pickup,p.p_destination].map(lit).join(',')+','+p.p_version+','+lit(p.p_extract)+')')
  if(name==='apois_nav_lab_reconcile_v21')return sql('select public.'+name+'('+[account,p.p_selection,p.p_request_key].map(lit).join(',')+','+p.p_seal+')')
  throw Error('unexpected RPC')
 }
-const control=createNavigationControl({confirmationEnabled:true,recoveryEnabled:true,verifySession:async token=>token==='synthetic-token'?account:null,allowPilot:u=>u===account,rpc})
+const control=createNavigationControl({confirmationEnabled:true,recoveryEnabled:true,catalogPolicy:{version:1,extractHash:digest},verifySession:async token=>token==='synthetic-token'?account:null,allowPilot:u=>u===account,rpc})
 let dispatch=0,createdRequests=0,lost=true
 const req=createExperimentalRequestHandler({enabled:true,authorize:async token=>token==='synthetic-token'?{allowed:true,authUserId:account,categoryId:id(90)}:null,
  readSelection:({authUserId,selectionId,requestKey})=>sql('select public.apois_nav_lab_read_selection_v21('+[authUserId,selectionId,requestKey].map(lit).join(',')+')'),
@@ -35,6 +35,9 @@ const invoke=async(name,{body,headers})=>{
  return result.status===200?{data:result.body}:{error:{context:new Response(JSON.stringify(result.body),{status:result.status})}}
 }
 const adapter=createVerifiedHostTransport({enabled:true,account,auth,invoke,controlFunction:'apois-navigation-control'})
+const catalogResult=await control('synthetic-token',{action:'apois_navigation_catalog'})
+assert.equal(catalogResult.status,200)
+const catalog=catalogResult.body.catalog;assert.equal(catalog.rows.length,2)
 const panel=createPassengerPanel({enabled:true,catalog,newKey:()=>key,confirm:adapter.confirm})
 assert.ok(panel.open());assert.ok(panel.selectSearch(catalog.rows.find(r=>r.id===id(21)).label,id(21)));assert.ok(panel.focus('destination'));assert.ok(panel.selectSearch(catalog.rows.find(r=>r.id===id(22)).label,id(22)))
 assert.ok(await panel.confirm())
