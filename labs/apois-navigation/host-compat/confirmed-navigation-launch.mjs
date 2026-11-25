@@ -8,9 +8,9 @@ const statusFor = {PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
 const uuid = v => typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export class ConfirmedNavigationLaunch {
   #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null;
-  constructor({enabled=false,verify,openNative,closeNative}) {
+  constructor({enabled=false,verify,openNative,closeNative,prepareAudio}) {
     this.#enabled=enabled===true;
-    this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;
+    this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;this.prepareAudio=prepareAudio;
   }
   // Session closure notifications originate only from the dedicated Capacitor
   // listener. Bind all fields, including revision. An unrelated replay event
@@ -21,6 +21,7 @@ export class ConfirmedNavigationLaunch {
     if(n&&event.sessionId===n.id&&event.rideId===n.rideId&&event.revision===n.revision){
       this.#native=null;
       ++this.#epoch;
+      n.releaseAudio?.();
       return true;
     }
     const t=this.#busy;
@@ -71,7 +72,7 @@ export class ConfirmedNavigationLaunch {
     if(native) {
       this.#blocked=true;
       try {
-        if(await this.closeNative(native.id)===true){this.#blocked=false;return true;}
+        if(await this.closeNative(native.id)===true){native.releaseAudio?.();this.#blocked=false;return true;}
       } catch {}
       return false;
     }
@@ -88,6 +89,7 @@ export class ConfirmedNavigationLaunch {
     this.#busy=ticket;
     const current=()=>this.#busy===ticket&&this.#epoch===ticket.epoch;
     let nativeUncertain=false;
+    let releaseAudio=null;
     try {
       const proof=await this.verify({rideId,phase});
       if(!current())return "stale";
@@ -101,6 +103,13 @@ export class ConfirmedNavigationLaunch {
       // geocoding/polyline, account IDs and tokens are never bridge arguments.
       // A future adapter must independently prove target provenance before routing.
       const request=Object.freeze({rideId,phase,revision:0});
+      // A failed stop cannot grant native guidance or allow a second audio path.
+      // The optional hook is installed only in the disposable generated host.
+      if(this.prepareAudio){
+        releaseAudio=await this.prepareAudio();
+        if(typeof releaseAudio!=="function"){releaseAudio=null;return "unverified";}
+        if(!current())return "stale";
+      }
       nativeUncertain=true;
       ticket.opening=true;
       const result=await this.openNative(request);
@@ -116,7 +125,8 @@ export class ConfirmedNavigationLaunch {
       if(result?.state==="opened"&&typeof result.sessionId==="string"&&result.sessionId.length>0){
         nativeUncertain=false;
         if(ticket.closed.has(result.sessionId))return "stale";
-        this.#native=Object.freeze({id:result.sessionId,rideId,phase,revision:0,identity:Object.freeze({...proof.identity})});
+        this.#native=Object.freeze({id:result.sessionId,rideId,phase,revision:0,identity:Object.freeze({...proof.identity}),releaseAudio});
+        releaseAudio=null; // native session owns the scope until confirmed closure
         return "internal";
       }
       // Only a definitive no-activity acknowledgement permits auto fallback.
@@ -124,6 +134,7 @@ export class ConfirmedNavigationLaunch {
       // keep original manual map controls available, do not open two activities.
       if(result?.state!=="unavailable"){this.#blocked=true;return "uncertain";}
       nativeUncertain=false;
+      releaseAudio?.();releaseAudio=null;
       // Reverify even after a definitive failure: account/ride may have changed
       // while the native attempt was running.
       const again=await this.verify({rideId,phase});
@@ -141,6 +152,11 @@ export class ConfirmedNavigationLaunch {
       if(nativeUncertain)this.#blocked=true;
       return current()?(nativeUncertain?"uncertain":"unverified"):"stale";
     }
-    finally{if(this.#busy===ticket)this.#busy=null;}
+    finally{
+      // A possibly-open Activity retains the audio suppression. Do not silently
+      // resume Web Speech on native timeout/rejection or ambiguous closure.
+      if(!nativeUncertain)releaseAudio?.();
+      if(this.#busy===ticket)this.#busy=null;
+    }
   }
 }

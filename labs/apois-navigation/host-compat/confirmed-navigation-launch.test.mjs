@@ -126,3 +126,47 @@ test("late recheck cannot revoke newer session",async()=>{
   await x.launch(request());const old=x.recheck();await x.invalidate();await x.launch(request());
   d.resolve(null);assert.equal(await old,"stale");assert.equal(closes,1);assert.equal(await x.launch(request()),"busy");
 });
+
+test("audio scope is not touched in default external mode",async()=>{
+  const x=new ConfirmedNavigationLaunch({prepareAudio:()=>{throw Error("must not stop");}});
+  assert.equal(await x.launch(request()),"external");
+});
+test("failed audio preparation never attempts native opening",async()=>{
+  let opens=0;const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:async()=>null,openNative:async()=>{opens++;}});
+  assert.equal(await x.launch(request()),"unverified");assert.equal(opens,0);
+});
+test("audio scope follows confirmed session closure, not unrelated events",async()=>{
+  let releases=0;const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:async()=>()=>{releases++;},
+    openNative:async()=>({state:"opened",sessionId:"audio"})});
+  assert.equal(await x.launch(request()),"internal");assert.equal(releases,0);
+  assert.equal(x.onNativeClosed({sessionId:"old",rideId,revision:0,action:"SESSION_CLOSED"}),false);
+  assert.equal(releases,0);
+  assert.equal(x.onNativeClosed({sessionId:"audio",rideId,revision:0,action:"SESSION_CLOSED"}),true);
+  assert.equal(releases,1);
+});
+test("definitive unavailable releases audio before original external callback",async()=>{
+  let released=false;const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),
+    prepareAudio:async()=>()=>{released=true;},openNative:async()=>({state:"unavailable"})});
+  assert.equal(await x.launch(request(async()=>assert.equal(released,true))),"external");
+});
+test("ambiguous native opening and failed close retain audio suppression",async()=>{
+  let releases=0;const prepareAudio=async()=>()=>{releases++;};
+  const a=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio,openNative:async()=>{throw Error("timeout");}});
+  assert.equal(await a.launch(request()),"uncertain");assert.equal(releases,0);
+  const b=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio,
+    openNative:async()=>({state:"opened",sessionId:"audio"}),closeNative:async()=>false});
+  assert.equal(await b.launch(request()),"internal");assert.equal(await b.invalidate(),false);assert.equal(releases,0);
+});
+test("revocation while preparing audio releases scope without opening native",async()=>{
+  const entered=deferred(),d=deferred();let releases=0,opens=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:()=>{entered.resolve();return d.promise;},openNative:async()=>{opens++;}});
+  const p=x.launch(request());await entered.promise;await x.invalidate();d.resolve(()=>{releases++;});
+  assert.equal(await p,"stale");assert.equal(releases,1);assert.equal(opens,0);
+});
+test("confirmed close acknowledgement releases audio once",async()=>{
+  let releases=0;const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:async()=>()=>{releases++;},
+    openNative:async()=>({state:"opened",sessionId:"audio"}),closeNative:async()=>true});
+  await x.launch(request());assert.equal(await x.invalidate(),true);
+  assert.equal(releases,1);assert.equal(x.onNativeClosed({sessionId:"audio",rideId,revision:0,action:"SESSION_CLOSED"}),false);
+  assert.equal(releases,1);
+});
