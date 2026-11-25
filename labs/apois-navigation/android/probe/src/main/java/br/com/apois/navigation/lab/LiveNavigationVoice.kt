@@ -12,6 +12,16 @@ internal interface NavigationVoicePermit {
     fun release()
 }
 
+internal class OnceNavigationVoicePermit(private val delegate: NavigationVoicePermit) : NavigationVoicePermit {
+    private var released = false
+    override fun isCurrent(): Boolean = !released && delegate.isCurrent()
+    override fun release() {
+        if (released) return
+        released = true
+        delegate.release()
+    }
+}
+
 internal data class LiveSpeechGate(
     val foreground: Boolean = false, val gpsAvailable: Boolean = false,
     val muted: Boolean = false, val closed: Boolean = false

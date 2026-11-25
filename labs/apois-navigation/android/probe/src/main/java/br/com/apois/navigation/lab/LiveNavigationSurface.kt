@@ -33,9 +33,10 @@ internal fun LiveNavigationSurface(
              (it.leg == Leg.TRIP && ride.phase == RidePhase.TRIP))
     }
     val quality by model.quality.collectAsState()
+    val routeNotice by model.routeNotice.collectAsState()
     DisposableEffect(model, route, validLeg) {
         if (route != null && validLeg != null && current(validLeg)) {
-            val lease = runCatching { acquireVoice?.invoke() }.getOrNull()
+            val lease = runCatching { acquireVoice?.invoke()?.let(::OnceNavigationVoicePermit) }.getOrNull()
             // Transfer ownership only when model.start succeeds; otherwise release.
             try { model.start(route, { current(validLeg) }, context, lease) }
             catch (_: Exception) {
@@ -50,5 +51,6 @@ internal fun LiveNavigationSurface(
         model.setForeground(foreground && validLeg != null && current(validLeg))
     }
     ApoisNavigationScreen(baseStyle, model, ride, onIntent, modifier,
-        gpsQuality = if (validLeg != null) quality else null)
+        gpsQuality = if (validLeg != null) quality else null,
+        routeNotice = if (validLeg != null) routeNotice else null)
 }

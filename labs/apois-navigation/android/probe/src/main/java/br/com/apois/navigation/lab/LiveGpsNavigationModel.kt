@@ -2,6 +2,7 @@ package br.com.apois.navigation.lab
 
 import android.os.Looper
 import android.content.Context
+import android.os.SystemClock
 import com.stadiamaps.ferrostar.core.NavigationState
 import com.stadiamaps.ferrostar.core.NavigationUiState
 import com.stadiamaps.ferrostar.core.NavigationViewModel
@@ -24,6 +25,9 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
     private var destination: String? = null
     private var voice: LiveNavigationVoice? = null
     private var foreground = false
+    private var rerouteGate: NativeRerouteGate? = null
+    private val _routeNotice = MutableStateFlow<String?>(null)
+    val routeNotice = _routeNotice.asStateFlow()
 
     private fun main() = check(Looper.myLooper() == Looper.getMainLooper())
 
@@ -50,6 +54,9 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         subscriber = null
         voice?.close()
         voice = null
+        rerouteGate?.close()
+        rerouteGate = null
+        _routeNotice.value = null
         _quality.value = GpsQuality.WAITING
         navigationUiState.value = NavigationUiState.empty().copy(isMuted = muted)
     }
@@ -59,6 +66,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         stopNavigation()
         if (!stillCurrent()) { permit?.let { runCatching { it.release() } }; _quality.value = GpsQuality.LOST; return }
         val active = generation
+        val budget = NativeRerouteGate()
+        rerouteGate = budget
         val config = NavigationControllerConfig(
             WaypointAdvanceMode.WaypointWithinRange(30.0),
             stepAdvanceDistanceToEndOfStep(15u, 25u),
@@ -69,30 +78,52 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         val navigator = createNavigator(route, config, false)
         // The first accepted physical fix initializes the Rust navigator.
         // No simulated location or last persisted location is used.
-        var nextFix: ((UserLocation) -> Unit)? = null
+        var nextFix: ((UserLocation, Long) -> Unit)? = null
         fun current() = generation == active && stillCurrent()
-        fun show(state: NavigationState) {
+        fun show(state: NavigationState, raw: UserLocation, captured: Long) {
             if (!current()) return
             val ui = NavigationUiState.fromFerrostar(state, muted).copy(destination = destination)
-            navigationUiState.value = ui
-            if (ui.tripState is TripState.Complete) voice?.setGpsAvailable(false)
-            else ui.spokenInstruction?.let { voice?.speak(it) }
+            val kind = (ui.routeDeviation as? RouteDeviation.Deviation)?.kind
+            val offRoute = kind is DeviationKind.CompletelyOffRoute
+            val offStep = kind is DeviationKind.OffStepOnRoute
+            val deviation = when (kind) {
+                is DeviationKind.CompletelyOffRoute -> kind.deviationFromRouteLine
+                is DeviationKind.OffStepOnRoute -> kind.deviationFromStepLine
+                else -> if (ui.routeDeviation != null) 0.0 else null
+            }
+            // The endpoint/provider is not wired yet. Evaluate the native policy
+            // in offline mode and do not spend a route request authorization.
+            val decision = budget.evaluate(SystemClock.elapsedRealtime(), captured,
+                raw.horizontalAccuracy, deviation, online = false)
+            val hold = offRoute || offStep || (decision is NativeRerouteGate.Decision.Hold &&
+                decision.reason == NativeRerouteGate.Reason.UNRELIABLE && ui.isNavigating())
+            _routeNotice.value = when {
+                offRoute -> "Fora da rota. Recálculo ainda indisponível no laboratório."
+                offStep -> "Conferindo o trajeto."
+                hold -> "Conferindo a precisão da rota."
+                else -> null
+            }
+            navigationUiState.value = if (hold) ui.copy(visualInstruction = null,
+                spokenInstruction = null, progress = null, currentStepRoadName = null) else ui
+            voice?.setGpsAvailable(!hold && ui.tripState !is TripState.Complete)
+            if (!hold && ui.tripState !is TripState.Complete)
+                ui.spokenInstruction?.let { voice?.speak(it) }
         }
         subscriber = DriverGpsFeed.subscribe(
             current = ::current,
-            onFix = { location ->
+            onFix = { location, captured ->
                 if (current()) {
                     val update = nextFix
                     if (update == null) {
                         var state = navigator.getInitialState(location)
-                        show(NavigationState(state.tripState, route.geometry, false))
-                        nextFix = { fix ->
+                        show(NavigationState(state.tripState, route.geometry, false), location, captured)
+                        nextFix = { fix, fixCaptured ->
                             if (current() && state.tripState !is TripState.Complete) {
                                 state = navigator.updateUserLocation(fix, state)
-                                show(NavigationState(state.tripState, route.geometry, false))
+                                show(NavigationState(state.tripState, route.geometry, false), fix, fixCaptured)
                             }
                         }
-                    } else update(location)
+                    } else update(location, captured)
                 }
             },
             onQuality = { status ->
@@ -100,6 +131,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                     _quality.value = status
                     voice?.setGpsAvailable(status == GpsQuality.AVAILABLE)
                     if (status != GpsQuality.AVAILABLE) {
+                        budget.invalidateFix()
+                        _routeNotice.value = null
                         // Keep geometry for context, but do not present stale
                         // instructions or synthesize speech on a lost fix.
                         navigationUiState.value = navigationUiState.value.copy(

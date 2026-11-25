@@ -22,7 +22,7 @@ object DriverGpsFeed {
     private var subscription: Subscription? = null
     private data class Subscription(
         val id: Long, val sourceId: Long, val startedAt: Long, val current: () -> Boolean,
-        val onFix: (UserLocation) -> Unit, val onQuality: (GpsQuality) -> Unit,
+        val onFix: (UserLocation, Long) -> Unit, val onQuality: (GpsQuality) -> Unit,
         val onRevoked: () -> Unit,
         val gate: GpsFixGate = GpsFixGate(),
         var quality: GpsQuality? = null
@@ -81,7 +81,7 @@ object DriverGpsFeed {
         return if (source == sourceId && live(s)) s.id else 0L
     }
     internal fun subscribe(
-        current: () -> Boolean, onFix: (UserLocation) -> Unit,
+        current: () -> Boolean, onFix: (UserLocation, Long) -> Unit,
         onQuality: (GpsQuality) -> Unit, onRevoked: () -> Unit
     ): Long? {
         main()
@@ -145,7 +145,7 @@ object DriverGpsFeed {
                 }
                 status(s, GpsQuality.AVAILABLE)
                 if (!live(s) || source != sourceId) return
-                if (runCatching { s.onFix(clean.toUserLocation()) }.isFailure) {
+                if (runCatching { s.onFix(clean.toUserLocation(), sample.elapsedMs) }.isFailure) {
                     revoke(s)
                 }
             }
