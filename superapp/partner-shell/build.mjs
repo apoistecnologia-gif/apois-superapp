@@ -111,7 +111,21 @@ forbidMarker(driverBundle, 'Solicitar saque', 'Motorista não leva CTA de saque 
 forbidMarker(driverBundle, 'Carteira e corridas', 'Motorista não leva nomenclatura custodial antiga ao APK');
 forbidMarker(driverBundle, 'Carteira — APOIS Motorista', 'Motorista não leva a rota da carteira custodial antiga');
 forbidMarker(driverBundle, 'Chat em breve', 'Motorista não exibe ação de chat sem implementação');
-forbidMarker(driverBundle, 'Abrir menu', 'Motorista não recompila menu lateral duplicado na tela principal');
+if (motoristaOnly) {
+  // QA290 legitimately exposes a menu button on inner screens. Inspect the
+  // actual generated Home, not a generic accessible label in the whole app.
+  const homeSource = readFileSync(resolve(root, '../../.work/partner-motorista/src/routes/motorista.app.tsx'), 'utf8');
+  const header = homeSource.slice(homeSource.indexOf('{/* APOIS_DRIVER_HOME_PREMIUM_V1'), homeSource.indexOf('<DriverSideMenu'));
+  if ((homeSource.match(/<DriverSideMenu\b/g) || []).length !== 1 ||
+      (header.match(/setSideMenuOpen\(true\)/g) || []).length !== 1 ||
+      (homeSource.match(/<ApoisPremiumDriverNav\b/g) || []).length !== 1 ||
+      /<ApoisDriverBottomNav\b/.test(homeSource)) {
+    throw Error('[FAIL] Motorista QA290: menu ou navegação duplicada na Home');
+  }
+  requireMarker(driverBundle, 'Abrir área do motorista', 'Home preserves a single functional menu');
+} else {
+  forbidMarker(driverBundle, 'Abrir menu', 'Motorista não recompila menu lateral duplicado na tela principal');
+}
 forbidMarker(driverBundle, 'apois:splash:motorista', 'Motorista não mostra splash interna depois do seletor Parceiro');
 forbidMarker(driverBundle, 'Esta é uma versão preliminar', 'Motorista não publica termos marcados como preliminares');
 
