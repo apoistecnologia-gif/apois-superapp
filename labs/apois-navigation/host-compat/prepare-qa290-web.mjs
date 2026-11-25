@@ -24,6 +24,8 @@ script=script.replaceAll(old,"apois-navigation-lab.invalid");
 const anchor='(cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")';
 assert.equal(script.split(anchor).length,2);
 script=script.replace(anchor,()=> 'node "$APOIS_CURRENT_ROOT/scripts/reconcile-motorista-qa290-visual.mjs"\n'+anchor);
+// Apply the paired voice guard only after the full historical chain and visual reconciliation.
+script=script.replace(anchor,()=>anchor+'\nnode "$GITHUB_WORKSPACE/labs/apois-navigation/host-compat/prepare-qa290-web-voice.mjs" "$MOTORISTA" "$GITHUB_WORKSPACE"');
 assert.ok(!/npm run build:entregador|gradle |assembleRelease|assembleDebug|supabase (db push|functions deploy)/.test(script));
 writeFileSync(join(stage,".navigation-qa290-web.sh"),script);
 console.log("[OK] exact historical Motorista chain isolated; synthetic environment gate only; no delivery build");
