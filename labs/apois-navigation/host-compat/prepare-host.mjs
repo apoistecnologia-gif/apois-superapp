@@ -34,3 +34,12 @@ app=app.replace("dependencies {","dependencies {\n    coreLibraryDesugaring 'com
 put("app/build.gradle",app);
 assert.equal(get("variables.gradle"),vars,"production-like template baseline preserved");
 console.log("[OK] lab-only API 25 host; no production files modified");
+
+const javaRoot="app/src/main/java/br/com/apois/navigation/compat/lab/";
+const mainPath=javaRoot+"MainActivity.java";
+const main=get(mainPath);
+assert.match(main,/public class MainActivity extends BridgeActivity\s*\{\s*\}/);
+put(mainPath,main.replace(/public class MainActivity extends BridgeActivity\s*\{\s*\}/,
+"public class MainActivity extends BridgeActivity {\n @Override public void onCreate(android.os.Bundle savedInstanceState) {\n  registerPlugin(ApoisNavigationLabPlugin.class);\n  super.onCreate(savedInstanceState);\n }\n}"));
+cpSync(join(lab,"host-compat/ApoisNavigationLabPlugin.java"),join(android,javaRoot,"ApoisNavigationLabPlugin.java"));
+console.log("[OK] native laboratory plugin registered in disposable host only");

@@ -1,0 +1,14 @@
+{
+  "version": 8,
+  "name": "APOIS synthetic offline laboratory",
+  "sources": {},
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#E5E2D9"
+      }
+    }
+  ]
+}
