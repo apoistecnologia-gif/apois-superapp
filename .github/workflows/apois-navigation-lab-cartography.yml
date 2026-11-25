@@ -43,6 +43,8 @@ jobs:
           python labs/apois-navigation/cartography/verify_content.py "$RUNNER_TEMP/apois-cartography-report/vale.pmtiles" "$RUNNER_TEMP/apois-cartography-report" | tee "$RUNNER_TEMP/apois-cartography-report/content-report.json"
       - name: Preparar glifos licenciados e cobertura pt-BR
         run: bash labs/apois-navigation/cartography/prepare-glyphs.sh "$RUNNER_TEMP/apois-cartography-report"
+      - name: Preparar pacote local verificavel para Android
+        run: python labs/apois-navigation/cartography/build_asset_pack.py "$RUNNER_TEMP/apois-cartography-report" | tee "$RUNNER_TEMP/apois-cartography-report/asset-pack-report.json"
       - name: Verificar leitura parcial HTTP local
         run: bash labs/apois-navigation/cartography/test-http-range.sh "$RUNNER_TEMP/apois-cartography-report"
       - uses: actions/upload-artifact@v4
