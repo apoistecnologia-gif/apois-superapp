@@ -4,3 +4,5 @@ Origem: apoistecnologia-gif/say-hello-buddy-23-84b5dcbf, commit c463fae7bb670003
 Snapshot atualizado para 62fdfc5abcd77f536ce7c070806e7b80b5306c5e: corrige delimitadores SQL identificados no run 45626397310; outros blobs preservados. CI novo pendente.
 
 Snapshot b3a1fad946494ac35c76fe2dbc207e72bd5e916c acrescenta leitura privada do motorista e regressões de atribuição/fase. Run anterior 45626682005 aprovado, novo CI pendente. Não deploy.
+
+Rodada 117: run 45627039665 integralmente aprovado (APOIS_DRIVER_PROOF_SQL_OK). Novo adaptador server-only exige verificador de sessão injetado e consulta privada injetada; verifica vínculo auth UUID retornado e fase/corrida. Quatro testes unitários e teste integrado no PostgreSQL descartável (sem rede), com credenciais Ed25519 efêmeras, SQLite scoped e verificador de admissão existente. Identidade sintética explicitamente marcada, revogação manual de fase no ensaio (não há evento real). Não altera schema de produção nem conecta Supabase. A query via docker exec é exclusivamente fixture, não adaptador de produção. O CI ainda deve provar a integração. Não usar IDs/segredos reais.
