@@ -19,7 +19,7 @@ assert.match(vars,/targetSdkVersion\s*=\s*36\b/);
 const original=join(source,"android-motorista");
 assert.match(readFileSync(join(original,"variables.gradle"),"utf8"),/minSdkVersion\s*=\s*24\b/);
 const originalGradle=readFileSync(join(original,"app/build.gradle"),"utf8");
-assert.ok(originalGradle.includes("implementation 'com.google.android.gms:play-services-location:21.3.0'"));
+assert.match(originalGradle,/^\s*implementation\s+(['"])com\.google\.android\.gms:play-services-location:21\.3\.0\1\s*$/m,"pinned GPS dependency (either Gradle quote style)");
 const gradle=get("app/build.gradle"),settings=get("settings.gradle");
 assert.ok(gradle.includes("minSdkVersion rootProject.ext.minSdkVersion"));
 assert.ok(gradle.includes("dependencies {"));

@@ -71,3 +71,29 @@ test("authority errors and clock regression cannot sign",async()=>{
   let t=100000;const issue=fixture(async()=>{t=99999;return proof();},{now:()=>t});
   assert.equal((await issue({},req())).status,503);
 });
+
+test("caller cancellation before authority read neither signs nor consumes capacity",async()=>{
+  const controller=new AbortController();controller.abort();let reads=0;
+  const issue=fixture(async()=>{reads++;return proof();},{maxPending:1});
+  assert.deepEqual(await issue({},req(),controller.signal),{status:503});
+  assert.deepEqual(await issue({},req(),{}),{status:400});
+  assert.equal(reads,0);
+  assert.equal((await issue({},req())).status,200);
+});
+test("caller abort propagates to trusted authority and holds capacity until settled",async()=>{
+  const caller=new AbortController();let finish,inner;
+  const issue=fixture((_s,_r,signal)=>{inner=signal;return new Promise(r=>{finish=r;});},{maxPending:1});
+  const p=issue({},req(),caller.signal);await Promise.resolve();
+  caller.abort();assert.equal(inner.aborted,true);
+  assert.deepEqual(await p,{status:503});
+  assert.deepEqual(await issue({},req()),{status:429});
+  finish(proof());await Promise.resolve();await Promise.resolve();
+  const next=issue({},req());await Promise.resolve();finish(proof());
+  assert.equal((await next).status,200);
+});
+test("abort before authority result continuation cannot return a signed token",async()=>{
+  const caller=new AbortController();let finish;
+  const issue=fixture(()=>new Promise(r=>{finish=r;}));
+  const p=issue({},req(),caller.signal);await Promise.resolve();
+  finish(proof());caller.abort();assert.deepEqual(await p,{status:503});
+});

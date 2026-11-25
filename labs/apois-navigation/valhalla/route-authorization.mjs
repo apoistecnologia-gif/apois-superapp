@@ -39,8 +39,9 @@ export function createRouteAuthorization({publicKey,audience,now=()=>Date.now(),
     if(!raw||!sig||sig.length!==64||!verify(null,raw,publicKey,sig))return {status:401};
     let claim;
     try{claim=JSON.parse(raw.toString("utf8"));}catch{return {status:401};}
-    if(!exact(claim)||claim.aud!==audience||!tokenId.test(claim.jti)||!hash.test(claim.sub)||!hash.test(claim.route)||
+    if(!exact(claim)||claim.aud!==audience||
       typeof claim.jti!=="string"||typeof claim.sub!=="string"||typeof claim.route!=="string"||
+      !tokenId.test(claim.jti)||!hash.test(claim.sub)||!hash.test(claim.route)||
       !Number.isSafeInteger(claim.iat)||!Number.isSafeInteger(claim.exp)||
       claim.iat<0||claim.iat>t||claim.exp<=t||claim.exp<=claim.iat||claim.exp-claim.iat>30_000||
       claim.route!==routeDigest(body))return {status:403};

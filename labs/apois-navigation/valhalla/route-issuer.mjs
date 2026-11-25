@@ -37,10 +37,13 @@ export function createRouteIssuer({privateKey,principalKey,audience,readAuthorit
     !Number.isInteger(maxPending)||maxPending<1||maxPending>32)throw Error("Invalid lab issuer configuration");
   const pseudonymKey=Buffer.from(principalKey);
   let pending=0,last=0;
-  return async function issue(session,request){
+  return async function issue(session,request,signal){
     if(!exact(request,["rideId","phase","origin","target"])||!isId(request.rideId)||typeof request.phase!=="string"||!Object.hasOwn(status,request.phase)||
       !point(request.origin)||!point(request.target))return {status:400};
     if(session==null)return {status:401};
+    // Optional trusted caller lifetime, never a field from the JSON request.
+    if(signal!==undefined&&!(signal instanceof AbortSignal))return {status:400};
+    if(signal?.aborted)return {status:503};
     if(pending>=maxPending)return {status:429};
     const began=now();
     if(!Number.isSafeInteger(began)||began<last)return {status:503};
@@ -48,15 +51,21 @@ export function createRouteIssuer({privateKey,principalKey,audience,readAuthorit
     // Snapshot only the allowed primitives before yielding to the adapter.
     const req={rideId:request.rideId,phase:request.phase,origin:{...request.origin},target:{...request.target}};
     const controller=new AbortController();
-    let timer,finished=false;
+    let timer,finished=false,onAbort;
     pending++;
     const work=Promise.resolve().then(()=>readAuthority(session,{rideId:req.rideId,phase:req.phase},controller.signal));
     // A non-cooperative adapter continues occupying capacity until settled;
     // timeout never releases the slot early or permits late signing.
     work.then(()=>{if(!finished){finished=true;pending--;}},()=>{if(!finished){finished=true;pending--;}});
     try{
-      const proof=await Promise.race([work,new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(null);},timeout);})]);
-      if(controller.signal.aborted)return {status:503};
+      const cancelled=new Promise(resolve=>{
+        onAbort=()=>{controller.abort();resolve(null);};
+        timer=setTimeout(onAbort,timeout);
+        signal?.addEventListener("abort",onAbort,{once:true});
+        if(signal?.aborted)onAbort();
+      });
+      const proof=await Promise.race([work,cancelled]);
+      if(controller.signal.aborted||signal?.aborted)return {status:503};
       const t=now();
       if(!Number.isSafeInteger(t)||t>Number.MAX_SAFE_INTEGER-30000||t<last||t<began||t-began>timeout)return {status:503};
       last=t;
@@ -67,6 +76,6 @@ export function createRouteIssuer({privateKey,principalKey,audience,readAuthorit
       const raw=Buffer.from(JSON.stringify(claim),"utf8");
       return {status:200,token:raw.toString("base64url")+"."+sign(null,raw,privateKey).toString("base64url")};
     }catch{return {status:503};}
-    finally{clearTimeout(timer);}
+    finally{clearTimeout(timer);if(onAbort)signal?.removeEventListener("abort",onAbort);}
   };
 }

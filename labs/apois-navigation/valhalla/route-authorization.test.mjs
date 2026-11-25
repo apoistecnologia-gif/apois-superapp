@@ -84,3 +84,13 @@ test("HTTP gateway rejects unsigned/changed/replayed capabilities before upstrea
   assert.equal((await post(p)).status,403);
   assert.equal(calls,1);
 });
+
+test("signed but non-string claims are rejected without object coercion or storage use",()=>{
+  let admitted=0;const {auth,permit}=fixture({store:{admit(){admitted++;throw Error("must not reach storage");}}});
+  for(const field of ["jti","sub","route"]){
+    for(const value of [{toString:null,valueOf:null},[],null,42]){
+      assert.deepEqual(auth(permit({[field]:value}),body),{status:403});
+    }
+  }
+  assert.equal(admitted,0);
+});
