@@ -70,7 +70,7 @@ export function createDurableRideHost({enabled=false,journal,verifyIdentity,acti
   }finally{if(generation===epoch)busy=false}
  }
  async function recover({seal=false}={}){
-  if(!['recovery','active','blocked'].includes(state)||busy||!uuid(scope))return false
+  if((!['recovery','active','blocked'].includes(state)&&!(state==='ready'&&pendingEntry))||busy||!uuid(scope))return false
   const epoch=generation;busy=true
   try{
    if(!await current(epoch))throw Error('Account changed')

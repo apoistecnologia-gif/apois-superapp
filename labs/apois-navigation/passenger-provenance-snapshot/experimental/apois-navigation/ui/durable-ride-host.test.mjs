@@ -52,3 +52,21 @@ test('active query must be authoritative; invalid account and account switch fai
  const s=setup();s.verified(false);const h=s.make();assert.equal(await h.open(),false);assert.equal(h.canReturnToLegacy(),false)
  const q=setup(),x=q.make();await x.open();x.begin(selection);await x.quote();q.account(b);await x.submit(true);assert.equal(q.calls.filter(c=>c.action.endsWith('create')).length,0);assert.equal(x.canReturnToLegacy(),false)
 })
+
+test('price change retains journal, allows explicit seal without closing the panel',async()=>{
+ let pending=null,creates=0,seals=0
+ const host=createDurableRideHost({
+  enabled:true,verifyIdentity:async()=>a,activeRide:async()=>({verified:true,ride:null}),
+  journal:{read:async()=>pending,reserve:async(_,e)=>{pending={...e};return true},clear:async()=>{pending=null;return true}},
+  transport:async body=>{
+   if(body.action==='apois_navigation_quote')return {status:200,body:{ok:true,estimated_price:12.34,fare_amount_cents:1234,distance_km:2,duration_min:7,expiresAt:selection.expiresAt}}
+   if(body.action==='apois_navigation_create'){creates++;return {status:409,body:{ok:false,error_code:'price_changed',estimated_price:13.34,fare_amount_cents:1334,distance_km:2,duration_min:7,expiresAt:selection.expiresAt}}}
+   if(body.action==='apois_navigation_seal'){seals++;return {status:200,body:{ok:true,state:'sealed',requestKey:body.requestKey,selectionId:body.selectionId}}}
+   throw Error('unexpected')
+  }
+ })
+ assert.ok(await host.open());assert.ok(host.begin(selection));assert.ok(await host.quote());assert.equal(await host.submit(true),null)
+ assert.equal(host.snapshot().state,'ready');assert.equal(host.snapshot().review.quote.fare_amount_cents,1334);assert.equal(host.snapshot().pending,true)
+ assert.equal(host.canReturnToLegacy(),false);assert.ok(await host.recover({seal:true}));assert.equal(host.snapshot().state,'ready-to-reopen')
+ assert.equal(host.canReturnToLegacy(),true);assert.equal(creates,1);assert.equal(seals,1);assert.equal(pending,null)
+})
