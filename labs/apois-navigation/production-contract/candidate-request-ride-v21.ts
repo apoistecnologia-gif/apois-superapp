@@ -1,4 +1,5 @@
-import { createV21ExperimentalAction, localValhallaMetrics } from "./v21-edge-adapter.mjs";
+import { createV21ExperimentalAction } from "./v21-edge-adapter.mjs";
+import { pilotRemoteQuoteMetrics, pilotAllowed } from "./pilot-remote-quote.mjs";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
@@ -217,13 +218,15 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
 
-    // APOIS_NAVIGATION_LAB_V21: no production configuration or remote URL.
+    // APOIS_NAVIGATION_LAB_V21: opt-in verified pilot, private HTTPS quote only.
     // The existing request path below is unchanged.
     if (body?.action === "apois_navigation_quote" || body?.action === "apois_navigation_create") {
+      if (Deno.env.get("APOIS_NAVIGATION_EXPERIMENTAL_ENABLED") !== "true") return json({ok:false,error_code:"experimental_navigation_disabled"},409);
+      if (!pilotAllowed(auth.id,Deno.env.get("APOIS_NAVIGATION_PILOT_AUTH_IDS"))) return json({ok:false,error_code:"pilot_not_allowed"},403);
       const handle = createV21ExperimentalAction({
-        enabled: Deno.env.get("APOIS_NAVIGATION_EXPERIMENTAL_ENABLED") === "true",
+        enabled: true,
         admin, authUserId: auth.id, passengerId: userRow.id,
-        independentMetrics: localValhallaMetrics(),
+        independentMetrics: pilotRemoteQuoteMetrics({authUserId:auth.id,readEnv:(name:string)=>Deno.env.get(name)}),
         loadFare: (categoryId: string, category: string, km: number, min: number, details: Record<string, unknown>) =>
           loadFare(admin, categoryId, category, km, min, details),
         dispatchInitial: dispatch,

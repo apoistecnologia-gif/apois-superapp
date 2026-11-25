@@ -29,11 +29,13 @@ Deno.serve(async req=>{
  if(req.headers.get("content-type")?.split(";")[0].trim().toLowerCase()!=="application/json"||!req.body)return json({ok:false,error_code:"invalid_request"},415);
  try{
   const reader=req.body.getReader();let total=0;const decoder=new TextDecoder();let raw="";
-  const deadline=setTimeout(()=>{void reader.cancel().catch(()=>undefined)},3000);
+  let timedOut=false;
+  const deadline=setTimeout(()=>{timedOut=true;void reader.cancel().catch(()=>undefined)},3000);
   try{
    for(;;){const {done,value}=await reader.read();if(done)break;total+=value.byteLength;if(total>4096){await reader.cancel();return json({ok:false,error_code:"request_too_large"},413)}raw+=decoder.decode(value,{stream:true})}
    raw+=decoder.decode();
   }finally{clearTimeout(deadline);reader.releaseLock()}
+  if(timedOut)return json({ok:false,error_code:"request_timeout"},408);
   const body=JSON.parse(raw);
   const token=authorization.slice(7);
   const client=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
