@@ -4,6 +4,10 @@ on:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
     paths: ['labs/apois-navigation/host-compat/**', 'labs/apois-navigation/android/**', '.github/workflows/apois-navigation-lab-host-compat.yml']
   workflow_dispatch:
+# Avoid redundant dependency downloads for superseded laboratory commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -91,6 +95,8 @@ jobs:
             # No alternative repositories, bypasses, or changes to dependency versions.
             if grep -Eq 'Received status code (403|429|502|503|504) from server|Read timed out|Connection reset' "$log"; then
               echo "Dependency transport failed; one retry" | tee -a "$log"
+              # Back off after Maven rate limiting, rather than retry immediately.
+              if grep -q "Received status code 429" "$log"; then sleep 30; fi
               gradle "${tasks[@]}" --no-daemon --stacktrace 2>&1 | tee -a "$log"
             else
               exit 1

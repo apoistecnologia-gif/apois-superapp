@@ -4,6 +4,10 @@ on:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
     paths: ['labs/apois-navigation/android/**', 'labs/apois-navigation/policy.mjs', 'labs/apois-navigation/policy.test.mjs', '.github/workflows/apois-navigation-lab-stage1.yml']
   workflow_dispatch:
+# Avoid redundant dependency downloads for superseded laboratory commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
