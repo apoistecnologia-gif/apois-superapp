@@ -63,8 +63,15 @@ object NativeConfirmedHost{
                 if(!available()||!req.matches(grant.target)||grant.identity!=grant.target.identity)return@launch
                 fun authorized()=configuration===config&&runCatching{grant.current()}.getOrDefault(false)
                 if(!authorized())return@launch
+                // No backend reads, GPS subscription or routing request if the
+                // packaged regional assets cannot be verified and installed.
+                // Use the verified immutable style in the eventual Activity.
+                val map=preflightRegionalMap(
+                    current={available()&&authorized()&&runCatching{grant.targetCurrent()}.getOrDefault(false)},
+                    load={withTimeoutOrNull(8_000L){BundledRegionalMap.VerifiedMap.load(activity.applicationContext)}}
+                )?:return@launch
                 prepared=prepareConfirmedWithNativeReads(config.approvedBackendHost,grant.identity,grant.target,
-                    config.resolver,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization)
+                    config.resolver,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization)
                 ensureActive()
                 if(!prepared||!available()||!authorized())return@launch
                 startAttempted=true

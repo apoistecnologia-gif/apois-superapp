@@ -44,8 +44,8 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
             BackHandler{ConfirmedLiveNavigationBridge.close(id);finish()}
             state?.takeIf{it.id==id}?.let{s->
                 Column(Modifier.fillMaxSize().statusBarsPadding()){
-                    BundledLiveNavigationSurface(
-                        route=s.owner.route,token=s.token,ride=s.ride,
+                    LiveNavigationSurface(
+                        baseStyle=s.owner.map.style,route=s.owner.route,token=s.token,ride=s.ride,
                         foreground=foreground,stillCurrent={ConfirmedLiveNavigationBridge.accepts(id,it)},
                         onIntent={ConfirmedLiveNavigationBridge.submit(id,it)},
                         modifier=Modifier.weight(1f),acquireVoice={ConfirmedLiveNavigationBridge.acquireVoice(id)},

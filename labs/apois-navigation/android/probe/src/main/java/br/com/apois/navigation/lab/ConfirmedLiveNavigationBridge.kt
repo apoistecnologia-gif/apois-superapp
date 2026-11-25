@@ -21,7 +21,7 @@ import java.util.function.Consumer
  */
 object ConfirmedLiveNavigationBridge {
     internal class Prepared(
-        val route:Route, val target:RegionalPoint,
+        val route:Route, val target:RegionalPoint, val map:BundledRegionalMap.VerifiedMap,
         val resolver:LiveRouteResolver, val verifiedCurrent:()->Boolean,
         val verify:suspend ()->VerifiedRouteEvidence?,
         val online:()->Boolean, val audioAuthorization:(()->Boolean)?,
@@ -70,6 +70,7 @@ object ConfirmedLiveNavigationBridge {
     // Activity can acquire its own consumer, without starting another GPS.
     internal suspend fun prepareFromGps(
         verify:suspend ()->VerifiedRouteEvidence?,resolver:LiveRouteResolver,
+        map:BundledRegionalMap.VerifiedMap,
         verifiedCurrent:()->Boolean,online:()->Boolean={false},
         // Trusted host must explicitly attest Web Speech is stopped and the
         // user's original voice preference permits speech. No JS/Intent flag.
@@ -126,7 +127,7 @@ object ConfirmedLiveNavigationBridge {
                         after.verifiedAt<before.verifiedAt||
                         !routeEndpointsMatch(geometry,fix.point,before.target)||
                         !initialRouteMatches(after,last,geometry,SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
-                    val owner=Prepared(route,after.target,resolver,verifiedCurrent,verify,online,audioAuthorization,
+                    val owner=Prepared(route,after.target,map,resolver,verifiedCurrent,verify,online,audioAuthorization,
                         NavigationSessionController(after.ride),PreparedAuthorityLease(SystemClock::elapsedRealtime),after,sourceId,last)
                     attempt.installed=owner
                     prepared=owner

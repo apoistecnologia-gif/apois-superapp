@@ -32,7 +32,7 @@ internal fun routeEvidenceFromRead(
 // The identity must match the authenticated host's previously verified identity.
 internal suspend fun prepareConfirmedWithNativeReads(
     approvedBackendHost:String,expected:RoutingIdentity,target:ApprovedIndependentTarget,
-    resolver:LiveRouteResolver,hostCurrent:()->Boolean,targetCurrent:()->Boolean,
+    resolver:LiveRouteResolver,map:BundledRegionalMap.VerifiedMap,hostCurrent:()->Boolean,targetCurrent:()->Boolean,
     online:()->Boolean,audioAuthorization:(()->Boolean)?=null
 ):Boolean{
     check(Looper.myLooper()==Looper.getMainLooper())
@@ -50,7 +50,7 @@ internal suspend fun prepareConfirmedWithNativeReads(
                 if(proof==null||!current())null else routeEvidenceFromRead(proof,target,SystemClock.elapsedRealtime())
             }
         },
-        resolver=resolver,verifiedCurrent=::current,online=online,
+        resolver=resolver,map=map,verifiedCurrent=::current,online=online,
         audioAuthorization=audioAuthorization
     )
 }

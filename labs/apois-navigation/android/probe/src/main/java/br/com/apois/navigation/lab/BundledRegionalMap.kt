@@ -29,7 +29,15 @@ internal object BundledRegionalMap {
     private val installLock = Any()
     private var store: PrivateMapStore? = null
 
-    suspend fun verifiedStyle(context: Context): BaseStyle.Json? = withContext(Dispatchers.IO) {
+    internal class VerifiedMap private constructor(val style: BaseStyle.Json) {
+        companion object {
+            internal suspend fun load(context: Context): VerifiedMap? = loadStyle(context)?.let(::VerifiedMap)
+        }
+    }
+
+    suspend fun verifiedStyle(context: Context): BaseStyle.Json? = VerifiedMap.load(context)?.style
+
+    private suspend fun loadStyle(context: Context): BaseStyle.Json? = withContext(Dispatchers.IO) {
         try {
             val manifest=JSONObject(boundedRead(context,"manifest.json",32_768).toString(Charsets.UTF_8))
             require(manifest.getInt("schema")==1 && manifest.getString("region")=="vale-pe-ba")
