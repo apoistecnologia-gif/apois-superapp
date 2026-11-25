@@ -32,7 +32,7 @@ patch('src/components/mapMarkers.tsx', (source) => {
 
   const brandedReturn = `  if (!validPosition(position) || !validPosition(display)) return null;\n  const brandedScale = Math.max(1.45, Math.min(2.15, safeDriverScale));\n  return <>\n    <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol("CIRCLE"), scale: 10 * brandedScale, fillColor: safeDriverColor, fillOpacity: 0.08, strokeColor: safeDriverColor, strokeOpacity: 0.26, strokeWeight: 1.2 }} />\n    <Marker\n      position={display}\n      clickable={false}\n      title="APOIS • localização do motorista"\n      zIndex={10000}\n      icon={{ path: PIN_PATH, fillColor: "#080B11", fillOpacity: 1, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.2, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n    <Marker\n      position={display}\n      clickable={false}\n      zIndex={10001}\n      icon={{ path: APOIS_DRIVER_LOCATION_A_PATH, fillOpacity: 0, strokeColor: safeDriverColor, strokeOpacity: 1, strokeWeight: 2.35, scale: brandedScale, anchor: safePoint(12, 22) }}\n    />\n  </>;`;
 
-  if (!next.includes(brandedReturn)) {
+  if (!next.includes(brandedReturn) && !next.includes('APOIS_DRIVER_HOME_DIRECTION_V1')) {
     if (!next.includes(oldReturn)) throw new Error('mapMarkers.tsx: retorno do InterpolatedDriverMarker não encontrado');
     next = next.replace(oldReturn, brandedReturn);
   }
@@ -44,7 +44,16 @@ patch('src/components/mapMarkers.tsx', (source) => {
     next = next.replace(signature, () => directionalSignature);
   }
   const markerAnchor = '  const brandedScale = Math.max(1.45, Math.min(2.15, safeDriverScale));';
-  const direction = "  // APOIS_DRIVER_HOME_DIRECTION_V1 — position and heading come from the existing GPS interpolation.\n  if (variant === \"direction\") {\n    const hasHeading = typeof heading === \"number\" && Number.isFinite(heading);\n    return <>\n      <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol(\"CIRCLE\"), scale: 17, fillColor: safeDriverColor, fillOpacity: 0.09, strokeColor: safeDriverColor, strokeOpacity: 0.25, strokeWeight: 1 }} />\n      <Marker position={display} clickable={false} zIndex={10000} icon={{ path: safeSymbol(\"CIRCLE\"), scale: 12, fillColor: \"#FFFFFF\", fillOpacity: 1, strokeColor: \"#FFFFFF\", strokeWeight: 1 }} />\n      <Marker position={display} clickable={false} title=\"Localização do motorista\" zIndex={10001} icon={{ path: hasHeading ? \"M 0,-8 L 6,7 L 0,3 L -6,7 Z\" : safeSymbol(\"CIRCLE\"), scale: hasHeading ? 1 : 5, rotation: hasHeading ? displayHeading : 0, fillColor: safeDriverColor, fillOpacity: 1, strokeColor: \"#FFFFFF\", strokeWeight: 1, anchor: safePoint(0, 0) }} />\n    </>;\n  }\n";
+  const direction = `  // APOIS_DRIVER_HOME_DIRECTION_V1 — position and heading come from the existing GPS interpolation.
+  if (variant === "direction") {
+    const hasHeading = typeof heading === "number" && Number.isFinite(heading);
+    return <>
+      <Marker position={display} clickable={false} zIndex={9997} icon={{ path: safeSymbol("CIRCLE"), scale: 17, fillColor: safeDriverColor, fillOpacity: 0.09, strokeColor: safeDriverColor, strokeOpacity: 0.25, strokeWeight: 1 }} />
+      <Marker position={display} clickable={false} zIndex={10000} icon={{ path: safeSymbol("CIRCLE"), scale: 12, fillColor: "#FFFFFF", fillOpacity: 1, strokeColor: "#FFFFFF", strokeWeight: 1 }} />
+      <Marker position={display} clickable={false} title="Localização do motorista" zIndex={10001} icon={{ path: hasHeading ? "M 0,-8 L 6,7 L 0,3 L -6,7 Z" : safeSymbol("CIRCLE"), scale: hasHeading ? 1 : 5, rotation: hasHeading ? displayHeading : 0, fillColor: safeDriverColor, fillOpacity: 1, strokeColor: "#FFFFFF", strokeWeight: 1, anchor: safePoint(0, 0) }} />
+    </>;
+  }
+`;
   if (!next.includes("APOIS_DRIVER_HOME_DIRECTION_V1")) {
     if (!next.includes(markerAnchor)) throw Error("mapMarkers.tsx: ponto de inserção ausente");
     next = next.replace(markerAnchor, () => direction + markerAnchor);

@@ -150,3 +150,5 @@ test('10 — reference map palette and directional GPS marker; APK generation re
  assert.ok(!pipeline.includes('  push:\n'));
  assert.ok(pipeline.includes("github.event_name == 'workflow_dispatch'"));
 });
+
+// Keep source-level verification aligned with literal marker generator content.
