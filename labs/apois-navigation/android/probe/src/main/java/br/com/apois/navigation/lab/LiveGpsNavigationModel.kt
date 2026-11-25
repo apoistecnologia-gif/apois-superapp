@@ -254,7 +254,7 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         } else if (permit != null) {
             // No implicit grant: the future host must first stop its legacy voice.
             if (context != null && runCatching { permit.isCurrent() }.getOrDefault(false)) {
-                voice = try { LiveNavigationVoice(context, permit) }
+                voice = try { LiveNavigationVoice(permit) }
                 catch (_: Exception) { runCatching { permit.release() }; null }
                 voice?.setMuted(muted)
                 voice?.setForeground(foreground)
