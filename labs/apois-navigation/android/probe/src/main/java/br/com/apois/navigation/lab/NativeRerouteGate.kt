@@ -12,6 +12,7 @@ internal class NativeRerouteGate {
         data object OfferExternal : Decision
     }
     private var lastFix: Long? = null
+    private var lastSeen: Long? = null
     private var lastRequest: Long? = null
     private var pending: Ticket? = null
     private var consecutive = 0
@@ -24,17 +25,24 @@ internal class NativeRerouteGate {
     fun evaluate(now: Long, captured: Long, accuracy: Double, deviation: Double?, online: Boolean): Decision {
         if (closed) return Decision.Hold(Reason.CLOSED)
         if (now <= 0 || captured <= 0 || captured > now || now - captured > 10_000 ||
-            lastFix?.let { captured <= it || captured - it < 1_000 } == true ||
+            lastSeen?.let { captured <= it } == true ||
             !accuracy.isFinite() || accuracy <= 0 || accuracy > 25.0 ||
             deviation == null || !deviation.isFinite() || deviation < 0) {
             invalidateFix()
             return Decision.Hold(Reason.UNRELIABLE)
         }
-        lastFix = captured
+        lastSeen = captured
+        // A reliable on-route fix must clear evidence immediately, even if it
+        // arrives inside the confirmation interval. Only independent off-route
+        // fixes count; intermediate reliable fixes must not erase evidence.
         if (deviation <= 50.0) {
+            lastFix = captured
             invalidateFix()
             return Decision.Continue
         }
+        if (lastFix?.let { captured - it < 1_000 } == true)
+            return Decision.Hold(Reason.CONFIRM_DEVIATION)
+        lastFix = captured
         consecutive = minOf(consecutive + 1, 2)
         if (consecutive < 2) return Decision.Hold(Reason.CONFIRM_DEVIATION)
         if (!online) return Decision.Hold(Reason.OFFLINE)
