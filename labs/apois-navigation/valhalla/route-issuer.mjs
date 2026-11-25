@@ -9,6 +9,14 @@ const isId=v=>typeof v==="string"&&uuid.test(v);
 const exact=(o,keys)=>o!==null&&typeof o==="object"&&!Array.isArray(o)&&Object.keys(o).length===keys.length&&keys.every(k=>Object.hasOwn(o,k));
 const point=p=>exact(p,["lat","lon"])&&typeof p.lat==="number"&&typeof p.lon==="number"&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&p.lat>=-9.65&&p.lat<=-9.10&&p.lon>=-40.80&&p.lon<=-40.20;
 const status={PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
+// Only a trusted lifecycle adapter may derive/revoke a scope. A separate
+// domain makes the pseudonym distinct from the driver quota identifier.
+// This deliberately revokes the entire ride leg, including reassignments.
+export function routeLegScope(key,audience,rideId,phase){
+  if(!Buffer.isBuffer(key)||key.length<32||typeof audience!=="string"||!audience||audience.length>128||
+    !isId(rideId)||typeof phase!=="string"||!Object.hasOwn(status,phase))throw Error("Invalid route leg scope");
+  return createHmac("sha256",key).update(JSON.stringify(["apois-route-leg-v1",audience,rideId.toLowerCase(),phase])).digest("hex");
+}
 export function routeBody(origin,target){
   if(!point(origin)||!point(target))return null;
   return normalizeRoute({locations:[{...origin,type:"break"},{...target,type:"break"}],costing:"auto",units:"kilometers",language:"pt-BR",format:"osrm",voice_instructions:true,banner_instructions:true,shape_format:"polyline6"});
@@ -30,12 +38,14 @@ export function verifiedRouteProof(proof,request,now){
   if(!point(request.target)||request.target.lat!==evidence.point.lat||request.target.lon!==evidence.point.lon)return null;
   return routeBody(request.origin,evidence.point);
 }
-export function createRouteIssuer({privateKey,principalKey,audience,readAuthority,now=()=>Date.now(),timeout=2500,maxPending=4,issuanceStore=null}){
+export function createRouteIssuer({privateKey,principalKey,audience,readAuthority,now=()=>Date.now(),timeout=2500,maxPending=4,issuanceStore=null,scopedIssuance=false}){
   if(privateKey?.type!=="private"||privateKey.asymmetricKeyType!=="ed25519"||
     !Buffer.isBuffer(principalKey)||principalKey.length<32||typeof audience!=="string"||!audience||audience.length>128||
     typeof readAuthority!=="function"||!Number.isInteger(timeout)||timeout<1||timeout>3000||
     !Number.isInteger(maxPending)||maxPending<1||maxPending>32||
-    (issuanceStore!==null&&typeof issuanceStore.register!=="function"))throw Error("Invalid lab issuer configuration");
+    typeof scopedIssuance!=="boolean"||
+    (issuanceStore!==null&&typeof issuanceStore.register!=="function")||
+    (scopedIssuance&&(!issuanceStore||typeof issuanceStore.revokeScope!=="function")))throw Error("Invalid lab issuer configuration");
   const pseudonymKey=Buffer.from(principalKey);
   let pending=0,last=0;
   return async function issue(session,request,signal){
@@ -79,8 +89,10 @@ export function createRouteIssuer({privateKey,principalKey,audience,readAuthorit
       // Persist only opaque issuance metadata before returning the credential.
       // A failed registration never returns a token or falls back to memory.
       if(issuanceStore){
-        const registered=issuanceStore.register({jti:claim.jti,sub:claim.sub,exp:claim.exp},t);
-        if(registered?.status!==200)return {status:registered?.status===429?429:503};
+        const metadata={jti:claim.jti,sub:claim.sub,exp:claim.exp};
+        if(scopedIssuance)metadata.scope=routeLegScope(pseudonymKey,audience,req.rideId,req.phase);
+        const registered=issuanceStore.register(metadata,t);
+        if(registered?.status!==200)return {status:registered?.status===429?429:scopedIssuance&&registered?.status===403?403:503};
       }
       return {status:200,token};
     }catch{return {status:503};}

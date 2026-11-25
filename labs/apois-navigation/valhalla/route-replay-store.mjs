@@ -6,9 +6,10 @@ import {randomBytes} from "node:crypto";
 import {openSync,closeSync,lstatSync} from "node:fs";
 const tokenId=/^[A-Za-z0-9_-]{22,64}$/;
 const hash=/^[a-f0-9]{64}$/;
-export function openRouteReplayStore({path,initialize=false,requireIssued=false,maxEntries=4096,maxPrincipals=1024,
+export function openRouteReplayStore({path,initialize=false,requireIssued=false,requireScoped=false,maxRevokedScopes=4096,maxEntries=4096,maxPrincipals=1024,
   perMinute=6,parallel=1,globalPerMinute=60,globalParallel=4,activeMs=30000}){
-  if(typeof path!=="string"||!path||path===":memory:"||typeof initialize!=="boolean"||typeof requireIssued!=="boolean"||![maxEntries,maxPrincipals,perMinute,parallel,globalPerMinute,globalParallel,activeMs]
+  if(typeof path!=="string"||!path||path===":memory:"||typeof initialize!=="boolean"||typeof requireIssued!=="boolean"||typeof requireScoped!=="boolean"||
+      (requireScoped&&!requireIssued)||![maxRevokedScopes,maxEntries,maxPrincipals,perMinute,parallel,globalPerMinute,globalParallel,activeMs]
       .every(n=>Number.isSafeInteger(n)&&n>0)||activeMs<15000||activeMs>60000)
     throw Error("Invalid local replay store configuration");
   // First provisioning is explicit and exclusive. Reopening a missing or
@@ -18,7 +19,7 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
   if(!lstatSync(path).isFile())throw Error("Replay storage must be a regular file");
   const db=new DatabaseSync(path,{timeout:100,allowExtension:false});
   let closed=false;
-  const config=JSON.stringify([maxEntries,maxPrincipals,perMinute,parallel,globalPerMinute,globalParallel,activeMs,requireIssued]);
+  const config=JSON.stringify([maxEntries,maxPrincipals,perMinute,parallel,globalPerMinute,globalParallel,activeMs,requireIssued,requireScoped,maxRevokedScopes]);
   function transaction(fn){
     if(closed)return {status:503};
     let begun=false;
@@ -37,7 +38,8 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
     const ready=transaction(()=>{
       if(initialize){
         db.exec(`CREATE TABLE route_meta(
-          id INTEGER PRIMARY KEY CHECK(id=1),config TEXT NOT NULL,last_ms INTEGER NOT NULL
+          id INTEGER PRIMARY KEY CHECK(id=1),config TEXT NOT NULL,last_ms INTEGER NOT NULL,
+          halted INTEGER NOT NULL CHECK(halted IN (0,1))
         ) STRICT;
         CREATE TABLE route_uses(
           jti TEXT PRIMARY KEY, sub TEXT NOT NULL, expires INTEGER NOT NULL,
@@ -46,16 +48,18 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
         CREATE INDEX route_uses_sub ON route_uses(sub);
         CREATE TABLE route_issued(
           jti TEXT PRIMARY KEY, sub TEXT NOT NULL, expires INTEGER NOT NULL,
-          revoked INTEGER NOT NULL CHECK(revoked IN (0,1))
-        ) STRICT;`);
-        db.prepare("INSERT INTO route_meta(id,config,last_ms) VALUES(1,?,0)").run(config);
+          revoked INTEGER NOT NULL CHECK(revoked IN (0,1)), scope TEXT
+        ) STRICT;
+        CREATE TABLE route_revoked_scopes(scope TEXT PRIMARY KEY) STRICT;`);
+        db.prepare("INSERT INTO route_meta(id,config,last_ms,halted) VALUES(1,?,0,0)").run(config);
       }
-      const meta=db.prepare("SELECT config,last_ms FROM route_meta WHERE id=1").get();
-      if(meta?.config!==config||!Number.isSafeInteger(meta.last_ms)||meta.last_ms<0)
+      const meta=db.prepare("SELECT config,last_ms,halted FROM route_meta WHERE id=1").get();
+      if(meta?.config!==config||!Number.isSafeInteger(meta.last_ms)||meta.last_ms<0||![0,1].includes(meta.halted))
         throw Error("Replay configuration or metadata mismatch");
       // Refuse incomplete schema; do not repair or initialize on restart.
       db.prepare("SELECT jti,sub,expires,started,active_until,lease FROM route_uses LIMIT 0").all();
-      db.prepare("SELECT jti,sub,expires,revoked FROM route_issued LIMIT 0").all();
+      db.prepare("SELECT jti,sub,expires,revoked,scope FROM route_issued LIMIT 0").all();
+      db.prepare("SELECT scope FROM route_revoked_scopes LIMIT 0").all();
       return {status:200};
     });
     if(ready.status!==200)throw Error("Replay storage unavailable or incompatible");
@@ -66,8 +70,8 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
     typeof claim.sub==="string"&&hash.test(claim.sub)&&validTime(t)&&
     Number.isSafeInteger(claim.exp)&&claim.exp>t&&claim.exp-t<=30000;
   function advance(t){
-    const meta=db.prepare("SELECT last_ms FROM route_meta WHERE id=1").get();
-    if(!meta||t<meta.last_ms)return false;
+    const meta=db.prepare("SELECT last_ms,halted FROM route_meta WHERE id=1").get();
+    if(!meta||meta.halted!==0||t<meta.last_ms)return false;
     db.prepare("UPDATE route_meta SET last_ms=? WHERE id=1").run(t);
     db.prepare("DELETE FROM route_issued WHERE expires<=?").run(t);
     return true;
@@ -78,12 +82,33 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
     if(!requireIssued)return {status:503};
     if(!validClaim(claim,t))return {status:403};
     const {jti,sub,exp}=claim;
+    const scope=claim.scope??null;
+    if(requireScoped&&(typeof scope!=="string"||!hash.test(scope)))return {status:403};
+    if(!requireScoped&&scope!==null)return {status:403};
     return transaction(()=>{
       if(!advance(t))return {status:503};
+      if(requireScoped&&db.prepare("SELECT 1 FROM route_revoked_scopes WHERE scope=?").get(scope))return {status:403};
       if(db.prepare("SELECT 1 FROM route_issued WHERE jti=?").get(jti)||
          db.prepare("SELECT 1 FROM route_uses WHERE jti=?").get(jti))return {status:403};
       if(count("SELECT COUNT(*) AS n FROM route_issued")>=maxEntries)return {status:429};
-      db.prepare("INSERT INTO route_issued(jti,sub,expires,revoked) VALUES(?,?,?,0)").run(jti,sub,exp);
+      db.prepare("INSERT INTO route_issued(jti,sub,expires,revoked,scope) VALUES(?,?,?,0,?)").run(jti,sub,exp,scope);
+      return {status:200};
+    });
+  }
+  // A tombstone is never expired automatically: a delayed stale authority
+  // read must not reopen a revoked leg. At capacity halt the whole store
+  // durably rather than forget a cancellation. No automatic reset path.
+  function revokeScope(scope,t){
+    if(!requireScoped)return {status:503};
+    if(typeof scope!=="string"||!hash.test(scope)||!validTime(t))return {status:403};
+    return transaction(()=>{
+      if(!advance(t))return {status:503};
+      if(db.prepare("SELECT 1 FROM route_revoked_scopes WHERE scope=?").get(scope))return {status:200};
+      if(count("SELECT COUNT(*) AS n FROM route_revoked_scopes")>=maxRevokedScopes){
+        db.prepare("UPDATE route_meta SET halted=1 WHERE id=1").run();
+        return {status:503};
+      }
+      db.prepare("INSERT INTO route_revoked_scopes(scope) VALUES(?)").run(scope);
       return {status:200};
     });
   }
@@ -106,8 +131,10 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
     const result=transaction(()=>{
       if(!advance(t))return {status:503};
       if(requireIssued){
-        const issued=db.prepare("SELECT sub,expires,revoked FROM route_issued WHERE jti=?").get(jti);
+        const issued=db.prepare("SELECT sub,expires,revoked,scope FROM route_issued WHERE jti=?").get(jti);
         if(!issued||issued.revoked!==0||issued.sub!==sub||issued.expires!==exp)return {status:403};
+        if(requireScoped&&(typeof issued.scope!=="string"||!hash.test(issued.scope)||
+          db.prepare("SELECT 1 FROM route_revoked_scopes WHERE scope=?").get(issued.scope)))return {status:403};
       }
       // Preserve each row until replay, minute window AND active lease expire.
       db.prepare("DELETE FROM route_uses WHERE expires<=? AND started<=? AND active_until<=?").run(t,t-60000,t);
@@ -136,5 +163,5 @@ export function openRouteReplayStore({path,initialize=false,requireIssued=false,
       });
     }};
   }
-  return {admit,register,revoke,close(){if(!closed){closed=true;db.close();}}};
+  return {admit,register,revoke,revokeScope,close(){if(!closed){closed=true;db.close();}}};
 }

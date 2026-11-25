@@ -178,3 +178,37 @@ test("strict registry fails closed on writer contention, and mode cannot change 
     assert.equal(a.register(p,100000).status,200);
   }finally{locked.close();}
 });
+
+test("scoped cancellation blocks existing and future credentials for the leg across restart",t=>{
+  const {open}=fixture(t,{requireIssued:true,requireScoped:true});
+  const a=open(),b=open(),scope="c".repeat(64),other="d".repeat(64);
+  const p={...claim(1),scope},q={...claim(2,"b"),scope},r={...claim(3),scope:other};
+  assert.equal(a.register(claim(4),100000).status,403);
+  assert.equal(a.register(p,100000).status,200);
+  assert.equal(a.register(q,100000).status,200);
+  assert.equal(a.register(r,100000).status,200);
+  assert.equal(b.revokeScope(scope,100001).status,200);
+  assert.equal(b.revokeScope(scope,100001).status,200);
+  a.close();b.close();const fresh=open();
+  assert.equal(fresh.admit(p,100002).status,403);
+  assert.equal(fresh.admit(q,100002).status,403);
+  const g=fresh.admit(r,100002);assert.equal(g.status,200);g.release();
+  assert.equal(fresh.register({...claim(4,"a",200000),scope},200000).status,403);
+});
+test("scope tombstone capacity durably halts both emission and admission",t=>{
+  const {open}=fixture(t,{requireIssued:true,requireScoped:true,maxRevokedScopes:1});
+  const a=open(),p={...claim(1),scope:"d".repeat(64)};
+  assert.equal(a.register(p,100000).status,200);
+  assert.equal(a.revokeScope("c".repeat(64),100001).status,200);
+  assert.equal(a.revokeScope("c".repeat(64),100001).status,200);
+  assert.equal(a.revokeScope(p.scope,100002).status,503);
+  a.close();const b=open();
+  assert.equal(b.admit(p,100003).status,503);
+  assert.equal(b.register({...claim(2),scope:"e".repeat(64)},100003).status,503);
+});
+test("revoked scope prevents future issue even if there was no previous token",t=>{
+  const {open,path}=fixture(t,{requireIssued:true,requireScoped:true});const a=open(),scope="c".repeat(64);
+  assert.equal(a.revokeScope(scope,100000).status,200);
+  assert.equal(a.register({...claim(1),scope},100001).status,403);
+  assert.throws(()=>openRouteReplayStore({path,requireIssued:true}));
+});

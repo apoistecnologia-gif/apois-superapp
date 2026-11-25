@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {generateKeyPairSync,randomBytes} from "node:crypto";
-import {createRouteIssuer,routeBody} from "./route-issuer.mjs";
+import {createRouteIssuer,routeBody,routeLegScope} from "./route-issuer.mjs";
+import {openRouteReplayStore} from "./route-replay-store.mjs";
+import {mkdtempSync,rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {createRouteAuthorization} from "./route-authorization.mjs";
 const ids=Array.from({length:6},(_,i)=>"00000000-0000-4000-8000-"+String(i+1).padStart(12,"0"));
 const req=()=>({rideId:ids[3],phase:"PICKUP",origin:{lat:-9.4,lon:-40.5},target:{lat:-9.42,lon:-40.51}});
@@ -108,4 +112,26 @@ test("issuer does not return token unless configured issuance store commits",asy
   assert.equal(result.status,200);
   const signed=JSON.parse(Buffer.from(result.token.split(".")[0],"base64url"));
   assert.deepEqual(metadata,{claim:{jti:signed.jti,sub:signed.sub,exp:signed.exp},t:100000});
+});
+
+test("trusted scope cancels pending stale authority and separates phases without raw ride ID",async t=>{
+  const dir=mkdtempSync(join(tmpdir(),"apois-scope-"));
+  const store=openRouteReplayStore({path:join(dir,"replay.sqlite"),initialize:true,requireIssued:true,requireScoped:true});
+  t.after(()=>{store.close();rmSync(dir,{recursive:true,force:true});});
+  const scope=routeLegScope(principalKey,"local-lab",ids[3],"PICKUP");
+  assert.notEqual(scope,routeLegScope(principalKey,"local-lab",ids[3],"TRIP"));
+  assert.notEqual(scope,routeLegScope(principalKey,"another",ids[3],"PICKUP"));
+  assert.ok(!scope.includes(ids[3]));
+  let finish;
+  const issue=fixture(()=>new Promise(r=>{finish=r;}),{issuanceStore:store,scopedIssuance:true});
+  const pending=issue({},req());await Promise.resolve();
+  assert.equal(store.revokeScope(scope,100000).status,200);
+  finish(proof());assert.deepEqual(await pending,{status:403});
+  const issueAgain=fixture(async()=>proof(),{issuanceStore:store,scopedIssuance:true});
+  assert.deepEqual(await issueAgain({},req()),{status:403});
+  const trip={...req(),phase:"TRIP"};
+  const tripIssuer=fixture(async()=>({...proof(),status:"em_viagem",targetEvidence:{...proof().targetEvidence,phase:"TRIP"}}),{issuanceStore:store,scopedIssuance:true});
+  const result=await tripIssuer({},trip);assert.equal(result.status,200);
+  const auth=createRouteAuthorization({publicKey:keys.publicKey,audience:"local-lab",now:()=>100000,store});
+  const g=auth("Bearer "+result.token,routeBody(trip.origin,trip.target));assert.equal(g.status,200);g.release();
 });
