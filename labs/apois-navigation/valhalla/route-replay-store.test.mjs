@@ -5,6 +5,7 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {spawn} from "node:child_process";
 import {generateKeyPairSync,sign} from "node:crypto";
+import {DatabaseSync} from "node:sqlite";
 import {openRouteReplayStore} from "./route-replay-store.mjs";
 import {createRouteAuthorization,routeDigest} from "./route-authorization.mjs";
 const claim=(n,sub="a",time=100000)=>({jti:String(n).padStart(24,"0"),sub:sub.repeat(64),exp:time+30000});
@@ -58,7 +59,12 @@ test("capacity and clock regression are persisted, mismatched configurations rej
   const a=open(),g=a.admit(claim(1),100000);assert.equal(g.status,200);g.release();
   assert.equal(a.admit(claim(2),100001).status,429);a.close();
   assert.throws(()=>openRouteReplayStore({path,maxEntries:2}));
-  const b=open();assert.equal(b.admit(claim(3),99999).status,503);
+  const b=open();
+  // The first claim has an overlong remaining lifetime at the regressed
+  // clock and must be rejected before storage. The second is structurally
+  // valid, so it independently exercises the persisted clock guard.
+  assert.equal(b.admit(claim(3),99999).status,403);
+  assert.equal(b.admit(claim(3,"a",99999),99999).status,503);
   assert.equal(b.admit(claim(3),100002).status,429);
   const h=b.admit(claim(4,"a",160002),160002);assert.equal(h.status,200);h.release();
 });
@@ -88,4 +94,18 @@ test("signed gateway verification uses shared store and never falls back on fail
   assert.equal(auth(b)(header,body).status,403);
   b.close();assert.equal(auth(b)(header,body).status,503);
   assert.equal(auth({admit(){throw Error("unavailable");}})(header,body).status,503);
+});
+
+test("busy SQLite writer fails closed without consuming or forwarding the credential",t=>{
+  const {open,path}=fixture(t);
+  const store=open();
+  const locked=new DatabaseSync(path);
+  try{
+    locked.exec("BEGIN IMMEDIATE");
+    assert.equal(store.admit(claim(1),100000).status,503);
+    locked.exec("ROLLBACK");
+    const grant=store.admit(claim(1),100000);
+    assert.equal(grant.status,200);grant.release();
+    assert.equal(store.admit(claim(1),100001).status,403);
+  }finally{locked.close();}
 });

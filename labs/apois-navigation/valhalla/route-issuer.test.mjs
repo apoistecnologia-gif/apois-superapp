@@ -29,7 +29,7 @@ test("trusted proof issues a valid gateway credential bound to exact route",asyn
 test("rejects absent session and extra client-supplied identity or provenance",async()=>{
   let reads=0;const issue=fixture(async()=>{reads++;return proof();});
   assert.equal((await issue(null,req())).status,401);
-  for(const r of [{...req(),driverId:ids[2]},{...req(),source:"INDEPENDENT_OSM"},{...req(),phase:"__proto__"},{...req(),origin:{lat:0,lon:0}}]){
+  for(const r of [{...req(),driverId:ids[2]},{...req(),source:"INDEPENDENT_OSM"},{...req(),phase:"__proto__"},{...req(),phase:["PICKUP"]},{...req(),origin:{lat:0,lon:0}}]){
     assert.equal((await issue({},r)).status,400);
   }
   assert.equal(reads,0);

@@ -38,7 +38,7 @@ export function createRouteIssuer({privateKey,principalKey,audience,readAuthorit
   const pseudonymKey=Buffer.from(principalKey);
   let pending=0,last=0;
   return async function issue(session,request){
-    if(!exact(request,["rideId","phase","origin","target"])||!isId(request.rideId)||!Object.hasOwn(status,request.phase)||
+    if(!exact(request,["rideId","phase","origin","target"])||!isId(request.rideId)||typeof request.phase!=="string"||!Object.hasOwn(status,request.phase)||
       !point(request.origin)||!point(request.target))return {status:400};
     if(session==null)return {status:401};
     if(pending>=maxPending)return {status:429};
@@ -58,7 +58,7 @@ export function createRouteIssuer({privateKey,principalKey,audience,readAuthorit
       const proof=await Promise.race([work,new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(null);},timeout);})]);
       if(controller.signal.aborted)return {status:503};
       const t=now();
-      if(!Number.isSafeInteger(t)||t<last||t<began||t-began>timeout)return {status:503};
+      if(!Number.isSafeInteger(t)||t>Number.MAX_SAFE_INTEGER-30000||t<last||t<began||t-began>timeout)return {status:503};
       last=t;
       const body=verifiedRouteProof(proof,req,t);
       if(!body)return {status:403};
