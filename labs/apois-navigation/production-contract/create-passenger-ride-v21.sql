@@ -47,8 +47,8 @@ begin
  ('agendada','aguardando_pagamento','procurar_motorista','motorista_a_caminho','motorista_chegou','em_viagem')) then return null; end if;
  v_points:=apois_nav_lab.prepare_selection(p_auth_user,p_selection,p_request_key);
  if v_points is null then return null; end if;
- if p_payload->'origin' is distinct from (v_points->'origin'-'label')
- or p_payload->'destination' is distinct from (v_points->'destination'-'label') then
+ if p_payload->'origin' is distinct from ((v_points->'origin')-'label')
+ or p_payload->'destination' is distinct from ((v_points->'destination')-'label') then
    raise exception 'confirmed_points_differ_from_fare_inputs';
  end if;
  insert into public.rides(passenger_id,category,status,origin,destination,origin_lat,origin_lng,destination_lat,destination_lng,origin_name,destination_name,
