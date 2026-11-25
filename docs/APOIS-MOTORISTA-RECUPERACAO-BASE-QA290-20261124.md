@@ -21,3 +21,7 @@ A QA290 usava `scripts/build-partner-release.sh`. A recuperação usa `scripts/b
 ## Restrições
 
 Preservar a Home, boas-vindas e login aprovados, mapa de referência, identidade de assinatura SHA-256 já comprovada, pacote br.com.apois.parceiro e isolamento de Entregas. Sem merge, mutação do Supabase ou alteração do Cliente. Não gerar APK até autorização expressa; a compilação Android continua manual. Recuperação integral da QA290 ainda não executada neste checkpoint.
+
+## Recuperação iniciada
+
+O pipeline `scripts/recover-motorista-qa290-web.sh` reconstrói a cadeia original até o limite do Motorista, em worktree descartável com pins verificados e os testes históricos. A execução não compila Entregador ou Android. A integração com o pipeline de APK permanece bloqueada até reconciliar a Home, login, mapa e shell atuais com as fontes geradas.

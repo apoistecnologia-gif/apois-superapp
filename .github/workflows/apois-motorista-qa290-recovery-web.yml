@@ -1,0 +1,57 @@
+name: APOIS Motorista - Restauracao QA290 (somente web)
+on:
+  push:
+    branches:
+      - fix/apois-motorista-assinatura-recuperacao-20261124
+    paths:
+      - scripts/recover-motorista-qa290-web.sh
+      - .github/workflows/apois-motorista-qa290-recovery-web.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: motorista-qa290-web-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  restore-qa290:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      BUN_VERSION: "1.3.14"
+      APOIS_REPO_TOKEN: ${{ secrets.APOIS_REPO_TOKEN }}
+      CORRIDAS_VITE_SUPABASE_URL: ${{ secrets.CORRIDAS_VITE_SUPABASE_URL }}
+      CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.CORRIDAS_VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CORRIDAS_WEB_MAPS_API_KEY: ${{ secrets.CORRIDAS_WEB_MAPS_API_KEY }}
+      VITE_APOIS_PARTNER_VECTOR_MAP_ID: "1af3628136c58ef870ba9d1a"
+      VITE_APOIS_PARTNER_CLOUD_STYLE_VERIFIED: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Materializar fontes protegidas
+        run: |
+          set -euo pipefail
+          : "${APOIS_REPO_TOKEN:?Protected source token required}"
+          git config --global url."https://x-access-token:$APOIS_REPO_TOKEN@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          npm run verify:pins
+      - name: Instalar Bun fixado
+        run: |
+          curl -fsSL https://bun.sh/install | bash -s "bun-v$BUN_VERSION"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - name: Recuperar QA290 integral sem Android
+        run: |
+          bash -n scripts/recover-motorista-qa290-web.sh
+          bash scripts/recover-motorista-qa290-web.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Motorista-QA290-fontes-reconstruidas-sem-APK
+          path: .work/qa290-recovered-evidence/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
