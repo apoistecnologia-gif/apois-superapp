@@ -324,3 +324,89 @@ create trigger trg_enforce_prepaid_pix_provider_target before insert or update o
 create trigger trg_enforce_ride_electronic_payment_homologation_gate before insert or update of payment_method on public.rides for each row execute function private.enforce_ride_electronic_payment_homologation_gate();
 create trigger trg_rides_state_machine before insert or update of status, driver_id, accepted_driver_id, queued_after_ride_id, accepted_at, driver_arrived_at, started_at, completed_at, cancelled_at, cancelled_by on public.rides for each row execute function private.enforce_ride_state_machine();
 create trigger trg_stamp_ride_financial_snapshot before insert or update of estimated_price, payment_method on public.rides for each row execute function private.stamp_ride_financial_snapshot();
+
+CREATE OR REPLACE FUNCTION private.driver_subscription_allows_rides(_status text)
+ RETURNS boolean
+ LANGUAGE sql
+ IMMUTABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select lower(coalesce(_status,'')) in ('active','ativa','teste');
+$function$;
+
+CREATE OR REPLACE FUNCTION private.enforce_driver_operational_stage_transition()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare v_driver public.drivers%rowtype;
+begin
+  if new.status is not distinct from old.status or new.status not in ('motorista_a_caminho','motorista_chegou','em_viagem') then return new; end if;
+  if new.driver_id is null then raise exception 'driver_required_for_ride_stage' using errcode='55000'; end if;
+  select * into v_driver from public.drivers d where d.id=new.driver_id;
+  if not found then raise exception 'driver_profile_missing' using errcode='55000'; end if;
+  if v_driver.approval_status <> 'aprovado' then raise exception 'driver_not_approved' using errcode='55000'; end if;
+  if v_driver.suspended_at is not null then raise exception 'driver_suspended' using errcode='55000'; end if;
+  if not private.driver_subscription_allows_rides(v_driver.subscription_status) then raise exception 'driver_subscription_inactive' using errcode='55000'; end if;
+  if v_driver.is_online is not true then raise exception 'driver_offline' using errcode='55000'; end if;
+  return new;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.enforce_ride_feature_flags()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  if public.ride_feature_enabled(new.category) then
+    return new;
+  end if;
+
+  if tg_op = 'INSERT' then
+    raise exception 'feature_%_unavailable', lower(new.category)
+      using errcode = 'P0001',
+            hint = 'Esta categoria esta temporariamente indisponivel.';
+  end if;
+
+  if new.category is distinct from old.category
+     or (
+       new.status is distinct from old.status
+       and old.status in ('agendada', 'procurar_motorista')
+       and new.status in ('procurar_motorista', 'motorista_a_caminho', 'motorista_chegou', 'em_viagem')
+     ) then
+    raise exception 'feature_%_unavailable', lower(new.category)
+      using errcode = 'P0001',
+            hint = 'Esta categoria esta temporariamente indisponivel.';
+  end if;
+
+  return new;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.ride_feature_enabled(_category text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select case lower(btrim(coalesce(_category, '')))
+    when 'guincho' then coalesce((
+      select lower(coalesce(s.value #>> '{}', 'false')) in ('true', '1', 'yes', 'on')
+      from public.app_settings s
+      where s.key = 'feature_guincho_enabled'
+      limit 1
+    ), false)
+    when 'fretes' then coalesce((
+      select lower(coalesce(s.value #>> '{}', 'false')) in ('true', '1', 'yes', 'on')
+      from public.app_settings s
+      where s.key = 'feature_fretes_enabled'
+      limit 1
+    ), false)
+    else true
+  end;
+$function$;
+create trigger trg_rides_driver_operational_stage_gate before update of status,driver_id on public.rides for each row execute function private.enforce_driver_operational_stage_transition();
+create trigger trg_enforce_ride_feature_flags before insert or update of category,status on public.rides for each row execute function public.enforce_ride_feature_flags();

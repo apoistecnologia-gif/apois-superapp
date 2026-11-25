@@ -564,6 +564,10 @@
     "private.enforce_prepaid_pix_provider_target",
     "private.enforce_ride_electronic_payment_homologation_gate",
     "private.enforce_ride_state_machine",
-    "private.stamp_ride_financial_snapshot"
+    "private.stamp_ride_financial_snapshot",
+    "private.driver_subscription_allows_rides",
+    "private.enforce_driver_operational_stage_transition",
+    "public.enforce_ride_feature_flags",
+    "public.ride_feature_enabled"
   ]
 }

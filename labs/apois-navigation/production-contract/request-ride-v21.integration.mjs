@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import {spawn} from 'node:child_process'
 import {createExperimentalRequestHandler} from './request-ride-v21.mjs'
+import {createExperimentalRideReview} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/request-review.mjs'
 const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0')
 const query=(statement,values=[])=>new Promise((resolve,reject)=>{
  const args=['exec','-i','apois-v21-fixture','psql','-X','-qAt','-U','postgres','-v','ON_ERROR_STOP=1']
@@ -16,7 +17,7 @@ const s=await query('select apois_nav_lab.confirm_selection($1,$2,$3,1,$4,1)',[a
 assert.ok(s?.selectionId)
 let routes=0,quotes=0,dispatch=0,price=12.34,offline=false
 const handle=createExperimentalRequestHandler({enabled:true,
- authorize:async session=>session==='fixture'?{allowed:true,authUserId:actor,categoryId:id(90)}:null,
+ authorize:async session=>['fixture','fixture-b'].includes(session)?{allowed:true,authUserId:session==='fixture'?actor:id(12),categoryId:id(90)}:null,
  readSelection:({authUserId,selectionId,requestKey})=>query('select apois_nav_lab.read_selection_v21($1,$2,$3)',[authUserId,selectionId,requestKey]),
  independentMetrics:async (a,b)=>{routes++;assert.deepEqual(a,{lat:-9.4,lng:-40.5});assert.deepEqual(b,{lat:-9.42,lng:-40.51});return offline?null:{source:'OSM_VALHALLA_LAB',distanceKm:2.10,durationMin:7.2}},
  loadFare:async (cat,kind,km,min,details)=>{quotes++;assert.deepEqual([cat,kind,km,min,details],[id(90),'carros',2.1,8,{}]);return price},
@@ -40,3 +41,19 @@ const before=routes, beforeQuotes=quotes
 price=99.99;const retry=await handle('fixture',request);assert.equal(retry.body.reused,true);assert.equal(retry.body.estimated_price,12.34)
 assert.equal(routes,before);assert.equal(quotes,beforeQuotes);assert.equal(dispatch,1)
 console.log('APOIS_V21_REQUEST_HANDLER_SQL_OK',{actualPostgres:true,serviceRole:true,syntheticAuth:true,syntheticMetrics:true,priceChange:true,concurrentReuse:true,dispatchAfterCommit:true})
+
+const key2=id(33),s2=await query('select apois_nav_lab.confirm_selection($1,$2,$3,1,$4,1)',[id(12),key2,id(21),id(22)])
+price=12.34
+let lost=true
+const review=createExperimentalRideReview({enabled:true,transport:async body=>{
+ const result=await handle('fixture-b',body)
+ if(body.action.endsWith('create')&&lost){lost=false;throw Error('synthetic lost response after commit')}
+ return result
+}})
+assert.ok(review.begin(s2));assert.ok(await review.requestQuote());assert.equal(await review.submit(true),null)
+assert.equal(review.snapshot().state,'uncertain');assert.equal(review.cancel(),false)
+const recovered=await review.submit(true);assert.ok(recovered?.reused)
+assert.equal(recovered.estimated_price,12.34)
+assert.equal(await query('select to_jsonb(count(*)) from public.rides where request_key=$1',[key2]),1)
+assert.equal(dispatch,2)
+console.log('APOIS_V21_CLIENT_TO_SQL_RECOVERY_OK')

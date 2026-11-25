@@ -34,5 +34,7 @@ jobs:
           run_sql < labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/schema.sql
           run_sql < "$root/observed-gates.sql"
           run_sql < "$root/create-passenger-ride-v21.sql"
+          run_sql < labs/apois-navigation/passenger-provenance-snapshot/revocation-fixture.sql
+          run_sql < "$root/authority-v21.sql"
           run_sql < "$root/test-v21.sql"
           node "$root/request-ride-v21.integration.mjs"

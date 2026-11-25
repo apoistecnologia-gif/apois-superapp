@@ -43,11 +43,35 @@ begin
    update public.rides set status='em_viagem' where id=r;
    raise exception 'invalid transition accepted';
  exception when check_violation then null; end;
+ update public.drivers set is_online=false where id=d;
+ begin
+  update public.rides set status='motorista_a_caminho',driver_id=d,accepted_driver_id=d,accepted_at=clock_timestamp() where id=r;
+  raise exception 'offline driver transitioned';
+ exception when object_not_in_prerequisite_state then if sqlerrm<>'driver_offline' then raise; end if; end;
+ update public.drivers set is_online=true where id=d;
  update public.rides set status='motorista_a_caminho',driver_id=d,accepted_driver_id=d,accepted_at=clock_timestamp() where id=r;
- if apois_nav_lab.read_driver_proof('00000000-0000-4000-8000-000000000061',r,'PICKUP') is null then raise exception 'driver proof missing'; end if;
+ if apois_nav_lab.read_driver_proof_v21('00000000-0000-4000-8000-000000000061',r,'PICKUP') is null then raise exception 'driver proof missing'; end if;
+ begin
+  update public.drivers set is_online=false where id=d;
+  if apois_nav_lab.read_driver_proof_v21('00000000-0000-4000-8000-000000000061',r,'PICKUP') is not null or not exists(select 1 from apois_nav_lab.revoked_leg where ride_id=r and phase='PICKUP') then raise exception 'offline revocation missing'; end if;
+  raise exception using errcode='P3101',message='rollback test';
+ exception when sqlstate 'P3101' then null; end;
+ begin
+  update public.users set suspended_at=clock_timestamp() where id='00000000-0000-4000-8000-000000000051';
+  if apois_nav_lab.read_driver_proof_v21('00000000-0000-4000-8000-000000000061',r,'PICKUP') is not null or not exists(select 1 from apois_nav_lab.revoked_leg where ride_id=r and phase='PICKUP') then raise exception 'indefinite suspension revocation missing'; end if;
+  raise exception using errcode='P3101',message='rollback test';
+ exception when sqlstate 'P3101' then null; end;
+ begin
+  update public.rides set origin='{"lat":-9.41,"lng":-40.5}' where id=r;
+  if apois_nav_lab.read_driver_proof_v21('00000000-0000-4000-8000-000000000061',r,'PICKUP') is not null or not exists(select 1 from apois_nav_lab.revoked_leg where ride_id=r and phase='PICKUP') then raise exception 'json geometry revocation missing'; end if;
+  raise exception using errcode='P3101',message='rollback test';
+ exception when sqlstate 'P3101' then null; end;
+ if exists(select 1 from apois_nav_lab.revoked_leg where ride_id=r) then raise exception 'rollback left tombstone'; end if;
+
  update public.rides set status='motorista_chegou',driver_arrived_at=clock_timestamp() where id=r;
  update public.rides set status='em_viagem',started_at=clock_timestamp() where id=r;
- if apois_nav_lab.read_driver_proof('00000000-0000-4000-8000-000000000061',r,'TRIP') is null then raise exception 'trip proof missing'; end if;
+ if apois_nav_lab.read_driver_proof_v21('00000000-0000-4000-8000-000000000061',r,'TRIP') is null then raise exception 'trip proof missing'; end if;
  update public.rides set status='finalizada',completed_at=clock_timestamp() where id=r;
+ if (select count(*) from apois_nav_lab.revoked_leg where ride_id=r)<>2 then raise exception 'phase revocation missing'; end if;
 end $$;
 select 'APOIS_OBSERVED_V21_CONTRACT_OK';

@@ -119,3 +119,6 @@ alter table public.users add column suspended_at timestamptz;
 create schema private;
 create table public.app_settings(key text primary key,value jsonb);
 create table public.cancellation_fees(passenger_id uuid not null,is_paid boolean,paid_at timestamptz,status text);
+
+alter table public.drivers add column is_online boolean not null default false;
+update public.drivers set is_online=true;
