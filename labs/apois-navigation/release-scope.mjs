@@ -57,7 +57,7 @@ export function audit(root){
   const report={baseline,head,changedPaths:changed.length,productionPaths:0,experimentalFlag:false,
     nativeHostDefault:null,labGateway:"loopback",activitiesExported:false,apkAuthorized:false,
     releaseReady:false,blockers:["independent destination provenance","authorized remote routing infrastructure",
-      "device rendering and audio","explicit APK authorization","production licensing and deployment approval"]};
+      "real authenticated issuer and authoritative revocation/reconciliation","device rendering and audio","explicit APK authorization","production licensing and deployment approval"]};
   console.log(JSON.stringify(report,null,2));return report;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)audit(resolve(process.argv[2]??"."));

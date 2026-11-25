@@ -1,0 +1,654 @@
+{
+  "source": {
+    "runId": 45621571865,
+    "jobId": 139230817690,
+    "commit": "981a883a44c067cb28a20706ae96fb2509938aac",
+    "logMarker": "APOIS_AUTHENTICATED_CAPACITY",
+    "conclusion": "success"
+  },
+  "resourceProfile": {
+    "profile": "compact",
+    "valhallaMemoryBytes": 536870912,
+    "valhallaMemorySwapBytes": 536870912,
+    "valhallaNanoCpus": 1000000000,
+    "valhallaThreads": 1,
+    "nodeOldSpaceMiB": 128,
+    "nodeRssHardLimited": false
+  },
+  "report": {
+    "scope": "local synthetic authority + Ed25519 + SQLite scoped issuance + HTTP gateway + real Valhalla; no Internet or real authentication",
+    "profile": "extended",
+    "idleMs": 20000,
+    "configuredLimits": {
+      "globalPerMinute": 300,
+      "globalParallel": 4,
+      "perMinute": 6,
+      "parallel": 1
+    },
+    "gatewayLimitPerMinute": 300,
+    "waves": 300,
+    "concurrency": 4,
+    "syntheticDrivers": 80,
+    "intervalMs": 1000,
+    "requests": 1200,
+    "successes": 1200,
+    "failures": {},
+    "durationSeconds": 298.83,
+    "requestsPerSecond": 4.02,
+    "totalLatency": {
+      "medianMs": 18.99,
+      "p95Ms": 103.1,
+      "maxMs": 486.65
+    },
+    "issuerLatency": {
+      "medianMs": 2.47,
+      "p95Ms": 28.95,
+      "maxMs": 464.89
+    },
+    "gatewayLatency": {
+      "medianMs": 15.74,
+      "p95Ms": 53.74,
+      "maxMs": 156.07
+    },
+    "responseBytes": {
+      "total": 22853280,
+      "max": 29075
+    },
+    "nodeCpuSeconds": {
+      "user": 4.014827,
+      "system": 0.949135
+    },
+    "eventLoopDelayP95Ms": 21.135359,
+    "peakSampledNodeRssBytes": 146558976,
+    "peakSampledSqliteBytes": 4308568,
+    "samples": [
+      {
+        "phase": "load",
+        "elapsedMs": 0,
+        "nodeRssBytes": 64417792,
+        "nodeHeapUsedBytes": 8989576,
+        "sqliteBytes": 317056,
+        "valhallaCpu": "3.65%",
+        "valhallaMemory": "41.14MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 5003,
+        "nodeRssBytes": 91746304,
+        "nodeHeapUsedBytes": 11526832,
+        "sqliteBytes": 922696,
+        "valhallaCpu": "0.36%",
+        "valhallaMemory": "41.39MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 10007,
+        "nodeRssBytes": 97136640,
+        "nodeHeapUsedBytes": 14515616,
+        "sqliteBytes": 1660176,
+        "valhallaCpu": "2.77%",
+        "valhallaMemory": "41.24MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 15009,
+        "nodeRssBytes": 98578432,
+        "nodeHeapUsedBytes": 15354920,
+        "sqliteBytes": 2319376,
+        "valhallaCpu": "2.73%",
+        "valhallaMemory": "41.25MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 20012,
+        "nodeRssBytes": 104222720,
+        "nodeHeapUsedBytes": 12551616,
+        "sqliteBytes": 2982696,
+        "valhallaCpu": "2.73%",
+        "valhallaMemory": "41.49MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 25016,
+        "nodeRssBytes": 108548096,
+        "nodeHeapUsedBytes": 14949248,
+        "sqliteBytes": 3646016,
+        "valhallaCpu": "2.69%",
+        "valhallaMemory": "41.73MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 30073,
+        "nodeRssBytes": 108810240,
+        "nodeHeapUsedBytes": 17257040,
+        "sqliteBytes": 4247008,
+        "valhallaCpu": "2.44%",
+        "valhallaMemory": "41.45MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 35074,
+        "nodeRssBytes": 109858816,
+        "nodeHeapUsedBytes": 20458384,
+        "sqliteBytes": 4247008,
+        "valhallaCpu": "2.41%",
+        "valhallaMemory": "41.7MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 40077,
+        "nodeRssBytes": 112218112,
+        "nodeHeapUsedBytes": 12506928,
+        "sqliteBytes": 4247008,
+        "valhallaCpu": "2.39%",
+        "valhallaMemory": "41.69MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 45079,
+        "nodeRssBytes": 115494912,
+        "nodeHeapUsedBytes": 20591472,
+        "sqliteBytes": 4247008,
+        "valhallaCpu": "2.74%",
+        "valhallaMemory": "41.68MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 50081,
+        "nodeRssBytes": 123621376,
+        "nodeHeapUsedBytes": 15323240,
+        "sqliteBytes": 4247008,
+        "valhallaCpu": "2.35%",
+        "valhallaMemory": "41.42MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 55083,
+        "nodeRssBytes": 123752448,
+        "nodeHeapUsedBytes": 13037072,
+        "sqliteBytes": 4247008,
+        "valhallaCpu": "2.30%",
+        "valhallaMemory": "41.65MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 60086,
+        "nodeRssBytes": 123752448,
+        "nodeHeapUsedBytes": 15510472,
+        "sqliteBytes": 4283872,
+        "valhallaCpu": "2.61%",
+        "valhallaMemory": "41.77MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 65089,
+        "nodeRssBytes": 124145664,
+        "nodeHeapUsedBytes": 14415184,
+        "sqliteBytes": 4283872,
+        "valhallaCpu": "2.57%",
+        "valhallaMemory": "41.76MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 70091,
+        "nodeRssBytes": 124145664,
+        "nodeHeapUsedBytes": 17536104,
+        "sqliteBytes": 4283872,
+        "valhallaCpu": "2.65%",
+        "valhallaMemory": "41.74MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 75094,
+        "nodeRssBytes": 124145664,
+        "nodeHeapUsedBytes": 20599024,
+        "sqliteBytes": 4283872,
+        "valhallaCpu": "2.28%",
+        "valhallaMemory": "41.73MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 80096,
+        "nodeRssBytes": 124276736,
+        "nodeHeapUsedBytes": 14070448,
+        "sqliteBytes": 4283872,
+        "valhallaCpu": "2.58%",
+        "valhallaMemory": "41.71MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 85104,
+        "nodeRssBytes": 124932096,
+        "nodeHeapUsedBytes": 21895952,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.48%",
+        "valhallaMemory": "41.54MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 90106,
+        "nodeRssBytes": 127553536,
+        "nodeHeapUsedBytes": 19089704,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.59%",
+        "valhallaMemory": "41.82MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 95109,
+        "nodeRssBytes": 129388544,
+        "nodeHeapUsedBytes": 17632504,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.44%",
+        "valhallaMemory": "41.81MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 100111,
+        "nodeRssBytes": 129388544,
+        "nodeHeapUsedBytes": 25355584,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.40%",
+        "valhallaMemory": "41.8MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 105114,
+        "nodeRssBytes": 129650688,
+        "nodeHeapUsedBytes": 23793344,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.58%",
+        "valhallaMemory": "41.8MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 110116,
+        "nodeRssBytes": 129650688,
+        "nodeHeapUsedBytes": 15134344,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.32%",
+        "valhallaMemory": "41.79MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 115118,
+        "nodeRssBytes": 129650688,
+        "nodeHeapUsedBytes": 22876128,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.56%",
+        "valhallaMemory": "41.57MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 120121,
+        "nodeRssBytes": 129650688,
+        "nodeHeapUsedBytes": 19989976,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.66%",
+        "valhallaMemory": "41.55MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 125124,
+        "nodeRssBytes": 129650688,
+        "nodeHeapUsedBytes": 18402904,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.36%",
+        "valhallaMemory": "41.54MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 130125,
+        "nodeRssBytes": 130437120,
+        "nodeHeapUsedBytes": 17087368,
+        "sqliteBytes": 4300328,
+        "valhallaCpu": "2.41%",
+        "valhallaMemory": "41.53MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 135128,
+        "nodeRssBytes": 130437120,
+        "nodeHeapUsedBytes": 24754288,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.26%",
+        "valhallaMemory": "41.49MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 140129,
+        "nodeRssBytes": 130699264,
+        "nodeHeapUsedBytes": 17468920,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "3.96%",
+        "valhallaMemory": "41.73MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 145132,
+        "nodeRssBytes": 131485696,
+        "nodeHeapUsedBytes": 12653224,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.33%",
+        "valhallaMemory": "41.57MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 150135,
+        "nodeRssBytes": 131485696,
+        "nodeHeapUsedBytes": 20206584,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.80%",
+        "valhallaMemory": "41.56MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 155137,
+        "nodeRssBytes": 137646080,
+        "nodeHeapUsedBytes": 27770368,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.74%",
+        "valhallaMemory": "41.8MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 160140,
+        "nodeRssBytes": 140791808,
+        "nodeHeapUsedBytes": 16905688,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.36%",
+        "valhallaMemory": "41.57MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 165143,
+        "nodeRssBytes": 141709312,
+        "nodeHeapUsedBytes": 24514944,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.43%",
+        "valhallaMemory": "41.81MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 170146,
+        "nodeRssBytes": 143937536,
+        "nodeHeapUsedBytes": 14144696,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.59%",
+        "valhallaMemory": "41.81MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 175149,
+        "nodeRssBytes": 143937536,
+        "nodeHeapUsedBytes": 21793560,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.33%",
+        "valhallaMemory": "41.55MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 180152,
+        "nodeRssBytes": 143937536,
+        "nodeHeapUsedBytes": 11232128,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.32%",
+        "valhallaMemory": "41.54MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 185155,
+        "nodeRssBytes": 143937536,
+        "nodeHeapUsedBytes": 18871800,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.41%",
+        "valhallaMemory": "41.78MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 190158,
+        "nodeRssBytes": 143937536,
+        "nodeHeapUsedBytes": 26368632,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.68%",
+        "valhallaMemory": "41.51MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 195161,
+        "nodeRssBytes": 144330752,
+        "nodeHeapUsedBytes": 15684320,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.44%",
+        "valhallaMemory": "41.48MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 200164,
+        "nodeRssBytes": 144330752,
+        "nodeHeapUsedBytes": 23260784,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.35%",
+        "valhallaMemory": "41.47MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 205167,
+        "nodeRssBytes": 144330752,
+        "nodeHeapUsedBytes": 12565096,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.43%",
+        "valhallaMemory": "41.7MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 210170,
+        "nodeRssBytes": 144330752,
+        "nodeHeapUsedBytes": 20116344,
+        "sqliteBytes": 4304448,
+        "valhallaCpu": "2.37%",
+        "valhallaMemory": "41.84MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 215318,
+        "nodeRssBytes": 144461824,
+        "nodeHeapUsedBytes": 26578240,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.80%",
+        "valhallaMemory": "41.59MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 220321,
+        "nodeRssBytes": 145248256,
+        "nodeHeapUsedBytes": 16399528,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.40%",
+        "valhallaMemory": "41.58MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 225324,
+        "nodeRssBytes": 145248256,
+        "nodeHeapUsedBytes": 23993952,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.24%",
+        "valhallaMemory": "41.8MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 230327,
+        "nodeRssBytes": 145248256,
+        "nodeHeapUsedBytes": 12907088,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.28%",
+        "valhallaMemory": "41.8MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 235330,
+        "nodeRssBytes": 145248256,
+        "nodeHeapUsedBytes": 20497784,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.38%",
+        "valhallaMemory": "41.78MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 240333,
+        "nodeRssBytes": 145248256,
+        "nodeHeapUsedBytes": 28020328,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.77%",
+        "valhallaMemory": "41.52MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 245336,
+        "nodeRssBytes": 146165760,
+        "nodeHeapUsedBytes": 16294728,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.43%",
+        "valhallaMemory": "41.75MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 250339,
+        "nodeRssBytes": 146165760,
+        "nodeHeapUsedBytes": 23908808,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.79%",
+        "valhallaMemory": "41.73MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 255342,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 12591096,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.35%",
+        "valhallaMemory": "41.47MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 260345,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 20200192,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.38%",
+        "valhallaMemory": "41.53MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 265347,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 27742520,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.36%",
+        "valhallaMemory": "41.98MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 270350,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 17092584,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.44%",
+        "valhallaMemory": "41.77MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 275354,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 24662568,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.55%",
+        "valhallaMemory": "41.76MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 280356,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 14026720,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.45%",
+        "valhallaMemory": "41.74MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 285359,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 21596616,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.68%",
+        "valhallaMemory": "41.44MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 290362,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 11692944,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.44%",
+        "valhallaMemory": "41.97MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 295365,
+        "nodeRssBytes": 146427904,
+        "nodeHeapUsedBytes": 19288328,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "2.64%",
+        "valhallaMemory": "41.73MiB / 512MiB"
+      },
+      {
+        "phase": "load",
+        "elapsedMs": 298833,
+        "nodeRssBytes": 146558976,
+        "nodeHeapUsedBytes": 25358680,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "0.03%",
+        "valhallaMemory": "41.5MiB / 512MiB"
+      },
+      {
+        "phase": "idle",
+        "elapsedMs": 304853,
+        "nodeRssBytes": 146558976,
+        "nodeHeapUsedBytes": 25583424,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "0.03%",
+        "valhallaMemory": "41.79MiB / 512MiB"
+      },
+      {
+        "phase": "idle",
+        "elapsedMs": 309856,
+        "nodeRssBytes": 146558976,
+        "nodeHeapUsedBytes": 25725936,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "0.03%",
+        "valhallaMemory": "41.79MiB / 512MiB"
+      },
+      {
+        "phase": "idle",
+        "elapsedMs": 314860,
+        "nodeRssBytes": 146558976,
+        "nodeHeapUsedBytes": 25869144,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "0.02%",
+        "valhallaMemory": "41.79MiB / 512MiB"
+      },
+      {
+        "phase": "idle",
+        "elapsedMs": 319857,
+        "nodeRssBytes": 146558976,
+        "nodeHeapUsedBytes": 25967840,
+        "sqliteBytes": 4308568,
+        "valhallaCpu": "0.02%",
+        "valhallaMemory": "41.79MiB / 512MiB"
+      }
+    ],
+    "sampleErrors": [],
+    "limitations": "Paced waves; sampled resources, not continuous peak; fake authority, no TLS/mobile network or production load. Quotas raised only for this fixture."
+  }
+}

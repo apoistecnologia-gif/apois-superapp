@@ -83,3 +83,16 @@ test("map distribution estimate combines with measured route payload without cla
   assert.equal(r.routePayloadGb,11.88);assert.equal(r.mapPayloadGb,3.52);
   assert.equal(r.estimatedCostBrl,null);assert.equal(r.productionCapacityVerified,false);
 });
+
+test("compact run proves constrained router test, not full VPS or remote capacity",()=>{
+  const e=JSON.parse(readFileSync(new URL("./evidence-45621571865.json",import.meta.url),"utf8"));
+  assert.equal(e.source.runId,45621571865);
+  assert.equal(e.resourceProfile.valhallaMemoryBytes,536870912);
+  assert.equal(e.resourceProfile.valhallaNanoCpus,1000000000);
+  assert.equal(e.resourceProfile.nodeRssHardLimited,false);
+  assert.equal(e.report.requests,1200);
+  assert.equal(e.report.successes,1200);
+  const r=planCapacity({...assumptions,activeDrivers:1000,localEvidence:e.report});
+  assert.equal(r.routePayloadGb,11.88);assert.equal(r.productionCapacityVerified,false);
+  assert.equal(r.configuredQuotaFits,false);assert.equal(r.withinBudget,null);
+});
