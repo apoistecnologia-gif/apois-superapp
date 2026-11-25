@@ -38,6 +38,7 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
                         ConfirmedLiveNavigationBridge.revoke()
                         break
                     }
+                    ConfirmedLiveNavigationBridge.checkVoice(id)
                     delay(1000)
                 }
             }
@@ -56,7 +57,11 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
         }
     }
     override fun onResume(){super.onResume();foreground=true}
-    override fun onPause(){foreground=false;super.onPause()}
+    override fun onPause(){
+        foreground=false
+        if(claimed)sessionId?.let{ConfirmedLiveNavigationBridge.pauseVoice(it)}
+        super.onPause()
+    }
     override fun onDestroy(){
         // Configuration recreation is deliberately a new entry, not an
         // inherited route/voice authority. Close this owner and acknowledge

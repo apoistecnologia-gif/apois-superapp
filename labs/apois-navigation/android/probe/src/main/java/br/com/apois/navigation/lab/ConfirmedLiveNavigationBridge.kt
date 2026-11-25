@@ -32,7 +32,7 @@ object ConfirmedLiveNavigationBridge {
         val ride:RideSnapshot get()=controller.snapshot
         var pending=false
         var opened=false
-        var audioClaimed=false
+        val voice=ConfirmedSessionVoice()
     }
     internal data class Screen(
         val id:String, val owner:Prepared, val token:LegToken,
@@ -194,14 +194,24 @@ object ConfirmedLiveNavigationBridge {
         main()
         val s=screen.value?:return null
         val p=s.owner
-        if(s.id!=id||p.audioClaimed||!accepts(id,s.token))return null
+        if(s.id!=id||!accepts(id,s.token))return null
         val approved=p.audioAuthorization?:return null
         // One attempt per opened session. An operational interruption or
         // failed stop never causes automatic reacquisition or repeated speech.
-        p.audioClaimed=true
         fun allowed()=accepts(id,s.token)&&runCatching{approved()}.getOrDefault(false)
-        if(!allowed())return null
-        return SharedGuidanceAudio.acquire(webStopped=true,stillCurrent=::allowed)
+        return p.voice.acquire{
+            if(!allowed())null else SharedGuidanceAudio.acquire(webStopped=true,stillCurrent=::allowed)
+        }
+    }
+
+    internal fun checkVoice(id:String){
+        main()
+        screen.value?.takeIf{it.id==id}?.owner?.voice?.checkAuthority()
+    }
+
+    internal fun pauseVoice(id:String){
+        main()
+        screen.value?.takeIf{it.id==id}?.owner?.voice?.pause()
     }
 
     internal fun submit(id:String,intent:RideIntent){
@@ -273,6 +283,7 @@ object ConfirmedLiveNavigationBridge {
             prepared=null
             s.owner.lease.revoke()
         }
+        s.owner.voice.close()
         s.owner.controller.close()
         screen.value=null
         return true
@@ -320,6 +331,7 @@ object ConfirmedLiveNavigationBridge {
         val p=prepared
         prepared=null
         p?.lease?.revoke()
+        p?.voice?.close()
         p?.controller?.close()
         screen.value?.id?.let{close(it)}
     }

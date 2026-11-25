@@ -221,7 +221,9 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
             onQuality = { status ->
                 if (current()) {
                     _quality.value = status
-                    voice?.setGpsAvailable(status == GpsQuality.AVAILABLE)
+                    // A recovered fix alone is not proof that guidance is safe.
+                    // Only show() may re-enable voice after checking deviation.
+                    if(status != GpsQuality.AVAILABLE)voice?.setGpsAvailable(false)
                     if (status != GpsQuality.AVAILABLE) {
                         budget.invalidateFix()
                         stillOffRoute = false
