@@ -1,0 +1,26 @@
+name: APOIS Navegacao - transporte privado de cotacao
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/remote-quote/**','.github/workflows/apois-navigation-lab-remote-quote.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: TLS com certificado temporario e SQLite persistente
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout "$work/key.pem" -out "$work/cert.pem" -days 1 -subj /CN=localhost -addext subjectAltName=DNS:localhost >/dev/null 2>&1
+          NODE_EXTRA_CA_CERTS="$work/cert.pem" node labs/apois-navigation/remote-quote/quote-tls.integration.mjs "$work/key.pem" "$work/cert.pem"
