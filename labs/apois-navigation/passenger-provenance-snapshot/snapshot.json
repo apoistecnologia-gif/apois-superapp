@@ -1,6 +1,6 @@
 {
   "source": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
-  "commit": "b3a1fad946494ac35c76fe2dbc207e72bd5e916c",
+  "commit": "05e0a02da2d95ef9339177ef180c3d984bebde64",
   "blobs": [
     {
       "path": "experimental/apois-navigation/schema.sql",
@@ -29,6 +29,34 @@
     {
       "path": "src/services/navigation/independent-selection.ts",
       "sha": "b963b97a43d8610a3f9e6b62b47edad3ca37a8dd"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/search.mjs",
+      "sha": "aede4d05216ddb92a7b06838e64a6b7b684df3c1"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/map-selection.mjs",
+      "sha": "a4f7019ac1c08de2ec2c35075a0ce80dfa0a7c51"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/passenger-flow.mjs",
+      "sha": "bc89cb6598b2676049da9aa3642a8403f5e6be5d"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/passenger-panel.mjs",
+      "sha": "87c9129ce603e1a76bda723f46633625dcca7a42"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/passenger-panel-view.mjs",
+      "sha": "ab7c3394985a8fe81e48f47ade913b85cebed94d"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/passenger-panel.test.mjs",
+      "sha": "e4d91d93c0ed08d587f157642d10364f08ded7f6"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/README.md",
+      "sha": "1433503ba5830b499706df39b1c60413035ffc5e"
     }
   ]
 }

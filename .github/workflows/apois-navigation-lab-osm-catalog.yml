@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/apois-navigation-lab-osm-catalog.yml'
       - 'labs/apois-navigation/osm-search/**'
+      - 'labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -79,7 +80,7 @@ jobs:
             pickup:{id:pickupId,version:1},destination:{id:destinationId,version:1}})
           console.log('APOIS_SELECTION_CLIENT_CONTRACT_OK')
           JS
-      - run: node --test labs/apois-navigation/osm-search/passenger-flow.test.mjs labs/apois-navigation/osm-search/passenger-panel.test.mjs
+      - run: node --test labs/apois-navigation/osm-search/passenger-flow.test.mjs labs/apois-navigation/osm-search/passenger-panel.test.mjs labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/passenger-panel.test.mjs
       - name: Mes do cache regional
         id: cache-month
         run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
