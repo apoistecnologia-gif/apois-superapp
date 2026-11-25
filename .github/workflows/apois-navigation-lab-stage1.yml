@@ -1,0 +1,43 @@
+name: APOIS Navegacao - laboratorio etapa 1 (sem APK)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/**', '.github/workflows/apois-navigation-lab-stage1.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Testar isolamento, seletor e reversao
+        run: node --test labs/apois-navigation/policy.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Android API 36
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Resolver e compilar SDK real (biblioteca, nao aplicativo)
+        run: |
+          gradle -p labs/apois-navigation/android :probe:compileDebugKotlin --no-daemon --stacktrace
+          gradle -p labs/apois-navigation/android :probe:dependencies --configuration debugCompileClasspath --no-daemon > /tmp/apois-navigation-dependencies.txt
+          grep -F 'com.stadiamaps.ferrostar:core:0.59.0' /tmp/apois-navigation-dependencies.txt
+          grep -F 'com.stadiamaps.ferrostar:ui-maplibre:0.59.0' /tmp/apois-navigation-dependencies.txt
+          test -z "$(find labs/apois-navigation -name '*.apk' -print -quit)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-navigation-dependency-report
+          path: /tmp/apois-navigation-dependencies.txt
+          retention-days: 7
