@@ -61,3 +61,13 @@ test('PIN is UI-only and rating is typed',async()=>{
  update("em_viagem",2);update("finalizada",3);
  assert.equal(await d.receive(event("RATE",{rating:5})),"handled");
 });
+
+test('successful finish also stays locked until a newer authoritative phase',async()=>{
+ let calls=0;const {d,g,event,update}=setup({handlers:{FINISH:()=>{calls++;return true;}}});
+ assert.equal(await d.receive(event("FINISH")),"handled");
+ assert.equal(await d.receive(event("FINISH")),"blocked");
+ update("em_viagem",2);assert.equal(await d.receive(event("FINISH")),"blocked");
+ update("finalizada",3);
+ assert.equal(d.acknowledgeFinishReconciled({epoch:g.epoch,rideId:id(4),revision:3}),true);
+ assert.equal(calls,1);
+});

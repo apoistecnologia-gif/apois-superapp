@@ -58,8 +58,11 @@ export class MotoristaIntentDispatcher {
       const result=await handler(ticket);
       // Success requires explicit handler acknowledgement; backend confirmation
       // of finalization still arrives through the existing authoritative path.
-      if(ticket.action==="FINISH" && result!==true){
-        this.#uncertainFinish=ticket;return "reconcile";
+      if(ticket.action==="FINISH"){
+        // Even known success must not permit a second finish while the old
+        // trip snapshot remains visible. Reconcile with a newer revision.
+        this.#uncertainFinish=ticket;
+        if(result!==true)return "reconcile";
       }
       // Do not turn a stale response into a new UI action.
       return current() ? (result===true?"handled":"rejected") : "stale";
