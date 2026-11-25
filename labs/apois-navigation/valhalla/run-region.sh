@@ -73,6 +73,6 @@ done
 test "$GATEWAY_READY" = 1
 python3 "$BASE/test_routes.py" "$OUT"
 node "$BASE/authenticated-regional-smoke.mjs" "$OUT"
-node "$BASE/authenticated-capacity.mjs" "$OUT" "$NAME"
+node "$BASE/authenticated-capacity.mjs" "$OUT" "$NAME" extended
 docker stats --no-stream --format '{{json .}}' "$NAME" >"$OUT/docker-stats.json"
 echo '[OK] Regional route benchmark completed; no paid API calls or APK.'

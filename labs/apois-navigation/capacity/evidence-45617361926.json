@@ -1,0 +1,186 @@
+{
+  "source": {
+    "runId": 45617361926,
+    "jobId": 139216120556,
+    "commit": "12635070deb42e972d411261d9584f9a27916a0e",
+    "logMarker": "APOIS_AUTHENTICATED_CAPACITY",
+    "conclusion": "success"
+  },
+  "report": {
+    "scope": "local synthetic authority + Ed25519 + SQLite scoped issuance + HTTP gateway + real Valhalla; no Internet or real authentication",
+    "configuredLimits": {
+      "globalPerMinute": 300,
+      "globalParallel": 4,
+      "perMinute": 6,
+      "parallel": 1
+    },
+    "gatewayLimitPerMinute": 300,
+    "waves": 75,
+    "concurrency": 4,
+    "syntheticDrivers": 80,
+    "intervalMs": 1000,
+    "requests": 300,
+    "successes": 300,
+    "failures": {},
+    "durationSeconds": 73.96,
+    "requestsPerSecond": 4.06,
+    "totalLatency": {
+      "medianMs": 17.51,
+      "p95Ms": 22.83,
+      "maxMs": 50.44
+    },
+    "issuerLatency": {
+      "medianMs": 2.6,
+      "p95Ms": 3.56,
+      "maxMs": 10
+    },
+    "gatewayLatency": {
+      "medianMs": 14.95,
+      "p95Ms": 20.09,
+      "maxMs": 41.75
+    },
+    "responseBytes": {
+      "total": 5713320,
+      "max": 29075
+    },
+    "nodeCpuSeconds": {
+      "user": 1.193124,
+      "system": 0.214129
+    },
+    "eventLoopDelayP95Ms": 20.299775,
+    "peakSampledNodeRssBytes": 131780608,
+    "peakSampledSqliteBytes": 4292112,
+    "samples": [
+      {
+        "elapsedMs": 0,
+        "nodeRssBytes": 64565248,
+        "nodeHeapUsedBytes": 9007416,
+        "sqliteBytes": 329416,
+        "valhallaCpu": "4.39%",
+        "valhallaMemory": "67.05MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 5004,
+        "nodeRssBytes": 92852224,
+        "nodeHeapUsedBytes": 13617616,
+        "sqliteBytes": 968016,
+        "valhallaCpu": "2.71%",
+        "valhallaMemory": "67.21MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 10006,
+        "nodeRssBytes": 98349056,
+        "nodeHeapUsedBytes": 13622696,
+        "sqliteBytes": 1627216,
+        "valhallaCpu": "2.76%",
+        "valhallaMemory": "67.45MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 15009,
+        "nodeRssBytes": 99930112,
+        "nodeHeapUsedBytes": 13557904,
+        "sqliteBytes": 2282296,
+        "valhallaCpu": "2.72%",
+        "valhallaMemory": "67.75MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 20012,
+        "nodeRssBytes": 106483712,
+        "nodeHeapUsedBytes": 15572408,
+        "sqliteBytes": 2937376,
+        "valhallaCpu": "2.48%",
+        "valhallaMemory": "67.75MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 25014,
+        "nodeRssBytes": 109760512,
+        "nodeHeapUsedBytes": 18338568,
+        "sqliteBytes": 3584216,
+        "valhallaCpu": "2.68%",
+        "valhallaMemory": "67.45MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 30016,
+        "nodeRssBytes": 110022656,
+        "nodeHeapUsedBytes": 15546104,
+        "sqliteBytes": 4255248,
+        "valhallaCpu": "2.69%",
+        "valhallaMemory": "67.77MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 35018,
+        "nodeRssBytes": 110678016,
+        "nodeHeapUsedBytes": 18047152,
+        "sqliteBytes": 4255248,
+        "valhallaCpu": "2.57%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 40020,
+        "nodeRssBytes": 112381952,
+        "nodeHeapUsedBytes": 15531288,
+        "sqliteBytes": 4255248,
+        "valhallaCpu": "2.62%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 45022,
+        "nodeRssBytes": 121163776,
+        "nodeHeapUsedBytes": 23526384,
+        "sqliteBytes": 4255248,
+        "valhallaCpu": "2.55%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 50026,
+        "nodeRssBytes": 124964864,
+        "nodeHeapUsedBytes": 19607656,
+        "sqliteBytes": 4255248,
+        "valhallaCpu": "2.61%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 55028,
+        "nodeRssBytes": 131256320,
+        "nodeHeapUsedBytes": 16628712,
+        "sqliteBytes": 4255248,
+        "valhallaCpu": "2.56%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 60030,
+        "nodeRssBytes": 131387392,
+        "nodeHeapUsedBytes": 24320680,
+        "sqliteBytes": 4292112,
+        "valhallaCpu": "2.51%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 65032,
+        "nodeRssBytes": 131649536,
+        "nodeHeapUsedBytes": 16300336,
+        "sqliteBytes": 4292112,
+        "valhallaCpu": "2.49%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 70035,
+        "nodeRssBytes": 131780608,
+        "nodeHeapUsedBytes": 24117216,
+        "sqliteBytes": 4292112,
+        "valhallaCpu": "2.72%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      },
+      {
+        "elapsedMs": 73965,
+        "nodeRssBytes": 131780608,
+        "nodeHeapUsedBytes": 18448224,
+        "sqliteBytes": 4292112,
+        "valhallaCpu": "0.04%",
+        "valhallaMemory": "67.97MiB / 5GiB"
+      }
+    ],
+    "sampleErrors": [],
+    "limitations": "75 paced waves; sampled resources, not continuous peak; fake authority, no TLS/mobile network or production load. Quotas raised only for this fixture."
+  }
+}

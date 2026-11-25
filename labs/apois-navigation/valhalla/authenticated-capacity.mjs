@@ -13,7 +13,8 @@ import {openRouteReplayStore} from "./route-replay-store.mjs";
 import {createRouteIssuer,routeBody} from "./route-issuer.mjs";
 import {createRouteAuthorization} from "./route-authorization.mjs";
 import {createRouteGateway,createBudget} from "./route-gateway.mjs";
-const [out,container]=process.argv.slice(2);
+const [out,container,profile="short"]=process.argv.slice(2);
+assert.ok(["short","extended"].includes(profile),"bounded profile only");
 assert.ok(out&&/^apois-valhalla-lab-[0-9]+$/.test(container??""),"local fixture container only");
 const {publicKey,privateKey}=generateKeyPairSync("ed25519");
 const audience="apois-capacity-synthetic";
@@ -22,7 +23,8 @@ const id=i=>"00000000-0000-4000-8000-"+String(i).padStart(12,"0");
 const point=(lat,lon)=>Object.freeze({lat,lon});
 const P=point(-9.403901,-40.5040233),J=point(-9.4165,-40.5035);
 const routes=[[P,point(-9.3800,-40.5020)],[J,point(-9.4250,-40.4980)],[P,J],[J,P],[point(-9.3990,-40.5220),J]];
-const concurrency=4,waves=75,drivers=80,intervalMs=1000;
+const concurrency=4,waves=profile==="extended"?300:75,drivers=80,intervalMs=1000;
+const idleMs=profile==="extended"?20000:0;
 const sessions=Array.from({length:drivers},(_,i)=>Object.freeze({index:i}));
 const requests=sessions.map(({index:i})=>Object.freeze({rideId:id(1000+i),phase:"PICKUP",origin:routes[i%routes.length][0],target:routes[i%routes.length][1]}));
 const limits={globalPerMinute:300,globalParallel:4,perMinute:6,parallel:1};
@@ -41,15 +43,15 @@ const gateway=createRouteGateway({authorize:createRouteAuthorization({publicKey,
 const docker=promisify(execFile);
 const delay=monitorEventLoopDelay({resolution:20});
 const results=[],samples=[],sampleErrors=[];
-let sampleInFlight=null,sampleTimer=null,start=0,cpuStart;
+let sampleInFlight=null,sampleTimer=null,start=0,cpuStart,phase="load";
 function sample(){
   if(sampleInFlight)return;
   sampleInFlight=(async()=>{
-    const m=process.memoryUsage(),elapsedMs=performance.now()-start;
+    const m=process.memoryUsage(),elapsedMs=performance.now()-start,samplePhase=phase;
     try{
       const {stdout}=await docker("docker",["stats","--no-stream","--format","{{json .}}",container],{timeout:5000,maxBuffer:16384});
       const d=JSON.parse(stdout.trim());
-      samples.push({elapsedMs:Math.round(elapsedMs),nodeRssBytes:m.rss,nodeHeapUsedBytes:m.heapUsed,
+      samples.push({phase:samplePhase,elapsedMs:Math.round(elapsedMs),nodeRssBytes:m.rss,nodeHeapUsedBytes:m.heapUsed,
         sqliteBytes:[path,path+"-wal",path+"-shm"].reduce((n,p)=>n+(existsSync(p)?statSync(p).size:0),0),
         valhallaCpu:d.CPUPerc,valhallaMemory:d.MemUsage});
     }catch{sampleErrors.push(Math.round(elapsedMs));}
@@ -94,24 +96,27 @@ try{
     if(wave+1<waves)await sleep(Math.max(0,intervalMs-(performance.now()-began)));
   }
   const elapsed=(performance.now()-start)/1000,cpu=process.cpuUsage(cpuStart);
-  delay.disable();clearInterval(sampleTimer);await sampleInFlight;
+  delay.disable();const loopP95=delay.percentile(95)/1e6;
+  clearInterval(sampleTimer);await sampleInFlight;
   sample();await sampleInFlight;
+  if(idleMs){phase="idle";sampleTimer=setInterval(sample,5000);await sleep(idleMs);clearInterval(sampleTimer);await sampleInFlight;sample();await sampleInFlight;}
   const ok=results.filter(r=>r.stage==="ok");
   const failures={};for(const r of results.filter(r=>r.stage!=="ok")){const k=r.stage+":"+r.status;failures[k]=(failures[k]??0)+1;}
   const report={scope:"local synthetic authority + Ed25519 + SQLite scoped issuance + HTTP gateway + real Valhalla; no Internet or real authentication",
-    configuredLimits:limits,gatewayLimitPerMinute:300,waves,concurrency,syntheticDrivers:drivers,intervalMs,
+    profile,idleMs,configuredLimits:limits,gatewayLimitPerMinute:300,waves,concurrency,syntheticDrivers:drivers,intervalMs,
     requests:results.length,successes:ok.length,failures,durationSeconds:Math.round(elapsed*100)/100,
     requestsPerSecond:Math.round(results.length/elapsed*100)/100,
     totalLatency:stats(ok.map(r=>r.totalMs)),issuerLatency:stats(ok.map(r=>r.issueMs)),gatewayLatency:stats(ok.map(r=>r.gatewayMs)),
     responseBytes:{total:ok.reduce((n,r)=>n+r.responseBytes,0),max:ok.reduce((n,r)=>Math.max(n,r.responseBytes),0)},
-    nodeCpuSeconds:{user:cpu.user/1e6,system:cpu.system/1e6},eventLoopDelayP95Ms:delay.percentile(95)/1e6,
+    nodeCpuSeconds:{user:cpu.user/1e6,system:cpu.system/1e6},eventLoopDelayP95Ms:loopP95,
     peakSampledNodeRssBytes:Math.max(0,...samples.map(s=>s.nodeRssBytes)),peakSampledSqliteBytes:Math.max(0,...samples.map(s=>s.sqliteBytes)),
-    samples,sampleErrors,limitations:"75 paced waves; sampled resources, not continuous peak; fake authority, no TLS/mobile network or production load. Quotas raised only for this fixture."};
-  writeFileSync(join(out,"authenticated-capacity-report.json"),JSON.stringify(report,null,2));
+    samples,sampleErrors,limitations:"Paced waves; sampled resources, not continuous peak; fake authority, no TLS/mobile network or production load. Quotas raised only for this fixture."};
+  writeFileSync(join(out,profile==="extended"?"authenticated-capacity-extended-report.json":"authenticated-capacity-report.json"),JSON.stringify(report,null,2));
   console.log("APOIS_AUTHENTICATED_CAPACITY",JSON.stringify(report));
   assert.equal(results.length,waves*concurrency);assert.equal(ok.length,results.length);
-  assert.ok(elapsed>=73,"sustained window did not run");
-  assert.ok(samples.length>=2,"resource samples missing");
+  assert.ok(elapsed>=waves-2,"sustained window did not run");
+  assert.ok(samples.filter(s=>s.phase==="load").length>=2,"resource samples missing");
+  if(idleMs)assert.ok(samples.filter(s=>s.phase==="idle").length>=2,"idle samples missing");
 }finally{
   if(sampleTimer)clearInterval(sampleTimer);delay.disable();await sampleInFlight;
   gateway.closeAllConnections();await new Promise(r=>gateway.close(r));

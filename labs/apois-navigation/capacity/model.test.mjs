@@ -33,3 +33,17 @@ test("failed, short or inconsistent evidence must be rejected",()=>{
   for(const patch of [{reserveFraction:1},{activeDrivers:0},{peakHourShare:0},{reroutesPerLeg:-1},{fixedMonthlyBrl:-1}])
     assert.throws(()=>planCapacity({...assumptions,...patch}));
 });
+
+import {readFileSync} from "node:fs";
+test("verified regional evidence feeds projected payload without claiming production capacity",()=>{
+  const e=JSON.parse(readFileSync(new URL("./evidence-45617361926.json",import.meta.url),"utf8"));
+  assert.equal(e.source.runId,45617361926);
+  const r=planCapacity({...assumptions,activeDrivers:1000,localEvidence:e.report});
+  assert.equal(r.monthlyRoutes,624000);
+  assert.equal(r.routePayloadGb,11.88);
+  assert.equal(r.requiredQuotaPerMinute,240);
+  assert.equal(r.configuredQuotaFits,false);
+  assert.equal(r.localEvidenceCoversOfferedLoad,true);
+  assert.equal(r.productionCapacityVerified,false);
+  assert.equal(r.estimatedCostBrl,null);
+});
