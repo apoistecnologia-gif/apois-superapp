@@ -1,0 +1,45 @@
+name: APOIS Navegacao - cadeia v21 regional (sem deploy)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/production-contract/v21-regional-smoke.mjs','labs/apois-navigation/production-contract/run-v21-regional.sh','.github/workflows/apois-navigation-lab-v21-regional.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regional:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Mes do cache regional
+        id: cache-month
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        with:
+          path: labs/apois-navigation/valhalla/.regional-cache
+          key: apois-valhalla-petrolina-juazeiro-bbox-v1-${{ steps.cache-month.outputs.month }}
+          fail-on-cache-miss: true
+      - run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool
+      - name: OSM real, cotacao v21, transacao e rotas protegidas
+        run: bash labs/apois-navigation/production-contract/run-v21-regional.sh "$RUNNER_TEMP/apois-v21-regional"
+      - name: Reproduzir embarque, recalculo e viagem no Ferrostar
+        run: |
+          set -euo pipefail
+          rustup update stable && rustup default stable
+          for name in pickup reroute trip; do
+            cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- "$RUNNER_TEMP/apois-v21-regional/v21_$name.json" | tee "$RUNNER_TEMP/apois-v21-regional/v21_$name-replay.txt"
+            grep -E 'APOIS_REPLAY_OK.*spoken_instruction_fixes=[1-9][0-9]*' "$RUNNER_TEMP/apois-v21-regional/v21_$name-replay.txt"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-v21-regional-evidence
+          path: ${{ runner.temp }}/apois-v21-regional/
+          retention-days: 7
