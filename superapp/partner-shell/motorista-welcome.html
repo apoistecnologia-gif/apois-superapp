@@ -33,6 +33,7 @@
   </main>
   <script>
     document.getElementById('apois-driver-welcome-enter').addEventListener('click',()=>{
+      try{sessionStorage.setItem('apois-driver-welcome-entered-v2','1')}catch{}
       window.location.assign('./modules/motorista/index.html#/motorista/login');
     });
   </script>

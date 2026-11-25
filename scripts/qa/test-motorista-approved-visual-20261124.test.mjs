@@ -26,7 +26,7 @@ test('01 — login visual white/red with original logo and safe inputs',()=>{
   'APOIS_MOTORISTA_VISUAL_REF_20261124_LOGIN',
   'data-apois-driver-approved-login-v1',
   'APOIS_PARTNER_LOGO_DATA_URL',
-  '::before', '::after', 'text-[#0D0F12]',
+  '::before', '::after', 'content:none!important', 'text-[#0D0F12]',
   'Entrar na sua conta', 'Acesse com e-mail e senha',
   'aria-label=\"E-mail\"','aria-label=\"Senha\"',
   'aria-label={showPassword ? \"Ocultar senha\" : \"Mostrar senha\"}',
@@ -152,3 +152,10 @@ test('10 — reference map palette and directional GPS marker; APK generation re
 });
 
 // Keep source-level verification aligned with literal marker generator content.
+
+test('11 — stable login and restored preceding welcome, callback routes bypass gate',()=>{
+ expect(login,['APOIS_DRIVER_WELCOME_ROUTE_V2','apois-driver-welcome-entered-v2','apois-parceiro:motorista-google-url','apois-parceiro:motorista-recovery-url','apois-driver-password-updated-v2','apois-driver-await-email-v4','hidden={showWelcome}','setShowWelcome(false)','setShowWelcome(true)','../../assets/apois-motorista-hero.webp','height:auto!important','overflow-anchor:none','content:none!important','apois-driver-signup-v2']);
+ expect(welcome,["sessionStorage.setItem('apois-driver-welcome-entered-v2','1')"]);
+ assert.ok(!login.includes('transform:rotate(-12deg)'));
+ assert.ok(!login.includes('transform:rotate(-7deg)'));
+});
