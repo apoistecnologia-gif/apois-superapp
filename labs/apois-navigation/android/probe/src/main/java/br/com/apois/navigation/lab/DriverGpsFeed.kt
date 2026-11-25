@@ -95,19 +95,30 @@ object DriverGpsFeed {
             FixDecision.IMPRECISE -> status(s, GpsQuality.IMPRECISE)
             FixDecision.LOST -> status(s, GpsQuality.LOST)
             FixDecision.ACCEPT -> {
-                if (fix.hasBearing() && (!fix.bearing.isFinite() || fix.bearing < 0f || fix.bearing >= 360f))
-                    fix.removeBearing()
-                if (fix.hasSpeed() && (!fix.speed.isFinite() || fix.speed < 0f))
-                    fix.removeSpeed()
-                if (Build.VERSION.SDK_INT >= 26) {
-                    if (fix.hasBearingAccuracy() && (!fix.bearingAccuracyDegrees.isFinite() ||
-                            fix.bearingAccuracyDegrees !in 0f..360f)) fix.removeBearingAccuracy()
-                    if (fix.hasSpeedAccuracy() && (!fix.speedAccuracyMetersPerSecond.isFinite() ||
-                            fix.speedAccuracyMetersPerSecond < 0f)) fix.removeSpeedAccuracy()
+                // Reconstruct only validated fields; Android's remove*Accuracy
+                // methods are not part of the public SDK on all supported APIs.
+                val clean = Location("apois-navigation").apply {
+                    latitude = fix.latitude
+                    longitude = fix.longitude
+                    accuracy = fix.accuracy
+                    time = fix.time
+                    elapsedRealtimeNanos = fix.elapsedRealtimeNanos
+                    if (fix.hasBearing() && fix.bearing.isFinite() && fix.bearing >= 0f && fix.bearing < 360f) {
+                        bearing = fix.bearing
+                        if (Build.VERSION.SDK_INT >= 26 && fix.hasBearingAccuracy() &&
+                            fix.bearingAccuracyDegrees.isFinite() && fix.bearingAccuracyDegrees in 0f..360f)
+                            bearingAccuracyDegrees = fix.bearingAccuracyDegrees
+                    }
+                    if (fix.hasSpeed() && fix.speed.isFinite() && fix.speed >= 0f) {
+                        speed = fix.speed
+                        if (Build.VERSION.SDK_INT >= 26 && fix.hasSpeedAccuracy() &&
+                            fix.speedAccuracyMetersPerSecond.isFinite() && fix.speedAccuracyMetersPerSecond >= 0f)
+                            speedAccuracyMetersPerSecond = fix.speedAccuracyMetersPerSecond
+                    }
                 }
                 status(s, GpsQuality.AVAILABLE)
                 if (!live(s) || source != sourceId) return
-                if (runCatching { s.onFix(fix.toUserLocation()) }.isFailure) {
+                if (runCatching { s.onFix(clean.toUserLocation()) }.isFailure) {
                     status(s, GpsQuality.LOST)
                     unsubscribe(s.id)
                 }
