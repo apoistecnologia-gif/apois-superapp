@@ -40,3 +40,5 @@ jobs:
           run_sql < "$root/test-v21.sql"
           node "$root/request-ride-v21.integration.mjs"
           node --test "$root/v21-edge-adapter.test.mjs"
+          run_sql < "$root/least-privilege-trigger-fixture.sql"
+          run_sql < "$root/test-least-privilege-trigger.sql"
