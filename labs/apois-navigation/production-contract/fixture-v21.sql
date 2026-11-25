@@ -122,3 +122,7 @@ create table public.cancellation_fees(passenger_id uuid not null,is_paid boolean
 
 alter table public.drivers add column is_online boolean not null default false;
 update public.drivers set is_online=true;
+
+-- Exact observed unique indexes (metadata only) relevant to concurrent ordinary creation.
+CREATE UNIQUE INDEX rides_one_active_per_passenger_idx ON public.rides USING btree (passenger_id) WHERE (status = ANY (ARRAY['procurar_motorista'::text, 'motorista_a_caminho'::text, 'motorista_chegou'::text, 'em_viagem'::text]));
+CREATE UNIQUE INDEX rides_one_queued_per_driver_idx ON public.rides USING btree (driver_id) WHERE ((queued_after_ride_id IS NOT NULL) AND (status = 'procurar_motorista'::text) AND (driver_id IS NOT NULL));

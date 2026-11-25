@@ -37,8 +37,12 @@ jobs:
           run_sql < labs/apois-navigation/passenger-provenance-snapshot/revocation-fixture.sql
           run_sql < "$root/authority-v21.sql"
           run_sql < "$root/service-rpc-v21.sql"
+          run_sql < "$root/recovery-v21.sql"
           run_sql < "$root/test-v21.sql"
           node "$root/request-ride-v21.integration.mjs"
           node --test "$root/v21-edge-adapter.test.mjs"
+          node "$root/recovery-v21.integration.mjs"
+          node --test labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/durable-ride-host.test.mjs
+          node labs/apois-navigation/passenger-provenance-snapshot/verify.mjs
           run_sql < "$root/least-privilege-trigger-fixture.sql"
           run_sql < "$root/test-least-privilege-trigger.sql"

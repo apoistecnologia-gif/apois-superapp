@@ -1,3 +1,5 @@
+-- Fixture extension; never execute on production.
+alter table apois_nav_lab.selection add column sealed_at timestamptz;
 -- Experimental v21 insertion boundary. NOT a migration. Cash-only pilot,
 -- never changes original request-ride, payment gates or dispatch functions.
 create function apois_nav_lab.create_passenger_ride_v21(
@@ -14,7 +16,7 @@ begin
  perform public.apois_lock_passenger_ride_financial_gate(v_passenger);
  select u.id,s.ride_id into v_passenger,v_linked
  from public.users u join apois_nav_lab.selection s on s.passenger_id=u.id
- where u.auth_user_id=p_auth_user and s.id=p_selection and s.request_key=p_request_key
+ where u.auth_user_id=p_auth_user and s.id=p_selection and s.request_key=p_request_key and s.sealed_at is null
  and u.blocked_at is null and u.deleted_at is null
  and (u.suspended_until is null or u.suspended_until<=clock_timestamp())
  and (u.suspended_at is null or u.suspended_until<=clock_timestamp())
@@ -83,7 +85,7 @@ begin
   if not found then return null; end if;
   return jsonb_build_object('linked',true);
  end if;
- if v_s.expires_at<=statement_timestamp() then return null; end if;
+ if v_s.sealed_at is not null or v_s.expires_at<=statement_timestamp() then return null; end if;
  select * into v_p from apois_nav_lab.catalog where id=v_s.pickup_id and version=v_s.pickup_version and active;
  if not found then return null; end if;
  select * into v_d from apois_nav_lab.catalog where id=v_s.destination_id and version=v_s.destination_version and active;

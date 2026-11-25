@@ -1,6 +1,6 @@
 {
   "source": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
-  "commit": "080db54d9f3ab5f167d0369cf872f7c064ead35e",
+  "commit": "3db5aa0aedc65c42550a6ff808cde2ae84d97dac",
   "blobs": [
     {
       "path": "experimental/apois-navigation/schema.sql",
@@ -69,6 +69,30 @@
     {
       "path": "experimental/apois-navigation/ui/REQUEST-REVIEW.md",
       "sha": "20b60174500de6e29295637761590379f8f8aa9e"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/ride-journal.mjs",
+      "sha": "7c9a05e8f892925742cec0d3bdb12c95bedd3228"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/durable-ride-host.mjs",
+      "sha": "327d458d987f80d25397d23ace248051f3f3e448"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/durable-ride-host.test.mjs",
+      "sha": "97f8a600ce3ccbf7da52a7b57045724e2e1d96d9"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/ride-journal.browser.mjs",
+      "sha": "a04d90a0b5ae0a21ca52b301cd67267561e35917"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/ride-journal.browser.html",
+      "sha": "a82d0457a24c93e680cfd9917a5b41fb3f298787"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/DURABLE-RECOVERY.md",
+      "sha": "b37ab0b531f1f6148516e919fcda6fab611acdea"
     }
   ]
 }
