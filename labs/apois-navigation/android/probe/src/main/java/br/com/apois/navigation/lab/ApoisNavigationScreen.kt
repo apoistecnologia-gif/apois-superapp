@@ -41,7 +41,8 @@ internal fun ApoisNavigationScreen(
     onIntent: (RideIntent) -> Unit,
     modifier: Modifier = Modifier,
     gpsQuality: GpsQuality? = null,
-    routeNotice: String? = null
+    routeNotice: String? = null,
+    hostOperationsOnly: Boolean = false
 ) {
     val ui by model.navigationUiState.collectAsState()
     // Lock immediately on local action until host changes revision, confirms busy/error.
@@ -56,7 +57,7 @@ internal fun ApoisNavigationScreen(
             val active=ride.phase in setOf(RidePhase.PICKUP,RidePhase.WAITING_PIN,RidePhase.TRIP)
             val sdkShowingProgress=ui.isNavigating() && active
             val components=NavigationViewComponentBuilder.Default().withProgressView { m,state,_ ->
-                if(sdkShowingProgress) RidePanel(ride,state,disabled,dispatch,m.fillMaxWidth(),gpsQuality,routeNotice)
+                if(sdkShowingProgress) RidePanel(ride,state,disabled,dispatch,m.fillMaxWidth(),gpsQuality,routeNotice,hostOperationsOnly)
             }
             // Keep one map instance. Ferrostar's own camera, guidance, mute and recenter
             // remain in use, and custom progress size is measured by its overlay.
@@ -69,7 +70,7 @@ internal fun ApoisNavigationScreen(
             )
             if(!sdkShowingProgress) {
                 Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=12.dp,vertical=8.dp)) {
-                    RidePanel(ride,ui,disabled,dispatch,Modifier.fillMaxWidth(),gpsQuality,routeNotice)
+                    RidePanel(ride,ui,disabled,dispatch,Modifier.fillMaxWidth(),gpsQuality,routeNotice,hostOperationsOnly)
                 }
             }
         }
@@ -78,7 +79,7 @@ internal fun ApoisNavigationScreen(
 
 @Composable
 private fun RidePanel(ride: RideSnapshot, ui: NavigationUiState, disabled: Boolean,
-                      dispatch:(RideAction,Int?)->Unit, modifier: Modifier=Modifier, gpsQuality: GpsQuality?=null, routeNotice: String?=null) {
+                      dispatch:(RideAction,Int?)->Unit, modifier: Modifier=Modifier, gpsQuality: GpsQuality?=null, routeNotice: String?=null, hostOperationsOnly:Boolean=false) {
     val arrived=ui.tripState is TripState.Complete
     val title=when(ride.phase) {
         RidePhase.PICKUP -> if(arrived) "Próximo ao embarque • aguardando confirmação" else "Indo ao passageiro"
@@ -105,7 +106,12 @@ private fun RidePanel(ride: RideSnapshot, ui: NavigationUiState, disabled: Boole
                 Text(ride.destination,maxLines=2,overflow=TextOverflow.Ellipsis,color=Muted,fontSize=14.sp)
             }
             ride.error?.let {Text(it,color=Red,fontSize=13.sp)}
-            when(ride.phase) {
+            if(hostOperationsOnly){
+                Text("PIN, finalização e demais ações permanecem na tela original do APOIS.",fontSize=12.sp,color=Muted)
+                if(ride.phase==RidePhase.TRIP){
+                    Button(onClick={dispatch(RideAction.RETURN,null)},enabled=!disabled,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("Finalizar no APOIS")}
+                }
+            } else when(ride.phase) {
                 RidePhase.PICKUP -> Text("A chegada depende da confirmação do sistema.",fontSize=12.sp,color=Muted)
                 RidePhase.WAITING_PIN -> Button(onClick={dispatch(RideAction.OPEN_PIN,null)},enabled=!disabled,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) { Text("Informar PIN de embarque") }
                 RidePhase.TRIP -> {
@@ -134,7 +140,7 @@ private fun RidePanel(ride: RideSnapshot, ui: NavigationUiState, disabled: Boole
             if(ride.phase in setOf(RidePhase.PICKUP,RidePhase.WAITING_PIN,RidePhase.TRIP)) {
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                     TextButton(onClick={dispatch(RideAction.RETURN,null)},enabled=!disabled){Text("Voltar ao APOIS")}
-                    TextButton(onClick={dispatch(RideAction.REQUEST_EXTERNAL,null)},enabled=!disabled){Text("Outro mapa")}
+                    TextButton(onClick={dispatch(RideAction.REQUEST_EXTERNAL,null)},enabled=!disabled){Text(if(hostOperationsOnly)"Outro mapa no APOIS" else "Outro mapa")}
                 }
             }
             if(disabled) LinearProgressIndicator(Modifier.fillMaxWidth())

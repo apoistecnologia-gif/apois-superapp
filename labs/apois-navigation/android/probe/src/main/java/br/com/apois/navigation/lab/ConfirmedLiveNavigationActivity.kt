@@ -46,7 +46,7 @@ class ConfirmedLiveNavigationActivity:ComponentActivity(){
                         foreground=foreground,stillCurrent={ConfirmedLiveNavigationBridge.accepts(id,it)},
                         onIntent={ConfirmedLiveNavigationBridge.submit(id,it)},
                         modifier=Modifier.weight(1f),acquireVoice=s.owner.acquireVoice,
-                        resources=s.resources,online=s.owner.online
+                        resources=s.resources,online=s.owner.online,hostOperationsOnly=true
                     )
                 }
             }

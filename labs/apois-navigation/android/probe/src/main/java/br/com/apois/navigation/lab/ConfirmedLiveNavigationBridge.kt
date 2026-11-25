@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Looper
 import android.os.Handler
+import android.os.SystemClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.json.JSONObject
 import uniffi.ferrostar.Route
@@ -22,7 +23,8 @@ object ConfirmedLiveNavigationBridge {
         val route:Route, val target:RegionalPoint,
         val resolver:LiveRouteResolver, val verifiedCurrent:()->Boolean,
         val online:()->Boolean, val acquireVoice:(()->NavigationVoicePermit?)?,
-        val controller:NavigationSessionController
+        val controller:NavigationSessionController,
+        val lease:PreparedAuthorityLease
     ) {
         val ride:RideSnapshot get()=controller.snapshot
         var pending=false
@@ -41,7 +43,7 @@ object ConfirmedLiveNavigationBridge {
     internal fun occupied():Boolean=screen.value!=null||closing!=null
     private val rideIdPattern=Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
-    private fun current(p:Prepared)=prepared===p && runCatching{p.verifiedCurrent()}.getOrDefault(false)
+    private fun current(p:Prepared)=prepared===p && p.lease.current() && runCatching{p.verifiedCurrent()}.getOrDefault(false)
 
     // Must be called ONLY after host verified identity, assignment, phase,
     // source provenance and route. Geometry checks alone do not prove any of
@@ -57,7 +59,7 @@ object ConfirmedLiveNavigationBridge {
             ride.phase !in setOf(RidePhase.PICKUP,RidePhase.TRIP)||ride.busy||
             !runCatching{verifiedCurrent()}.getOrDefault(false)||
             !routeEndpointsMatch(route.geometry.map{RegionalPoint(it.lat,it.lng)},origin,target))return false
-        prepared=Prepared(route,target,resolver,verifiedCurrent,online,acquireVoice,NavigationSessionController(ride))
+        prepared=Prepared(route,target,resolver,verifiedCurrent,online,acquireVoice,NavigationSessionController(ride),PreparedAuthorityLease(SystemClock::elapsedRealtime))
         return true
     }
 
@@ -94,14 +96,11 @@ object ConfirmedLiveNavigationBridge {
     internal fun submit(id:String,intent:RideIntent){
         main()
         val s=screen.value?:return
-        if(s.id!=id||!accepts(id,s.token)||s.owner.controller.submit(intent).isEmpty())return
-        s.owner.pending=true
-        // UI intents only. The original host must revalidate and use its own
-        // PIN/finish/rating UI; no RPC or arrival authority lives here.
-        val event=JSONObject().put("sessionId",id).put("rideId",intent.rideId)
-            .put("revision",intent.revision).put("action",intent.action.name)
-        intent.rating?.let{event.put("rating",it)}
-        runCatching{callback?.accept(event)}
+        if(s.id!=id||!accepts(id,s.token)||intent!=s.ride.intent(intent.action,intent.rating))return
+        // Until original handlers are bound, every allowed button returns to
+        // the host, never confirms an operation or opens a second navigator.
+        if(intent.action==RideAction.RETURN||intent.action==RideAction.REQUEST_EXTERNAL){close(id);return}
+        // Operational intents remain blocked until original UI integration.
     }
 
     // Only the trusted host may acknowledge an intent with a newer verified
@@ -114,6 +113,7 @@ object ConfirmedLiveNavigationBridge {
         if(ride.phase!=p.ride.phase){revoke();return false}
         p.controller.update(ride)
         if(p.controller.snapshot!==ride)return false
+        if(!p.lease.renew()){revoke();return false}
         p.pending=false
         screen.value?.takeIf{it.owner===p}?.let{
             // New Screen identity ensures Compose sees the refreshed snapshot.
@@ -173,6 +173,7 @@ object ConfirmedLiveNavigationBridge {
         main()
         val p=prepared
         prepared=null
+        p?.lease?.revoke()
         p?.controller?.close()
         screen.value?.id?.let{close(it)}
     }

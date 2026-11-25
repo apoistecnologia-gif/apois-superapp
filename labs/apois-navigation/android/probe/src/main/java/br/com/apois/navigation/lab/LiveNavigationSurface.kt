@@ -24,7 +24,7 @@ internal fun LiveNavigationSurface(
     onIntent: (RideIntent) -> Unit, modifier: Modifier = Modifier,
     acquireVoice: (() -> NavigationVoicePermit?)? = null,
     resources: LegRouteResources<Route>? = null,
-    online: () -> Boolean = { false }
+    online: () -> Boolean = { false }, hostOperationsOnly:Boolean=false
 ) {
     val context = LocalContext.current.applicationContext
     val model = remember { LiveGpsNavigationModel() }
@@ -56,5 +56,5 @@ internal fun LiveNavigationSurface(
     }
     ApoisNavigationScreen(baseStyle, model, ride, onIntent, modifier,
         gpsQuality = if (validLeg != null) quality else null,
-        routeNotice = if (validLeg != null) routeNotice else null)
+        routeNotice = if (validLeg != null) routeNotice else null, hostOperationsOnly=hostOperationsOnly)
 }

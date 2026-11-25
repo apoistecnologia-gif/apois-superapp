@@ -20,7 +20,7 @@ internal fun BundledLiveNavigationSurface(
     foreground: Boolean, stillCurrent: (LegToken) -> Boolean,
     onIntent: (RideIntent) -> Unit, modifier: Modifier = Modifier,
     acquireVoice: (() -> NavigationVoicePermit?)? = null,
-    resources: LegRouteResources<Route>? = null, online: () -> Boolean = { false }
+    resources: LegRouteResources<Route>? = null, online: () -> Boolean = { false }, hostOperationsOnly:Boolean=false
 ) {
     val context = LocalContext.current.applicationContext
     val current by rememberUpdatedState(stillCurrent)
@@ -36,7 +36,7 @@ internal fun BundledLiveNavigationSurface(
     val ready = style
     if (ready != null) {
         LiveNavigationSurface(ready,route,token,ride,foreground,current,onIntent,modifier,
-            acquireVoice,resources,online)
+            acquireVoice,resources,online,hostOperationsOnly)
     } else {
         var sent by remember(ride.rideId,ride.revision,ride.phase,ride.busy,ride.error) { mutableStateOf(false) }
         val dispatch: (RideAction) -> Unit = { action ->
@@ -54,7 +54,7 @@ internal fun BundledLiveNavigationSurface(
             }
             Spacer(Modifier.height(16.dp))
             if (failed && ride.intent(RideAction.REQUEST_EXTERNAL)!=null) {
-                Button(onClick={dispatch(RideAction.REQUEST_EXTERNAL)},enabled=!sent) { Text("Outro mapa") }
+                Button(onClick={dispatch(RideAction.REQUEST_EXTERNAL)},enabled=!sent) { Text(if(hostOperationsOnly)"Outro mapa no APOIS" else "Outro mapa") }
             }
             TextButton(onClick={dispatch(RideAction.RETURN)},enabled=!sent&&!ride.busy) { Text("Voltar ao APOIS") }
         }
