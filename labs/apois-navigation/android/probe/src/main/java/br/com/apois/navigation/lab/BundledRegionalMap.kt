@@ -3,7 +3,6 @@ package br.com.apois.navigation.lab
 import android.content.Context
 import android.net.Uri
 import java.io.File
-import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -28,6 +27,7 @@ internal object BundledRegionalMap {
         }
 
     private val installLock = Any()
+    private var store: PrivateMapStore? = null
 
     suspend fun verifiedStyle(context: Context): BaseStyle.Json? = withContext(Dispatchers.IO) {
         try {
@@ -56,33 +56,15 @@ internal object BundledRegionalMap {
             // A PMTiles reader needs ranged file access. Keep map in app-private,
             // no-backup storage and use file://, not the asset URL in the template.
             val mapEntry=entries.single { it.path=="vale.pmtiles" }
-            val file=synchronized(installLock) { installMap(context,mapEntry) }
+            val file=synchronized(installLock) {
+                val owner=store ?: PrivateMapStore(File(context.noBackupFilesDir,"apois-regional"))
+                    .also { store=it }
+                owner.open(mapEntry) { context.assets.open(LocalMapAssetPolicy.ROOT+mapEntry.path) }
+            }
             regional.put("url","pmtiles://"+Uri.fromFile(file).toString())
             BaseStyle.Json(style.toString())
         } catch (e:kotlinx.coroutines.CancellationException) { throw e }
         catch (_:Exception) { null }
     }
 
-    private fun installMap(context: Context, entry: MapAssetEntry): File {
-        val dir=File(context.noBackupFilesDir,"apois-regional")
-        check(dir.isDirectory || dir.mkdirs())
-        val file=File(dir,"vale-"+entry.sha256+".pmtiles")
-        if (file.isFile && file.length()==entry.bytes &&
-            file.inputStream().use { LocalMapAssetPolicy.verify(it,entry) }) return file
-        val staging=File.createTempFile("vale-",".tmp",dir)
-        try {
-            FileOutputStream(staging).use { output ->
-                require(context.assets.open(LocalMapAssetPolicy.ROOT+entry.path).use {
-                    LocalMapAssetPolicy.verify(it,entry,output)
-                })
-                output.fd.sync()
-            }
-            // Same-directory rename: the renderer never sees a partial archive.
-            check(staging.renameTo(file)) { "Local map install failed" }
-            require(file.inputStream().use { LocalMapAssetPolicy.verify(it,entry) })
-            return file
-        } finally {
-            staging.delete()
-        }
-    }
 }
