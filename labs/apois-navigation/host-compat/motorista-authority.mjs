@@ -45,14 +45,17 @@ export class MotoristaAuthority {
       proof?.authUserId!==this.#account.authUserId||proof?.driverId!==this.#account.driverId||
       !Number.isSafeInteger(proof.revision)||proof.revision<0||
       !uuid(row?.id))return false;
-    const owner=row.accepted_driver_id ?? row.driver_id;
-    if(owner!==this.#account.driverId || (row.driver_id!=null&&row.driver_id!==owner))return false;
     const prev=this.#state;
     if(prev && (row.id!==prev.rideId || proof.revision<=prev.revision))return false;
+    const owner=row.accepted_driver_id ?? row.driver_id;
+    if(owner!==this.#account.driverId || (row.driver_id!=null&&row.driver_id!==owner)){
+      if(prev?.rideId===row.id)this.clearRide(this.#epoch);
+      return false;
+    }
     const phase=phases.get(row.status);
     // Payment pending, queue and unknown/redispatch state must not navigate.
     // A confirmed loss of authorization for the current ride must revoke it.
-    if(!phase || row.queued_after_ride_id && phase!=="COMPLETED" && phase!=="CANCELLED") {
+    if(!phase) {
       if(prev?.rideId===row.id){this.#state=null;this.#pending=null;++this.#epoch;}
       return false;
     }
@@ -61,6 +64,14 @@ export class MotoristaAuthority {
     this.#state=Object.freeze({rideId:row.id,revision:proof.revision,phase});
     this.#pending=null;
     return true;
+  }
+  // Missing row/RLS disappearance is a verified host signal, not a bridge event.
+  invalidateMissingRide(rideId,proof){
+    if(!this.#account||!this.#state||this.#state.rideId!==rideId||
+      proof?.epoch!==this.#epoch||proof.authUserId!==this.#account.authUserId||
+      proof.driverId!==this.#account.driverId||!Number.isSafeInteger(proof.revision)||
+      proof.revision<=this.#state.revision)return false;
+    return this.clearRide(this.#epoch);
   }
   // Host explicitly closes current ride before adopting queued/next ride.
   clearRide(epoch){if(epoch!==this.#epoch)return false;this.#state=null;this.#pending=null;++this.#epoch;return true;}

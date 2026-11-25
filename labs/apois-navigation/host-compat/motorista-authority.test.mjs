@@ -11,8 +11,10 @@ const event=(g,action,extra={})=>({...g.snapshot,action,...extra});
 test('payment and queued offers cannot start navigation',()=>{
  const g=setup();assert.equal(accept(g,'aguardando_pagamento'),false);
  assert.equal(accept(g,'procurar_motorista'),false);
- assert.equal(accept(g,'motorista_a_caminho',1,{queued_after_ride_id:id(5)}),false);
- assert.equal(g.snapshot,null);assert.equal(accept(g,'motorista_a_caminho'),true);
+ assert.equal(accept(g,'procurar_motorista',1,{queued_after_ride_id:id(5)}),false);
+ assert.equal(g.snapshot,null);
+ // Existing source activates the queued ride when its status becomes active.
+ assert.equal(accept(g,'motorista_a_caminho',2,{queued_after_ride_id:id(5)}),true);
 });
 test('verified assigned driver required, no ambiguous ownership',()=>{
  const g=setup();assert.equal(g.accept(row('em_viagem'),proof(g,1,{authUserId:id(9)})),false);
@@ -56,4 +58,25 @@ test('same account token refresh preserves session, next ride needs explicit cle
  assert.equal(g.clearRide(epoch),true);assert.equal(g.clearRide(epoch),false);
  assert.equal(accept(g,'motorista_a_caminho',1,{id:id(5)}),true);
  g.close();assert.equal(g.bind(auth),false);
+});
+
+test('newer verified ownership loss revokes current ride but stale or unrelated rows do not',()=>{
+ const g=setup();accept(g,'em_viagem',4);const epoch=g.epoch;
+ const t=g.authorize(event(g,'FINISH'),epoch);
+ assert.equal(accept(g,'em_viagem',3,{driver_id:id(9),accepted_driver_id:id(9)}),false);
+ assert.equal(accept(g,'em_viagem',5,{id:id(6),driver_id:id(9),accepted_driver_id:id(9)}),false);
+ assert.equal(g.current(t),true);
+ assert.equal(accept(g,'em_viagem',5,{driver_id:id(9),accepted_driver_id:id(9)}),false);
+ assert.equal(g.snapshot,null);assert.equal(g.current(t),false);
+ assert.equal(g.accept(row('em_viagem'),proof(g,6,{epoch})),false);
+});
+test('verified disappearance and redispatch revoke pending actions',()=>{
+ const g=setup();accept(g,'em_viagem',4);const t=g.authorize(event(g,'FINISH'),g.epoch);
+ assert.equal(g.invalidateMissingRide(id(4),proof(g,3)),false);
+ assert.equal(g.invalidateMissingRide(id(5),proof(g,5)),false);
+ assert.equal(g.invalidateMissingRide(id(4),proof(g,5)),true);
+ assert.equal(g.current(t),false);
+ accept(g,'motorista_a_caminho',1);
+ assert.equal(accept(g,'procurar_motorista',2),false);
+ assert.equal(g.snapshot,null);
 });
