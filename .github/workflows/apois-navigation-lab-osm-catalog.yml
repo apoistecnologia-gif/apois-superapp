@@ -46,6 +46,56 @@ jobs:
           assert all(r["active"] is False and r["extract_sha256"]==c["extract_sha256"] for r in c["rows"])
           print("APOIS_REAL_CATALOG_VALIDATED",json.dumps({"count":c["count"],"bytes":p.stat().st_size,"extract_sha256":c["extract_sha256"],"active":0}))
           PY
+      - name: Medir cobertura de ruas, enderecos e bairros no extrato
+        run: |
+          set -euo pipefail
+          C="$GITHUB_WORKSPACE/labs/apois-navigation/valhalla/.regional-cache"
+          D="$RUNNER_TEMP/apois-osm-catalog"
+          osmium tags-filter -R "$C/vale.osm.pbf" \
+            w/highway nwr/addr:housenumber nwr/place \
+            -o "$RUNNER_TEMP/apois-coverage.osm.pbf"
+          osmium cat "$RUNNER_TEMP/apois-coverage.osm.pbf" -f opl \
+            | python3 -c '
+          import collections
+          import json
+          import pathlib
+          import sys
+
+          counts = collections.Counter(dict.fromkeys([
+              "named_highway_segments",
+              "objects_with_house_number",
+              "objects_with_house_number_and_street",
+              "objects_with_house_number_and_place",
+              "named_neighborhood_objects",
+          ], 0))
+          for line in sys.stdin:
+              fields = line.split()
+              raw_tags = next((field[1:] for field in fields if field.startswith("T")), "")
+              tags = dict(tag.split("=", 1) for tag in raw_tags.split(",") if "=" in tag)
+              if fields[0].startswith("w") and tags.get("highway") and tags.get("name"):
+                  counts["named_highway_segments"] += 1
+              if tags.get("addr:housenumber"):
+                  counts["objects_with_house_number"] += 1
+                  if tags.get("addr:street"):
+                      counts["objects_with_house_number_and_street"] += 1
+                  if tags.get("addr:place"):
+                      counts["objects_with_house_number_and_place"] += 1
+              if tags.get("name") and tags.get("place") in {"suburb", "quarter", "neighbourhood"}:
+                  counts["named_neighborhood_objects"] += 1
+
+          output = pathlib.Path(sys.argv[1])
+          extract_sha256 = (output.parent / "extract.sha256").read_text().split()[0]
+          report = {
+              "extract_sha256": extract_sha256,
+              "license": "ODbL-1.0",
+              "attribution": "© OpenStreetMap contributors",
+              "scope": "OSM objects in the cached regional extract; no deduplication or completeness estimate",
+              "counts": dict(counts),
+          }
+          payload = json.dumps(report, ensure_ascii=False, sort_keys=True)
+          output.write_text(payload + "\n", encoding="utf-8")
+          print("APOIS_OSM_ADDRESS_COVERAGE", payload)
+          ' "$D/address-coverage.json"
       - uses: actions/upload-artifact@v4
         with:
           name: apois-independent-regional-catalog
