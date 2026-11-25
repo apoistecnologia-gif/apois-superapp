@@ -38,4 +38,46 @@ revoke all on function apois_nav_lab.record_revoked_leg() from public,anon,authe
 grant execute on function apois_nav_lab.record_revoked_leg() to service_role;
 create trigger apois_nav_lab_revoked_leg before update or delete on public.rides
 for each row execute function apois_nav_lab.record_revoked_leg();
+-- Conservative invalidation on changes to security-sensitive authority.
+-- Fixture only: production roles/RLS and lock ordering require review.
+create function apois_nav_lab.record_authority_revocation() returns trigger
+language plpgsql security invoker set search_path='' as $$
+begin
+  if tg_table_name='drivers' then
+    if (new.user_id,new.approval_status,new.subscription_status,new.category,new.blocked_at,new.suspended_at)
+      is not distinct from (old.user_id,old.approval_status,old.subscription_status,old.category,old.blocked_at,old.suspended_at) then return new; end if;
+    insert into apois_nav_lab.revoked_leg(ride_id,phase)
+    select r.id,case r.status::text when 'motorista_a_caminho' then 'PICKUP' else 'TRIP' end
+    from public.rides r join apois_nav_lab.selection s on s.ride_id=r.id
+    where (r.driver_id=old.id or r.accepted_driver_id=old.id) and r.status::text in ('motorista_a_caminho','em_viagem')
+    on conflict do nothing;
+  elsif tg_table_name='users' then
+    if (new.auth_user_id,new.blocked_at,new.deleted_at,new.suspended_until)
+      is not distinct from (old.auth_user_id,old.blocked_at,old.deleted_at,old.suspended_until) then return new; end if;
+    insert into apois_nav_lab.revoked_leg(ride_id,phase)
+    select r.id,case r.status::text when 'motorista_a_caminho' then 'PICKUP' else 'TRIP' end
+    from public.rides r join apois_nav_lab.selection s on s.ride_id=r.id
+    where r.status::text in ('motorista_a_caminho','em_viagem') and
+      (r.passenger_id=old.id or exists(select 1 from public.drivers d where d.user_id=old.id and (r.driver_id=d.id or r.accepted_driver_id=d.id)))
+    on conflict do nothing;
+  elsif tg_table_name='catalog' then
+    if new.active is not distinct from old.active then return new; end if;
+    insert into apois_nav_lab.revoked_leg(ride_id,phase)
+    select r.id,case r.status::text when 'motorista_a_caminho' then 'PICKUP' else 'TRIP' end
+    from public.rides r join apois_nav_lab.selection s on s.ride_id=r.id
+    where r.status::text in ('motorista_a_caminho','em_viagem') and
+      ((s.pickup_id,s.pickup_version)=(old.id,old.version) or (s.destination_id,s.destination_version)=(old.id,old.version))
+    on conflict do nothing;
+  else raise exception 'unexpected authority table';
+  end if;
+  return new;
+end $$;
+revoke all on function apois_nav_lab.record_authority_revocation() from public,anon,authenticated;
+grant execute on function apois_nav_lab.record_authority_revocation() to service_role;
+create trigger apois_nav_lab_driver_revoked after update on public.drivers
+for each row execute function apois_nav_lab.record_authority_revocation();
+create trigger apois_nav_lab_user_revoked after update on public.users
+for each row execute function apois_nav_lab.record_authority_revocation();
+create trigger apois_nav_lab_catalog_revoked after update on apois_nav_lab.catalog
+for each row execute function apois_nav_lab.record_authority_revocation();
 commit;

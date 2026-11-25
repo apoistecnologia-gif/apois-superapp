@@ -38,7 +38,8 @@ function reply(res,status,value){
     "Cache-Control":"no-store","Connection":"close","X-Content-Type-Options":"nosniff"});
   res.end(body);
 }
-export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000,inputTimeout=5000,authorize=null}={}){
+export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000,inputTimeout=5000,authorize=null,authorizationTimeout=2500}={}){
+  if(!Number.isInteger(authorizationTimeout)||authorizationTimeout<50||authorizationTimeout>3000)throw Error("Invalid authorization timeout");
   if(!Number.isInteger(inputTimeout)||inputTimeout<50||inputTimeout>5000)throw Error("Invalid local input timeout");
   if(!Number.isInteger(upstreamPort)||upstreamPort<1||upstreamPort>65535)throw Error("Invalid local upstream port");
   const upstream="http://127.0.0.1:"+upstreamPort+"/route";
@@ -71,7 +72,24 @@ export function createRouteGateway({upstreamPort=8002,budget=createBudget(),time
     // standalone CLI remains loopback-only synthetic benchmark mode.
     let grant=null;
     if(authorize){
-      try{grant=authorize(req.headers.authorization,body);}catch{reply(res,503,{error:"authorization_unavailable"});return;}
+      const authController=new AbortController();
+      const abort=()=>authController.abort();
+      res.once("close",abort);
+      const timer=setTimeout(abort,authorizationTimeout);
+      let onAbort;
+      try{
+        const work=Promise.resolve().then(()=>authorize(req.headers.authorization,body,authController.signal));
+        // A late successful grant must release its lease even after timeout.
+        work.then(g=>{if(authController.signal.aborted&&g?.status===200)g.release?.();},()=>{});
+        const cancelled=new Promise(resolve=>{
+          onAbort=()=>resolve({status:503});
+          authController.signal.addEventListener("abort",onAbort,{once:true});
+          if(res.destroyed)abort();
+        });
+        grant=await Promise.race([work,cancelled]);
+        if(authController.signal.aborted||res.destroyed){grant?.release?.();reply(res,503,{error:"authorization_unavailable"});return;}
+      }catch{reply(res,503,{error:"authorization_unavailable"});return;}
+      finally{clearTimeout(timer);res.removeListener("close",abort);if(onAbort)authController.signal.removeEventListener("abort",onAbort);}
       if(grant?.status!==200||typeof grant.release!=="function"){
         const status=[401,403,429,503].includes(grant?.status)?grant.status:503;
         reply(res,status,{error:"route_not_authorized"});return;

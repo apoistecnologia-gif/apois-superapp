@@ -23,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           node verify.mjs
-          node --test driver-authority.test.mjs supabase-session.test.mjs revocation-reconciler.test.mjs
+          node --test driver-authority.test.mjs supabase-session.test.mjs revocation-reconciler.test.mjs reconciled-authorization.test.mjs
           node --test experimental/apois-navigation/client.test.mjs
           python3 -m unittest discover -s experimental/apois-navigation -p 'test_import_catalog.py' -v
       - name: PostgreSQL descartavel sem rede
