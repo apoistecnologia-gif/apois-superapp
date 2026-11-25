@@ -21,10 +21,24 @@ trap cleanup EXIT
 IMAGE='ghcr.io/valhalla/valhalla-scripted@sha256:0e559e57b19e293bcf62e10c64163f2fe60c42902a760152c9238307e13e7257'
 URL='https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf'
 mkdir -p "$WORK/custom"
-curl --fail --location --retry 3 --max-time 240 "$URL" -o "$WORK/nordeste.osm.pbf"
-sha256sum "$WORK/nordeste.osm.pbf" | awk '{print $1}' >"$OUT/source-sha256.txt"
-# Bounding box covers the two cities, airport and neighbouring routes.
-osmium extract --strategy complete_ways --bbox=-40.80,-9.65,-40.20,-9.10 "$WORK/nordeste.osm.pbf" -o "$WORK/custom/vale.osm.pbf"
+# Keep a small regional extract in CI cache rather than redownloading Nordeste
+# for every experiment. Revalidate the file and hash before use. Monthly cache
+# rotation is only a lab convenience, not a production map-update policy.
+CACHE="$BASE/.regional-cache"
+mkdir -p "$CACHE"
+if [ -s "$CACHE/vale.osm.pbf" ] && [ -s "$CACHE/source-sha256.txt" ] && [ -s "$CACHE/extract.sha256" ] &&
+  (cd "$CACHE" && sha256sum -c extract.sha256) && osmium fileinfo "$CACHE/vale.osm.pbf" >/dev/null; then
+  echo '[OK] Reusing verified local regional extract'
+else
+  curl --fail --location --retry 4 --retry-all-errors --retry-delay 5 --retry-max-time 300 --connect-timeout 15 --max-time 240 "$URL" -o "$WORK/nordeste.osm.pbf"
+  sha256sum "$WORK/nordeste.osm.pbf" | awk '{print $1}' >"$CACHE/source-sha256.txt"
+  osmium extract --strategy complete_ways --bbox=-40.80,-9.65,-40.20,-9.10 "$WORK/nordeste.osm.pbf" -o "$WORK/vale.osm.pbf"
+  mv "$WORK/vale.osm.pbf" "$CACHE/vale.osm.pbf"
+  (cd "$CACHE" && sha256sum vale.osm.pbf > extract.sha256)
+fi
+cp "$CACHE/source-sha256.txt" "$OUT/source-sha256.txt"
+cp "$CACHE/extract.sha256" "$OUT/extract.sha256"
+cp "$CACHE/vale.osm.pbf" "$WORK/custom/vale.osm.pbf"
 osmium fileinfo "$WORK/custom/vale.osm.pbf" >"$OUT/extract-info.txt"
 chmod 777 "$WORK/custom" # disposable runner directory; not production configuration
 docker pull "$IMAGE"

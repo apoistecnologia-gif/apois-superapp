@@ -19,6 +19,13 @@ jobs:
           submodules: false
       - name: Instalar utilitario de extracao OSM
         run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool
+      - name: Mes do cache regional
+        id: cache-month
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: labs/apois-navigation/valhalla/.regional-cache
+          key: apois-valhalla-petrolina-juazeiro-bbox-v1-${{ steps.cache-month.outputs.month }}
       - name: Testar rotas locais em portugues
         run: |
           bash -n labs/apois-navigation/valhalla/run-region.sh
