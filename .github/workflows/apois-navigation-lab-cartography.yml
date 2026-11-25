@@ -22,7 +22,7 @@ jobs:
           distribution: temurin
           java-version: '25'
       - name: Instalar extrator OSM
-        run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool time
+        run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool time nginx-light
       - name: Mes do cache regional
         id: cache-month
         run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
@@ -34,6 +34,8 @@ jobs:
         run: |
           bash -n labs/apois-navigation/cartography/build-region.sh
           bash labs/apois-navigation/cartography/build-region.sh "$RUNNER_TEMP/apois-cartography-report"
+      - name: Verificar leitura parcial HTTP local
+        run: bash labs/apois-navigation/cartography/test-http-range.sh "$RUNNER_TEMP/apois-cartography-report"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
