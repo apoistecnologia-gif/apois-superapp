@@ -14,10 +14,21 @@ const checks={
 for(const markers of Object.values(checks))for(const marker of markers)assert.ok(app.includes(marker),marker);
 for(const marker of ["driver_start_ride","driver-finish-redispatch","driver-cancel-redispatch"])assert.ok(lifecycle.includes(marker),marker);
 assert.ok(voice.includes("tickNavigation"));
+assert.ok(!app.includes("tickNavigation(")&&!app.includes("void speak(firstInstruction"),"QA235 no duplicate maneuver speech");
+for(const marker of ["APOIS_NAVIGATION_QA290_GENERATED_VOICE_GUARD","stopVoiceForHandoff","setLegacyGuidanceAllowed","!qa235ExternalVoice && enabled"])assert.ok(voice.includes(marker),marker);
+const javaRoot="android-motorista/app/src/main/java/com/apois/motorista/";
+const java=read(javaRoot+"DriverVoicePlugin.java");
+const generation=read(javaRoot+"VoiceGeneration.java");
+for(const marker of ['@CapacitorPlugin(name = "DriverVoice")','generation.accepts(ticket)','result.put("stopped", stopped)','2200L'])assert.ok(java.includes(marker),marker);
+const hash=s=>createHash("sha256").update(s).digest("hex");
+const voiceEvidence={web:hash(voice),java:hash(java),generation:hash(generation),mode:"QA235 external default preserved; strict stop acknowledgement and generation guard; no native registration change or physical audio test"};
+const launchSites=app.split("\n").map((line,index)=>({line:index+1,code:line.trim()})).filter(x=>x.code.includes("launchApoisNavigationAfterRideStart("));
+assert.ok(launchSites.some(x=>x.code.includes("accepted.origin_lat")),"confirmed accept pickup launch");
+assert.ok(launchSites.some(x=>x.code.includes("ride.destination_lat")),"confirmed PIN destination launch");
 function files(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(join(dir,e.name)):e.isFile()?[join(dir,e.name)]:[]);}
 const dist=join(root,"dist/client");
 const bundle=files(dist).map(f=>({path:relative(dist,f),bytes:statSync(f).size,sha256:createHash("sha256").update(readFileSync(f)).digest("hex")}));
 assert.ok(bundle.length>0);
-const report={sourceCommit:"9fc171050d8b5703540c49d19a8f1e9f5162775f",historicalBuilder:"6b0d31dcad5be9b7c7b9a8c651deeca98104b65f",reconciliationCommit:"a19fc0bc8e68c94dae0f1d48ff7cef2dba8ad94d",files:bundle.length,bytes:bundle.reduce((s,x)=>s+x.bytes,0),markers:checks,hashes:bundle,limits:"Compile-only synthetic config; no APK, real auth, runtime navigation or production integration."};
+const report={sourceCommit:"9fc171050d8b5703540c49d19a8f1e9f5162775f",historicalBuilder:"6b0d31dcad5be9b7c7b9a8c651deeca98104b65f",reconciliationCommit:"a19fc0bc8e68c94dae0f1d48ff7cef2dba8ad94d",files:bundle.length,bytes:bundle.reduce((s,x)=>s+x.bytes,0),markers:checks,voiceEvidence,launchSites,hashes:bundle,limits:"Compile-only synthetic config; no APK, real auth, runtime navigation or production integration."};
 writeFileSync(out,JSON.stringify(report,null,2)+"\n");
 console.log("[OK] generated QA290 WebView source/bundle evidence, "+bundle.length+" files");
