@@ -7,9 +7,9 @@ import {MotoristaAuthority} from "./motorista-authority.mjs";
 const statusFor = {PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
 const uuid = v => typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export class ConfirmedNavigationLaunch {
-  #epoch=0; #busy=null; #native=null;
+  #epoch=0; #busy=null; #native=null; #blocked=false; #enabled;
   constructor({enabled=false,verify,openNative,closeNative}) {
-    this.enabled=enabled===true;
+    this.#enabled=enabled===true;
     this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;
   }
   // Invalidate on logout, unmount, loss of assignment or new authoritative
@@ -19,20 +19,25 @@ export class ConfirmedNavigationLaunch {
     const native=this.#native;
     this.#native=null;
     if(native) {
-      try { return await this.closeNative(native)===true; }
-      catch { return false; }
+      this.#blocked=true;
+      try {
+        if(await this.closeNative(native)===true){this.#blocked=false;return true;}
+      } catch {}
+      return false;
     }
-    return true;
+    return !this.#blocked && !this.#busy;
   }
   async launch({rideId,phase,openExternal}) {
     // Preserve exact QA290 behavior by default: no verification RPC, native
     // calls, state changes, or new dependency on an experimental feature.
-    if(!this.enabled){await openExternal();return "external";}
+    if(!this.#enabled){await openExternal();return "external";}
     if(!uuid(rideId)||!Object.hasOwn(statusFor,phase))return "unverified";
     if(this.#busy||this.#native)return "busy";
+    if(this.#blocked)return "uncertain";
     const ticket={epoch:this.#epoch};
     this.#busy=ticket;
     const current=()=>this.#busy===ticket&&this.#epoch===ticket.epoch;
+    let nativeUncertain=false;
     try {
       const proof=await this.verify({rideId,phase});
       if(!current())return "stale";
@@ -46,21 +51,26 @@ export class ConfirmedNavigationLaunch {
       // geocoding/polyline, account IDs and tokens are never bridge arguments.
       // A future adapter must independently prove target provenance before routing.
       const request=Object.freeze({rideId,phase,revision:0});
+      nativeUncertain=true;
       const result=await this.openNative(request);
       if(!current()){
-        if(result?.state==="opened"&&typeof result.sessionId==="string"){
-          try { await this.closeNative(result.sessionId); }catch{}
+        if(result?.state==="unavailable"){nativeUncertain=false;}
+        else if(result?.state==="opened"&&typeof result.sessionId==="string"&&result.sessionId.length>0){
+          try { if(await this.closeNative(result.sessionId)===true)nativeUncertain=false; }catch{}
         }
+        if(nativeUncertain)this.#blocked=true;
         return "stale";
       }
       if(result?.state==="opened"&&typeof result.sessionId==="string"&&result.sessionId.length>0){
+        nativeUncertain=false;
         this.#native=result.sessionId;
         return "internal";
       }
       // Only a definitive no-activity acknowledgement permits auto fallback.
       // Reject/timeout/malformed replies may mean native opened: fail silent,
       // keep original manual map controls available, do not open two activities.
-      if(result?.state!=="unavailable")return "uncertain";
+      if(result?.state!=="unavailable"){this.#blocked=true;return "uncertain";}
+      nativeUncertain=false;
       // Reverify even after a definitive failure: account/ride may have changed
       // while the native attempt was running.
       const again=await this.verify({rideId,phase});
@@ -74,7 +84,10 @@ export class ConfirmedNavigationLaunch {
         return "unverified";
       await openExternal();
       return current()?"external":"stale";
-    }catch{return current()?"uncertain":"stale";}
+    }catch{
+      if(nativeUncertain)this.#blocked=true;
+      return current()?(nativeUncertain?"uncertain":"unverified"):"stale";
+    }
     finally{if(this.#busy===ticket)this.#busy=null;}
   }
 }
