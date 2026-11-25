@@ -10,7 +10,11 @@ import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {createPassengerPanel} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/passenger-panel.mjs'
 import {createExperimentalRideReview} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/request-review.mjs'
-import {createV21ExperimentalAction,localValhallaMetrics} from './v21-edge-adapter.mjs'
+import {createV21ExperimentalAction} from './v21-edge-adapter.mjs'
+import {startRegionalQuoteTls} from './regional-private-quote.mjs'
+import {createNavigationControl} from './navigation-control-v21.mjs'
+import {createVerifiedHostTransport} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/verified-host-transport.mjs'
+import {createDurableRideHost} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/durable-ride-host.mjs'
 import {loadFare} from './observed-fare-v21.ts'
 import {createDriverAuthority} from '../passenger-provenance-snapshot/driver-authority.mjs'
 import {createGuardedAuthorization} from '../passenger-provenance-snapshot/guarded-authorization.mjs'
@@ -39,6 +43,8 @@ const sql=(statement,values=[],role=true)=>{
  return result?JSON.parse(result):null
 }
 sql("insert into apois_nav_lab.catalog(id,version,osm_kind,osm_id,extract_sha256,label,lat,lng,active) select id,version,osm_kind,osm_id,extract_sha256,label,lat,lng,active from jsonb_to_recordset($1::jsonb) as x(id uuid,version int,osm_kind text,osm_id bigint,extract_sha256 text,label text,lat float8,lng float8,active bool)",[JSON.stringify(catalog.rows)],false)
+const quoteTls=await startRegionalQuoteTls({authUserId:passengerAuth,certificate:process.env.APOIS_LAB_CERT,keyFile:process.env.APOIS_LAB_CERT_KEY,origin:pickup,destination})
+try{
 let dispatches=0
 const admin={
  from(table){const q={select(){return q},eq(){return q},async maybeSingle(){return table==='passenger_wallets'?{data:{is_blocked:false}}:{data:{id:id(90),code:'carros'}}},then(resolve){assert.equal(table,'tariff_rules');resolve({data:[{city:'petrolina',base_fare:3,per_km:2,per_min:0.5,min_fare:10}]})}};return q},
@@ -49,18 +55,40 @@ const admin={
   return {data:sql('select public.apois_nav_lab_create_ride_v21($1,$2,$3,$4::jsonb)',[...values,JSON.stringify(args.p_payload)])}
  }
 }
-const handle=createV21ExperimentalAction({enabled:true,admin,authUserId:passengerAuth,passengerId,independentMetrics:localValhallaMetrics(),loadFare:(...args)=>loadFare(admin,...args),dispatchInitial:async({id:rideId})=>{assert.equal(sql("select to_jsonb(count(*)) from public.rides where id=$1 and status='procurar_motorista'",[rideId]),1);dispatches++;return [profile]}})
-const panel=createPassengerPanel({enabled:true,catalog,newKey:()=>key,confirm:async body=>sql('select apois_nav_lab.confirm_selection($1,$2,$3,$4,$5,$6)',[passengerAuth,body.requestKey,body.pickup.id,body.pickup.version,body.destination.id,body.destination.version])})
+const handle=createV21ExperimentalAction({enabled:true,admin,authUserId:passengerAuth,passengerId,independentMetrics:quoteTls.metrics,loadFare:(...args)=>loadFare(admin,...args),dispatchInitial:async({id:rideId})=>{assert.equal(sql("select to_jsonb(count(*)) from public.rides where id=$1 and status='procurar_motorista'",[rideId]),1);dispatches++;return [profile]}})
+const control=createNavigationControl({confirmationEnabled:true,recoveryEnabled:true,catalogPolicy:{version:1,extractHash:manifest.extract_sha256},verifySession:async s=>s==='synthetic-regional-passenger'?passengerAuth:null,allowPilot:u=>u===passengerAuth,rpc:async(name,p)=>{
+ assert.equal(p.p_auth_user,passengerAuth)
+ if(name==='apois_nav_lab_catalog_v21')return sql('select public.apois_nav_lab_catalog_v21($1,$2,$3)',[passengerAuth,p.p_version,p.p_extract])
+ if(name==='apois_nav_lab_confirm_catalog_v21')return sql('select public.apois_nav_lab_confirm_catalog_v21($1,$2,$3,$4,$5,$6)',[passengerAuth,p.p_request_key,p.p_pickup,p.p_destination,p.p_version,p.p_extract])
+ if(name==='apois_nav_lab_active_v21')return sql('select public.apois_nav_lab_active_v21($1)',[passengerAuth])
+ if(name==='apois_nav_lab_reconcile_v21')return sql('select public.apois_nav_lab_reconcile_v21($1,$2,$3,$4)',[passengerAuth,p.p_selection,p.p_request_key,p.p_seal])
+ throw Error('Unexpected control RPC')
+}})
+let sent=0
+const auth={getSession:async()=>({data:{session:{user:{id:passengerAuth},access_token:'synthetic-regional-passenger'}}}),getUser:async token=>({data:{user:token==='synthetic-regional-passenger'?{id:passengerAuth}:null}})}
+const adapter=createVerifiedHostTransport({enabled:true,account:passengerAuth,auth,controlFunction:'apois-navigation-control',invoke:async(name,{body,headers})=>{
+ const token=headers.Authorization.slice(7);assert.equal(token,'synthetic-regional-passenger')
+ const result=await (name==='request-ride'?handle(body):control(token,body))
+ if(body.action==='apois_navigation_create'){sent++;throw Error('synthetic lost response after actual fixture creation')}
+ return result.status===200?{data:result.body}:{error:{context:new Response(JSON.stringify(result.body),{status:result.status})}}
+}})
+const delivered=await adapter.readCatalog({version:1,extractHash:manifest.extract_sha256},AbortSignal.timeout(10000));assert.equal(delivered.rows.length,2)
+const panel=createPassengerPanel({enabled:true,catalog:delivered,newKey:()=>key,confirm:adapter.confirm})
 assert.ok(panel.open())
 assert.equal(panel.suggestTap({lat:pickup.lat,lng:pickup.lng}).id,pickup.id)
 assert.ok(panel.acceptSuggestion());assert.ok(panel.focus('destination'))
 assert.ok(panel.selectSearch(destination.label,destination.id))
 assert.ok(await panel.confirm())
-const review=createExperimentalRideReview({enabled:true,transport:handle})
-assert.ok(review.begin(panel.confirmedInput()))
-const quote=await review.requestQuote();assert.ok(quote&&quote.distance_km>0.5)
-const created=await review.submit(true);assert.ok(created?.rideId);assert.equal(dispatches,1)
-const ride=created.rideId
+let record=null
+const journal={read:async()=>record,reserve:async(_,e)=>{if(record)return false;record={...e};return true},clear:async(_,e)=>{if(JSON.stringify(e)!==JSON.stringify(record))return false;record=null;return true}}
+const make=()=>createDurableRideHost({enabled:true,journal,...adapter})
+const first=make();assert.ok(await first.open());assert.ok(first.begin(panel.confirmedInput()))
+const quote=await first.quote();assert.ok(quote&&quote.distance_km>0.5)
+assert.equal(await first.submit(true),null);assert.equal(first.snapshot().state,'recovery');assert.ok(record);first.invalidate()
+const recovered=make();assert.ok(await recovered.open());assert.equal(recovered.snapshot().state,'recovery')
+assert.ok(await recovered.recover());assert.equal(recovered.snapshot().state,'active');assert.equal(sent,1);assert.equal(dispatches,1)
+const ride=recovered.snapshot().ride.rideId
+assert.equal(quoteTls.stats().metricRequests,2)
 assert.equal(sql("select to_jsonb(count(*)) from public.rides where id=$1 and fare_amount_cents=$2 and payment_method='cash' and pickup_source='osm_lab'",[ride,quote.fare_amount_cents]),1)
 sql("update public.rides set driver_id=$1,accepted_driver_id=$1,accepted_at=clock_timestamp(),status='motorista_a_caminho' where id=$2",[driver,ride])
 const authority=createDriverAuthority({verifySession:async s=>s==='driver-a'?driverAuth:s==='driver-b'?id(62):null,readDriverProof:async({authUserId,rideId,phase})=>sql('select apois_nav_lab.read_driver_proof_v21($1,$2,$3)',[authUserId,rideId,phase])})
@@ -104,7 +132,10 @@ try{
  sql("update public.rides set status='finalizada',completed_at=clock_timestamp() where id=$1",[ride]);refresh()
  assert.equal((await post(finalPending,trip)).status,403)
  assert.equal((await issue('driver-a',trip)).status,403)
- const report={source:'OSM_PBF',extract_sha256:manifest.extract_sha256,selectedPublicNodes:2,auth:'synthetic',dispatch:'synthetic after commit',tariffs:'synthetic inputs to observed v21 formula',quote,driverAuthority:'v21 fixture',routes}
+ assert.ok(await recovered.recover());assert.equal(record,null);assert.ok(recovered.canReturnToLegacy());assert.equal(sent,1)
+ const report={privateQuote:quoteTls.stats(),recoveredWithoutDuplicate:true,source:'OSM_PBF',extract_sha256:manifest.extract_sha256,selectedPublicNodes:2,auth:'synthetic',dispatch:'synthetic after commit',tariffs:'synthetic inputs to observed v21 formula',quote,driverAuthority:'v21 fixture',routes}
  writeFileSync(join(out,'v21-regional-report.json'),JSON.stringify(report,null,2))
  console.log('APOIS_V21_OSM_TO_FERROSTAR_INPUT_OK',JSON.stringify(report))
 }finally{panel.close();host.close();gateway.closeAllConnections();await new Promise(res=>gateway.close(res));store.close();rmSync(dir,{recursive:true,force:true})}
+
+}finally{await quoteTls.close()}

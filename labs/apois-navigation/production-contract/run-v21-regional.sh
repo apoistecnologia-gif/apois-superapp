@@ -12,6 +12,7 @@ cleanup(){
   trap - EXIT
   docker logs "$NAME" >"$OUT/valhalla.log" 2>&1 || true
   docker rm -f "$NAME" apois-provenance-fixture >/dev/null 2>&1 || true
+  if [[ -n "${TLS:-}" && "$TLS" == /tmp/tmp.* && -d "$TLS" ]]; then rm -rf "$TLS"; fi
   if [[ "$WORK" == /tmp/tmp.* && -d "$WORK" && ! -L "$WORK" ]]; then rm -rf "$WORK" 2>/dev/null || sudo rm -rf "$WORK"; fi
   exit "$code"
 }
@@ -39,6 +40,9 @@ run_sql < "$ROOT/create-passenger-ride-v21.sql"
 run_sql < "$BASE/passenger-provenance-snapshot/revocation-fixture.sql"
 run_sql < "$ROOT/authority-v21.sql"
 run_sql < "$ROOT/service-rpc-v21.sql"
+run_sql < "$ROOT/recovery-v21.sql"
+run_sql < "$ROOT/confirmation-v21.sql"
+run_sql < "$ROOT/catalog-v21.sql"
 ready=0
 for i in $(seq 1 180); do
  if curl -fsS --max-time 2 http://127.0.0.1:8002/status > "$OUT/status.json"; then ready=1; break; fi
@@ -46,5 +50,9 @@ for i in $(seq 1 180); do
  sleep 3
 done
 test "$ready" = 1
-node "$ROOT/v21-regional-smoke.mjs" "$OUT"
+TLS="$(mktemp -d)"
+# Local CA accepted only in the test process; never disable TLS verification.
+openssl req -x509 -newkey rsa:2048 -nodes -keyout "$TLS/key.pem" -out "$TLS/cert.pem" -days 1 -subj /CN=localhost -addext subjectAltName=DNS:localhost >/dev/null 2>&1
+NODE_EXTRA_CA_CERTS="$TLS/cert.pem" APOIS_LAB_CERT="$TLS/cert.pem" APOIS_LAB_CERT_KEY="$TLS/key.pem" node "$ROOT/v21-regional-smoke.mjs" "$OUT"
+rm -rf "$TLS"
 test "$(docker inspect -f '{{.State.Running}} {{.State.OOMKilled}}' "$NAME")" = "true false"

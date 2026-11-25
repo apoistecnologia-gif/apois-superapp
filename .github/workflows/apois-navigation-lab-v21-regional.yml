@@ -2,7 +2,7 @@ name: APOIS Navegacao - cadeia v21 regional (sem deploy)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/production-contract/v21-regional-smoke.mjs','labs/apois-navigation/production-contract/run-v21-regional.sh','.github/workflows/apois-navigation-lab-v21-regional.yml']
+    paths: ['labs/apois-navigation/production-contract/v21-regional-smoke.mjs','labs/apois-navigation/production-contract/regional-private-quote.mjs','labs/apois-navigation/production-contract/run-v21-regional.sh','.github/workflows/apois-navigation-lab-v21-regional.yml']
   workflow_dispatch:
 permissions:
   contents: read
