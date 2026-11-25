@@ -34,7 +34,8 @@ internal suspend fun prepareConfirmedWithNativeReads(
     approvedBackendHost:String,expected:RoutingIdentity,target:ApprovedIndependentTarget,
     routeEndpoint:String,routeHost:String,issuer:RouteCapabilityIssuer,
     map:BundledRegionalMap.VerifiedMap,hostCurrent:()->Boolean,targetCurrent:()->Boolean,
-    online:()->Boolean,audioAuthorization:(()->Boolean)?=null
+    online:()->Boolean,audioAuthorization:(()->Boolean)?=null,
+    verifyEvidence:(suspend ()->VerifiedRouteEvidence?)?=null
 ):Boolean{
     check(Looper.myLooper()==Looper.getMainLooper())
     if(!target.usable()||target.identity!=expected)return false
@@ -47,7 +48,10 @@ internal suspend fun prepareConfirmedWithNativeReads(
     val resolver=ValhallaRouteClient(routeEndpoint,routeHost,RouteCapabilityScope(target,::current,issuer))
     return ConfirmedLiveNavigationBridge.prepareFromGps(
         verify={
-            if(!current())null else {
+            if(!current())null else if(verifyEvidence!=null){
+                val evidence=verifyEvidence()
+                evidence?.takeIf{current()&&it.identity==expected&&it.ride.rideId==target.rideId&&it.ride.phase==target.phase&&it.target==target.point&&it.source==target.source&&it.usable(SystemClock.elapsedRealtime())}
+            } else {
                 val proof=reader.verify(target.rideId,target.phase,expected)
                 if(proof==null||!current())null else routeEvidenceFromRead(proof,target,SystemClock.elapsedRealtime())
             }

@@ -14,7 +14,8 @@ internal data class NativeHostGrant(
     val identity:RoutingIdentity,val target:ApprovedIndependentTarget,
     val current:()->Boolean,val targetCurrent:()->Boolean,
     val issuer:RouteCapabilityIssuer,
-    val audioAuthorization:(()->Boolean)?=null
+    val audioAuthorization:(()->Boolean)?=null,
+    val verifyEvidence:(suspend ()->VerifiedRouteEvidence?)?=null
 )
 internal data class NativeHostConfiguration(
     val approvedBackendHost:String,val routeEndpoint:String,val routeHost:String,
@@ -75,7 +76,7 @@ object NativeConfirmedHost{
                     load={withTimeoutOrNull(8_000L){BundledRegionalMap.VerifiedMap.load(activity.applicationContext)}}
                 )?:return@launch
                 prepared=prepareConfirmedWithNativeReads(config.approvedBackendHost,grant.identity,grant.target,
-                    config.routeEndpoint,config.routeHost,grant.issuer,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization)
+                    config.routeEndpoint,config.routeHost,grant.issuer,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization,grant.verifyEvidence)
                 ensureActive()
                 if(!prepared||!available()||!authorized())return@launch
                 startAttempted=true
