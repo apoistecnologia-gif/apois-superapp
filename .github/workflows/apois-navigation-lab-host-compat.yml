@@ -49,7 +49,18 @@ jobs:
           set -euo pipefail
           cd "$RUNNER_TEMP/apois-compat-host/android"
           gradle --version
-          gradle :app:checkDebugAarMetadata :app:processDebugMainManifest :app:compileDebugJavaWithJavac :navigation-probe:compileDebugKotlin :navigation-probe:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/apois-host-compat.log"
+          tasks=(:app:checkDebugAarMetadata :app:processDebugMainManifest :app:compileDebugJavaWithJavac :navigation-probe:compileDebugKotlin :navigation-probe:testDebugUnitTest)
+          log="$RUNNER_TEMP/apois-host-compat.log"
+          if ! gradle "${tasks[@]}" --no-daemon --stacktrace 2>&1 | tee "$log"; then
+            # Retry once only for transient dependency transport failures.
+            # No alternative repositories, bypasses, or changes to dependency versions.
+            if grep -Eq 'Received status code (403|429|502|503|504) from server|Read timed out|Connection reset' "$log"; then
+              echo "Dependency transport failed; one retry" | tee -a "$log"
+              gradle "${tasks[@]}" --no-daemon --stacktrace 2>&1 | tee -a "$log"
+            else
+              exit 1
+            fi
+          fi
           test -z "$(find . -name '*.apk' -print -quit)"
       - uses: actions/upload-artifact@v4
         if: always()

@@ -61,11 +61,18 @@ object LabNavigationBridge {
     }
     fun close(sessionId:String):Boolean{
         main()
-        if(screen.value?.sessionId!=sessionId)return false
+        val previous=screen.value ?: return false
+        if(previous.sessionId!=sessionId)return false
+        val notify=callback
         controller?.close()
         controller=null
         callback=null
         screen.value=null
+        // Close first, then notify. Back or Activity destruction must not leave
+        // a stale fake session in the WebView. The host checks session identity.
+        val event=JSONObject().put("sessionId",sessionId).put("rideId",previous.ride.rideId)
+            .put("revision",previous.ride.revision).put("action","SESSION_CLOSED")
+        runCatching { notify?.accept(event) }
         return true
     }
     fun closeActive(){

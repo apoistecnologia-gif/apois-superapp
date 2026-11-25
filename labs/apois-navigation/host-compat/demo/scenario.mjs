@@ -18,7 +18,9 @@ export function createDemo(bridge,{schedule=setTimeout,unschedule=clearTimeout,o
  }
  async function event(e){
    const c=current;
-   if(!c||e.sessionId!==c.sessionId||e.rideId!==c.snapshot.rideId||e.revision!==c.snapshot.revision)return;
+   if(!c||e.sessionId!==c.sessionId||e.rideId!==c.snapshot.rideId)return;
+   if(e.action==="SESSION_CLOSED"){cancelTimer();current=null;onStatus("Sessão encerrada");return;}
+   if(e.revision!==c.snapshot.revision)return;
    const phase=c.snapshot.phase;
    if(e.action==="OPEN_PIN"&&phase==="WAITING_PIN")await next("TRIP",{destination:"Destino fictício — etapa 2"});
    else if(e.action==="FINISH"&&phase==="TRIP")await next("COMPLETED");

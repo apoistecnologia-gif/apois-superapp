@@ -17,3 +17,13 @@ test("cancel cannot complete",async()=>{const x=setup();await x.d.start("cancel"
 test("stale, foreign, invalid events ignored",async()=>{const x=setup();await x.d.start("trip");await x.send("FINISH",{revision:0});await x.send("FINISH",{sessionId:"old"});await x.send("FINISH",{rideId:"other"});await x.send("RATE",{rating:5});assert.equal(x.updates.length,0);await x.send("FINISH");await x.send("RATE",{rating:6});assert.equal(x.d.state().phase,"COMPLETED");await x.send("SKIP_RATING");assert.equal(x.d.state(),null);});
 test("external fallback closes only fake session",async()=>{const x=setup();await x.d.start("trip");await x.send("REQUEST_EXTERNAL");assert.equal(x.d.state(),null);assert.equal(x.updates.length,0);});
 test("replacing session and disposal",async()=>{const x=setup();const old=await x.d.start("full");const newer=await x.d.start("trip");assert.notEqual(old,newer);await x.fire();assert.equal(x.d.state().phase,"TRIP");await x.d.dispose();assert.equal(x.d.state(),null);await assert.rejects(x.d.start("trip"));});
+
+test("Android back closes host session and cancels scheduled pickup",async()=>{
+ const x=setup();await x.d.start("full");await x.send("SESSION_CLOSED");
+ assert.equal(x.d.state(),null);await x.fire();assert.equal(x.updates.length,0);
+});
+test("late close from old activity cannot close new session",async()=>{
+ const x=setup();const old=await x.d.start("full");const fresh=await x.d.start("trip");
+ await x.send("SESSION_CLOSED",{sessionId:old});assert.equal(x.d.state().sessionId,fresh);
+ await x.send("SESSION_CLOSED");assert.equal(x.d.state(),null);
+});

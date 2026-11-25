@@ -38,6 +38,7 @@ internal class LabReplayModel(private val context:Context):NavigationViewModel {
     }
     suspend fun play(token:LegToken, stillCurrent:()->Boolean){
         failure.value=null
+        stopNavigation()
         try {
             val adapter=RouteAdapter.fromWellKnownRouteProvider(WellKnownRouteProvider.Valhalla("https://navigation.invalid/route","auto"))
             val bytes=context.assets.open("apois-lab-route.json").use{it.readBytes()}
@@ -65,11 +66,23 @@ internal class LabReplayModel(private val context:Context):NavigationViewModel {
                         .copy(destination=destination)
                     navigationUiState.value=ui
                     if(ui.tripState is TripState.Complete)break
+                    if(i==2000){
+                        failure.value="Limite de reprodução alcançado."
+                        stopNavigation()
+                        break
+                    }
                     if(foreground.value&&stillCurrent())ui.spokenInstruction?.let{speech.onSpokenInstructionTrigger(it)}
                     delay(750)
                     foreground.first{it}
                     if(!stillCurrent())break
-                    simulation=advanceLocationSimulation(simulation)
+                    val next=advanceLocationSimulation(simulation)
+                    if(next==simulation){
+                        // Never claim arrival simply because replay input ended.
+                        failure.value="Trajeto simulado terminou sem confirmação de chegada."
+                        stopNavigation()
+                        break
+                    }
+                    simulation=next
                     state=navigator.updateUserLocation(simulation.currentLocation,state)
                 }
             } finally {
