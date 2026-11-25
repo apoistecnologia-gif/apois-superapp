@@ -1,0 +1,569 @@
+{
+  "source": "authorized read-only Supabase metadata",
+  "project": "tbbzkrfupmqdywnzgnms",
+  "observed": "2026-11-25",
+  "edgeFunction": "request-ride",
+  "edgeVersion": 21,
+  "edgeReportedSha256": "2fb17e78cd12368a89b4416fe397f7557821d43d0027f372fe148042456b4a8f",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "required": true,
+      "default_expr": "gen_random_uuid()"
+    },
+    {
+      "name": "passenger_id",
+      "type": "uuid",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "driver_id",
+      "type": "uuid",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "accepted_driver_id",
+      "type": "uuid",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "category",
+      "type": "text",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "required": true,
+      "default_expr": "'procurar_motorista'::text"
+    },
+    {
+      "name": "origin",
+      "type": "jsonb",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "destination",
+      "type": "jsonb",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "intermediates",
+      "type": "jsonb",
+      "required": true,
+      "default_expr": "'[]'::jsonb"
+    },
+    {
+      "name": "origin_name",
+      "type": "text",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "destination_name",
+      "type": "text",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "origin_lat",
+      "type": "numeric(10,8)",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "origin_lng",
+      "type": "numeric(11,8)",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "destination_lat",
+      "type": "numeric(10,8)",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "destination_lng",
+      "type": "numeric(11,8)",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "encoded_polyline",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "estimated_price",
+      "type": "numeric(10,2)",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "final_price",
+      "type": "numeric(10,2)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "distance_km",
+      "type": "numeric(10,2)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "duration_min",
+      "type": "numeric(10,2)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "payment_method",
+      "type": "text",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "service_details",
+      "type": "jsonb",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "request_key",
+      "type": "uuid",
+      "required": true,
+      "default_expr": null
+    },
+    {
+      "name": "candidate_driver_ids",
+      "type": "uuid[]",
+      "required": true,
+      "default_expr": "'{}'::uuid[]"
+    },
+    {
+      "name": "offered_driver_ids",
+      "type": "uuid[]",
+      "required": true,
+      "default_expr": "'{}'::uuid[]"
+    },
+    {
+      "name": "rejected_driver_ids",
+      "type": "uuid[]",
+      "required": true,
+      "default_expr": "'{}'::uuid[]"
+    },
+    {
+      "name": "current_offer_driver_id",
+      "type": "uuid",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "dispatch_attempts",
+      "type": "integer",
+      "required": true,
+      "default_expr": "0"
+    },
+    {
+      "name": "request_expires_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "search_expires_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "scheduled_for",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "security_code",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_name",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_photo",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_phone",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_vehicle_model",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_vehicle_color",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_vehicle_plate",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_rating",
+      "type": "numeric(3,2)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_latitude",
+      "type": "numeric(10,8)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_longitude",
+      "type": "numeric(11,8)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_heading",
+      "type": "numeric",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "passenger_rating",
+      "type": "numeric(2,1)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "passenger_rating_comment",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "share_token",
+      "type": "uuid",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "cancellation_fee",
+      "type": "numeric(10,2)",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "cancellation_reason",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "cancelled_by",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "accepted_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_arrived_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "started_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "cancelled_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "required": true,
+      "default_expr": "now()"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "required": true,
+      "default_expr": "now()"
+    },
+    {
+      "name": "pickup_label",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "pickup_short_label",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "pickup_address",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "pickup_place_id",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "pickup_source",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_rated_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "passenger_rated_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "queued_after_ride_id",
+      "type": "uuid",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "queued_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "share_expires_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "share_revoked_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "security_code_failed_attempts",
+      "type": "integer",
+      "required": true,
+      "default_expr": "0"
+    },
+    {
+      "name": "security_code_locked_until",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "security_code_last_failed_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_to_passenger_rating",
+      "type": "smallint",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_to_passenger_comment",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "payment_status",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "payment_provider",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "provider_payment_id",
+      "type": "text",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "payment_confirmed_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "initial_dispatch_claimed_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "scheduled_activated_at",
+      "type": "timestamp with time zone",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "fare_amount_cents",
+      "type": "bigint",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "processing_fee_cents",
+      "type": "bigint",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "passenger_charge_cents",
+      "type": "bigint",
+      "required": false,
+      "default_expr": null
+    },
+    {
+      "name": "driver_approach_distance_km",
+      "type": "numeric(10,3)",
+      "required": true,
+      "default_expr": "0"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "rides_accepted_driver_id_fkey",
+      "definition": "FOREIGN KEY (accepted_driver_id) REFERENCES drivers(id)"
+    },
+    {
+      "name": "rides_category_check",
+      "definition": "CHECK ((category = ANY (ARRAY['carros'::text, 'motos'::text, 'fretes'::text, 'guincho'::text, 'envios'::text])))"
+    },
+    {
+      "name": "rides_driver_id_fkey",
+      "definition": "FOREIGN KEY (driver_id) REFERENCES drivers(id)"
+    },
+    {
+      "name": "rides_driver_to_passenger_rating_check",
+      "definition": "CHECK (((driver_to_passenger_rating IS NULL) OR ((driver_to_passenger_rating >= 1) AND (driver_to_passenger_rating <= 5))))"
+    },
+    {
+      "name": "rides_estimated_price_check",
+      "definition": "CHECK ((estimated_price >= (0)::numeric))"
+    },
+    {
+      "name": "rides_financial_snapshot_arithmetic",
+      "definition": "CHECK ((((fare_amount_cents IS NULL) AND (processing_fee_cents IS NULL) AND (passenger_charge_cents IS NULL)) OR ((fare_amount_cents IS NOT NULL) AND (processing_fee_cents IS NOT NULL) AND (passenger_charge_cents IS NOT NULL) AND (passenger_charge_cents = (fare_amount_cents + processing_fee_cents)))))"
+    },
+    {
+      "name": "rides_financial_snapshot_nonnegative",
+      "definition": "CHECK ((((fare_amount_cents IS NULL) OR (fare_amount_cents > 0)) AND ((processing_fee_cents IS NULL) OR (processing_fee_cents >= 0)) AND ((passenger_charge_cents IS NULL) OR (passenger_charge_cents > 0))))"
+    },
+    {
+      "name": "rides_passenger_id_fkey",
+      "definition": "FOREIGN KEY (passenger_id) REFERENCES users(id)"
+    },
+    {
+      "name": "rides_payment_status_check",
+      "definition": "CHECK (((payment_status IS NULL) OR (payment_status = ANY (ARRAY['pending'::text, 'paid'::text, 'expired'::text, 'failed'::text, 'refunded'::text]))))"
+    },
+    {
+      "name": "rides_pkey",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "rides_queued_after_ride_id_fkey",
+      "definition": "FOREIGN KEY (queued_after_ride_id) REFERENCES rides(id) ON DELETE SET NULL"
+    },
+    {
+      "name": "rides_request_key_key",
+      "definition": "UNIQUE (request_key)"
+    },
+    {
+      "name": "rides_security_code_failed_attempts_nonnegative",
+      "definition": "CHECK ((security_code_failed_attempts >= 0))"
+    },
+    {
+      "name": "rides_share_token_key",
+      "definition": "UNIQUE (share_token)"
+    },
+    {
+      "name": "rides_status_check",
+      "definition": "CHECK ((status = ANY (ARRAY['agendada'::text, 'aguardando_pagamento'::text, 'procurar_motorista'::text, 'motorista_a_caminho'::text, 'motorista_chegou'::text, 'em_viagem'::text, 'finalizada'::text, 'cancelada_passageiro'::text, 'cancelada_motorista'::text, 'expired'::text])))"
+    }
+  ],
+  "selectedFunctions": [
+    "public.apois_enforce_passenger_operational_status_gate",
+    "public.apois_enforce_passenger_ride_financial_gate",
+    "public.apois_lock_passenger_ride_financial_gate",
+    "private.calculate_electronic_processing_fee_cents",
+    "private.enforce_prepaid_pix_dispatch_gate",
+    "private.enforce_prepaid_pix_provider_target",
+    "private.enforce_ride_electronic_payment_homologation_gate",
+    "private.enforce_ride_state_machine",
+    "private.stamp_ride_financial_snapshot"
+  ]
+}

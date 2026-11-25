@@ -1,0 +1,34 @@
+name: APOIS Navegacao - contrato observado v21 (sem deploy)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/production-contract/**','labs/apois-navigation/passenger-provenance-snapshot/**','.github/workflows/apois-navigation-lab-production-contract.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validar contrato observado no PostgreSQL descartavel
+        run: |
+          set -euo pipefail
+          docker run -d --name apois-v21-fixture --network none -e POSTGRES_PASSWORD=synthetic_ci_only postgres:17
+          trap 'docker rm -f apois-v21-fixture >/dev/null 2>&1 || true' EXIT
+          ready=0
+          for n in $(seq 1 60); do
+            if docker exec apois-v21-fixture pg_isready -h 127.0.0.1 -U postgres; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" = 1
+          run_sql() { docker exec -i apois-v21-fixture psql -X -U postgres -v ON_ERROR_STOP=1; }
+          root=labs/apois-navigation/production-contract
+          run_sql < "$root/fixture-v21.sql"
+          run_sql < labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/schema.sql
+          run_sql < "$root/observed-gates.sql"
+          run_sql < "$root/create-passenger-ride-v21.sql"
+          run_sql < "$root/test-v21.sql"
