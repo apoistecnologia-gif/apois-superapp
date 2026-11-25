@@ -25,8 +25,13 @@ internal class LegRouteResources<T : Any>(
     fun accepts(candidate: Attachment): Boolean = !closed && attachment === candidate
     fun detach(candidate: Attachment) {
         if (!accepts(candidate)) return
+        suspendAttachment()
+    }
+    fun suspendAttachment() {
         attachment = null
         budget.invalidateFix()
+        // Remove cached coordinates when leaving the map; retain only the budget.
+        cache.clear()
         // Do NOT clear pending request here. Its job must settle the ticket
         // when transport completes or is cancelled, even after UI detaches.
     }

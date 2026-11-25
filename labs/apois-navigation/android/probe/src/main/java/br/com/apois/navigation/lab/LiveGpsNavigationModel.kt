@@ -82,6 +82,14 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         stopNavigation()
         if (!stillCurrent()) { permit?.let { runCatching { it.release() } }; _quality.value = GpsQuality.LOST; return }
         val active = generation
+        val endpoint = route.geometry.lastOrNull()?.let { RegionalPoint(it.lat,it.lng) }
+        if (resources != null && (endpoint == null || !endpoint.valid() ||
+                endpoint.distanceTo(resources.target) > 150.0)) {
+            permit?.let { runCatching { it.release() } }
+            _quality.value = GpsQuality.LOST
+            _routeNotice.value = "Destino da rota incompatível."
+            return
+        }
         val attachment = if (legToken != null) resources?.attach(legToken) else null
         if (resources != null && attachment == null) {
             permit?.let { runCatching { it.release() } }

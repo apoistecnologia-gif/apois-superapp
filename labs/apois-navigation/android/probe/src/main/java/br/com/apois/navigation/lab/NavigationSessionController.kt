@@ -1,5 +1,7 @@
 package br.com.apois.navigation.lab
 
+import uniffi.ferrostar.Route
+
 // Lab-only deterministic lifecycle coordinator. Host supplies server-authoritative
 // snapshots and executes effects serially on one dispatcher. No direct RPC,
 // background location subscription, voice playback, or map launch here.
@@ -23,6 +25,26 @@ internal class NavigationSessionController(initial:RideSnapshot) {
     private var foreground=true
     private var closed=false
     private var pending:RideIntent?=null
+    private var routeResources: LegRouteResources<Route>? = null
+    // Trusted host supplies the immutable routing target and resolver only
+    // for its current verified token. Keep the same owner on fallback/re-entry.
+    fun routingFor(candidate: LegToken, target: RegionalPoint,
+                   resolver: LiveRouteResolver): LegRouteResources<Route>? {
+        if (!acceptsNavigationEvent(candidate) || !target.valid()) return null
+        val existing = routeResources
+        if (existing != null) {
+            // A changed destination needs a separately audited host flow;
+            // never silently reset the budget or reuse the wrong target.
+            if (existing.target != target) return null
+            return existing
+        }
+        return LegRouteResources(candidate.rideId, candidate.leg, target, resolver::resolve)
+            .also { routeResources = it }
+    }
+    private fun closeRouting() {
+        routeResources?.close()
+        routeResources = null
+    }
 
     // WAITING_PIN intentionally stops guidance: pickup navigation is over.
     private fun desiredLeg():Leg? = if(!enabled||closed) null else when(snapshot.phase) {
@@ -52,6 +74,7 @@ internal class NavigationSessionController(initial:RideSnapshot) {
     // Disable only on an explicit host decision (e.g. confirmed external fallback).
     fun disable():List<SessionEffect> {
         enabled=false
+        routeResources?.suspendAttachment()
         return reconcile()
     }
     fun update(next:RideSnapshot):List<SessionEffect> {
@@ -66,6 +89,7 @@ internal class NavigationSessionController(initial:RideSnapshot) {
             RidePhase.COMPLETED, RidePhase.CANCELLED -> accepted.phase==snapshot.phase
         }
         if(!legal)return emptyList()
+        if (accepted.phase != snapshot.phase) closeRouting()
         snapshot=accepted
         pending=null
         return reconcile()
@@ -90,6 +114,7 @@ internal class NavigationSessionController(initial:RideSnapshot) {
     fun close():List<SessionEffect>{
         if(closed)return emptyList()
         closed=true
+        closeRouting()
         pending=null
         return reconcile()
     }

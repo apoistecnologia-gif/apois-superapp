@@ -58,7 +58,7 @@ class LegRouteResourcesTest {
         val y=o.attach(token)!!
         o.remember(x,a,"late",1001)
         assertNull(o.cached(x,a,1002))
-        assertEquals("old",o.cached(y,a,1002))
+        assertNull(o.cached(y,a,1002))
         o.close()
         assertFalse(o.accepts(y))
         assertNull(o.cached(y,a,1003))
