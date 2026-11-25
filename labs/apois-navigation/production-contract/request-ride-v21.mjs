@@ -33,7 +33,7 @@ export function createExperimentalRequestHandler({enabled=false,authorize,readSe
     }
     return {status:200,body:{ok:true,...row,candidates}}
    }
-   if(selection.linked===true)return create?recover(null):fail(409,'ride_already_created')
+   if(selection.linked===true)return create?await recover(null):fail(409,'ride_already_created')
    if(selection.linked!==false||!point(selection.origin)||!point(selection.destination)||!Number.isFinite(Date.parse(selection.expiresAt))||Date.parse(selection.expiresAt)<=now())return fail(409,'selection_expired')
    const origin={...selection.origin},destination={...selection.destination}
    const metrics=await independentMetrics(origin,destination)

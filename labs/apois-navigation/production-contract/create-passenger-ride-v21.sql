@@ -53,11 +53,11 @@ begin
  end if;
  insert into public.rides(passenger_id,category,status,origin,destination,origin_lat,origin_lng,destination_lat,destination_lng,origin_name,destination_name,
  estimated_price,fare_amount_cents,distance_km,duration_min,payment_method,payment_status,payment_provider,provider_payment_id,service_details,
- intermediates,request_key,pickup_label,pickup_short_label,pickup_address,pickup_place_id,pickup_source,search_expires_at)
+ intermediates,request_key,pickup_label,pickup_short_label,pickup_address,pickup_place_id,pickup_source,search_expires_at,created_at)
  values(v_passenger,'carros','procurar_motorista',p_payload->'origin',p_payload->'destination',
  (v_points->'origin'->>'lat')::numeric,(v_points->'origin'->>'lng')::numeric,(v_points->'destination'->>'lat')::numeric,(v_points->'destination'->>'lng')::numeric,
  v_points->'origin'->>'label',v_points->'destination'->>'label',v_price,round(v_price*100)::bigint,v_distance,v_duration,'cash','pending',null,null,'{}',
- '[]',p_request_key,v_points->'origin'->>'label',null,null,null,'osm_lab',clock_timestamp()+interval '180 seconds')
+ '[]',p_request_key,v_points->'origin'->>'label',null,null,null,'osm_lab',clock_timestamp()+interval '180 seconds',clock_timestamp())
  returning * into v_ride;
  if not apois_nav_lab.bind_selection(p_auth_user,p_selection,v_ride.id) then raise exception 'experimental_ride_binding_failed'; end if;
  return jsonb_build_object('rideId',v_ride.id,'status',v_ride.status,'estimated_price',v_ride.estimated_price,'fare_amount_cents',v_ride.fare_amount_cents,'payment_status',v_ride.payment_status,'reused',false);
