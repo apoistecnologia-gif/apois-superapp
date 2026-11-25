@@ -1,6 +1,6 @@
 {
   "source": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
-  "commit": "3db5aa0aedc65c42550a6ff808cde2ae84d97dac",
+  "commit": "cbb4320a0c52da6497aa91b9fdc37c80ec166bc0",
   "blobs": [
     {
       "path": "experimental/apois-navigation/schema.sql",
@@ -93,6 +93,26 @@
     {
       "path": "experimental/apois-navigation/ui/DURABLE-RECOVERY.md",
       "sha": "b37ab0b531f1f6148516e919fcda6fab611acdea"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/verified-host-transport.mjs",
+      "sha": "060a7809321dd220a327d9eab827d2fe3199da9a"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/creation-interlock.mjs",
+      "sha": "39e32d36eebab72d8394c963b26bb3e743658fe9"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/durable-passenger-view.mjs",
+      "sha": "680af377aac3f2d9d7a64bb426695d7f635b97a9"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/verified-host-transport.test.mjs",
+      "sha": "eeac609620f798ba60a7be1595889dc8d24e89b1"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/HOST-TRANSPORT.md",
+      "sha": "8905d1caebd1276526e25bc54e40772d081f7a54"
     }
   ]
 }
