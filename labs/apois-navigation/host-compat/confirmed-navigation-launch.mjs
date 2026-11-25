@@ -7,7 +7,7 @@ import {MotoristaAuthority} from "./motorista-authority.mjs";
 const statusFor = {PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
 const uuid = v => typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export class ConfirmedNavigationLaunch {
-  #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null;
+  #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null; #closing=null;
   constructor({enabled=false,verify,openNative,closeNative,prepareAudio,cancelNativePreparation}) {
     this.#enabled=enabled===true;
     this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;this.prepareAudio=prepareAudio;this.cancelNativePreparation=cancelNativePreparation;
@@ -24,6 +24,11 @@ export class ConfirmedNavigationLaunch {
       n.releaseAudio?.();
       return true;
     }
+    const closing=this.#closing;
+    if(closing&&event.sessionId===closing.id&&event.rideId===closing.rideId&&event.revision===closing.revision){
+      this.#finishClose(closing);
+      return true;
+    }
     const t=this.#busy;
     // Android Back may arrive before openConfirmed resolves. Buffer a small
     // number of exact-reference closures; apply only to the returned session.
@@ -32,6 +37,30 @@ export class ConfirmedNavigationLaunch {
       return true;
     }
     return false;
+  }
+  #finishClose(closing){
+    if(this.#closing!==closing)return false;
+    this.#closing=null;
+    closing.releaseAudio?.();
+    this.#blocked=false;
+    return true;
+  }
+  // Keep the exact closing reference after a timeout. A late destruction
+  // event or an idempotent native acknowledgement may safely unblock it.
+  async #awaitClose(closing){
+    if(closing.pending)return closing.pending;
+    const attempt=(async()=>{
+      try {
+        if(await this.closeNative(closing.id)===true){
+          this.#finishClose(closing);
+          return true;
+        }
+      } catch {}
+      return this.#closing!==closing;
+    })();
+    closing.pending=attempt;
+    try{return await attempt;}
+    finally{if(closing.pending===attempt)closing.pending=null;}
   }
   async recheck(){
     const n=this.#native;
@@ -77,11 +106,10 @@ export class ConfirmedNavigationLaunch {
     }
     if(native) {
       this.#blocked=true;
-      try {
-        if(await this.closeNative(native.id)===true){native.releaseAudio?.();this.#blocked=false;return true;}
-      } catch {}
-      return false;
+      this.#closing={...native,pending:null};
+      return this.#awaitClose(this.#closing);
     }
+    if(this.#closing)return this.#awaitClose(this.#closing);
     return !this.#blocked && !this.#busy;
   }
   async launch({rideId,phase,openExternal}) {
@@ -124,7 +152,14 @@ export class ConfirmedNavigationLaunch {
       if(!current()){
         if(result?.state==="unavailable"||result?.state==="opened"&&ticket.closed.has(result.sessionId)){nativeUncertain=false;}
         else if(result?.state==="opened"&&typeof result.sessionId==="string"&&result.sessionId.length>0){
-          try { if(await this.closeNative(result.sessionId)===true)nativeUncertain=false; }catch{}
+          // Late opened result after revocation. Keep the exact session and
+          // audio scope so a real delayed destruction can settle the block.
+          this.#blocked=true;
+          const closing={id:result.sessionId,rideId,phase,revision:0,releaseAudio,pending:null};
+          this.#closing=closing;
+          releaseAudio=null;
+          nativeUncertain=false;
+          await this.#awaitClose(closing);
         }
         if(nativeUncertain)this.#blocked=true;
         return "stale";

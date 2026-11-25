@@ -200,3 +200,43 @@ test("failed cancellation does not unlock ambiguous open",async()=>{
   await x.invalidate();d.reject(Error("timeout"));
   assert.equal(await p,"stale");assert.equal(await x.launch(request()),"uncertain");assert.equal(external,0);
 });
+
+test("late matching destruction after failed close releases scope and permits a different opening",async()=>{
+  let releases=0,opens=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:async()=>()=>{releases++;},
+    openNative:async()=>({state:"opened",sessionId:"s"+(++opens)}),closeNative:async()=>false});
+  await x.launch(request());assert.equal(await x.invalidate(),false);
+  assert.equal(await x.launch(request()),"uncertain");
+  assert.equal(x.onNativeClosed({sessionId:"s1",rideId,revision:1,action:"SESSION_CLOSED"}),false);
+  assert.equal(x.onNativeClosed({sessionId:"other",rideId,revision:0,action:"SESSION_CLOSED"}),false);
+  assert.equal(releases,0);
+  assert.equal(x.onNativeClosed({sessionId:"s1",rideId,revision:0,action:"SESSION_CLOSED"}),true);
+  assert.equal(releases,1);assert.equal(await x.launch(request()),"internal");
+  assert.equal(x.onNativeClosed({sessionId:"s1",rideId,revision:0,action:"SESSION_CLOSED"}),false);
+  assert.equal(releases,1);
+});
+test("destruction during close acknowledgement releases once and late false is harmless",async()=>{
+  const d=deferred(),entered=deferred();let releases=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:async()=>()=>{releases++;},
+    openNative:async()=>({state:"opened",sessionId:"s"}),closeNative:()=>{entered.resolve();return d.promise;}});
+  await x.launch(request());const close=x.invalidate();await entered.promise;
+  assert.equal(x.onNativeClosed({sessionId:"s",rideId,revision:0,action:"SESSION_CLOSED"}),true);
+  d.resolve(false);assert.equal(await close,true);assert.equal(releases,1);
+});
+test("idempotent close retry restores only known closing session",async()=>{
+  let calls=0,releases=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:async()=>()=>{releases++;},
+    openNative:async()=>({state:"opened",sessionId:"s"}),closeNative:async id=>{assert.equal(id,"s");return ++calls===2;}});
+  await x.launch(request());assert.equal(await x.invalidate(),false);
+  assert.equal(await x.invalidate(),true);assert.equal(calls,2);assert.equal(releases,1);
+});
+test("late opened revoked attempt recovers only from matching destruction",async()=>{
+  const d=deferred(),entered=deferred();let releases=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),prepareAudio:async()=>()=>{releases++;},
+    openNative:()=>{entered.resolve();return d.promise;},closeNative:async()=>false});
+  const p=x.launch(request());await entered.promise;await x.invalidate();
+  d.resolve({state:"opened",sessionId:"late"});assert.equal(await p,"stale");
+  assert.equal(await x.launch(request()),"uncertain");assert.equal(releases,0);
+  assert.equal(x.onNativeClosed({sessionId:"late",rideId,revision:0,action:"SESSION_CLOSED"}),true);
+  assert.equal(releases,1);
+});
