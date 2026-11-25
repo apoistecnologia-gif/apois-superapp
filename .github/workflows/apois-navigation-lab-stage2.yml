@@ -17,6 +17,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Testar contrato e limites do gateway local
+        run: node --test labs/apois-navigation/valhalla/route-gateway.test.mjs
       - name: Instalar utilitario de extracao OSM
         run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool
       - name: Mes do cache regional

@@ -6,9 +6,11 @@ OUT="$(realpath -m "${1:-$BASE/results}")"
 mkdir -p "$OUT"
 WORK="$(mktemp -d)"
 NAME="apois-valhalla-lab-$$"
+GATEWAY_PID=""
 cleanup(){
   local code=$?
   trap - EXIT
+  if [[ -n "$GATEWAY_PID" ]]; then kill "$GATEWAY_PID" 2>/dev/null || true; wait "$GATEWAY_PID" 2>/dev/null || true; fi
   docker logs "$NAME" >"$OUT/valhalla.log" 2>&1 || true
   docker rm -f "$NAME" >/dev/null 2>&1 || true
   # Docker builds graph files as root; remove only our own generated directory.
@@ -58,6 +60,17 @@ done
 test "$READY" = 1
 echo "$(( $(date +%s) - START ))" >"$OUT/startup-seconds.txt"
 du -sb "$WORK/custom" >"$OUT/storage-bytes.txt"
+# The real SDK response is tested through the same strict local gateway.
+# Native Valhalla benchmark remains direct; no public ports or live requests.
+APOIS_LAB_GATEWAY_PORT=8003 node "$BASE/route-gateway.mjs" >"$OUT/gateway.log" 2>&1 &
+GATEWAY_PID=$!
+GATEWAY_READY=0
+for i in $(seq 1 20); do
+  if curl -fsS --max-time 1 http://127.0.0.1:8003/healthz >/dev/null; then GATEWAY_READY=1;break;fi
+  kill -0 "$GATEWAY_PID"
+  sleep 1
+done
+test "$GATEWAY_READY" = 1
 python3 "$BASE/test_routes.py" "$OUT"
 docker stats --no-stream --format '{{json .}}' "$NAME" >"$OUT/docker-stats.json"
 echo '[OK] Regional route benchmark completed; no paid API calls or APK.'

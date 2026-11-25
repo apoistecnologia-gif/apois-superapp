@@ -2,6 +2,7 @@
 import json, math, pathlib, statistics, sys, time, urllib.request, concurrent.futures
 OUT=pathlib.Path(sys.argv[1])
 URL="http://127.0.0.1:8002/route"
+SDK_URL="http://127.0.0.1:8003/route"
 # Approximate, manually selected public geographic test points, not validated addresses.
 # Petrolina Centro point based on OSM-derived reference: https://guiamapa.com/pe/petrolina/centro/avenida-presidente-dutra
 P=(-9.403901,-40.5040233)
@@ -53,7 +54,7 @@ def sdk_route(case):
     req={"locations":[{"lat":lat,"lon":lon,"type":"break"} for lat,lon in (a,b)],
         "costing":"auto","units":"kilometers","language":"pt-BR","format":"osrm",
         "voice_instructions":True,"banner_instructions":True,"shape_format":"polyline6"}
-    with urllib.request.urlopen(urllib.request.Request(URL,data=json.dumps(req).encode(),headers={"Content-Type":"application/json"}),timeout=15) as response:
+    with urllib.request.urlopen(urllib.request.Request(SDK_URL,data=json.dumps(req).encode(),headers={"Content-Type":"application/json"}),timeout=15) as response:
         data=json.load(response)
     assert data.get("code")=="Ok",(name,data)
     route=data["routes"][0]
