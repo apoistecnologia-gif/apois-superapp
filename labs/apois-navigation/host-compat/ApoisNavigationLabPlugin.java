@@ -17,7 +17,10 @@ public class ApoisNavigationLabPlugin extends Plugin {
     public void openConfirmed(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             try {
-                ConfirmedNavigationRequest.parse(call.getData());
+                JSObject data=call.getData();
+                if(data==null||data.length()!=3||!data.has("rideId")||!data.has("phase")||!data.has("revision"))
+                    throw new IllegalArgumentException("Invalid request");
+                ConfirmedNavigationRequest.validate(data.opt("rideId"),data.opt("phase"),data.opt("revision"));
                 call.resolve(new JSObject().put("state","unavailable"));
             } catch(IllegalArgumentException e) {
                 call.reject("Invalid confirmed navigation request");
