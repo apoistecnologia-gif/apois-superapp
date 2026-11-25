@@ -48,6 +48,7 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
     fun setForeground(value: Boolean) {
         main()
         foreground = value
+        if (!value) routeJob?.cancel()
         voice?.setForeground(value)
     }
     override fun stopNavigation() {
@@ -117,15 +118,20 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                 val origin = RegionalPoint(raw.coordinates.lat,raw.coordinates.lng)
                 val ticket = decision.ticket
                 // Scope and gate belong to the whole leg, not the individual route.
-                // Start lazily so the job reference is installed before callbacks.
-                val job = sessionScope.launch(start = CoroutineStart.LAZY) {
+                // Enter try immediately, then yield. Cancellation before the
+                // request starts must still settle the budget ticket.
+                val job = sessionScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     try {
+                        yield()
+                        ensureActive()
                         val replacement = withTimeout(15_000) { resolver.resolve(origin,target) }
-                        val fix = latest
-                        if (!current() || !foreground || !stillOffRoute || _quality.value != GpsQuality.AVAILABLE ||
-                            fix == null || SystemClock.elapsedRealtime() - latestCaptured !in 0..10_000 ||
-                            !routeEndpointsMatch(replacement.geometry.map { RegionalPoint(it.lat,it.lng) },
-                                RegionalPoint(fix.coordinates.lat,fix.coordinates.lng),target)) return@launch
+                        ensureActive()
+                        val fix = latest ?: return@launch
+                        if (!mayApplyReroute(current(), foreground, stillOffRoute,
+                            _quality.value, budget.isPending(ticket), SystemClock.elapsedRealtime(),
+                            latestCaptured, fix.horizontalAccuracy,
+                            replacement.geometry.map { RegionalPoint(it.lat,it.lng) },
+                            RegionalPoint(fix.coordinates.lat,fix.coordinates.lng),target)) return@launch
                         val freshNavigator = createNavigator(replacement, config, false)
                         activeRoute = replacement
                         navigator = freshNavigator
@@ -135,15 +141,18 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                         navigationUiState.value = NavigationUiState.empty().copy(
                             routeGeometry = replacement.geometry, destination = destination, isMuted = muted)
                         _routeNotice.value = "Rota atualizada. Aguardando posição."
+                    } catch (_: TimeoutCancellationException) {
+                        if (current() && stillOffRoute) _routeNotice.value = "Tempo de recálculo excedido. Confira o trajeto."
                     } catch (e: CancellationException) { throw e }
                     catch (_: Exception) {
                         if (current() && stillOffRoute) _routeNotice.value = "Não foi possível recalcular. Confira o trajeto."
                     } finally {
                         budget.settle(ticket)
+                        if (current() && stillOffRoute && _routeNotice.value == "Recalculando rota…")
+                            _routeNotice.value = "Fora da rota. Aguardando nova posição."
                     }
                 }
                 routeJob = job
-                job.start()
             }
             val hold = offRoute || offStep || (decision is NativeRerouteGate.Decision.Hold &&
                 decision.reason == NativeRerouteGate.Reason.UNRELIABLE && ui.isNavigating())

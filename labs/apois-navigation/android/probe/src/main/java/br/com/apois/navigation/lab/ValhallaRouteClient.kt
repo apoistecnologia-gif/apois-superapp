@@ -40,6 +40,16 @@ internal fun routeEndpointsMatch(points: List<RegionalPoint>, origin: RegionalPo
         points.all { it.valid() } && points.first().distanceTo(origin) <= 150.0 &&
         points.last().distanceTo(destination) <= 150.0
 
+internal fun mayApplyReroute(
+    current: Boolean, foreground: Boolean, offRoute: Boolean, quality: GpsQuality,
+    pending: Boolean, now: Long, captured: Long, accuracy: Double,
+    geometry: List<RegionalPoint>, latest: RegionalPoint, target: RegionalPoint
+): Boolean = current && foreground && offRoute && pending &&
+    quality == GpsQuality.AVAILABLE && captured > 0 &&
+    now >= captured && now - captured <= 10_000L &&
+    accuracy.isFinite() && accuracy > 0 && accuracy <= 25.0 &&
+    routeEndpointsMatch(geometry,latest,target)
+
 internal fun interface LiveRouteResolver {
     suspend fun resolve(origin: RegionalPoint, destination: RegionalPoint): Route
 }

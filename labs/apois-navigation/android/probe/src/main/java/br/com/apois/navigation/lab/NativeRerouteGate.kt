@@ -51,6 +51,7 @@ internal class NativeRerouteGate {
         pending = ticket
         return Decision.Request(ticket)
     }
+    fun isPending(ticket: Ticket): Boolean = !closed && pending === ticket
     fun settle(ticket: Ticket): Boolean {
         if (closed || pending !== ticket) return false
         pending = null
