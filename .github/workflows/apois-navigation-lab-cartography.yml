@@ -12,7 +12,7 @@ concurrency:
 jobs:
   tiles:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,6 +47,30 @@ jobs:
         run: python labs/apois-navigation/cartography/build_asset_pack.py "$RUNNER_TEMP/apois-cartography-report" | tee "$RUNNER_TEMP/apois-cartography-report/asset-pack-report.json"
       - name: Verificar leitura parcial HTTP local
         run: bash labs/apois-navigation/cartography/test-http-range.sh "$RUNNER_TEMP/apois-cartography-report"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Android API 36 para teste de merge de assets
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -n "$SDKMANAGER"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Verificar pacote no merge Android sem APK
+        run: |
+          set -euo pipefail
+          P="$GITHUB_WORKSPACE/labs/apois-navigation/android/probe"
+          O="$RUNNER_TEMP/apois-cartography-report"
+          test ! -e "$P/src/main/assets/apois-regional"
+          mkdir -p "$P/src/main/assets"
+          cp -a "$O/android-assets/apois-regional" "$P/src/main/assets/"
+          gradle -p labs/apois-navigation/android :probe:mergeDebugAssets --no-daemon --stacktrace
+          python labs/apois-navigation/cartography/verify_merged_assets.py "$O/android-assets/apois-regional" "$P/build/intermediates/assets" | tee "$O/merged-assets-report.json"
+          test -z "$(find "$P" -name '*.apk' -print -quit)"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
