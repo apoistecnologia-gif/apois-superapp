@@ -7,10 +7,60 @@ import {MotoristaAuthority} from "./motorista-authority.mjs";
 const statusFor = {PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
 const uuid = v => typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export class ConfirmedNavigationLaunch {
-  #epoch=0; #busy=null; #native=null; #blocked=false; #enabled;
+  #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null;
   constructor({enabled=false,verify,openNative,closeNative}) {
     this.#enabled=enabled===true;
     this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;
+  }
+  // Session closure notifications originate only from the dedicated Capacitor
+  // listener. Bind all fields, including revision. An unrelated replay event
+  // must never clear a confirmed session or unlock an ambiguous launch.
+  onNativeClosed(event) {
+    if(event?.action!=="SESSION_CLOSED"||typeof event.sessionId!=="string")return false;
+    const n=this.#native;
+    if(n&&event.sessionId===n.id&&event.rideId===n.rideId&&event.revision===n.revision){
+      this.#native=null;
+      ++this.#epoch;
+      return true;
+    }
+    const t=this.#busy;
+    // Android Back may arrive before openConfirmed resolves. Buffer a small
+    // number of exact-reference closures; apply only to the returned session.
+    if(t?.opening&&event.rideId===t.rideId&&event.revision===0&&t.closed.size<4){
+      t.closed.add(event.sessionId);
+      return true;
+    }
+    return false;
+  }
+  async recheck(){
+    const n=this.#native;
+    if(!n||this.#checking)return "idle";
+    const ticket={};
+    this.#checking=ticket;
+    try{
+      const p=await this.verify({rideId:n.rideId,phase:n.phase});
+      if(this.#native!==n)return "stale";
+      const authority=new MotoristaAuthority();
+      const same=p&&["authUserId","driverId","profileUserId"].every(k=>p.identity?.[k]===n.identity[k]);
+      if(!same||p.row?.id!==n.rideId||p.row.status!==statusFor[n.phase]||
+        !authority.bind(p.identity)||!authority.accept(p.row,{epoch:authority.epoch,
+          authUserId:n.identity.authUserId,driverId:n.identity.driverId,revision:0})){
+        await this.invalidate();
+        return "revoked";
+      }
+      return "current";
+    }catch{
+      if(this.#native!==n)return "stale";
+      await this.invalidate();
+      return "revoked"; // verification unavailable is not proof of assignment loss
+    }finally{if(this.#checking===ticket)this.#checking=null;}
+  }
+  // UI state is a revocation hint only, never proof to authorize a launch.
+  // Avoid racing a successful PIN/accept with React's previous render.
+  observeRide(rideId,status){
+    const n=this.#native;
+    if(!n||n.rideId===rideId&&status===statusFor[n.phase])return;
+    return this.recheck();
   }
   // Invalidate on logout, unmount, loss of assignment or new authoritative
   // phase. Never automatically launch a different navigator on revocation.
@@ -21,7 +71,7 @@ export class ConfirmedNavigationLaunch {
     if(native) {
       this.#blocked=true;
       try {
-        if(await this.closeNative(native)===true){this.#blocked=false;return true;}
+        if(await this.closeNative(native.id)===true){this.#blocked=false;return true;}
       } catch {}
       return false;
     }
@@ -34,7 +84,7 @@ export class ConfirmedNavigationLaunch {
     if(!uuid(rideId)||!Object.hasOwn(statusFor,phase))return "unverified";
     if(this.#busy||this.#native)return "busy";
     if(this.#blocked)return "uncertain";
-    const ticket={epoch:this.#epoch};
+    const ticket={epoch:this.#epoch,rideId,opening:false,closed:new Set()};
     this.#busy=ticket;
     const current=()=>this.#busy===ticket&&this.#epoch===ticket.epoch;
     let nativeUncertain=false;
@@ -52,9 +102,11 @@ export class ConfirmedNavigationLaunch {
       // A future adapter must independently prove target provenance before routing.
       const request=Object.freeze({rideId,phase,revision:0});
       nativeUncertain=true;
+      ticket.opening=true;
       const result=await this.openNative(request);
+      ticket.opening=false;
       if(!current()){
-        if(result?.state==="unavailable"){nativeUncertain=false;}
+        if(result?.state==="unavailable"||result?.state==="opened"&&ticket.closed.has(result.sessionId)){nativeUncertain=false;}
         else if(result?.state==="opened"&&typeof result.sessionId==="string"&&result.sessionId.length>0){
           try { if(await this.closeNative(result.sessionId)===true)nativeUncertain=false; }catch{}
         }
@@ -63,7 +115,8 @@ export class ConfirmedNavigationLaunch {
       }
       if(result?.state==="opened"&&typeof result.sessionId==="string"&&result.sessionId.length>0){
         nativeUncertain=false;
-        this.#native=result.sessionId;
+        if(ticket.closed.has(result.sessionId))return "stale";
+        this.#native=Object.freeze({id:result.sessionId,rideId,phase,revision:0,identity:Object.freeze({...proof.identity})});
         return "internal";
       }
       // Only a definitive no-activity acknowledgement permits auto fallback.

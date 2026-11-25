@@ -80,3 +80,49 @@ test("failed closure prevents another navigator session",async()=>{
   assert.equal(await x.invalidate(),false);
   assert.equal(await x.launch(request()),"uncertain");
 });
+
+test("matching native Back clears session; unrelated or replay events do not",async()=>{
+  let opens=0;const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),
+    openNative:async()=>({state:"opened",sessionId:"s"+(++opens)})});
+  assert.equal(await x.launch(request()),"internal");
+  for(const e of [{sessionId:"s2",rideId,revision:0,action:"SESSION_CLOSED"},
+    {sessionId:"s1",rideId:"wrong",revision:0,action:"SESSION_CLOSED"},
+    {sessionId:"s1",rideId,revision:1,action:"SESSION_CLOSED"},
+    {sessionId:"s1",rideId,revision:0,action:"FINISH"}]){
+    assert.equal(x.onNativeClosed(e),false);assert.equal(await x.launch(request()),"busy");
+  }
+  assert.equal(x.onNativeClosed({sessionId:"s1",rideId,revision:0,action:"SESSION_CLOSED"}),true);
+  assert.equal(await x.launch(request()),"internal");
+});
+test("Back before open acknowledgement never leaves a ghost native session",async()=>{
+  const entered=deferred(),d=deferred();
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),openNative:()=>{entered.resolve();return d.promise;}});
+  const p=x.launch(request());await entered.promise;
+  assert.equal(x.onNativeClosed({sessionId:"s1",rideId,revision:0,action:"SESSION_CLOSED"}),true);
+  d.resolve({state:"opened",sessionId:"s1"});
+  assert.equal(await p,"stale");assert.equal(await x.recheck(),"idle");
+});
+test("active session recheck revokes missing row, phase or ownership; no auto fallback",async()=>{
+  for(const next of [null,proof("motorista_chegou"),proof("motorista_a_caminho",identity.authUserId),
+    {...proof(),identity:{...identity,authUserId:identity.profileUserId}}]){
+    let reads=0,closed=0;const x=new ConfirmedNavigationLaunch({enabled:true,
+      verify:async()=>++reads===1?proof():next,openNative:async()=>({state:"opened",sessionId:"s"}),
+      closeNative:async()=>{closed++;return true;}});
+    assert.equal(await x.launch(request()),"internal");assert.equal(await x.recheck(),"revoked");
+    assert.equal(closed,1);assert.equal(await x.recheck(),"idle");
+  }
+});
+test("current proof preserves session; UI mismatch only triggers recheck",async()=>{
+  let reads=0;const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>{reads++;return proof();},
+    openNative:async()=>({state:"opened",sessionId:"s"})});
+  await x.launch(request());await x.observeRide(null,null);
+  assert.equal(reads,2);assert.equal(await x.launch(request()),"busy");
+  await x.observeRide(rideId,"motorista_a_caminho");assert.equal(reads,2);
+});
+test("late recheck cannot revoke newer session",async()=>{
+  const d=deferred();let reads=0,opens=0,closes=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:()=>++reads===2?d.promise:Promise.resolve(proof()),
+    openNative:async()=>({state:"opened",sessionId:"s"+(++opens)}),closeNative:async()=>{closes++;return true;}});
+  await x.launch(request());const old=x.recheck();await x.invalidate();await x.launch(request());
+  d.resolve(null);assert.equal(await old,"stale");assert.equal(closes,1);assert.equal(await x.launch(request()),"busy");
+});
