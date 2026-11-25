@@ -82,7 +82,7 @@ const legacyNavLabel=nav.includes('max-w-full break-words text-center text-xs fo
 const legacyNavPadding=nav.includes('paddingBottom: "max(env(safe-area-inset-bottom), 10px)"')?10:7;
 nav=swap(nav,'paddingBottom: "max(env(safe-area-inset-bottom), '+legacyNavPadding+'px)"','paddingBottom: isHome ? "max(env(safe-area-inset-bottom), 7px)" : "max(env(safe-area-inset-bottom), '+legacyNavPadding+'px)"',"safe area nav home");
 const legacyNavItem=nav.includes('group relative flex min-h-[60px]')?'min-h-[60px]':'min-h-12';
-nav=swap(nav,'group relative flex '+legacyNavItem,'group relative flex '+ '
+nav=swap(nav,'group relative flex '+legacyNavItem,'group relative flex '+String.fromCharCode(36)+'{isHome ? "min-h-0" : "'+legacyNavItem+'"}',"altura itens nav home");
 nav=swap(nav,'className="mx-auto grid min-h-['+legacyNavHeight+'px] w-full max-w-md grid-cols-5 gap-1"','className={isHome ? "mx-auto grid h-[52px] w-full max-w-md grid-cols-5 gap-0" : "mx-auto grid min-h-['+legacyNavHeight+'px] w-full max-w-md grid-cols-5 gap-1"}',"altura nav home");
 nav=swap(nav,'driver-nav-active text-[#E51B23]','text-[#E51B23]',"remove tema dourado CSS home");
 nav=swap(nav,'className="driver-nav-icon relative mt-1 flex '+legacyNavIcon+' items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"','className={isHome ? "relative mt-1 flex h-6 w-8 items-center justify-center" : "driver-nav-icon relative mt-1 flex '+legacyNavIcon+' items-center justify-center rounded-xl transition-all duration-200 motion-reduce:transition-none"}',"icone home compacto");
