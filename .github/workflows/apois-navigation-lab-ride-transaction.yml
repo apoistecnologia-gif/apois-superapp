@@ -243,8 +243,14 @@ jobs:
               raise exception 'creation, retry or pricing persistence failed';
             end if;
             ordinary_selection := (apois_nav_lab.confirm_selection(actor,ordinary_key,point_a,1,point_b,1)->>'selectionId')::uuid;
+            select * into retried from apois_nav_lab.create_passenger_ride(actor,ordinary_selection,ordinary_key,
+              payload || jsonb_build_object('request_key',ordinary_key));
+            if retried.id is not null or exists(select 1 from public.rides where request_key=ordinary_key) then
+              raise exception 'duplicate active ride accepted';
+            end if;
             insert into public.rides(passenger_id,request_key,category,status,origin_lat,origin_lng,destination_lat,destination_lng,intermediates)
-              values(created.passenger_id,ordinary_key,'carros','procurar_motorista',-9.4,-40.5,-9.42,-40.51,'[]');
+              values(created.passenger_id,ordinary_key,'carros','concluida',-9.4,-40.5,-9.42,-40.51,'[]');
+            update public.rides set status='concluida' where id=created.id;
             select * into retried from apois_nav_lab.create_passenger_ride(actor,ordinary_selection,ordinary_key,
               payload || jsonb_build_object('request_key',ordinary_key));
             if retried.id is not null or exists(select 1 from apois_nav_lab.selection where id=ordinary_selection and ride_id is not null) then
