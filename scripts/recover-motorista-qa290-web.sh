@@ -27,6 +27,7 @@ for module in apois-corridas-motorista-admin apois-entregas; do
   mkdir -p "$STAGE/sources/$module"
   git -C "$ROOT/sources/$module" archive "$expected" | tar -x -C "$STAGE/sources/$module"
 done
+export APOIS_CURRENT_ROOT="$ROOT"
 cd "$STAGE"
 # Materialize precisely the original Motorista half of the QA290 release.
 # Keep all historical tests, order, types and guards. No new payment policy.
@@ -38,7 +39,10 @@ if(split.length!==2) throw Error('Historical release boundary changed');
 const driver=split[0];
 if(!driver.includes('fix-partner-qa290-compact-offer-v1.mjs')||!driver.includes('bun run typecheck')||!driver.includes('npm run build:motorista'))throw Error('QA290 recovery contract missing');
 if((driver.match(/npm run build:motorista/g)||[]).length!==1)throw Error('Unexpected build count');
-writeFileSync('.qa290-motorista-web.sh',driver);
+const anchor='(cd "$ROOT" && node "$ROOT/scripts/verify-report05-motorista-security-v1.mjs")';
+if(driver.split(anchor).length!==2)throw Error('QA290 overlay boundary changed');
+const combined=driver.replace(anchor,()=> 'node "$APOIS_CURRENT_ROOT/scripts/reconcile-motorista-qa290-visual.mjs"\n'+anchor);
+writeFileSync('.qa290-motorista-web.sh',combined);
 NODE
 bash -n .qa290-motorista-web.sh
 bash .qa290-motorista-web.sh
@@ -50,7 +54,7 @@ test ! -e superapp/partner-shell/android/app/build/outputs/apk
 OUT="$ROOT/.work/qa290-recovered-evidence"
 rm -rf "$OUT"
 mkdir -p "$OUT/src/routes" "$OUT/src/components" "$OUT/src/lib"
-for file in motorista.app motorista.login motorista.perfil motorista.corridas motorista.ganhos motorista.configuracoes; do
+for file in motorista.app motorista.login motorista.perfil motorista.corridas motorista.ganhos motorista.configuracoes motorista.desempenho; do
   cp ".work/partner-motorista/src/routes/$file.tsx" "$OUT/src/routes/"
 done
 for file in MovviMap mapMarkers ApoisPremiumDriverNav MovviHeader; do

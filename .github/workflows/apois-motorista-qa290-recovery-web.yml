@@ -5,6 +5,11 @@ on:
       - fix/apois-motorista-assinatura-recuperacao-20261124
     paths:
       - scripts/recover-motorista-qa290-web.sh
+      - scripts/reconcile-motorista-qa290-visual.mjs
+      - scripts/templates/ApoisDriverHomePremiumTop.tsx.txt
+      - scripts/templates/ApoisDriverHomePremiumPanel.tsx.txt
+      - scripts/templates/ApoisDriverPerformancePage.tsx.txt
+      - scripts/apply-driver-login-approved-qa-v1.mjs
       - .github/workflows/apois-motorista-qa290-recovery-web.yml
   workflow_dispatch:
 permissions:
@@ -46,6 +51,7 @@ jobs:
           echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
       - name: Recuperar QA290 integral sem Android
         run: |
+          node --check scripts/reconcile-motorista-qa290-visual.mjs
           bash -n scripts/recover-motorista-qa290-web.sh
           bash scripts/recover-motorista-qa290-web.sh
       - uses: actions/upload-artifact@v4
