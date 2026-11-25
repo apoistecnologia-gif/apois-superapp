@@ -7,6 +7,10 @@ class VoicePolicyTest {
     assertEquals("Em 1,2 km, vire à direita.",normalizeNavigationSpeech("In 1,2 km, vire à direita."))
     assertEquals("Continue em Rua In 300 metros.",normalizeNavigationSpeech("Continue em Rua In 300 metros."))
     assertEquals("Vire à direita.",normalizeNavigationSpeech("Vire à direita."))
+    assertEquals("Dirija para este em Rua do Coliseu. Então, em 100 metros, Vire à esquerda para Travessa Antônio Luiz Ferreira.",
+        normalizeNavigationSpeech("Dirija para este em Rua do Coliseu. Then, in 100 metros, Vire à esquerda para Travessa Antônio Luiz Ferreira."))
+    assertEquals("Então, em 1,2 km, vire à direita.",normalizeNavigationSpeech("Then, in 1,2 km, vire à direita."))
+    assertEquals("Continue em Rua Then, in 100 metros, Centro.",normalizeNavigationSpeech("Continue em Rua Then, in 100 metros, Centro."))
  }
  @Test fun oneUtteranceOnly(){
     val p=VoicePolicy()

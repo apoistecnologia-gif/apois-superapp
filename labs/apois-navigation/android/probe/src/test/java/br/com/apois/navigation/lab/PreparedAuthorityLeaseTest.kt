@@ -26,4 +26,22 @@ class PreparedAuthorityLeaseTest{
         now=999;assertFalse(lease.current());assertFalse(lease.renew())
         now=1000;assertFalse(lease.current())
     }
+    @Test fun expirationDoesNotResurrectAfterClockRegression(){
+        var now=1000L
+        val lease=PreparedAuthorityLease({now})
+        now=31000;assertFalse(lease.current())
+        now=2000;assertFalse(lease.current());assertFalse(lease.renew())
+    }
+    @Test fun regressionWithinLeaseAlsoRevokesWithoutRenewal(){
+        var now=1000L
+        val lease=PreparedAuthorityLease({now})
+        now=2000;assertTrue(lease.current())
+        now=1500;assertFalse(lease.current())
+        now=3000;assertFalse(lease.current());assertFalse(lease.renew())
+    }
+    @Test fun renewalReadsClockExactlyOnce(){
+        var reads=0
+        val lease=PreparedAuthorityLease({1000L+(reads++).toLong()})
+        assertTrue(lease.renew());assertEquals(2,reads)
+    }
 }

@@ -153,7 +153,8 @@ object ConfirmedLiveNavigationBridge {
         val p=prepared?:return null
         if(!current(p)){revoke();return null}
         if(p.pending||p.opened||p.ride.rideId!=rideId||p.ride.phase.name!=phase||p.ride.revision!=revision)return null
-        if(!p.initialFix.usable(SystemClock.elapsedRealtime())){revoke();return null}
+        val now=SystemClock.elapsedRealtime()
+        if(!p.initialFix.usable(now)||!p.evidence.usable(now)){revoke();return null}
         p.controller.enable()
         val token=p.controller.token?:return null
         val resources=p.controller.routingFor(token,p.target,p.resolver)

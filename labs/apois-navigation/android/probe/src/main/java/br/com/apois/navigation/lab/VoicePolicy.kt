@@ -1,9 +1,13 @@
 package br.com.apois.navigation.lab
 
-// Correct only the observed mixed-language distance prefix. Street names and
-// maneuver semantics remain unchanged. No machine translation or guessed turns.
+// Correct only observed Valhalla mixed-language transition templates,
+// never translate road names, numbers, distances or maneuver direction.
+// The second template was observed in regional run 45608869135.
 private val mixedDistancePrefix=Regex("^In(?=\\s+\\d+(?:[.,]\\d+)?\\s+(?:metros?|quilômetros?|quilometros?|km)\\b)",RegexOption.IGNORE_CASE)
-internal fun normalizeNavigationSpeech(text:String):String = text.trim().replace(mixedDistancePrefix,"Em")
+private val mixedTransition=Regex("(^|[.!?]\\s+)(Then,\\s+in)(?=\\s+\\d+(?:[.,]\\d+)?\\s+(?:metros?|quilômetros?|quilometros?|km)\\s*,)",RegexOption.IGNORE_CASE)
+internal fun normalizeNavigationSpeech(text:String):String = text.trim()
+    .replace(mixedDistancePrefix,"Em")
+    .replace(mixedTransition){match->match.groupValues[1]+"Então, em"}
 
 // One policy per active navigation voice. Utterance IDs may be reused by a
 // replacement navigator. Scope IDs to the route while bounding total accepts.
