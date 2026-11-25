@@ -136,7 +136,7 @@ test('08 — Corridas-only source order and runtime safety unchanged',()=>{
 
 test('09 — idle map has reserved viewport, compact summary and usable navigation',()=>{
  expect(home,['viewport mapa livre','+ 174px','+ 198px','m.setHeading(0)','m.setTilt(0)','altura nav home','rotulos sem quebra','labels.icon']);
- expect(top,['h-[46px]','h-[44px]','setSideMenuOpen(true)']);
+ expect(top,['h-[46px]','h-[44px]','navigate({to:"/motorista/perfil"})']);
  expect(panel,['"116px"','aria-expanded={expanded}','aria-controls="apois-driver-summary-details"','+ 58px','hidden={!expanded}']);
  assert.ok(!welcome.includes('object-fit:cover'));
  assert.ok(!panel.includes('45dvh'));
