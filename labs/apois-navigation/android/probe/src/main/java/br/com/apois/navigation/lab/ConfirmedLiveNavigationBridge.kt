@@ -17,7 +17,7 @@ import java.util.function.Consumer
  * accepts a ride reference; route data and authority must be prepared by a
  * trusted host inside this library. No synthetic replay, GPS acquisition, auth
  * token, network endpoint, or ride mutation is accepted via the bridge.
- * No real host calls prepareFromGps yet. Process death deliberately loses everything.
+ * The optional native host is unconfigured by default. Process death deliberately loses everything.
  */
 object ConfirmedLiveNavigationBridge {
     internal class Prepared(
@@ -242,7 +242,7 @@ object ConfirmedLiveNavigationBridge {
 
     // Immediately revoke navigation token and detach the surface, but do not
     // acknowledge closure until the actual Activity destruction callback.
-    // Closing UI retains the leg budget and pending intent until refresh.
+    // Closing UI drops the route owner; initialAdmission retains the per-leg budget.
     fun close(id:String):Boolean{
         main()
         if(closing?.id==id)return true
@@ -252,7 +252,15 @@ object ConfirmedLiveNavigationBridge {
         closing=s
         closingCallback=callback
         callback=null
-        s.owner.controller.disable()
+        // No reopened prepared route is allowed; release immediately so a
+        // distinct next leg can prepare after actual Activity destruction.
+        if(prepared===s.owner){
+            expiryTask?.let{handler.removeCallbacks(it)}
+            expiryTask=null
+            prepared=null
+            s.owner.lease.revoke()
+        }
+        s.owner.controller.close()
         screen.value=null
         return true
     }

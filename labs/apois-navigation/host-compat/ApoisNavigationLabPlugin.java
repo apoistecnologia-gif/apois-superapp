@@ -2,6 +2,7 @@ package br.com.apois.navigation.compat.lab;
 
 import br.com.apois.navigation.lab.LabNavigationBridge;
 import br.com.apois.navigation.lab.ConfirmedLiveNavigationBridge;
+import br.com.apois.navigation.lab.NativeConfirmedHost;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -26,18 +27,32 @@ public class ApoisNavigationLabPlugin extends Plugin {
                     call.resolve(new JSObject().put("state","unavailable"));
                     return;
                 }
-                String id=ConfirmedLiveNavigationBridge.INSTANCE.openPrepared(getActivity(),request.rideId,request.phase,request.revision,event -> {
-                    try {notifyListeners("confirmedRideIntent",JSObject.fromJSONObject(event),false);}
-                    catch(Exception ignored) { /* No business action executed. */ }
-                });
-                JSObject result=new JSObject().put("state",id==null?"unavailable":"opened");
-                if(id!=null)result.put("sessionId",id);
-                call.resolve(result);
+                NativeConfirmedHost.INSTANCE.open(getActivity(),request.rideId,request.phase,request.revision,
+                    () -> hasListeners("confirmedRideIntent"),event -> {
+                        try {notifyListeners("confirmedRideIntent",JSObject.fromJSONObject(event),false);}
+                        catch(Exception ignored) { /* No business action executed. */ }
+                    }, id -> {
+                        JSObject result=new JSObject().put("state",id==null?"unavailable":"opened");
+                        if(id!=null)result.put("sessionId",id);
+                        call.resolve(result);
+                    }, () -> call.reject("Confirmed navigation opening not acknowledged"));
             } catch(IllegalArgumentException e) {
                 call.reject("Invalid confirmed navigation request");
             } catch(Exception e) {
                 call.reject("Confirmed navigation opening not acknowledged");
             }
+        });
+    }
+
+    @PluginMethod
+    public void cancelConfirmedPreparation(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                JSObject data=call.getData();
+                if(data==null||data.length()!=3)throw new IllegalArgumentException("Invalid request");
+                ConfirmedNavigationRequest req=ConfirmedNavigationRequest.validate(data.opt("rideId"),data.opt("phase"),data.opt("revision"));
+                call.resolve(new JSObject().put("cancelled",NativeConfirmedHost.INSTANCE.cancelPending(req.rideId,req.phase,req.revision)));
+            }catch(Exception e){call.reject("Invalid preparation cancellation");}
         });
     }
 
@@ -85,7 +100,7 @@ public class ApoisNavigationLabPlugin extends Plugin {
     }
     @Override protected void handleOnDestroy(){
         getActivity().runOnUiThread(() -> {
-            ConfirmedLiveNavigationBridge.INSTANCE.revoke();
+            NativeConfirmedHost.INSTANCE.destroy();
             LabNavigationBridge.INSTANCE.closeActive();
         });
     }
