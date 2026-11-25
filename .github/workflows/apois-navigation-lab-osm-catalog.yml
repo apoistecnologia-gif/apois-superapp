@@ -2,7 +2,9 @@ name: APOIS Navegacao - catalogo OSM regional (sem deploy)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['.github/workflows/apois-navigation-lab-osm-catalog.yml']
+    paths:
+      - '.github/workflows/apois-navigation-lab-osm-catalog.yml'
+      - 'labs/apois-navigation/osm-search/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,6 +21,28 @@ jobs:
         with:
           node-version: '24'
       - run: node labs/apois-navigation/passenger-provenance-snapshot/verify.mjs
+      - name: Testar busca offline com dados sinteticos
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict'
+          import {createOsmSearch} from './labs/apois-navigation/osm-search/search.mjs'
+          const manifest = {source:'OSM_PBF',version:1,extract_sha256:'a'}
+          const row = {version:1,extract_sha256:'a',lat:-9.4,lng:-40.5,active:true}
+          const rows = [
+            {...row,id:'a',label:'Praça da Sé',street:'Rua São José',house_number:'12',neighborhood:'Centro'},
+            {...row,id:'b',label:'Praça da Serra',street:'Rua São José',house_number:'120'},
+            {...row,id:'c',label:'Praça da Sé',active:false},
+            {...row,id:'d',label:'Praça da Sé',extract_sha256:'b'},
+          ]
+          const search = createOsmSearch({...manifest,rows})
+          assert.deepEqual(search('Praca da Se').map(x=>x.id),['a','b'])
+          assert.deepEqual(search('Sao Jose 12').map(x=>x.id),['a'])
+          assert.deepEqual(search('Sao Jose 120').map(x=>x.id),['b'])
+          assert.deepEqual(search('praca centro').map(x=>x.id),['a'])
+          assert.deepEqual(createOsmSearch({...manifest,rows:[rows[2]]})('praca'),[])
+          assert.throws(()=>createOsmSearch({source:'GOOGLE',rows:[]}),TypeError)
+          console.log('APOIS_OSM_SEARCH_OK')
+          JS
       - name: Mes do cache regional
         id: cache-month
         run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
