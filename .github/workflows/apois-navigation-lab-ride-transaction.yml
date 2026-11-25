@@ -133,4 +133,32 @@ jobs:
             end if;
           end $;
           select 'APOIS_RIDE_TRANSACTION_CREATE_OK';
+          -- Exercise the Passenger column name and baseline coordinate scales.
+          reset role;
+          alter table public.rides rename column waypoints to intermediates;
+          alter table public.rides
+            alter column origin_lat type numeric(10,8),
+            alter column origin_lng type numeric(11,8),
+            alter column destination_lat type numeric(10,8),
+            alter column destination_lng type numeric(11,8);
+          set role service_role;
+          do $
+          declare
+            ride constant uuid := '00000000-0000-4000-8000-000000000041';
+            driver constant uuid := '00000000-0000-4000-8000-000000000071';
+            driver_auth constant uuid := '00000000-0000-4000-8000-000000000061';
+          begin
+            update public.rides set
+              status='motorista_a_caminho', driver_id=driver,
+              accepted_driver_id=driver, accepted_at=clock_timestamp()
+            where id=ride;
+            if apois_nav_lab.read_driver_proof(driver_auth,ride,'PICKUP') is null then
+              raise exception 'proof unavailable with Passenger coordinate and stop columns';
+            end if;
+            update public.rides set intermediates=null where id=ride;
+            if apois_nav_lab.read_driver_proof(driver_auth,ride,'PICKUP') is not null then
+              raise exception 'unknown Passenger stops accepted';
+            end if;
+          end $;
+          select 'APOIS_PASSENGER_RIDE_COLUMNS_OK';
           SQL
