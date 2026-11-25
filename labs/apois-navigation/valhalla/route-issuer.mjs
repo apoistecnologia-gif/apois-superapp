@@ -30,11 +30,12 @@ export function verifiedRouteProof(proof,request,now){
   if(!point(request.target)||request.target.lat!==evidence.point.lat||request.target.lon!==evidence.point.lon)return null;
   return routeBody(request.origin,evidence.point);
 }
-export function createRouteIssuer({privateKey,principalKey,audience,readAuthority,now=()=>Date.now(),timeout=2500,maxPending=4}){
+export function createRouteIssuer({privateKey,principalKey,audience,readAuthority,now=()=>Date.now(),timeout=2500,maxPending=4,issuanceStore=null}){
   if(privateKey?.type!=="private"||privateKey.asymmetricKeyType!=="ed25519"||
     !Buffer.isBuffer(principalKey)||principalKey.length<32||typeof audience!=="string"||!audience||audience.length>128||
     typeof readAuthority!=="function"||!Number.isInteger(timeout)||timeout<1||timeout>3000||
-    !Number.isInteger(maxPending)||maxPending<1||maxPending>32)throw Error("Invalid lab issuer configuration");
+    !Number.isInteger(maxPending)||maxPending<1||maxPending>32||
+    (issuanceStore!==null&&typeof issuanceStore.register!=="function"))throw Error("Invalid lab issuer configuration");
   const pseudonymKey=Buffer.from(principalKey);
   let pending=0,last=0;
   return async function issue(session,request,signal){
@@ -74,7 +75,14 @@ export function createRouteIssuer({privateKey,principalKey,audience,readAuthorit
       const sub=createHmac("sha256",pseudonymKey).update(proof.driverId.toLowerCase()).digest("hex");
       const claim={aud:audience,iat:t,exp:t+30000,jti:randomBytes(18).toString("base64url"),sub,route:routeDigest(body)};
       const raw=Buffer.from(JSON.stringify(claim),"utf8");
-      return {status:200,token:raw.toString("base64url")+"."+sign(null,raw,privateKey).toString("base64url")};
+      const token=raw.toString("base64url")+"."+sign(null,raw,privateKey).toString("base64url");
+      // Persist only opaque issuance metadata before returning the credential.
+      // A failed registration never returns a token or falls back to memory.
+      if(issuanceStore){
+        const registered=issuanceStore.register({jti:claim.jti,sub:claim.sub,exp:claim.exp},t);
+        if(registered?.status!==200)return {status:registered?.status===429?429:503};
+      }
+      return {status:200,token};
     }catch{return {status:503};}
     finally{clearTimeout(timer);if(onAbort)signal?.removeEventListener("abort",onAbort);}
   };

@@ -97,3 +97,15 @@ test("abort before authority result continuation cannot return a signed token",a
   const p=issue({},req(),caller.signal);await Promise.resolve();
   finish(proof());caller.abort();assert.deepEqual(await p,{status:503});
 });
+
+test("issuer does not return token unless configured issuance store commits",async()=>{
+  for(const [register,status] of [[()=>({status:429}),429],[()=>({status:503}),503],[()=>({status:403}),503],[()=>{throw Error("storage");},503]]){
+    const result=await fixture(async()=>proof(),{issuanceStore:{register}})({},req());
+    assert.deepEqual(result,{status});
+  }
+  let metadata;
+  const result=await fixture(async()=>proof(),{issuanceStore:{register:(claim,t)=>{metadata={claim,t};return {status:200};}}})({},req());
+  assert.equal(result.status,200);
+  const signed=JSON.parse(Buffer.from(result.token.split(".")[0],"base64url"));
+  assert.deepEqual(metadata,{claim:{jti:signed.jti,sub:signed.sub,exp:signed.exp},t:100000});
+});

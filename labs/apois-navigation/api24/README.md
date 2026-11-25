@@ -5,3 +5,5 @@ Achado preexistente: scripts/android/APOISReturnBubble.java usa TYPE_APPLICATION
 Próximo gate: validar a geração do host QA290 completo sem instrumentações do SDK interno, preservar assinatura/manifesto/voz e fluxos externos e testar API 24/25 reais. Não modificar minSdk em produção. A seleção e distribuição da variante final dependem de autorização.
 
 Run 45613480070: fallback JS aprovado; preparação reprovada na linha 22 antes de Gradle. O Gradle original declara a dependência 21.3.0 com aspas duplas, enquanto o teste exigia aspas simples. O novo gate aceita exatamente a mesma coordenada e versão com ambos estilos de aspas. Não remove a verificação, não muda a dependência nem minSdk. Nova execução necessária.
+
+Run 45614149527 (1925f60) aprovado integralmente: 33/33 testes JS, Gradle BUILD SUCCESSFUL em 50 s, manifesto mesclado minSdk=24, árvore runtime sem Ferrostar/MapLibre/probe, nenhum APK/AAB. Limitações do fixture permanecem; não comprova host final nem dispositivo.

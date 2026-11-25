@@ -128,3 +128,53 @@ test("existing replay metadata is never recreated or overwritten",t=>{
   const db=new DatabaseSync(path);db.exec("DELETE FROM route_meta");db.close();
   assert.throws(()=>openRouteReplayStore({path}));
 });
+
+test("strict issuance registry rejects unknown, mismatched and revoked credentials across restart",t=>{
+  const {open}=fixture(t,{requireIssued:true});
+  const p=claim(1),a=open(),b=open();
+  assert.equal(a.admit(p,100000).status,403);
+  assert.equal(a.register(p,100000).status,200);
+  assert.equal(b.register(p,100000).status,403);
+  assert.equal(b.admit({...p,sub:"b".repeat(64)},100000).status,403);
+  assert.equal(b.admit({...p,exp:129999},100000).status,403);
+  assert.equal(b.revoke(p.jti,100001).status,200);
+  assert.equal(a.revoke(p.jti,100001).status,200);
+  a.close();b.close();
+  const reopened=open();
+  assert.equal(reopened.admit(p,100002).status,403);
+  assert.equal(reopened.register(p,100002).status,403);
+  assert.equal(reopened.revoke(claim(2).jti,100002).status,404);
+});
+test("strict admission and revocation serialize; admission winner cannot be reported as revoked",t=>{
+  const {open}=fixture(t,{requireIssued:true});const a=open(),b=open(),p=claim(1);
+  assert.equal(a.register(p,100000).status,200);
+  const g=b.admit(p,100001);assert.equal(g.status,200);
+  assert.equal(a.revoke(p.jti,100001).status,409);g.release();
+  assert.equal(a.revoke(p.jti,100002).status,409);
+  assert.equal(a.admit(p,100002).status,403);
+});
+test("strict registry never evicts live revoked records; expiration releases capacity",t=>{
+  const {open}=fixture(t,{requireIssued:true,maxEntries:1});
+  const a=open(),p=claim(1);
+  assert.equal(a.register(p,100000).status,200);
+  assert.equal(a.revoke(p.jti,100001).status,200);
+  assert.equal(a.register(claim(2),100002).status,429);
+  assert.equal(a.register(claim(3,"a",100000),100000).status,503);
+  const q=claim(2,"a",130000);
+  assert.equal(a.register(q,130000).status,200);
+  assert.equal(a.admit(p,130000).status,403);
+  const g=a.admit(q,130000);assert.equal(g.status,200);g.release();
+});
+test("strict registry fails closed on writer contention, and mode cannot change on reopen",t=>{
+  const {open,path}=fixture(t,{requireIssued:true});const a=open(),p=claim(1);
+  assert.throws(()=>openRouteReplayStore({path}));
+  const locked=new DatabaseSync(path);
+  try{
+    locked.exec("BEGIN IMMEDIATE");
+    assert.equal(a.register(p,100000).status,503);
+    assert.equal(a.revoke(p.jti,100000).status,503);
+    locked.exec("ROLLBACK");
+    assert.equal(a.admit(p,100000).status,403);
+    assert.equal(a.register(p,100000).status,200);
+  }finally{locked.close();}
+});
