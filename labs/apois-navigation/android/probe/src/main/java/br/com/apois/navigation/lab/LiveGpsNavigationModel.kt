@@ -27,6 +27,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
     private var voice: LiveNavigationVoice? = null
     private var foreground = false
     private var rerouteGate: NativeRerouteGate? = null
+    private var routeOwner: LegRouteResources<Route>? = null
+    private var routeAttachment: LegRouteResources.Attachment? = null
     private var routeJob: Job? = null
     private var scope: CoroutineScope? = null
     private val _routeNotice = MutableStateFlow<String?>(null)
@@ -58,11 +60,15 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         subscriber = null
         voice?.close()
         voice = null
+        val owner = routeOwner
+        routeAttachment?.let { owner?.detach(it) }
+        routeAttachment = null
+        routeOwner = null
         routeJob?.cancel()
         routeJob = null
         scope?.cancel()
         scope = null
-        rerouteGate?.close()
+        if (owner == null) rerouteGate?.close()
         rerouteGate = null
         _routeNotice.value = null
         _quality.value = GpsQuality.WAITING
@@ -70,13 +76,23 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
     }
 
     fun start(route: Route, stillCurrent: () -> Boolean, context: Context? = null, permit: NavigationVoicePermit? = null,
-              resolver: LiveRouteResolver? = null, target: RegionalPoint? = null,
+              resources: LegRouteResources<Route>? = null, legToken: LegToken? = null,
               online: () -> Boolean = { false }) {
         main()
         stopNavigation()
         if (!stillCurrent()) { permit?.let { runCatching { it.release() } }; _quality.value = GpsQuality.LOST; return }
         val active = generation
-        val budget = NativeRerouteGate()
+        val attachment = if (legToken != null) resources?.attach(legToken) else null
+        if (resources != null && attachment == null) {
+            permit?.let { runCatching { it.release() } }
+            _quality.value = GpsQuality.LOST
+            _routeNotice.value = "Sessão de navegação indisponível."
+            return
+        }
+        routeOwner = resources
+        routeAttachment = attachment
+        val target = resources?.target
+        val budget = resources?.budget ?: NativeRerouteGate()
         rerouteGate = budget
         val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope = sessionScope
@@ -95,7 +111,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         // The first accepted physical fix initializes the Rust navigator.
         // No simulated location or last persisted location is used.
         var nextFix: ((UserLocation, Long) -> Unit)? = null
-        fun current() = generation == active && stillCurrent()
+        fun current() = generation == active && stillCurrent() &&
+            (resources == null || (attachment != null && resources.accepts(attachment)))
         fun show(state: NavigationState, raw: UserLocation, captured: Long) {
             if (!current()) return
             val ui = NavigationUiState.fromFerrostar(state, muted).copy(destination = destination)
@@ -108,13 +125,13 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                 is DeviationKind.OffStepOnRoute -> 0.0
                 else -> if (ui.routeDeviation != null) 0.0 else null
             }
-            val canRequest = resolver != null && target?.valid() == true &&
+            val canRequest = resources != null && attachment != null && target?.valid() == true &&
                 RegionalPoint(raw.coordinates.lat,raw.coordinates.lng).valid() &&
                 foreground && runCatching { online() }.getOrDefault(false)
             val decision = budget.evaluate(SystemClock.elapsedRealtime(), captured,
                 raw.horizontalAccuracy, deviation, online = canRequest)
             if (!offRoute) routeJob?.cancel()
-            if (offRoute && decision is NativeRerouteGate.Decision.Request && resolver != null && target != null) {
+            if (offRoute && decision is NativeRerouteGate.Decision.Request && resources != null && attachment != null && target != null) {
                 val origin = RegionalPoint(raw.coordinates.lat,raw.coordinates.lng)
                 val ticket = decision.ticket
                 // Scope and gate belong to the whole leg, not the individual route.
@@ -124,7 +141,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                     try {
                         yield()
                         ensureActive()
-                        val replacement = withTimeout(15_000) { resolver.resolve(origin,target) }
+                        val cached = resources.cached(attachment, origin, SystemClock.elapsedRealtime())
+                        val replacement = cached ?: withTimeout(15_000) { resources.resolve(attachment, origin) }
                         ensureActive()
                         val fix = latest ?: return@launch
                         if (!mayApplyReroute(current(), foreground, stillOffRoute,
@@ -133,6 +151,7 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                             replacement.geometry.map { RegionalPoint(it.lat,it.lng) },
                             RegionalPoint(fix.coordinates.lat,fix.coordinates.lng),target)) return@launch
                         val freshNavigator = createNavigator(replacement, config, false)
+                        if (cached == null) resources.remember(attachment, origin, replacement, SystemClock.elapsedRealtime())
                         activeRoute = replacement
                         navigator = freshNavigator
                         nextFix = null // initialize only from the next accepted GPS fix
