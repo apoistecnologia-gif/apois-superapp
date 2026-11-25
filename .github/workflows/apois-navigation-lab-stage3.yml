@@ -1,0 +1,29 @@
+name: APOIS Navegacao - replay Ferrostar real (sem APK)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/replay/**', '.github/workflows/apois-navigation-lab-stage3.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Rust stable
+        run: rustup update stable && rustup default stable && rustc --version
+      - name: Simular GPS e testar desvio e chegada no nucleo real
+        run: |
+          set -euo pipefail
+          cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- labs/apois-navigation/replay/fixtures/upstream-valhalla-osrm.json | tee /tmp/apois-replay-report.txt
+          grep -F 'APOIS_REPLAY_OK' /tmp/apois-replay-report.txt
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: apois-ferrostar-replay-report
+          path: /tmp/apois-replay-report.txt
+          retention-days: 7

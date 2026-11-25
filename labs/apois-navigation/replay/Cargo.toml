@@ -1,0 +1,8 @@
+[package]
+name = "apois-navigation-replay"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+ferrostar = { git = "https://github.com/stadiamaps/ferrostar.git", rev = "a499f24389554f2420c927f2aa29623221474087" }

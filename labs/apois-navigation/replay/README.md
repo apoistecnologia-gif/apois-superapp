@@ -1,0 +1,5 @@
+# Stage 3 — isolated real Ferrostar replay
+Uses Rust core 0.59.0 (same engine as Android), pinned upstream commit a499f24389554f2420c927f2aa29623221474087, and its OSRM parser, GPS simulator and navigation state machine. The upstream fixture is copied from Ferrostar tag 0.59.0, android/core/src/androidTest/java/com/stadiamaps/ferrostar/core/ValhallaCoreTest.kt, simpleRoute; BSD-3-Clause license retained. It is a non-Brazilian public sample, not a regional navigation test. No paid API, real GPS, Android APK, passenger data, or live ride.
+Run: cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- labs/apois-navigation/replay/fixtures/upstream-valhalla-osrm.json
+Tests parser, simulation, precise off-route detection, progress and arrival. Actual reroute network call, Portuguese voice/audio, Android rendering, battery and field tests remain pending.
+Valhalla request must use format=osrm, voice_instructions=true, banner_instructions=true, language=pt-BR, units=kilometers. The next regional test must export an OSRM response for this runner rather than treating default Valhalla JSON as SDK-compatible.
