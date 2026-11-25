@@ -17,7 +17,7 @@ begin
     where u.auth_user_id=p_auth_user and s.id=p_selection and s.request_key=p_request_key
       and u.deleted_at is null and u.blocked_at is null
       and (u.suspended_until is null or u.suspended_until<=clock_timestamp())
-    for share of u for update of s;
+    for no key update of u for update of s;
   if not found then return null; end if;
   if v_linked is not null then
     select * into strict v_ride from public.rides
@@ -33,6 +33,14 @@ begin
      v_input.scheduled_for is not null or
      v_input.intermediates is distinct from '[]'::jsonb then
     raise exception 'unsupported experimental ride payload';
+  end if;
+
+  if exists (
+    select 1 from public.rides
+    where passenger_id=v_passenger
+      and status::text in ('procurar_motorista','motorista_a_caminho','motorista_chegou','em_viagem')
+  ) then
+    return null;
   end if;
 
   v_points := apois_nav_lab.prepare_selection(p_auth_user,p_selection,p_request_key);
