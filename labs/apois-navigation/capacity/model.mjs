@@ -13,6 +13,20 @@ export function readLocalEvidence(report){
     achievedPerMinute:report.requests/report.durationSeconds*60,
     meanResponseBytes:report.responseBytes.total/report.requests,p95Ms:report.totalLatency.p95Ms});
 }
+// Asset payload is not the full APK, not the actual store download, and not
+// proof of billing by a particular distribution provider.
+export function planMapDistribution({activeDrivers,assetBytes=3524826,downloadsPerDriver=null,chargedShare=null,archiveBytes=3422737}={}){
+  if(!integer(activeDrivers,1,1000000)||!integer(assetBytes,1,1e9)||!integer(archiveBytes,1,assetBytes)||
+    !(downloadsPerDriver===null||finite(downloadsPerDriver,0,1000))||
+    !(chargedShare===null||finite(chargedShare,0,1)))throw Error("Invalid map distribution assumptions");
+  const mapPayloadGb=downloadsPerDriver===null?null:activeDrivers*downloadsPerDriver*assetBytes/1e9;
+  const chargedPayloadGb=mapPayloadGb===null||chargedShare===null?null:mapPayloadGb*chargedShare;
+  return {assetBytes,archiveBytes,packagedPlusPrivateArchiveBytes:assetBytes+archiveBytes,
+    downloadsPerDriver,chargedShare,mapPayloadGb:mapPayloadGb===null?null:round(mapPayloadGb),
+    chargedPayloadGb:chargedPayloadGb===null?null:round(chargedPayloadGb),
+    chargedGbPerDriver:chargedPayloadGb===null?null:chargedPayloadGb/activeDrivers,
+    actualDistributionVerified:false};
+}
 export function planCapacity(input){
   const {activeDrivers,daysPerMonth,ridesPerDriverDay,reroutesPerLeg,peakHourShare,burstFactor,
     reserveFraction,routeQuotaPerMinute=60,targetPerDriver=5,meanResponseBytes=null,
@@ -38,10 +52,10 @@ export function planCapacity(input){
   const mapGb=mapGbPerDriver===null?null:activeDrivers*mapGbPerDriver;
   const totalPayloadGb=routePayloadGb===null||mapGb===null?null:routePayloadGb+mapGb;
   const ceiling=activeDrivers*targetPerDriver;
-  const variable=fixedMonthlyBrl===null||variableBrlPer1000Routes===null||
+  const variable=variableBrlPer1000Routes===null||
     egressBrlPerGb===null||totalPayloadGb===null?null:
       variableBrlPer1000Routes*monthlyRoutes/1000+egressBrlPerGb*totalPayloadGb;
-  const cost=variable===null?null:fixedMonthlyBrl+variable;
+  const cost=variable===null||fixedMonthlyBrl===null?null:fixedMonthlyBrl+variable;
   return {activeDrivers,monthlyRoutes:Math.ceil(monthlyRoutes),routesPerDriverDay:round(routesPerDriverDay),
     peakRequestsPerMinute:round(peakPerMinute),requiredQuotaPerMinute:requiredQuota,routeQuotaPerMinute,
     configuredQuotaFits:requiredQuota<=routeQuotaPerMinute,

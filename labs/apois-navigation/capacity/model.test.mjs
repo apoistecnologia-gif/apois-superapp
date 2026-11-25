@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {planCapacity,readLocalEvidence} from "./model.mjs";
+import {planCapacity,readLocalEvidence,planMapDistribution} from "./model.mjs";
 const assumptions={activeDrivers:100,daysPerMonth:26,ridesPerDriverDay:8,reroutesPerLeg:.5,peakHourShare:.15,burstFactor:3,reserveFraction:.25};
 test("unknown prices and traffic stay unknown, quota and ceiling are separate",()=>{
   const r=planCapacity(assumptions);
@@ -54,4 +54,32 @@ test("extended verified evidence preserves same traffic projection and no produc
   const r=planCapacity({...assumptions,activeDrivers:1000,localEvidence:e.report});
   assert.equal(r.routePayloadGb,11.88);assert.equal(r.configuredQuotaFits,false);
   assert.equal(r.productionCapacityVerified,false);assert.equal(r.withinBudget,null);
+});
+
+test("map bytes measured in CI are distinct from APK and billable egress",()=>{
+  const unknown=planMapDistribution({activeDrivers:1000});
+  assert.equal(unknown.assetBytes,3524826);
+  assert.equal(unknown.packagedPlusPrivateArchiveBytes,6947563);
+  assert.equal(unknown.chargedGbPerDriver,null);
+  const m=planMapDistribution({activeDrivers:1000,downloadsPerDriver:1,chargedShare:1});
+  assert.equal(m.mapPayloadGb,3.52);assert.equal(m.chargedPayloadGb,3.52);
+  assert.equal(m.chargedGbPerDriver,.003524826);
+  assert.equal(m.actualDistributionVerified,false);
+  const noDirect=planMapDistribution({activeDrivers:1000,downloadsPerDriver:1,chargedShare:0});
+  assert.equal(noDirect.chargedPayloadGb,0);
+  assert.equal(planMapDistribution({activeDrivers:1000,downloadsPerDriver:1}).chargedPayloadGb,null);
+  for(const patch of [{activeDrivers:0},{downloadsPerDriver:-1},{chargedShare:2},{archiveBytes:99999999}])
+    assert.throws(()=>planMapDistribution({activeDrivers:100,...patch}));
+});
+test("maximum affordable fixed cost is available before any fixed quote",()=>{
+  const r=planCapacity({...assumptions,meanResponseBytes:10000,mapGbPerDriver:.1,egressBrlPerGb:2,variableBrlPer1000Routes:1});
+  assert.equal(r.maxFixedMonthlyBrl,416.35);
+  assert.equal(r.estimatedCostBrl,null);assert.equal(r.withinBudget,null);
+});
+test("map distribution estimate combines with measured route payload without claiming billing",()=>{
+  const e=JSON.parse(readFileSync(new URL("./evidence-45618935238.json",import.meta.url),"utf8"));
+  const m=planMapDistribution({activeDrivers:1000,downloadsPerDriver:1,chargedShare:1});
+  const r=planCapacity({...assumptions,activeDrivers:1000,localEvidence:e.report,mapGbPerDriver:m.chargedGbPerDriver});
+  assert.equal(r.routePayloadGb,11.88);assert.equal(r.mapPayloadGb,3.52);
+  assert.equal(r.estimatedCostBrl,null);assert.equal(r.productionCapacityVerified,false);
 });
