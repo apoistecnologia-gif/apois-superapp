@@ -51,5 +51,5 @@ export function createVerifiedHostTransport({auth,invoke,account,controlFunction
   const result=await transport({action:'apois_navigation_active'},AbortSignal.timeout(10000))
   return result.status===200&&result.body?.verified===true?result.body:{verified:false}
  }
- return {verifyIdentity,transport,confirm,activeRide}
+ return {verifyIdentity,transport,confirm,activeRide,verifiedAuthorization:async()=>({Authorization:'Bearer '+await session()})}
 }

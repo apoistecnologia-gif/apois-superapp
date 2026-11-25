@@ -1,0 +1,1 @@
+export function mountDurablePassengerHost(root:HTMLElement,options:{enabled:boolean;account:string;auth:unknown;invoke:unknown;map?:unknown;catalog?:unknown;onReturn:()=>void;onTrack:(id:string)=>void;allowSelection?:boolean;signal?:AbortSignal}):Promise<{dispose:()=>void}|null>;

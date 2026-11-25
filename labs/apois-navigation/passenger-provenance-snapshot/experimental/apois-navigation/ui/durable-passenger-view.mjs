@@ -7,11 +7,12 @@ import {createVerifiedHostTransport} from './verified-host-transport.mjs'
 // Dedicated opt-in container. Existing Google route/price/dispatch components
 // are not imported or rewritten. The trusted host provides a MapLibre map,
 // verified account, active catalog, Supabase client adapter and tracker callback.
-export async function mountDurablePassengerHost(root,{enabled=false,account,auth,invoke,map,catalog,onReturn,onTrack,locks,journalFactory=openRideJournal}={}){
- if(enabled!==true)return null
- if(!root?.ownerDocument||!map||typeof map.on!=='function'||typeof map.off!=='function'||typeof onReturn!=='function'||typeof onTrack!=='function')throw Error('Missing host dependency')
+export async function mountDurablePassengerHost(root,{enabled=false,account,auth,invoke,map,catalog,onReturn,onTrack,locks,journalFactory=openRideJournal,allowSelection=true,signal}={}){
+ if(enabled!==true||signal?.aborted)return null
+ if(!root?.ownerDocument||(allowSelection&&(!map||typeof map.on!=='function'||typeof map.off!=='function'))||typeof onReturn!=='function'||typeof onTrack!=='function')throw Error('Missing host dependency')
  const transport=createVerifiedHostTransport({enabled:true,account,auth,invoke,controlFunction:'apois-navigation-control'})
  const journal=await journalFactory()
+ if(signal?.aborted){journal.close?.();return null}
  const interlock=createCreationInterlock({enabled:true,journal,verifyIdentity:transport.verifyIdentity,activeRide:transport.activeRide,locks})
  const host=createDurableRideHost({enabled:true,journal,...transport})
  const doc=root.ownerDocument
@@ -21,14 +22,14 @@ export async function mountDurablePassengerHost(root,{enabled=false,account,auth
  let panel=null,disposed=false,busy=false
  const button=(label,fn)=>{const b=el('button',label);b.type='button';b.addEventListener('click',()=>{if(disposed||busy)return;void act(fn)});return b}
  const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'})
- const dispose=()=>{if(disposed)return;disposed=true;panel?.dispose();host.invalidate();journal.close?.();shell.remove()}
+ const dispose=()=>{if(disposed)return;disposed=true;signal?.removeEventListener('abort',dispose);panel?.dispose();host.invalidate();journal.close?.();shell.remove()}
  async function act(fn){busy=true;render();try{await fn()}catch{status.textContent='Não foi possível confirmar a operação.'}finally{busy=false;render()}}
  async function returnLegacy(){
   if(!host.canReturnToLegacy()||!await interlock.canReturn())return false
   dispose();onReturn();return true
  }
  function mountSelection(){
-  panel=mountPassengerPanel(selectionRoot,{enabled:true,map,catalog,confirm:transport.confirm,onReturn:()=>{panel=null;void act(async()=>{if(!await returnLegacy()&&!disposed)mountSelection()})}})
+  panel=mountPassengerPanel(selectionRoot,{enabled:true,map,catalog,confirm:transport.confirm,onReturn:()=>{panel=null;void act(async()=>{if(!await returnLegacy()&&!disposed&&allowSelection)mountSelection()})}})
  }
  function render(){
   if(disposed)return
@@ -53,8 +54,11 @@ export async function mountDurablePassengerHost(root,{enabled=false,account,auth
   for(const b of controls.children)b.disabled=busy
  }
  try{
+  signal?.addEventListener('abort',dispose,{once:true})
+  if(signal?.aborted){dispose();return null}
   await host.open()
-  if(host.snapshot().state==='ready')mountSelection()
+  if(disposed)return null
+  if(host.snapshot().state==='ready'&&allowSelection)mountSelection()
   render()
   return {dispose,host,interlock}
  }catch(e){dispose();throw e}

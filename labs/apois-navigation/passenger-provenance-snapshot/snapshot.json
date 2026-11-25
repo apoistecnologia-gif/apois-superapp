@@ -1,6 +1,6 @@
 {
   "source": "apoistecnologia-gif/say-hello-buddy-23-84b5dcbf",
-  "commit": "cbb4320a0c52da6497aa91b9fdc37c80ec166bc0",
+  "commit": "4cf4dcce473adacb94559dbf8e30005857a922ef",
   "blobs": [
     {
       "path": "experimental/apois-navigation/schema.sql",
@@ -96,7 +96,7 @@
     },
     {
       "path": "experimental/apois-navigation/ui/verified-host-transport.mjs",
-      "sha": "060a7809321dd220a327d9eab827d2fe3199da9a"
+      "sha": "b45f4bb039778ed0996de9fff5aeb196e703ea4c"
     },
     {
       "path": "experimental/apois-navigation/ui/creation-interlock.mjs",
@@ -104,7 +104,7 @@
     },
     {
       "path": "experimental/apois-navigation/ui/durable-passenger-view.mjs",
-      "sha": "680af377aac3f2d9d7a64bb426695d7f635b97a9"
+      "sha": "9f3439519096e6b9563da36ea71bd92580e905fb"
     },
     {
       "path": "experimental/apois-navigation/ui/verified-host-transport.test.mjs",
@@ -113,6 +113,22 @@
     {
       "path": "experimental/apois-navigation/ui/HOST-TRANSPORT.md",
       "sha": "8905d1caebd1276526e25bc54e40772d081f7a54"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/pilot-runtime.mjs",
+      "sha": "a692cd04d2dc5eb666868749ec6c6aea351783a6"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/pilot-runtime.d.mts",
+      "sha": "59ec00406abcd37c01e6622c95bf0f9c8cbb438a"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/durable-passenger-view.d.mts",
+      "sha": "7771cbe2b0434a606daf8d9f4740fdebc58b3ffa"
+    },
+    {
+      "path": "experimental/apois-navigation/ui/pilot-runtime.test.mjs",
+      "sha": "eff3a8999d2ede35f63ce01c59055559398b60a1"
     }
   ]
 }
