@@ -31,7 +31,7 @@ object ConfirmedLiveNavigationBridge {
     }
     internal data class Screen(
         val id:String, val owner:Prepared, val token:LegToken,
-        val resources:LegRouteResources<Route>,val ride:RideSnapshot
+        val resources:LegRouteResources<Route>,val ride:RideSnapshot,val openingRevision:Long
     )
     internal val screen=MutableStateFlow<Screen?>(null)
     private var prepared:Prepared?=null
@@ -40,10 +40,21 @@ object ConfirmedLiveNavigationBridge {
     private var closingCallback:Consumer<JSONObject>?=null
     private var waiter:Consumer<Boolean>?=null
     private val handler=Handler(Looper.getMainLooper())
+    private var expiryTask:Runnable?=null
     internal fun occupied():Boolean=screen.value!=null||closing!=null
     private val rideIdPattern=Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
     private fun current(p:Prepared)=prepared===p && p.lease.current() && runCatching{p.verifiedCurrent()}.getOrDefault(false)
+
+    // Also expire a prepared owner while no Activity is visible. A stale
+    // callback cannot revoke a newer owner. Elapsed-time checks still gate
+    // every access if Android delays a Handler while asleep.
+    private fun scheduleExpiry(p:Prepared){
+        expiryTask?.let{handler.removeCallbacks(it)}
+        val task=Runnable{if(prepared===p){if(current(p))scheduleExpiry(p) else revoke()}}
+        expiryTask=task
+        handler.postDelayed(task,30_000L)
+    }
 
     // Must be called ONLY after host verified identity, assignment, phase,
     // source provenance and route. Geometry checks alone do not prove any of
@@ -60,6 +71,7 @@ object ConfirmedLiveNavigationBridge {
             !runCatching{verifiedCurrent()}.getOrDefault(false)||
             !routeEndpointsMatch(route.geometry.map{RegionalPoint(it.lat,it.lng)},origin,target))return false
         prepared=Prepared(route,target,resolver,verifiedCurrent,online,acquireVoice,NavigationSessionController(ride),PreparedAuthorityLease(SystemClock::elapsedRealtime))
+        prepared?.let(::scheduleExpiry)
         return true
     }
 
@@ -77,7 +89,7 @@ object ConfirmedLiveNavigationBridge {
         if(resources==null){p.controller.disable();return null}
         val id=UUID.randomUUID().toString()
         callback=events
-        screen.value=Screen(id,p,token,resources,p.ride)
+        screen.value=Screen(id,p,token,resources,p.ride,p.ride.revision)
         try{
             activity.startActivity(Intent(activity,ConfirmedLiveNavigationActivity::class.java).putExtra("confirmedSession",id))
         }catch(e:Exception){
@@ -114,6 +126,7 @@ object ConfirmedLiveNavigationBridge {
         p.controller.update(ride)
         if(p.controller.snapshot!==ride)return false
         if(!p.lease.renew()){revoke();return false}
+        scheduleExpiry(p)
         p.pending=false
         screen.value?.takeIf{it.owner===p}?.let{
             // New Screen identity ensures Compose sees the refreshed snapshot.
@@ -162,7 +175,7 @@ object ConfirmedLiveNavigationBridge {
         closingCallback=null
         waiter=null
         val event=JSONObject().put("sessionId",id).put("rideId",s.ride.rideId)
-            .put("revision",s.ride.revision).put("action","SESSION_CLOSED")
+            .put("revision",s.openingRevision).put("action","SESSION_CLOSED")
         runCatching{notify?.accept(event)}
         runCatching{done?.accept(true)}
     }
@@ -171,6 +184,8 @@ object ConfirmedLiveNavigationBridge {
     // cached resources; no reopening from a saved intent or previous process.
     fun revoke(){
         main()
+        expiryTask?.let{handler.removeCallbacks(it)}
+        expiryTask=null
         val p=prepared
         prepared=null
         p?.lease?.revoke()
