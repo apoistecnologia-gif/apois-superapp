@@ -10,6 +10,27 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 // Registered only in the disposable Capacitor host.
 @CapacitorPlugin(name="ApoisNavigationLab")
 public class ApoisNavigationLabPlugin extends Plugin {
+    // Confirmed ride transport is intentionally separate from synthetic replay.
+    // Until the live route/provenance/authority owner is installed, this method
+    // guarantees no Activity, GPS subscription, TTS, or request was created.
+    @PluginMethod
+    public void openConfirmed(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                ConfirmedNavigationRequest.parse(call.getData());
+                call.resolve(new JSObject().put("state","unavailable"));
+            } catch(IllegalArgumentException e) {
+                call.reject("Invalid confirmed navigation request");
+            }
+        });
+    }
+
+    // Never close a synthetic replay using a real-ride transport call.
+    @PluginMethod
+    public void closeConfirmed(PluginCall call) {
+        call.resolve(new JSObject().put("closed",false));
+    }
+
     @PluginMethod
     public void open(PluginCall call) {
         getActivity().runOnUiThread(() -> {
