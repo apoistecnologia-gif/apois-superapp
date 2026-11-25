@@ -35,7 +35,7 @@ jobs:
       - name: Testar rotas locais em portugues
         run: |
           bash -n labs/apois-navigation/valhalla/run-region.sh
-          bash labs/apois-navigation/valhalla/run-region.sh "$RUNNER_TEMP/apois-route-report"
+          bash labs/apois-navigation/valhalla/run-region.sh "$RUNNER_TEMP/apois-route-report" compact
       - uses: actions/cache/save@v4
         if: always() && steps.regional-cache.outputs.cache-hit != 'true' && hashFiles('labs/apois-navigation/valhalla/.regional-cache/extract.sha256') != ''
         with:
