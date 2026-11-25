@@ -52,7 +52,7 @@ internal class NativeRerouteGate {
         if (lastRequest?.let { now - it < 15_000 } == true || recent.size >= 3)
             return Decision.Hold(Reason.RATE_LIMIT)
         lastRequest = now
-        recent.addLast(now)
+        recent.add(now)
         total++
         consecutive = 0
         val ticket = Ticket()
