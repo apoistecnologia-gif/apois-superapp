@@ -28,7 +28,16 @@ try {
   let gradle=readFileSync(join(android,"app/build.gradle"),"utf8");
   assert.ok(gradle.includes("implementation project(':capacitor-android')"));
   writeFileSync(join(android,"app/build.gradle"),gradle);
-  writeFileSync(join(java,"MainActivity.java"),"        registerPlugin(DriverVoicePlugin.class);\n");
+  writeFileSync(join(java,"MainActivity.java"),[
+    "package br.com.apois.parceiro;",
+    "public class MainActivity extends com.getcapacitor.BridgeActivity {",
+    "    @Override public void onCreate(android.os.Bundle state) {",
+    "        registerPlugin(DriverVoicePlugin.class);",
+    "        super.onCreate(state);",
+    "    }",
+    "}",
+    ""
+  ].join("\n"));
   // Provide the launcher prerequisite package-visibility block only in the
   // temporary scaffold. No Firebase config or production signing credentials.
   const manifestPath=join(android,"app/src/main/AndroidManifest.xml");
@@ -76,7 +85,7 @@ try {
   assert.ok(patched.includes("qa235CheckPickupArrival(location);\n                labGpsPublish(location);"));
   for(const marker of ["qa236PickupReady","/rest/v1/rpc/driver_mark_arrived","private void loadPersistedSessionTokens()","INICIAR CORRIDA • PIN","driver_set_presence","ContextCompat.RECEIVER_NOT_EXPORTED"])
     assert.ok(patched.includes(marker),"lost QA290 marker "+marker);
-  // Remove only the injected statements and compare shared components untouched.
+  // Compare shared components untouched by the passive driver instrumentation.
   for(const name of shared)assert.equal(hash(join(java,name)),before[name],name);
   writeFileSync(join(java,"DriverLocationService.java"),patched);
   const recheck=spawnSync(process.execPath,[join(repo,"scripts/install-partner-native-qa280.mjs")],{cwd:stage,stdio:"inherit"});
