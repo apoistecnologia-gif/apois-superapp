@@ -140,6 +140,109 @@
           17
         ]
       }
+    },
+    {
+      "id": "place-label",
+      "type": "symbol",
+      "source": "regional",
+      "source-layer": "places",
+      "minzoom": 9,
+      "filter": [
+        "all",
+        [
+          "has",
+          "name"
+        ],
+        [
+          "in",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "literal",
+            [
+              "city",
+              "town",
+              "village",
+              "suburb",
+              "neighbourhood"
+            ]
+          ]
+        ]
+      ],
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          12,
+          15,
+          15
+        ],
+        "text-max-width": 8,
+        "text-allow-overlap": false
+      },
+      "paint": {
+        "text-color": "#34383C",
+        "text-halo-color": "#F4F2ED",
+        "text-halo-width": 1.4
+      }
+    },
+    {
+      "id": "road-label",
+      "type": "symbol",
+      "source": "regional",
+      "source-layer": "roads",
+      "minzoom": 13,
+      "filter": [
+        "has",
+        "name"
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          13,
+          10,
+          17,
+          13
+        ],
+        "text-allow-overlap": false,
+        "text-keep-upright": true,
+        "symbol-spacing": 250
+      },
+      "paint": {
+        "text-color": "#53575A",
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 1.3
+      }
     }
-  ]
+  ],
+  "glyphs": "https://maps.example.invalid/glyphs/{fontstack}/{range}.pbf"
 }

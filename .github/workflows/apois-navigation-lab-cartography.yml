@@ -34,6 +34,15 @@ jobs:
         run: |
           bash -n labs/apois-navigation/cartography/build-region.sh
           bash labs/apois-navigation/cartography/build-region.sh "$RUNNER_TEMP/apois-cartography-report"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Decodificar tiles e validar cobertura regional
+        run: |
+          python -m pip install --disable-pip-version-check pmtiles==3.8.1 mapbox-vector-tile==2.2.0
+          python labs/apois-navigation/cartography/verify_content.py "$RUNNER_TEMP/apois-cartography-report/vale.pmtiles" "$RUNNER_TEMP/apois-cartography-report" | tee "$RUNNER_TEMP/apois-cartography-report/content-report.json"
+      - name: Preparar glifos licenciados e cobertura pt-BR
+        run: bash labs/apois-navigation/cartography/prepare-glyphs.sh "$RUNNER_TEMP/apois-cartography-report"
       - name: Verificar leitura parcial HTTP local
         run: bash labs/apois-navigation/cartography/test-http-range.sh "$RUNNER_TEMP/apois-cartography-report"
       - uses: actions/upload-artifact@v4
