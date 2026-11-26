@@ -41,7 +41,9 @@ const error=(code,status=409)=>({error:{context:new Response(JSON.stringify({ok:
 const response=data=>({data})
 const status=document.getElementById('fixture-status'),counter=document.getElementById('count')
 async function update(){const s=await state();counter.textContent='Criações simuladas neste aparelho: '+s.creates;document.getElementById('finish').disabled=!s.ride||done(s.ride)}
-async function invoke(name,{body:b,headers}){
+const fixtureLock=task=>navigator.locks.request(key+'-transaction',{mode:'exclusive'},task)
+function invoke(name,options){return fixtureLock(()=>invokeLocked(name,options))}
+async function invokeLocked(name,{body:b,headers}){
  if(headers.Authorization!=='Bearer '+token)throw Error('fixture token')
  const request=['apois_navigation_quote','apois_navigation_create'].includes(b.action)
  if(name!==(request?'request-ride':'apois-navigation-control'))throw Error('fixture endpoint')
@@ -76,7 +78,11 @@ async function invoke(name,{body:b,headers}){
 const ctrl=new AbortController()
 window.addEventListener('pagehide',()=>ctrl.abort(),{once:true})
 document.getElementById('reload').onclick=()=>location.reload()
-document.getElementById('finish').onclick=async()=>{const s=await state();if(s.ride){s.ride.status='finalizada';await store(s);status.textContent='Corrida fictícia encerrada. Toque em Verificar solicitação existente.';await update()}}
+document.getElementById('finish').onclick=async()=>{
+ const button=document.getElementById('finish');button.disabled=true
+ try{await fixtureLock(async()=>{const s=await state();if(s.ride){s.ride.status='finalizada';await store(s);await update();status.textContent='Corrida fictícia encerrada. Toque em Verificar solicitação existente.'}})}
+ catch{status.textContent='Falha ao persistir encerramento fictício.';await update().catch(()=>{})}
+}
 async function boot(){
  if(!globalThis.isSecureContext||!navigator.locks||!globalThis.indexedDB){status.textContent='WebView sem suporte à recuperação segura (Web Locks/IndexedDB). Atualize o Android System WebView.';return}
  const journal=await openRideJournal();let pending

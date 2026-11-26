@@ -40,6 +40,7 @@ try{
  await click(view,'Verificar solicitação existente')
  await until(view,text('Corrida existente. Continue no acompanhamento.'),'recovered ride')
  await click(view,'Simular encerramento da corrida')
+ await until(view,text('Corrida fictícia encerrada. Toque em Verificar solicitação existente.'),'committed synthetic finish')
  await click(view,'Verificar solicitação existente')
  await until(view,text('Tentativa encerrada pelo servidor.'),'terminal recovery')
  await click(view,'Voltar ao fluxo atual')
