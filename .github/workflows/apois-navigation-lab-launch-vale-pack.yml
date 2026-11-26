@@ -18,13 +18,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: apois-launch-vale-candidate
-          run-id: 45748506856
+          run-id: 45750844751
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-launch-vale
       - uses: actions/download-artifact@v4
         with:
           name: apois-launch-vale-search-candidates
-          run-id: 45748780382
+          run-id: 45750844751
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-vale-search
       - uses: actions/setup-python@v5

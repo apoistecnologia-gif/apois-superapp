@@ -9,3 +9,5 @@ A fábrica local aceita somente uma lease do pacote fixado, após revalidar todo
 
 ## Preservação temporária para homologação
 Os artefatos originais dos runs 45748506856, 45748780382, 45748961675 e 45749604118 expiram em 03/12/2026, antes da meta de 15/12. O workflow de preservação reconstrói o pacote a partir das fontes fixadas, compara os recursos de runtime byte a byte e solicita retenção de 30 dias dos quatro conjuntos inativos. Não é hospedagem permanente, assinatura, publicação ou liberação. Somente após execução aprovada e confirmação das datas de expiração no GitHub os consumidores podem trocar seus run IDs; os hashes e as regras de validação permanecem iguais.
+
+Run de preservação 45750844751 aprovado: quatro artefatos ativos no armazenamento CI, expiração confirmada 26/12/2026, 03:44 UTC. Os cinco workflows consumidores foram atualizados para esse run; hashes fixados, manifestos de procedência e fonte original preservados. O run de preservação original continua sendo evidência histórica, não um mecanismo de distribuição ou renovação automática.

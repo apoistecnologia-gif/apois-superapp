@@ -22,13 +22,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: apois-launch-vale-candidate
-          run-id: 45748506856
+          run-id: 45750844751
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-launch-vale
       - uses: actions/download-artifact@v4
         with:
           name: apois-vale-inactive-data-pack
-          run-id: 45748961675
+          run-id: 45750844751
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-vale-pack
       - run: python labs/apois-navigation/launch-vale/runtime_assets.py "$RUNNER_TEMP/apois-launch-vale" "$RUNNER_TEMP/apois-vale-pack" "$RUNNER_TEMP/apois-vale-runtime-assets"
