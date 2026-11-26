@@ -58,6 +58,12 @@ class OfflinePackStoreTest{
         map.writeBytes(original)
         assertEquals(p,s.openVerified(spec("1")))
     }
+    @Test fun rejectDirectoryAtLockPathWithoutOpeningSource(){
+        val root=tmp.newFolder();assertTrue(File(root,".install.lock").mkdir())
+        var reads=0
+        assertTrue(runCatching{store(root).install(spec("1")){reads++;ByteArrayInputStream(bytes(it,"1"))}}.isFailure)
+        assertEquals(0,reads)
+    }
     @Test fun rejectBudgetBeforeReading(){
         val s=OfflinePackStore(tmp.newFolder(),1,0)
         assertTrue(runCatching{s.install(spec("1")){error("not called")}}.isFailure)

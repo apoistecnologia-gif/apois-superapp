@@ -69,8 +69,11 @@ internal class OfflinePackStore(private val root:File,private val maxInstallByte
         val total=spec.files.sumOf{it.bytes}
         require(total<=maxInstallBytes)
         check(root.absoluteFile==root.canonicalFile)
-        check(root.isDirectory||root.mkdirs())
-        RandomAccessFile(child(root,".install.lock"),"rw").use{handle->
+        check(root.isDirectory||root.mkdirs()||root.isDirectory)
+        check(root.absoluteFile==root.canonicalFile&&root.isDirectory)
+        val lockFile=child(root,".install.lock")
+        check(!lockFile.exists()||lockFile.isFile){"invalid lock file"}
+        RandomAccessFile(lockFile,"rw").use{handle->
             val lock=handle.channel.tryLock()?:error("store busy")
             try{
                 val final=child(root,"pack-"+spec.identity())
