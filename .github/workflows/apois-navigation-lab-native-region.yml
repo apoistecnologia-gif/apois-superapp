@@ -1,0 +1,55 @@
+name: APOIS Navegacao - limites IBGE no Android (laboratorio)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/android/probe/src/**/NativeRegionPolicy*.kt','labs/apois-navigation/region-data/native-fixture.py','.github/workflows/apois-navigation-lab-native-region.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-region:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-ibge-nordeste-candidate
+          run-id: 45732560505
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-ibge-region
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python labs/apois-navigation/region-data/native-fixture.py "$RUNNER_TEMP/apois-ibge-region" "$RUNNER_TEMP/apois-native-region"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Android API 36
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Validar geometria real no Kotlin
+        run: |
+          set -euo pipefail
+          D="$RUNNER_TEMP/apois-native-region"
+          export APOIS_NATIVE_REGION_FIXTURE="$D/region.apr"
+          export APOIS_NATIVE_REGION_SHA256="$(cat "$D/region.sha256")"
+          export APOIS_NATIVE_REGION_SAMPLES="$D/samples.tsv"
+          gradle -p labs/apois-navigation/android :probe:testDebugUnitTest --tests '*NativeRegionPolicyTest' --no-daemon --stacktrace
+          grep -R -F 'APOIS_NATIVE_REGION_OK samples=17' labs/apois-navigation/android/probe/build/test-results/testDebugUnitTest
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: apois-native-region-evidence
+          path: ${{ runner.temp }}/apois-native-region/
+          retention-days: 7
