@@ -19,6 +19,7 @@ const paths=[
  'production-contract/v21-edge-adapter.mjs','production-contract/request-ride-v21.mjs',
  'production-contract/pilot-remote-quote.mjs','production-contract/edge-session-v21.mjs',
  'production-contract/navigation-control-v21.mjs','production-contract/recovery-v21.mjs','production-contract/catalog-validation.mjs',
+ 'production-contract/driver-direct-edge-v21.mjs','production-contract/driver-control-v21.mjs',
  'driver-broker/driver-local-session.mjs','driver-broker/driver-proxy.mjs','driver-broker/driver-protocol.mjs','driver-broker/http.mjs',
  'remote-quote/remote-quote-metrics.mjs','remote-quote/quote-protocol.mjs'
 ]

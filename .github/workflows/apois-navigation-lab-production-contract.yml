@@ -40,6 +40,9 @@ jobs:
           run_sql < labs/apois-navigation/passenger-provenance-snapshot/revocation-fixture.sql
           run_sql < "$root/authority-v21.sql"
           run_sql < "$root/service-rpc-v21.sql"
+          run_sql < "$root/driver-target-rate-v21.sql"
+          run_sql < "$root/test-driver-target-rate-v21.sql"
+          node --test "$root/driver-direct-edge-v21.test.mjs"
           run_sql < "$root/recovery-v21.sql"
           run_sql < "$root/confirmation-v21.sql"
           run_sql < "$root/catalog-v21.sql"
