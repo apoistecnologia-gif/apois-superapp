@@ -26,3 +26,6 @@ Meta de lançamento informada: 15/12/2026. A branch de laboratório não constit
 | Operação | testes físicos em Petrolina/Juazeiro, perda de sinal, bateria, fallback explícito, monitoramento, rollback de ativação | Pendente |
 
 O piso persistente experimental nesta rodada não equivale a proteção de produção: não houve teste de perda de energia, restauração completa ou API 25. A retenção de mapas e catálogo no CI até 26/12 é temporária; o artefato anterior de replay vence em 02/12, com novo workflow de preservação pendente. Não ativar flags nem fazer deploy enquanto os gates não forem comprovados. Nenhuma cobrança, alteração de produção, chave oficial ou leitura de dados pessoais nesta rodada. Não afirmar que APK isolado é APK oficial.
+
+## Atualização de evidência desta rodada
+45787969502 armazenamento/piso persistente JVM, 45787969561 auditoria integral, 45787969361 regressão de permissões/resultados e 45787969611 retenção de replay passaram. Replay preservado até 26/12. Build privado passageiro permanece sem evidência por falha sem logs; acesso de leitura ao repositório está disponível. Novo ensaio WebView isolado e compilação conjunta QA290 nativa com Vale estão preparados, mas CI ainda não validado. Não houve deploy, credenciais ou alteração de app oficial.
