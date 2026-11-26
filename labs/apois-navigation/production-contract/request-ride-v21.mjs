@@ -6,9 +6,9 @@ const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[8
 const fail=(status,error_code)=>({status,body:{ok:false,error_code}})
 const point=p=>p&&Object.keys(p).length===2&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&p.lat>=-9.65&&p.lat<=-9.10&&p.lng>=-40.80&&p.lng<=-40.20
 const positive=v=>typeof v==='number'&&Number.isFinite(v)&&v>0
-export function createExperimentalRequestHandler({enabled=false,authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial,now=Date.now}={}){
+export function createExperimentalRequestHandler({enabled=false,authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial,revalidate=async()=>true,now=Date.now}={}){
  if(enabled!==true)return async()=>fail(409,'experimental_navigation_disabled')
- if(![authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial].every(f=>typeof f==='function'))throw Error('Missing trusted server adapter')
+ if(![authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial,revalidate].every(f=>typeof f==='function'))throw Error('Missing trusted server adapter')
  return async(session,body)=>{
   const action=body?.action,create=action==='apois_navigation_create'
   if(!body||typeof body!=='object'||Array.isArray(body)||!['apois_navigation_quote','apois_navigation_create'].includes(action))return fail(422,'invalid_experimental_request')
@@ -24,6 +24,7 @@ export function createExperimentalRequestHandler({enabled=false,authorize,readSe
    const selection=await readSelection(args)
    if(!selection)return fail(409,'selection_unavailable')
    const recover=async payload=>{
+    if(await revalidate(session,args)!==true)return fail(401,'session_not_current')
     const row=await createAtomic(args,payload)
     if(!row||!uuid(row.rideId)||typeof row.reused!=='boolean'||!positive(row.estimated_price)||
        !Number.isSafeInteger(row.fare_amount_cents)||row.fare_amount_cents!==Math.round(row.estimated_price*100))return fail(409,'ride_not_confirmed')
@@ -46,6 +47,10 @@ export function createExperimentalRequestHandler({enabled=false,authorize,readSe
    if(!positive(price)||!Number.isSafeInteger(cents)||cents<=0||price!==cents/100)return fail(503,'invalid_authoritative_fare')
    if(Date.parse(selection.expiresAt)<=now())return fail(409,'selection_expired')
    const quote={estimated_price:price,fare_amount_cents:cents,distance_km:distanceKm,duration_min:durationMin,expiresAt:selection.expiresAt}
+   if(!create||request.expected_price_cents!==cents){
+    if(await revalidate(session,args)!==true)return fail(401,'session_not_current')
+    if(Date.parse(selection.expiresAt)<=now())return fail(409,'selection_expired')
+   }
    if(!create)return {status:200,body:{ok:true,...quote}}
    if(request.expected_price_cents!==cents)return {status:409,body:{ok:false,error_code:'price_changed',...quote}}
    return await recover({origin,destination,estimated_price:price,distance_km:distanceKm,duration_min:durationMin,

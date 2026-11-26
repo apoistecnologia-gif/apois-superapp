@@ -15,7 +15,7 @@ export function localValhallaMetrics(fetcher=fetch){
   return {source:'OSM_VALHALLA_LAB',distanceKm:route.distance/1000,durationMin:route.duration/60}
  }
 }
-export function createV21ExperimentalAction({enabled=false,admin,authUserId,passengerId,independentMetrics,loadFare,dispatchInitial}={}){
+export function createV21ExperimentalAction({enabled=false,admin,authUserId,passengerId,independentMetrics,loadFare,dispatchInitial,verifyCurrentSession=async()=>true}={}){
  if(enabled!==true)return createExperimentalRequestHandler()
  async function rpc(name,args){
   const {data,error}=await admin.rpc(name,args)
@@ -33,7 +33,7 @@ export function createV21ExperimentalAction({enabled=false,admin,authUserId,pass
   },
   readSelection:args=>rpc('apois_nav_lab_read_selection_v21',params(args)),
   createAtomic:(args,payload)=>rpc('apois_nav_lab_create_ride_v21',{...params(args),p_payload:payload}),
-  independentMetrics,loadFare,dispatchInitial
+  independentMetrics,loadFare,dispatchInitial,revalidate:verifyCurrentSession
  })
  return body=>handler(null,body)
 }

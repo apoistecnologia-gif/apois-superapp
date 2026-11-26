@@ -246,6 +246,7 @@ Deno.serve(async (req: Request) => {
         loadFare: (categoryId: string, category: string, km: number, min: number, details: Record<string, unknown>) =>
           loadFare(admin, categoryId, category, km, min, details),
         dispatchInitial: dispatch,
+        verifyCurrentSession: async()=>await verifiedExperimentalSession(url,serviceRole)(token,req.signal)===auth.id,
       });
       const result = await handle(body);
       return json(result.body, result.status);
