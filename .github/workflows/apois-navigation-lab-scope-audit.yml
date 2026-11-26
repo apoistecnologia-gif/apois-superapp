@@ -1,0 +1,34 @@
+name: APOIS GPS - auditoria integral de escopo
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test labs/apois-navigation/release-scope.test.mjs
+      - name: Compare all changes against original production baseline
+        run: |
+          set -euo pipefail
+          node labs/apois-navigation/release-scope.mjs | tee "$RUNNER_TEMP/apois-scope-report.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-lab-scope-report
+          path: ${{ runner.temp }}/apois-scope-report.json
+          retention-days: 30
+          if-no-files-found: error
