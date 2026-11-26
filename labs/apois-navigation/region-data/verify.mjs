@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {createPolygonRegion} from '../valhalla/region-policy.mjs';
+const dir=process.argv[2],report=JSON.parse(readFileSync(join(dir,'region-report.json')));
+assert.equal(report.active,false);
+const contains=createPolygonRegion(readFileSync(join(dir,'nordeste-candidate.geojson')),report.candidate_sha256);
+const fixture=JSON.parse(readFileSync(new URL('../northeast/samples.json',import.meta.url)));
+const accepted=fixture.cities.map(([uf,name,lat,lon])=>({uf,name,accepted:contains(lat,lon)}));
+const outside=[['Belém',-1.4558,-48.5039],['Brasília',-15.7939,-47.8828],['Belo Horizonte',-19.9167,-43.9345],['São Paulo',-23.5505,-46.6333],['Oceano Atlântico',-10,-30],['Exterior',0,0]].map(([name,lat,lon])=>({name,accepted:contains(lat,lon)}));
+const result={accepted,outside,active:false,limits:'Approximate public sample coordinates; no guarantee of complete coverage'};
+writeFileSync(join(dir,'region-tests.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));
+assert.ok(accepted.every(s=>s.accepted),'Expected sample rejected');assert.ok(outside.every(s=>!s.accepted),'Out-of-region sample accepted');

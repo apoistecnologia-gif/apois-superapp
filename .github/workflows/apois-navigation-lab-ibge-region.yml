@@ -1,0 +1,39 @@
+name: APOIS Navegacao - limites IBGE Nordeste (laboratorio)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/region-data/*.py','labs/apois-navigation/region-data/*.mjs','.github/workflows/apois-navigation-lab-ibge-region.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Preparar geometria oficial
+        run: |
+          set -euo pipefail
+          python -m pip install --only-binary=:all: geopandas==1.0.1 shapely==2.0.7 pyogrio==0.10.0 pyproj==3.7.1
+          O="$RUNNER_TEMP/apois-ibge-region"
+          mkdir -p "$O"
+          curl --fail --location --retry 2 --retry-all-errors --retry-delay 5 --connect-timeout 20 --max-time 180 https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2025/Brasil/BR_Regioes_2025.zip -o "$RUNNER_TEMP/BR_Regioes_2025.zip"
+          python labs/apois-navigation/region-data/prepare.py "$RUNNER_TEMP/BR_Regioes_2025.zip" "$O"
+          node labs/apois-navigation/region-data/verify.mjs "$O"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-ibge-nordeste-candidate
+          path: ${{ runner.temp }}/apois-ibge-region/
+          retention-days: 7
+          if-no-files-found: warn
