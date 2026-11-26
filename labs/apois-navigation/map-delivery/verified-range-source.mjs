@@ -17,24 +17,48 @@ export async function createVerifiedRangeSource({manifestBytes,expectedManifestS
  const m=await verifiedManifest(manifestBytes,expectedManifestSha256)
  if(!Number.isSafeInteger(cacheChunks)||cacheChunks<0||cacheChunks>8||!Number.isSafeInteger(maxRead)||maxRead<16384||maxRead>8*1024*1024||!Number.isSafeInteger(parallel)||parallel<1||parallel>8)throw Error('Invalid verified range limits')
  const transport=createRangeSource({url,authorizedOrigin,sha256:m.archiveSha256,bytes:m.bytes,etag,fetcher,parallel,maxRange:m.chunkBytes})
- const cache=new Map();let active=0,closed=false
+ const cache=new Map(),inflight=new Map();let active=0,closed=false
  const owner=new AbortController()
  const abortError=()=>new DOMException('Cancelled','AbortError')
  const readChunk=async(index,signal)=>{
   if(signal.aborted)throw abortError()
   const cached=cache.get(index)
   if(cached){cache.delete(index);cache.set(index,cached);return cached}
-  const start=index*m.chunkBytes,expected=Math.min(m.chunkBytes,m.bytes-start)
-  const result=await transport.getBytes(start,expected,signal,etag)
-  const bytes=new Uint8Array(result.data)
-  if(bytes.length!==expected||await sha(bytes)!==m.chunks[index])throw Error('Map chunk integrity failure')
-  if(signal.aborted)throw abortError()
-  if(cacheChunks){cache.set(index,bytes);while(cache.size>cacheChunks)cache.delete(cache.keys().next().value)}
-  return bytes
+  let item=inflight.get(index)
+  if(!item||item.controller.signal.aborted){
+   const controller=new AbortController()
+   item={controller,waiters:0,done:false,promise:null}
+   inflight.set(index,item)
+   const entry=item
+   entry.promise=(async()=>{
+    const start=index*m.chunkBytes,expected=Math.min(m.chunkBytes,m.bytes-start)
+    const result=await transport.getBytes(start,expected,controller.signal,etag)
+    const bytes=new Uint8Array(result.data)
+    if(bytes.length!==expected||await sha(bytes)!==m.chunks[index])throw Error('Map chunk integrity failure')
+    if(closed||controller.signal.aborted)throw abortError()
+    if(cacheChunks){cache.set(index,bytes);while(cache.size>cacheChunks)cache.delete(cache.keys().next().value)}
+    return bytes
+   })().finally(()=>{entry.done=true;if(inflight.get(index)===entry)inflight.delete(index)})
+   // All waiters may leave before the transport settles.
+   entry.promise.catch(()=>{})
+  }
+  const entry=item
+  entry.waiters++
+  try{
+   return await new Promise((resolve,reject)=>{
+    const cancel=()=>{signal.removeEventListener('abort',cancel);reject(abortError())}
+    if(signal.aborted){cancel();return}
+    signal.addEventListener('abort',cancel,{once:true})
+    entry.promise.then(value=>{signal.removeEventListener('abort',cancel);if(signal.aborted)reject(abortError());else resolve(value)},error=>{signal.removeEventListener('abort',cancel);reject(error)})
+   })
+  }finally{
+   entry.waiters--
+   if(entry.waiters===0&&!entry.done)entry.controller.abort()
+  }
  }
  return {
   getKey:()=>transport.getKey(),
-  close(){closed=true;owner.abort();cache.clear();transport.close()},
+  close(){closed=true;owner.abort();for(const entry of inflight.values())entry.controller.abort();inflight.clear();cache.clear();transport.close()},
   async getBytes(offset,length,signal,expectedETag){
    if(closed||signal?.aborted)throw abortError()
    if(!Number.isSafeInteger(offset)||!Number.isSafeInteger(length)||offset<0||offset>=m.bytes||length<1||length>maxRead||!Number.isSafeInteger(offset+length))throw Error('Invalid verified range')

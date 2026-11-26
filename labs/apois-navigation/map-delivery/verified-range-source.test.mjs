@@ -48,3 +48,15 @@ test('manifest verification uses one immutable snapshot even for Node Buffer',as
  assert.equal(checked.archiveSha256,sha256)
  assert.deepEqual(checked.chunks,manifest.chunks)
 })
+
+test('overlapping reads share an authenticated chunk without sharing cancellation',async()=>{
+ const f=fixture(),started=Promise.withResolvers(),release=Promise.withResolvers()
+ const s=await createVerifiedRangeSource({...config,fetcher:async(...args)=>{started.resolve();await release.promise;return f.fetcher(...args)}})
+ const c=new AbortController(),first=s.getBytes(0,20,c.signal)
+ await started.promise
+ const second=s.getBytes(10,20)
+ c.abort();await assert.rejects(first,/Cancelled/)
+ release.resolve()
+ assert.deepEqual(new Uint8Array((await second).data),bytes.slice(10,30))
+ assert.equal(f.calls,1);s.close()
+})
