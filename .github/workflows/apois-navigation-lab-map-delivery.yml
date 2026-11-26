@@ -1,0 +1,21 @@
+name: APOIS Navegacao - entrega parcial de mapas (laboratorio)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/map-delivery/**','.github/workflows/apois-navigation-lab-map-delivery.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  range-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test labs/apois-navigation/map-delivery/range-source.test.mjs
