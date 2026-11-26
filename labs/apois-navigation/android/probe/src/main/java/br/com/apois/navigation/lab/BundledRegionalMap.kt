@@ -29,15 +29,18 @@ internal object BundledRegionalMap {
     private val installLock = Any()
     private var store: PrivateMapStore? = null
 
-    internal class VerifiedMap private constructor(val style: BaseStyle.Json) {
+    private data class LoadedMap(val style:BaseStyle.Json,val extractSha:String,val mapSha:String)
+    internal class VerifiedMap private constructor(val style: BaseStyle.Json,val extractSha:String,val mapSha:String) {
         companion object {
-            internal suspend fun load(context: Context): VerifiedMap? = loadStyle(context)?.let(::VerifiedMap)
+            internal suspend fun load(context: Context): VerifiedMap? = loadStyle(context)?.let{
+                VerifiedMap(it.style,it.extractSha,it.mapSha)
+            }
         }
     }
 
     suspend fun verifiedStyle(context: Context): BaseStyle.Json? = VerifiedMap.load(context)?.style
 
-    private suspend fun loadStyle(context: Context): BaseStyle.Json? = withContext(Dispatchers.IO) {
+    private suspend fun loadStyle(context: Context): LoadedMap? = withContext(Dispatchers.IO) {
         try {
             val manifest=JSONObject(boundedRead(context,"manifest.json",32_768).toString(Charsets.UTF_8))
             require(manifest.getInt("schema")==1 && manifest.getString("region")=="vale-pe-ba")
@@ -70,7 +73,9 @@ internal object BundledRegionalMap {
                 owner.open(mapEntry) { context.assets.open(LocalMapAssetPolicy.ROOT+mapEntry.path) }
             }
             regional.put("url","pmtiles://"+Uri.fromFile(file).toString())
-            BaseStyle.Json(style.toString())
+            val extract=manifest.getString("extract_sha256")
+            require(extract.matches(Regex("[a-f0-9]{64}")))
+            LoadedMap(BaseStyle.Json(style.toString()),extract,mapEntry.sha256)
         } catch (e:kotlinx.coroutines.CancellationException) { throw e }
         catch (_:Exception) { null }
     }

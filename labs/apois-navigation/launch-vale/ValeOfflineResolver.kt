@@ -90,3 +90,14 @@ internal class ValeOfflineResolver(
         }
     }
 }
+
+/** Factory only for the pinned laboratory Vale data pack; map provenance
+ * must match the graph before the native actor can be created. No registration.
+ */
+internal fun valeLocalFactory(context:Context,graph:File,packCurrent:()->Boolean):NativeLocalRouteFactory =
+    NativeLocalRouteFactory{target,map,current,verify->
+        if(map.extractSha!="c50dd021ab11518b230c191bc9fa85f683c9b82810f605476532c16172f55238"||
+            map.mapSha!="18dc74cfea6ab6a8365b48df0731173b794825b108ed1f72db740ed16c3490fe"||
+            !runCatching{packCurrent()&&current()}.getOrDefault(false))null
+        else ValeOfflineResolver(context,graph,target,current,packCurrent,verify,android.os.SystemClock::elapsedRealtime)
+    }

@@ -13,14 +13,16 @@ import java.util.function.Consumer
 internal data class NativeHostGrant(
     val identity:RoutingIdentity,val target:ApprovedIndependentTarget,
     val current:()->Boolean,val targetCurrent:()->Boolean,
-    val issuer:RouteCapabilityIssuer,
+    val issuer:RouteCapabilityIssuer?,
     val audioAuthorization:(()->Boolean)?=null,
-    val verifyEvidence:(suspend ()->VerifiedRouteEvidence?)?=null
+    val verifyEvidence:(suspend ()->VerifiedRouteEvidence?)?=null,
+    val localFactory:NativeLocalRouteFactory?=null
 )
 internal data class NativeHostConfiguration(
     val approvedBackendHost:String,val routeEndpoint:String,val routeHost:String,
     val online:()->Boolean,
-    val grant:suspend (ConfirmedHostRequest)->NativeHostGrant?
+    val grant:suspend (ConfirmedHostRequest)->NativeHostGrant?,
+    val localRoutingOnly:Boolean=false
 )
 object NativeConfirmedHost{
     private var configuration:NativeHostConfiguration?=null
@@ -34,7 +36,8 @@ object NativeConfirmedHost{
         // Validate the exact backend origin at setup, before any read.
         if(runCatching{
             approvedReadBase("https://"+config.approvedBackendHost,config.approvedBackendHost)
-            validatedRouteEndpoint(config.routeEndpoint,config.routeHost)
+            if(config.localRoutingOnly){require(config.routeEndpoint.isEmpty()&&config.routeHost.isEmpty())}
+            else validatedRouteEndpoint(config.routeEndpoint,config.routeHost)
         }.isFailure)return false
         configuration=config
         return true
@@ -66,6 +69,7 @@ object NativeConfirmedHost{
                 if(!available())return@launch
                 val grant=withTimeoutOrNull(5_000L){config.grant(req)}?:return@launch
                 if(!available()||!req.matches(grant.target)||grant.identity!=grant.target.identity)return@launch
+                if(!nativeRoutingModeMatches(config.localRoutingOnly,grant.localFactory!=null,grant.issuer!=null))return@launch
                 fun authorized()=configuration===config&&runCatching{grant.current()}.getOrDefault(false)
                 if(!authorized())return@launch
                 // No backend reads, GPS subscription or routing request if the
@@ -76,7 +80,7 @@ object NativeConfirmedHost{
                     load={withTimeoutOrNull(8_000L){BundledRegionalMap.VerifiedMap.load(activity.applicationContext)}}
                 )?:return@launch
                 prepared=prepareConfirmedWithNativeReads(config.approvedBackendHost,grant.identity,grant.target,
-                    config.routeEndpoint,config.routeHost,grant.issuer,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization,grant.verifyEvidence)
+                    config.routeEndpoint,config.routeHost,grant.issuer,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization,grant.verifyEvidence,grant.localFactory)
                 ensureActive()
                 if(!prepared||!available()||!authorized())return@launch
                 startAttempted=true
