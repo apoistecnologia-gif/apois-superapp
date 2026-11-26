@@ -1,0 +1,58 @@
+name: APOIS Navegacao - Nordeste integral (laboratorio sem deploy)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/northeast/**','.github/workflows/apois-navigation-lab-northeast.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: apois-navigation-northeast
+  cancel-in-progress: false
+jobs:
+  northeast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preparar ferramentas
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y osmium-tool time
+          python -m pip install --disable-pip-version-check pmtiles==3.8.1 mapbox-vector-tile==2.2.0
+          bash -n labs/apois-navigation/northeast/build-map.sh labs/apois-navigation/northeast/build-graph.sh
+          python -m py_compile labs/apois-navigation/northeast/verify.py
+      - name: Extrato Nordeste integral
+        id: source
+        run: |
+          set -euo pipefail
+          O="$RUNNER_TEMP/apois-northeast-report"
+          mkdir -p "$O"
+          df -h > "$O/disk-before.txt"
+          free -m > "$O/memory-before.txt"
+          curl --fail --location --retry 1 --retry-max-time 900 --max-time 780 --connect-timeout 20 https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf -o "$RUNNER_TEMP/nordeste.osm.pbf"
+          (cd "$RUNNER_TEMP" && sha256sum nordeste.osm.pbf) > "$O/source.sha256"
+          stat -c %s "$RUNNER_TEMP/nordeste.osm.pbf" > "$O/source-bytes.txt"
+          osmium fileinfo "$RUNNER_TEMP/nordeste.osm.pbf" > "$O/source-info.txt"
+      - name: Mapa integral e amostras nos nove estados
+        run: bash labs/apois-navigation/northeast/build-map.sh "$RUNNER_TEMP/nordeste.osm.pbf" "$RUNNER_TEMP/apois-northeast-report"
+      - name: Grafo continuo e rotas interestaduais
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        run: bash labs/apois-navigation/northeast/build-graph.sh "$RUNNER_TEMP/nordeste.osm.pbf" "$RUNNER_TEMP/apois-northeast-report"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-northeast-evidence
+          path: ${{ runner.temp }}/apois-northeast-report/
+          retention-days: 7
+          if-no-files-found: warn
