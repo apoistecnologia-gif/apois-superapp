@@ -48,7 +48,7 @@ for(const [name,b] of data){
  const target=join(app,'assets',name)
  mkdirSync(dirname(target),{recursive:true});writeFileSync(target,b,{flag:'wx'})
 }
-for(const [dir,file] of [['launch-vale','ValeOfflineResolver.kt'],['launch-vale','ValeRuntimePack.kt'],['pack-store','OfflinePackStore.kt']]){
+for(const [dir,file] of [['launch-vale','ValeOfflineResolver.kt'],['launch-vale','ValeRuntimePack.kt'],['launch-vale','ValeNativeHostLifecycle.kt'],['pack-store','OfflinePackStore.kt']]){
  const target=join(java,file);assert.ok(!existsSync(target));copyFileSync(join(lab,dir,file),target)
 }
 const gradle=join(module,'build.gradle'),before=read(gradle)
@@ -61,4 +61,19 @@ writeFileSync(join(app,'java/br/com/apois/navigation/compat/lab/ApoisConfirmedNa
  confirmedOnlyPlugin(read(join(lab,'host-compat/ApoisNavigationLabPlugin.java'))),{flag:'wx'})
 assert.equal(read(join(app,'AndroidManifest.xml')),manifest)
 assert.equal(read(join(app,'java/br/com/apois/navigation/compat/lab/MainActivity.java')),main)
+// Compile a native candidate entrypoint without actually registering or enabling it.
+writeFileSync(join(app,'java/br/com/apois/navigation/compat/lab/ConfirmedCandidateActivity.java'),`package br.com.apois.navigation.compat.lab;
+public class ConfirmedCandidateActivity extends com.getcapacitor.BridgeActivity {
+ private static final boolean APOIS_CONFIRMED_NAVIGATION_ENABLED=false;
+ private br.com.apois.navigation.lab.ValeNativeHostLifecycle.Attachment navigation;
+ @Override public void onCreate(android.os.Bundle state){
+  if(APOIS_CONFIRMED_NAVIGATION_ENABLED)registerPlugin(ApoisConfirmedNavigationPlugin.class);
+  super.onCreate(state);
+  navigation=br.com.apois.navigation.lab.ValeNativeHostLifecycle.attach(this,APOIS_CONFIRMED_NAVIGATION_ENABLED,"fixture.invalid");
+ }
+ @Override public void onDestroy(){
+  if(navigation!=null){navigation.close();navigation=null;}
+  super.onDestroy();
+ }
+}\n`,{flag:'wx'})
 console.log('APOIS_QA290_NATIVE_VALE_STAGED',JSON.stringify({assets:data.size,activated:false,gpsRegistered:false,voiceRegistered:false}))
