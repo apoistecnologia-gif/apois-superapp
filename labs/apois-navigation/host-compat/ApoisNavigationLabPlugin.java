@@ -68,10 +68,13 @@ public class ApoisNavigationLabPlugin extends Plugin {
     @PluginMethod
     public void closeConfirmed(PluginCall call) {
         getActivity().runOnUiThread(() -> {
-            String id=call.getString("sessionId");
-            if(id==null){call.resolve(new JSObject().put("closed",false));return;}
-            ConfirmedLiveNavigationBridge.INSTANCE.closeAcknowledged(id,closed ->
-                call.resolve(new JSObject().put("closed",closed)));
+            try {
+                JSObject data=call.getData();
+                if(data==null||data.length()!=1||!data.has("sessionId"))throw new IllegalArgumentException("Invalid close");
+                String id=ConfirmedNavigationRequest.sessionId(data.opt("sessionId"));
+                ConfirmedLiveNavigationBridge.INSTANCE.closeAcknowledged(id,closed ->
+                    call.resolve(new JSObject().put("closed",closed)));
+            }catch(IllegalArgumentException e){call.reject("Invalid confirmed session");}
         });
     }
 

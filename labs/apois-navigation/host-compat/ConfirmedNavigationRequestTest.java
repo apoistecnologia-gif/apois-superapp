@@ -16,6 +16,11 @@ public final class ConfirmedNavigationRequestTest {
         for(Object phase:new Object[]{null,"WAITING_PIN","COMPLETED","FINISH","CANCELLED",123})reject(ID,phase,0);
         for(Object revision:new Object[]{null,"0",true,-1,1.5,Double.NaN,Double.POSITIVE_INFINITY,1_000_000_001L})reject(ID,"TRIP",revision);
         if(ConfirmedNavigationRequest.validate(ID,"TRIP",1_000_000_000L).revision!=1_000_000_000L)throw new AssertionError("Boundary");
+        if(!ID.equals(ConfirmedNavigationRequest.sessionId(ID)))throw new AssertionError("Session ID");
+        for(Object invalid:new Object[]{null,123,"",ID+"x","lab-replay"}){
+            try{ConfirmedNavigationRequest.sessionId(invalid);throw new AssertionError("Invalid session accepted");}
+            catch(IllegalArgumentException expected){}
+        }
         System.out.println("[OK] confirmed transport: two active phases, invalid ID/phase/revision rejected; no Android operation");
     }
 }

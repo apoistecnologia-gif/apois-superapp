@@ -15,6 +15,12 @@ final class ConfirmedNavigationRequest {
         this.rideId=id;this.phase=phase;this.revision=revision;
     }
 
+    static String sessionId(Object id) {
+        if(!(id instanceof String)||!RIDE_ID.matcher((String)id).matches())
+            throw new IllegalArgumentException("Invalid session");
+        return (String)id;
+    }
+
     static ConfirmedNavigationRequest validate(Object id,Object phase,Object revision) {
         if(!(id instanceof String)||!RIDE_ID.matcher((String)id).matches())
             throw new IllegalArgumentException("Invalid ride");
