@@ -42,3 +42,16 @@ internal object PackSignaturePolicy{
         verifier.initVerify(key);verifier.update(release.payload());verifier.verify(release.signature)
     }.getOrDefault(false)
 }
+
+
+/** Only for a caller that supplies a trusted rollback floor. Snapshot mutable
+ * inputs before verifying and reading source. Does not persist or activate
+ * a release, provision a key or perform network IO. */
+internal fun installSignedCandidate(
+    store:OfflinePackStore,release:SignedPackRelease,key:PublicKey,pinnedKeyId:String,
+    floor:PackReleaseFloor,source:(String)->java.io.InputStream
+):java.io.File{
+    val candidate=release.copy(spec=release.spec.validated(),signature=release.signature.copyOf())
+    check(PackSignaturePolicy.verify(candidate,key,pinnedKeyId,floor)){"untrusted pack release"}
+    return store.install(candidate.spec,source)
+}
