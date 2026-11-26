@@ -1,0 +1,45 @@
+name: APOIS Navegacao - PMTiles HTTPS real (laboratorio)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/map-delivery/range-integration.mjs','.github/workflows/apois-navigation-lab-map-range-integration.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-cartography-regional
+          run-id: 45539272618
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-map-fixture
+      - name: Testar leitura PMTiles real com TLS confiavel e sem download integral
+        run: |
+          set -euo pipefail
+          H="$RUNNER_TEMP/apois-range-integration"
+          mkdir -p "$H"
+          cp labs/apois-navigation/map-delivery/{range-source,range-integration}.mjs "$H/"
+          cd "$H"
+          npm init -y >/dev/null
+          npm install --save-exact --no-audit --no-fund pmtiles@3.2.0
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=APOIS local test' -addext 'subjectAltName=IP:127.0.0.1' -keyout local.key -out local.crt >/dev/null 2>&1
+          P="$RUNNER_TEMP/apois-map-fixture/android-assets/apois-regional"
+          NODE_EXTRA_CA_CERTS="$H/local.crt" node range-integration.mjs "$P/vale.pmtiles" "$P/manifest.json" "$H/local.crt" "$H/local.key" | tee "$RUNNER_TEMP/range-integration-report.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-map-range-integration-evidence
+          path: ${{ runner.temp }}/range-integration-report.json
+          retention-days: 7
+          if-no-files-found: error
