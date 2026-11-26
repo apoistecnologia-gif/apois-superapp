@@ -1,0 +1,39 @@
+name: APOIS GPS - grafo embarcado Piaui 3.6.3
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/embedded-graph/**','.github/workflows/apois-navigation-lab-embedded-graph.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: sudo apt-get update && sudo apt-get install -y osmium-tool
+      - run: bash labs/apois-navigation/embedded-graph/build.sh "$RUNNER_TEMP/apois-embedded-graph"
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: apois-piaui-embedded-graph-3.6.3
+          path: ${{ runner.temp }}/apois-embedded-graph/
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: apois-piaui-embedded-graph-failure
+          path: |
+            ${{ runner.temp }}/apois-embedded-graph/status.json
+            ${{ runner.temp }}/apois-embedded-graph/image-digest.txt
+            ${{ runner.temp }}/apois-embedded-graph/valhalla.log
+          retention-days: 7
+          if-no-files-found: warn
