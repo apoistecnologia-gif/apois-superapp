@@ -3,3 +3,6 @@ Separate Edge authentication boundary and HMAC private broker. The login JWT is 
 
 ## Modo local exclusivo
 Configuração experimental explícita localOnly=true no proxy e broker: somente target, sem coordenada de origem, sem chave Ed25519 de roteamento ou store de emissão. O broker rejeita configuração mista e permit mesmo se assinado; a autenticação, HMAC, admissão antirreplay e prova fresca do banco continuam obrigatórias. O modo remoto original permanece separado. A variável candidata APOIS_NAVIGATION_DRIVER_LOCAL_ONLY não foi configurada em nenhum ambiente. Não é deploy, nem aprovação de produção.
+
+## Sessão atual no modo local (candidato não implantado)
+O Edge usa o JWT original apenas na verificação Auth e exige também a confirmação privada de session_id/sub, inclusive not_after. Verificador Web API limita trabalho pendente e tempo, não encaminha prova tardia e não envia JWT ao broker. Modo local exige configuração explícita de política compatível (sem time-box/inatividade/single-session; caso contrário falta implementar essa política). O RPC booleano está só na fixture. Chave service_role nunca sai do Edge. A janela entre leitura e uso não desaparece; sem deploy, credenciais ou configuração reais.

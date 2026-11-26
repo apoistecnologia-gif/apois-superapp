@@ -15,4 +15,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --test labs/apois-navigation/driver-broker/driver-broker.test.mjs
+      - run: node --test labs/apois-navigation/driver-broker/driver-broker.test.mjs labs/apois-navigation/driver-broker/driver-local-session.test.mjs

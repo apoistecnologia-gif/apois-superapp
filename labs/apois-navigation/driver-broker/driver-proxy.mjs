@@ -16,7 +16,7 @@ export function createDriverProxy({enabled=false,localOnly=false,endpoint,keyId,
     if(request?.action!=='target')return deny(409)
     if(!request||Object.keys(request).length!==3||!uuid(request.rideId)||!['PICKUP','TRIP'].includes(request.phase))return deny(422)
    }
-   const actor=await verifySession(header.slice(7))
+   const actor=await verifySession(header.slice(7),req.signal)
    if(!uuid(actor))return deny(401)
    if(await allowPilot(actor)!==true)return deny(403)
    if(req.signal.aborted)return deny(503)
