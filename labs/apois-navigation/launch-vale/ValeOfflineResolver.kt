@@ -161,6 +161,8 @@ internal suspend fun installValeLocalDriverControlCandidate(
 ):Boolean{
     if(!enabled)return false
     check(android.os.Looper.myLooper()==android.os.Looper.getMainLooper())
+    // Avoid verifying/installing a pack for a dead host or duplicate configuration.
+    if(NativeConfirmedHost.configured()||!runCatching{hostCurrent()}.getOrDefault(false))return false
     val client=runCatching{NativeDriverControlClient(backendHost)}.getOrNull()?:return false
     val pack=try{VerifiedValeRuntimePack.install(context.applicationContext)}
         catch(e:kotlinx.coroutines.CancellationException){throw e}
