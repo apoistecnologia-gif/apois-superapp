@@ -27,9 +27,8 @@ jobs:
           python -m py_compile labs/apois-navigation/embedded-northeast/inspect-index.py
           df -h > "$O/disk-before.txt"
           free -m > "$O/memory-before.txt"
-          curl --fail --location --retry 3 --retry-all-errors --retry-delay 10 --retry-max-time 900 --max-time 780 --connect-timeout 20 https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf -o "$RUNNER_TEMP/nordeste.osm.pbf"
-          (cd "$RUNNER_TEMP" && sha256sum nordeste.osm.pbf) > "$O/source.sha256"
-          (cd "$RUNNER_TEMP" && echo "49cad6d647ad887d95c56677bd0c02e732ef9984b1aa6ac92b0dfe018eb08835  nordeste.osm.pbf" | sha256sum -c -)
+          bash labs/apois-navigation/embedded-northeast/fetch-source.sh "$RUNNER_TEMP/nordeste.osm.pbf" "$O"
+
       - name: Generate version-compatible graph and run existing 15 route samples
         env:
           APOIS_LOCAL_ANDROID_TEST: '1'
