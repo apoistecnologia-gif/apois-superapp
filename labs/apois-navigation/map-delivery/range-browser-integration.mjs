@@ -70,6 +70,7 @@ try{
  assert.ok(preflights>0,'No actual CORS preflight received')
  const initialBytes=bytes,initialRequests=requests
  await page.evaluate(()=>window.startMap())
+ assert.equal(await page.evaluate(async()=>{try{await window.startMap();return false}catch(e){return /already/.test(e.message)}}),true)
  // Poll from the Node test harness; waitForFunction evaluates a string inside
  // the page and conflicts with strict script-src. Do not relax the CSP.
  const deadline=Date.now()+25000
@@ -84,6 +85,6 @@ try{
  assert.ok(stats.roads>0&&stats.labels>0&&stats.tiles>0);assert.match(stats.attribution,/OpenStreetMap contributors/)
  console.log('MAP_RANGE_METRICS',JSON.stringify({archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,unexpected,external,errors,...stats}))
  assert.equal(external.length,0);assert.equal(errors.length,0);assert.equal(unexpected,0);assert.ok(requests>initialRequests,'No map range fetched');assert.ok(bytes-initialBytes<size,'Initial viewport transferred at least one entire archive')
- await page.evaluate(()=>window.lab.dispose());assert.equal(await page.locator('.maplibregl-canvas').count(),0)
+ await page.evaluate(()=>window.lab.dispose());assert.equal(await page.locator('.maplibregl-canvas').count(),0);assert.equal(await page.evaluate(()=>window.lab),null)
  console.log(JSON.stringify({fixture:'vale-pe-ba',archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,chunkVerified:true,manifestSha256:chunks.sha256,...stats,limits:'Chromium cross-origin local fixture, certificate SPKI pinned only for test; no Android or production CDN claim'},null,2))
 }finally{await browser?.close();for(const s of [pageServer,mapServer]){s.closeAllConnections();if(s.listening)await new Promise(r=>s.close(r))}}
