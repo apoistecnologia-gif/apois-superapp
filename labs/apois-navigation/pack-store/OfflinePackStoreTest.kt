@@ -64,6 +64,26 @@ class OfflinePackStoreTest{
         assertTrue(runCatching{store(root).install(spec("1")){reads++;ByteArrayInputStream(bytes(it,"1"))}}.isFailure)
         assertEquals(0,reads)
     }
+    @Test fun interruptedSourceDoesNotPublishOrLeaveStage(){
+        val root=tmp.newFolder();val s=store(root)
+        val previous=s.install(spec("1")){ByteArrayInputStream(bytes(it,"1"))}
+        assertTrue(runCatching{s.install(spec("2")){name->
+            if(name=="map.pmtiles")throw java.io.IOException("source interrupted")
+            ByteArrayInputStream(bytes(name,"2"))
+        }}.isFailure)
+        assertEquals(listOf(previous.name),root.list()!!.filter{it.startsWith("pack-")})
+        assertTrue(root.list()!!.none{it.startsWith("stage-")})
+        assertEquals(previous,s.openVerified(spec("1")))
+    }
+    @Test fun rejectsOversizedAndZeroProgressStreams(){
+        val root=tmp.newFolder();val s=store(root)
+        assertTrue(runCatching{s.install(spec("1")){ByteArrayInputStream(bytes(it,"1")+byteArrayOf(0))}}.isFailure)
+        assertTrue(runCatching{s.install(spec("1")){object:java.io.InputStream(){
+            override fun read():Int=0
+            override fun read(b:ByteArray,off:Int,len:Int):Int=0
+        }}}.isFailure)
+        assertTrue(root.list()!!.none{it.startsWith("pack-")||it.startsWith("stage-")})
+    }
     @Test fun rejectBudgetBeforeReading(){
         val s=OfflinePackStore(tmp.newFolder(),1,0)
         assertTrue(runCatching{s.install(spec("1")){error("not called")}}.isFailure)
