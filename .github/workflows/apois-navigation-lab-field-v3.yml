@@ -1,0 +1,42 @@
+name: APOIS GPS - APK dinamico V3 Piaui
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/field-v3/**','.github/workflows/apois-navigation-lab-field-v3.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-field-pilot-data
+          run-id: 45733321788
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-field-data
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
+      - run: bash labs/apois-navigation/field-v3/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-GPS-Piaui-Piloto-V3
+          path: ${{ runner.temp }}/apois-field-apk/
+          retention-days: 7
+          if-no-files-found: error
