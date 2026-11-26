@@ -1,5 +1,6 @@
 import { createV21ExperimentalAction } from "./v21-edge-adapter.mjs";
 import { pilotRemoteQuoteMetrics, pilotAllowed } from "./pilot-remote-quote.mjs";
+import { bearerToken, createV21EdgeSession } from "./edge-session-v21.mjs";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
@@ -187,6 +188,16 @@ async function dispatch(ride: { id: string; candidate_driver_ids?: unknown }, re
     : [];
 }
 
+// Only the experimental quote/create path uses this extra session gate.
+let experimentalVerifier:ReturnType<typeof createV21EdgeSession>|null=null;
+function verifiedExperimentalSession(url:string,serviceRole:string){
+ const anon=Deno.env.get("SUPABASE_ANON_KEY")??"";
+ return experimentalVerifier??=createV21EdgeSession({projectUrl:url,
+  sessionPolicyConfirmed:Deno.env.get("APOIS_NAVIGATION_SESSION_POLICY")==="existence-not-after-reviewed",
+  authClient:createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}}),
+  serviceClient:createClient(url,serviceRole,{auth:{persistSession:false,autoRefreshToken:false}})});
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -223,6 +234,11 @@ Deno.serve(async (req: Request) => {
     if (body?.action === "apois_navigation_quote" || body?.action === "apois_navigation_create") {
       if (Deno.env.get("APOIS_NAVIGATION_EXPERIMENTAL_ENABLED") !== "true") return json({ok:false,error_code:"experimental_navigation_disabled"},409);
       if (!pilotAllowed(auth.id,Deno.env.get("APOIS_NAVIGATION_PILOT_AUTH_IDS"))) return json({ok:false,error_code:"pilot_not_allowed"},403);
+      const token=bearerToken(req.headers.get("authorization"));
+      if(!token)return json({ok:false,error_code:"unauthorized"},401);
+      try{
+        if(await verifiedExperimentalSession(url,serviceRole)(token,req.signal)!==auth.id)return json({ok:false,error_code:"unauthorized"},401);
+      }catch{return json({ok:false,error_code:"session_verification_unavailable"},503);}
       const handle = createV21ExperimentalAction({
         enabled: true,
         admin, authUserId: auth.id, passengerId: userRow.id,
