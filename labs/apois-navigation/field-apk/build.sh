@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/emulator-common/apk-assertions.sh"
 H="$RUNNER_TEMP/apois-field-host"
 P="$RUNNER_TEMP/apois-field-data"
 mkdir -p "$H"
@@ -54,8 +55,8 @@ mkdir -p "$OUT"
 "$TOOLS/apksigner" verify --verbose --print-certs "$APK"
 "$TOOLS/aapt" dump badging "$APK" > "$OUT/badging.txt"
 grep -F "package: name='br.com.apois.navigation.field.v2.lab'" "$OUT/badging.txt"
-! grep -F 'android.permission.INTERNET' "$OUT/badging.txt"
-! grep -F 'android.permission.ACCESS_BACKGROUND_LOCATION' "$OUT/badging.txt"
+lab_assert_absent 'android\.permission\.INTERNET' "$OUT/badging.txt" || exit 1
+lab_assert_absent 'android\.permission\.ACCESS_BACKGROUND_LOCATION' "$OUT/badging.txt" || exit 1
 grep -F 'android.permission.ACCESS_FINE_LOCATION' "$OUT/badging.txt"
 unzip -l "$APK" | grep -F 'assets/apois-field-pilot/pilot.pmtiles'
 cp "$APK" "$OUT/APOIS-GPS-Piaui-Piloto-V2.apk"
