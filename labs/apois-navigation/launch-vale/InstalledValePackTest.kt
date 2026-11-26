@@ -60,6 +60,21 @@ class InstalledValePackTest {
         Log.i("APOIS_VALE_OFFLINE","pack_installed=true; search_rows="+rows.length())
         return pack
     }
+    @Test fun observedPackChangeCannotResurrectLease(){
+        val pack=validatedTile()
+        val lease=kotlinx.coroutines.runBlocking{pack.acquireLease()}
+        val original=pack.search.lastModified()
+        assertTrue(lease.claim())
+        try{
+            assertTrue(pack.search.setLastModified(original-60_000L))
+            assertFalse(lease.current())
+        }finally{
+            assertTrue(pack.search.setLastModified(original))
+        }
+        assertFalse(lease.current());assertFalse(lease.claim())
+        val fresh=kotlinx.coroutines.runBlocking{pack.acquireLease()}
+        try{assertTrue(fresh.claim());assertTrue(fresh.current())}finally{fresh.close()}
+    }
     @Test fun verifyRegionalOfflineRoutesAndFerrostar(){
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val pack=validatedTile()
