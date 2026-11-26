@@ -13,19 +13,19 @@ def clean(s):
     s = " ".join(s.split())
     return s if len(s)<=120 else ""
 
-def inside(lat, lon):
-    return math.isfinite(lat) and math.isfinite(lon) and BOUNDS[1]<=lat<=BOUNDS[3] and BOUNDS[0]<=lon<=BOUNDS[2]
+def inside(lat, lon, bounds=BOUNDS):
+    return math.isfinite(lat) and math.isfinite(lon) and bounds[1]<=lat<=bounds[3] and bounds[0]<=lon<=bounds[2]
 
 def key(s):
     return " ".join(re.findall(r"[a-z0-9]+", "".join(c for c in unicodedata.normalize("NFKD",s.casefold()) if not unicodedata.combining(c))))
 
-def read_xml(path):
+def read_xml(path, bounds=BOUNDS):
     nodes,rows={},[]
     parser=ET.iterparse(path,events=("start","end"))
     _,root=next(parser)
     if root.tag!="osm": raise ValueError("invalid OSM root")
     def add(kind, osm_id, label, point, tags, source_type, number=""):
-        if not label or len(label)>240 or not inside(*point): return
+        if not label or len(label)>240 or not inside(*point, bounds): return
         if len(rows)>=MAX_ROWS: raise ValueError("candidate count exceeds pilot capacity")
         rows.append({"id":f"{source_type}:{osm_id}:{kind}","kind":kind,"label":label,
                      "lat":point[0],"lon":point[1],"number":number,
@@ -49,7 +49,7 @@ def read_xml(path):
         elif e.tag=="way" and name and tags.get("highway") in {"motorway","trunk","primary","secondary","tertiary","unclassified","residential","living_street","service","road"}:
             refs=[int(n.attrib["ref"]) for n in e.findall("nd")]
             if any(r not in nodes for r in refs):raise ValueError("missing referenced node")
-            points=[nodes[r] for r in refs if inside(*nodes[r])]
+            points=[nodes[r] for r in refs if inside(*nodes[r], bounds)]
             if points:
                 # Existing road vertex, not a fabricated house number or geocoded address.
                 add("street",osm_id,name,points[len(points)//2],tags,"way")
@@ -72,25 +72,27 @@ def search(rows, query, limit=12):
             found.append((score,r))
     return [r for _,r in sorted(found,key=lambda x:x[0])[:max(0,min(limit,20))]]
 
-def main():
-    p=argparse.ArgumentParser();p.add_argument("extract",type=pathlib.Path);p.add_argument("out",type=pathlib.Path);a=p.parse_args()
-    with a.extract.open("rb") as f: digest=hashlib.file_digest(f,"sha256").hexdigest()
-    if digest!=EXTRACT_SHA:raise ValueError("OSM source differs from V4.1; cannot combine catalog with approved pilot")
+def generate(extract, out, expected_sha=EXTRACT_SHA, bounds=BOUNDS, cities=("Itainopolis","Picos")):
+    with extract.open("rb") as f: digest=hashlib.file_digest(f,"sha256").hexdigest()
+    if digest!=expected_sha:raise ValueError("OSM source differs from expected regional extract")
     with tempfile.TemporaryDirectory() as d:
         filtered=pathlib.Path(d)/"filtered.osm.pbf"; xml=pathlib.Path(d)/"filtered.osm"
-        subprocess.run(["osmium","tags-filter",str(a.extract),"w/highway","n/addr:housenumber","n/place","-o",str(filtered)],check=True,timeout=180)
+        subprocess.run(["osmium","tags-filter",str(extract),"w/highway","n/addr:housenumber","n/place","-o",str(filtered)],check=True,timeout=180)
         subprocess.run(["osmium","cat",str(filtered),"-f","osm","-o",str(xml)],check=True,timeout=180)
-        rows=read_xml(xml)
+        rows=read_xml(xml,bounds)
     counts=dict(collections.Counter(r["kind"] for r in rows))
     assert counts.get("street",0)>0 and counts.get("place",0)>0
-    for q in ("Itainopolis","Picos"):
+    for q in cities:
         assert any(r["kind"]=="place" and key(r["label"])==key(q) for r in search(rows,q,20)),q
-    manifest={"schema":1,"active":False,"extract_sha256":digest,"license":"ODbL-1.0","attribution":"© OpenStreetMap contributors","bounds":BOUNDS,"rows":rows}
+    manifest={"schema":1,"active":False,"extract_sha256":digest,"license":"ODbL-1.0","attribution":"© OpenStreetMap contributors","bounds":bounds,"rows":rows}
     data=(json.dumps(manifest,ensure_ascii=False,separators=(",",":"))+"\n").encode()
     if len(data)>MAX_BYTES:raise ValueError("catalog byte capacity exceeded")
-    a.out.mkdir(parents=True,exist_ok=True)
-    (a.out/"search-candidates.json").write_bytes(data)
+    out.mkdir(parents=True,exist_ok=True)
+    (out/"search-candidates.json").write_bytes(data)
     report={"counts":counts,"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest(),"extract_sha256":digest,"active":False,"limits":"OSM candidates, not unique roads or verified routable addresses"}
-    (a.out/"search-report.json").write_text(json.dumps(report,indent=2)+"\n")
+    (out/"search-report.json").write_text(json.dumps(report,indent=2)+"\n")
     print("APOIS_PILOT_SEARCH_OK",json.dumps(report))
+def main():
+    p=argparse.ArgumentParser();p.add_argument("extract",type=pathlib.Path);p.add_argument("out",type=pathlib.Path);a=p.parse_args()
+    generate(a.extract,a.out)
 if __name__=="__main__":main()
