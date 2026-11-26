@@ -1,0 +1,40 @@
+name: APOIS GPS - grafo Nordeste compatibilidade Android 3.6.3
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/embedded-northeast/**','.github/workflows/apois-navigation-lab-embedded-northeast.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: apois-navigation-northeast
+  cancel-in-progress: false
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Check scripts and source
+        run: |
+          set -euo pipefail
+          O="$RUNNER_TEMP/apois-ne-embedded-report"
+          mkdir -p "$O"
+          bash -n labs/apois-navigation/embedded-northeast/build-graph.sh
+          python -m py_compile labs/apois-navigation/embedded-northeast/inspect-index.py
+          df -h > "$O/disk-before.txt"
+          free -m > "$O/memory-before.txt"
+          curl --fail --location --retry 3 --retry-all-errors --retry-delay 10 --retry-max-time 900 --max-time 780 --connect-timeout 20 https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf -o "$RUNNER_TEMP/nordeste.osm.pbf"
+          (cd "$RUNNER_TEMP" && sha256sum nordeste.osm.pbf) > "$O/source.sha256"
+      - name: Generate version-compatible graph and run existing 15 route samples
+        run: bash labs/apois-navigation/embedded-northeast/build-graph.sh "$RUNNER_TEMP/nordeste.osm.pbf" "$RUNNER_TEMP/apois-ne-embedded-report"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-ne-embedded-graph-report
+          path: ${{ runner.temp }}/apois-ne-embedded-report/
+          retention-days: 7
+          if-no-files-found: warn
