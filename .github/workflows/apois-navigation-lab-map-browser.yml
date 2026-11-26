@@ -1,0 +1,45 @@
+name: APOIS Navegacao - mapa remoto em navegador (laboratorio)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/map-delivery/range-browser-*.mjs','.github/workflows/apois-navigation-lab-map-browser.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-cartography-regional
+          run-id: 45539272618
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-map-fixture
+      - name: Renderizar mapa MapLibre por HTTPS Range e CORS
+        run: |
+          set -euo pipefail
+          H="$RUNNER_TEMP/apois-map-browser"
+          mkdir -p "$H"
+          cp labs/apois-navigation/map-delivery/{range-source,range-browser-entry,range-browser-integration}.mjs "$H/"
+          cd "$H"
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund --save-exact maplibre-gl@4.7.1 pmtiles@3.2.0 esbuild@0.25.0 playwright-core@1.51.1
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=APOIS local test' -addext 'subjectAltName=IP:127.0.0.1' -keyout local.key -out local.crt >/dev/null 2>&1
+          export CHROME_BIN="$(command -v google-chrome || command -v chromium)"
+          node range-browser-integration.mjs "$RUNNER_TEMP/apois-map-fixture/android-assets/apois-regional" local.crt local.key | tee "$RUNNER_TEMP/range-browser-report.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-map-browser-evidence
+          path: ${{ runner.temp }}/range-browser-report.json
+          retention-days: 7
+          if-no-files-found: error
