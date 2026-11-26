@@ -1,0 +1,2 @@
+# Candidato Vale PE/BA para eventual lançamento
+Reusa o retângulo e a cartografia existente. Gera mapa e grafo 3.6.3 a partir do mesmo extrato (novo candidato, não substitui o anterior). Quatro rotas públicas, incluindo duas travessias, valida geometria e snap de 150 m, instruções, índices, cobertura e glifos. Artefato de CI inativo, sem catálogo de busca, assinatura ou distribuição permanente. Não autoriza integração ou lançamento. A data prevista de 15/12 não relaxa gates.
