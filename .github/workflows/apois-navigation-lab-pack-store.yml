@@ -26,8 +26,8 @@ jobs:
           set -euo pipefail
           D="$RUNNER_TEMP/apois-pack-store"
           mkdir -p "$D/src/main/kotlin" "$D/src/test/kotlin"
-          cp labs/apois-navigation/pack-store/{OfflinePackStore,PackSignaturePolicy}.kt "$D/src/main/kotlin/"
-          cp labs/apois-navigation/pack-store/{OfflinePackStoreTest,PackSignaturePolicyTest}.kt "$D/src/test/kotlin/"
+          cp labs/apois-navigation/pack-store/{OfflinePackStore,PackSignaturePolicy,PackFloorStore}.kt "$D/src/main/kotlin/"
+          cp labs/apois-navigation/pack-store/{OfflinePackStoreTest,PackSignaturePolicyTest,PackFloorStoreTest}.kt "$D/src/test/kotlin/"
           printf '%s\n' "rootProject.name = 'apois-pack-store'" > "$D/settings.gradle"
           cat > "$D/build.gradle" <<'EOF'
           plugins { id 'org.jetbrains.kotlin.jvm' version '2.3.20' }
