@@ -42,6 +42,8 @@ jobs:
           run-id: 45787969611
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-route-assets
+      - name: Verify retained replay hashes and rejection cases
+        run: APOIS_REPLAY_FIXTURE="$RUNNER_TEMP/apois-route-assets" node --test labs/apois-navigation/physical-lab/replay-fixture.test.mjs
       - name: Gerar APK de teste sem backend ou rede
         run: bash labs/apois-navigation/physical-lab/build.sh
       - uses: actions/upload-artifact@v4
