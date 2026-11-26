@@ -6,7 +6,8 @@ const exact=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).
 const sha=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),v=>v.toString(16).padStart(2,'0')).join('')
 export async function verifiedManifest(raw,pinned){
  if(!(raw instanceof Uint8Array)||raw.byteLength<1||raw.byteLength>2*1024*1024||typeof pinned!=='string'||!hex.test(pinned))throw Error('Manifest pin required')
- const copy=raw.slice()
+ // Buffer.slice() aliases the backing store in Node. Copy before awaiting SHA.
+ const copy=Uint8Array.from(raw)
  if(await sha(copy)!==pinned)throw Error('Untrusted chunk manifest')
  const m=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(copy))
  if(!exact(m,['format','archiveSha256','bytes','chunkBytes','chunks'])||m.format!=='APOIS-PMTILES-CHUNKS-v1'||typeof m.archiveSha256!=='string'||!hex.test(m.archiveSha256)||!Number.isSafeInteger(m.bytes)||m.bytes<127||!Number.isSafeInteger(m.chunkBytes)||m.chunkBytes<65536||m.chunkBytes>2097152||!Array.isArray(m.chunks)||m.chunks.length!==Math.ceil(m.bytes/m.chunkBytes)||!m.chunks.every(x=>typeof x==='string'&&hex.test(x)))throw Error('Invalid chunk manifest')

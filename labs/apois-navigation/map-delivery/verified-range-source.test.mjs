@@ -39,3 +39,12 @@ test('cache is bounded and request cancellation releases capacity',async()=>{
  await s.getBytes(0,20);await s.getBytes(chunkBytes,20);await s.getBytes(0,20);assert.equal(f.calls,3)
  const c=new AbortController();c.abort();await assert.rejects(s.getBytes(0,20,c.signal),/Cancelled/);assert.equal(f.calls,3)
 })
+
+test('manifest verification uses one immutable snapshot even for Node Buffer',async()=>{
+ const original=Buffer.from(raw),pin=digest(original)
+ const pending=verifiedManifest(original,pin)
+ original.fill(0)
+ const checked=await pending
+ assert.equal(checked.archiveSha256,sha256)
+ assert.deepEqual(checked.chunks,manifest.chunks)
+})
