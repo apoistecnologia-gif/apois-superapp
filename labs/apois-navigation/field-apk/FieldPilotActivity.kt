@@ -20,6 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stadiamaps.ferrostar.maplibreui.views.PortraitNavigationView
+import com.stadiamaps.ferrostar.maplibreui.NavigationMapView
+import com.stadiamaps.ferrostar.maplibreui.runtime.defaultNavigationMapOptions
+import com.stadiamaps.ferrostar.maplibreui.runtime.rememberNavigationMapState
+import com.stadiamaps.ferrostar.core.NavigationUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -36,6 +40,9 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
     private var selected by mutableStateOf<String?>(null)
     private var state by mutableStateOf("Escolha um trajeto de referência.")
     private var distance by mutableStateOf<Double?>(null)
+    private var accuracy by mutableStateOf<Double?>(null)
+    private var mapStatus by mutableStateOf("Carregando mapa local…")
+    private var outsidePack by mutableStateOf(false)
     private var active by mutableStateOf(false)
     private var foreground=false
     private var source:Long?=null
@@ -71,6 +78,7 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
                     if(selected==null){
                         Text("Teste como passageiro ou com o veículo parado. Não opere o celular dirigindo.")
                         Text(if(bundle==null)"Verificando mapas..." else "Mapa local verificado.")
+                        Text(state)
                         for((id,label) in listOf("itainopolis" to "Itainópolis — 1,29 km","picos" to "Picos — 1,18 km","corridor" to "Itainópolis → Picos — 51,32 km")){
                             Button(onClick={startPilot(id)},enabled=bundle!=null,modifier=Modifier.fillMaxWidth()){Text(label)}
                             bundle?.routes?.get(id)?.geometry?.firstOrNull()?.let{p->Text(String.format(Locale.US,"Início: %.6f, %.6f",p.lat,p.lng),style=MaterialTheme.typography.bodySmall)}
@@ -78,9 +86,22 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
                     }else{
                         Text(state)
                         distance?.let{Text("Distância até o início: "+String.format(Locale("pt","BR"),"%.0f m",it))}
+                        accuracy?.let{Text("Precisão do GPS: "+String.format(Locale("pt","BR"),"%.1f m",it))}
+                        if(outsidePack)Text("Posição fora da área do mapa piloto. Não há orientação.")
+                        val style=bundle?.style
+                        if(style!=null){
+                            if(active){
+                                PortraitNavigationView(modifier=Modifier.weight(1f).fillMaxWidth(),baseStyle=style,viewModel=model,views=com.stadiamaps.ferrostar.composeui.config.NavigationViewComponentBuilder.Default(),onTapExit={stopPilot()})
+                            }else{
+                                val camera=rememberNavigationMapState()
+                                Box(Modifier.weight(1f).fillMaxWidth()){
+                                    NavigationMapView(baseStyle=style,navigationMapState=camera,uiState=ui,mapOptions=defaultNavigationMapOptions(),routeOverlayBuilder=null,onMapLoadFinished={mapStatus="Mapa local carregado."},onMapLoadFailed={mapStatus="Falha ao renderizar mapa local."})
+                                }
+                                Text(mapStatus,style=MaterialTheme.typography.bodySmall)
+                                TextButton(onClick={camera.recenter(false)},modifier=Modifier.fillMaxWidth()){Text("Centralizar minha posição")}
+                            }
+                        }
                         if(active){
-                            val style=bundle?.style
-                            if(style!=null)PortraitNavigationView(modifier=Modifier.weight(1f).fillMaxWidth(),baseStyle=style,viewModel=model,views=com.stadiamaps.ferrostar.composeui.config.NavigationViewComponentBuilder.Default(),onTapExit={stopPilot()})
                             gpsStatusLabel(quality)?.let{Text(it)}
                             notice?.let{Text(it)}
                             if(ui.tripState is TripState.Complete)Text("Chegada ao destino de teste. Nenhuma corrida real finalizada.")
@@ -102,21 +123,33 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
         if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)){state="Ative o GPS do aparelho.";return}
         val route=bundle!!.routes.getValue(id)
         val origin=route.geometry.first().let{RegionalPoint(it.lat,it.lng)}
-        selected=id;state="Aproxime-se do início da rota e aguarde GPS preciso.";distance=null
+        selected=id;state="Aguardando GPS preciso para exibir sua posição.";distance=null;accuracy=null;outsidePack=false;mapStatus="Carregando mapa local…"
+        model.navigationUiState.value=NavigationUiState.empty()
         val ticket=++generation
         val sid=DriverGpsFeed.beginSource();source=sid
         preflight=DriverGpsFeed.subscribe(current={foreground&&generation==ticket&&source==sid},
             onFix={fix,captured->
                 val point=RegionalPoint(fix.coordinates.lat,fix.coordinates.lng)
-                val delta=origin.distanceTo(point);distance=delta
-                if(delta<=35.0&&fix.horizontalAccuracy<=20.0&&SystemClock.elapsedRealtime()-captured<=5000){
+                val delta=origin.distanceTo(point);distance=delta;accuracy=fix.horizontalAccuracy
+                outsidePack=!fieldPackContains(point.lat,point.lng)
+                // Browsing mode: raw accepted location, no route line, ETA, maneuver or voice.
+                model.navigationUiState.value=NavigationUiState.empty().copy(location=fix,isMuted=true)
+                state=when{
+                    outsidePack -> "GPS recebido; fora da área do mapa piloto."
+                    delta>35.0 -> "GPS recebido. Visualizando posição; rota fixa ainda não iniciada."
+                    else -> "GPS recebido. Conferindo precisão para iniciar."
+                }
+                if(fieldMayStart(delta,fix.horizontalAccuracy,SystemClock.elapsedRealtime(),captured,!outsidePack)){
                     preflight?.let(DriverGpsFeed::unsubscribe);preflight=null
                     active=true;distance=null;state="Orientação por GPS real. Trajeto fixo; sem recálculo."
                     model.setDestination("Destino de teste")
                     model.start(route,{foreground&&generation==ticket&&source==sid},applicationContext,voicePermit(ticket))
                     model.setForeground(true)
                 }
-            },onQuality={q->if(q!=GpsQuality.AVAILABLE)state=gpsStatusLabel(q)?:"Aguardando GPS."},
+            },onQuality={q->if(q!=GpsQuality.AVAILABLE){
+                state=gpsStatusLabel(q)?:"Aguardando GPS.";distance=null;accuracy=null;outsidePack=false
+                model.navigationUiState.value=NavigationUiState.empty()
+            }},
             onRevoked={stopPilot()})
         try{
             check(preflight!=null)
@@ -141,7 +174,7 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
         runCatching{manager.removeUpdates(this)}
         preflight?.let(DriverGpsFeed::unsubscribe);preflight=null
         val old=source;source=null;old?.let(DriverGpsFeed::endSource)
-        tts?.stop();active=false;selected=null;distance=null;state="Teste encerrado. Escolha um trajeto."
+        tts?.stop();active=false;selected=null;distance=null;accuracy=null;outsidePack=false;state="Teste encerrado. Escolha um trajeto."
     }
     override fun onLocationChanged(location:Location){
         if(!foreground)return
