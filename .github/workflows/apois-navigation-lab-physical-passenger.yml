@@ -4,6 +4,9 @@ on:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
     paths: ['labs/apois-navigation/physical-passenger/**','labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/**','labs/apois-navigation/emulator-common/boot.sh','labs/apois-navigation/emulator-common/apk-assertions.sh','.github/workflows/apois-navigation-lab-physical-passenger.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
   actions: read

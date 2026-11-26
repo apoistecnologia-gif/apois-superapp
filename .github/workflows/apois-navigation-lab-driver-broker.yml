@@ -2,7 +2,7 @@ name: APOIS navigation lab - driver broker
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/driver-broker/**','labs/apois-navigation/production-contract/driver-control-v21.mjs','labs/apois-navigation/passenger-provenance-snapshot/driver-authority.mjs','labs/apois-navigation/valhalla/route-issuer.mjs','labs/apois-navigation/valhalla/route-replay-store.mjs','.github/workflows/apois-navigation-lab-driver-broker.yml']
+    paths: ['labs/apois-navigation/driver-broker/**','labs/apois-navigation/production-contract/driver-control-v21.mjs','labs/apois-navigation/production-contract/edge-session-v21*.mjs','labs/apois-navigation/passenger-provenance-snapshot/driver-authority.mjs','labs/apois-navigation/valhalla/route-issuer.mjs','labs/apois-navigation/valhalla/route-replay-store.mjs','.github/workflows/apois-navigation-lab-driver-broker.yml']
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,4 +18,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --test labs/apois-navigation/driver-broker/driver-broker.test.mjs labs/apois-navigation/driver-broker/driver-local-session.test.mjs
+      - run: node --test labs/apois-navigation/driver-broker/driver-broker.test.mjs labs/apois-navigation/driver-broker/driver-local-session.test.mjs labs/apois-navigation/production-contract/edge-session-v21.test.mjs
