@@ -5,6 +5,9 @@ const exact=(o,k)=>o!==null&&typeof o==='object'&&!Array.isArray(o)&&Object.keys
 const point=p=>exact(p,['id','version'])&&uuid(p.id)&&Number.isSafeInteger(p.version)&&p.version>0&&p.version<=2147483647
 const confirmedPoint=p=>exact(p,['lat','lng','label'])&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&p.lat>=-9.65&&p.lat<=-9.10&&p.lng>=-40.80&&p.lng<=-40.20&&typeof p.label==='string'&&p.label.trim().length>0&&p.label.length<=200
 const fail=(status,error_code)=>({status,body:{ok:false,error_code}})
+/**
+ * @param {{confirmationEnabled?:boolean,recoveryEnabled?:boolean,verifySession?:(session:string)=>Promise<string|null>,rpc?:(name:string,args:Record<string,unknown>)=>Promise<unknown>,allowPilot?:(id:string)=>boolean|Promise<boolean>,catalogPolicy?:{version:number,extractHash:string}}} [options]
+ */
 export function createNavigationControl({confirmationEnabled=false,recoveryEnabled=false,verifySession,rpc,allowPilot=()=>false,catalogPolicy}={}){
  const recovery=createRecoveryAction({enabled:recoveryEnabled,verifySession,rpc})
  if(confirmationEnabled===true&&![verifySession,rpc,allowPilot].every(f=>typeof f==='function'))throw Error('Missing trusted confirmation dependency')

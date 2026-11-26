@@ -15,6 +15,10 @@ export function localValhallaMetrics(fetcher=fetch){
   return {source:'OSM_VALHALLA_LAB',distanceKm:route.distance/1000,durationMin:route.duration/60}
  }
 }
+/**
+ * @typedef {{lat:number,lng:number}} RoutePoint
+ * @param {{enabled?:boolean,admin?:{rpc:(name:string,args:Record<string,unknown>)=>PromiseLike<{data:unknown,error:unknown}>,from:(table:string)=>{select:(columns:string)=>any}},authUserId?:string,passengerId?:string,independentMetrics?:(origin:RoutePoint,destination:RoutePoint)=>Promise<{source:string,distanceKm:number,durationMin:number}|null>,loadFare?:(categoryId:string,category:string,km:number,min:number,details:Record<string,unknown>)=>Promise<number>,dispatchInitial?:(ride:{id:string})=>Promise<string[]>,verifyCurrentSession?:()=>Promise<boolean>}} [options]
+ */
 export function createV21ExperimentalAction({enabled=false,admin,authUserId,passengerId,independentMetrics,loadFare,dispatchInitial,verifyCurrentSession=async()=>true}={}){
  if(enabled!==true)return createExperimentalRequestHandler()
  async function rpc(name,args){
