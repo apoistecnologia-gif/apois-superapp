@@ -22,3 +22,6 @@ A perda de sessão/conectividade observada ou mudança da versão da evidência 
 
 ## Ordem de preflight e descarte
 A verificação do mapa ocorre antes da leitura de grant (inclusive quando o grant consulta backend). Grant descartado em revogação durante aquisição, falha de preparação ou abertura ambígua; o resolver ativo mantém sua lease até encerramento. Os testes cobrem mapa inválido sem consulta, aquisição revogada e transferência de ownership. Sem mudança no host oficial.
+
+## Ensaio da Activity confirmada de ponta a ponta
+Workflow dedicado cria Activity hospedeira descartável e copia o motor, pacote, tela e ponte reais. GPS, identidade e respostas de autoridade são explicitamente sintéticos, sem internet; testa abertura da Activity real, retorno por Back e ACK de destruição, próxima fase e fechamento por revogação. Nenhum APK distribuível, permissão extra ou integração oficial. A execução deve confirmar o marcador de CI; não substitui testes físicos, áudio audível ou comprovação de renderização de cada tile.
