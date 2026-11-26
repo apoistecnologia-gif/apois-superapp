@@ -1,0 +1,41 @@
+name: APOIS GPS - instalar exatamente V3 revisada
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['.github/workflows/apois-navigation-lab-v3-exact-install.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: APOIS-GPS-Piaui-Piloto-V3
+          run-id: 45741889591
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-field-apk
+      - name: Verify exact APK and Android tools
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/apois-field-apk"
+          echo '7b4287189d46be3208675f5b9957d0dce4b4bf7dfc10b4ad907b3fcc9b93ddfc  APOIS-GPS-Piaui-Piloto-V3.apk' | sha256sum -c -
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - run: bash labs/apois-navigation/field-v3/install-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-v3-exact-install-report
+          path: ${{ runner.temp }}/apois-v3-install-smoke/
+          retention-days: 7
+          if-no-files-found: warn

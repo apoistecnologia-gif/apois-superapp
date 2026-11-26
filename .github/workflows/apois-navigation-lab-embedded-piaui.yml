@@ -1,0 +1,53 @@
+name: APOIS GPS - grafo Piaui no Android offline
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/embedded-piaui/**','.github/workflows/apois-navigation-lab-embedded-piaui.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  embedded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-piaui-embedded-graph-3.6.3
+          run-id: 45742837044
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-piaui-graph
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Android SDK and emulator
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+      - name: Compile engine and Ferrostar, inspect APK permissions and ABI
+        env:
+          APOIS_PIAUI_GRAPH_DIR: ${{ runner.temp }}/apois-piaui-graph
+        run: bash labs/apois-navigation/embedded-probe/build.sh
+      - name: Enable emulator acceleration
+        run: |
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Execute six Piaui routes offline and parse for Ferrostar
+        run: bash labs/apois-navigation/embedded-probe/emulator.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-embedded-piaui-report
+          path: ${{ runner.temp }}/apois-embedded-report/
+          retention-days: 7
+          if-no-files-found: warn

@@ -6,10 +6,20 @@ mkdir -p "$H/app/src/main/assets" "$H/app/src/androidTest/java/br/com/apois/navi
 cp "$ROOT/android/settings.gradle" "$H/settings.gradle"
 sed -i "s/include ':probe'/include ':app'/" "$H/settings.gradle"
 cp "$ROOT/android/gradle.properties" "$H/gradle.properties"
-cp "$ROOT/embedded-probe/EmbeddedRouteTest.kt" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded/"
-# Upstream fixture, public OSM data, pinned Git blob. Never downloads real user locations.
-git -C "$GITHUB_WORKSPACE/.valhalla-mobile-source" show b47ad5a9aa5d907df329bd2a0bfcc9080220c9d8:android/valhalla/src/androidTest/assets/valhalla_tiles.tar > "$H/app/src/main/assets/valhalla_tiles.tar"
-test "$(git hash-object "$H/app/src/main/assets/valhalla_tiles.tar")" = 774d4cc66470fe825476f4441fb5964d36650cf9
+if [[ -n "${APOIS_PIAUI_GRAPH_DIR:-}" ]]; then
+    # Pin the exact graph artifact approved in run 45742837044, not a mutable download.
+    G="$APOIS_PIAUI_GRAPH_DIR"
+    (cd "$G" && printf '%s\n' '3d8ddee2d42886b1846d86477b44ca7fabc050227e48c767836699050b23dd31  graph-manifest.json' 'b0f3de3041ec8994c77eb678e416db86f93e9dc3d95a7416114b55059a393344  valhalla_tiles.tar' | sha256sum -c -)
+    cp "$G/valhalla_tiles.tar" "$H/app/src/main/assets/"
+    cp "$G/graph-manifest.json" "$H/app/src/main/assets/"
+    cp "$G/OSM-NOTICE.txt" "$H/app/src/main/assets/"
+    cp "$ROOT/embedded-piaui/EmbeddedPiauiRouteTest.kt" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded/"
+else
+    cp "$ROOT/embedded-probe/EmbeddedRouteTest.kt" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded/"
+    # Upstream fixture, public OSM data, pinned Git blob. Never downloads real user locations.
+    git -C "$GITHUB_WORKSPACE/.valhalla-mobile-source" show b47ad5a9aa5d907df329bd2a0bfcc9080220c9d8:android/valhalla/src/androidTest/assets/valhalla_tiles.tar > "$H/app/src/main/assets/valhalla_tiles.tar"
+    test "$(git hash-object "$H/app/src/main/assets/valhalla_tiles.tar")" = 774d4cc66470fe825476f4441fb5964d36650cf9
+fi
 cat > "$H/app/build.gradle" <<'EOF'
 plugins { id 'com.android.application' version '9.0.1' }
 android {

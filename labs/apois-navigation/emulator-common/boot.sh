@@ -10,6 +10,9 @@ boot_lab_emulator(){
  mkdir -p "$ANDROID_AVD_HOME"
  manager="$(find "$sdk/cmdline-tools" -type f -name avdmanager | sort -V | tail -1)"
  test -x "$manager"
+ test -x "$sdk/platform-tools/adb"
+ export PATH="$sdk/platform-tools:$PATH"
+ adb version | tee "$out/adb-version.txt"
  local image='system-images;android-35;google_apis;x86_64'
  printf 'no\n' | "$manager" create avd -n "$name" -k "$image" -p "$ANDROID_AVD_HOME/$name.avd" --device pixel_6 --force 2>&1 | tee "$out/avd-create.txt"
  "$manager" list avd > "$out/avd-manager-list.txt"
