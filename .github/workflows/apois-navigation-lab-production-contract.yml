@@ -41,6 +41,7 @@ jobs:
           run_sql < "$root/confirmation-v21.sql"
           run_sql < "$root/catalog-v21.sql"
           run_sql < "$root/test-v21.sql"
+          node "$root/driver-local-proof.integration.mjs"
           node "$root/request-ride-v21.integration.mjs"
           node --test "$root/v21-edge-adapter.test.mjs"
           node "$root/recovery-v21.integration.mjs"
