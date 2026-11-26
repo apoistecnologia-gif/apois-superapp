@@ -86,7 +86,7 @@ jobs:
             cp -a "$H/probe/build/outputs/androidTest-results" "$OUT/results"
           fi
           test "$status" = 0
-          grep -F 'confirmed_activity=true; back_ack=true; next_leg=true; authority_revoked=true; synthetic_gps=true' "$OUT/lifecycle.log"
+          grep -F 'confirmed_activity=true; back_ack=true; same_leg_reentry=true; bounded_reentry=true; next_leg=true; authority_revoked=true; synthetic_gps=true' "$OUT/lifecycle.log"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

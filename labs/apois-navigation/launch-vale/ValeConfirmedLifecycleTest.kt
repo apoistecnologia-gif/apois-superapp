@@ -28,7 +28,7 @@ import org.junit.runner.RunWith
  * production registration, credentials, network, or physical GPS claim. */
 @RunWith(AndroidJUnit4::class)
 class ValeConfirmedLifecycleTest{
-    @Test fun openBackReopenOtherLegAndRevoke(){
+    @Test fun openBackReopenSameLegThenOtherLegAndRevoke(){
         val inst=InstrumentationRegistry.getInstrumentation()
         val app=inst.targetContext.applicationContext
         val device=UiDevice.getInstance(inst)
@@ -129,11 +129,31 @@ class ValeConfirmedLifecycleTest{
             val ack=CountDownLatch(1);val accepted=AtomicBoolean(false)
             inst.runOnMainSync{ConfirmedLiveNavigationBridge.closeAcknowledged(pickup){ok->accepted.set(ok);ack.countDown()}}
             assertTrue(ack.await(5,TimeUnit.SECONDS));assertTrue(accepted.get())
+            // Reopening requires real acknowledged destruction and a fresh proof.
+            // Do not manipulate the Android clock or bypass the 30-second gate.
+            val early=CountDownLatch(1);val earlyId=AtomicReference<String?>();val earlyUncertain=AtomicBoolean(false)
+            scenario.onActivity{host->
+                NativeConfirmedHost.open(host,rideId,RidePhase.PICKUP.name,0,{true},{},
+                    {id->earlyId.set(id);early.countDown()},{earlyUncertain.set(true);early.countDown()})
+            }
+            assertTrue(early.await(40,TimeUnit.SECONDS))
+            assertNull(earlyId.get());assertFalse(earlyUncertain.get())
+            SystemClock.sleep(30_100L)
+            val reopened=open(RidePhase.PICKUP,"Indo ao passageiro").first
+            assertNotEquals(pickup,reopened)
+            assertTrue(waitForAppText("APOIS CI fixture",10_000L))
+            val exhausted=CountDownLatch(1);val exhaustedId=AtomicReference<String?>();val exhaustedUncertain=AtomicBoolean(false)
+            scenario.onActivity{host->
+                NativeConfirmedHost.open(host,rideId,RidePhase.PICKUP.name,0,{true},{},
+                    {id->exhaustedId.set(id);exhausted.countDown()},{exhaustedUncertain.set(true);exhausted.countDown()})
+            }
+            assertTrue(exhausted.await(40,TimeUnit.SECONDS))
+            assertNull(exhaustedId.get());assertFalse(exhaustedUncertain.get())
             val trip=open(RidePhase.TRIP,"Corrida em andamento").first
             assertNotEquals(pickup,trip)
             assertTrue(waitForAppText("APOIS CI fixture",10_000L))
             inst.runOnMainSync{assertNull(ConfirmedLiveNavigationBridge.screen.value);assertFalse(ConfirmedLiveNavigationBridge.occupied())}
-            android.util.Log.i("APOIS_VALE_LIFECYCLE","confirmed_activity=true; back_ack=true; next_leg=true; authority_revoked=true; synthetic_gps=true")
+            android.util.Log.i("APOIS_VALE_LIFECYCLE","confirmed_activity=true; back_ack=true; same_leg_reentry=true; bounded_reentry=true; next_leg=true; authority_revoked=true; synthetic_gps=true")
         }catch(t:Throwable){
             diagnostics()
             throw t
