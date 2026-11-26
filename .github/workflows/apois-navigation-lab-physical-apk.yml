@@ -2,8 +2,11 @@ name: APOIS GPS - APK isolado para testes fisicos
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/physical-lab/**','.github/workflows/apois-navigation-lab-physical-apk.yml']
+    paths: ['labs/apois-navigation/physical-lab/**','labs/apois-navigation/android/probe/**','labs/apois-navigation/host-compat/prepare-host.mjs','labs/apois-navigation/host-compat/ApoisNavigationLabPlugin.java','labs/apois-navigation/emulator-common/apk-assertions.sh','.github/workflows/apois-navigation-lab-physical-apk.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
   actions: read
