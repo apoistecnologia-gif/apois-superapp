@@ -15,13 +15,21 @@ function claims(token,issuer,seconds){
   return {authUserId:c.sub,sessionId:c.session_id,exp:c.exp}
  }catch{return null}
 }
-export function createLocalDriverSessionVerifier({projectUrl,sessionPolicyConfirmed=false,getUser,sessionExists,now=Date.now,timeoutMs=1800,maxPending=4}={}){
+export function createLocalDriverSessionVerifier({projectUrl,...options}={}){
+ if(typeof projectUrl!=='string'||!/^https:\/\/[a-z0-9]{20}\.supabase\.co\/?$/.test(projectUrl))throw Error('Invalid local session policy')
+ return boundVerifier(new URL('/auth/v1',projectUrl).href,options)
+}
+// CI only: exact local issuer. Production factories never use this entry.
+export function createLoopbackFixtureSessionVerifier({projectUrl,...options}={}){
+ if(!['http://127.0.0.1:54321','http://localhost:54321'].includes(projectUrl))throw Error('Invalid fixture issuer')
+ return boundVerifier(new URL('/auth/v1',projectUrl).href,options)
+}
+function boundVerifier(issuer,{sessionPolicyConfirmed=false,getUser,sessionExists,now=Date.now,timeoutMs=1800,maxPending=4}={}){
  // Confirmation means project policy has been reviewed and supported by
  // the configured session reader. A missing/unknown policy never enables.
- if(sessionPolicyConfirmed!==true||typeof projectUrl!=='string'||!/^https:\/\/[a-z0-9]{20}\.supabase\.co\/?$/.test(projectUrl)||
+ if(sessionPolicyConfirmed!==true||
     ![getUser,sessionExists,now].every(f=>typeof f==='function')||
     !Number.isInteger(timeoutMs)||timeoutMs<50||timeoutMs>2500||!Number.isInteger(maxPending)||maxPending<1||maxPending>32)throw Error('Invalid local session policy')
- const issuer=new URL('/auth/v1',projectUrl).href
  let pending=0
  return async(token,signal)=>{
   if(!(signal instanceof AbortSignal)||signal.aborted)return null
