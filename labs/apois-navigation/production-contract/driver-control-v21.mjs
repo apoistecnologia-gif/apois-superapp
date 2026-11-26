@@ -17,14 +17,15 @@ export function trustedTarget(proof,rideId,phase,now){
     e.rideId!==rideId||e.phase!==phase||e.source!=='INDEPENDENT_OSM'||!point(e.point))return null
  return Object.freeze({rideId,phase,identity:Object.freeze({authUserId:proof.authUserId,profileUserId:proof.profileUserId,driverId:proof.driverId}),evidence:Object.freeze({id:e.id,version:e.version,source:e.source,point:Object.freeze({...e.point})})})
 }
-export function createDriverControl({enabled=false,authority,issuePermit,allowPilot=()=>false,now=Date.now,timeout=5000,maxPending=4}={}){
+export function createDriverControl({enabled=false,localOnly=false,authority,issuePermit,allowPilot=()=>false,now=Date.now,timeout=5000,maxPending=4}={}){
  if(enabled!==true)return async()=>fail(409,'experimental_navigation_disabled')
- if(![authority,issuePermit,allowPilot,now].every(f=>typeof f==='function')||!Number.isSafeInteger(timeout)||timeout<1||timeout>5000||!Number.isSafeInteger(maxPending)||maxPending<1||maxPending>32)throw Error('Trusted driver dependencies required')
+ if(typeof localOnly!=='boolean'||![authority,allowPilot,now].every(f=>typeof f==='function')||(localOnly?issuePermit!==undefined:typeof issuePermit!=='function')||!Number.isSafeInteger(timeout)||timeout<1||timeout>5000||!Number.isSafeInteger(maxPending)||maxPending<1||maxPending>32)throw Error('Trusted driver dependencies required')
  let pending=0
  const handle=async(session,request,signal)=>{
   if(!(signal instanceof AbortSignal)||signal.aborted)return fail(503,'navigation_unavailable')
   const target=request?.action==='target',permit=request?.action==='permit'
   if(!target&&!permit)return fail(422,'invalid_driver_request')
+  if(localOnly&&!target)return fail(409,'remote_routing_disabled')
   if(!exact(request,target?['action','rideId','phase']:['action','rideId','phase','origin','evidenceId','evidenceVersion'])||
    !uuid(request.rideId)||!Object.hasOwn(status,request.phase)||
    (permit&&(!point(request.origin)||!uuid(request.evidenceId)||!Number.isSafeInteger(request.evidenceVersion)||request.evidenceVersion<1)))return fail(422,'invalid_driver_request')
@@ -37,7 +38,11 @@ export function createDriverControl({enabled=false,authority,issuePermit,allowPi
    if(signal.aborted)return fail(503,'navigation_unavailable')
    if(!result||await allowPilot(result.identity.authUserId)!==true)return fail(403,'driver_not_authorized')
    if(signal.aborted)return fail(503,'navigation_unavailable')
-   if(target)return {status:200,body:{ok:true,target:result}}
+   if(target){
+    const refreshed=trustedTarget(proof,req.rideId,req.phase,now())
+    if(!refreshed)return fail(403,'driver_not_authorized')
+    return {status:200,body:{ok:true,target:result}}
+   }
    if(input.evidenceId!==result.evidence.id||input.evidenceVersion!==result.evidence.version)return fail(409,'target_changed')
    // The issuer independently authenticates and loads fresh proof again.
    // Client cannot choose the target, driver, provenance or scope.

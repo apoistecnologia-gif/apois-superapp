@@ -55,3 +55,15 @@ test('non-cooperative read times out, occupies capacity, cannot issue later',asy
  assert.equal((await f('synthetic-session',target)).status,429)
  unblock(null);await new Promise(r=>setImmediate(r));assert.equal(issued,0)
 })
+
+test('local-only target contract needs no route key and refuses permit before authority',async()=>{
+ let reads=0,time=10000,lag=0
+ const proof={authUserId:actor,profileUserId:profile,driverId:driver,rideId:ride,status:'motorista_a_caminho',assignedDriverId:driver,acceptedDriverId:driver,category:'carros',intermediateStops:0,verifiedAt:10000,targetEvidence:{id:evidence,version:1,rideId:ride,phase:'PICKUP',source:'INDEPENDENT_OSM',point:p}}
+ const cfg={enabled:true,localOnly:true,now:()=>time,authority:async()=>{reads++;return proof},allowPilot:()=>{time+=lag;return true}}
+ assert.throws(()=>createDriverControl({...cfg,issuePermit:async()=>({})}))
+ const f=createDriverControl(cfg)
+ assert.equal((await f('synthetic-session',permit)).status,409);assert.equal(reads,0)
+ assert.equal((await f('synthetic-session',{...target,origin})).status,422);assert.equal(reads,0)
+ const r=await f('synthetic-session',target);assert.equal(r.status,200);assert.equal(r.body.target.evidence.id,evidence);assert.equal(reads,1)
+ lag=5001;assert.equal((await f('synthetic-session',target)).status,403)
+})
