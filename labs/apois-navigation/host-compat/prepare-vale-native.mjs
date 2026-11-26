@@ -4,6 +4,8 @@ import assert from 'node:assert/strict'
 import {realpathSync,readFileSync,writeFileSync,copyFileSync,mkdirSync,existsSync,statSync} from 'node:fs'
 import {join,dirname} from 'node:path'
 import {createHash} from 'node:crypto'
+import {confirmedOnlyPlugin} from './confirmed-only-plugin.mjs'
+import {execFileSync} from 'node:child_process'
 const [hostArg,labArg,assetsArg]=process.argv.slice(2)
 const host=realpathSync(hostArg),lab=realpathSync(labArg),assets=realpathSync(assetsArg)
 const temp=realpathSync(process.env.RUNNER_TEMP)
@@ -52,6 +54,11 @@ for(const [dir,file] of [['launch-vale','ValeOfflineResolver.kt'],['launch-vale'
 const gradle=join(module,'build.gradle'),before=read(gradle)
 assert.ok(!before.includes('valhalla-mobile'))
 writeFileSync(gradle,before+"\ndependencies {\n implementation 'io.github.rallista:valhalla-mobile:0.6.3'\n implementation 'io.github.rallista:valhalla-models:0.5.2'\n implementation 'io.github.rallista:valhalla-models-config:0.5.2'\n implementation 'com.stadiamaps:osrm-openapi:0.0.10'\n}\n")
+// Compile the real-ride-only variant alongside the lab transport. The
+// actual registration is deliberately left to a separately reviewed host.
+execFileSync(process.execPath,['--test',join(lab,'host-compat/confirmed-only-plugin.test.mjs')],{stdio:'inherit'})
+writeFileSync(join(app,'java/br/com/apois/navigation/compat/lab/ApoisConfirmedNavigationPlugin.java'),
+ confirmedOnlyPlugin(read(join(lab,'host-compat/ApoisNavigationLabPlugin.java'))),{flag:'wx'})
 assert.equal(read(join(app,'AndroidManifest.xml')),manifest)
 assert.equal(read(join(app,'java/br/com/apois/navigation/compat/lab/MainActivity.java')),main)
 console.log('APOIS_QA290_NATIVE_VALE_STAGED',JSON.stringify({assets:data.size,activated:false,gpsRegistered:false,voiceRegistered:false}))
