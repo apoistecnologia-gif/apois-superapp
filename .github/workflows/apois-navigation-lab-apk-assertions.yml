@@ -1,0 +1,18 @@
+name: APOIS GPS - regressao das verificacoes de permissoes APK
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/**/build.sh','labs/apois-navigation/**/android-build.sh','labs/apois-navigation/**/pack-android-build.sh','labs/apois-navigation/emulator-common/apk-assertions*.sh','.github/workflows/apois-navigation-lab-apk-assertions.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  permission-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - run: bash labs/apois-navigation/emulator-common/apk-assertions.test.sh
