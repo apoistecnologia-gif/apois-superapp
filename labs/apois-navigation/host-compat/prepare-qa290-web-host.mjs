@@ -150,16 +150,20 @@ export function bindConfirmedNavigationLifecycle():()=>void {
   if(!EXPERIMENTAL_INTERNAL_NAVIGATION)return ()=>{};
   const owner={};lifecycleOwner=owner;
   let previous:string|null|undefined;
+  let previousToken:string|null|undefined;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
     const current=session?.user.id??null;
-    if(event==="SIGNED_OUT"||(previous!==undefined&&current!==previous))void launch.invalidate();
-    previous=current;
+    const token=session?.access_token??null;
+    if(event==="SIGNED_OUT"||(previous!==undefined&&current!==previous)||
+       (previousToken!==undefined&&token!==previousToken))void launch.invalidate();
+    previous=current;previousToken=token;
   });
   // Poll only while the controller owns a native session.
   // Background WebView timers are best-effort, not a native authority lease.
   const timer=window.setInterval(()=>{void launch.recheck();},20000);
   return ()=>{
     subscription.unsubscribe();
+    previous=null;previousToken=null;
     window.clearInterval(timer);
     if(lifecycleOwner!==owner)return;
     lifecycleOwner=null;
