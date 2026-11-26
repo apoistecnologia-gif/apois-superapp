@@ -31,7 +31,8 @@ internal class ValeOfflineResolver(
     private val app=context.applicationContext
     private val closed=AtomicBoolean(false)
     private var actor:Valhalla?=null
-    private fun active()=!closed.get()&&hostCurrent()
+    override fun resourcesCurrent()=!closed.get()&&runCatching{packCurrent()}.getOrDefault(false)
+    private fun active()=resourcesCurrent()&&hostCurrent()
     private val guard=ScopedOfflineCalculation(
         target,::active,packCurrent,evidence,now,::calculate,
         {route:Route->route.geometry.map{RegionalPoint(it.lat,it.lng)}}

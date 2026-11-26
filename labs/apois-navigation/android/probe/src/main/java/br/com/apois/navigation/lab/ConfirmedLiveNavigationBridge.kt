@@ -34,6 +34,7 @@ object ConfirmedLiveNavigationBridge {
         var opened=false
         val voice=ConfirmedSessionVoice()
         private val routeLifetime=RouteResolverLifetime(resolver)
+        fun resourcesCurrent()=routeLifetime.current()
         fun releaseResolver()=routeLifetime.close()
     }
     internal data class Screen(
@@ -58,7 +59,7 @@ object ConfirmedLiveNavigationBridge {
     private val activityOwnership=ConfirmedActivityOwnership()
     internal fun occupied():Boolean=screen.value!=null||closing!=null||preparing!=null
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
-    private fun current(p:Prepared)=prepared===p && p.lease.current() && DriverGpsFeed.currentSourceId()==p.sourceId && runCatching{p.verifiedCurrent()}.getOrDefault(false)
+    private fun current(p:Prepared)=prepared===p && p.lease.current() && p.resourcesCurrent() && DriverGpsFeed.currentSourceId()==p.sourceId && runCatching{p.verifiedCurrent()}.getOrDefault(false)
 
     // Also expire a prepared owner while no Activity is visible. A stale
     // callback cannot revoke a newer owner. Elapsed-time checks still gate
@@ -95,7 +96,7 @@ object ConfirmedLiveNavigationBridge {
                 attempt.job=coroutineContext[Job]
                 val sourceId=DriverGpsFeed.currentSourceId()?:return@withTimeoutOrNull false
                 fun current()=preparing===attempt&&!attempt.invalidated&&
-                    DriverGpsFeed.currentSourceId()==sourceId&&runCatching{verifiedCurrent()}.getOrDefault(false)
+                    DriverGpsFeed.currentSourceId()==sourceId&&resolverResourcesCurrent(resolver)&&runCatching{verifiedCurrent()}.getOrDefault(false)
                 fun connected()=runCatching{online()}.getOrDefault(false)
                 val firstEvidence=verify()?:return@withTimeoutOrNull false
                 if(!current()||!connected()||!firstEvidence.usable(SystemClock.elapsedRealtime())||

@@ -38,6 +38,7 @@ class ValeAuthorizedResolverTest {
                 assertNull(factory.open(target.copy(source=RoutingTargetSource.GOOGLE),map,{active},evidence))
                 val opened=checkNotNull(factory.open(target,map,{active},evidence))
                 resolver=opened
+                assertTrue(resolverResourcesCurrent(opened))
                 assertNull(factory.open(target,map,{active},evidence))
                 val route=opened.resolve(origin,destination)
                 assertTrue(route.geometry.size>1)
@@ -51,6 +52,10 @@ class ValeAuthorizedResolverTest {
                 assertFalse(active)
                 assertTrue(runCatching{opened.resolve(origin,destination)}.isFailure)
                 assertEquals(4,reads)
+                // Resource validity must fail even without requesting a route.
+                assertTrue(resolverResourcesCurrent(opened))
+                lease.close()
+                assertFalse(resolverResourcesCurrent(opened))
             }finally{
                 resolver?.dispose()
                 lease.close()
