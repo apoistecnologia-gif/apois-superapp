@@ -2,7 +2,7 @@ name: APOIS GPS - APK dinamico V3 Piaui
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/field-v3/**','.github/workflows/apois-navigation-lab-field-v3.yml']
+    paths: ['labs/apois-navigation/field-v3/**','labs/apois-navigation/android/**','labs/apois-navigation/field-apk/prepare.py','labs/apois-navigation/field-apk/FieldStartPolicy.kt','.github/workflows/apois-navigation-lab-field-v3.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -40,3 +40,34 @@ jobs:
           path: ${{ runner.temp }}/apois-field-apk/
           retention-days: 7
           if-no-files-found: error
+
+  install-smoke:
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: APOIS-GPS-Piaui-Piloto-V3
+          path: ${{ runner.temp }}/apois-field-apk
+      - name: Verify artifact and prepare emulator
+        run: |
+          set -euo pipefail
+          (cd "$RUNNER_TEMP/apois-field-apk" && sha256sum -c SHA256SUMS.txt)
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Install and launch exact V3 artifact offline
+        run: bash labs/apois-navigation/field-v3/install-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-v3-install-smoke-report
+          path: ${{ runner.temp }}/apois-v3-install-smoke/
+          retention-days: 7
+          if-no-files-found: warn

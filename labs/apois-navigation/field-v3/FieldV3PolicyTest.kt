@@ -22,3 +22,30 @@ class FieldV3PolicyTest {
     assertFalse(fieldV3FixReady(f.copy(accuracy=21.0),11000))
  }
 }
+
+class FieldInitialRequestGateTest {
+ @Test fun cancellationDoesNotPermitConcurrentRetry(){
+    val g=FieldInitialRequestGate()
+    val first=g.begin()!!
+    assertTrue(g.accepts(first));assertNull(g.begin())
+    g.invalidate()
+    assertFalse(g.accepts(first));assertFalse(g.allowRetry());assertNull(g.begin())
+    assertTrue(g.finish(first));assertTrue(g.allowRetry())
+    val second=g.begin()!!
+    assertFalse(g.accepts(first));assertFalse(g.finish(first));assertTrue(g.accepts(second))
+ }
+ @Test fun endingSessionRevokesOldResponseEvenAfterRestart(){
+    val g=FieldInitialRequestGate()
+    val first=g.begin()!!
+    g.reset()
+    val second=g.begin()!!
+    assertFalse(g.accepts(first));assertFalse(g.finish(first))
+    assertTrue(g.accepts(second));assertTrue(g.finish(second))
+ }
+ @Test fun retryMustBeExplicitAfterFailure(){
+    val g=FieldInitialRequestGate()
+    val first=g.begin()!!
+    assertTrue(g.finish(first));assertNull(g.begin())
+    assertTrue(g.allowRetry());assertNotNull(g.begin())
+ }
+}

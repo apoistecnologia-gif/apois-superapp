@@ -58,12 +58,9 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
     private var qualityNow=GpsQuality.WAITING
     private var initialJob:Job?=null
     private var owner:LegRouteResources<Route>?=null
-    private var target:RegionalPoint?=null
     private var secret:FieldLabSecret?=null
-    private var requestedHost:String?=null
     private var requestInFlight by mutableStateOf(false)
-    private var attempted=false
-    private var distance by mutableStateOf<Double?>(null)
+    private val requestGate=FieldInitialRequestGate()
     private var accuracy by mutableStateOf<Double?>(null)
     private var mapStatus by mutableStateOf("Carregando mapa local…")
     private var outsidePack by mutableStateOf(false)
@@ -119,7 +116,7 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
                         Button(onClick={startDynamic()},enabled=bundle!=null&&consent,modifier=Modifier.fillMaxWidth()){Text("Buscar rota a partir do GPS")}
                     }else{
                         Text(state)
-                        if(!active&&!requestInFlight&&attempted)TextButton(onClick={attempted=false;state="Aguardando posição GPS para nova tentativa."}){Text("Tentar novamente")}
+                        if(!active&&!requestInFlight&&requestGate.attempted)TextButton(onClick={if(requestGate.allowRetry())state="Aguardando posição GPS para nova tentativa."}){Text("Tentar novamente")}
                         accuracy?.let{Text("Precisão do GPS: "+String.format(Locale("pt","BR"),"%.1f m",it))}
                         if(outsidePack)Text("Posição fora da área do mapa piloto. Não há orientação.")
                         val style=bundle?.style
@@ -167,7 +164,7 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
             state="Conceda localização precisa e selecione novamente.";return
         }
         if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)){state="Ative o GPS do aparelho.";return}
-        credential="";consent=false;requestedHost=hostname;secret=key;target=destination
+        credential="";consent=false;secret=key
         selected="dynamic";state="Aguardando GPS preciso.";accuracy=null;outsidePack=false
         model.navigationUiState.value=NavigationUiState.empty()
         val ticket=++generation
@@ -179,7 +176,7 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
                 accuracy=fix.horizontalAccuracy;outsidePack=!fieldPackContains(point.lat,point.lng)
                 latest=InitialRouteFix(point,fix.horizontalAccuracy,captured)
                 model.navigationUiState.value=NavigationUiState.empty().copy(location=fix,isMuted=true)
-                if(!attempted&&!requestInFlight){
+                if(!requestGate.attempted&&!requestInFlight){
                     val f=latest!!
                     when{
                         outsidePack -> state="GPS fora do mapa piloto."
@@ -187,12 +184,19 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
                         !online() -> state="Sem conexão. Nenhuma rota solicitada."
                         !key.valid(SystemClock.elapsedRealtime()) -> state="Credencial expirada. Encerre e informe uma nova."
                         else -> {
-                            attempted=true;requestInFlight=true;state="Buscando rota no servidor APOIS…"
+                            val request=checkNotNull(requestGate.begin());requestInFlight=true;state="Buscando rota no servidor APOIS…"
                             val client=FieldDynamicRouteClient("https://"+hostname+"/route",hostname,key,::current,destination)
-                            initialJob=lifecycleScope.launch{
+                            initialJob=lifecycleScope.launch(start=CoroutineStart.UNDISPATCHED){
                                 try {
+                                    yield()
+                                    ensureActive()
+                                    if(!requestGate.accepts(request)||!current()||!online()){
+                                        if(current())state="Conexão ou posição indisponível. Tente novamente."
+                                        return@launch
+                                    }
                                     val route=withTimeout(15_000){client.resolve(f.point,destination)}
                                     ensureActive()
+                                    if(!current()||!requestGate.accepts(request))return@launch
                                     val fresh=latest
                                     if(fresh==null||!fieldDynamicCanStart(current(),foreground,qualityNow,SystemClock.elapsedRealtime(),fresh,destination,route.geometry.map{RegionalPoint(it.lat,it.lng)})){
                                         state="Posição mudou ou perdeu precisão. Solicite nova rota.";return@launch
@@ -209,7 +213,7 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
                                 }catch(_:TimeoutCancellationException){if(current())state="Servidor demorou a responder. Tente novamente."}
                                 catch(e:CancellationException){throw e}
                                 catch(_:Exception){if(current())state="Rota indisponível. Confira servidor, conexão e destino."}
-                                finally{if(current())requestInFlight=false}
+                                finally{if(requestGate.finish(request)&&current())requestInFlight=false}
                             }
                         }
                     }
@@ -217,7 +221,7 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
             },onQuality={q->
                 qualityNow=q
                 if(q!=GpsQuality.AVAILABLE){
-                    latest=null;initialJob?.cancel();requestInFlight=false
+                    latest=null;requestGate.invalidate();initialJob?.cancel()
                     state=gpsStatusLabel(q)?:"Aguardando GPS.";accuracy=null;outsidePack=false
                     model.navigationUiState.value=NavigationUiState.empty()
                 }
@@ -241,14 +245,14 @@ class FieldDynamicPilotActivity:ComponentActivity(),LocationListener {
     }
     private fun stopPilot(){
         generation++
-        initialJob?.cancel();initialJob=null;requestInFlight=false;attempted=false;latest=null
-        qualityNow=GpsQuality.WAITING;secret=null;requestedHost=null;target=null;credential="";consent=false
+        requestGate.reset();initialJob?.cancel();initialJob=null;requestInFlight=false;latest=null
+        qualityNow=GpsQuality.WAITING;secret=null;credential="";consent=false
         model.setForeground(false);model.stopNavigation()
         owner?.close();owner=null
         runCatching{manager.removeUpdates(this)}
         preflight?.let(DriverGpsFeed::unsubscribe);preflight=null
         val old=source;source=null;old?.let(DriverGpsFeed::endSource)
-        tts?.stop();active=false;selected=null;distance=null;accuracy=null;outsidePack=false;state="Teste encerrado. Informe servidor, credencial e destino."
+        tts?.stop();active=false;selected=null;accuracy=null;outsidePack=false;state="Teste encerrado. Informe servidor, credencial e destino."
     }
     override fun onLocationChanged(location:Location){
         if(!foreground)return
