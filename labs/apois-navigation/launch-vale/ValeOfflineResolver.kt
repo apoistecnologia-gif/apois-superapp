@@ -177,7 +177,9 @@ internal suspend fun installValeLocalDriverControlCandidate(
             fun live()=NativeDriverReadSource.current(stamp)&&
                 runCatching{hostCurrent()&&online()}.getOrDefault(false)
             valeDriverGrant(app,pack,request,::live,client::target,audioAuthorization)
-        },localRoutingOnly=true)
+        },localRoutingOnly=true,readyForOpening={
+            runCatching{hostCurrent()&&online()&&NativeDriverReadSource.stamp()!=null}.getOrDefault(false)
+        })
     if(!NativeConfirmedHost.install(configuration))return false
     onInstalled(configuration)
     return true

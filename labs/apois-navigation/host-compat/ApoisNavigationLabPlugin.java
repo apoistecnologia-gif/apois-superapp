@@ -19,7 +19,7 @@ public class ApoisNavigationLabPlugin extends Plugin {
     public void confirmedAvailability(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             if(call.getData()==null||call.getData().length()!=0){call.reject("Invalid capability request");return;}
-            call.resolve(new JSObject().put("configured",NativeConfirmedHost.INSTANCE.configured()));
+            call.resolve(new JSObject().put("configured",NativeConfirmedHost.INSTANCE.available()));
         });
     }
 

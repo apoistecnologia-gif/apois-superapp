@@ -23,7 +23,8 @@ internal data class NativeHostConfiguration(
     val approvedBackendHost:String,val routeEndpoint:String,val routeHost:String,
     val online:()->Boolean,
     val grant:suspend (ConfirmedHostRequest)->NativeHostGrant?,
-    val localRoutingOnly:Boolean=false
+    val localRoutingOnly:Boolean=false,
+    val readyForOpening:()->Boolean={true}
 )
 object NativeConfirmedHost{
     private var configuration:NativeHostConfiguration?=null
@@ -45,6 +46,12 @@ object NativeConfirmedHost{
     }
     // Read-only capability check. It never configures the host or starts GPS.
     fun configured():Boolean{main();return configuration!=null}
+    fun available():Boolean{
+        main()
+        val config=configuration?:return false
+        return pending==null&&!ConfirmedLiveNavigationBridge.occupied()&&
+            LabNavigationBridge.screen.value==null&&runCatching{config.readyForOpening()}.getOrDefault(false)
+    }
     private fun request(id:String,phase:String,revision:Long):ConfirmedHostRequest?{
         val leg=when(phase){"PICKUP"->RidePhase.PICKUP;"TRIP"->RidePhase.TRIP;else->return null}
         return ConfirmedHostRequest(id,leg,revision).takeIf{it.valid()}
@@ -56,7 +63,8 @@ object NativeConfirmedHost{
         main()
         val req=request(id,phase,revision)?:run{uncertain.run();return}
         val config=configuration?:run{opened.accept(null);return}
-        if(ConfirmedLiveNavigationBridge.occupied()||LabNavigationBridge.screen.value!=null){uncertain.run();return}
+        if(ConfirmedLiveNavigationBridge.occupied()||LabNavigationBridge.screen.value!=null||pending!=null){uncertain.run();return}
+        if(!runCatching{config.readyForOpening()}.getOrDefault(false)){opened.accept(null);return}
         val ticket=gate.begin(req)?:run{uncertain.run();return}
         pendingTicket=ticket
         val job=CoroutineScope(Dispatchers.Main.immediate).launch(start=CoroutineStart.UNDISPATCHED){
