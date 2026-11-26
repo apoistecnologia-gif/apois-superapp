@@ -51,7 +51,7 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
                 if(!isDestroyed&&status==TextToSpeech.SUCCESS){
                     val engine=tts
                     val voice=engine?.voices?.firstOrNull{it.locale.language=="pt"&&it.locale.country=="BR"&&!it.isNetworkConnectionRequired}
-                    voiceReady=voice!=null&&engine.setVoice(voice)==TextToSpeech.SUCCESS
+                    voiceReady=voice!=null&&engine?.setVoice(voice)==TextToSpeech.SUCCESS
                 }
             }
         }
@@ -73,13 +73,14 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
                         Text(if(bundle==null)"Verificando mapas..." else "Mapa local verificado.")
                         for((id,label) in listOf("itainopolis" to "Itainópolis — 1,29 km","picos" to "Picos — 1,18 km","corridor" to "Itainópolis → Picos — 51,32 km")){
                             Button(onClick={startPilot(id)},enabled=bundle!=null,modifier=Modifier.fillMaxWidth()){Text(label)}
+                            bundle?.routes?.get(id)?.geometry?.firstOrNull()?.let{p->Text(String.format(Locale.US,"Início: %.6f, %.6f",p.lat,p.lng),style=MaterialTheme.typography.bodySmall)}
                         }
                     }else{
                         Text(state)
                         distance?.let{Text("Distância até o início: "+String.format(Locale("pt","BR"),"%.0f m",it))}
                         if(active){
                             val style=bundle?.style
-                            if(style!=null)PortraitNavigationView(modifier=Modifier.weight(1f).fillMaxWidth(),baseStyle=style,viewModel=model,onTapExit={stopPilot()})
+                            if(style!=null)PortraitNavigationView(modifier=Modifier.weight(1f).fillMaxWidth(),baseStyle=style,viewModel=model,views=com.stadiamaps.ferrostar.composeui.config.NavigationViewComponentBuilder.Default(),onTapExit={stopPilot()})
                             gpsStatusLabel(quality)?.let{Text(it)}
                             notice?.let{Text(it)}
                             if(ui.tripState is TripState.Complete)Text("Chegada ao destino de teste. Nenhuma corrida real finalizada.")
