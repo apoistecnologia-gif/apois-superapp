@@ -1,0 +1,51 @@
+name: APOIS GPS - Valhalla embarcado (isolado)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/embedded-probe/**','.github/workflows/apois-navigation-lab-embedded.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  embedded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Rallista/valhalla-mobile
+          ref: b47ad5a9aa5d907df329bd2a0bfcc9080220c9d8
+          path: .valhalla-mobile-source
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Android SDK and emulator
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+      - name: Compile engine and Ferrostar, inspect APK permissions and ABI
+        run: bash labs/apois-navigation/embedded-probe/build.sh
+      - name: Enable emulator acceleration
+        run: |
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Execute offline route with upstream fixture
+        run: bash labs/apois-navigation/embedded-probe/emulator.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-embedded-probe-report
+          path: ${{ runner.temp }}/apois-embedded-report/
+          retention-days: 7
+          if-no-files-found: warn
