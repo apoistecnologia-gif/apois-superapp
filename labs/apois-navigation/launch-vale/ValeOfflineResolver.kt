@@ -25,7 +25,8 @@ private object ValeEngineLane {
 internal class ValeOfflineResolver(
     context:Context,private val graph:File,private val target:ApprovedIndependentTarget,
     private val hostCurrent:()->Boolean,private val packCurrent:()->Boolean,
-    evidence:suspend ()->VerifiedRouteEvidence?,now:()->Long
+    evidence:suspend ()->VerifiedRouteEvidence?,now:()->Long,
+    private val onDispose:()->Unit={}
 ):ManagedRouteResolver{
     private val app=context.applicationContext
     private val closed=AtomicBoolean(false)
@@ -85,19 +86,22 @@ internal class ValeOfflineResolver(
 
     override fun dispose(){
         if(!closed.compareAndSet(false,true))return
-        ValeEngineLane.executor.execute{
+        try{onDispose()}finally{ValeEngineLane.executor.execute{
             try{actor?.close()}catch(_:Exception){}catch(_:LinkageError){}finally{actor=null}
-        }
+        }}
     }
 }
 
 /** Factory only for the pinned laboratory Vale data pack; map provenance
  * must match the graph before the native actor can be created. No registration.
  */
-internal fun valeLocalFactory(context:Context,graph:File,packCurrent:()->Boolean):NativeLocalRouteFactory =
+internal fun valeLocalFactory(context:Context,lease:VerifiedValeRuntimePack.Lease):NativeLocalRouteFactory =
     NativeLocalRouteFactory{target,map,current,verify->
         if(map.extractSha!="c50dd021ab11518b230c191bc9fa85f683c9b82810f605476532c16172f55238"||
             map.mapSha!="18dc74cfea6ab6a8365b48df0731173b794825b108ed1f72db740ed16c3490fe"||
-            !runCatching{packCurrent()&&current()}.getOrDefault(false))null
-        else ValeOfflineResolver(context,graph,target,current,packCurrent,verify,android.os.SystemClock::elapsedRealtime)
+            !runCatching{current()&&target.usable()&&lease.claim()}.getOrDefault(false))null
+        else try{
+            ValeOfflineResolver(context,lease.graph,target,current,lease::current,verify,
+                android.os.SystemClock::elapsedRealtime,lease::close)
+        }catch(e:Exception){lease.close();throw e}
     }

@@ -54,6 +54,16 @@ internal class OfflinePackStore(private val root:File,private val maxInstallByte
             f.inputStream().use{copyChecked(it,e)}
         }
     }
+    /** Read-only revalidation before granting a session. Missing or corrupt
+     * data fails closed; never repairs, downloads or replaces an existing pack. */
+    @Synchronized fun openVerified(trusted:OfflinePackSpec):File{
+        val spec=trusted.validated()
+        require(spec.files.sumOf{it.bytes}<=maxInstallBytes)
+        check(root.absoluteFile==root.canonicalFile&&root.isDirectory)
+        val dir=child(root,"pack-"+spec.identity())
+        verify(dir,spec)
+        return dir
+    }
     @Synchronized fun install(trusted:OfflinePackSpec,source:(String)->InputStream):File{
         val spec=trusted.validated()
         val total=spec.files.sumOf{it.bytes}

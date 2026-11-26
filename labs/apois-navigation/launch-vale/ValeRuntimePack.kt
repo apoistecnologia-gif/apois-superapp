@@ -2,6 +2,7 @@ package br.com.apois.navigation.lab
 
 import android.content.Context
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -16,6 +17,33 @@ internal class VerifiedValeRuntimePack private constructor(
     val graph:File get()=File(directory,"graph.tar")
     val search:File get()=File(directory,"search.json")
     val map:File get()=File(directory,"map.pmtiles")
+    /** One native, revocable lease; no authority to change a ride. Full hash
+     * verification runs off the UI thread before the lease is issued. During
+     * use, cheap file stamps detect disappearance/replacement; the graph is
+     * additionally hashed by the resolver before opening the engine. */
+    internal inner class Lease internal constructor(){
+        private val revoked=AtomicBoolean(false)
+        private val claimed=AtomicBoolean(false)
+        private val files=listOf(map,this@VerifiedValeRuntimePack.graph,search)
+        private val stamps=files.map{file->file.length() to file.lastModified()}
+        val graph:File get()=this@VerifiedValeRuntimePack.graph
+        fun current():Boolean=!revoked.get()&&runCatching{
+            directory.absoluteFile==directory.canonicalFile&&directory.isDirectory&&
+                directory.list()?.toSet()==files.map{it.name}.toSet()&&
+                files.zip(stamps).all{(f,s)->f.absoluteFile==f.canonicalFile&&f.isFile&&
+                    f.length()==s.first&&f.lastModified()==s.second}
+        }.getOrDefault(false)&&!revoked.get()
+        fun claim():Boolean=current()&&claimed.compareAndSet(false,true)&&current()
+        fun close(){revoked.set(true)}
+    }
+    suspend fun acquireLease():Lease=withContext(Dispatchers.IO){
+        ensureActive()
+        val root=checkNotNull(directory.parentFile)
+        val verified=OfflinePackStore(root,32L*1024*1024).openVerified(spec)
+        check(verified==directory&&directory.name=="pack-"+identity&&identity==spec.identity())
+        ensureActive()
+        Lease().also{check(it.current())}
+    }
     companion object{
         private val spec=OfflinePackSpec("vale-pe-ba",
             "c50dd021ab11518b230c191bc9fa85f683c9b82810f605476532c16172f55238","3.6.3",listOf(

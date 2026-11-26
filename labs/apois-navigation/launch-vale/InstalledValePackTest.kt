@@ -35,7 +35,7 @@ class InstalledValePackTest {
     private fun body(a:Point,b:Point)=
         """{"locations":[{"lat":${a.lat},"lon":${a.lng},"type":"break"},{"lat":${b.lat},"lon":${b.lng},"type":"break"}],"costing":"auto","units":"kilometers","language":"pt-BR","format":"osrm","voice_instructions":true,"banner_instructions":true,"shape_format":"polyline6"}"""
     private fun digest(bytes:ByteArray)=MessageDigest.getInstance("SHA-256").digest(bytes).joinToString(""){"%02x".format(it.toInt() and 255)}
-    private fun validatedTile():File {
+    private fun validatedTile():br.com.apois.navigation.lab.VerifiedValeRuntimePack {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val pack=kotlinx.coroutines.runBlocking{br.com.apois.navigation.lab.VerifiedValeRuntimePack.install(context)}
         val dir=pack.directory
@@ -58,12 +58,15 @@ class InstalledValePackTest {
             assertTrue(catalog.find(city).any{it.kind=="place"&&it.label==city})
         }
         Log.i("APOIS_VALE_OFFLINE","pack_installed=true; search_rows="+rows.length())
-        return pack.graph
+        return pack
     }
     @Test fun verifyRegionalOfflineRoutesAndFerrostar(){
         val context=InstrumentationRegistry.getInstrumentation().targetContext
-        val tile=validatedTile()
-        val config=ValhallaConfigBuilder().withTileExtract(tile.absolutePath).build()
+        val pack=validatedTile()
+        val lease=kotlinx.coroutines.runBlocking{pack.acquireLease()}
+        assertTrue(lease.claim());assertFalse(lease.claim());assertTrue(lease.current())
+        try{
+        val config=ValhallaConfigBuilder().withTileExtract(lease.graph.absolutePath).build()
         val adapter=RouteAdapter.fromWellKnownRouteProvider(WellKnownRouteProvider.Valhalla("https://navigation.invalid/route","auto"))
         val a=Point(-9.403901,-40.5040233);val b=Point(-9.397901,-40.4980233)
         val c=Point(-9.4165,-40.5035);val d=Point(-9.4225,-40.5095)
@@ -73,7 +76,9 @@ class InstalledValePackTest {
             fun checked(origin:Point,target:Point):Route{
                 assertTrue(origin.inside()&&target.inside())
                 val start=SystemClock.elapsedRealtime()
+                assertTrue(lease.current())
                 val raw=engine.routeRaw(body(origin,target))
+                assertTrue(lease.current())
                 val bytes=raw.toByteArray(Charsets.UTF_8);assertTrue(bytes.size in 1..2_000_000)
                 val json=JSONObject(raw);assertEquals("Ok",json.getString("code"))
                 val item=json.getJSONArray("routes").getJSONObject(0)
@@ -101,7 +106,11 @@ class InstalledValePackTest {
             assertNotEquals(checked(a,c).geometry,changed.geometry)
             assertTrue(runCatching{engine.routeRaw(body(Point(-7.45,-41.48),c))}.isFailure)
             Log.i("APOIS_VALE_OFFLINE","reference_routes=4; changed_origin=true")
-
         }
+        }finally{lease.close()}
+        assertFalse(lease.current());assertFalse(lease.claim())
+        val next=kotlinx.coroutines.runBlocking{pack.acquireLease()}
+        try{assertTrue(next.claim());assertTrue(next.current())}finally{next.close()}
+        Log.i("APOIS_VALE_OFFLINE","lease_single_use=true; revoked=true; reacquired=true")
     }
 }

@@ -44,6 +44,20 @@ class OfflinePackStoreTest{
         File(p,"graph.tar").writeText("corrupt")
         assertTrue(runCatching{s.install(spec("1")){error("must not overwrite published path")}}.isFailure)
     }
+    @Test fun reopenIsReadOnlyAndRejectsSameSizeCorruption(){
+        val root=tmp.newFolder();val s=store(root)
+        assertTrue(runCatching{s.openVerified(spec("1"))}.isFailure)
+        assertEquals(emptyList<String>(),root.list()!!.toList())
+        val p=s.install(spec("1")){ByteArrayInputStream(bytes(it,"1"))}
+        assertEquals(p,s.openVerified(spec("1")))
+        val map=File(p,"map.pmtiles");val original=map.readBytes()
+        val corrupt=original.copyOf().also{it[0]=(it[0].toInt() xor 1).toByte()}
+        map.writeBytes(corrupt)
+        assertTrue(runCatching{s.openVerified(spec("1"))}.isFailure)
+        assertArrayEquals(corrupt,map.readBytes())
+        map.writeBytes(original)
+        assertEquals(p,s.openVerified(spec("1")))
+    }
     @Test fun rejectBudgetBeforeReading(){
         val s=OfflinePackStore(tmp.newFolder(),1,0)
         assertTrue(runCatching{s.install(spec("1")){error("not called")}}.isFailure)
