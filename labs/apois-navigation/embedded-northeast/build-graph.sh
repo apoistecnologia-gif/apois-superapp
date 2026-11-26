@@ -43,3 +43,12 @@ docker stats --no-stream --format '{{json .}}' "$NAME" > "$OUT/docker-stats.json
 # Measure the complete graph, without uploading the graph or modifying any remote service.
 test -s "$WORK/custom/valhalla_tiles.tar"
 python "$BASE/inspect-index.py" "$WORK/custom/valhalla_tiles.tar" "$OUT/graph-index-report.json"
+
+# Optional local handoff to Android in the same ephemeral CI runner only.
+if [[ "${APOIS_LOCAL_ANDROID_TEST:-0}" == 1 ]];then
+  D="$RUNNER_TEMP/apois-ne-local-graph"
+  mkdir -p "$D"
+  cp "$WORK/custom/valhalla_tiles.tar" "$D/graph.tar"
+  cp "$OUT/graph-index-report.json" "$D/"
+  (cd "$D" && sha256sum graph.tar > graph.sha256)
+fi

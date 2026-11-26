@@ -12,7 +12,7 @@ concurrency:
 jobs:
   graph:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,8 +29,36 @@ jobs:
           free -m > "$O/memory-before.txt"
           curl --fail --location --retry 3 --retry-all-errors --retry-delay 10 --retry-max-time 900 --max-time 780 --connect-timeout 20 https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf -o "$RUNNER_TEMP/nordeste.osm.pbf"
           (cd "$RUNNER_TEMP" && sha256sum nordeste.osm.pbf) > "$O/source.sha256"
+          (cd "$RUNNER_TEMP" && echo "49cad6d647ad887d95c56677bd0c02e732ef9984b1aa6ac92b0dfe018eb08835  nordeste.osm.pbf" | sha256sum -c -)
       - name: Generate version-compatible graph and run existing 15 route samples
+        env:
+          APOIS_LOCAL_ANDROID_TEST: '1'
         run: bash labs/apois-navigation/embedded-northeast/build-graph.sh "$RUNNER_TEMP/nordeste.osm.pbf" "$RUNNER_TEMP/apois-ne-embedded-report"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Prepare Android SDK and emulator
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Compile isolated Android test without bundling graph
+        run: bash labs/apois-navigation/embedded-northeast/android-build.sh
+      - name: Calculate all 15 routes offline on Android
+        run: bash labs/apois-navigation/embedded-northeast/android-emulator.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-ne-android-evidence
+          path: ${{ runner.temp }}/apois-embedded-report/
+          retention-days: 7
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         if: always()
         with:
