@@ -33,6 +33,13 @@ class PackSignaturePolicyTest{
         assertFalse(verify(r,PackReleaseFloor(3,spec.identity())))
         assertFalse(verify(r,PackReleaseFloor(2,"c".repeat(64))))
     }
+    @Test fun rejectDifferentCurveEvenWhenPinned(){
+        val other=KeyPairGenerator.getInstance("EC").apply{initialize(ECGenParameterSpec("secp384r1"))}.generateKeyPair()
+        val draft=SignedPackRelease(spec,2,byteArrayOf())
+        val signer=Signature.getInstance("SHA256withECDSA")
+        signer.initSign(other.private);signer.update(draft.payload())
+        assertFalse(PackSignaturePolicy.verify(draft.copy(signature=signer.sign()),other.public,PackSignaturePolicy.keyId(other.public),PackReleaseFloor(0,null)))
+    }
     @Test fun rejectUntrustedKeyAndBadSignature(){
         val r=release(2);val other=key()
         assertFalse(PackSignaturePolicy.verify(r,other.public,PackSignaturePolicy.keyId(keys.public),PackReleaseFloor(0,null)))
