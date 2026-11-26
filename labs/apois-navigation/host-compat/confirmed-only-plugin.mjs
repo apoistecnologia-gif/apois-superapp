@@ -7,9 +7,9 @@ export function confirmedOnlyPlugin(source){
  assert.equal(source.split(start).length,2)
  assert.equal(source.split(end).length,2)
  assert.ok(source.indexOf(start)<source.indexOf(end))
- let result=source.slice(0,source.indexOf(start))+source.slice(source.indexOf(end))
+ // Activity owns configuration; a late plugin destroy must not revoke another owner.
+ let result=source.slice(0,source.indexOf(start))+'}\n'
  result=result.replace('import br.com.apois.navigation.lab.LabNavigationBridge;\n','')
- result=result.replace('            LabNavigationBridge.INSTANCE.closeActive();\n','')
  result=result.replace('public class ApoisNavigationLabPlugin extends Plugin','public class ApoisConfirmedNavigationPlugin extends Plugin')
  result=result.replace('@CapacitorPlugin(name="ApoisNavigationLab")','@CapacitorPlugin(name="ApoisConfirmedNavigation")')
  assert.ok(!result.includes('LabNavigationBridge')&&!result.includes('public void open(')&&!result.includes('public void update(')&&!result.includes('public void close('))

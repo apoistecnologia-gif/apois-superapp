@@ -8,7 +8,7 @@ test('confirmed transport retains only reviewed ride reference methods',()=>{
  assert.match(generated,/@CapacitorPlugin\(name="ApoisConfirmedNavigation"\)/)
  assert.match(generated,/ConfirmedNavigationRequest\.sessionId/)
  assert.match(generated,/ConfirmedLiveNavigationBridge\.INSTANCE\.closeAcknowledged/)
- assert.doesNotMatch(generated,/LabNavigationBridge|rideIntent"\)/)
+ assert.doesNotMatch(generated,/LabNavigationBridge|rideIntent"\)|handleOnDestroy|NativeConfirmedHost\.INSTANCE\.destroy/)
 })
 test('missing or repeated replay boundaries fail closed',()=>{
  assert.throws(()=>confirmedOnlyPlugin(original.replace('public void open(PluginCall call)','public void replay(PluginCall call)')))
