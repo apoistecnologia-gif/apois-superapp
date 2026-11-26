@@ -6,10 +6,10 @@ mkdir -p "$H/app/src/main/assets" "$H/app/src/androidTest/java/br/com/apois/navi
 cp "$ROOT/android/settings.gradle" "$H/settings.gradle"
 sed -i "s/include ':probe'/include ':app'/" "$H/settings.gradle"
 cp "$ROOT/android/gradle.properties" "$H/gradle.properties"
-G="$RUNNER_TEMP/apois-vale-pack"
-(cd "$G" && printf '%s\n' '38cf6df5fdd080ac4feb5c053a417fb4b814119765bc8214ad7593da985a1433  graph.tar' '18dc74cfea6ab6a8365b48df0731173b794825b108ed1f72db740ed16c3490fe  map.pmtiles' '9864919ce496184b917818f56d00406ef367c1987cdf37f24cc524c324bc08fa  search.json' | sha256sum -c -)
-mkdir -p "$H/app/src/main/assets/vale-pack"
-cp "$G/"{graph.tar,map.pmtiles,search.json} "$H/app/src/main/assets/vale-pack/"
+G="$RUNNER_TEMP/apois-vale-runtime-assets"
+(cd "$G" && printf '%s\n' '38cf6df5fdd080ac4feb5c053a417fb4b814119765bc8214ad7593da985a1433  apois-vale-data/graph.tar' '18dc74cfea6ab6a8365b48df0731173b794825b108ed1f72db740ed16c3490fe  apois-regional/vale.pmtiles' '9864919ce496184b917818f56d00406ef367c1987cdf37f24cc524c324bc08fa  apois-vale-data/search.json' | sha256sum -c -)
+cp -a "$G/." "$H/app/src/main/assets/"
+cp "$ROOT/launch-vale/ValeRuntimePack.kt" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded/"
 cp "$ROOT/launch-vale/InstalledValePackTest.kt" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded/"
 cp "$ROOT/pack-store/OfflinePackStore.kt" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded/"
 cp "$ROOT/field-v42/PilotSearchCatalog.kt" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded/"
@@ -60,5 +60,5 @@ for abi in arm64-v8a x86_64; do
  grep -F "lib/$abi/libvalhalla-wrapper.so" "$OUT/apk-files.txt"
 done
 stat -c '%s bytes (test APK)' "$APK" > "$OUT/size.txt"
-(cd "$G" && sha256sum graph.tar map.pmtiles search.json) > "$OUT/fixture.sha256"
+(cd "$G" && sha256sum apois-vale-data/graph.tar apois-regional/vale.pmtiles apois-vale-data/search.json) > "$OUT/fixture.sha256"
 gradle -p "$H" :app:dependencies --configuration debugRuntimeClasspath --no-daemon > "$OUT/dependencies.txt"

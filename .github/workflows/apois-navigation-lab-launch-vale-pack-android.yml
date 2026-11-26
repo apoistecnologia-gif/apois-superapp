@@ -2,7 +2,7 @@ name: APOIS GPS - Vale pacote instalado no Android
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/launch-vale/InstalledValePackTest.kt','labs/apois-navigation/launch-vale/pack-android-build.sh','.github/workflows/apois-navigation-lab-launch-vale-pack-android.yml']
+    paths: ['labs/apois-navigation/launch-vale/InstalledValePackTest.kt','labs/apois-navigation/launch-vale/ValeRuntimePack.kt','labs/apois-navigation/pack-store/OfflinePackStore.kt','labs/apois-navigation/launch-vale/pack-android-build.sh','.github/workflows/apois-navigation-lab-launch-vale-pack-android.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,10 +18,10 @@ jobs:
           submodules: false
       - uses: actions/download-artifact@v4
         with:
-          name: apois-vale-inactive-data-pack
-          run-id: 45748961675
+          name: apois-vale-runtime-assets-inactive
+          run-id: 45749604118
           github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/apois-vale-pack
+          path: ${{ runner.temp }}/apois-vale-runtime-assets
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

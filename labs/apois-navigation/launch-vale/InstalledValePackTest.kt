@@ -37,20 +37,15 @@ class InstalledValePackTest {
     private fun digest(bytes:ByteArray)=MessageDigest.getInstance("SHA-256").digest(bytes).joinToString(""){"%02x".format(it.toInt() and 255)}
     private fun validatedTile():File {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
-        val spec=OfflinePackSpec("vale-pe-ba","c50dd021ab11518b230c191bc9fa85f683c9b82810f605476532c16172f55238","3.6.3",listOf(
-            OfflinePackFile("map.pmtiles",3422737,"18dc74cfea6ab6a8365b48df0731173b794825b108ed1f72db740ed16c3490fe"),
-            OfflinePackFile("graph.tar",8263680,"38cf6df5fdd080ac4feb5c053a417fb4b814119765bc8214ad7593da985a1433"),
-            OfflinePackFile("search.json",1433158,"9864919ce496184b917818f56d00406ef367c1987cdf37f24cc524c324bc08fa")
-        ))
-        assertEquals("89e4ed84a975713e74e67bcdba4b883caf1b85e1348c2496189c153a2629cfad",spec.identity())
-        val store=OfflinePackStore(File(context.noBackupFilesDir,"regional-packs"),32*1024*1024L,0)
-        val dir=store.install(spec){context.assets.open("vale-pack/"+it)}
-        assertEquals(dir,store.install(spec){error("unexpected repeat install")})
+        val pack=kotlinx.coroutines.runBlocking{br.com.apois.navigation.lab.VerifiedValeRuntimePack.install(context)}
+        val dir=pack.directory
+        assertEquals("89e4ed84a975713e74e67bcdba4b883caf1b85e1348c2496189c153a2629cfad",pack.identity)
+        assertEquals(dir,kotlinx.coroutines.runBlocking{br.com.apois.navigation.lab.VerifiedValeRuntimePack.install(context)}.directory)
         val magic=ByteArray(7)
         java.io.DataInputStream(File(dir,"map.pmtiles").inputStream()).use{it.readFully(magic)}
         assertEquals("PMTiles",magic.toString(Charsets.US_ASCII))
         val json=JSONObject(File(dir,"search.json").readText())
-        assertEquals(spec.sourceSha,json.getString("extract_sha256"))
+        assertEquals("c50dd021ab11518b230c191bc9fa85f683c9b82810f605476532c16172f55238",json.getString("extract_sha256"))
         assertFalse(json.getBoolean("active"))
         val rows=json.getJSONArray("rows");assertEquals(8676,rows.length())
         val candidates=(0 until rows.length()).map{ i->
@@ -63,7 +58,7 @@ class InstalledValePackTest {
             assertTrue(catalog.find(city).any{it.kind=="place"&&it.label==city})
         }
         Log.i("APOIS_VALE_OFFLINE","pack_installed=true; search_rows="+rows.length())
-        return File(dir,"graph.tar")
+        return pack.graph
     }
     @Test fun verifyRegionalOfflineRoutesAndFerrostar(){
         val context=InstrumentationRegistry.getInstrumentation().targetContext
