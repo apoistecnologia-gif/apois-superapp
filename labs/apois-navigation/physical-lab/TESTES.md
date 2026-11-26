@@ -8,3 +8,5 @@ Aplicativo separado, pacote br.com.apois.navigation.compat.lab, Android 7.1 (API
 Limites: não testa app oficial, autenticação real, servidor remoto, recálculo automático em rua, compartilhamento do GPS original, bateria em corrida real. Não representa aprovação comercial. O mapa tem atribuição © OpenStreetMap contributors (ODbL); arquivos de aviso e licença estão incluídos nos assets.
 
 CI 45784332943 falhou na geração do overlay porque há dois callbacks de saída após a separação do painel confirmado. Correção preserva saída confirmada e bloqueia apenas saída SDK do replay sintético. APK passa a incluir hash/commit e lista de arquivos, com retenção 30 dias; ainda requer build verde e teste físico. O teste de tela confirmada separado passou no run 45784332748. Nenhum APK oficial alterado.
+
+O novo ensaio de retenção preserva somente relatório e três rotas/replays sintéticos do run 45707496288, validando métricas, voz e origem antes de copiar; publica hashes SHA-256 para revisão. Não contém tokens, chave de assinatura ou dados de cliente. A mudança para o novo run só deve ocorrer após confirmar sucesso. O arquivo original vence 02/12/2026.

@@ -1,0 +1,46 @@
+name: APOIS GPS - preservar replay Vale sintetico
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/physical-lab/replay-fixture.mjs','.github/workflows/apois-navigation-lab-replay-retention.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-v21-regional-evidence
+          run-id: 45707496288
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/original-replay
+      - name: Verify and preserve only synthetic replay data
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/preserved-replay"
+          node --input-type=module <<'JS'
+          import {verifyReplayFixture} from './labs/apois-navigation/physical-lab/replay-fixture.mjs'
+          import {copyFileSync,writeFileSync} from 'node:fs'
+          import {join} from 'node:path'
+          const source=join(process.env.RUNNER_TEMP,'original-replay'),out=join(process.env.RUNNER_TEMP,'preserved-replay')
+          const report=verifyReplayFixture(source)
+          for(const {name} of report.entries)copyFileSync(join(source,name),join(out,name))
+          writeFileSync(join(out,'provenance.json'),JSON.stringify(report,null,2)+'\n')
+          console.log('APOIS_REPLAY_RETENTION_OK',JSON.stringify(report))
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-vale-synthetic-replay
+          path: ${{ runner.temp }}/preserved-replay/
+          retention-days: 30
+          if-no-files-found: error
