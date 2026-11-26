@@ -33,6 +33,8 @@ mkdir -p "$OUT"
 cp "$APK" "$OUT/APOIS-Passageiro-Teste-Fisico.apk"
 cp "$RUNNER_TEMP/apois-passenger-badging.txt" "$OUT/"
 cp "$ROOT/physical-passenger/TESTES.md" "$OUT/"
+cp "$H/fixture-provenance.json" "$RUNNER_TEMP/apois-passenger-apk-files.txt" "$OUT/"
+printf '%s\n' "${GITHUB_SHA:?CI commit required}" > "$OUT/BUILD-COMMIT.txt"
 cd "$OUT"
 sha256sum APOIS-Passageiro-Teste-Fisico.apk > SHA256SUMS.txt
 cat SHA256SUMS.txt

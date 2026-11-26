@@ -49,5 +49,5 @@ jobs:
         with:
           name: APOIS-Passageiro-Teste-Fisico
           path: ${{ runner.temp }}/apois-passenger-apk/
-          retention-days: 7
+          retention-days: 30
           if-no-files-found: error
