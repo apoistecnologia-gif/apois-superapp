@@ -142,7 +142,7 @@ internal suspend fun valeDriverGrant(
             localFactory=NativeLocalRouteFactory{approved,map,owner,verify->
                 if(approved!=target.approved||!current())null
                 else valeLocalFactory(context,lease).open(approved,map,{current()&&owner()},verify)
-            })
+            },discard=lease::close)
         handedOff=true
         return grant
     }finally{if(!handedOff)lease.close()}

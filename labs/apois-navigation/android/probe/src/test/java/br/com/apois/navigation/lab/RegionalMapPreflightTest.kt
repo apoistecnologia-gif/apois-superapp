@@ -23,6 +23,20 @@ class RegionalMapPreflightTest{
         val map=Any()
         assertSame(map,preflightRegionalMap({true}){map})
     }
+    @Test fun invalidMapNeverRequestsGrant()=runBlocking{
+        var grants=0
+        assertNull(mapThenGrant<Any,Any>({true},{null},{grants++;Any()},{error("no grant")}))
+        assertEquals(0,grants)
+    }
+    @Test fun revokedGrantIsDiscardedExactlyOnce()=runBlocking{
+        var active=true;var discarded=0
+        val result=mapThenGrant({active},{Any()},{active=false;Any()},{discarded++})
+        assertNull(result);assertEquals(1,discarded)
+    }
+    @Test fun successfulGrantTransfersOwnership()=runBlocking{
+        val map=Any();val grant=Any()
+        assertEquals(map to grant,mapThenGrant({true},{map},{grant},{error("unexpected discard")}))
+    }
     @Test fun cancellationIsNotTreatedAsSuccessfulVerification()=runBlocking{
         var cancelled=false
         try{preflightRegionalMap<Any>({true}){throw CancellationException("test")}}

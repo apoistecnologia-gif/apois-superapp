@@ -16,7 +16,8 @@ internal data class NativeHostGrant(
     val issuer:RouteCapabilityIssuer?,
     val audioAuthorization:(()->Boolean)?=null,
     val verifyEvidence:(suspend ()->VerifiedRouteEvidence?)?=null,
-    val localFactory:NativeLocalRouteFactory?=null
+    val localFactory:NativeLocalRouteFactory?=null,
+    val discard:()->Unit={}
 )
 internal data class NativeHostConfiguration(
     val approvedBackendHost:String,val routeEndpoint:String,val routeHost:String,
@@ -63,28 +64,31 @@ object NativeConfirmedHost{
             var startAttempted=false
             var session:String?=null
             var ambiguous=false
+            var unusedGrant:NativeHostGrant?=null
             try{
                 fun available()=configuration===config&&gate.current(ticket)&&
                     !activity.isFinishing&&!activity.isDestroyed&&runCatching{listener.asBoolean}.getOrDefault(false)
                 if(!available())return@launch
-                val grant=withTimeoutOrNull(5_000L){config.grant(req)}?:return@launch
+                // Verify map BEFORE any grant read. The candidate can perform
+                // authenticated backend IO while creating a grant.
+                val (map,grant)=mapThenGrant(
+                    current=::available,
+                    load={withTimeoutOrNull(8_000L){BundledRegionalMap.VerifiedMap.load(activity.applicationContext)}},
+                    grant={withTimeoutOrNull(5_000L){config.grant(req)}},
+                    discard={runCatching{it.discard()}}
+                )?:return@launch
+                unusedGrant=grant
                 if(!available()||!req.matches(grant.target)||grant.identity!=grant.target.identity)return@launch
                 if(!nativeRoutingModeMatches(config.localRoutingOnly,grant.localFactory!=null,grant.issuer!=null))return@launch
-                fun authorized()=configuration===config&&runCatching{grant.current()}.getOrDefault(false)
+                fun authorized()=configuration===config&&runCatching{grant.current()&&grant.targetCurrent()}.getOrDefault(false)
                 if(!authorized())return@launch
-                // No backend reads, GPS subscription or routing request if the
-                // packaged regional assets cannot be verified and installed.
-                // Use the verified immutable style in the eventual Activity.
-                val map=preflightRegionalMap(
-                    current={available()&&authorized()&&runCatching{grant.targetCurrent()}.getOrDefault(false)},
-                    load={withTimeoutOrNull(8_000L){BundledRegionalMap.VerifiedMap.load(activity.applicationContext)}}
-                )?:return@launch
                 prepared=prepareConfirmedWithNativeReads(config.approvedBackendHost,grant.identity,grant.target,
                     config.routeEndpoint,config.routeHost,grant.issuer,map,::authorized,grant.targetCurrent,config.online,grant.audioAuthorization,grant.verifyEvidence,grant.localFactory)
                 ensureActive()
                 if(!prepared||!available()||!authorized())return@launch
                 startAttempted=true
                 session=ConfirmedLiveNavigationBridge.openPrepared(activity,id,phase,revision,events)
+                if(session!=null)unusedGrant=null
             }catch(_:CancellationException){
                 ambiguous=startAttempted
             }catch(_:Exception){
@@ -93,6 +97,8 @@ object NativeConfirmedHost{
                 // If no Activity was attempted/created, drop any prepared route.
                 // Never clear a possibly active Activity just to allow fallback.
                 if(prepared&&session==null&&!ambiguous)ConfirmedLiveNavigationBridge.revoke()
+                // Failed or ambiguous opening cannot retain a local grant.
+                unusedGrant?.let{runCatching{it.discard()}}
                 gate.finish(ticket)
                 if(pendingTicket===ticket){pendingTicket=null;pending=null}
                 if(ambiguous)uncertain.run() else opened.accept(session)
