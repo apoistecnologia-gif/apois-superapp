@@ -13,7 +13,7 @@ class ScopedOfflineCalculationTest{
     private val proof=routeEvidenceFromRead(NativeVerifiedRide(identity,id,RidePhase.PICKUP,0,1000,"carros"),target,2000)!!
     private fun guard(t:ApprovedIndependentTarget=target,current:()->Boolean={true},pack:()->Boolean={true},
         evidence:suspend ()->VerifiedRouteEvidence?={proof},now:()->Long={2000},
-        calc:suspend (RegionalPoint,RegionalPoint)->List<RegionalPoint>={a,b->listOf(a,b)})=
+        calc:suspend (RegionalPoint,RegionalPoint)->List<RegionalPoint> = {a,b->listOf(a,b)})=
         ScopedOfflineCalculation(t,current,pack,evidence,now,calc,{it})
     @Test fun validExactLeg()=runBlocking{
         var reads=0
@@ -21,11 +21,13 @@ class ScopedOfflineCalculationTest{
         assertEquals(listOf(origin,destination),g.resolve(origin,destination));assertEquals(2,reads)
     }
     @Test fun wrongTargetSourceAndMissingPackNeverCalculate()=runBlocking{
-        val never:suspend (RegionalPoint,RegionalPoint)->List<RegionalPoint>={_,_->throw AssertionError("not authorized")}
+        var calls=0
+        val never:suspend (RegionalPoint,RegionalPoint)->List<RegionalPoint> = {a,b->calls++;listOf(a,b)}
         for(g in listOf(guard(t=target.copy(source=RoutingTargetSource.GOOGLE),calc=never),guard(pack={false},calc=never),guard(evidence={null},calc=never))){
             assertTrue(runCatching{g.resolve(origin,destination)}.isFailure)
         }
         assertTrue(runCatching{guard(calc=never).resolve(origin,origin)}.isFailure)
+        assertEquals(0,calls)
     }
     @Test fun revocationAndExpiredEvidenceRejectDelayedRoute()=runBlocking{
         var active=true
