@@ -16,9 +16,11 @@ services:
       use_default_speeds_config: "False"
     mem_limit: 2g
     cpus: 2
+    logging:
+      driver: "none"
     restart: "no"
   gateway:
-    image: node:24-alpine
+    image: ${APOIS_NODE_IMAGE:?set pinned Node image digest}
     network_mode: host
     user: "${APOIS_UID:?set uid}:${APOIS_GID:?set gid}"
     read_only: true
@@ -33,9 +35,11 @@ services:
       APOIS_FIELD_DYNAMIC_EXPIRES_AT: "${APOIS_EXPIRES_AT:?set expiry epoch milliseconds}"
     command: ["node","/lab/field-dynamic/gateway.mjs"]
     mem_limit: 128m
+    logging:
+      driver: "none"
     restart: "no"
   tls:
-    image: caddy:2-alpine
+    image: ${APOIS_CADDY_IMAGE:?set pinned Caddy image digest}
     network_mode: host
     environment:
       APOIS_FIELD_HOST: "${APOIS_FIELD_HOST:?set dedicated test hostname}"
@@ -43,6 +47,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - tls_data:/data
       - tls_config:/config
+    logging:
+      driver: "none"
     restart: "no"
 volumes:
   tls_data:

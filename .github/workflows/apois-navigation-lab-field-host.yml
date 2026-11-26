@@ -19,6 +19,17 @@ jobs:
         with:
           node-version: '24'
       - run: node --test labs/apois-navigation/field-host/gateway-expiry.test.mjs
+      - name: Resolve candidate image digests and inspect platform support
+        run: |
+          set -euo pipefail
+          docker pull node:24-alpine
+          docker pull caddy:2-alpine
+          echo "APOIS_NODE_IMAGE=$(docker image inspect --format '{{index .RepoDigests 0}}' node:24-alpine)" >> "$GITHUB_ENV"
+          echo "APOIS_CADDY_IMAGE=$(docker image inspect --format '{{index .RepoDigests 0}}' caddy:2-alpine)" >> "$GITHUB_ENV"
+          docker buildx imagetools inspect ghcr.io/valhalla/valhalla-scripted@sha256:0e559e57b19e293bcf62e10c64163f2fe60c42902a760152c9238307e13e7257
+      - name: Validate Caddy config without publishing
+        working-directory: labs/apois-navigation/field-host
+        run: docker run --rm --network none -e APOIS_FIELD_HOST=navigation-lab.apoisbrasil.com.br -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" "$APOIS_CADDY_IMAGE" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - name: Validate compose config only
         working-directory: labs/apois-navigation/field-host
         env:

@@ -1,7 +1,7 @@
 // Isolated laboratory only. Loopback, ephemeral bearer, no database or real ride authority.
 import {createRouteGateway,createBudget} from "../valhalla/route-gateway.mjs";
 import {timingSafeEqual} from "node:crypto";
-import {readFileSync} from "node:fs";
+import {closeSync,constants,fstatSync,openSync,readFileSync} from "node:fs";
 export const contains=(lat,lon)=>Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-7.75&&lat<=-6.85&&lon>=-41.85&&lon<=-41.15;
 export function pilotGateway(secret,upstreamPort=8002,{expiresAt=Date.now()+900_000,now=()=>Date.now()}={}){
   const began=now();
@@ -19,9 +19,23 @@ export function pilotGateway(secret,upstreamPort=8002,{expiresAt=Date.now()+900_
     return {status:200,release(){}};
   }});
 }
+// The field host uses a read-only bind mount. Never accept a symlink, a
+// world/group-readable file, a different owner, or an unbounded input.
+export function readFieldSecret(file){
+  const fd=openSync(file,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);
+  try{
+    const info=fstatSync(fd);
+    if(!info.isFile()||(info.mode&0o777)!==0o600&&(info.mode&0o777)!==0o400||
+      (typeof process.getuid==="function"&&info.uid!==process.getuid())||
+      info.size<64||info.size>65)throw Error("invalid lab credential file");
+    const raw=readFileSync(fd,"utf8");
+    if(!/^[a-f0-9]{64}\n?$/.test(raw))throw Error("invalid lab credential file");
+    return raw.trim();
+  }finally{closeSync(fd);}
+}
 if(process.env.APOIS_FIELD_DYNAMIC_RUN==="1"){
   const file=process.env.APOIS_FIELD_DYNAMIC_SECRET_FILE;
-  const secret=file?readFileSync(file,"utf8").trim():process.env.APOIS_FIELD_DYNAMIC_SECRET;
+  const secret=file?readFieldSecret(file):process.env.APOIS_FIELD_DYNAMIC_SECRET;
   const expiry=process.env.APOIS_FIELD_DYNAMIC_EXPIRES_AT;
   if(file&&!expiry)throw Error("explicit expiry required for file credential");
   const server=pilotGateway(secret,8002,expiry?{expiresAt:Number(expiry)}:{});
