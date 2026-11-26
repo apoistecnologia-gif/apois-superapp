@@ -1,0 +1,33 @@
+name: APOIS Navegacao - autorizacao com limites reais IBGE (laboratorio)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/region-data/authorized-integration.mjs','.github/workflows/apois-navigation-lab-ibge-authorization.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-ibge-nordeste-candidate
+          run-id: 45732560505
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-ibge-region
+      - run: node labs/apois-navigation/region-data/authorized-integration.mjs "$RUNNER_TEMP/apois-ibge-region"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-ibge-authorization-report
+          path: ${{ runner.temp }}/apois-ibge-region/authorized-region-report.json
+          retention-days: 7
