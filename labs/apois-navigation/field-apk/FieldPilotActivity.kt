@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stadiamaps.ferrostar.maplibreui.views.PortraitNavigationView
 import com.stadiamaps.ferrostar.maplibreui.NavigationMapView
-import com.stadiamaps.ferrostar.maplibreui.runtime.defaultNavigationMapOptions
+import org.maplibre.compose.map.MapOptions
 import com.stadiamaps.ferrostar.maplibreui.runtime.rememberNavigationMapState
 import com.stadiamaps.ferrostar.core.NavigationUiState
 import kotlinx.coroutines.Dispatchers
@@ -95,7 +95,7 @@ class FieldPilotActivity:ComponentActivity(),LocationListener {
                             }else{
                                 val camera=rememberNavigationMapState()
                                 Box(Modifier.weight(1f).fillMaxWidth()){
-                                    NavigationMapView(baseStyle=style,navigationMapState=camera,uiState=ui,mapOptions=defaultNavigationMapOptions(),routeOverlayBuilder=null,onMapLoadFinished={mapStatus="Mapa local carregado."},onMapLoadFailed={mapStatus="Falha ao renderizar mapa local."})
+                                    NavigationMapView(baseStyle=style,navigationMapState=camera,uiState=ui,mapOptions=MapOptions(),routeOverlayBuilder=null,onMapLoadFinished={mapStatus="Mapa local carregado."},onMapLoadFailed={mapStatus="Falha ao renderizar mapa local."})
                                 }
                                 Text(mapStatus,style=MaterialTheme.typography.bodySmall)
                                 TextButton(onClick={camera.recenter(false)},modifier=Modifier.fillMaxWidth()){Text("Centralizar minha posição")}
