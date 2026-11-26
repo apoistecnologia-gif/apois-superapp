@@ -22,7 +22,7 @@ const pageServer=http((req,res)=>{
  const file=resolve(site,'.'+(path==='/'?'/index.html':path))
  if(!file.startsWith(site+'/')||!statSync(file).isFile())throw Error('missing')
  const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.pbf':'application/octet-stream'}
- const data=readFileSync(file);res.writeHead(200,{'Content-Type':mime[extname(file)]??'application/octet-stream','Content-Length':data.length});res.end(data)
+ const data=readFileSync(file);const headers={'Content-Type':mime[extname(file)]??'application/octet-stream','Content-Length':data.length};if(extname(file)==='.html')headers['Content-Security-Policy']="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; img-src 'self' data: blob:; connect-src 'self' https://127.0.0.1:"+mapServer.address().port+"; object-src 'none'; base-uri 'none'";res.writeHead(200,headers);res.end(data)
  }catch{res.writeHead(404).end()}
 })
 const listen=s=>new Promise((r,j)=>{s.once('error',j);s.listen(0,'127.0.0.1',r)})
@@ -54,13 +54,25 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROME_BIN,headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--ignore-certificate-errors-spki-list='+pin]})
  const page=await browser.newPage({viewport:{width:320,height:500}})
  const external=[],errors=[]
- await page.route('**/*',r=>{const u=r.request().url();if(u.startsWith(origin+'/')||u===mapOrigin+path)return r.continue();external.push(u);return r.abort()})
+ // Observe actual Chromium traffic without Playwright interception (which can change CORS/cache behavior).
+ page.on('request',r=>{const u=r.url();if(!u.startsWith(origin+'/')&&u!==mapOrigin+path&&!u.startsWith('blob:')&&!u.startsWith('data:'))external.push(u)})
  page.on('pageerror',e=>errors.push(String(e)))
- await page.goto(origin);await page.waitForFunction(()=>typeof window.startMap==='function');await page.evaluate(()=>window.startMap())
+ await page.goto(origin);await page.waitForFunction(()=>typeof window.startMap==='function')
+ // Independent browser CORS check: require If-Range preflight and exposed response metadata.
+ const probe=await page.evaluate(async({url,etag})=>{
+  const r=await fetch(url,{headers:{Range:'bytes=0-126','If-Range':etag},credentials:'omit',redirect:'error'});
+  return {status:r.status,etag:r.headers.get('ETag'),range:r.headers.get('Content-Range'),bytes:(await r.arrayBuffer()).byteLength}
+ },{url:mapOrigin+path,etag})
+ console.log('CORS_PROBE',JSON.stringify({probe,preflights,requests,bytes}))
+ assert.deepEqual(probe,{status:206,etag,range:'bytes 0-126/'+size,bytes:127})
+ assert.ok(preflights>0,'No actual CORS preflight received')
+ const initialBytes=bytes,initialRequests=requests
+ await page.evaluate(()=>window.startMap())
  await page.waitForFunction(()=>window.lab?.map.loaded()&&window.lab.map.queryRenderedFeatures({layers:['road-label']}).length>0,{},{timeout:25000})
  const stats=await page.evaluate(()=>({roads:window.lab.map.queryRenderedFeatures({layers:['roads']}).length,labels:window.lab.map.queryRenderedFeatures({layers:['road-label','place-label']}).length,attribution:document.querySelector('.maplibregl-ctrl-attrib')?.textContent,...window.lab.metrics()}))
  assert.ok(stats.roads>0&&stats.labels>0&&stats.tiles>0);assert.match(stats.attribution,/OpenStreetMap contributors/)
- assert.equal(external.length,0);assert.equal(errors.length,0);assert.equal(unexpected,0);assert.ok(preflights>0&&requests>0&&bytes<size)
+ console.log('MAP_RANGE_METRICS',JSON.stringify({archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,unexpected,external,errors,...stats}))
+ assert.equal(external.length,0);assert.equal(errors.length,0);assert.equal(unexpected,0);assert.ok(requests>initialRequests,'No map range fetched');assert.ok(bytes-initialBytes<size,'Initial viewport transferred at least one entire archive')
  await page.evaluate(()=>window.lab.dispose());assert.equal(await page.locator('.maplibregl-canvas').count(),0)
- console.log(JSON.stringify({fixture:'vale-pe-ba',archiveBytes:size,rangeBytes:bytes,requests,preflights,...stats,limits:'Chromium cross-origin local fixture, certificate SPKI pinned only for test; no Android or production CDN claim'},null,2))
+ console.log(JSON.stringify({fixture:'vale-pe-ba',archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,...stats,limits:'Chromium cross-origin local fixture, certificate SPKI pinned only for test; no Android or production CDN claim'},null,2))
 }finally{await browser?.close();for(const s of [pageServer,mapServer]){s.closeAllConnections();if(s.listening)await new Promise(r=>s.close(r))}}
