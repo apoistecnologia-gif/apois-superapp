@@ -15,7 +15,8 @@ internal sealed interface SessionEffect {
     data class PauseVoice(val token:LegToken):SessionEffect
     data class ResumeVoice(val token:LegToken):SessionEffect
 }
-internal class NavigationSessionController(initial:RideSnapshot) {
+internal class NavigationSessionController(initial:RideSnapshot,private val retainedInitialBudget:NativeRerouteGate?=null) {
+    private val initialLeg=when(initial.phase){RidePhase.PICKUP->Leg.PICKUP;RidePhase.TRIP->Leg.TRIP;else->null}
     var snapshot=initial
         private set
     var token:LegToken?=null
@@ -38,7 +39,8 @@ internal class NavigationSessionController(initial:RideSnapshot) {
             if (existing.target != target) return null
             return existing
         }
-        return LegRouteResources(candidate.rideId, candidate.leg, target, resolver::resolve)
+        return LegRouteResources(candidate.rideId, candidate.leg, target, RouteRegion.Vale, resolver::resolve,
+            retainedInitialBudget.takeIf{candidate.leg==initialLeg})
             .also { routeResources = it }
     }
     private fun closeRouting() {

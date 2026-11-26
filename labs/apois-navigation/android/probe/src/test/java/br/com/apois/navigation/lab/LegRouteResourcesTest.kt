@@ -65,6 +65,24 @@ class LegRouteResourcesTest {
         assertNull(o.attach(token))
         assertEquals(Decision.Hold(Reason.CLOSED),o.budget.fix(2000))
     }
+    @Test fun localReentryRetainsOnlyBudgetAndPendingTicketAcrossOwners() {
+        val budget=NativeRerouteGate()
+        val first=LegRouteResources("ride",Leg.PICKUP,b,RouteRegion.Vale,{_,_->"old"},budget)
+        val x=first.attach(token)!!
+        first.remember(x,a,"old",1000)
+        budget.fix(1000)
+        val ticket=(budget.fix(2000) as Decision.Request).ticket
+        first.close()
+        assertFalse(first.accepts(x))
+        val second=LegRouteResources("ride",Leg.PICKUP,b,RouteRegion.Vale,{_,_->"new"},budget)
+        val y=second.attach(token.copy(generation=2))!!
+        assertNull(second.cached(y,a,18000))
+        budget.fix(18000)
+        assertEquals(Decision.Hold(Reason.IN_FLIGHT),budget.fix(19000))
+        assertTrue(budget.settle(ticket))
+        assertTrue(budget.fix(20000) is Decision.Request)
+        assertEquals(2,budget.requests)
+    }
     @Test fun monotonicClockRegressionInvalidatesCache() {
         val o=owner();val x=o.attach(token)!!
         o.remember(x,a,"route",1000)

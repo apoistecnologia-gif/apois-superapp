@@ -8,14 +8,17 @@ internal class LegRouteResources<T : Any>(
     private val rideId: String, private val leg: Leg,
     val target: RegionalPoint,
     val region: RouteRegion,
-    private val resolver: suspend (RegionalPoint, RegionalPoint) -> T
+    private val resolver: suspend (RegionalPoint, RegionalPoint) -> T,
+    private val retainedBudget: NativeRerouteGate?
 ) {
+    constructor(rideId:String, leg:Leg, target:RegionalPoint, region:RouteRegion,
+        resolver:suspend (RegionalPoint,RegionalPoint)->T):this(rideId,leg,target,region,resolver,null)
     constructor(rideId:String, leg:Leg, target:RegionalPoint,
         resolver:suspend (RegionalPoint,RegionalPoint)->T):this(rideId,leg,target,RouteRegion.Vale,resolver)
     class Attachment internal constructor()
     private data class Entry<T>(val value: T, val insertedAt: Long)
     private val cache = LinkedHashMap<RegionalPoint, Entry<T>>(4, 0.75f, true)
-    val budget = NativeRerouteGate()
+    val budget = retainedBudget ?: NativeRerouteGate()
     private var attachment: Attachment? = null
     private var closed = false
 
@@ -59,7 +62,9 @@ internal class LegRouteResources<T : Any>(
     fun close() {
         closed = true
         attachment = null
-        budget.close()
+        // A detached local leg retains only its authorization budget. The
+        // old resolver, attachment and cached coordinates are never reused.
+        if(retainedBudget==null)budget.close() else budget.invalidateFix()
         cache.clear()
     }
 }
