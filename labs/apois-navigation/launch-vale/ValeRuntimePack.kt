@@ -27,12 +27,17 @@ internal class VerifiedValeRuntimePack private constructor(
         private val files=listOf(map,this@VerifiedValeRuntimePack.graph,search)
         private val stamps=files.map{file->file.length() to file.lastModified()}
         val graph:File get()=this@VerifiedValeRuntimePack.graph
-        fun current():Boolean=!revoked.get()&&runCatching{
-            directory.absoluteFile==directory.canonicalFile&&directory.isDirectory&&
-                directory.list()?.toSet()==files.map{it.name}.toSet()&&
-                files.zip(stamps).all{(f,s)->f.absoluteFile==f.canonicalFile&&f.isFile&&
-                    f.length()==s.first&&f.lastModified()==s.second}
-        }.getOrDefault(false)&&!revoked.get()
+        fun current():Boolean{
+            if(revoked.get())return false
+            val valid=runCatching{
+                directory.absoluteFile==directory.canonicalFile&&directory.isDirectory&&
+                    directory.list()?.toSet()==files.map{it.name}.toSet()&&
+                    files.zip(stamps).all{(f,s)->f.absoluteFile==f.canonicalFile&&f.isFile&&
+                        f.length()==s.first&&f.lastModified()==s.second}
+            }.getOrDefault(false)
+            if(!valid)close()
+            return valid&&!revoked.get()
+        }
         fun claim():Boolean=current()&&claimed.compareAndSet(false,true)&&current()
         fun close(){revoked.set(true)}
     }
