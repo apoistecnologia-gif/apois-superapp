@@ -104,6 +104,16 @@ try {
     assert.ok(code.includes("package br.com.apois.parceiro;"),name);
     writeFileSync(join(target,name),code.replace("package br.com.apois.parceiro;","package br.com.apois.navigation.compat.lab;"));
   }
+  // Stage the actual QA290-generated Activity for an independent compile
+  // proof. Do not replace the lab MainActivity or register the service.
+  const candidateMain=readFileSync(join(java,"MainActivity.java"),"utf8");
+  for(const marker of ["registerPlugin(DriverVoicePlugin.class)","registerPlugin(DriverLocationPlugin.class)",
+      "registerPlugin(CourierLocationPlugin.class)","registerPlugin(APOISExternalNavigationPlugin.class)",
+      "APOISReturnBubble.show","APOISReturnBubble.externalNavigationClosed"])
+    assert.ok(candidateMain.includes(marker),"generated QA290 activity lost "+marker);
+  writeFileSync(join(target,"Qa290GeneratedCandidateActivity.java"),
+    candidateMain.replace("package br.com.apois.parceiro;","package br.com.apois.navigation.compat.lab;\nimport com.apois.motorista.DriverVoicePlugin;")
+      .replace("public class MainActivity extends","public class Qa290GeneratedCandidateActivity extends"),{flag:"wx"});
   mkdirSync(join(app,"src/main/res/drawable"),{recursive:true});
   mkdirSync(join(app,"src/main/res/drawable-nodpi"),{recursive:true});
   cpSync(join(src,"res/drawable/ic_stat_apois_notification.xml"),join(app,"src/main/res/drawable/ic_stat_apois_notification.xml"));
