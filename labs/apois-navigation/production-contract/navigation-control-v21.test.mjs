@@ -34,3 +34,11 @@ test('catalog only exposes configured active public data, recovery independent o
  assert.equal((await noCatalog('ok',req)).status,503)
  assert.equal((await noCatalog('ok',{action:'apois_navigation_active'})).body.verified,true)
 })
+
+test('confirmation rejects malformed or out-of-region points and projects public response',async()=>{
+ const base={selectionId:id(5),requestKey:req.requestKey,expiresAt:new Date(Date.now()+60000).toISOString(),origin:{lat:-9.4,lng:-40.5,label:'A'},destination:{lat:-9.42,lng:-40.51,label:'B'}}
+ let value=base
+ const control=createNavigationControl({confirmationEnabled:true,catalogPolicy:{version:1,extractHash:'a'.repeat(64)},verifySession:async()=>id(1),allowPilot:()=>true,rpc:async()=>value})
+ for(const origin of [{lat:0,lng:0,label:'A'},{lat:'-9.4',lng:-40.5,label:'A'},{...base.origin,authUserId:id(1)},{...base.origin,label:''}]){value={...base,origin};assert.equal((await control('s',req)).status,409)}
+ value={...base,internal:id(7),ok:false};assert.deepEqual((await control('s',req)).body,{ok:true,...base})
+})
