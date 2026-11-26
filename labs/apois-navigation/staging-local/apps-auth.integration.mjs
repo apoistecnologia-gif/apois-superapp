@@ -23,7 +23,7 @@ assert.ok(typeof anon==='string'&&typeof service==='string'&&anon!==service)
 const {createClient}=createRequire(join(target,'package.json'))('@supabase/supabase-js')
 const client=(key=anon)=>createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})
 const admin=client(service)
-const sql=s=>execFileSync('psql',[db,'-X','-qAt','-v','ON_ERROR_STOP=1'],{input:s+';\n',encoding:'utf8',timeout:5000}).trim()
+const sql=s=>execFileSync('docker',['exec','-i','supabase_db_apois-navigation-local','psql','-X','-qAt','-U','supabase_admin','-d','postgres','-v','ON_ERROR_STOP=1'],{input:s+';\n',encoding:'utf8',timeout:5000}).trim()
 const lit=v=>"'"+String(v).replaceAll("'","''")+"'"
 const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0')
 const rpc=async(name,args,signal)=>{
