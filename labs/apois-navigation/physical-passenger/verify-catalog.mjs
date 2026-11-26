@@ -4,10 +4,13 @@ import {createHash} from 'node:crypto'
 import {pathToFileURL} from 'node:url'
 import {resolve} from 'node:path'
 const extract='c50dd021ab11518b230c191bc9fa85f683c9b82810f605476532c16172f55238'
+export const VALE_CATALOG_SHA256='bec83aeb51bb7dbcde8795714ceb9e67598443144c1d8ff73e6c717970474ff6'
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 export function verifyInactiveValeCatalog(file){
  assert.ok(statSync(file).size>0&&statSync(file).size<=512*1024)
- const raw=readFileSync(file),c=JSON.parse(raw.toString('utf8'))
+ const raw=readFileSync(file),digest=createHash('sha256').update(raw).digest('hex')
+ assert.equal(digest,VALE_CATALOG_SHA256,'catalog byte identity mismatch')
+ const c=JSON.parse(raw.toString('utf8'))
  assert.equal(c.format,'apois-independent-catalog-v1')
  assert.equal(c.source,'OSM_PBF');assert.equal(c.extract_sha256,extract)
  assert.equal(c.version,1);assert.equal(c.license,'ODbL-1.0')
@@ -29,7 +32,7 @@ export function verifyInactiveValeCatalog(file){
   const hex=digest.toString('hex')
   assert.equal(r.id,hex.replace(/^(........)(....)(....)(....)(............)$/,'$1-$2-$3-$4-$5'))
  }
- return {catalog:c,sha256:createHash('sha256').update(raw).digest('hex')}
+ return {catalog:c,sha256:digest}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  const {catalog,sha256}=verifyInactiveValeCatalog(process.argv[2])
