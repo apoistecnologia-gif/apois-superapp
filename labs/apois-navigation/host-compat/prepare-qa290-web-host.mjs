@@ -192,4 +192,11 @@ for(const [anchor,phase] of [
 assert.equal(app.split(pickup).length-1,1);
 assert.equal(app.split(trip).length-1,tripCount);
 writeFileSync(appPath,app);
+const externalPath=join(root,"src/components/ApoisExternalNavigation.tsx");
+let external=readFileSync(externalPath,"utf8");
+const externalOnce=(a,b)=>{assert.equal(external.split(a).length,2,"QA290 external guard: "+a);external=external.replace(a,()=>b);};
+external='import {runExternalApoisNavigation} from "@/lib/apois-navigation-lab/host";\n'+external;
+externalOnce('const result = await NativeNavigation.open({ provider, latitude: lat, longitude: lng });','const result = await runExternalApoisNavigation(()=>NativeNavigation.open({ provider, latitude: lat, longitude: lng }));');
+externalOnce('void launchApoisNavigationAfterRideStart(latitude,longitude)','void runExternalApoisNavigation(()=>launchApoisNavigationAfterRideStart(latitude,longitude))');
+writeFileSync(externalPath,external);
 console.log("[OK] QA290 confirmed-navigation host attached: pickup=1 destination="+tripCount+"; hard disabled; external callback unchanged; native transport connected, live provider unavailable, no production registration");
