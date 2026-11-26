@@ -35,20 +35,22 @@ internal fun validatedRouteEndpoint(raw: String, authorizedHost: String): URI {
     return uri
 }
 
-internal fun routeEndpointsMatch(points: List<RegionalPoint>, origin: RegionalPoint, destination: RegionalPoint): Boolean =
-    origin.valid() && destination.valid() && points.size in 2..100_000 &&
-        points.all { it.valid() } && points.first().distanceTo(origin) <= 150.0 &&
+internal fun routeEndpointsMatch(points: List<RegionalPoint>, origin: RegionalPoint, destination: RegionalPoint,
+    region: RouteRegion = RouteRegion.Vale): Boolean =
+    region.contains(origin) && region.contains(destination) && points.size in 2..100_000 &&
+        points.all(region::contains) && points.first().distanceTo(origin) <= 150.0 &&
         points.last().distanceTo(destination) <= 150.0
 
 internal fun mayApplyReroute(
     current: Boolean, foreground: Boolean, offRoute: Boolean, quality: GpsQuality,
     pending: Boolean, now: Long, captured: Long, accuracy: Double,
-    geometry: List<RegionalPoint>, latest: RegionalPoint, target: RegionalPoint
+    geometry: List<RegionalPoint>, latest: RegionalPoint, target: RegionalPoint,
+    region: RouteRegion = RouteRegion.Vale
 ): Boolean = current && foreground && offRoute && pending &&
     quality == GpsQuality.AVAILABLE && captured > 0 &&
     now >= captured && now - captured <= 10_000L &&
     accuracy.isFinite() && accuracy > 0 && accuracy <= 25.0 &&
-    routeEndpointsMatch(geometry,latest,target)
+    routeEndpointsMatch(geometry,latest,target,region)
 
 internal fun interface LiveRouteResolver {
     suspend fun resolve(origin: RegionalPoint, destination: RegionalPoint): Route

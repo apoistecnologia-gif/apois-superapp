@@ -25,6 +25,27 @@ class NativeRegionPolicyTest {
         val extra=b+byteArrayOf(1);assertTrue(runCatching{NativeRegionPolicy.read(extra,hash(extra))}.isFailure)
         val truncated=b.copyOf(b.size-1);assertTrue(runCatching{NativeRegionPolicy.read(truncated,hash(truncated))}.isFailure)
     }
+    @Test fun explicitScopeDoesNotWidenLegacyDefault(){
+        val bytes=fixture()
+        val region=RouteRegion.Verified(NativeRegionPolicy.read(bytes,hash(bytes)))
+        val a=RegionalPoint(-7.4,-41.4);val b=RegionalPoint(-7.41,-41.41)
+        val outside=RegionalPoint(-9.4,-40.5)
+        val hole=RegionalPoint(-7.75,-41.75)
+        assertFalse(routeEndpointsMatch(listOf(a,b),a,b))
+        assertTrue(routeEndpointsMatch(listOf(a,b),a,b,region))
+        assertFalse(routeEndpointsMatch(listOf(a,hole,b),a,b,region))
+        assertFalse(routeEndpointsMatch(listOf(a,outside,b),a,b,region))
+        assertFalse(routeEndpointsMatch(listOf(a,b),a,outside,region))
+        val owner=LegRouteResources("pilot",Leg.TRIP,b,region){_,_->"route"}
+        val attachment=owner.attach(LegToken("pilot",Leg.TRIP,1))!!
+        owner.remember(attachment,a,"route",1000)
+        assertEquals("route",owner.cached(attachment,a,1001))
+        owner.remember(attachment,outside,"wrong",1000)
+        assertNull(owner.cached(attachment,outside,1001))
+        assertFalse(mayApplyReroute(true,true,true,GpsQuality.AVAILABLE,true,1000,1000,5.0,listOf(a,b),a,b))
+        assertTrue(mayApplyReroute(true,true,true,GpsQuality.AVAILABLE,true,1000,1000,5.0,listOf(a,b),a,b,region))
+        assertFalse(mayApplyReroute(true,true,true,GpsQuality.AVAILABLE,true,12000,1000,5.0,listOf(a,b),a,b,region))
+    }
     @Test fun realBoundaryWhenRequested(){
         val path=System.getenv("APOIS_NATIVE_REGION_FIXTURE")?:return
         val sha=System.getenv("APOIS_NATIVE_REGION_SHA256")?:error("missing fixture hash")

@@ -7,8 +7,11 @@ package br.com.apois.navigation.lab
 internal class LegRouteResources<T : Any>(
     private val rideId: String, private val leg: Leg,
     val target: RegionalPoint,
+    val region: RouteRegion,
     private val resolver: suspend (RegionalPoint, RegionalPoint) -> T
 ) {
+    constructor(rideId:String, leg:Leg, target:RegionalPoint,
+        resolver:suspend (RegionalPoint,RegionalPoint)->T):this(rideId,leg,target,RouteRegion.Vale,resolver)
     class Attachment internal constructor()
     private data class Entry<T>(val value: T, val insertedAt: Long)
     private val cache = LinkedHashMap<RegionalPoint, Entry<T>>(4, 0.75f, true)
@@ -16,7 +19,7 @@ internal class LegRouteResources<T : Any>(
     private var attachment: Attachment? = null
     private var closed = false
 
-    init { require(rideId.isNotBlank() && target.valid()) }
+    init { require(rideId.isNotBlank() && region.contains(target)) }
     fun attach(token: LegToken): Attachment? {
         if (closed || attachment != null || token.rideId != rideId || token.leg != leg) return null
         budget.invalidateFix()
@@ -39,18 +42,18 @@ internal class LegRouteResources<T : Any>(
         cache.entries.removeAll { now < it.value.insertedAt || now - it.value.insertedAt >= 30_000L }
     }
     fun cached(candidate: Attachment, origin: RegionalPoint, now: Long): T? {
-        if (!accepts(candidate) || !origin.valid() || now <= 0) return null
+        if (!accepts(candidate) || !region.contains(origin) || now <= 0) return null
         purge(now)
         return cache[origin]?.value
     }
     fun remember(candidate: Attachment, origin: RegionalPoint, value: T, now: Long) {
-        if (!accepts(candidate) || !origin.valid() || now <= 0) return
+        if (!accepts(candidate) || !region.contains(origin) || now <= 0) return
         purge(now)
         cache[origin] = Entry(value, now)
         while (cache.size > 4) cache.remove(cache.entries.first().key)
     }
     suspend fun resolve(candidate: Attachment, origin: RegionalPoint): T {
-        check(accepts(candidate) && origin.valid()) { "Inactive route attachment" }
+        check(accepts(candidate) && region.contains(origin)) { "Inactive route attachment" }
         return resolver(origin, target)
     }
     fun close() {

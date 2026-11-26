@@ -83,7 +83,7 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
         if (!stillCurrent()) { permit?.let { runCatching { it.release() } }; _quality.value = GpsQuality.LOST; return }
         val active = generation
         val endpoint = route.geometry.lastOrNull()?.let { RegionalPoint(it.lat,it.lng) }
-        if (resources != null && (endpoint == null || !endpoint.valid() ||
+        if (resources != null && (endpoint == null || !resources.region.contains(endpoint) ||
                 endpoint.distanceTo(resources.target) > 150.0)) {
             permit?.let { runCatching { it.release() } }
             _quality.value = GpsQuality.LOST
@@ -133,8 +133,8 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                 is DeviationKind.OffStepOnRoute -> 0.0
                 else -> if (ui.routeDeviation != null) 0.0 else null
             }
-            val canRequest = resources != null && attachment != null && target?.valid() == true &&
-                RegionalPoint(raw.coordinates.lat,raw.coordinates.lng).valid() &&
+            val canRequest = resources != null && attachment != null && target != null && resources.region.contains(target) &&
+                resources.region.contains(RegionalPoint(raw.coordinates.lat,raw.coordinates.lng)) &&
                 foreground && runCatching { online() }.getOrDefault(false)
             val decision = budget.evaluate(SystemClock.elapsedRealtime(), captured,
                 raw.horizontalAccuracy, deviation, online = canRequest)
@@ -157,7 +157,7 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                             _quality.value, budget.isPending(ticket), SystemClock.elapsedRealtime(),
                             latestCaptured, fix.horizontalAccuracy,
                             replacement.geometry.map { RegionalPoint(it.lat,it.lng) },
-                            RegionalPoint(fix.coordinates.lat,fix.coordinates.lng),target)) return@launch
+                            RegionalPoint(fix.coordinates.lat,fix.coordinates.lng),target,resources.region)) return@launch
                         val freshNavigator = createNavigator(replacement, config, false)
                         if (cached == null) resources.remember(attachment, origin, replacement, SystemClock.elapsedRealtime())
                         activeRoute = replacement
