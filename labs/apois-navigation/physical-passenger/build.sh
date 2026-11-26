@@ -10,7 +10,7 @@ npm install --save-exact --no-audit --no-fund @capacitor/core@8.5.0 @capacitor/c
 cp "$ROOT/physical-passenger/entry.mjs" .
 cp "$ROOT/physical-passenger/index.html" www/
 cp -a "$ROOT/passenger-provenance-snapshot" snapshot
-node "$ROOT/physical-passenger/prepare.mjs" "$H" "$RUNNER_TEMP/apois-map-assets/android-assets/apois-regional" "$RUNNER_TEMP/apois-route-assets"
+node "$ROOT/physical-passenger/prepare.mjs" "$H" "$RUNNER_TEMP/apois-map-assets/apois-regional" "$RUNNER_TEMP/apois-route-assets"
 ./node_modules/.bin/esbuild entry.mjs --bundle --format=esm --outfile=www/bundle.js
 printf '{"appId":"br.com.apois.navigation.passenger.lab","appName":"APOIS Passageiro Teste","webDir":"www"}' > capacitor.config.json
 npx cap add android

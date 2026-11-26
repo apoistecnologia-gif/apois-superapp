@@ -4,3 +4,5 @@ Aplicativo separado, sem rede, conta ou GPS. Mapa real OSM do Vale e catálogo d
 2. Mantenha marcada a simulação de perda de resposta. Confirme a corrida. O contador deve subir somente uma vez e o painel oferecer recuperação.
 3. Feche o app e reabra; o contador deve permanecer igual e o painel oferecer verificação, não nova corrida. Toque em verificar solicitação, acompanhe a corrida, simule encerramento e verifique novamente. Volte ao fluxo de seleção.
 4. Informe se mapa carrega, WebView/IndexedDB/Web Locks funcionam, seleção funciona e recuperação mantém o contador. O laboratório não comprova integração real, CI privado do Passageiro ou operação comercial.
+
+O mapa deste teste usa o pacote Vale preservado (run 45750844751), id e SHA-256 anteriores mantidos. O catálogo original de 390 nós OSM é validado integralmente antes de escolher os dois pontos fictícios do fluxo; nenhum registro real ativado. Preço e distância apresentados continuam simulados, não estimativas reais. O catálogo original é preservado em CI separado, não hospedado publicamente.

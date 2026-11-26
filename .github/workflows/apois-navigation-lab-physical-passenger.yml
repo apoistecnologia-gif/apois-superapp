@@ -32,8 +32,8 @@ jobs:
           "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
       - uses: actions/download-artifact@v4
         with:
-          name: apois-cartography-regional
-          run-id: 45539272618
+          name: apois-vale-runtime-assets-inactive
+          run-id: 45750844751
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-map-assets
       - uses: actions/download-artifact@v4
