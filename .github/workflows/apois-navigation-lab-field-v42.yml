@@ -1,0 +1,85 @@
+name: APOIS GPS - APK offline V4.2 pesquisa Piaui
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/field-v422/**','.github/workflows/apois-navigation-lab-field-v422.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-field-pilot-data
+          run-id: 45733321788
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-field-data
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-piaui-embedded-graph-3.6.3
+          run-id: 45742837044
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-piaui-graph
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-piaui-offline-search-candidates
+          run-id: 45746406549
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-search-candidates
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
+      - run: bash labs/apois-navigation/field-v42/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: APOIS-GPS-Piaui-Piloto-V42
+          path: ${{ runner.temp }}/apois-field-apk/
+          retention-days: 7
+          if-no-files-found: error
+
+  install-smoke:
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: APOIS-GPS-Piaui-Piloto-V42
+          path: ${{ runner.temp }}/apois-field-apk
+      - name: Verify artifact and prepare emulator
+        run: |
+          set -euo pipefail
+          (cd "$RUNNER_TEMP/apois-field-apk" && sha256sum -c SHA256SUMS.txt)
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Install and launch exact V4.2 artifact offline
+        run: bash labs/apois-navigation/field-v42/install-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-v42-install-smoke-report
+          path: ${{ runner.temp }}/apois-v42-install-smoke/
+          retention-days: 7
+          if-no-files-found: warn
