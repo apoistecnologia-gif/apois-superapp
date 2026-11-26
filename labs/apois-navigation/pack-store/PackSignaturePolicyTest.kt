@@ -4,8 +4,13 @@ import java.security.Signature
 import java.security.spec.ECGenParameterSpec
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
+import java.io.ByteArrayInputStream
+import java.security.MessageDigest
 
 class PackSignaturePolicyTest{
+    @get:Rule val tmp=TemporaryFolder()
     private fun key()=KeyPairGenerator.getInstance("EC").apply{initialize(ECGenParameterSpec("secp256r1"))}.generateKeyPair()
     private val keys=key()
     private val spec=OfflinePackSpec("pi-lab","a".repeat(64),"3.6.3",listOf("map.pmtiles","graph.tar","search.json").map{OfflinePackFile(it,10,"b".repeat(64))})
@@ -16,6 +21,27 @@ class PackSignaturePolicyTest{
         return draft.copy(signature=signer.sign())
     }
     private fun verify(r:SignedPackRelease,floor:PackReleaseFloor=PackReleaseFloor(0,null))=PackSignaturePolicy.verify(r,keys.public,PackSignaturePolicy.keyId(keys.public),floor)
+    @Test fun signedInstallRejectsBeforeReadingAndAcceptsExactBytes(){
+        val root=tmp.newFolder()
+        val store=OfflinePackStore(root,1024,0)
+        val bytes="fixture".toByteArray()
+        val hash=MessageDigest.getInstance("SHA-256").digest(bytes).joinToString(""){"%02x".format(it.toInt() and 255)}
+        val exact=spec.copy(files=spec.files.map{it.copy(bytes=bytes.size.toLong(),sha256=hash)})
+        val draft=SignedPackRelease(exact,2,byteArrayOf())
+        val signer=Signature.getInstance("SHA256withECDSA")
+        signer.initSign(keys.private);signer.update(draft.payload())
+        val valid=draft.copy(signature=signer.sign())
+        val pin=PackSignaturePolicy.keyId(keys.public)
+        var reads=0
+        val source:(String)->java.io.InputStream={reads++;ByteArrayInputStream(bytes)}
+        for(floor in listOf(PackReleaseFloor(3,exact.identity()),PackReleaseFloor(2,"c".repeat(64)))){
+            assertTrue(runCatching{installSignedCandidate(store,valid,keys.public,pin,floor,source)}.isFailure)
+        }
+        assertTrue(runCatching{installSignedCandidate(store,valid.copy(signature=ByteArray(64)),keys.public,pin,PackReleaseFloor(0,null),source)}.isFailure)
+        assertEquals(0,reads);assertTrue(root.list()!!.isEmpty())
+        val dir=installSignedCandidate(store,valid,keys.public,pin,PackReleaseFloor(0,null),source)
+        assertEquals(3,reads);assertEquals(dir,store.openVerified(exact))
+    }
     @Test fun validSignatureAndRetry(){
         val r=release(2)
         assertTrue(verify(r))
