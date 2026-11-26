@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/emulator-common/apk-assertions.sh"
 H="$RUNNER_TEMP/apois-embedded"
 mkdir -p "$H/app/src/main/assets" "$H/app/src/androidTest/java/br/com/apois/navigation/embedded"
 cp "$ROOT/android/settings.gradle" "$H/settings.gradle"
@@ -51,7 +52,7 @@ TOOLS="$ANDROID_SDK_ROOT/build-tools/36.0.0"
 OUT="$RUNNER_TEMP/apois-embedded-report"
 mkdir -p "$OUT"
 "$TOOLS/aapt" dump badging "$APK" > "$OUT/badging.txt"
-! grep -E "android.permission.(INTERNET|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|ACCESS_BACKGROUND_LOCATION)" "$OUT/badging.txt"
+lab_assert_absent 'android\.permission\.(INTERNET|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|ACCESS_BACKGROUND_LOCATION)' "$OUT/badging.txt" || exit 1
 unzip -l "$APK" > "$OUT/apk-files.txt"
 for abi in arm64-v8a x86_64; do
  grep -F "lib/$abi/libvalhalla-wrapper.so" "$OUT/apk-files.txt"
