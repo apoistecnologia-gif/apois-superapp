@@ -42,3 +42,16 @@ test('confirmation rejects malformed or out-of-region points and projects public
  for(const origin of [{lat:0,lng:0,label:'A'},{lat:'-9.4',lng:-40.5,label:'A'},{...base.origin,authUserId:id(1)},{...base.origin,label:''}]){value={...base,origin};assert.equal((await control('s',req)).status,409)}
  value={...base,internal:id(7),ok:false};assert.deepEqual((await control('s',req)).body,{ok:true,...base})
 })
+
+test('recovery never returns a terminal ride as active or exposes extra database fields',async()=>{
+ const active={action:'apois_navigation_active'},recover={action:'apois_navigation_recover',selectionId:id(5),requestKey:id(2)}
+ let value={verified:true,ride:{rideId:id(6),status:'finalizada'}}
+ const control=createNavigationControl({recoveryEnabled:true,verifySession:async()=>id(1),rpc:async()=>value})
+ assert.equal((await control('s',active)).status,409)
+ value={verified:true,ride:{rideId:id(6),status:'motorista_chegou',privateField:'test'},secret:'test'}
+ assert.deepEqual((await control('s',active)).body,{verified:true,ride:{rideId:id(6),status:'motorista_chegou'}})
+ const row={selectionId:id(5),requestKey:id(2),state:'ride'}
+ value={...row,ride:{rideId:id(6),status:'unrecognized'}};assert.equal((await control('s',recover)).status,409)
+ value={...row,ride:{rideId:id(6),status:'expired',privateField:'test'},ok:false};assert.deepEqual((await control('s',recover)).body,{ok:true,...row,ride:{rideId:id(6),status:'expired'}})
+ value={...row,state:'sealed',ride:{rideId:id(6),status:'expired'}};assert.equal((await control('s',recover)).status,409)
+})
