@@ -2,8 +2,11 @@ name: APOIS GPS - Vale PE-BA no Android offline
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/launch-vale/android-build.sh','labs/apois-navigation/launch-vale/EmbeddedValeRouteTest.kt','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','labs/apois-navigation/android/probe/src/main/java/br/com/apois/navigation/lab/RouteResolverLifetime.kt','labs/apois-navigation/android/probe/src/main/java/br/com/apois/navigation/lab/ConfirmedLiveNavigationBridge.kt','.github/workflows/apois-navigation-lab-launch-vale-android.yml']
+    paths: ['labs/apois-navigation/launch-vale/android-build.sh','labs/apois-navigation/launch-vale/EmbeddedValeRouteTest.kt','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','labs/apois-navigation/android/probe/**','labs/apois-navigation/host-compat/prepare-host.mjs','.github/workflows/apois-navigation-lab-launch-vale-android.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
   actions: read
@@ -60,6 +63,12 @@ jobs:
         with:
           persist-credentials: false
           submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-vale-runtime-assets-inactive
+          run-id: 45749604118
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-vale-runtime-assets
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -83,6 +92,8 @@ jobs:
           npx cap add android
           node "$GITHUB_WORKSPACE/labs/apois-navigation/host-compat/prepare-host.mjs" "$H" "$GITHUB_WORKSPACE/labs/apois-navigation"
           cp "$GITHUB_WORKSPACE/labs/apois-navigation/launch-vale/ValeOfflineResolver.kt" "$H/android/navigation-probe/src/main/java/br/com/apois/navigation/lab/"
+          mkdir -p "$H/android/app/src/main/assets"
+          cp -a "$RUNNER_TEMP/apois-vale-runtime-assets/." "$H/android/app/src/main/assets/"
           cat >> "$H/android/navigation-probe/build.gradle" <<'EOF'
           dependencies {
             implementation 'io.github.rallista:valhalla-mobile:0.6.3'
@@ -102,6 +113,13 @@ jobs:
           unzip -l "$APK" > "$RUNNER_TEMP/apois-offline-capacitor-files.txt"
           grep -F 'lib/arm64-v8a/libvalhalla-wrapper.so' "$RUNNER_TEMP/apois-offline-capacitor-files.txt"
           grep -F 'lib/x86_64/libvalhalla-wrapper.so' "$RUNNER_TEMP/apois-offline-capacitor-files.txt"
+          for F in apois-regional/vale.pmtiles apois-regional/style.json apois-regional/manifest.json apois-vale-data/graph.tar apois-vale-data/search.json;do grep -F "assets/$F" "$RUNNER_TEMP/apois-offline-capacitor-files.txt";done
+          for PAIR in "18dc74cfea6ab6a8365b48df0731173b794825b108ed1f72db740ed16c3490fe apois-regional/vale.pmtiles" "38cf6df5fdd080ac4feb5c053a417fb4b814119765bc8214ad7593da985a1433 apois-vale-data/graph.tar" "9864919ce496184b917818f56d00406ef367c1987cdf37f24cc524c324bc08fa apois-vale-data/search.json";do
+            read -r EXPECTED NAME <<< "$PAIR"
+            ACTUAL=$(unzip -p "$APK" "assets/$NAME" | sha256sum | cut -d ' ' -f1)
+            test "$ACTUAL" = "$EXPECTED"
+          done
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/zipalign" -c -P 16 4 "$APK"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" > "$RUNNER_TEMP/apois-offline-capacitor-badging.txt"
           grep -F "package: name='br.com.apois.navigation.compat.lab'" "$RUNNER_TEMP/apois-offline-capacitor-badging.txt"
       - uses: actions/upload-artifact@v4
