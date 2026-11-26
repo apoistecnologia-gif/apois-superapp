@@ -41,7 +41,8 @@ OUT="$RUNNER_TEMP/apois-physical-apk"
 mkdir -p "$OUT"
 cp "$APK" "$OUT/APOIS-GPS-Teste-Fisico.apk"
 cp "$RUNNER_TEMP/apois-apk-badging.txt" "$OUT/"
-cp "$ROOT/physical-lab/TESTES.md" "$OUT/"
+cp "$ROOT/physical-lab/TESTES.md" "$RUNNER_TEMP/apois-physical-apk-files.txt" "$OUT/"
+printf '%s\n' "${GITHUB_SHA:?CI commit required}" > "$OUT/BUILD-COMMIT.txt"
 cd "$OUT"
 sha256sum APOIS-GPS-Teste-Fisico.apk > SHA256SUMS.txt
 cat SHA256SUMS.txt
