@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - run: python -m unittest discover -s labs/apois-navigation/embedded-graph -p 'test_*.py' -v
+      - run: bash -n labs/apois-navigation/embedded-graph/build.sh
       - run: sudo apt-get update && sudo apt-get install -y osmium-tool
       - run: bash labs/apois-navigation/embedded-graph/build.sh "$RUNNER_TEMP/apois-embedded-graph"
       - uses: actions/upload-artifact@v4
