@@ -149,9 +149,11 @@ internal class LiveGpsNavigationModel : NavigationViewModel {
                     try {
                         yield()
                         ensureActive()
+                        if (!current() || !foreground || !runCatching { online() }.getOrDefault(false)) return@launch
                         val cached = resources.cached(attachment, origin, SystemClock.elapsedRealtime())
                         val replacement = cached ?: withTimeout(15_000) { resources.resolve(attachment, origin) }
                         ensureActive()
+                        if (!runCatching { online() }.getOrDefault(false)) return@launch
                         val fix = latest ?: return@launch
                         if (!mayApplyReroute(current(), foreground, stillOffRoute,
                             _quality.value, budget.isPending(ticket), SystemClock.elapsedRealtime(),
