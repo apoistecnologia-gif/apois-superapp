@@ -44,11 +44,22 @@ internal class PackFloorStore(private val root:File,private val region:String,pr
             check(decode(target)==floor)
         }finally{stage.delete()}
     }
+    fun matchesScope(region:String,keyId:String)=this.region==region&&this.keyId==keyId
     fun bootstrap(initial:PackReleaseFloor)=locked{
         check(!child("floor").exists()){"floor already exists"}
         write(initial)
     }
     fun read():PackReleaseFloor=locked{decode(child("floor"))}
+    // Serialize verification, immutable installation and floor advancement
+    // against competing cooperative installers. A failed callback cannot
+    // advance the floor. A crash after install leaves an inactive candidate.
+    fun <T> accept(next:PackReleaseFloor,install:(PackReleaseFloor)->T):T=locked{
+        val current=decode(child("floor"))
+        require(next.sequence>current.sequence||next==current){"rollback or conflict"}
+        val result=install(current)
+        if(next!=current)write(next)
+        result
+    }
     fun advance(next:PackReleaseFloor)=locked{
         val current=decode(child("floor"))
         require(next.sequence>current.sequence||next==current){"rollback or conflict"}

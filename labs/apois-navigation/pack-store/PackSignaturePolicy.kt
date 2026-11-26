@@ -55,3 +55,16 @@ internal fun installSignedCandidate(
     check(PackSignaturePolicy.verify(candidate,key,pinnedKeyId,floor)){"untrusted pack release"}
     return store.install(candidate.spec,source)
 }
+
+
+/** Uses the private scoped floor. Does not expose a selected/active pointer.
+ * Caller must explicitly bootstrap trusted baseline, never on a failed read. */
+internal fun installWithPersistedFloor(
+    store:OfflinePackStore,release:SignedPackRelease,key:PublicKey,pinnedKeyId:String,
+    floor:PackFloorStore,source:(String)->java.io.InputStream
+):java.io.File{
+    val candidate=release.copy(spec=release.spec.validated(),signature=release.signature.copyOf())
+    check(floor.matchesScope(candidate.spec.region,pinnedKeyId))
+    val next=PackReleaseFloor(candidate.sequence,candidate.spec.identity())
+    return floor.accept(next){current->installSignedCandidate(store,candidate,key,pinnedKeyId,current,source)}
+}
