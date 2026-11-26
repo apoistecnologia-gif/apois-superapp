@@ -6,3 +6,6 @@ ValeOfflineResolver une o motor JNI 0.6.3 ao ScopedOfflineCalculation com autori
 
 ## Lease nativa do candidato instalado
 A fábrica local aceita somente uma lease do pacote fixado, após revalidar todos os hashes no armazenamento privado (sem download ou reparo). Uma lease só pode ser reivindicada uma vez; o encerramento do resolver a revoga. A checagem de atividade durante cada cálculo também verifica caminhos e metadados dos arquivos. Esses metadados não substituem uma nova verificação criptográfica: o grafo é revalidado antes de abrir o motor. Não é autorização de corrida, assinatura de distribuição ou integração com o host oficial.
+
+## Preservação temporária para homologação
+Os artefatos originais dos runs 45748506856, 45748780382, 45748961675 e 45749604118 expiram em 03/12/2026, antes da meta de 15/12. O workflow de preservação reconstrói o pacote a partir das fontes fixadas, compara os recursos de runtime byte a byte e solicita retenção de 30 dias dos quatro conjuntos inativos. Não é hospedagem permanente, assinatura, publicação ou liberação. Somente após execução aprovada e confirmação das datas de expiração no GitHub os consumidores podem trocar seus run IDs; os hashes e as regras de validação permanecem iguais.
