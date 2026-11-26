@@ -26,7 +26,7 @@ internal class ValeOfflineResolver(
     context:Context,private val graph:File,private val target:ApprovedIndependentTarget,
     private val hostCurrent:()->Boolean,private val packCurrent:()->Boolean,
     evidence:suspend ()->VerifiedRouteEvidence?,now:()->Long
-):LiveRouteResolver{
+):ManagedRouteResolver{
     private val app=context.applicationContext
     private val closed=AtomicBoolean(false)
     private var actor:Valhalla?=null
@@ -83,7 +83,7 @@ internal class ValeOfflineResolver(
         return file
     }
 
-    fun dispose(){
+    override fun dispose(){
         if(!closed.compareAndSet(false,true))return
         ValeEngineLane.executor.execute{
             try{actor?.close()}catch(_:Exception){}catch(_:LinkageError){}finally{actor=null}

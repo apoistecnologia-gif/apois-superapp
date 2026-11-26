@@ -2,7 +2,7 @@ name: APOIS GPS - Vale PE-BA no Android offline
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/launch-vale/android-build.sh','labs/apois-navigation/launch-vale/EmbeddedValeRouteTest.kt','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','.github/workflows/apois-navigation-lab-launch-vale-android.yml']
+    paths: ['labs/apois-navigation/launch-vale/android-build.sh','labs/apois-navigation/launch-vale/EmbeddedValeRouteTest.kt','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','labs/apois-navigation/android/probe/src/main/java/br/com/apois/navigation/lab/RouteResolverLifetime.kt','labs/apois-navigation/android/probe/src/main/java/br/com/apois/navigation/lab/ConfirmedLiveNavigationBridge.kt','.github/workflows/apois-navigation-lab-launch-vale-android.yml']
   workflow_dispatch:
 permissions:
   contents: read

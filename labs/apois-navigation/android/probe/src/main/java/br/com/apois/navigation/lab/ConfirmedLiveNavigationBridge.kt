@@ -33,6 +33,8 @@ object ConfirmedLiveNavigationBridge {
         var pending=false
         var opened=false
         val voice=ConfirmedSessionVoice()
+        private val routeLifetime=RouteResolverLifetime(resolver)
+        fun releaseResolver()=routeLifetime.close()
     }
     internal data class Screen(
         val id:String, val owner:Prepared, val token:LegToken,
@@ -80,7 +82,11 @@ object ConfirmedLiveNavigationBridge {
         audioAuthorization:(()->Boolean)?=null
     ):Boolean{
         main()
-        if(prepared!=null||occupied()||LabNavigationBridge.screen.value!=null)return false
+        if(prepared!=null||occupied()||LabNavigationBridge.screen.value!=null){
+            // A managed resolver is a one-shot candidate, never the existing owner.
+            if(prepared?.resolver!==resolver)releaseManagedResolver(resolver)
+            return false
+        }
         val attempt=Preparation()
         preparing=attempt
         var success=false
@@ -145,7 +151,12 @@ object ConfirmedLiveNavigationBridge {
         }catch(_:Exception){return false}
         finally{
             if(preparing===attempt)preparing=null
-            if(!success&&attempt.installed!=null&&prepared===attempt.installed)revoke()
+            if(!success){
+                val installed=attempt.installed
+                if(installed==null)releaseManagedResolver(resolver)
+                else if(prepared===installed)revoke()
+                else installed.releaseResolver()
+            }
         }
     }
 
@@ -288,6 +299,7 @@ object ConfirmedLiveNavigationBridge {
         }
         s.owner.voice.close()
         s.owner.controller.close()
+        s.owner.releaseResolver()
         screen.value=null
         return true
     }
@@ -336,6 +348,7 @@ object ConfirmedLiveNavigationBridge {
         p?.lease?.revoke()
         p?.voice?.close()
         p?.controller?.close()
+        p?.releaseResolver()
         screen.value?.id?.let{close(it)}
     }
 }
