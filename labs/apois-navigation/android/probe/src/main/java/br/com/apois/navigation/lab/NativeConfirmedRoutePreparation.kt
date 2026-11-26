@@ -75,6 +75,6 @@ internal suspend fun prepareConfirmedWithNativeReads(
     return ConfirmedLiveNavigationBridge.prepareFromGps(
         verify=verify,
         resolver=resolver,map=map,verifiedCurrent=::current,online=online,
-        audioAuthorization=audioAuthorization
+        audioAuthorization=audioAuthorization,localInitialRetry=localFactory!=null
     )
 }

@@ -51,6 +51,26 @@ class InitialRoutePolicyTest{
         val another=evidence.copy(ride=ride.copy(rideId="00000000-0000-4000-8000-000000000009"))
         assertFalse(admission.reserve(another))
     }
+    @Test fun onlyFailedLocalPreparationMayRetryOnceWithFreshProof(){
+        val admission=InitialRouteAdmission(1)
+        assertTrue(admission.reserve(evidence,1000,true))
+        assertFalse(admission.available(evidence.copy(verifiedAt=30_999),30_999,true))
+        val fresh=evidence.copy(verifiedAt=31_000)
+        assertFalse(admission.available(fresh,31_000,false))
+        assertFalse(admission.available(fresh.copy(identity=identity.copy(driverId=identity.profileUserId)),31_000,true))
+        assertTrue(admission.reserve(fresh,31_000,true))
+        assertFalse(admission.available(evidence.copy(verifiedAt=61_000),61_000,true))
+    }
+    @Test fun preparedLocalAndRemoteAttemptsNeverReopen(){
+        val local=InitialRouteAdmission()
+        assertTrue(local.reserve(evidence,1000,true))
+        local.markPrepared(evidence)
+        val fresh=evidence.copy(verifiedAt=31_000)
+        assertFalse(local.available(fresh,31_000,true))
+        val remote=InitialRouteAdmission()
+        assertTrue(remote.reserve(evidence))
+        assertFalse(remote.available(fresh,31_000,true))
+    }
     @Test fun impreciseStaleOrMovedOriginRejected(){
         assertFalse(initialRouteMatches(evidence,fix.copy(accuracy=25.1),listOf(origin,target),2000))
         assertFalse(initialRouteMatches(evidence.copy(verifiedAt=12000),fix,listOf(origin,target),12000))

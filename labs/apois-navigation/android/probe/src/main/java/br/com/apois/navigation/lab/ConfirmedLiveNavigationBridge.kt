@@ -80,7 +80,7 @@ object ConfirmedLiveNavigationBridge {
         verifiedCurrent:()->Boolean,online:()->Boolean={false},
         // Trusted host must explicitly attest Web Speech is stopped and the
         // user's original voice preference permits speech. No JS/Intent flag.
-        audioAuthorization:(()->Boolean)?=null
+        audioAuthorization:(()->Boolean)?=null,localInitialRetry:Boolean=false
     ):Boolean{
         main()
         if(prepared!=null||occupied()||LabNavigationBridge.screen.value!=null){
@@ -100,7 +100,7 @@ object ConfirmedLiveNavigationBridge {
                 fun connected()=runCatching{online()}.getOrDefault(false)
                 val firstEvidence=verify()?:return@withTimeoutOrNull false
                 if(!current()||!connected()||!firstEvidence.usable(SystemClock.elapsedRealtime())||
-                    !initialAdmission.available(firstEvidence))return@withTimeoutOrNull false
+                    !initialAdmission.available(firstEvidence,SystemClock.elapsedRealtime(),localInitialRetry))return@withTimeoutOrNull false
                 var latest:InitialRouteFix?=null
                 var quality=GpsQuality.WAITING
                 val first=CompletableDeferred<Unit>()
@@ -123,9 +123,9 @@ object ConfirmedLiveNavigationBridge {
                     if(!current()||!connected()||quality!=GpsQuality.AVAILABLE||!fix.usable(now)||
                         !before.usable(now)||!sameRoutingLeg(firstEvidence,before)||
                         before.ride.revision!=firstEvidence.ride.revision||before.verifiedAt<firstEvidence.verifiedAt)return@withTimeoutOrNull false
-                    // Exactly one initial route request. No retry, persisted
-                    // location, cached Google polyline or invented destination.
-                    if(!initialAdmission.reserve(before))return@withTimeoutOrNull false
+                    // One request per opening; a later explicit local opening may retry a failed preparation.
+                    // No persisted location, Google polyline or invented destination.
+                    if(!initialAdmission.reserve(before,now,localInitialRetry))return@withTimeoutOrNull false
                     val route=withTimeoutOrNull(15_000L){resolver.resolve(fix.point,before.target)}
                         ?:return@withTimeoutOrNull false
                     val after=verify()?:return@withTimeoutOrNull false
@@ -139,6 +139,7 @@ object ConfirmedLiveNavigationBridge {
                         !initialRouteMatches(after,last,geometry,SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
                     val owner=Prepared(route,after.target,map,resolver,verifiedCurrent,verify,online,audioAuthorization,
                         NavigationSessionController(after.ride),PreparedAuthorityLease(SystemClock::elapsedRealtime),after,sourceId,last)
+                    initialAdmission.markPrepared(after)
                     attempt.installed=owner
                     prepared=owner
                     prepared?.let(::scheduleExpiry)
