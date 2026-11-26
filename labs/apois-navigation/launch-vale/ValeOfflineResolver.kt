@@ -125,15 +125,18 @@ internal suspend fun valeDriverGrant(
     var handedOff=false
     try{
         ensureActiveForValeGrant()
-        fun current()=available()&&lease.current()
+        fun current():Boolean{
+            if(!available()||!lease.current()){lease.close();return false}
+            return true
+        }
         if(!current())return null
         val grant=NativeHostGrant(target.approved.identity,target.approved,::current,::current,null,
             audioAuthorization=audioAuthorization,
             verifyEvidence={
                 if(!current())null else{
                     val next=readTarget(request)
-                    if(!current()||!target.currentProof(next))null
-                    else next?.evidence(android.os.SystemClock.elapsedRealtime())
+                    if(!current()||!target.currentProof(next)){lease.close();null}
+                    else next?.evidence(android.os.SystemClock.elapsedRealtime()).also{if(it==null)lease.close()}
                 }
             },
             localFactory=NativeLocalRouteFactory{approved,map,owner,verify->

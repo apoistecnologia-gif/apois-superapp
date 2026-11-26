@@ -55,13 +55,13 @@ class ValeAuthorizedResolverTest {
                 changeOnRead=5
                 assertTrue(runCatching{opened.resolve(origin,destination)}.isFailure)
                 assertEquals(5,reads)
-                active=false
+                // A changed authority revision permanently revokes this
+                // owner even if the old proof later reappears.
+                assertFalse(grant.current())
+                assertFalse(resolverResourcesCurrent(opened))
+                changeOnRead=Int.MAX_VALUE
                 assertTrue(runCatching{opened.resolve(origin,destination)}.isFailure)
                 assertEquals(5,reads)
-                // Resource validity must fail even without requesting a route.
-                active=true
-                assertTrue(grant.current())
-                assertTrue(resolverResourcesCurrent(opened))
                 opened.dispose()
                 assertFalse(resolverResourcesCurrent(opened))
                 assertFalse(grant.current())
@@ -70,6 +70,16 @@ class ValeAuthorizedResolverTest {
             }
             assertFalse(grant.current())
             assertNull(factory.open(target,map,{true},evidence))
+            val fresh=checkNotNull(valeDriverGrant(context,pack,request,{active},readTarget))
+            val nextFactory=checkNotNull(fresh.localFactory)
+            val next=checkNotNull(nextFactory.open(target,map,{true},checkNotNull(fresh.verifyEvidence)))
+            try{
+                assertTrue(fresh.current());assertTrue(resolverResourcesCurrent(next))
+                active=false
+                assertFalse(fresh.current())
+                active=true
+                assertFalse(fresh.current());assertFalse(resolverResourcesCurrent(next))
+            }finally{next.dispose()}
             android.util.Log.i("APOIS_VALE_AUTHORIZED","real_engine=true; real_map=true; synthetic_authority=true; revocation_rejected=true")
         }
     }

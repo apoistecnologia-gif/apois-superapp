@@ -17,3 +17,5 @@ A ponte de navegação verifica a validade do resolver gerenciado durante prepar
 
 ## Adaptador nativo para autoridade do motorista (não registrado)
 O candidato local passa pelo mesmo contrato de target do driver-control já existente, com nova leitura autenticada antes/depois da rota e renovação. Fixa identidade, corrida, fase, evidência/versionamento e destino. Não pede permit remoto, não envia origem a roteador e não muda preço ou estado da corrida. Exige host explicitamente aprovado, sessão nativa vigente, conectividade para autoridade e instalação prévia do pacote. Desabilitado por padrão; teste usa resposta sintética do contrato e motor real. Ainda não existe deploy do endpoint nem registro no host oficial.
+
+A perda de sessão/conectividade observada ou mudança da versão da evidência revoga a lease definitivamente. O reaparecimento de uma prova anterior não reabre a mesma sessão. O workflow do motor autorizado cancela rodadas superadas para reduzir concorrência de CI. Ainda exige teste e implantação controlada do endpoint; não há execução em produção.

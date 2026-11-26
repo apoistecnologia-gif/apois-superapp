@@ -4,6 +4,9 @@ on:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
     paths: ['labs/apois-navigation/launch-vale/ValeAuthorizedResolverTest.kt','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','labs/apois-navigation/launch-vale/ValeRuntimePack.kt','labs/apois-navigation/pack-store/OfflinePackStore.kt','labs/apois-navigation/android/probe/**','.github/workflows/apois-navigation-lab-vale-authorized-engine.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
   actions: read
