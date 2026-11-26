@@ -1,0 +1,26 @@
+name: APOIS GPS - rotas dinamicas Valhalla Piaui
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/field-dynamic/**','.github/workflows/apois-navigation-lab-field-dynamic.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dynamic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - run: sudo apt-get update && sudo apt-get install -y osmium-tool
+      - run: bash labs/apois-navigation/field-dynamic/build.sh "$RUNNER_TEMP/apois-field-dynamic"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-field-dynamic-evidence
+          path: ${{ runner.temp }}/apois-field-dynamic/
+          retention-days: 7
+          if-no-files-found: warn
