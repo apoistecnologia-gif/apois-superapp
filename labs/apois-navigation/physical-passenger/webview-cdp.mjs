@@ -41,7 +41,13 @@ export async function connectWebView(){
    })
    const evalJS=async expression=>{
     const reply=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true})
-    assert.ok(!reply.exceptionDetails,'WebView expression threw')
+    if(reply.exceptionDetails){
+     const detail=reply.exceptionDetails
+     // Synthetic lab only: report exception type/location, not evaluated DOM contents.
+     const kind=detail.exception?.className??'Error'
+     throw Error(`WebView expression threw (${kind}, line ${detail.lineNumber??'?'}, column ${detail.columnNumber??'?'})`)
+    }
+    assert.ok(reply.result,'missing CDP evaluation result')
     return reply.result.value
    }
    const close=()=>{try{ws.close()}finally{adb('forward','--remove','tcp:'+forward)}}
