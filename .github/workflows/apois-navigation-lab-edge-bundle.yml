@@ -2,7 +2,7 @@ name: APOIS Navegacao - pacote Edge candidato (sem deploy)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/staging-package/**','.github/workflows/apois-navigation-lab-edge-bundle.yml']
+    paths: ['labs/apois-navigation/staging-package/**','labs/apois-navigation/production-contract/**','labs/apois-navigation/driver-broker/**','labs/apois-navigation/remote-quote/**','.github/workflows/apois-navigation-lab-edge-bundle.yml']
   workflow_dispatch:
 permissions:
   contents: read
