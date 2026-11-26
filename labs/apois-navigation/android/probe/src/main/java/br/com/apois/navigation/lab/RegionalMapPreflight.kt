@@ -20,6 +20,7 @@ internal suspend fun <M:Any,G:Any> mapThenGrant(
 ):Pair<M,G>?{
     fun live()=runCatching{current()}.getOrDefault(false)
     val map=preflightRegionalMap(::live,load)?:return null
+    kotlinx.coroutines.currentCoroutineContext().ensureActive()
     val result=grant()?:return null
     var keep=false
     try{
