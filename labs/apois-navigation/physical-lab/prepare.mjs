@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {readFileSync,writeFileSync,cpSync,mkdirSync,realpathSync} from 'node:fs'
 import {join} from 'node:path'
 import {createHash} from 'node:crypto'
+import {verifyReplayFixture} from './replay-fixture.mjs'
 const [hostArg,packArg,routeArg]=process.argv.slice(2)
 const host=realpathSync(hostArg),temp=realpathSync(process.env.RUNNER_TEMP)
 assert.ok(host===join(temp,'apois-physical-host'))
@@ -22,6 +23,7 @@ for(const f of m.files){
  const dest=join(out,f.path);mkdirSync(join(dest,'..'),{recursive:true});writeFileSync(dest,data)
 }
 writeFileSync(join(out,'manifest.json'),manifest)
+const verifiedReplay=verifyReplayFixture(routeArg)
 const report=JSON.parse(readFileSync(join(routeArg,'v21-regional-report.json'),'utf8'))
 assert.equal(report.extract_sha256,m.extract_sha256);assert.equal(report.source,'OSM_PBF')
 for(const phase of ['pickup','trip']){
@@ -75,4 +77,4 @@ xml=swap(xml,'</manifest>','<uses-permission android:name="android.permission.IN
 put(appManifest,xml)
 const plugin='app/src/main/java/br/com/apois/navigation/compat/lab/ApoisNavigationLabPlugin.java'
 put(plugin,swap(get(plugin),'    @PluginMethod\n    public void confirmedAvailability','    @PluginMethod\n    public void physicalGps(PluginCall call) {\n        getActivity().runOnUiThread(() -> {\n            try {\n                getActivity().startActivity(new android.content.Intent(getActivity(),br.com.apois.navigation.lab.PhysicalGpsActivity.class));\n                call.resolve();\n            } catch(Exception e) {call.reject("GPS diagnostic unavailable");}\n        });\n    }\n    @PluginMethod\n    public void confirmedAvailability'))
-console.log('APOIS_PHYSICAL_ASSETS_VERIFIED',JSON.stringify({pack:m.pack_id,extract:m.extract_sha256,routeFixture:'45707496288',network:false}))
+console.log('APOIS_PHYSICAL_ASSETS_VERIFIED',JSON.stringify({pack:m.pack_id,extract:m.extract_sha256,routeFixture:verifiedReplay,network:false}))
