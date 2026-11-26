@@ -53,7 +53,24 @@ internal fun ApoisNavigationScreen(
     val disabled=ride.busy || sent
     val palette=lightColorScheme(primary=Red,onPrimary=Color.White,surface=Color.White,onSurface=Ink)
     MaterialTheme(colorScheme=palette) {
-        Box(modifier.fillMaxSize().background(Color(0xFFE5E2D9))) {
+        if(hostOperationsOnly){
+            // Confirmed ride controls cannot depend on the SDK progress overlay:
+            // that overlay can be absent while GPS or maneuver progress is null.
+            // Reserve a dedicated bottom area so return remains reachable.
+            Column(modifier.fillMaxSize().background(Color(0xFFE5E2D9))){
+                val components=NavigationViewComponentBuilder.Default().withProgressView { _,_,_-> }
+                PortraitNavigationView(
+                    modifier=Modifier.weight(1f).fillMaxWidth(),baseStyle=baseStyle,viewModel=model,
+                    views=components,locationPuckStyle=NavigationMapPuckStyle(
+                        dotFillColorCurrentLocation=Red,dotFillColorOldLocation=Red,bearingColor=Red
+                    ),
+                    onTapExit={dispatch(RideAction.RETURN,null)}
+                )
+                Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=12.dp,vertical=8.dp)){
+                    RidePanel(ride,ui,disabled,dispatch,Modifier.fillMaxWidth(),gpsQuality,routeNotice,true)
+                }
+            }
+        }else Box(modifier.fillMaxSize().background(Color(0xFFE5E2D9))) {
             val active=ride.phase in setOf(RidePhase.PICKUP,RidePhase.WAITING_PIN,RidePhase.TRIP)
             val sdkShowingProgress=ui.isNavigating() && active
             val components=NavigationViewComponentBuilder.Default().withProgressView { m,state,_ ->
