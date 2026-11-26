@@ -115,7 +115,7 @@ internal fun installDriverControlCandidate(enabled:Boolean=false,backendHost:Str
     if(!enabled)return false
     check(Looper.myLooper()==Looper.getMainLooper())
     val client=runCatching{NativeDriverControlClient(backendHost)}.getOrNull()?:return false
-    return NativeConfirmedHost.install(NativeHostConfiguration(backendHost,routeEndpoint,routeHost,online){request->
+    return NativeConfirmedHost.install(NativeHostConfiguration(backendHost,routeEndpoint,routeHost,online,grant={request->
         val stamp=NativeDriverReadSource.stamp()?:return@NativeHostConfiguration null
         fun live()=NativeDriverReadSource.current(stamp)&&runCatching{hostCurrent()}.getOrDefault(false)
         if(!live())return@NativeHostConfiguration null
@@ -131,5 +131,5 @@ internal fun installDriverControlCandidate(enabled:Boolean=false,backendHost:Str
                 }
             }
         )
-    })
+    }))
 }
