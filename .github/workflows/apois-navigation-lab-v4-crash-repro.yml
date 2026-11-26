@@ -1,0 +1,42 @@
+name: APOIS GPS - reproduzir falha V4 original
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['.github/workflows/apois-navigation-lab-v4-crash-repro.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: APOIS-GPS-Piaui-Piloto-V4
+          run-id: 45743390151
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-field-apk
+      - name: Verify original APK and install emulator tools
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/apois-field-apk"
+          echo '608f53a08187a0ccd4670c0a2c6144554c2d8021968d863ceabaa7865dcbafc7  APOIS-GPS-Piaui-Piloto-V4.apk' | sha256sum -c -
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Reproduce route start on original APK and preserve crash evidence
+        run: bash labs/apois-navigation/field-v4/install-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-v4-original-crash-evidence
+          path: ${{ runner.temp }}/apois-v4-install-smoke/
+          retention-days: 7
+          if-no-files-found: warn
