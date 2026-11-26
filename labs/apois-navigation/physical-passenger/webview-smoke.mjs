@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import {textCheckpoint} from './webview-checkpoints.mjs'
 import {readFileSync,writeFileSync} from 'node:fs'
 import {join} from 'node:path'
 import {adb,packageName,connectWebView,until,click} from './webview-cdp.mjs'
@@ -6,7 +7,7 @@ const out=process.argv[2],catalog=JSON.parse(readFileSync(process.argv[3],'utf8'
 assert.equal(catalog.rows.length,2)
 const labels=catalog.rows.map(x=>x.label)
 assert.notEqual(labels[0],labels[1],'fixture labels must be distinguishable')
-const text=s=>'!!document.body && document.body.innerText.includes('+JSON.stringify(s)+')'
+const text=textCheckpoint
 const count=n=>text('Criações simuladas neste aparelho: '+n)
 const launch=()=>adb('shell','am','start','-W','-n',packageName+'/.MainActivity')
 let view=null
