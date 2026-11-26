@@ -74,10 +74,19 @@ jobs:
           adb shell svc wifi disable
           adb shell svc data disable
           adb shell input keyevent 82
-          gradle -p "$H" :probe:connectedDebugAndroidTest --no-daemon --stacktrace | tee "$OUT/test.log"
-          adb logcat -d -s APOIS_VALE_LIFECYCLE:I '*:S' > "$OUT/lifecycle.log"
+          set +e
+          gradle -p "$H" :probe:connectedDebugAndroidTest --no-daemon --stacktrace 2>&1 | tee "$OUT/test.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          adb logcat -d -s APOIS_VALE_LIFECYCLE:V AndroidRuntime:E '*:S' > "$OUT/lifecycle.log" || true
+          cat "$OUT/lifecycle.log"
+          adb shell dumpsys activity activities > "$OUT/activities.txt" || true
+          adb exec-out screencap -p > "$OUT/after-test.png" || true
+          if test -d "$H/probe/build/outputs/androidTest-results"; then
+            cp -a "$H/probe/build/outputs/androidTest-results" "$OUT/results"
+          fi
+          test "$status" = 0
           grep -F 'confirmed_activity=true; back_ack=true; next_leg=true; authority_revoked=true; synthetic_gps=true' "$OUT/lifecycle.log"
-          cp -a "$H/probe/build/outputs/androidTest-results" "$OUT/results"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

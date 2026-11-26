@@ -10,6 +10,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import java.io.ByteArrayOutputStream
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -40,7 +43,16 @@ class ValeConfirmedLifecycleTest{
         var source=0L
         var tick:Runnable?=null
         val scenario=ActivityScenario.launch(ValeLifecycleFixtureActivity::class.java)
+        fun diagnostics(){
+            runCatching{inst.runOnMainSync{
+                val resumed=ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED).map{it.javaClass.simpleName}
+                val state=ConfirmedLiveNavigationBridge.screen.value
+                android.util.Log.e("APOIS_VALE_LIFECYCLE","diagnostic resumed=$resumed; screen=${state!=null}; occupied=${ConfirmedLiveNavigationBridge.occupied()}; accepted=${state?.let{ConfirmedLiveNavigationBridge.accepts(it.id,it.token)}}")
+            }}
+            runCatching{val out=ByteArrayOutputStream();device.dumpWindowHierarchy(out);android.util.Log.e("APOIS_VALE_LIFECYCLE","diagnostic hierarchy="+out.toString("UTF-8").take(12000))}
+        }
         try{
+            device.wakeUp()
             scenario.onActivity{
                 source=DriverGpsFeed.beginSource()
                 assertTrue(NativeDriverReadSource.bind(source,"https://fixture.invalid","synthetic-ci-key"){ "synthetic-ci-token" })
@@ -77,7 +89,7 @@ class ValeConfirmedLifecycleTest{
                 assertTrue("open callback timeout",opened.await(40,TimeUnit.SECONDS))
                 assertFalse("ambiguous opening",uncertain.get())
                 val id=checkNotNull(session.get()){ "native session unavailable" }
-                assertTrue("confirmed Activity not rendered",device.wait(Until.hasObject(By.textContains(expected)),20_000L))
+                assertTrue("confirmed Activity not rendered: $expected",device.wait(Until.hasObject(By.textContains(expected)),25_000L))
                 assertTrue("host-only operations not shown",device.wait(Until.hasObject(By.textContains("demais ações permanecem")),10_000L))
                 inst.runOnMainSync{
                     val screen=checkNotNull(ConfirmedLiveNavigationBridge.screen.value)
@@ -102,6 +114,9 @@ class ValeConfirmedLifecycleTest{
             assertTrue(device.wait(Until.hasObject(By.textContains("APOIS CI fixture")),10_000L))
             inst.runOnMainSync{assertNull(ConfirmedLiveNavigationBridge.screen.value);assertFalse(ConfirmedLiveNavigationBridge.occupied())}
             android.util.Log.i("APOIS_VALE_LIFECYCLE","confirmed_activity=true; back_ack=true; next_leg=true; authority_revoked=true; synthetic_gps=true")
+        }catch(t:Throwable){
+            diagnostics()
+            throw t
         }finally{
             inst.runOnMainSync{
                 tick?.let{handler.removeCallbacks(it)}
