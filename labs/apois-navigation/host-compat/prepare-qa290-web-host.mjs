@@ -10,9 +10,20 @@ const temp=realpathSync(process.env.RUNNER_TEMP);
 assert.equal(root,join(temp,"apois-qa290-web/.work/partner-motorista"));
 const lib=join(root,"src/lib/apois-navigation-lab");
 mkdirSync(lib);
-for(const p of ["confirmed-navigation-launch.mjs","motorista-authority.mjs"])
+for(const p of ["confirmed-navigation-launch.mjs","motorista-authority.mjs","driver-proof-reader.mjs"])
   copyFileSync(join(repo,"labs/apois-navigation/host-compat",p),join(lib,p));
 execFileSync(process.execPath,["--test",join(repo,"labs/apois-navigation/host-compat/confirmed-navigation-launch.test.mjs")],{stdio:"inherit"});
+execFileSync(process.execPath,["--test",join(repo,"labs/apois-navigation/host-compat/driver-proof-reader.test.mjs")],{stdio:"inherit"});
+writeFileSync(join(lib,"driver-proof-reader.d.mts"),`
+import type {ConfirmedLaunchProof,ConfirmedPhase} from "./confirmed-navigation-launch.mjs";
+export function createDriverProofReader(options:{
+ getSession:(signal:AbortSignal)=>Promise<{userId:string;token:string}|null>;
+ getUser:(token:string,signal:AbortSignal)=>Promise<string|null>;
+ readProfile:(signal:AbortSignal)=>Promise<{id:string;user_id:string}|null>;
+ readRide:(id:string,signal:AbortSignal)=>Promise<ConfirmedLaunchProof["row"]|null>;
+ timeoutMs?:number;maxPending?:number;
+}):(r:{rideId:string;phase:ConfirmedPhase})=>Promise<ConfirmedLaunchProof|null>;
+`,{flag:"wx"});
 writeFileSync(join(lib,"confirmed-navigation-launch.d.mts"),`
 export type ConfirmedPhase = "PICKUP" | "TRIP";
 export type ConfirmedLaunchProof = {
@@ -38,29 +49,32 @@ import {supabase} from "@/integrations/supabase/client";
 import {beginConfirmedVoiceHandoff} from "@/lib/voiceNav";
 import {Capacitor,registerPlugin,type PluginListenerHandle} from "@capacitor/core";
 import {ConfirmedNavigationLaunch,type ConfirmedPhase,type ConfirmedLaunchProof} from "./confirmed-navigation-launch.mjs";
+import {createDriverProofReader} from "./driver-proof-reader.mjs";
 
 // Hard disabled. Do not expose a preference, remote flag or deep link until
 // the native adapter, provenance, revocation and physical QA are approved.
 const EXPERIMENTAL_INTERNAL_NAVIGATION:boolean=false;
 
-async function verify({rideId}: {rideId:string;phase:ConfirmedPhase}):Promise<ConfirmedLaunchProof|null> {
-  const before=await supabase.auth.getUser();
-  const authId=before.data.user?.id;
-  if(before.error||!authId)return null;
-  // Existing read-only profile RPC. Do not call a profile helper that could
-  // trigger unrelated provisioning. No auth/user equality assumptions.
-  const profile=await supabase.rpc("driver_get_profile");
-  if(profile.error||!profile.data||typeof profile.data!=="object"||Array.isArray(profile.data))return null;
-  const record=profile.data as Record<string,unknown>;
-  if(typeof record.id!=="string"||typeof record.user_id!=="string")return null;
-  const result=await supabase.from("rides")
-    .select("id,status,driver_id,accepted_driver_id,category").eq("id",rideId).maybeSingle();
-  if(result.error||!result.data)return null;
-  const after=await supabase.auth.getUser();
-  if(after.error||after.data.user?.id!==authId)return null;
-  return {identity:{authUserId:authId,driverId:record.id,profileUserId:record.user_id},
-    row:result.data as unknown as ConfirmedLaunchProof["row"]};
-}
+const verify=createDriverProofReader({
+  getSession:async()=>{
+    const {data,error}=await supabase.auth.getSession();
+    return error||!data.session?null:{userId:data.session.user.id,token:data.session.access_token};
+  },
+  getUser:async token=>{
+    const {data,error}=await supabase.auth.getUser(token);
+    return error?null:data.user?.id??null;
+  },
+  readProfile:async signal=>{
+    const profile=await supabase.rpc("driver_get_profile").abortSignal(signal);
+    if(profile.error||!profile.data||typeof profile.data!=="object"||Array.isArray(profile.data))return null;
+    const record=profile.data as Record<string,unknown>;
+    return typeof record.id==="string"&&typeof record.user_id==="string"?{id:record.id,user_id:record.user_id}:null;
+  },
+  readRide:async (rideId,signal)=>{
+    const result=await supabase.from("rides").select("id,status,driver_id,accepted_driver_id,category").eq("id",rideId).abortSignal(signal).maybeSingle();
+    return result.error||!result.data?null:result.data as unknown as ConfirmedLaunchProof["row"];
+  },
+});
 
 type ConfirmedRequest={rideId:string;phase:ConfirmedPhase;revision:number};
 type ConfirmedNativePlugin={
@@ -89,14 +103,8 @@ function ensureNativeListener():Promise<boolean>{
   void pending.finally(()=>{if(listenerReady===pending)listenerReady=null;});
   return pending;
 }
-async function boundedVerify(request:{rideId:string;phase:ConfirmedPhase}):Promise<ConfirmedLaunchProof|null>{
-  let timeout:ReturnType<typeof setTimeout>|undefined;
-  try{
-    return await Promise.race([verify(request),new Promise<null>(resolve=>{timeout=setTimeout(()=>resolve(null),5000);})]);
-  }finally{if(timeout!==undefined)clearTimeout(timeout);}
-}
 const launch=new ConfirmedNavigationLaunch({
-  enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify:boundedVerify,
+  enabled:EXPERIMENTAL_INTERNAL_NAVIGATION,verify,
   prepareAudio:beginConfirmedVoiceHandoff,
   canOpenNative:async()=>Capacitor.isNativePlatform()&&Capacitor.getPlatform()==="android"&&
     Capacitor.isPluginAvailable(nativeName)&&(await native.confirmedAvailability()).configured===true,
