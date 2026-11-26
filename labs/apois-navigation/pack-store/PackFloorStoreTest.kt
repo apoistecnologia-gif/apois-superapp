@@ -26,6 +26,25 @@ class PackFloorStoreTest{
         assertEquals(two,store(root).read())
         assertTrue(root.list()!!.none{it.startsWith("floor-stage-")})
     }
+    @Test fun competingInstallerCannotReadOrAdvanceLockedFloor(){
+        val root=tmp.newFolder();val first=store(root);val second=store(root)
+        first.bootstrap(one)
+        var called=false
+        val result=first.accept(two){old->
+            assertEquals(one,old)
+            assertTrue(runCatching{second.read()}.isFailure)
+            assertTrue(runCatching{second.accept(two){called=true}}.isFailure)
+            "installed"
+        }
+        assertEquals("installed",result);assertFalse(called);assertEquals(two,second.read())
+    }
+    @Test fun failedCallbackLeavesFloorAndReleasesLock(){
+        val root=tmp.newFolder();val first=store(root);first.bootstrap(one)
+        assertTrue(runCatching{first.accept(two){throw java.io.IOException("fixture install failed")}}.isFailure)
+        assertEquals(one,store(root).read())
+        assertEquals("ok",store(root).accept(two){"ok"})
+        assertEquals(two,first.read())
+    }
     @Test fun corruptOrWrongScopeNeverDefaultsToZero(){
         val root=tmp.newFolder();store(root).bootstrap(one)
         assertTrue(runCatching{PackFloorStore(root,"other",key).read()}.isFailure)
