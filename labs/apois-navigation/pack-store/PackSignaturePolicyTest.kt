@@ -7,6 +7,7 @@ import org.junit.Test
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.security.MessageDigest
 
 class PackSignaturePolicyTest{
@@ -41,6 +42,31 @@ class PackSignaturePolicyTest{
         assertEquals(0,reads);assertTrue(root.list()!!.isEmpty())
         val dir=installSignedCandidate(store,valid,keys.public,pin,PackReleaseFloor(0,null),source)
         assertEquals(3,reads);assertEquals(dir,store.openVerified(exact))
+    }
+    @Test fun persistentFloorAdvancesOnlyAfterVerifiedInstall(){
+        val root=tmp.newFolder()
+        val store=OfflinePackStore(File(root,"packs"),1024,0)
+        val floorRoot=File(root,"floor").also{assertTrue(it.mkdir())}
+        val pin=PackSignaturePolicy.keyId(keys.public)
+        val floor=PackFloorStore(floorRoot,spec.region,pin)
+        val bytes="fixture".toByteArray()
+        val hash=MessageDigest.getInstance("SHA-256").digest(bytes).joinToString(""){"%02x".format(it.toInt() and 255)}
+        val exact=spec.copy(files=spec.files.map{it.copy(bytes=bytes.size.toLong(),sha256=hash)})
+        fun signed(sequence:Long):SignedPackRelease{
+            val draft=SignedPackRelease(exact,sequence,byteArrayOf())
+            val signer=Signature.getInstance("SHA256withECDSA")
+            signer.initSign(keys.private);signer.update(draft.payload())
+            return draft.copy(signature=signer.sign())
+        }
+        val r=signed(2);val initial=PackReleaseFloor(0,null)
+        assertTrue(runCatching{installWithPersistedFloor(store,r,keys.public,pin,floor){error("missing floor")}}.isFailure)
+        floor.bootstrap(initial)
+        assertTrue(runCatching{installWithPersistedFloor(store,r,keys.public,pin,floor){ByteArrayInputStream(byteArrayOf(0))}}.isFailure)
+        assertEquals(initial,floor.read())
+        val dir=installWithPersistedFloor(store,r,keys.public,pin,floor){ByteArrayInputStream(bytes)}
+        assertEquals(PackReleaseFloor(2,exact.identity()),floor.read())
+        assertTrue(runCatching{installWithPersistedFloor(store,signed(1),keys.public,pin,floor){error("rollback source")}}.isFailure)
+        assertEquals(dir,installWithPersistedFloor(store,r,keys.public,pin,floor){error("already installed")})
     }
     @Test fun validSignatureAndRetry(){
         val r=release(2)
