@@ -41,7 +41,8 @@ export class ConfirmedNavigationLaunch {
   onNativeClosed(event:unknown):boolean;
   recheck():Promise<string>;
   observeRide(rideId:string|null,status:string|null):Promise<string>|undefined;
-  launch(r:Request & {openExternal:()=>Promise<void>}):Promise<"external"|"internal"|"busy"|"stale"|"unverified"|"uncertain">;
+  launch(r:Request & {openExternal:()=>Promise<void>;allowExternalFallback?:boolean}):Promise<"external"|"internal"|"busy"|"stale"|"unverified"|"uncertain"|"unavailable">;
+  runExternal<T>(work:()=>Promise<T>):Promise<T>;
 }
 `,{flag:"wx"});
 writeFileSync(join(lib,"host.ts"),`// APOIS_NAVIGATION_QA290_CONFIRMED_HOST
@@ -84,7 +85,7 @@ type ConfirmedNativePlugin={
   cancelConfirmedPreparation(request:ConfirmedRequest):Promise<{cancelled:boolean}>;
   addListener(eventName:"confirmedRideIntent",listener:(event:unknown)=>void):Promise<PluginListenerHandle>;
 };
-const nativeName="ApoisNavigationLab";
+const nativeName="ApoisConfirmedNavigation";
 const native=registerPlugin<ConfirmedNativePlugin>(nativeName);
 let listenerReady:Promise<boolean>|null=null;
 let listenerEpoch=0;
@@ -123,6 +124,16 @@ const launch=new ConfirmedNavigationLaunch({
 export async function launchConfirmedApoisNavigation(rideId:string,phase:ConfirmedPhase,openExternal:()=>Promise<void>):Promise<void>{
   const result=await launch.launch({rideId,phase,openExternal});
   if(result!=="external"&&result!=="internal")throw Error("Navegação não confirmada. Confira a corrida e use Reabrir mapa.");
+}
+
+export function confirmedNavigationEnabled():boolean {
+  return EXPERIMENTAL_INTERNAL_NAVIGATION&&Capacitor.isNativePlatform()&&Capacitor.getPlatform()==="android";
+}
+export async function retryConfirmedApoisNavigation(rideId:string,phase:ConfirmedPhase):Promise<string>{
+  return launch.launch({rideId,phase,allowExternalFallback:false,openExternal:async()=>{throw Error("Explicit internal retry must not open external map");}});
+}
+export function runExternalApoisNavigation<T>(work:()=>Promise<T>):Promise<T>{
+  return launch.runExternal(work);
 }
 
 // Attach only in the existing Motorista route. No extra auth subscription or
