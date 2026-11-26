@@ -1,0 +1,21 @@
+{
+    # No access logging; no admin endpoint reachable from the host.
+    admin off
+}
+{$APOIS_FIELD_HOST} {
+    @route {
+        method POST
+        path /route
+    }
+    handle @route {
+        reverse_proxy 127.0.0.1:8003 {
+            transport http {
+                dial_timeout 2s
+                response_header_timeout 15s
+            }
+        }
+    }
+    handle {
+        respond 404
+    }
+}

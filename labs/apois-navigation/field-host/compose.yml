@@ -1,0 +1,49 @@
+# Linux host-network only; do not use on Docker Desktop or expose ports 8002/8003.
+# Assumes graph/PBF already prepared in a dedicated directory, no production data.
+services:
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted@sha256:0e559e57b19e293bcf62e10c64163f2fe60c42902a760152c9238307e13e7257
+    ports:
+      - "127.0.0.1:8002:8002"
+    volumes:
+      - ${APOIS_GRAPH_DIR:?set graph directory}:/custom_files
+    environment:
+      server_threads: "2"
+      build_admins: "False"
+      build_time_zones: "False"
+      build_elevation: "False"
+      build_transit: "False"
+      use_default_speeds_config: "False"
+    mem_limit: 2g
+    cpus: 2
+    restart: "no"
+  gateway:
+    image: node:24-alpine
+    network_mode: host
+    user: "${APOIS_UID:?set uid}:${APOIS_GID:?set gid}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ../:/lab:ro
+      - ${APOIS_SECRET_FILE:?set credential file}:/run/apois-secret:ro
+    environment:
+      APOIS_FIELD_DYNAMIC_RUN: "1"
+      APOIS_FIELD_DYNAMIC_SECRET_FILE: /run/apois-secret
+      APOIS_FIELD_DYNAMIC_EXPIRES_AT: "${APOIS_EXPIRES_AT:?set expiry epoch milliseconds}"
+    command: ["node","/lab/field-dynamic/gateway.mjs"]
+    mem_limit: 128m
+    restart: "no"
+  tls:
+    image: caddy:2-alpine
+    network_mode: host
+    environment:
+      APOIS_FIELD_HOST: "${APOIS_FIELD_HOST:?set dedicated test hostname}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls_data:/data
+      - tls_config:/config
+    restart: "no"
+volumes:
+  tls_data:
+  tls_config:

@@ -1,0 +1,31 @@
+name: APOIS GPS - infraestrutura piloto (sem deploy)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/field-host/**','labs/apois-navigation/field-dynamic/gateway.mjs','.github/workflows/apois-navigation-lab-field-host.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test labs/apois-navigation/field-host/gateway-expiry.test.mjs
+      - name: Validate compose config only
+        working-directory: labs/apois-navigation/field-host
+        env:
+          APOIS_GRAPH_DIR: /tmp/apois-graph-test
+          APOIS_UID: '1000'
+          APOIS_GID: '1000'
+          APOIS_SECRET_FILE: /tmp/apois-secret-test
+          APOIS_EXPIRES_AT: '1000'
+          APOIS_FIELD_HOST: field.invalid
+        run: docker compose config --quiet
