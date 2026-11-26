@@ -27,7 +27,16 @@ def distance(a,b):
     x,y=map(math.radians,a);u,v=map(math.radians,b)
     return 6371000*2*math.asin(min(1,math.sqrt(math.sin((u-x)/2)**2+math.cos(x)*math.cos(u)*math.sin((v-y)/2)**2)))
 # Public reference coordinates only, not the user's device location.
-a=(-7.4475,-41.4786);b=(-7.4415,-41.4726);c=(-7.0769,-41.4669);d=(-7.0709,-41.4609)
+# Use the snapped public road endpoint verified in the original bundled route.
+# The former destination snapped 247.344 m away: keep it as a negative client test.
+a=(-7.4475,-41.4786);b=(-7.439992,-41.474246);c=(-7.0769,-41.4669);d=(-7.0709,-41.4609)
+original_b=(-7.4415,-41.4726)
+status,too_far=request(a,original_b)
+assert status==200
+bad_geometry=decode(too_far["routes"][0]["geometry"])
+bad_snap=distance(original_b,bad_geometry[-1])
+assert bad_snap>150,("negative fixture changed",bad_snap)
+print("Client must reject distant snapped destination: %.2f m"%bad_snap,flush=True)
 assert request(a,b,None)[0]==401
 assert request(a,b,"0"*64)[0]==401
 assert request((-9.4,-40.5),b)[0]==400
@@ -38,7 +47,7 @@ for name,origin,target in cases:
     status,data=request(origin,target);assert status==200,(name,status,data)
     r=data["routes"][0];p=decode(r["geometry"]);assert len(p)>=2
     assert all(-7.75<=x<=-6.85 and -41.85<=y<=-41.15 for x,y in p),name
-    assert distance(origin,p[0])<=150 and distance(target,p[-1])<=150,name
+    assert distance(origin,p[0])<=150 and distance(target,p[-1])<=150,(name,distance(origin,p[0]),distance(target,p[-1]))
     steps=[s for leg in r["legs"] for s in leg["steps"]]
     assert r["distance"]>0 and r["duration"]>0
     assert any(s.get("voiceInstructions") for s in steps) and any(s.get("bannerInstructions") for s in steps)
@@ -46,5 +55,5 @@ for name,origin,target in cases:
     report.append(dict(case=name,distance_m=r["distance"],duration_s=r["duration"],origin_snap_m=round(distance(origin,p[0]),2),target_snap_m=round(distance(target,p[-1]),2)))
     (out/(name+".json")).write_text(json.dumps(data,ensure_ascii=False))
 assert geoms["intercity"]!=geoms["intercity_changed_origin"]
-(out/"report.json").write_text(json.dumps({"routes":report,"rejections":4,"scope":"public synthetic endpoints, real local Valhalla, not actual user GPS or production"},indent=2))
-print("APOIS_DYNAMIC_OK routes=6 rejections=4 changed_origin=true")
+(out/"report.json").write_text(json.dumps({"routes":report,"rejections":4,"client_snap_rejection_m":round(bad_snap,2),"scope":"public synthetic endpoints, real local Valhalla, not actual user GPS or production"},indent=2))
+print("APOIS_DYNAMIC_OK routes=6 rejections=4 client_snap_rejection=true changed_origin=true")
