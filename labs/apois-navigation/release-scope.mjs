@@ -56,7 +56,16 @@ export function audit(root){
   const untracked=git("ls-files","--others","--exclude-standard","-z").split("\0").filter(Boolean);
   assert.equal(working.length+untracked.length,0,"audit requires a clean checkout");
   const read=p=>readFileSync(join(root,"labs/apois-navigation",p),"utf8");
-  assertDisabledHost(read("host-compat/prepare-qa290-web-host.mjs"));
+  const webHost=read("host-compat/prepare-qa290-web-host.mjs");
+  assertDisabledHost(webHost);
+  assert.ok(webHost.includes('const nativeName="ApoisConfirmedNavigation"'));
+  const candidate=read("host-compat/prepare-vale-native.mjs");
+  assert.equal((candidate.match(/APOIS_CONFIRMED_NAVIGATION_ENABLED=false/g)||[]).length,1);
+  assert.ok(candidate.includes("if(APOIS_CONFIRMED_NAVIGATION_ENABLED)registerPlugin(ApoisConfirmedNavigationPlugin.class)"));
+  assert.ok(candidate.includes('APOIS_CONFIRMED_NAVIGATION_ENABLED,"fixture.invalid"'));
+  const lifecycle=read("launch-vale/ValeNativeHostLifecycle.kt");
+  assert.ok(lifecycle.includes("if(!enabled)return attachment")&&lifecycle.includes("audioAuthorization=null"));
+  assert.ok(!lifecycle.includes("requestPermissions("));
   assertPrivateManifest(read("android/probe/src/main/AndroidManifest.xml"));
   assert.ok(read("valhalla/route-gateway.mjs").includes('.listen(port,"127.0.0.1"'));
   // The source can only remain inactive until a separate reviewed activation.
