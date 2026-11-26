@@ -48,7 +48,8 @@ object ConfirmedLiveNavigationBridge {
     private var callback:Consumer<JSONObject>?=null
     // Retain only the acknowledgement reference, not route geometry, GPS fix,
     // verifier, map, target or the credential issuer after closing.
-    private data class Closing(val id:String,val rideId:String,val openingRevision:Long)
+    private data class Closing(val id:String,val rideId:String,val openingRevision:Long,
+        val reentry:InitialRouteAdmission.CloseTicket?)
     private var closing:Closing?=null
     private var closingCallback:Consumer<JSONObject>?=null
     private var waiter:Consumer<Boolean>?=null
@@ -138,7 +139,7 @@ object ConfirmedLiveNavigationBridge {
                         !routeEndpointsMatch(geometry,fix.point,before.target)||
                         !initialRouteMatches(after,last,geometry,SystemClock.elapsedRealtime()))return@withTimeoutOrNull false
                     val owner=Prepared(route,after.target,map,resolver,verifiedCurrent,verify,online,audioAuthorization,
-                        NavigationSessionController(after.ride),PreparedAuthorityLease(SystemClock::elapsedRealtime),after,sourceId,last)
+                        NavigationSessionController(after.ride,initialAdmission.budgetFor(after)),PreparedAuthorityLease(SystemClock::elapsedRealtime),after,sourceId,last)
                     initialAdmission.markPrepared(after)
                     attempt.installed=owner
                     prepared=owner
@@ -178,7 +179,7 @@ object ConfirmedLiveNavigationBridge {
         if(resources==null){p.controller.disable();return null}
         val id=UUID.randomUUID().toString()
         check(activityOwnership.begin(id)){"Navigation Activity ownership occupied"}
-        p.opened=true // no stale initial route on re-entry; use original map until fresh re-entry is implemented
+        p.opened=true // never reopen this route object; re-entry needs a new verified preparation
         callback=events
         screen.value=Screen(id,p,token,resources,p.ride,p.ride.revision)
         try{
@@ -288,7 +289,9 @@ object ConfirmedLiveNavigationBridge {
         val s=screen.value?:return false
         if(s.id!=id)return false
         stopRenewal()
-        closing=Closing(s.id,s.ride.rideId,s.openingRevision)
+        // Revocation clears prepared before calling close; it must not grant re-entry.
+        val reentry=initialAdmission.closeTicket(s.owner.evidence).takeIf{prepared===s.owner&&current(s.owner)}
+        closing=Closing(s.id,s.ride.rideId,s.openingRevision,reentry)
         closingCallback=callback
         callback=null
         // No reopened prepared route is allowed; release immediately so a
@@ -326,6 +329,7 @@ object ConfirmedLiveNavigationBridge {
         if(screen.value?.id==id)close(id)
         val s=closing?:return
         if(s.id!=id||!activityOwnership.destroyed(id,activity))return
+        s.reentry?.let{initialAdmission.markActivityClosed(it,SystemClock.elapsedRealtime())}
         val notify=closingCallback
         val done=waiter
         closing=null
