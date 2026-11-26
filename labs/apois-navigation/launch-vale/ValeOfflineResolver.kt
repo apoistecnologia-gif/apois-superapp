@@ -176,3 +176,16 @@ internal suspend fun installValeLocalDriverControlCandidate(
             valeDriverGrant(app,pack,request,::live,client::target,audioAuthorization)
         },localRoutingOnly=true))
 }
+
+
+/** Entry point for a future trusted native application module. Not a
+ * Capacitor plugin, preference, remote flag or credential receiver. A host
+ * must explicitly opt in and keep its own lifecycle scope current. */
+object ValeNativeHostBootstrap{
+    suspend fun install(
+        context:Context,backendHost:String,online:()->Boolean,
+        hostCurrent:()->Boolean,enabled:Boolean=false,
+        audioAuthorization:(()->Boolean)?=null
+    ):Boolean=installValeLocalDriverControlCandidate(
+        enabled,context,backendHost,online,hostCurrent,audioAuthorization)
+}
