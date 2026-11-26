@@ -8,7 +8,7 @@ const point=p=>p&&Object.keys(p).length===2&&Number.isFinite(p.lat)&&Number.isFi
 const rideStatuses=new Set(['agendada','aguardando_pagamento','procurar_motorista','motorista_a_caminho','motorista_chegou','em_viagem','finalizada','cancelada_passageiro','cancelada_motorista','expired'])
 const paymentStatuses=new Set(['pending','paid','failed','refunded','cancelled','expired'])
 const positive=v=>typeof v==='number'&&Number.isFinite(v)&&v>0
-export function createExperimentalRequestHandler({enabled=false,authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial,revalidate=async()=>true,now=Date.now}={}){
+export function createExperimentalRequestHandler({enabled=false,authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial,revalidate,now=Date.now}={}){
  if(enabled!==true)return async()=>fail(409,'experimental_navigation_disabled')
  if(![authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial,revalidate].every(f=>typeof f==='function'))throw Error('Missing trusted server adapter')
  return async(session,body)=>{

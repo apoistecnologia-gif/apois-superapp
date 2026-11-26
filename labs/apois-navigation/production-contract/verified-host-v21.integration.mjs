@@ -22,7 +22,7 @@ const rpc=async(name,p)=>{
 }
 const control=createNavigationControl({confirmationEnabled:true,recoveryEnabled:true,catalogPolicy:{version:1,extractHash:digest},verifySession:async token=>token==='synthetic-token'?account:null,allowPilot:u=>u===account,rpc})
 let dispatch=0,createdRequests=0,lost=true
-const req=createExperimentalRequestHandler({enabled:true,authorize:async token=>token==='synthetic-token'?{allowed:true,authUserId:account,categoryId:id(90)}:null,
+const req=createExperimentalRequestHandler({enabled:true,revalidate:async token=>token==='synthetic-token',authorize:async token=>token==='synthetic-token'?{allowed:true,authUserId:account,categoryId:id(90)}:null,
  readSelection:({authUserId,selectionId,requestKey})=>sql('select public.apois_nav_lab_read_selection_v21('+[authUserId,selectionId,requestKey].map(lit).join(',')+')'),
  independentMetrics:async()=>({source:'OSM_VALHALLA_LAB',distanceKm:2.1,durationMin:7.2}),loadFare:async()=>12.34,
  createAtomic:({authUserId,selectionId,requestKey},payload)=>sql('select public.apois_nav_lab_create_ride_v21('+[authUserId,selectionId,requestKey,JSON.stringify(payload)].map(lit).join(',')+'::jsonb)'),

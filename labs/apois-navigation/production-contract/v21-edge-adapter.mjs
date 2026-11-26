@@ -19,8 +19,9 @@ export function localValhallaMetrics(fetcher=fetch){
  * @typedef {{lat:number,lng:number}} RoutePoint
  * @param {{enabled?:boolean,admin?:{rpc:(name:string,args:Record<string,unknown>)=>PromiseLike<{data:unknown,error:unknown}>,from:(table:string)=>{select:(columns:string)=>any}},authUserId?:string,passengerId?:string,independentMetrics?:(origin:RoutePoint,destination:RoutePoint)=>Promise<{source:string,distanceKm:number,durationMin:number}|null>,loadFare?:(categoryId:string,category:string,km:number,min:number,details:Record<string,unknown>)=>Promise<number>,dispatchInitial?:(ride:{id:string})=>Promise<string[]>,verifyCurrentSession?:()=>Promise<boolean>}} [options]
  */
-export function createV21ExperimentalAction({enabled=false,admin,authUserId,passengerId,independentMetrics,loadFare,dispatchInitial,verifyCurrentSession=async()=>true}={}){
+export function createV21ExperimentalAction({enabled=false,admin,authUserId,passengerId,independentMetrics,loadFare,dispatchInitial,verifyCurrentSession}={}){
  if(enabled!==true)return createExperimentalRequestHandler()
+ if(typeof verifyCurrentSession!=='function')throw Error('Missing explicit session verifier')
  async function rpc(name,args){
   const {data,error}=await admin.rpc(name,args)
   if(error)throw Error('private experimental SQL failed')

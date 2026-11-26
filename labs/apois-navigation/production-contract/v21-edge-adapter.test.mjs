@@ -32,7 +32,7 @@ test('server action retains exact existing fare formula and dispatches only afte
   }
  }
  const route=localValhallaMetrics(async(url,options)=>{assert.equal(url,'http://127.0.0.1:8002/route');assert.equal(options.redirect,'error');assert.deepEqual(JSON.parse(options.body).locations,[{lat:-9.4,lon:-40.5},{lat:-9.42,lon:-40.51}]);return new Response(JSON.stringify(response))})
- const handler=createV21ExperimentalAction({enabled:true,admin,authUserId:id(1),passengerId:id(2),independentMetrics:route,loadFare:(...args)=>loadFare(admin,...args),dispatchInitial:async()=>{assert.ok(committed);dispatch++;return [id(6)]}})
+ const handler=createV21ExperimentalAction({enabled:true,admin,authUserId:id(1),passengerId:id(2),independentMetrics:route,loadFare:(...args)=>loadFare(admin,...args),dispatchInitial:async()=>{assert.ok(committed);dispatch++;return [id(6)]},verifyCurrentSession:async()=>true})
  assert.equal((await createV21ExperimentalAction()(req)).status,409)
  blocked=true;assert.equal((await handler(req)).status,403);assert.equal(readCalls,0);blocked=false
  const quote=await handler(req);assert.equal(quote.body.fare_amount_cents,1120);assert.equal(committed,false)
@@ -78,9 +78,17 @@ test('ride creation only returns the public SQL contract and never dispatches an
  const {createExperimentalRequestHandler}=await import('./request-ride-v21.mjs')
  const valid={rideId:id(5),status:'procurar_motorista',reused:false,estimated_price:11.2,fare_amount_cents:1120,payment_status:'pending'}
  let row=valid,dispatch=0
- const handler=createExperimentalRequestHandler({enabled:true,authorize:async()=>({authUserId:id(1),categoryId:id(9),allowed:true}),readSelection:async()=>({linked:true}),independentMetrics:async()=>null,loadFare:async()=>0,createAtomic:async()=>row,dispatchInitial:async()=>{dispatch++;return []}})
+ const handler=createExperimentalRequestHandler({enabled:true,authorize:async()=>({authUserId:id(1),categoryId:id(9),allowed:true}),readSelection:async()=>({linked:true}),independentMetrics:async()=>null,loadFare:async()=>0,createAtomic:async()=>row,dispatchInitial:async()=>{dispatch++;return []},revalidate:async()=>true})
  const create={...req,action:'apois_navigation_create',expected_price_cents:1120}
  for(const status of ['unrecognized','finalizada']){row={...valid,status};assert.equal((await handler(null,create)).status,409)}
  row={...valid,payment_status:'unrecognized'};assert.equal((await handler(null,create)).status,409);assert.equal(dispatch,0)
  row={...valid,reused:true,status:'finalizada',privateField:'test',ok:false};assert.deepEqual((await handler(null,create)).body,{ok:true,...valid,reused:true,status:'finalizada',candidates:0});assert.equal(dispatch,0)
+})
+
+test('enabled request handlers require explicit session revalidation; disabled path stays inert',async()=>{
+ const {createExperimentalRequestHandler}=await import('./request-ride-v21.mjs')
+ const noop=async()=>null
+ assert.throws(()=>createV21ExperimentalAction({enabled:true}),/explicit session verifier/)
+ assert.throws(()=>createExperimentalRequestHandler({enabled:true,authorize:noop,readSelection:noop,independentMetrics:noop,loadFare:noop,createAtomic:noop,dispatchInitial:noop}),/Missing trusted server adapter/)
+ assert.equal((await createV21ExperimentalAction()(req)).status,409)
 })

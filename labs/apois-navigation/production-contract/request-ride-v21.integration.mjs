@@ -17,6 +17,7 @@ const s=await query('select apois_nav_lab.confirm_selection($1,$2,$3,1,$4,1)',[a
 assert.ok(s?.selectionId)
 let routes=0,quotes=0,dispatch=0,price=12.34,offline=false
 const handle=createExperimentalRequestHandler({enabled:true,
+ revalidate:async session=>['fixture','fixture-b'].includes(session),
  authorize:async session=>['fixture','fixture-b'].includes(session)?{allowed:true,authUserId:session==='fixture'?actor:id(12),categoryId:id(90)}:null,
  readSelection:({authUserId,selectionId,requestKey})=>query('select apois_nav_lab.read_selection_v21($1,$2,$3)',[authUserId,selectionId,requestKey]),
  independentMetrics:async (a,b)=>{routes++;assert.deepEqual(a,{lat:-9.4,lng:-40.5});assert.deepEqual(b,{lat:-9.42,lng:-40.51});return offline?null:{source:'OSM_VALHALLA_LAB',distanceKm:2.10,durationMin:7.2}},
