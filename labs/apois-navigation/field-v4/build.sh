@@ -39,8 +39,8 @@ android {
   applicationId 'br.com.apois.navigation.field.v4.lab'
   minSdk 25
   targetSdk 36
-  versionCode 4
-  versionName '4.0-offline-pilot'
+  versionCode 5
+  versionName '4.1-offline-pilot'
  }
  compileOptions { sourceCompatibility JavaVersion.VERSION_21; targetCompatibility JavaVersion.VERSION_21; coreLibraryDesugaringEnabled true }
 }
@@ -52,7 +52,7 @@ EOF
 cat > "$H/app/src/main/AndroidManifest.xml" <<'EOF'
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
  <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
- <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
+ <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove"/>
  <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove"/>
  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
@@ -73,8 +73,9 @@ mkdir -p "$OUT"
 "$TOOLS/apksigner" verify --verbose --print-certs "$APK"
 "$TOOLS/aapt" dump badging "$APK" > "$OUT/badging.txt"
 grep -F "package: name='br.com.apois.navigation.field.v4.lab'" "$OUT/badging.txt"
-if grep -E 'android.permission.(INTERNET|ACCESS_NETWORK_STATE|ACCESS_WIFI_STATE|ACCESS_BACKGROUND_LOCATION)' "$OUT/badging.txt";then echo 'Forbidden permission in V4';exit 1;fi
+if grep -E 'android.permission.(INTERNET|ACCESS_WIFI_STATE|ACCESS_BACKGROUND_LOCATION)' "$OUT/badging.txt";then echo 'Forbidden permission in V4';exit 1;fi
 grep -F 'android.permission.ACCESS_FINE_LOCATION' "$OUT/badging.txt"
+grep -F 'android.permission.ACCESS_NETWORK_STATE' "$OUT/badging.txt"
 unzip -l "$APK" > "$OUT/apk-files.txt"
 grep -F 'assets/apois-field-pilot/pilot.pmtiles' "$OUT/apk-files.txt"
 grep -F 'assets/apois-field-graph/valhalla_tiles.tar' "$OUT/apk-files.txt"

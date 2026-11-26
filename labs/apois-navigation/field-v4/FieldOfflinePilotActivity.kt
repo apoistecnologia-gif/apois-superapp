@@ -85,7 +85,7 @@ class FieldOfflinePilotActivity:ComponentActivity(),LocationListener {
             BackHandler{if(selected!=null)stopPilot() else finish()}
             MaterialTheme{
                 Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp).then(if(selected==null)Modifier.verticalScroll(rememberScrollState()) else Modifier),verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    Text("APOIS GPS • Piloto PI V4",style=MaterialTheme.typography.headlineSmall)
+                    Text("APOIS GPS • Piloto PI V4.1",style=MaterialTheme.typography.headlineSmall)
                     Text("Rota dinâmica offline · GPS físico · sem servidor",style=MaterialTheme.typography.bodySmall)
                     if(selected==null){
                         Text("Teste como passageiro ou com o veículo parado. Não opere o celular dirigindo.")
@@ -100,7 +100,7 @@ class FieldOfflinePilotActivity:ComponentActivity(),LocationListener {
                             TextButton(onClick={choose("itainopolis")}){Text("Itainópolis")}
                             TextButton(onClick={choose("picos")}){Text("Picos")}
                         }
-                        Button(onClick={startOffline()},enabled=bundle!=null,modifier=Modifier.fillMaxWidth()){Text("Calcular rota offline pelo GPS")}
+                        Button(onClick={startOffline()},enabled=bundle!=null&&fieldV3Target(lat,lon)!=null,modifier=Modifier.fillMaxWidth()){Text("Calcular rota offline pelo GPS")}
                     }else{
                         Text(state)
                         if(!active&&!requestInFlight&&requestGate.attempted)TextButton(onClick={if(requestGate.allowRetry())state="Aguardando posição GPS para nova tentativa."}){Text("Tentar novamente")}
@@ -133,7 +133,7 @@ class FieldOfflinePilotActivity:ComponentActivity(),LocationListener {
         }
     }
     private fun choose(id:String){
-        bundle?.routes?.get(id)?.geometry?.lastOrNull()?.let{lat=it.lat.toString();lon=it.lng.toString()}
+        bundle?.routes?.get(id)?.geometry?.lastOrNull()?.let{lat=it.lat.toString();lon=it.lng.toString();state="Destino selecionado. Calcule a rota pelo GPS."}
     }
     private fun startOffline(){
         if(!foreground||selected!=null||bundle==null)return
@@ -141,7 +141,7 @@ class FieldOfflinePilotActivity:ComponentActivity(),LocationListener {
         if(destination==null){state="Destino inválido ou fora do mapa piloto.";return}
         if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),71)
-            state="Conceda localização precisa e selecione novamente.";return
+            state="Conceda localização precisa e toque em calcular novamente.";return
         }
         if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)){state="Ative o GPS do aparelho.";return}
         selected="offline";state="Aguardando GPS preciso.";accuracy=null;outsidePack=false
