@@ -21,8 +21,8 @@ jobs:
       - run: node --test labs/apois-navigation/passenger-map/local-map.test.mjs
       - uses: actions/download-artifact@v4
         with:
-          name: apois-cartography-regional
-          run-id: 45539272618
+          name: apois-vale-runtime-assets-inactive
+          run-id: 45750844751
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-map-assets
       - name: Renderizar pacote PMTiles real sem rede externa
@@ -32,7 +32,7 @@ jobs:
           mkdir -p "$S/site"
           cp -a labs/apois-navigation/passenger-map/*.mjs "$S/"
           cp -a labs/apois-navigation/passenger-provenance-snapshot "$S/snapshot"
-          cp -a "$RUNNER_TEMP/apois-map-assets/android-assets/apois-regional" "$S/site/"
+          cp -a "$RUNNER_TEMP/apois-map-assets/apois-regional" "$S/site/"
           cd "$S"
           test "$(sha256sum site/apois-regional/manifest.json | cut -d ' ' -f 1)" = 367c0104a8a5de7f11bdf2c965eb91a73e1cf21b5a3809f78f53e7170b7cdebb
           echo APOIS_PACK_MANIFEST_SHA256="$(sha256sum site/apois-regional/manifest.json | cut -d ' ' -f 1)"
