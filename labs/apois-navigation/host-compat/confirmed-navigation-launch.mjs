@@ -7,7 +7,7 @@ import {MotoristaAuthority} from "./motorista-authority.mjs";
 const statusFor = {PICKUP:"motorista_a_caminho",TRIP:"em_viagem"};
 const uuid = v => typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export class ConfirmedNavigationLaunch {
-  #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null; #closing=null;
+  #epoch=0; #busy=null; #native=null; #blocked=false; #enabled; #checking=null; #closing=null; #external=null;
   constructor({enabled=false,verify,openNative,closeNative,prepareAudio,cancelNativePreparation,canOpenNative}) {
     this.#enabled=enabled===true;
     this.verify=verify;this.openNative=openNative;this.closeNative=closeNative;this.prepareAudio=prepareAudio;this.cancelNativePreparation=cancelNativePreparation;this.canOpenNative=canOpenNative;
@@ -112,14 +112,26 @@ export class ConfirmedNavigationLaunch {
       return this.#awaitClose(this.#closing);
     }
     if(this.#closing)return this.#awaitClose(this.#closing);
-    return !this.#blocked && !this.#busy;
+    return !this.#blocked && !this.#busy && !this.#external;
+  }
+  // Explicit Google/Waze actions share the same in-process opening gate.
+  // An ambiguous native open/close must never be treated as permission to
+  // start a second navigator. Default mode calls the original action directly.
+  async runExternal(work){
+    if(typeof work!=="function")throw Error("Invalid external navigation callback");
+    if(!this.#enabled)return work();
+    if(this.#busy||this.#native||this.#blocked||this.#closing||this.#external)
+      throw Error("Encerre a navegação anterior antes de abrir outro mapa.");
+    const ticket={};this.#external=ticket;
+    try{return await work();}
+    finally{if(this.#external===ticket)this.#external=null;}
   }
   async launch({rideId,phase,openExternal,allowExternalFallback=true}) {
     // Preserve exact QA290 behavior by default: no verification RPC, native
     // calls, state changes, or new dependency on an experimental feature.
     if(!this.#enabled){if(!allowExternalFallback)return "unavailable";await openExternal();return "external";}
     if(!uuid(rideId)||!Object.hasOwn(statusFor,phase))return "unverified";
-    if(this.#busy||this.#native)return "busy";
+    if(this.#busy||this.#native||this.#external)return "busy";
     if(this.#blocked)return "uncertain";
     const ticket={epoch:this.#epoch,rideId,opening:false,closed:new Set(),cancel:null};
     this.#busy=ticket;

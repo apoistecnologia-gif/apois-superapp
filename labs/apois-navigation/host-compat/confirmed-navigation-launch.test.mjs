@@ -295,3 +295,27 @@ test("explicit internal-only launch never surprises the driver with an external 
   assert.equal(await uncertain.launch(r),"uncertain");
   assert.equal(external,0);
 });
+
+test("manual Google/Waze actions serialize with native preparation and confirmed closure",async()=>{
+  const d=deferred(),entered=deferred();let ext=0;
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),openNative:async()=>({state:"opened",sessionId:"native"}),closeNative:async()=>false});
+  const external=x.runExternal(async()=>{ext++;entered.resolve();await d.promise;return 42;});
+  await entered.promise;
+  assert.equal(await x.launch(request()),"busy");
+  await assert.rejects(x.runExternal(()=>{ext++;}));
+  d.resolve();assert.equal(await external,42);
+  assert.equal(await x.launch(request()),"internal");
+  await assert.rejects(x.runExternal(()=>{ext++;}));
+  assert.equal(await x.invalidate(),false);
+  await assert.rejects(x.runExternal(()=>{ext++;}));
+  assert.equal(x.onNativeClosed({sessionId:"native",rideId,revision:0,action:"SESSION_CLOSED"}),true);
+  assert.equal(await x.runExternal(async()=>++ext),2);
+});
+test("manual external actions stay blocked after ambiguous opening; disabled mode is transparent",async()=>{
+  const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),openNative:async()=>null});
+  assert.equal(await x.launch(request()),"uncertain");
+  await assert.rejects(x.runExternal(()=>{throw Error("must not run")}),/Encerre/);
+  const disabled=new ConfirmedNavigationLaunch({});
+  assert.equal(await disabled.runExternal(async()=>7),7);
+  await assert.rejects(disabled.runExternal(async()=>{throw Error("original")}),/original/);
+});
