@@ -1,5 +1,7 @@
 package br.com.apois.navigation.lab
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.CancellationException
 import org.junit.Assert.*
 import org.junit.Test
@@ -43,6 +45,26 @@ class ScopedOfflineCalculationTest{
         assertTrue(runCatching{g.resolve(origin,destination)}.isFailure)
         val h=guard(calc={a,b->listOf(a,RegionalPoint(0.0,0.0),b)})
         assertTrue(runCatching{h.resolve(origin,destination)}.isFailure)
+    }
+    @Test fun overlappingCalculationRejectedAndSlotReleased()=runBlocking{
+        val entered=CompletableDeferred<Unit>()
+        val release=CompletableDeferred<Unit>()
+        var calls=0
+        val g=guard(calc={a,b->calls++;entered.complete(Unit);release.await();listOf(a,b)})
+        val first=async{g.resolve(origin,destination)}
+        entered.await()
+        assertTrue(runCatching{g.resolve(origin,destination)}.isFailure)
+        assertEquals(1,calls)
+        release.complete(Unit)
+        assertEquals(listOf(origin,destination),first.await())
+        assertEquals(listOf(origin,destination),g.resolve(origin,destination))
+        assertEquals(2,calls)
+    }
+    @Test fun failureReleasesCalculationSlot()=runBlocking{
+        var calls=0
+        val g=guard(calc={a,b->if(++calls==1)error("test failure");listOf(a,b)})
+        assertTrue(runCatching{g.resolve(origin,destination)}.isFailure)
+        assertEquals(listOf(origin,destination),g.resolve(origin,destination))
     }
     @Test fun cancellationPropagates()=runBlocking{
         val g=guard(calc={_,_->throw CancellationException("test")})

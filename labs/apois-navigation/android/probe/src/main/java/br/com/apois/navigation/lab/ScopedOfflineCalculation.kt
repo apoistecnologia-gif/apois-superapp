@@ -2,6 +2,7 @@ package br.com.apois.navigation.lab
 
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Candidate local routing guard for the existing confirmed Vale ride contract.
  * No host registration, backend mutation, engine or pack downloader.
@@ -17,6 +18,7 @@ internal class ScopedOfflineCalculation<T:Any>(
     private val calculate:suspend (RegionalPoint,RegionalPoint)->T,
     private val geometry:(T)->List<RegionalPoint>
 ){
+    private val calculating=AtomicBoolean(false)
     private fun allowed(origin:RegionalPoint,destination:RegionalPoint)=
         target.usable()&&origin.valid()&&destination==target.point&&
         runCatching{current()&&packCurrent()}.getOrDefault(false)
@@ -28,13 +30,16 @@ internal class ScopedOfflineCalculation<T:Any>(
             it.ride.phase==target.phase&&it.target==target.point&&it.source==target.source&&it.usable(now())}
     }
     suspend fun resolve(origin:RegionalPoint,destination:RegionalPoint):T{
-        val before=checkNotNull(verified(origin,destination)){"Local route authorization unavailable"}
-        val result=calculate(origin,destination)
-        currentCoroutineContext().ensureActive()
-        val after=checkNotNull(verified(origin,destination)){"Local route authorization revoked"}
-        check(sameRoutingLeg(before,after)&&after.verifiedAt>=before.verifiedAt&&after.ride.revision>=before.ride.revision&&
-            (after.ride.revision>before.ride.revision||after.ride==before.ride)){"Stale ride evidence"}
-        check(routeEndpointsMatch(geometry(result),origin,destination)){"Local route outside authorized region"}
-        return result
+        check(calculating.compareAndSet(false,true)){"Local calculation already running"}
+        try{
+            val before=checkNotNull(verified(origin,destination)){"Local route authorization unavailable"}
+            val result=calculate(origin,destination)
+            currentCoroutineContext().ensureActive()
+            val after=checkNotNull(verified(origin,destination)){"Local route authorization revoked"}
+            check(sameRoutingLeg(before,after)&&after.verifiedAt>=before.verifiedAt&&after.ride.revision>=before.ride.revision&&
+                (after.ride.revision>before.ride.revision||after.ride==before.ride)){"Stale ride evidence"}
+            check(routeEndpointsMatch(geometry(result),origin,destination)){"Local route outside authorized region"}
+            return result
+        }finally{calculating.set(false)}
     }
 }
