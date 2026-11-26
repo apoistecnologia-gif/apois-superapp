@@ -26,10 +26,13 @@ internal fun interface RouteCapabilityIssuer{
 internal class RouteCapabilityScope(
     private val target:ApprovedIndependentTarget,
     private val current:()->Boolean,
-    private val issuer:RouteCapabilityIssuer
+    private val issuer:RouteCapabilityIssuer,
+    val region:RouteRegion
 ){
+    constructor(target:ApprovedIndependentTarget,current:()->Boolean,issuer:RouteCapabilityIssuer):
+        this(target,current,issuer,RouteRegion.Vale)
     fun authorized(origin:RegionalPoint,destination:RegionalPoint):Boolean=
-        target.usable()&&origin.valid()&&destination==target.point&&
+        target.usable(region)&&region.contains(origin)&&destination==target.point&&
             runCatching{current()}.getOrDefault(false)
 
     suspend fun acquire(origin:RegionalPoint,destination:RegionalPoint):RouteCapability?{

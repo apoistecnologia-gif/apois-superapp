@@ -67,7 +67,7 @@ internal class ValhallaRouteClient(endpoint: String, authorizedHost: String, pri
         val permit=checkNotNull(authorization.acquire(origin,destination)){"Route authorization unavailable"}
         check(authorization.authorized(origin,destination)){"Route authorization revoked"}
         val result=runInterruptible(Dispatchers.IO) {
-            require(origin.valid() && destination.valid())
+            require(authorization.region.contains(origin) && authorization.region.contains(destination))
             val body = JSONObject().put("locations", JSONArray().apply {
                 for (p in listOf(origin, destination)) put(JSONObject().put("lat", p.lat)
                     .put("lon", p.lng).put("type", "break"))
@@ -107,7 +107,7 @@ internal class ValhallaRouteClient(endpoint: String, authorizedHost: String, pri
                     WellKnownRouteProvider.Valhalla(uri.toString(), "auto"))
                 val route = adapter.parseResponse(bytes).first()
                 check(routeEndpointsMatch(route.geometry.map { RegionalPoint(it.lat,it.lng) },
-                    origin,destination)) { "Route geometry outside authorized corridor" }
+                    origin,destination,authorization.region)) { "Route geometry outside authorized corridor" }
                 route
             } finally { conn.disconnect() }
         }

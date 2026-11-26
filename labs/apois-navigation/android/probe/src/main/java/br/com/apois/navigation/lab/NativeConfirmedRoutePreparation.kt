@@ -10,8 +10,8 @@ internal data class ApprovedIndependentTarget(
     val identity:RoutingIdentity,val rideId:String,val phase:RidePhase,
     val point:RegionalPoint,val source:RoutingTargetSource
 ){
-    fun usable():Boolean=nativeRideUuid.matches(rideId)&&
-        phase in setOf(RidePhase.PICKUP,RidePhase.TRIP)&&point.valid()&&
+    fun usable(region:RouteRegion=RouteRegion.Vale):Boolean=nativeRideUuid.matches(rideId)&&
+        phase in setOf(RidePhase.PICKUP,RidePhase.TRIP)&&region.contains(point)&&
         source in setOf(RoutingTargetSource.INDEPENDENT_GPS,RoutingTargetSource.INDEPENDENT_OSM)
 }
 

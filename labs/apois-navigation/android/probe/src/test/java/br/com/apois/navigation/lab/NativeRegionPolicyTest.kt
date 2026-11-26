@@ -46,6 +46,26 @@ class NativeRegionPolicyTest {
         assertTrue(mayApplyReroute(true,true,true,GpsQuality.AVAILABLE,true,1000,1000,5.0,listOf(a,b),a,b,region))
         assertFalse(mayApplyReroute(true,true,true,GpsQuality.AVAILABLE,true,12000,1000,5.0,listOf(a,b),a,b,region))
     }
+    @Test fun capabilityIsBoundToRegionDestinationAndCurrentSession()=kotlinx.coroutines.runBlocking{
+        val bytes=fixture()
+        val region=RouteRegion.Verified(NativeRegionPolicy.read(bytes,hash(bytes)))
+        val a=RegionalPoint(-7.4,-41.4);val b=RegionalPoint(-7.41,-41.41)
+        val identity=RoutingIdentity("00000000-0000-4000-8000-000000000001","00000000-0000-4000-8000-000000000002","00000000-0000-4000-8000-000000000003")
+        val target=ApprovedIndependentTarget(identity,"00000000-0000-4000-8000-000000000004",RidePhase.TRIP,b,RoutingTargetSource.INDEPENDENT_OSM)
+        val token="a".repeat(32)+"."+"b".repeat(86)
+        var calls=0;var current=true
+        val issuer=RouteCapabilityIssuer{_,_->calls++;token}
+        val legacy=RouteCapabilityScope(target,{true},issuer)
+        assertNull(legacy.acquire(a,b))
+        val scope=RouteCapabilityScope(target,{current},issuer,region)
+        assertNull(scope.acquire(RegionalPoint(-7.75,-41.75),b))
+        assertNull(scope.acquire(a,a))
+        assertEquals(0,calls)
+        assertNotNull(scope.acquire(a,b))
+        current=false
+        assertNull(scope.acquire(a,b))
+        assertEquals(1,calls)
+    }
     @Test fun realBoundaryWhenRequested(){
         val path=System.getenv("APOIS_NATIVE_REGION_FIXTURE")?:return
         val sha=System.getenv("APOIS_NATIVE_REGION_SHA256")?:error("missing fixture hash")
