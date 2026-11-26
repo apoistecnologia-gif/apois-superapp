@@ -58,6 +58,15 @@ internal class VerifiedValeRuntimePack private constructor(
         suspend fun install(context:Context):VerifiedValeRuntimePack=withContext(Dispatchers.IO){
             val app=context.applicationContext
             ensureActive()
+            // Bind all map style/glyph entries to the exact trusted bundled
+            // manifest, not just the graph and PMTiles hashes.
+            val manifest=app.assets.open("apois-regional/manifest.json").use{input->
+                val out=java.io.ByteArrayOutputStream();val buf=ByteArray(4096)
+                while(true){val n=input.read(buf);if(n<0)break;check(n>0&&out.size()+n<=32768);out.write(buf,0,n)}
+                out.toByteArray()
+            }
+            val manifestHash=java.security.MessageDigest.getInstance("SHA-256").digest(manifest).joinToString(""){"%02x".format(it.toInt() and 255)}
+            check(manifestHash=="367c0104a8a5de7f11bdf2c965eb91a73e1cf21b5a3809f78f53e7170b7cdebb")
             val root=File(app.noBackupFilesDir.canonicalFile,"vale-runtime-packs")
             val store=OfflinePackStore(root,32L*1024*1024)
             val id=spec.identity()
