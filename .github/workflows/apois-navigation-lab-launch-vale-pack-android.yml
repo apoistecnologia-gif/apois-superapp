@@ -43,6 +43,8 @@ jobs:
           test -e /dev/kvm
           sudo chmod a+rw /dev/kvm
       - name: Execute Vale routes offline and parse for Ferrostar
+        env:
+          APOIS_EXPECTED_TESTS: '2'
         run: bash labs/apois-navigation/embedded-probe/emulator.sh
       - uses: actions/upload-artifact@v4
         if: always()
