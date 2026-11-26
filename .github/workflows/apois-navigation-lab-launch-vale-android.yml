@@ -2,7 +2,7 @@ name: APOIS GPS - Vale PE-BA no Android offline
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/launch-vale/android-build.sh','labs/apois-navigation/launch-vale/EmbeddedValeRouteTest.kt','.github/workflows/apois-navigation-lab-launch-vale-android.yml']
+    paths: ['labs/apois-navigation/launch-vale/android-build.sh','labs/apois-navigation/launch-vale/EmbeddedValeRouteTest.kt','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','.github/workflows/apois-navigation-lab-launch-vale-android.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -82,6 +82,7 @@ jobs:
           printf '{"appId":"br.com.apois.navigation.compat.lab","appName":"APOIS navigation lab","webDir":"www"}' > capacitor.config.json
           npx cap add android
           node "$GITHUB_WORKSPACE/labs/apois-navigation/host-compat/prepare-host.mjs" "$H" "$GITHUB_WORKSPACE/labs/apois-navigation"
+          cp "$GITHUB_WORKSPACE/labs/apois-navigation/launch-vale/ValeOfflineResolver.kt" "$H/android/navigation-probe/src/main/java/br/com/apois/navigation/lab/"
           cat >> "$H/android/navigation-probe/build.gradle" <<'EOF'
           dependencies {
             implementation 'io.github.rallista:valhalla-mobile:0.6.3'
@@ -96,7 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/apois-compat-offline/android"
-          gradle :app:checkDebugAarMetadata :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/apois-offline-capacitor.log"
+          gradle :app:checkDebugAarMetadata :navigation-probe:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/apois-offline-capacitor.log"
           APK=app/build/outputs/apk/debug/app-debug.apk
           unzip -l "$APK" > "$RUNNER_TEMP/apois-offline-capacitor-files.txt"
           grep -F 'lib/arm64-v8a/libvalhalla-wrapper.so' "$RUNNER_TEMP/apois-offline-capacitor-files.txt"
