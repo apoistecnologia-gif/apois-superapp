@@ -25,3 +25,5 @@ A verificação do mapa ocorre antes da leitura de grant (inclusive quando o gra
 
 ## Ensaio da Activity confirmada de ponta a ponta
 Workflow dedicado cria Activity hospedeira descartável e copia o motor, pacote, tela e ponte reais. GPS, identidade e respostas de autoridade são explicitamente sintéticos, sem internet; testa abertura da Activity real, retorno por Back e ACK de destruição, próxima fase e fechamento por revogação. Nenhum APK distribuível, permissão extra ou integração oficial. A execução deve confirmar o marcador de CI; não substitui testes físicos, áudio audível ou comprovação de renderização de cada tile.
+
+A evidência nativa usa o início monotônico da leitura autenticada, não a chegada da resposta, evitando renovar artificialmente a validade por latência de rede. A prova do servidor ainda deve vir de leitura fresca; o relógio monotônico do aparelho não autentica o relógio do servidor. O preflight também verifica cancelamento antes de iniciar a leitura de grant.

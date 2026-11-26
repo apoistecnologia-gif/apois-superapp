@@ -119,8 +119,9 @@ internal suspend fun valeDriverGrant(
 ):NativeHostGrant?{
     fun available()=runCatching{live()}.getOrDefault(false)
     if(!request.valid()||!available())return null
+    val firstRead=android.os.SystemClock.elapsedRealtime()
     val target=readTarget(request)?.takeIf{it.matches(request)}?:return null
-    if(!available())return null
+    if(!available()||target.evidence(android.os.SystemClock.elapsedRealtime(),firstRead)==null)return null
     val lease=pack.acquireLease()
     var handedOff=false
     try{
@@ -134,9 +135,10 @@ internal suspend fun valeDriverGrant(
             audioAuthorization=audioAuthorization,
             verifyEvidence={
                 if(!current())null else{
+                    val began=android.os.SystemClock.elapsedRealtime()
                     val next=readTarget(request)
                     if(!current()||!target.currentProof(next)){lease.close();null}
-                    else next?.evidence(android.os.SystemClock.elapsedRealtime()).also{if(it==null)lease.close()}
+                    else next?.evidence(android.os.SystemClock.elapsedRealtime(),began).also{if(it==null)lease.close()}
                 }
             },
             localFactory=NativeLocalRouteFactory{approved,map,owner,verify->

@@ -19,6 +19,13 @@ class NativeDriverControlClientPolicyTest{
         assertEquals(target.approved.point,proof.target)
         assertNull(proof.ride.passenger)
     }
+    @Test fun evidenceNeverRejuvenatesASlowRead(){
+        assertEquals(1000L,target.evidence(4500L,1000L)!!.verifiedAt)
+        assertNotNull(target.evidence(6000L,1000L))
+        assertNull(target.evidence(6001L,1000L))
+        assertNull(target.evidence(1000L,1001L))
+        assertNull(target.evidence(1000L,0L))
+    }
     @Test fun permitIsOnlyForExactRidePhaseAndEvidence(){
         val grant=DriverControlPermit(id,RidePhase.PICKUP,evidence,1,"a".repeat(32)+"."+"b".repeat(86))
         assertTrue(grant.matches(target))

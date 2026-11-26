@@ -17,10 +17,12 @@ internal data class DriverControlTarget(
         listOf(approved.identity.authUserId,approved.identity.profileUserId,approved.identity.driverId).all{nativeRideUuid.matches(it)}
     fun matches(request:ConfirmedHostRequest):Boolean=usable()&&request.matches(approved)
     fun currentProof(next:DriverControlTarget?):Boolean=usable()&&next==this
-    fun evidence(now:Long):VerifiedRouteEvidence?{
-        if(!usable())return null
+    fun evidence(now:Long,readBegan:Long=now):VerifiedRouteEvidence?{
+        if(!usable()||readBegan<=0||now<readBegan||now-readBegan>5_000L)return null
         val a=approved
-        return routeEvidenceFromRead(NativeVerifiedRide(a.identity,a.rideId,a.phase,0,now,"carros"),a,now)
+        // Use the conservative start of the authenticated read, not the
+        // arrival time of the response, as the local freshness boundary.
+        return routeEvidenceFromRead(NativeVerifiedRide(a.identity,a.rideId,a.phase,0,readBegan,"carros"),a,now)
     }
 }
 internal data class DriverControlPermit(val rideId:String,val phase:RidePhase,val evidenceId:String,val version:Int,val token:String){
@@ -126,8 +128,9 @@ internal fun installDriverControlCandidate(enabled:Boolean=false,backendHost:Str
             audioAuthorization=audioAuthorization,
             verifyEvidence={
                 if(!live())null else {
+                    val began=SystemClock.elapsedRealtime()
                     val next=client.target(request)
-                    if(!live()||!grant.currentProof(next))null else next?.evidence(SystemClock.elapsedRealtime())
+                    if(!live()||!grant.currentProof(next))null else next?.evidence(SystemClock.elapsedRealtime(),began)
                 }
             }
         )
