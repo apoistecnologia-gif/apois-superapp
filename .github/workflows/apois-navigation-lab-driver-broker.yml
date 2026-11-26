@@ -2,8 +2,11 @@ name: APOIS navigation lab - driver broker
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/driver-broker/**','.github/workflows/apois-navigation-lab-driver-broker.yml']
+    paths: ['labs/apois-navigation/driver-broker/**','labs/apois-navigation/production-contract/driver-control-v21.mjs','labs/apois-navigation/passenger-provenance-snapshot/driver-authority.mjs','labs/apois-navigation/valhalla/route-issuer.mjs','labs/apois-navigation/valhalla/route-replay-store.mjs','.github/workflows/apois-navigation-lab-driver-broker.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
