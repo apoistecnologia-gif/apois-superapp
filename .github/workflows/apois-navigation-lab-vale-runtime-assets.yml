@@ -1,0 +1,40 @@
+name: APOIS GPS - recursos offline completos Vale (inativo)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/launch-vale/runtime_assets.py','labs/apois-navigation/launch-vale/test_runtime_assets.py','.github/workflows/apois-navigation-lab-vale-runtime-assets.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s labs/apois-navigation/launch-vale -p 'test_runtime_assets.py' -v
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-launch-vale-candidate
+          run-id: 45748506856
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-launch-vale
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-vale-inactive-data-pack
+          run-id: 45748961675
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-vale-pack
+      - run: python labs/apois-navigation/launch-vale/runtime_assets.py "$RUNNER_TEMP/apois-launch-vale" "$RUNNER_TEMP/apois-vale-pack" "$RUNNER_TEMP/apois-vale-runtime-assets"
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: apois-vale-runtime-assets-inactive
+          path: ${{ runner.temp }}/apois-vale-runtime-assets/
+          retention-days: 7
