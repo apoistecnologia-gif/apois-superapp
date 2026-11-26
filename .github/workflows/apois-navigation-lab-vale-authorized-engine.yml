@@ -1,0 +1,80 @@
+name: APOIS GPS - motor Vale com autoridade simulada no Android
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/launch-vale/ValeAuthorizedResolverTest.kt','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','labs/apois-navigation/launch-vale/ValeRuntimePack.kt','labs/apois-navigation/pack-store/OfflinePackStore.kt','labs/apois-navigation/android/probe/**','.github/workflows/apois-navigation-lab-vale-authorized-engine.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  authorized-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-vale-runtime-assets-inactive
+          run-id: 45749604118
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-vale-runtime-assets
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Prepare isolated native library and test resources
+        run: |
+          set -euo pipefail
+          LAB="$GITHUB_WORKSPACE/labs/apois-navigation"
+          H="$RUNNER_TEMP/apois-vale-authorized"
+          cp -a "$LAB/android" "$H"
+          S="$H/probe/src/main"
+          T="$H/probe/src/androidTest/java/br/com/apois/navigation/lab"
+          mkdir -p "$S/assets" "$T"
+          cp -a "$RUNNER_TEMP/apois-vale-runtime-assets/." "$S/assets/"
+          cp "$LAB/launch-vale/"{ValeOfflineResolver,ValeRuntimePack}.kt "$S/java/br/com/apois/navigation/lab/"
+          cp "$LAB/pack-store/OfflinePackStore.kt" "$S/java/br/com/apois/navigation/lab/"
+          cp "$LAB/launch-vale/ValeAuthorizedResolverTest.kt" "$T/"
+          cat >> "$H/probe/build.gradle" <<'EOF'
+          android { defaultConfig { testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner' } }
+          dependencies {
+            implementation 'io.github.rallista:valhalla-mobile:0.6.3'
+            implementation 'io.github.rallista:valhalla-models:0.5.2'
+            implementation 'io.github.rallista:valhalla-models-config:0.5.2'
+            implementation 'com.stadiamaps:osrm-openapi:0.0.10'
+            androidTestImplementation 'androidx.test:runner:1.6.2'
+            androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+          }
+          EOF
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
+          gradle -p "$H" :probe:assembleDebugAndroidTest --no-daemon --stacktrace
+      - name: Verify actual local resolver with a synthetic authority fixture
+        run: |
+          set -euo pipefail
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+          OUT="$RUNNER_TEMP/apois-vale-authorized-report"
+          H="$RUNNER_TEMP/apois-vale-authorized"
+          source labs/apois-navigation/emulator-common/boot.sh
+          boot_lab_emulator apois-vale-authorized "$OUT"
+          adb shell svc wifi disable
+          adb shell svc data disable
+          gradle -p "$H" :probe:connectedDebugAndroidTest --no-daemon --stacktrace | tee "$OUT/test.log"
+          adb logcat -d -s APOIS_VALE_AUTHORIZED:I '*:S' > "$OUT/authorized.log"
+          grep -F 'real_engine=true; real_map=true; synthetic_authority=true; revocation_rejected=true' "$OUT/authorized.log"
+          cp -a "$H/probe/build/outputs/androidTest-results" "$OUT/results"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-vale-authorized-engine-report
+          path: ${{ runner.temp }}/apois-vale-authorized-report/
+          retention-days: 7
+          if-no-files-found: warn
