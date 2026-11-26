@@ -2,7 +2,7 @@ name: APOIS Navegacao - PMTiles HTTPS real (laboratorio)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/map-delivery/range-integration.mjs','.github/workflows/apois-navigation-lab-map-range-integration.yml']
+    paths: ['labs/apois-navigation/map-delivery/range-integration.mjs','labs/apois-navigation/map-delivery/range-source.mjs','labs/apois-navigation/map-delivery/verified-range-source.mjs','labs/apois-navigation/map-delivery/build-chunk-manifest.mjs','.github/workflows/apois-navigation-lab-map-range-integration.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           H="$RUNNER_TEMP/apois-range-integration"
           mkdir -p "$H"
-          cp labs/apois-navigation/map-delivery/{range-source,range-integration}.mjs "$H/"
+          cp labs/apois-navigation/map-delivery/{range-source,range-integration,verified-range-source,build-chunk-manifest}.mjs "$H/"
           cd "$H"
           npm init -y >/dev/null
           npm install --save-exact --no-audit --no-fund pmtiles@3.2.0
