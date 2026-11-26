@@ -73,3 +73,14 @@ test('pilot allowlist defaults to deny and private HTTPS quote has no fallback',
  linked=true;assert.equal((await handler(null,create)).body.error_code,'session_not_current')
  assert.equal(writes,0);assert.equal(routes,2)
  })
+
+test('ride creation only returns the public SQL contract and never dispatches an invalid row',async()=>{
+ const {createExperimentalRequestHandler}=await import('./request-ride-v21.mjs')
+ const valid={rideId:id(5),status:'procurar_motorista',reused:false,estimated_price:11.2,fare_amount_cents:1120,payment_status:'pending'}
+ let row=valid,dispatch=0
+ const handler=createExperimentalRequestHandler({enabled:true,authorize:async()=>({authUserId:id(1),categoryId:id(9),allowed:true}),readSelection:async()=>({linked:true}),independentMetrics:async()=>null,loadFare:async()=>0,createAtomic:async()=>row,dispatchInitial:async()=>{dispatch++;return []}})
+ const create={...req,action:'apois_navigation_create',expected_price_cents:1120}
+ for(const status of ['unrecognized','finalizada']){row={...valid,status};assert.equal((await handler(null,create)).status,409)}
+ row={...valid,payment_status:'unrecognized'};assert.equal((await handler(null,create)).status,409);assert.equal(dispatch,0)
+ row={...valid,reused:true,status:'finalizada',privateField:'test',ok:false};assert.deepEqual((await handler(null,create)).body,{ok:true,...valid,reused:true,status:'finalizada',candidates:0});assert.equal(dispatch,0)
+})

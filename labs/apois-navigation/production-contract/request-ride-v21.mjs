@@ -5,6 +5,8 @@
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
 const fail=(status,error_code)=>({status,body:{ok:false,error_code}})
 const point=p=>p&&Object.keys(p).length===2&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&p.lat>=-9.65&&p.lat<=-9.10&&p.lng>=-40.80&&p.lng<=-40.20
+const rideStatuses=new Set(['agendada','aguardando_pagamento','procurar_motorista','motorista_a_caminho','motorista_chegou','em_viagem','finalizada','cancelada_passageiro','cancelada_motorista','expired'])
+const paymentStatuses=new Set(['pending','paid','failed','refunded','cancelled','expired'])
 const positive=v=>typeof v==='number'&&Number.isFinite(v)&&v>0
 export function createExperimentalRequestHandler({enabled=false,authorize,readSelection,independentMetrics,loadFare,createAtomic,dispatchInitial,revalidate=async()=>true,now=Date.now}={}){
  if(enabled!==true)return async()=>fail(409,'experimental_navigation_disabled')
@@ -26,13 +28,13 @@ export function createExperimentalRequestHandler({enabled=false,authorize,readSe
    const recover=async payload=>{
     if(await revalidate(session,args)!==true)return fail(401,'session_not_current')
     const row=await createAtomic(args,payload)
-    if(!row||!uuid(row.rideId)||typeof row.reused!=='boolean'||!positive(row.estimated_price)||
+    if(!row||!uuid(row.rideId)||typeof row.reused!=='boolean'||!rideStatuses.has(row.status)||!paymentStatuses.has(row.payment_status)||(!row.reused&&row.status!=='procurar_motorista')||!positive(row.estimated_price)||
        !Number.isSafeInteger(row.fare_amount_cents)||row.fare_amount_cents!==Math.round(row.estimated_price*100))return fail(409,'ride_not_confirmed')
     let candidates=0
     if(!row.reused&&row.status==='procurar_motorista'){
       try{const ids=await dispatchInitial({id:row.rideId});if(Array.isArray(ids))candidates=Math.min(5,ids.length)}catch{/* existing recovery owns dispatch */}
     }
-    return {status:200,body:{ok:true,...row,candidates}}
+    return {status:200,body:{ok:true,rideId:row.rideId,status:row.status,reused:row.reused,estimated_price:row.estimated_price,fare_amount_cents:row.fare_amount_cents,payment_status:row.payment_status,candidates}}
    }
    if(selection.linked===true)return create?await recover(null):fail(409,'ride_already_created')
    if(selection.linked!==false||!point(selection.origin)||!point(selection.destination)||!Number.isFinite(Date.parse(selection.expiresAt))||Date.parse(selection.expiresAt)<=now())return fail(409,'selection_expired')
