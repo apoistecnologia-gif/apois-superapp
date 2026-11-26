@@ -8,10 +8,14 @@ import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {createDriverBroker} from '../driver-broker/driver-broker.mjs'
 import {createDriverProxy} from '../driver-broker/driver-proxy.mjs'
+import {createLocalDriverSessionVerifier} from '../driver-broker/driver-local-session.mjs'
 import {openRouteReplayStore} from '../valhalla/route-replay-store.mjs'
 const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0')
 const actor=id(61),other=id(62),driver=id(71),profile=id(51),account=id(501),passenger=id(502),key=id(503)
-const p=id(21),q=id(22)
+const p=id(21),q=id(22),sid=id(804),otherSid=id(805)
+const project='https://abcdefghijklmnopqrst.supabase.co'
+const jwt=(sub,session_id)=>['e30',Buffer.from(JSON.stringify({iss:project+'/auth/v1',aud:'authenticated',role:'authenticated',sub,session_id,iat:Math.floor(Date.now()/1000)-1,exp:Math.floor(Date.now()/1000)+600})).toString('base64url'),'synthetic-signature'].join('.')
+const driverToken=jwt(actor,sid),otherToken=jwt(other,otherSid)
 const args=['exec','-i','apois-v21-fixture','psql','-X','-qAt','-U','postgres','-v','ON_ERROR_STOP=1']
 const lit=v=>"'"+String(v).replaceAll("'","''")+"'"
 const sql=(statement,service=true)=>{
@@ -19,6 +23,7 @@ const sql=(statement,service=true)=>{
  return x?JSON.parse(x):null
 }
 sql('insert into public.users(id,auth_user_id) values('+lit(passenger)+','+lit(account)+')',false)
+sql('insert into auth.sessions(id,user_id) values('+[sid,actor].map(lit).join(',')+'),('+[otherSid,other].map(lit).join(',')+')',false)
 const selection=sql('select apois_nav_lab.confirm_selection('+[account,key,p].map(lit).join(',')+',1,'+lit(q)+',1)')
 assert.ok(selection?.selectionId)
 const payload={origin:{lat:-9.4,lng:-40.5},destination:{lat:-9.42,lng:-40.51},category:'carros',intermediates:[],payment_method:'cash',estimated_price:12.34,distance_km:2.1,duration_min:8,expected_price_cents:1234}
@@ -34,8 +39,9 @@ const broker=await createDriverBroker({enabled:true,localOnly:true,keys:[secret]
  reads++
  return sql('select public.apois_nav_lab_driver_proof_v21('+[authUserId,rideId,phase].map(lit).join(',')+')')
 }})
-const proxy=createDriverProxy({enabled:true,localOnly:true,endpoint:'https://fixture.invalid/driver-control',...secret,allowPilot,verifySession:async token=>token==='driver'?actor:token==='other'?other:null,fetcher:async(url,opts)=>{forwarded++;return broker(new Request(url,opts))}})
-const request=(phase='PICKUP',token='driver',body={action:'target',rideId:ride,phase})=>proxy(new Request('https://edge.invalid/driver',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)}))
+const verifySession=createLocalDriverSessionVerifier({projectUrl:project,sessionPolicyConfirmed:true,getUser:async token=>token===driverToken?{id:actor}:token===otherToken?{id:other}:null,sessionExists:async({authUserId,sessionId})=>sql('select to_jsonb(public.apois_nav_lab_session_exists_v21('+[authUserId,sessionId].map(lit).join(',')+'))')})
+const proxy=createDriverProxy({enabled:true,localOnly:true,endpoint:'https://fixture.invalid/driver-control',...secret,allowPilot,verifySession,fetcher:async(url,opts)=>{forwarded++;return broker(new Request(url,opts))}})
+const request=(phase='PICKUP',token='driver',body={action:'target',rideId:ride,phase})=>proxy(new Request('https://edge.invalid/driver',{method:'POST',headers:{Authorization:'Bearer '+(token==='driver'?driverToken:token==='other'?otherToken:token),'Content-Type':'application/json'},body:JSON.stringify(body)}))
 try{
  assert.equal((await request()).status,403) // searching, not assigned
  sql("update public.rides set status='motorista_a_caminho',driver_id="+lit(driver)+",accepted_driver_id="+lit(driver)+",accepted_at=clock_timestamp() where id="+lit(ride))
@@ -58,7 +64,11 @@ try{
  assert.equal((await request('TRIP')).status,403)
  sql("update public.drivers set is_online=true where id="+lit(driver))
  assert.equal((await request('TRIP')).status,403) // durable tombstone
+ const beforeSignOut=forwarded
+ sql('delete from auth.sessions where id='+lit(sid),false)
+ assert.equal((await request('TRIP')).status,401)
+ assert.equal(forwarded,beforeSignOut) // no broker call after private session deletion
  sql("update public.rides set status='finalizada',completed_at=clock_timestamp() where id="+lit(ride))
- assert.equal((await request('TRIP')).status,403)
- console.log('APOIS_V21_LOCAL_DRIVER_SQL_OK',JSON.stringify({actualPostgres:true,actualHmac:true,actualReplayStore:true,syntheticAuth:true,pickup:true,trip:true,remotePermitBlocked:true,revocationDurable:true,reads}))
+ assert.equal((await request('TRIP')).status,401)
+ console.log('APOIS_V21_LOCAL_DRIVER_SQL_OK',JSON.stringify({actualPostgres:true,actualHmac:true,actualReplayStore:true,syntheticAuth:true,actualPrivateSessionCheck:true,deletedSessionRejected:true,pickup:true,trip:true,remotePermitBlocked:true,revocationDurable:true,reads}))
 }finally{admissionStore.close();rmSync(dir,{recursive:true,force:true})}

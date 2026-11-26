@@ -2,8 +2,11 @@ name: APOIS Navegacao - contrato observado v21 (sem deploy)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/production-contract/**','labs/apois-navigation/passenger-provenance-snapshot/**','.github/workflows/apois-navigation-lab-production-contract.yml']
+    paths: ['labs/apois-navigation/production-contract/**','labs/apois-navigation/passenger-provenance-snapshot/**','labs/apois-navigation/driver-broker/**','labs/apois-navigation/valhalla/route-replay-store.mjs','.github/workflows/apois-navigation-lab-production-contract.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -41,6 +44,7 @@ jobs:
           run_sql < "$root/confirmation-v21.sql"
           run_sql < "$root/catalog-v21.sql"
           run_sql < "$root/test-v21.sql"
+          run_sql < "$root/session-proof-fixture.sql"
           node "$root/driver-local-proof.integration.mjs"
           node "$root/request-ride-v21.integration.mjs"
           node --test "$root/v21-edge-adapter.test.mjs"
@@ -53,7 +57,6 @@ jobs:
           node labs/apois-navigation/passenger-provenance-snapshot/verify.mjs
           run_sql < "$root/least-privilege-trigger-fixture.sql"
           run_sql < "$root/test-least-privilege-trigger.sql"
-          run_sql < "$root/session-proof-fixture.sql"
           run_sql < "$root/test-session-proof.sql"
       - name: Journal persistente em Chromium real
         run: bash labs/apois-navigation/production-contract/test-journal-browser.sh
