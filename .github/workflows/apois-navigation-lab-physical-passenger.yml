@@ -38,8 +38,8 @@ jobs:
           path: ${{ runner.temp }}/apois-map-assets
       - uses: actions/download-artifact@v4
         with:
-          name: apois-v21-regional-evidence
-          run-id: 45707496288
+          name: apois-inactive-passenger-catalog
+          run-id: 45762910530
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-route-assets
       - run: bash labs/apois-navigation/physical-passenger/build.sh
