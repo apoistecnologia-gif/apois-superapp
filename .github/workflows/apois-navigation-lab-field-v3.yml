@@ -2,7 +2,7 @@ name: APOIS GPS - APK dinamico V3 Piaui
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/field-v3/**','labs/apois-navigation/android/**','labs/apois-navigation/field-apk/prepare.py','labs/apois-navigation/field-apk/FieldStartPolicy.kt','.github/workflows/apois-navigation-lab-field-v3.yml']
+    paths: ['labs/apois-navigation/emulator-common/**','labs/apois-navigation/field-v3/**','labs/apois-navigation/android/**','labs/apois-navigation/field-apk/prepare.py','labs/apois-navigation/field-apk/FieldStartPolicy.kt','.github/workflows/apois-navigation-lab-field-v3.yml']
   workflow_dispatch:
 permissions:
   contents: read

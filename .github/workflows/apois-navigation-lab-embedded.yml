@@ -2,7 +2,7 @@ name: APOIS GPS - Valhalla embarcado (isolado)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/embedded-probe/**','.github/workflows/apois-navigation-lab-embedded.yml']
+    paths: ['labs/apois-navigation/emulator-common/**','labs/apois-navigation/embedded-probe/**','.github/workflows/apois-navigation-lab-embedded.yml']
   workflow_dispatch:
 permissions:
   contents: read
