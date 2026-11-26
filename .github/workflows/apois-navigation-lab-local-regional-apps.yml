@@ -2,7 +2,7 @@ name: APOIS Navegacao - Auth local e Valhalla regional integrados
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/staging-local/start-regional-valhalla.sh','.github/workflows/apois-navigation-lab-local-regional-apps.yml']
+    paths: ['labs/apois-navigation/staging-local/**','labs/apois-navigation/production-contract/driver-direct-edge-v21.mjs','labs/apois-navigation/production-contract/driver-target-rate-v21.sql','.github/workflows/apois-navigation-lab-local-regional-apps.yml']
   workflow_dispatch:
 permissions:
   contents: read

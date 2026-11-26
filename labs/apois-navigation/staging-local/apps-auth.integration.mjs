@@ -12,7 +12,7 @@ import {createV21ExperimentalAction} from '../production-contract/v21-edge-adapt
 import {loadFare} from '../production-contract/observed-fare-v21.ts'
 import {verifyInactiveValeCatalog} from '../physical-passenger/verify-catalog.mjs'
 import {startRegionalQuoteTls} from '../production-contract/regional-private-quote.mjs'
-import {createDriverControl} from '../production-contract/driver-control-v21.mjs'
+import {createDirectLocalDriverEdge} from '../production-contract/driver-direct-edge-v21.mjs'
 import {createVerifiedHostTransport} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/verified-host-transport.mjs'
 import {createPassengerPanel} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/passenger-panel.mjs'
 import {createDurableRideHost} from '../passenger-provenance-snapshot/experimental/apois-navigation/ui/durable-ride-host.mjs'
@@ -70,11 +70,8 @@ const quoteTls=regional?await startRegionalQuoteTls({authUserId:passenger.id,cer
 const control=createNavigationControl({confirmationEnabled:true,recoveryEnabled:true,catalogPolicy:{version:1,extractHash:digest},
  verifySession:t=>verify(t,AbortSignal.timeout(3000)),allowPilot:u=>u===passenger.id,rpc})
 let dispatch=0,creates=0
-const driverControl=createDriverControl({enabled:true,localOnly:true,allowPilot:u=>u===driver.id||u===other.id,authority:async(token,req,signal)=>{
- const user=await verify(token,signal);if(!user)return null
- const proof=await rpc('apois_nav_lab_driver_proof_v21',{p_auth_user:user,p_ride:req.rideId,p_phase:req.phase},signal)
- return await verify(token,signal)===user?proof:null
-}})
+const driverControl=createDirectLocalDriverEdge({enabled:true,verifySession:verify,allowPilot:u=>u===driver.id||u===other.id,
+ readLimited:(input,signal)=>rpc('apois_nav_lab_driver_target_limited_v21',{p_auth_user:input.authUserId,p_ride:input.rideId,p_phase:input.phase},signal)})
 const server=createServer(async(req,res)=>{
  const send=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(body))}
  try{
@@ -96,7 +93,10 @@ const server=createServer(async(req,res)=>{
     loadFare:(...args)=>loadFare(admin,...args),dispatchInitial:async()=>{dispatch++;return []},
     verifyCurrentSession:async()=>await verify(token,AbortSignal.timeout(3000))===user})
    result=await action(body)
-  }else if(req.url==='/functions/v1/apois-navigation-driver-control')result=await driverControl(token,body,AbortSignal.timeout(5000))
+  }else if(req.url==='/functions/v1/apois-navigation-driver-control'){
+   const reply=await driverControl(new Request('http://127.0.0.1'+req.url,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:raw}))
+   return send(reply.status,await reply.json())
+  }
   else return send(404,{ok:false})
   return send(result.status,result.body)
  }catch{return send(503,{ok:false})}
@@ -120,7 +120,7 @@ try{
  assert.equal(await first.submit(true),null);assert.ok(record);first.invalidate()
  const next=createDurableRideHost({enabled:true,journal,...adapter});assert.ok(await next.open());assert.ok(await next.recover())
  const ride=next.snapshot().ride.rideId;assert.ok(ride);assert.equal(dispatch,1);assert.equal(creates,1)
- const driverCall=async(actor,phase)=>fetch(base+'apois-navigation-driver-control',{method:'POST',headers:{Authorization:'Bearer '+actor.token,'Content-Type':'application/json'},body:JSON.stringify({action:'target',rideId:ride,phase})})
+ const driverCall=async(actor,phase,action='target')=>fetch(base+'apois-navigation-driver-control',{method:'POST',headers:{Authorization:'Bearer '+actor.token,'Content-Type':'application/json'},body:JSON.stringify({action,rideId:ride,phase})})
  assert.equal((await driverCall(driver,'PICKUP')).status,403)
  sql("update public.rides set status='motorista_a_caminho',driver_id="+lit(driverId)+",accepted_driver_id="+lit(driverId)+",accepted_at=clock_timestamp() where id="+lit(ride))
  assert.equal((await driverCall(other,'PICKUP')).status,403)
@@ -129,12 +129,13 @@ try{
  assert.equal((await driverCall(driver,'PICKUP')).status,403)
  sql("update public.rides set status='em_viagem',started_at=clock_timestamp() where id="+lit(ride))
  const trip=await driverCall(driver,'TRIP');assert.equal(trip.status,200);assert.deepEqual((await trip.json()).target.evidence.point,{lat:destination.lat,lon:destination.lng})
- const denied=await passenger.client.rpc('apois_nav_lab_driver_proof_v21',{p_auth_user:driver.id,p_ride:ride,p_phase:'TRIP'});assert.ok(denied.error,'client direct service-only RPC must be denied')
+ assert.equal((await driverCall(driver,'TRIP','permit')).status,409)
+ const denied=await passenger.client.rpc('apois_nav_lab_driver_target_limited_v21',{p_auth_user:driver.id,p_ride:ride,p_phase:'TRIP'});assert.ok(denied.error,'client direct service-only RPC must be denied')
  const sessionId=JSON.parse(Buffer.from(driver.token.split('.')[1],'base64url')).session_id
  sql('delete from auth.sessions where id='+lit(sessionId)+' and user_id='+lit(driver.id))
  assert.equal((await driverCall(driver,'TRIP')).status,401)
  sql("update public.rides set status='finalizada',completed_at=clock_timestamp() where id="+lit(ride))
  assert.ok(await next.recover());assert.equal(record,null);assert.equal(creates,1)
  if(quoteTls)assert.equal(quoteTls.stats().metricRequests,2)
- console.log('APOIS_LOCAL_AUTH_APPS_CONTRACT_OK',JSON.stringify({realAuth:true,realPostgREST:true,actualSql:true,httpTransport:true,passengerRecovery:true,driverPickup:true,trip:true,sessionRevoked:true,terminalRelease:true,dispatchFixture:true,realValhalla:regional,realPublicCatalog:regional,observedFareFormula:true,tariffFixture:true,quote:quoteTls?.stats()??null}))
+ console.log('APOIS_LOCAL_AUTH_APPS_CONTRACT_OK',JSON.stringify({realAuth:true,directDriverTarget:true,realPostgREST:true,actualSql:true,httpTransport:true,passengerRecovery:true,driverPickup:true,trip:true,sessionRevoked:true,terminalRelease:true,dispatchFixture:true,realValhalla:regional,realPublicCatalog:regional,observedFareFormula:true,tariffFixture:true,quote:quoteTls?.stats()??null}))
 }finally{await new Promise(resolve=>server.close(resolve));if(quoteTls)await quoteTls.close()}
