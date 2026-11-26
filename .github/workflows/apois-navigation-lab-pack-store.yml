@@ -1,0 +1,45 @@
+name: APOIS GPS - armazenamento imutavel de pacotes offline
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/pack-store/**','.github/workflows/apois-navigation-lab-pack-store.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Compile isolated Kotlin storage proof
+        run: |
+          set -euo pipefail
+          D="$RUNNER_TEMP/apois-pack-store"
+          mkdir -p "$D/src/main/kotlin" "$D/src/test/kotlin"
+          cp labs/apois-navigation/pack-store/OfflinePackStore.kt "$D/src/main/kotlin/"
+          cp labs/apois-navigation/pack-store/OfflinePackStoreTest.kt "$D/src/test/kotlin/"
+          printf '%s\n' "rootProject.name = 'apois-pack-store'" > "$D/settings.gradle"
+          cat > "$D/build.gradle" <<'EOF'
+          plugins { id 'org.jetbrains.kotlin.jvm' version '2.3.20' }
+          repositories { mavenCentral() }
+          dependencies { testImplementation 'junit:junit:4.13.2' }
+          kotlin { jvmToolchain(21) }
+          EOF
+          gradle -p "$D" test --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-offline-pack-store-tests
+          path: ${{ runner.temp }}/apois-pack-store/build/test-results/test/
+          retention-days: 7
+          if-no-files-found: warn
