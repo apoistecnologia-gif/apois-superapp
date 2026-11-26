@@ -2,7 +2,7 @@ name: APOIS Navegacao - QA290 WebView isolado (sem APK)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/host-compat/*qa290-web*', 'labs/apois-navigation/host-compat/confirmed-navigation-launch*.mjs', 'labs/apois-navigation/host-compat/instrument-*voice.mjs', 'labs/apois-navigation/host-compat/instrument-shared-audio.mjs', '.github/workflows/apois-navigation-lab-qa290-web.yml']
+    paths: ['labs/apois-navigation/host-compat/*qa290-web*', 'labs/apois-navigation/host-compat/confirmed-navigation-launch*.mjs','labs/apois-navigation/host-compat/driver-proof-reader*.mjs','labs/apois-navigation/host-compat/motorista-authority*.mjs', 'labs/apois-navigation/host-compat/instrument-*voice.mjs', 'labs/apois-navigation/host-compat/instrument-shared-audio.mjs', '.github/workflows/apois-navigation-lab-qa290-web.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -46,6 +46,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.3.14'
+      - name: Run exact-session and launch policy tests
+        run: node --test labs/apois-navigation/host-compat/driver-proof-reader.test.mjs labs/apois-navigation/host-compat/confirmed-navigation-launch.test.mjs
       - name: Reconstruir somente Motorista com ambiente ficticio
         run: bash labs/apois-navigation/host-compat/run-qa290-web.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/apois-qa290-web" "$RUNNER_TEMP/qa290-web-report"
       - uses: actions/upload-artifact@v4
