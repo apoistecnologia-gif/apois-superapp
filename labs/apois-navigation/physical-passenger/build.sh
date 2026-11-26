@@ -23,8 +23,11 @@ TOOLS="$ANDROID_SDK_ROOT/build-tools/36.0.0"
 "$TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/apois-passenger-badging.txt"
 grep -F "package: name='br.com.apois.navigation.passenger.lab'" "$RUNNER_TEMP/apois-passenger-badging.txt"
 ! grep -F "android.permission.INTERNET" "$RUNNER_TEMP/apois-passenger-badging.txt"
-! grep -F "android.permission.ACCESS_FINE_LOCATION" "$RUNNER_TEMP/apois-passenger-badging.txt"
-unzip -l "$APK" | grep -F 'assets/public/apois-regional/vale.pmtiles'
+if grep -E "android.permission.(ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|ACCESS_BACKGROUND_LOCATION)" "$RUNNER_TEMP/apois-passenger-badging.txt"; then echo "Unexpected location permission"; exit 1; fi
+unzip -Z1 "$APK" > "$RUNNER_TEMP/apois-passenger-apk-files.txt"
+grep -Fx 'assets/public/apois-regional/vale.pmtiles' "$RUNNER_TEMP/apois-passenger-apk-files.txt"
+test "$(unzip -p "$APK" assets/public/apois-regional/vale.pmtiles | sha256sum | cut -d ' ' -f 1)" = 18dc74cfea6ab6a8365b48df0731173b794825b108ed1f72db740ed16c3490fe
+test "$(unzip -p "$APK" assets/public/apois-regional/manifest.json | sha256sum | cut -d ' ' -f 1)" = 367c0104a8a5de7f11bdf2c965eb91a73e1cf21b5a3809f78f53e7170b7cdebb
 OUT="$RUNNER_TEMP/apois-passenger-apk"
 mkdir -p "$OUT"
 cp "$APK" "$OUT/APOIS-Passageiro-Teste-Fisico.apk"
