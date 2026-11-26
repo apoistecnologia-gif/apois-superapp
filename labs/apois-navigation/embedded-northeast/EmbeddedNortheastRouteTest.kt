@@ -55,6 +55,10 @@ class EmbeddedNortheastRouteTest{
             val c=crossings.getJSONArray(i);cases.add(Triple(c.getString(0),point(c.getJSONArray(1)),point(c.getJSONArray(2))))
         }
         assertEquals(15,cases.size)
+        // Preserve the original out-of-road reference as a negative test.
+        // Add the public urban reference previously approved in the PI pilot.
+        cases.add(Triple("PI Itainópolis via válida",Point(-7.4475,-41.4786),Point(-7.439992,-41.474246)))
+        assertEquals(16,cases.size)
         val config=ValhallaConfigBuilder().withTileExtract(file.absolutePath).build()
         val adapter=RouteAdapter.fromWellKnownRouteProvider(WellKnownRouteProvider.Valhalla("https://navigation.invalid/route","auto"))
         val opened=SystemClock.elapsedRealtime()
@@ -86,9 +90,10 @@ class EmbeddedNortheastRouteTest{
                 if(snapA>150||snapB>150)rejected.add(label)
                 Log.i("APOIS_NE_OFFLINE","case="+label+" ms="+(SystemClock.elapsedRealtime()-t)+" pss_kb="+Debug.getPss()+" snap_m="+snapA+","+snapB+" voice="+voice+" banners="+banners)
             }
-            Log.i("APOIS_NE_OFFLINE","routes=15 snap_rejected="+rejected.size)
-            // A server-valid route can still be rejected by the mobile snap gate.
-            assertTrue("snap > 150m: "+rejected.joinToString(),rejected.isEmpty())
+            Log.i("APOIS_NE_OFFLINE","routes="+cases.size+" snap_accepted="+(cases.size-rejected.size)+" snap_rejected="+rejected.size)
+            // The original synthetic point lands >150m from the road. It must
+            // remain rejected; all 15 positive cases must meet the same gate.
+            assertEquals(listOf("PI Itainópolis"),rejected)
         }
     }
 }
