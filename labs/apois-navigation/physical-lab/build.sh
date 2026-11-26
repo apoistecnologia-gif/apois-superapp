@@ -13,7 +13,7 @@ cp "$ROOT/host-compat/demo/scenario.mjs" www/
 printf '{"appId":"br.com.apois.navigation.compat.lab","appName":"APOIS GPS Teste","webDir":"www"}' > capacitor.config.json
 npx cap add android
 node "$ROOT/host-compat/prepare-host.mjs" "$H" "$ROOT"
-node "$ROOT/physical-lab/prepare.mjs" "$H" "$RUNNER_TEMP/apois-map-assets/android-assets/apois-regional" "$RUNNER_TEMP/apois-route-assets"
+node "$ROOT/physical-lab/prepare.mjs" "$H" "$RUNNER_TEMP/apois-map-assets/apois-regional" "$RUNNER_TEMP/apois-route-assets"
 cd "$H/android"
 gradle :navigation-probe:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
 APK="$H/android/app/build/outputs/apk/debug/app-debug.apk"
