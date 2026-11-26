@@ -111,12 +111,14 @@ class ValeConfirmedLifecycleTest{
                 assertTrue("host-only operations not shown",waitForAppText("demais ações permanecem",10_000L))
                 inst.runOnMainSync{
                     val screen=checkNotNull(ConfirmedLiveNavigationBridge.screen.value)
+                    val resumed=ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
+                    assertEquals("actual confirmed Activity must be resumed",1,resumed.count{it is ConfirmedLiveNavigationActivity})
                     assertEquals(id,screen.id);assertEquals(phase,screen.ride.phase)
                     assertTrue(ConfirmedLiveNavigationBridge.accepts(id,screen.token))
                 }
                 // Caller closes the Activity or revokes its authority. The
                 // latch only fires when actual Activity destruction is observed.
-                if(phase==RidePhase.PICKUP)device.pressBack() else active.set(false)
+                if(phase==RidePhase.PICKUP)assertTrue("Back was not delivered",device.pressBack()) else active.set(false)
                 assertTrue("actual destruction not acknowledged",closed.await(15,TimeUnit.SECONDS))
                 val e=checkNotNull(event.get());assertEquals(id,e.getString("sessionId"))
                 assertEquals(rideId,e.getString("rideId"));assertEquals(0L,e.getLong("revision"))
