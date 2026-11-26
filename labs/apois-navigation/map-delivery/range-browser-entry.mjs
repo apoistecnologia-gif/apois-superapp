@@ -1,11 +1,13 @@
 import maplibregl from 'maplibre-gl'
 import {PMTiles} from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import {createRangeSource} from './range-source.mjs'
+import {createVerifiedRangeSource} from './verified-range-source.mjs'
+import {createTileScheduler} from './tile-scheduler.mjs'
 import config from './fixture-config.json'
 import style from './fixture-style.json'
 window.startMap=async()=>{
- const source=createRangeSource({...config,parallel:16})
+ const source=await createVerifiedRangeSource({...config,manifestBytes:new TextEncoder().encode(config.manifestText),parallel:8,cacheChunks:8})
+ const scheduler=createTileScheduler({parallel:4,maxQueued:32})
  const archive=new PMTiles(source)
  const header=await archive.getHeader()
  if(header.specVersion!==3||header.tileType!==1)throw Error('Invalid archive')
@@ -16,7 +18,7 @@ window.startMap=async()=>{
   if(!m)throw Error('Invalid tile')
   const [z,x,y]=m.slice(1).map(Number)
   if(z<8||z>15||x>=2**z||y>=2**z)throw Error('Tile outside archive')
-  const tile=await archive.getZxy(z,x,y,controller.signal)
+  const tile=await scheduler.run(signal=>archive.getZxy(z,x,y,signal),controller.signal)
   tiles++;return {data:tile?.data??new ArrayBuffer(0)}
  })
  const s=structuredClone(style)
@@ -30,6 +32,6 @@ window.startMap=async()=>{
    if(!url.startsWith(prefix)&&!url.startsWith(location.origin+'/glyphs/'))throw Error('Unexpected map resource')
    return {url}
   }})
-  window.lab={map,metrics:()=>({tiles}),dispose:()=>{map.remove();maplibregl.removeProtocol(scheme);source.close()}}
- }catch(e){map?.remove();maplibregl.removeProtocol(scheme);source.close();throw e}
+  window.lab={map,metrics:()=>({tiles}),dispose:()=>{map.remove();maplibregl.removeProtocol(scheme);scheduler.close();source.close()}}
+ }catch(e){map?.remove();maplibregl.removeProtocol(scheme);scheduler.close();source.close();throw e}
 }

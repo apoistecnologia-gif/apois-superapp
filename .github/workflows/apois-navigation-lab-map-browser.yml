@@ -2,7 +2,7 @@ name: APOIS Navegacao - mapa remoto em navegador (laboratorio)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/map-delivery/range-browser-*.mjs','.github/workflows/apois-navigation-lab-map-browser.yml']
+    paths: ['labs/apois-navigation/map-delivery/range-browser-*.mjs','labs/apois-navigation/map-delivery/range-source.mjs','labs/apois-navigation/map-delivery/verified-range-source.mjs','labs/apois-navigation/map-delivery/build-chunk-manifest.mjs','labs/apois-navigation/map-delivery/tile-scheduler.mjs','.github/workflows/apois-navigation-lab-map-browser.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           H="$RUNNER_TEMP/apois-map-browser"
           mkdir -p "$H"
-          cp labs/apois-navigation/map-delivery/{range-source,range-browser-entry,range-browser-integration}.mjs "$H/"
+          cp labs/apois-navigation/map-delivery/{range-source,verified-range-source,build-chunk-manifest,tile-scheduler,range-browser-entry,range-browser-integration}.mjs "$H/"
           cd "$H"
           npm init -y >/dev/null
           npm install --ignore-scripts --no-audit --no-fund --save-exact maplibre-gl@4.7.1 pmtiles@3.2.0 esbuild@0.25.0 playwright-core@1.51.1

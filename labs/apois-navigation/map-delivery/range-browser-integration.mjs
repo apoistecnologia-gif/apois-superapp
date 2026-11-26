@@ -6,6 +6,7 @@ import {createHash,X509Certificate} from 'node:crypto'
 import {readFileSync,writeFileSync,statSync,createReadStream,mkdirSync,cpSync} from 'node:fs'
 import {resolve,extname,join} from 'node:path'
 import {execFileSync} from 'node:child_process'
+import {buildChunkManifest} from './build-chunk-manifest.mjs'
 const pack=resolve(process.argv[2]),cert=readFileSync(process.argv[3]),key=readFileSync(process.argv[4]),site=resolve('site')
 const sha=b=>createHash('sha256').update(b).digest('hex')
 const manifest=readFileSync(join(pack,'manifest.json'))
@@ -13,6 +14,7 @@ assert.equal(sha(manifest),'367c0104a8a5de7f11bdf2c965eb91a73e1cf21b5a3809f78f53
 const m=JSON.parse(manifest)
 for(const f of m.files){const b=readFileSync(join(pack,f.path));assert.equal(b.length,f.bytes);assert.equal(sha(b),f.sha256)}
 const archive=join(pack,'vale.pmtiles'),size=statSync(archive).size,digest=sha(readFileSync(archive)),path='/maps/nordeste-'+digest+'.pmtiles',etag='"'+digest+'"'
+const chunks=await buildChunkManifest(archive,{expectedSha256:digest,expectedBytes:size,chunkBytes:65536})
 mkdirSync(site,{recursive:true})
 cpSync(join(pack,'glyphs'),join(site,'glyphs'),{recursive:true})
 writeFileSync('fixture-style.json',readFileSync(join(pack,'style.json')))
@@ -45,7 +47,7 @@ let browser
 try{
  await listen(mapServer)
  const mapOrigin='https://127.0.0.1:'+mapServer.address().port
- writeFileSync('fixture-config.json',JSON.stringify({url:mapOrigin+path,authorizedOrigin:mapOrigin,sha256:digest,bytes:size,etag}))
+ writeFileSync('fixture-config.json',JSON.stringify({url:mapOrigin+path,authorizedOrigin:mapOrigin,etag,manifestText:chunks.raw.toString('utf8'),expectedManifestSha256:chunks.sha256}))
  execFileSync('./node_modules/.bin/esbuild',['range-browser-entry.mjs','--bundle','--format=esm','--outfile=site/bundle.js'],{stdio:'inherit'})
  writeFileSync(join(site,'index.html'),'<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="./bundle.css"><style>body{margin:0}#map{width:320px;height:320px}</style><div id="map"></div><script type="module" src="./bundle.js"></script>')
  // Pin ONLY the ephemeral loopback server certificate public key in this CI
@@ -83,5 +85,5 @@ try{
  console.log('MAP_RANGE_METRICS',JSON.stringify({archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,unexpected,external,errors,...stats}))
  assert.equal(external.length,0);assert.equal(errors.length,0);assert.equal(unexpected,0);assert.ok(requests>initialRequests,'No map range fetched');assert.ok(bytes-initialBytes<size,'Initial viewport transferred at least one entire archive')
  await page.evaluate(()=>window.lab.dispose());assert.equal(await page.locator('.maplibregl-canvas').count(),0)
- console.log(JSON.stringify({fixture:'vale-pe-ba',archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,...stats,limits:'Chromium cross-origin local fixture, certificate SPKI pinned only for test; no Android or production CDN claim'},null,2))
+ console.log(JSON.stringify({fixture:'vale-pe-ba',archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,chunkVerified:true,manifestSha256:chunks.sha256,...stats,limits:'Chromium cross-origin local fixture, certificate SPKI pinned only for test; no Android or production CDN claim'},null,2))
 }finally{await browser?.close();for(const s of [pageServer,mapServer]){s.closeAllConnections();if(s.listening)await new Promise(r=>s.close(r))}}
