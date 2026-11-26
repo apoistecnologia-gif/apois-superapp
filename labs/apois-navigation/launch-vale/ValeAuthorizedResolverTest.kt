@@ -1,6 +1,5 @@
 package br.com.apois.navigation.lab
 
-import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
@@ -42,6 +41,7 @@ class ValeAuthorizedResolverTest {
             var resolver:ManagedRouteResolver?=null
             try{
                 assertNull(factory.open(target.copy(source=RoutingTargetSource.GOOGLE),map,{active},evidence))
+                assertNull(factory.open(target.copy(point=RegionalPoint(-9.42,-40.51)),map,{active},evidence))
                 val opened=checkNotNull(factory.open(target,map,{active},evidence))
                 resolver=opened
                 assertTrue(resolverResourcesCurrent(opened))
@@ -50,7 +50,7 @@ class ValeAuthorizedResolverTest {
                 assertTrue(route.geometry.size>1)
                 assertEquals(3,reads)
                 assertTrue(runCatching{opened.resolve(origin,origin)}.isFailure)
-                assertEquals(2,reads)
+                assertEquals(3,reads)
                 // Revoke the simulated authority only after the JNI calculation.
                 changeOnRead=5
                 assertTrue(runCatching{opened.resolve(origin,destination)}.isFailure)
@@ -59,6 +59,8 @@ class ValeAuthorizedResolverTest {
                 assertTrue(runCatching{opened.resolve(origin,destination)}.isFailure)
                 assertEquals(5,reads)
                 // Resource validity must fail even without requesting a route.
+                active=true
+                assertTrue(grant.current())
                 assertTrue(resolverResourcesCurrent(opened))
                 opened.dispose()
                 assertFalse(resolverResourcesCurrent(opened))

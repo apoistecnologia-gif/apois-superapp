@@ -136,7 +136,10 @@ internal suspend fun valeDriverGrant(
                     else next?.evidence(android.os.SystemClock.elapsedRealtime())
                 }
             },
-            localFactory=valeLocalFactory(context,lease))
+            localFactory=NativeLocalRouteFactory{approved,map,owner,verify->
+                if(approved!=target.approved||!current())null
+                else valeLocalFactory(context,lease).open(approved,map,{current()&&owner()},verify)
+            })
         handedOff=true
         return grant
     }finally{if(!handedOff)lease.close()}
