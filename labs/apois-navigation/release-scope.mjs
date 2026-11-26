@@ -10,7 +10,7 @@ export const baseline="cb970bbb2d4fe5358b64d24dc31de8fcbcc3bff4";
 const workflow=/^\.github\/workflows\/apois-navigation-lab-[a-z0-9-]+\.yml$/;
 const forbidden=/\.(?:apk|aab|jks|keystore|p12|pfx|pem|key)$/i;
 export function allowedPath(path){
-  if(typeof path!=="string"||path.includes("\\")||path.split("/").some(p=>!p||p==="."||p===".."))return false;
+  if(typeof path!=="string"||path.includes("\\")||/[\x00-\x1f\x7f]/.test(path)||path.split("/").some(p=>!p||p==="."||p===".."||/^\.env(?:\.|$)/i.test(p)))return false;
   return !forbidden.test(path)&&
     (path.startsWith("labs/apois-navigation/")||workflow.test(path));
 }
@@ -26,13 +26,20 @@ export function assertDisabledHost(source){
   assert.ok(source.includes("if(!EXPERIMENTAL_INTERNAL_NAVIGATION)return ()=>{};"));
 }
 export function assertPrivateManifest(xml){
-  assert.ok(!/<(?:uses-permission|permission|service|provider|receiver|intent-filter)\b/i.test(xml),"unexpected component or permission");
-  const activities=[...xml.matchAll(/<activity\b[^>]*>/g)].map(m=>m[0]);
-  assert.equal(activities.length,2);
-  for(const name of ["LabNavigationActivity","ConfirmedLiveNavigationActivity"]){
-    const tag=activities.filter(a=>a.includes('android:name="br.com.apois.navigation.lab.'+name+'"'));
-    assert.equal(tag.length,1);
-    assert.ok(tag[0].includes('android:exported="false"'));
+  // Deliberately accept only the tiny private library manifest. New
+  // components, namespace aliases, permissions or attributes require review.
+  const text=xml.trim().replace(/\s+/g," ");
+  const head='<manifest xmlns:android="http://schemas.android.com/apk/res/android">';
+  const acts=['LabNavigationActivity','ConfirmedLiveNavigationActivity'].map(name=>
+    '<activity android:name="br.com.apois.navigation.lab.'+name+'" android:exported="false" />');
+  const accepted=[head,'<manifest>'].flatMap(m=>[acts,[...acts].reverse()].map(a=>m+' <application> '+a.join(' ')+' </application> </manifest>'));
+  const normalized=text.replace(/>\s*</g,"> <");
+  assert.ok(accepted.includes(normalized),"unexpected library manifest component or attribute");
+}
+export function assertLabModes(entries){
+  for(const entry of entries){
+    const match=/^(100644|100755) blob [a-f0-9]{40,64}\t(.+)$/.exec(entry);
+    assert.ok(match&&allowedPath(match[2]),"non-regular or forbidden lab tree entry: "+entry);
   }
 }
 export function audit(root){
@@ -42,6 +49,8 @@ export function audit(root){
   // --no-renames checks both removed and added paths of a rename.
   const changed=git("diff","--no-renames","--name-only","-z",baseline,head).split("\0").filter(Boolean);
   assertLabScope(changed);
+  const entries=git("ls-tree","-r","-z",head,"--","labs/apois-navigation",".github/workflows").split("\0").filter(Boolean).filter(e=>allowedPath(e.slice(e.indexOf("\t")+1))||e.slice(e.indexOf("\t")+1).startsWith("labs/apois-navigation/"));
+  assertLabModes(entries);
   // Also catch uncommitted tracked/untracked changes in a local preflight.
   const working=git("diff","--no-renames","--name-only","-z","HEAD").split("\0").filter(Boolean);
   const untracked=git("ls-files","--others","--exclude-standard","-z").split("\0").filter(Boolean);
