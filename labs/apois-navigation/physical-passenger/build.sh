@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/emulator-common/apk-assertions.sh"
 H="$RUNNER_TEMP/apois-passenger-physical"
 test ! -e "$H"
 mkdir -p "$H/www"
@@ -22,7 +23,7 @@ TOOLS="$ANDROID_SDK_ROOT/build-tools/36.0.0"
 "$TOOLS/apksigner" verify --verbose "$APK"
 "$TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/apois-passenger-badging.txt"
 grep -F "package: name='br.com.apois.navigation.passenger.lab'" "$RUNNER_TEMP/apois-passenger-badging.txt"
-! grep -F "android.permission.INTERNET" "$RUNNER_TEMP/apois-passenger-badging.txt"
+lab_assert_absent 'android\.permission\.INTERNET' "$RUNNER_TEMP/apois-passenger-badging.txt" || exit 1
 if grep -E "android.permission.(ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|ACCESS_BACKGROUND_LOCATION)" "$RUNNER_TEMP/apois-passenger-badging.txt"; then echo "Unexpected location permission"; exit 1; fi
 unzip -Z1 "$APK" > "$RUNNER_TEMP/apois-passenger-apk-files.txt"
 grep -Fx 'assets/public/apois-regional/vale.pmtiles' "$RUNNER_TEMP/apois-passenger-apk-files.txt"

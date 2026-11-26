@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/emulator-common/apk-assertions.sh"
 H="$RUNNER_TEMP/apois-physical-host"
 test ! -e "$H"
 mkdir -p "$H/www"
@@ -22,8 +23,8 @@ TOOLS="$ANDROID_SDK_ROOT/build-tools/36.0.0"
 "$TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/apois-apk-badging.txt"
 grep -F "package: name='br.com.apois.navigation.compat.lab'" "$RUNNER_TEMP/apois-apk-badging.txt"
 grep -F "sdkVersion:'25'" "$RUNNER_TEMP/apois-apk-badging.txt"
-! grep -F "android.permission.INTERNET" "$RUNNER_TEMP/apois-apk-badging.txt"
-! grep -F "android.permission.ACCESS_BACKGROUND_LOCATION" "$RUNNER_TEMP/apois-apk-badging.txt"
+lab_assert_absent 'android\.permission\.INTERNET' "$RUNNER_TEMP/apois-apk-badging.txt" || exit 1
+lab_assert_absent 'android\.permission\.ACCESS_BACKGROUND_LOCATION' "$RUNNER_TEMP/apois-apk-badging.txt" || exit 1
 grep -F "android.permission.ACCESS_FINE_LOCATION" "$RUNNER_TEMP/apois-apk-badging.txt"
 unzip -l "$APK" | grep -F 'assets/apois-regional/vale.pmtiles'
 unzip -l "$APK" | grep -F 'assets/apois-physical-trip.json'
