@@ -164,11 +164,12 @@ export function observeConfirmedNavigationRide(rideId:string|null,status:string|
   if(EXPERIMENTAL_INTERNAL_NAVIGATION)void launch.observeRide(rideId,status);
 }
 `,{flag:"wx"});
+writeFileSync(join(lib,"internal-retry.tsx"),"import {useEffect,useRef,useState} from \"react\";\nimport {confirmedNavigationEnabled,retryConfirmedApoisNavigation} from \"./host\";\nimport type {ConfirmedPhase} from \"./confirmed-navigation-launch.mjs\";\nexport function ConfirmedNavigationRetryButton({rideId,phase,category}:{rideId:string;phase:ConfirmedPhase;category:string|null|undefined}){\n const [busy,setBusy]=useState(false);\n const [message,setMessage]=useState(\"\");\n const current=useRef<object|null>(null);\n useEffect(()=>{current.current={};setBusy(false);setMessage(\"\");return()=>{current.current=null;};},[rideId,phase]);\n if(!confirmedNavigationEnabled()||category!==\"carros\")return null;\n async function retry(){\n  const ticket=current.current;\n  if(!ticket||busy)return;\n  setBusy(true);setMessage(\"\");\n  try{\n   const result=await retryConfirmedApoisNavigation(rideId,phase);\n   if(current.current!==ticket)return;\n   if(result===\"unavailable\")setMessage(\"Navegação APOIS indisponível. Você pode escolher Google Maps ou Waze.\");\n   else if(result===\"busy\"||result===\"uncertain\")setMessage(\"A navegação anterior ainda não foi encerrada. Confira antes de tentar novamente.\");\n   else if(result!==\"internal\")setMessage(\"Confira a corrida e a localização antes de tentar novamente.\");\n  }catch{if(current.current===ticket)setMessage(\"Não foi possível confirmar a navegação.\");}\n  finally{if(current.current===ticket)setBusy(false);}\n }\n return <div className=\"w-full min-w-0\">\n  <button type=\"button\" disabled={busy} onClick={()=>void retry()} className=\"flex min-h-[48px] w-full items-center justify-center rounded-[16px] border border-[#C71623] bg-white px-3 text-[13px] font-extrabold text-[#C71623] disabled:opacity-50\">\n   {busy?\"Verificando navegação…\":\"Navegação APOIS\"}\n  </button>\n  {message?<p role=\"status\" className=\"mt-1 text-xs font-semibold text-[#AF1830]\">{message}</p>:null}\n </div>;\n}\n",{flag:"wx"});
 const appPath=join(root,"src/routes/motorista.app.tsx");
 let app=readFileSync(appPath,"utf8");
 const replaceExact=(a,b)=>{assert.equal(app.split(a).length,2,"QA290 host anchor: "+a);app=app.replace(a,()=>b);};
 assert.ok(app.includes("APOIS_DRIVER_HOME_PREMIUM_V1")&&app.includes("APOIS_DRIVER_RIDE_VIDEO_AUDIT_V1"));
-app='// APOIS_NAVIGATION_QA290_CONFIRMED_LAUNCH\nimport {launchConfirmedApoisNavigation,bindConfirmedNavigationLifecycle,observeConfirmedNavigationRide} from "@/lib/apois-navigation-lab/host";\n'+app;
+app='// APOIS_NAVIGATION_QA290_CONFIRMED_LAUNCH\nimport {ConfirmedNavigationRetryButton} from "@/lib/apois-navigation-lab/internal-retry";\nimport {launchConfirmedApoisNavigation,bindConfirmedNavigationLifecycle,observeConfirmedNavigationRide} from "@/lib/apois-navigation-lab/host";\n'+app;
 replaceExact("function MotoristaApp() {","function MotoristaApp() {\n  useEffect(() => bindConfirmedNavigationLifecycle(), []);");
 replaceExact("  const [active, setActive] = useState<RideRow | null>(null);",
   "  const [active, setActive] = useState<RideRow | null>(null);\n  useEffect(() => { observeConfirmedNavigationRide(active?.id ?? null,active?.status ?? null); }, [active?.id,active?.status]);");
@@ -178,6 +179,14 @@ const trip="launchApoisNavigationAfterRideStart(ride.destination_lat, ride.desti
 const tripCount=app.split(trip).length-1;
 assert.ok(tripCount>=1&&tripCount<=2,"unexpected QA290 destination launch count "+tripCount);
 app=app.replaceAll(trip,()=> 'launchConfirmedApoisNavigation(ride.id, "TRIP", () => '+trip+')');
+// Keep external provider selection and original UI. The new explicit button
+// is absent in default builds; it never silently opens a different app.
+for(const [anchor,phase] of [
+ ['<ApoisExternalNavigation latitude={ride.origin_lat} longitude={ride.origin_lng} stage="até o passageiro" />',"PICKUP"],
+ ['<ApoisExternalNavigation latitude={ride.destination_lat} longitude={ride.destination_lng} stage="até o destino" />',"TRIP"]
+]){
+ replaceExact(anchor,anchor+'\n          <ConfirmedNavigationRetryButton rideId={ride.id} phase="'+phase+'" category={ride.category} />');
+}
 // The original external callback stays available and existing PIN, finish,
 // cancellation and visual markers are never rewritten by this transform.
 assert.equal(app.split(pickup).length-1,1);
