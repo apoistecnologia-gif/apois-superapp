@@ -2,7 +2,7 @@ name: APOIS GPS - APK offline V4.2 pesquisa Piaui
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/field-v422/**','.github/workflows/apois-navigation-lab-field-v422.yml']
+    paths: ['labs/apois-navigation/field-v42/**','.github/workflows/apois-navigation-lab-field-v42.yml']
   workflow_dispatch:
 permissions:
   contents: read
