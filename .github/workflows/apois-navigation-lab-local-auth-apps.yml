@@ -1,0 +1,28 @@
+name: APOIS Navegacao - homologacao local Auth e aplicativos
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/staging-local/**','labs/apois-navigation/production-contract/**','labs/apois-navigation/driver-broker/**','.github/workflows/apois-navigation-lab-local-auth-apps.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  local-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: supabase/setup-cli@v3
+        with:
+          version: '2.122.1'
+      - name: Auth real e API local, sem vincular projeto
+        run: bash labs/apois-navigation/staging-local/run.sh
