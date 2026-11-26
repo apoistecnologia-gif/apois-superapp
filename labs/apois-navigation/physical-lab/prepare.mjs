@@ -46,10 +46,14 @@ let screen=get(native+'ApoisNavigationScreen.kt')
 screen=swap(screen,"hostOperationsOnly: Boolean = false","hostOperationsOnly: Boolean = false,\n    onLabAckTimeout: (() -> Unit)? = null")
 screen=swap(screen,"val disabled=ride.busy || sent","val disabled=ride.busy || sent\n    val latestTimeout by rememberUpdatedState(onLabAckTimeout)\n    val latestDispatch by rememberUpdatedState(dispatch)\n    var timedOut by remember(ride.rideId,ride.revision,ride.phase) { mutableStateOf(false) }\n    LaunchedEffect(ride.rideId,ride.revision,ride.phase,sent) {\n        if(sent && onLabAckTimeout != null) {\n            kotlinx.coroutines.delay(10000)\n            timedOut=true\n        }\n    }")
 screen=swap(screen,"val sdkShowingProgress=ui.isNavigating() && active","val sdkShowingProgress=ui.isNavigating() && active && onLabAckTimeout==null")
-screen=swap(screen,"onTapExit={dispatch(RideAction.RETURN,null)}","onTapExit={latestDispatch(RideAction.RETURN,null)}")
+// The confirmed and replay layouts both have an exit callback. Keep the
+// confirmed one enabled; disable only the synthetic replay SDK exit.
+const exitAnchor="onTapExit={dispatch(RideAction.RETURN,null)}"
+assert.equal(screen.split(exitAnchor).length,3,"expected confirmed and replay exits")
+screen=screen.replace(exitAnchor,"onTapExit={latestDispatch(RideAction.RETURN,null)}")
+screen=swap(screen,exitAnchor,"onTapExit={if(onLabAckTimeout==null) latestDispatch(RideAction.RETURN,null)}")
 screen=swap(screen,"    MaterialTheme(colorScheme=palette) {","    MaterialTheme(colorScheme=palette) {\n        if(timedOut && latestTimeout!=null) AlertDialog(\n            onDismissRequest={},\n            title={Text(\"Confirmação não recebida\")},\n            text={Text(\"A ação não foi confirmada pelo simulador. Encerre esta sessão e repita o teste. Nenhuma corrida foi finalizada automaticamente.\")},\n            confirmButton={TextButton(onClick={latestTimeout?.invoke()}){Text(\"Encerrar teste\")}}\n        )")
 // Physical replay has its own native synthetic authority. No real ride or backend is reachable.
-screen=swap(screen,"onTapExit={latestDispatch(RideAction.RETURN,null)}","onTapExit={if(onLabAckTimeout==null) latestDispatch(RideAction.RETURN,null)}")
 put(native+'ApoisNavigationScreen.kt',screen)
 let bridge=get(native+'LabNavigationBridge.kt')
 bridge=swap(bridge,"        val event=JSONObject().put(\"sessionId\",sessionId).put(\"rideId\",intent.rideId)","        // Explicit user intent, already accepted by the session controller.\n        // For this disposable, networkless APK only, confirm the fictional\n        // state on Android rather than waiting for a suspended WebView.\n        when (val decision = physicalIntentDecision(c.snapshot,intent)) {\n            is PhysicalIntentDecision.Advance -> {\n                val next=decision.snapshot\n                c.update(next)\n                check(c.snapshot===next)\n                screen.value=Screen(sessionId,c.snapshot,c.token)\n                return\n            }\n            PhysicalIntentDecision.Close -> { close(sessionId); return }\n            PhysicalIntentDecision.Reject -> return\n        }\n    }\n    private fun emitUnusedCompatibilityEvent(sessionId:String,intent:RideIntent){\n        val event=JSONObject().put(\"sessionId\",sessionId).put(\"rideId\",intent.rideId)")
