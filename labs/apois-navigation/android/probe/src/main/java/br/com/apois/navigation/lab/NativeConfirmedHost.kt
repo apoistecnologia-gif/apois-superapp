@@ -115,6 +115,11 @@ object NativeConfirmedHost{
         pending?.cancel()
         return true
     }
+    // A stale Activity may not destroy a newer host configuration.
+    internal fun destroyOwned(config:NativeHostConfiguration){
+        main()
+        if(configuration===config)destroy()
+    }
     fun destroy(){
         main()
         configuration=null

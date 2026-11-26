@@ -157,7 +157,8 @@ private suspend fun ensureActiveForValeGrant(){kotlinx.coroutines.currentCorouti
  * calculation is local and never falls back to remote routing. */
 internal suspend fun installValeLocalDriverControlCandidate(
     enabled:Boolean=false,context:Context,backendHost:String,
-    online:()->Boolean,hostCurrent:()->Boolean,audioAuthorization:(()->Boolean)?=null
+    online:()->Boolean,hostCurrent:()->Boolean,audioAuthorization:(()->Boolean)?=null,
+    onInstalled:(NativeHostConfiguration)->Unit={}
 ):Boolean{
     if(!enabled)return false
     check(android.os.Looper.myLooper()==android.os.Looper.getMainLooper())
@@ -170,13 +171,16 @@ internal suspend fun installValeLocalDriverControlCandidate(
     ensureActiveForValeGrant()
     if(!runCatching{hostCurrent()}.getOrDefault(false))return false
     val app=context.applicationContext
-    return NativeConfirmedHost.install(NativeHostConfiguration(
+    val configuration=NativeHostConfiguration(
         backendHost,"","",online,grant={request->
             val stamp=NativeDriverReadSource.stamp()?:return@NativeHostConfiguration null
             fun live()=NativeDriverReadSource.current(stamp)&&
                 runCatching{hostCurrent()&&online()}.getOrDefault(false)
             valeDriverGrant(app,pack,request,::live,client::target,audioAuthorization)
-        },localRoutingOnly=true))
+        },localRoutingOnly=true)
+    if(!NativeConfirmedHost.install(configuration))return false
+    onInstalled(configuration)
+    return true
 }
 
 
