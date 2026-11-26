@@ -35,3 +35,11 @@ du -sb "$WORK/custom" > "$OUT/graph-storage-bytes.txt"
 python "$BASE/verify.py" route "$OUT"
 test "$(docker inspect -f '{{.State.Running}} {{.State.OOMKilled}}' "$NAME")" = "true false"
 docker stats --no-stream --format '{{json .}}' "$NAME" > "$OUT/docker-stats.json"
+
+# Retain the graph data only after validated routing, not a deployed service.
+if [[ "${RETAIN_BUNDLE:-0}" == 1 ]]; then
+  BUNDLE="$(dirname "$OUT")/apois-northeast-bundle"
+  mkdir -p "$BUNDLE"
+  test -s "$WORK/custom/valhalla_tiles.tar"
+  cp "$WORK/custom/valhalla_tiles.tar" "$BUNDLE/valhalla_tiles.tar"
+fi

@@ -15,4 +15,9 @@ echo 'f310bd0413e2e4512b27f4046d418664e8e1d3bf31603c2a70e23de06c167e4d  planetil
 sha256sum nordeste.pmtiles > "$OUT/map.sha256"
 python "$BASE/../cartography/verify_archive.py" nordeste.pmtiles "$BASE/../cartography/style-template.json" > "$OUT/map-archive-report.json"
 python "$BASE/verify.py" map "$OUT" nordeste.pmtiles
-# Evidence only; no large archive or graph uploaded at this stage.
+# Retain only on explicitly opted-in manual run.
+if [[ "${RETAIN_BUNDLE:-0}" == 1 ]]; then
+  BUNDLE="$(dirname "$OUT")/apois-northeast-bundle"
+  mkdir -p "$BUNDLE"
+  mv nordeste.pmtiles "$BUNDLE/nordeste.pmtiles"
+fi

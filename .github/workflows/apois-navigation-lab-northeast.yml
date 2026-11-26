@@ -2,8 +2,14 @@ name: APOIS Navegacao - Nordeste integral (laboratorio sem deploy)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/northeast/**','.github/workflows/apois-navigation-lab-northeast.yml']
+    paths: ['labs/apois-navigation/northeast/*.sh','labs/apois-navigation/northeast/verify.py','labs/apois-navigation/northeast/samples.json','labs/apois-navigation/northeast/bundle.py']
   workflow_dispatch:
+    inputs:
+      retain_bundle:
+        description: 'Reter mapa e grafo por 1 dia (usa cota de artefatos; somente com autorizacao)'
+        required: true
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -13,6 +19,8 @@ jobs:
   northeast:
     runs-on: ubuntu-latest
     timeout-minutes: 65
+    env:
+      RETAIN_BUNDLE: ${{ github.event_name == 'workflow_dispatch' && inputs.retain_bundle && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,7 +39,8 @@ jobs:
           sudo apt-get install -y osmium-tool time
           python -m pip install --disable-pip-version-check pmtiles==3.8.1 mapbox-vector-tile==2.2.0
           bash -n labs/apois-navigation/northeast/build-map.sh labs/apois-navigation/northeast/build-graph.sh
-          python -m py_compile labs/apois-navigation/northeast/verify.py
+          python -m py_compile labs/apois-navigation/northeast/verify.py labs/apois-navigation/northeast/bundle.py
+          python -m unittest discover -s labs/apois-navigation/northeast -p 'test_bundle.py'
       - name: Extrato Nordeste integral
         id: source
         run: |
@@ -40,7 +49,7 @@ jobs:
           mkdir -p "$O"
           df -h > "$O/disk-before.txt"
           free -m > "$O/memory-before.txt"
-          curl --fail --location --retry 1 --retry-max-time 900 --max-time 780 --connect-timeout 20 https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf -o "$RUNNER_TEMP/nordeste.osm.pbf"
+          curl --fail --location --retry 3 --retry-all-errors --retry-delay 10 --retry-max-time 900 --max-time 780 --connect-timeout 20 https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf -o "$RUNNER_TEMP/nordeste.osm.pbf"
           (cd "$RUNNER_TEMP" && sha256sum nordeste.osm.pbf) > "$O/source.sha256"
           stat -c %s "$RUNNER_TEMP/nordeste.osm.pbf" > "$O/source-bytes.txt"
           osmium fileinfo "$RUNNER_TEMP/nordeste.osm.pbf" > "$O/source-info.txt"
@@ -49,6 +58,17 @@ jobs:
       - name: Grafo continuo e rotas interestaduais
         if: ${{ !cancelled() && steps.source.outcome == 'success' }}
         run: bash labs/apois-navigation/northeast/build-graph.sh "$RUNNER_TEMP/nordeste.osm.pbf" "$RUNNER_TEMP/apois-northeast-report"
+      - name: Manifesto verificavel do candidato integral
+        if: ${{ success() && env.RETAIN_BUNDLE == '1' }}
+        run: python labs/apois-navigation/northeast/bundle.py "$RUNNER_TEMP/apois-northeast-report" "$RUNNER_TEMP/apois-northeast-bundle"
+      - uses: actions/upload-artifact@v4
+        if: ${{ success() && env.RETAIN_BUNDLE == '1' }}
+        with:
+          name: apois-northeast-bundle
+          path: ${{ runner.temp }}/apois-northeast-bundle/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
