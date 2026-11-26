@@ -3,18 +3,18 @@
 // address, raw request/response logging, redirect, or third-party fallback.
 import {createServer} from "node:http";
 import {pathToFileURL} from "node:url";
+import {inside,valeContains} from "./region-policy.mjs";
 const MAX_BODY=4096,MAX_RESPONSE=2_000_000;
 const keys=(obj,expected)=>obj!==null&&typeof obj==="object"&&!Array.isArray(obj)&&
   Object.keys(obj).length===expected.length&&expected.every(k=>Object.hasOwn(obj,k));
-export function normalizeRoute(body){
+export function normalizeRoute(body,contains=valeContains){
   if(!keys(body,["locations","costing","units","language","format","voice_instructions","banner_instructions","shape_format"]))return null;
   if(body.costing!=="auto"||body.units!=="kilometers"||body.language!=="pt-BR"||body.format!=="osrm"||
      body.voice_instructions!==true||body.banner_instructions!==true||body.shape_format!=="polyline6")return null;
   if(!Array.isArray(body.locations)||body.locations.length!==2)return null;
   const points=body.locations;
   if(!points.every(p=>keys(p,["lat","lon","type"])&&p.type==="break"&&
-    typeof p.lat==="number"&&Number.isFinite(p.lat)&&p.lat>=-9.65&&p.lat<=-9.10&&
-    typeof p.lon==="number"&&Number.isFinite(p.lon)&&p.lon>=-40.80&&p.lon<=-40.20))return null;
+    inside(contains,p.lat,p.lon)))return null;
   return {locations:points.map(({lat,lon})=>({lat,lon,type:"break"})),costing:"auto",units:"kilometers",
     language:"pt-BR",format:"osrm",voice_instructions:true,banner_instructions:true,shape_format:"polyline6"};
 }
@@ -38,7 +38,8 @@ function reply(res,status,value){
     "Cache-Control":"no-store","Connection":"close","X-Content-Type-Options":"nosniff"});
   res.end(body);
 }
-export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000,inputTimeout=5000,authorize=null,authorizationTimeout=2500}={}){
+export function createRouteGateway({upstreamPort=8002,budget=createBudget(),timeout=10_000,inputTimeout=5000,authorize=null,authorizationTimeout=2500,contains=valeContains}={}){
+  if(typeof contains!=="function")throw Error("Invalid region policy");
   if(!Number.isInteger(authorizationTimeout)||authorizationTimeout<50||authorizationTimeout>3000)throw Error("Invalid authorization timeout");
   if(!Number.isInteger(inputTimeout)||inputTimeout<50||inputTimeout>5000)throw Error("Invalid local input timeout");
   if(!Number.isInteger(upstreamPort)||upstreamPort<1||upstreamPort>65535)throw Error("Invalid local upstream port");
@@ -63,7 +64,7 @@ export function createRouteGateway({upstreamPort=8002,budget=createBudget(),time
       const chunks=[];let n=0;
       for await(const chunk of req){n+=chunk.length;if(n>MAX_BODY)throw Error("size");chunks.push(chunk);}
       if(n!==Number(len))throw Error("size");
-      body=normalizeRoute(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+      body=normalizeRoute(JSON.parse(Buffer.concat(chunks).toString("utf8")),contains);
     }catch{reply(res,400,{error:"invalid_route"});return;}
     finally{clearTimeout(bodyDeadline);}
     if(!body){reply(res,400,{error:"invalid_route"});return;}

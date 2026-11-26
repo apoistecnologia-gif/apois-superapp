@@ -1,0 +1,21 @@
+name: APOIS Navegacao - politica regional e autorizacao (laboratorio)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/valhalla/region-policy*.mjs','labs/apois-navigation/valhalla/route-*.mjs','.github/workflows/apois-navigation-lab-region-policy.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test labs/apois-navigation/valhalla/region-policy.test.mjs labs/apois-navigation/valhalla/route-{gateway,authorization,issuer,replay-store}.test.mjs
