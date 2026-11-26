@@ -42,29 +42,48 @@ internal fun mayRenewRouteEvidence(previous:VerifiedRouteEvidence,next:VerifiedR
     next.verifiedAt>previous.verifiedAt && next.ride.revision>=previous.ride.revision &&
     (next.ride.revision>previous.ride.revision||next.ride==previous.ride)
 
-// A failed local calculation may be explicitly retried once with fresh proof
-// after a cooldown. Remote requests and successfully prepared legs retain
-// the one-attempt rule. No coordinates, credentials, or disk storage.
+// Local calculations have two total preparation attempts per ride leg: a
+// failed initial attempt OR one explicit re-entry after acknowledged Activity
+// destruction. Remote attempts remain single-use. Keep only IDs and budget.
 internal class InitialRouteAdmission(private val capacity:Int=256){
-    private data class Attempt(val identity:RoutingIdentity,val at:Long,val local:Boolean,val count:Int,val prepared:Boolean=false)
+    private data class Attempt(val identity:RoutingIdentity,val at:Long,val local:Boolean,val count:Int,
+        val budget:NativeRerouteGate?,val marker:Any=Any(),val prepared:Boolean=false,val closedAt:Long?=null)
+    internal class CloseTicket internal constructor(internal val key:Pair<String,RidePhase>,internal val marker:Any)
     private val attempted=mutableMapOf<Pair<String,RidePhase>,Attempt>()
     init{require(capacity>0)}
+    private fun key(e:VerifiedRouteEvidence)=e.ride.rideId to e.ride.phase
     fun available(evidence:VerifiedRouteEvidence,now:Long=evidence.verifiedAt,local:Boolean=false):Boolean{
         if(!evidence.usable(now))return false
-        val previous=attempted[evidence.ride.rideId to evidence.ride.phase]
-        return if(previous==null)attempted.size<capacity else
-            local&&previous.local&&!previous.prepared&&previous.count<2&&previous.identity==evidence.identity&&
-            now>=previous.at&&now-previous.at>=30_000L&&evidence.verifiedAt>previous.at
+        val previous=attempted[key(evidence)]?:return attempted.size<capacity
+        if(!local||!previous.local||previous.count>=2||previous.identity!=evidence.identity)return false
+        val boundary=if(previous.prepared)previous.closedAt?:return false else previous.at
+        return now>=boundary&&now-boundary>=30_000L&&evidence.verifiedAt>boundary
     }
     fun reserve(evidence:VerifiedRouteEvidence,now:Long=evidence.verifiedAt,local:Boolean=false):Boolean{
         if(!available(evidence,now,local))return false
-        val key=evidence.ride.rideId to evidence.ride.phase
-        attempted[key]=Attempt(evidence.identity,now,local,(attempted[key]?.count?:0)+1)
+        val key=key(evidence)
+        val previous=attempted[key]
+        attempted[key]=Attempt(evidence.identity,now,local,(previous?.count?:0)+1,
+            previous?.budget?:if(local)NativeRerouteGate() else null)
         return true
     }
+    fun budgetFor(evidence:VerifiedRouteEvidence):NativeRerouteGate?=
+        attempted[key(evidence)]?.takeIf{it.local&&it.identity==evidence.identity}?.budget
     fun markPrepared(evidence:VerifiedRouteEvidence){
-        val key=evidence.ride.rideId to evidence.ride.phase
+        val key=key(evidence)
         val previous=attempted[key]?:return
         if(previous.identity==evidence.identity)attempted[key]=previous.copy(prepared=true)
+    }
+    fun closeTicket(evidence:VerifiedRouteEvidence):CloseTicket?{
+        val key=key(evidence)
+        val previous=attempted[key]?:return null
+        if(!previous.local||!previous.prepared||previous.closedAt!=null||previous.identity!=evidence.identity)return null
+        return CloseTicket(key,previous.marker)
+    }
+    fun markActivityClosed(ticket:CloseTicket,now:Long):Boolean{
+        val previous=attempted[ticket.key]?:return false
+        if(previous.marker!==ticket.marker||!previous.prepared||previous.closedAt!=null||now<previous.at)return false
+        attempted[ticket.key]=previous.copy(closedAt=now)
+        return true
     }
 }

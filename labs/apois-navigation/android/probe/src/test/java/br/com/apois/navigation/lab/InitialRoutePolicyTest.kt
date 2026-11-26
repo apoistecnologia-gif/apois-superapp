@@ -71,6 +71,25 @@ class InitialRoutePolicyTest{
         assertTrue(remote.reserve(evidence))
         assertFalse(remote.available(fresh,31_000,true))
     }
+    @Test fun acknowledgedLocalReentryRequiresCooldownFreshSameIdentityAndRetainsBudget(){
+        val admission=InitialRouteAdmission()
+        assertTrue(admission.reserve(evidence,1000,true))
+        val budget=admission.budgetFor(evidence)!!
+        admission.markPrepared(evidence)
+        val ticket=admission.closeTicket(evidence)!!
+        val fresh=evidence.copy(verifiedAt=32_000)
+        assertFalse(admission.available(fresh,32_000,true))
+        assertTrue(admission.markActivityClosed(ticket,2000))
+        assertFalse(admission.markActivityClosed(ticket,3000))
+        assertFalse(admission.available(evidence.copy(verifiedAt=31_999),31_999,true))
+        assertFalse(admission.available(fresh.copy(identity=identity.copy(driverId=identity.profileUserId)),32_000,true))
+        assertTrue(admission.reserve(fresh,32_000,true))
+        assertSame(budget,admission.budgetFor(fresh))
+        assertFalse(admission.markActivityClosed(ticket,33_000))
+        admission.markPrepared(fresh)
+        assertTrue(admission.markActivityClosed(admission.closeTicket(fresh)!!,33_000))
+        assertFalse(admission.available(evidence.copy(verifiedAt=63_000),63_000,true))
+    }
     @Test fun impreciseStaleOrMovedOriginRejected(){
         assertFalse(initialRouteMatches(evidence,fix.copy(accuracy=25.1),listOf(origin,target),2000))
         assertFalse(initialRouteMatches(evidence.copy(verifiedAt=12000),fix,listOf(origin,target),12000))
