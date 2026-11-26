@@ -55,3 +55,20 @@ test('recovery never returns a terminal ride as active or exposes extra database
  value={...row,ride:{rideId:id(6),status:'expired',privateField:'test'},ok:false};assert.deepEqual((await control('s',recover)).body,{ok:true,...row,ride:{rideId:id(6),status:'expired'}})
  value={...row,state:'sealed',ride:{rideId:id(6),status:'expired'}};assert.equal((await control('s',recover)).status,409)
 })
+
+test('revocation during catalog, confirmation and recovery RPC never releases the result',async()=>{
+ const policy={version:1,extractHash:'a'.repeat(64)}
+ let auth=id(1),allowed=true,revoke='session',calls=0
+ const control=createNavigationControl({confirmationEnabled:true,recoveryEnabled:true,catalogPolicy:policy,verifySession:async()=>auth,allowPilot:()=>allowed,rpc:async(name)=>{
+  calls++
+  if(revoke==='session')auth=null;else if(revoke==='identity')auth=id(9);else allowed=false
+  if(name.endsWith('catalog_v21')&&!name.includes('confirm'))return {source:'OSM_PBF',version:1,extract_sha256:policy.extractHash,rows:[]}
+  if(name.includes('confirm'))return {selectionId:id(5),requestKey:req.requestKey,expiresAt:new Date(Date.now()+60000).toISOString(),origin:{lat:-9.4,lng:-40.5,label:'A'},destination:{lat:-9.42,lng:-40.51,label:'B'}}
+  if(name.endsWith('active_v21'))return {verified:true,ride:{rideId:id(6),status:'em_viagem'}}
+  return {selectionId:id(5),requestKey:req.requestKey,state:'ride',ride:{rideId:id(6),status:'finalizada'}}
+ }})
+ const actions=[{action:'apois_navigation_catalog'},req,{action:'apois_navigation_active'},...['recover','seal'].map(action=>({action:'apois_navigation_'+action,selectionId:id(5),requestKey:req.requestKey}))]
+ for(const action of actions)for(const mode of ['session','identity']){auth=id(1);allowed=true;revoke=mode;const result=await control('s',action);assert.deepEqual(result,{status:401,body:{ok:false,error_code:'unauthorized'}})}
+ auth=id(1);allowed=true;revoke='pilot';assert.equal((await control('s',req)).status,403)
+ assert.equal(calls,11)
+})

@@ -20,12 +20,16 @@ export function createRecoveryAction({enabled=false,verifySession,rpc}={}){
    if(!uuid(auth))return fail(401,'unauthorized')
    if(active){
     const value=await rpc('apois_nav_lab_active_v21',{p_auth_user:auth})
+    if(await verifySession(session)!==auth)return fail(401,'unauthorized')
     if(value?.verified!==true||!Object.hasOwn(value,'ride'))return fail(409,'active_ride_unverified')
     const activeRide=value.ride===null?null:ride(value.ride)
     if(value.ride!==null&&!activeRide)return fail(409,'active_ride_unverified')
     return result(200,{verified:true,ride:activeRide})
    }
    const value=await rpc('apois_nav_lab_reconcile_v21',{p_auth_user:auth,p_selection:body.selectionId,p_request_key:body.requestKey,p_seal:action==='apois_navigation_seal'})
+   // A seal may already be committed. Never reveal its outcome to a revoked
+   // session; the durable client can reconcile under a fresh valid session.
+   if(await verifySession(session)!==auth)return fail(401,'unauthorized')
    if(!value||value.selectionId!==body.selectionId||value.requestKey!==body.requestKey||!['open','sealed','ride'].includes(value.state))return fail(409,'recovery_unverified')
    const projected={ok:true,selectionId:value.selectionId,requestKey:value.requestKey,state:value.state}
    if(value.state==='ride'){
