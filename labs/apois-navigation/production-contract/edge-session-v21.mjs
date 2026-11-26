@@ -5,6 +5,10 @@ export function bearerToken(header){
  if(typeof header!=='string'||header.length>8192||!/^Bearer [-_A-Za-z0-9]+\.[-_A-Za-z0-9]+\.[-_A-Za-z0-9]+$/.test(header))return null
  return header.slice(7)
 }
+/**
+ * @param {{projectUrl?:string,sessionPolicyConfirmed?:boolean,authClient?:{auth:{getUser:(token:string)=>PromiseLike<{data:{user?:{id:string,is_anonymous?:boolean}|null},error:unknown}>}},serviceClient?:{rpc:(name:string,args:Record<string,unknown>)=>{abortSignal:(signal:AbortSignal)=>PromiseLike<{data:unknown,error:unknown}>}},now?:()=>number,timeoutMs?:number,maxPending?:number}} [options]
+ * @returns {(token:string,signal:AbortSignal)=>Promise<string|null>}
+ */
 export function createV21EdgeSession({projectUrl,sessionPolicyConfirmed=false,authClient,serviceClient,now=Date.now,timeoutMs=1800,maxPending=4}={}){
  if(typeof authClient?.auth?.getUser!=='function'||typeof serviceClient?.rpc!=='function')throw Error('Missing session clients')
  return createLocalDriverSessionVerifier({projectUrl,sessionPolicyConfirmed,now,timeoutMs,maxPending,

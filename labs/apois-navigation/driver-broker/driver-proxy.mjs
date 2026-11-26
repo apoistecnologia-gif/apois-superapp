@@ -1,6 +1,10 @@
 // Login JWT is used only by verifySession; never forwarded.
 import {createDriverSigner} from './driver-protocol.mjs'
 import {uuid,boundedJson,json,deny} from './http.mjs'
+/**
+ * @param {{enabled?:boolean,localOnly?:boolean,endpoint?:string,keyId?:string,secret?:string,verifySession?:(token:string,signal:AbortSignal)=>Promise<string|null>,allowPilot?:(id:string)=>boolean|Promise<boolean>,fetcher?:typeof fetch}} [options]
+ * @returns {(req:Request)=>Promise<Response>}
+ */
 export function createDriverProxy({enabled=false,localOnly=false,endpoint,keyId,secret,verifySession,allowPilot,fetcher=fetch}={}){
  if(!enabled)return async()=>deny(409)
  const url=new URL(endpoint)
