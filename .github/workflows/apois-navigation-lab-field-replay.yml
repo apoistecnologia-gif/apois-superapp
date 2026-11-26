@@ -1,0 +1,49 @@
+name: APOIS GPS - replay Ferrostar rotas reais Piaui
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['.github/workflows/apois-navigation-lab-field-replay.yml','labs/apois-navigation/replay/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-field-pilot-data
+          run-id: 45733321788
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-field-data
+      - name: Conferir os mesmos tres trajetos do APK
+        working-directory: ${{ runner.temp }}/apois-field-data
+        run: |
+          sha256sum -c <<'EOF'
+          800d3f622c09c304eb3be7d7686280869f4608e3fd5581094c618cc825b5ab61  itainopolis-route.json
+          31674dddbea605c931742cd7b1f1d01cda4dadbd6e03996d8615860615550a33  picos-route.json
+          d4f2a038cba4b650c0c901adc373b9cf1e65a1b530551637dd77663321bb254c  corridor-route.json
+          EOF
+      - name: Verificar progresso desvio chegada e instrucoes
+        run: |
+          set -euo pipefail
+          rustup update stable && rustup default stable
+          O="$RUNNER_TEMP/apois-field-replay"
+          mkdir -p "$O"
+          for name in itainopolis picos corridor; do
+            cargo run --manifest-path labs/apois-navigation/replay/Cargo.toml -- "$RUNNER_TEMP/apois-field-data/$name-route.json" | tee "$O/$name.txt"
+            grep -E 'APOIS_REPLAY_OK.*off_route=true arrival=true spoken_instruction_fixes=[1-9][0-9]*' "$O/$name.txt"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-field-replay-evidence
+          path: ${{ runner.temp }}/apois-field-replay/
+          retention-days: 7
+          if-no-files-found: warn
