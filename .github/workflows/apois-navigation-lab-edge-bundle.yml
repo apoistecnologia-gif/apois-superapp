@@ -1,0 +1,40 @@
+name: APOIS Navegacao - pacote Edge candidato (sem deploy)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/staging-package/**','.github/workflows/apois-navigation-lab-edge-bundle.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 'v2.4.5'
+      - name: Validar fluxo legado e preparar pacote sem segredos
+        run: |
+          node --test labs/apois-navigation/staging-package/request-legacy-guard.test.mjs
+          node labs/apois-navigation/staging-package/build-edge-bundle.mjs
+      - name: Verificar grafo de imports no Deno
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/apois-navigation-edge-candidate"
+          deno --version
+          deno check --help >/dev/null
+          deno check --no-config supabase/functions/request-ride/index.ts supabase/functions/apois-navigation-control/index.ts supabase/functions/apois-navigation-driver-control/index.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-inactive-edge-function-candidate
+          path: ${{ runner.temp }}/apois-navigation-edge-candidate/
+          retention-days: 7
+          if-no-files-found: error
