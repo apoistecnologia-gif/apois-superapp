@@ -1,0 +1,42 @@
+name: APOIS GPS - preservacao de catalogo Vale inativo
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['.github/workflows/apois-navigation-lab-passenger-catalog-retention.yml','labs/apois-navigation/physical-passenger/verify-catalog.mjs']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-v21-regional-evidence
+          run-id: 45707496288
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-original-catalog-evidence
+      - name: Preserve exact inactive catalogue after validation
+        run: |
+          set -euo pipefail
+          S="$RUNNER_TEMP/apois-original-catalog-evidence/catalog.json"
+          D="$RUNNER_TEMP/apois-inactive-passenger-catalog"
+          mkdir -p "$D"
+          node labs/apois-navigation/physical-passenger/verify-catalog.mjs "$S" | tee "$D/verification.txt"
+          cp "$S" "$D/catalog.json"
+          cmp "$S" "$D/catalog.json"
+          (cd "$D" && sha256sum catalog.json > SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apois-inactive-passenger-catalog
+          path: ${{ runner.temp }}/apois-inactive-passenger-catalog/
+          retention-days: 30
+          if-no-files-found: error
