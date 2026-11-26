@@ -117,6 +117,7 @@ export class ConfirmedNavigationLaunch {
   // Explicit Google/Waze actions share the same in-process opening gate.
   // An ambiguous native open/close must never be treated as permission to
   // start a second navigator. Default mode calls the original action directly.
+  canDetachListener(){return !this.#busy&&!this.#native&&!this.#closing&&!this.#blocked;}
   async runExternal(work){
     if(typeof work!=="function")throw Error("Invalid external navigation callback");
     if(!this.#enabled)return work();

@@ -319,3 +319,12 @@ test("manual external actions stay blocked after ambiguous opening; disabled mod
   assert.equal(await disabled.runExternal(async()=>7),7);
   await assert.rejects(disabled.runExternal(async()=>{throw Error("original")}),/original/);
 });
+
+test("listener cannot detach until late real closure settles native ownership",async()=>{
+ const x=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),openNative:async()=>({state:"opened",sessionId:"native"}),closeNative:async()=>false});
+ assert.equal(x.canDetachListener(),true);
+ await x.launch(request());assert.equal(x.canDetachListener(),false);
+ await x.invalidate();assert.equal(x.canDetachListener(),false);
+ x.onNativeClosed({sessionId:"native",rideId,revision:0,action:"SESSION_CLOSED"});
+ assert.equal(x.canDetachListener(),true);
+});

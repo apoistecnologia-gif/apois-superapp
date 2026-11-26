@@ -43,6 +43,7 @@ export class ConfirmedNavigationLaunch {
   observeRide(rideId:string|null,status:string|null):Promise<string>|undefined;
   launch(r:Request & {openExternal:()=>Promise<void>;allowExternalFallback?:boolean}):Promise<"external"|"internal"|"busy"|"stale"|"unverified"|"uncertain"|"unavailable">;
   runExternal<T>(work:()=>Promise<T>):Promise<T>;
+  canDetachListener():boolean;
 }
 `,{flag:"wx"});
 writeFileSync(join(lib,"host.ts"),`// APOIS_NAVIGATION_QA290_CONFIRMED_HOST
@@ -90,12 +91,19 @@ const native=registerPlugin<ConfirmedNativePlugin>(nativeName);
 let listenerReady:Promise<boolean>|null=null;
 let listenerEpoch=0;
 let listener:PluginListenerHandle|null=null;
+let lifecycleOwner:object|null=null;
+function releaseIdleListener():void{
+  if(lifecycleOwner||!launch.canDetachListener())return;
+  ++listenerEpoch;
+  const old=listener;listener=null;listenerReady=null;
+  if(old)void old.remove().catch(()=>undefined);
+}
 function ensureNativeListener():Promise<boolean>{
   if(listener)return Promise.resolve(true);
   if(listenerReady)return listenerReady;
   const epoch=listenerEpoch;
   const pending=native.addListener("confirmedRideIntent",event=>{
-    if(epoch===listenerEpoch)launch.onNativeClosed(event);
+    if(epoch===listenerEpoch){launch.onNativeClosed(event);releaseIdleListener();}
   }).then(async handle=>{
     if(epoch!==listenerEpoch){await handle.remove();return false;}
     listener=handle;return true;
@@ -140,6 +148,7 @@ export function runExternalApoisNavigation<T>(work:()=>Promise<T>):Promise<T>{
 // data reads in the default mode. Invalidation never runs a ride operation.
 export function bindConfirmedNavigationLifecycle():()=>void {
   if(!EXPERIMENTAL_INTERNAL_NAVIGATION)return ()=>{};
+  const owner={};lifecycleOwner=owner;
   let previous:string|null|undefined;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
     const current=session?.user.id??null;
@@ -152,11 +161,11 @@ export function bindConfirmedNavigationLifecycle():()=>void {
   return ()=>{
     subscription.unsubscribe();
     window.clearInterval(timer);
-    ++listenerEpoch;
-    const old=listener;
-    listener=null;listenerReady=null;
-    if(old)void old.remove().catch(()=>undefined);
-    void launch.invalidate();
+    if(lifecycleOwner!==owner)return;
+    lifecycleOwner=null;
+    // Keep the exact close listener while native ownership is uncertain.
+    // A delayed destruction acknowledgement must be allowed to unblock it.
+    void launch.invalidate().finally(releaseIdleListener);
   };
 }
 
