@@ -1,0 +1,69 @@
+name: APOIS GPS - pacote Vale completo e armazenamento real
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/launch-vale/assemble-pack.py','labs/apois-navigation/launch-vale/ValePackCandidateTest.kt','.github/workflows/apois-navigation-lab-launch-vale-pack.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-launch-vale-candidate
+          run-id: 45748506856
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-launch-vale
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-launch-vale-search-candidates
+          run-id: 45748780382
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-vale-search
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python labs/apois-navigation/launch-vale/assemble-pack.py "$RUNNER_TEMP/apois-launch-vale" "$RUNNER_TEMP/apois-vale-search" "$RUNNER_TEMP/apois-vale-candidate"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Test actual candidate files against immutable Kotlin store
+        run: |
+          set -euo pipefail
+          D="$RUNNER_TEMP/apois-vale-pack-tests"
+          mkdir -p "$D/src/main/kotlin" "$D/src/test/kotlin"
+          cp labs/apois-navigation/pack-store/OfflinePackStore.kt "$D/src/main/kotlin/"
+          cp labs/apois-navigation/launch-vale/ValePackCandidateTest.kt "$D/src/test/kotlin/"
+          echo "rootProject.name = 'apois-vale-pack-tests'" > "$D/settings.gradle"
+          cat > "$D/build.gradle" <<'EOF'
+          plugins { id 'org.jetbrains.kotlin.jvm' version '2.3.20' }
+          repositories { mavenCentral() }
+          dependencies { testImplementation 'junit:junit:4.13.2' }
+          kotlin { jvmToolchain(21) }
+          EOF
+          export APOIS_VALE_CANDIDATE="$RUNNER_TEMP/apois-vale-candidate"
+          gradle -p "$D" test --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: apois-vale-inactive-data-pack
+          path: ${{ runner.temp }}/apois-vale-candidate/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-vale-pack-test-report
+          path: ${{ runner.temp }}/apois-vale-pack-tests/build/test-results/test/
+          retention-days: 7
+          if-no-files-found: warn

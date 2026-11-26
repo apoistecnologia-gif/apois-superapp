@@ -2,7 +2,7 @@ name: APOIS GPS - candidato regional de lancamento Vale
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/launch-vale/**','.github/workflows/apois-navigation-lab-launch-vale.yml']
+    paths: ['labs/apois-navigation/launch-vale/build.sh','labs/apois-navigation/launch-vale/verify.py','labs/apois-navigation/launch-vale/manifest.py','.github/workflows/apois-navigation-lab-launch-vale.yml']
   workflow_dispatch:
 permissions:
   contents: read
