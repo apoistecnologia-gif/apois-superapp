@@ -3,6 +3,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createNavigationControl } from "./navigation-control-v21.mjs";
+import { bearerToken, createV21EdgeSession } from "./edge-session-v21.mjs";
 
 const origins=new Set((Deno.env.get("APOIS_NAVIGATION_ALLOWED_ORIGINS")??"").split(",").map(x=>x.trim()).filter(Boolean));
 const pilots=new Set((Deno.env.get("APOIS_NAVIGATION_PILOT_AUTH_IDS")??"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean));
@@ -10,6 +11,14 @@ const confirmationEnabled=Deno.env.get("APOIS_NAVIGATION_EXPERIMENTAL_ENABLED")=
 const recoveryEnabled=Deno.env.get("APOIS_NAVIGATION_RECOVERY_ENABLED")==="true";
 const catalogPolicy={version:Number(Deno.env.get("APOIS_NAVIGATION_CATALOG_VERSION")??"0"),extractHash:Deno.env.get("APOIS_NAVIGATION_CATALOG_EXTRACT_SHA256")??""};
 const url=Deno.env.get("SUPABASE_URL")??"",anon=Deno.env.get("SUPABASE_ANON_KEY")??"",service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
+
+let sessionVerifier:ReturnType<typeof createV21EdgeSession>|null=null;
+function verifiedSession(){
+ return sessionVerifier??=createV21EdgeSession({projectUrl:url,
+  sessionPolicyConfirmed:Deno.env.get("APOIS_NAVIGATION_SESSION_POLICY")==="existence-not-after-reviewed",
+  authClient:createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}}),
+  serviceClient:createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}})});
+}
 
 Deno.serve(async req=>{
  const origin=req.headers.get("Origin");
@@ -25,8 +34,8 @@ Deno.serve(async req=>{
  if(req.method!=="POST")return json({ok:false,error_code:"method_not_allowed"},405);
  if(!confirmationEnabled&&!recoveryEnabled)return json({ok:false,error_code:"experimental_navigation_disabled"},409);
  if(!url||!anon||!service)return json({ok:false,error_code:"navigation_unavailable"},503);
- const authorization=req.headers.get("authorization")??"";
- if(!authorization.startsWith("Bearer ")||authorization.length>8192)return json({ok:false,error_code:"unauthorized"},401);
+ const token=bearerToken(req.headers.get("authorization"));
+ if(!token)return json({ok:false,error_code:"unauthorized"},401);
  if(req.headers.get("content-type")?.split(";")[0].trim().toLowerCase()!=="application/json"||!req.body)return json({ok:false,error_code:"invalid_request"},415);
  try{
   const reader=req.body.getReader();let total=0;const decoder=new TextDecoder();let raw="";
@@ -38,15 +47,14 @@ Deno.serve(async req=>{
   }finally{clearTimeout(deadline);reader.releaseLock()}
   if(timedOut)return json({ok:false,error_code:"request_timeout"},408);
   const body=JSON.parse(raw);
-  const token=authorization.slice(7);
-  const client=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
+  const verify=verifiedSession();
   const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
   const handler=createNavigationControl({confirmationEnabled,recoveryEnabled,catalogPolicy,
-   verifySession:async()=>{const {data,error}=await client.auth.getUser(token);return error?null:data.user?.id??null},
+   verifySession:(session:string)=>verify(session,req.signal),
    allowPilot:(id:string)=>pilots.has(id.toLowerCase()),
    rpc:async(name:string,args:Record<string,unknown>)=>{const {data,error}=await admin.rpc(name,args);if(error)throw Error("navigation RPC failed");return data}
   });
-  const result=await handler(null,body);
+  const result=await handler(token,body);
   return json(result.body,result.status);
  }catch{return json({ok:false,error_code:"navigation_control_unavailable"},503)}
 });
