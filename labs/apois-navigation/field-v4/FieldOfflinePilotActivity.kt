@@ -183,15 +183,16 @@ class FieldOfflinePilotActivity:ComponentActivity(),LocationListener {
                                     val resources=LegRouteResources(leg.rideId,leg.leg,destination,RouteRegion.FieldPilot,client::resolve)
                                     owner=resources
                                     preflight?.let(DriverGpsFeed::unsubscribe);preflight=null
-                                    active=true;state="Rota offline. Orientação por GPS real."
                                     model.setDestination("Destino de teste")
                                     model.start(route,::current,applicationContext,voicePermit(ticket),resources,leg,
                                         online={client.available})
+                                    check(model.quality.value!=GpsQuality.LOST)
                                     model.setForeground(true)
+                                    active=true;state="Rota offline. Orientação por GPS real."
                                 }catch(_:TimeoutCancellationException){if(current())state="Cálculo demorou demais. Tente novamente."}
                                 catch(e:CancellationException){throw e}
-                                catch(_:LinkageError){if(current())state="Motor offline incompatível com este aparelho."}
-                                catch(_:Exception){if(current())state="Rota offline indisponível. Confira posição e destino."}
+                                catch(_:LinkageError){if(current()){if(preflight==null)stopPilot();state="Motor offline incompatível com este aparelho."}}
+                                catch(_:Exception){if(current()){if(preflight==null)stopPilot();state="Rota offline indisponível. Confira posição e destino."}}
                                 finally{if(requestGate.finish(request)&&current())requestInFlight=false}
                             }
                         }

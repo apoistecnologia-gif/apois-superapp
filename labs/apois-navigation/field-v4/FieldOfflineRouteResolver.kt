@@ -55,7 +55,7 @@ internal class FieldOfflineRouteResolver(context:Context,private val target:Regi
     }
     fun dispose(){
         if(!closed.compareAndSet(false,true))return
-        FieldOfflineLane.executor.execute{try{actor?.close()}finally{actor=null}}
+        FieldOfflineLane.executor.execute{try{actor?.close()}catch(_:Exception){}catch(_:LinkageError){}finally{actor=null}}
     }
 }
 

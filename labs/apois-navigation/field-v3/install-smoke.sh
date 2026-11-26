@@ -13,13 +13,10 @@ grep -F Success "$OUT/install.txt"
 PKG=br.com.apois.navigation.field.v3.lab
 adb shell am start -W -n "$PKG/br.com.apois.navigation.lab.FieldDynamicPilotActivity" | tee "$OUT/launch.txt"
 grep -F 'Status: ok' "$OUT/launch.txt"
-sleep 8
-adb shell pidof "$PKG" > "$OUT/pid.txt"
-test -s "$OUT/pid.txt"
-adb shell uiautomator dump /sdcard/apois-lab-view.xml >/dev/null
-adb pull /sdcard/apois-lab-view.xml "$OUT/view.xml" >/dev/null
-grep -F 'APOIS GPS' "$OUT/view.xml"
-grep -F 'Mapa local verificado.' "$OUT/view.xml"
+source "$(cd "$(dirname "$0")/.." && pwd)/emulator-common/ui.sh"
+ACT=br.com.apois.navigation.lab.FieldDynamicPilotActivity
+lab_wait_screen "$PKG" "$ACT" 'Mapa local verificado.' "$OUT"
+cp "$OUT/view.xml" "$OUT/verified-map.xml"
 adb shell am force-stop "$PKG"
 adb shell pm clear "$PKG" | tee "$OUT/clear.txt"
-echo '[OK] exact artifact installed, launched, verified local map manifest and stopped; no actual navigation or GPS tested.'
+echo '[OK] exact V3 installed, launched, verified local map manifest and stopped; no actual navigation or GPS tested.'

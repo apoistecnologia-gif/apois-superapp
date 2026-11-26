@@ -2,7 +2,7 @@ name: APOIS GPS - instalar exatamente V3 revisada
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['.github/workflows/apois-navigation-lab-v3-exact-install.yml']
+    paths: ['.github/workflows/apois-navigation-lab-v3-exact-install.yml','labs/apois-navigation/field-v3/install-smoke.sh','labs/apois-navigation/emulator-common/ui.sh']
   workflow_dispatch:
 permissions:
   contents: read
