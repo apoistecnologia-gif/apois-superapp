@@ -1,0 +1,33 @@
+name: APOIS GPS - catalogo offline Piaui (sem ativacao)
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/embedded-search/**','.github/workflows/apois-navigation-lab-embedded-search.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Unit tests
+        run: python3 -m unittest discover -s labs/apois-navigation/embedded-search -p 'test_*.py' -v
+      - run: sudo apt-get update -qq && sudo apt-get install -y osmium-tool
+      - name: Reproduce source extract and verify exact provenance before catalog
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/apois-search-source"
+          mkdir -p "$W"
+          curl -fL --retry 2 --retry-all-errors --connect-timeout 20 --max-time 240 https://download.openstreetmap.fr/extracts/south-america/brazil/northeast/piaui-latest.osm.pbf -o "$W/piaui.osm.pbf"
+          osmium extract --strategy complete_ways --bbox=-41.85,-7.75,-41.15,-6.85 "$W/piaui.osm.pbf" -o "$W/pilot.osm.pbf"
+          python3 labs/apois-navigation/embedded-search/catalog.py "$W/pilot.osm.pbf" "$RUNNER_TEMP/apois-search-report"
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: apois-piaui-offline-search-candidates
+          path: ${{ runner.temp }}/apois-search-report/
+          retention-days: 7
