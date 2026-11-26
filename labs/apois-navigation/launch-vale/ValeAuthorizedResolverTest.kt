@@ -22,17 +22,23 @@ class ValeAuthorizedResolverTest {
             val origin=RegionalPoint(-9.403901,-40.5040233)
             val destination=RegionalPoint(-9.4165,-40.5035)
             val target=ApprovedIndependentTarget(identity,id,RidePhase.PICKUP,destination,RoutingTargetSource.INDEPENDENT_OSM)
-            val lease=pack.acquireLease()
             var active=true
             var reads=0
-            var revokeOnRead=Int.MAX_VALUE
-            val evidence:suspend ()->VerifiedRouteEvidence?={
+            var changeOnRead=Int.MAX_VALUE
+            val request=ConfirmedHostRequest(id,RidePhase.PICKUP,0)
+            val proof=DriverControlTarget(target,"00000000-0000-4000-8000-000000000005",1)
+            val readTarget:suspend (ConfirmedHostRequest)->DriverControlTarget?={r->
+                check(r==request)
                 reads++
-                if(reads>=revokeOnRead)active=false
-                val now=SystemClock.elapsedRealtime()
-                if(!active)null else routeEvidenceFromRead(NativeVerifiedRide(identity,id,RidePhase.PICKUP,0,now,"carros"),target,now)
+                if(!active)null else if(reads>=changeOnRead)proof.copy(version=2) else proof
             }
-            val factory=valeLocalFactory(context,lease)
+            assertNull(valeDriverGrant(context,pack,request,{false},readTarget))
+            assertEquals(0,reads)
+            val grant=checkNotNull(valeDriverGrant(context,pack,request,{active},readTarget))
+            assertEquals(1,reads)
+            assertNull(grant.issuer)
+            val evidence=checkNotNull(grant.verifyEvidence)
+            val factory=checkNotNull(grant.localFactory)
             var resolver:ManagedRouteResolver?=null
             try{
                 assertNull(factory.open(target.copy(source=RoutingTargetSource.GOOGLE),map,{active},evidence))
@@ -42,26 +48,26 @@ class ValeAuthorizedResolverTest {
                 assertNull(factory.open(target,map,{active},evidence))
                 val route=opened.resolve(origin,destination)
                 assertTrue(route.geometry.size>1)
-                assertEquals(2,reads)
+                assertEquals(3,reads)
                 assertTrue(runCatching{opened.resolve(origin,origin)}.isFailure)
                 assertEquals(2,reads)
                 // Revoke the simulated authority only after the JNI calculation.
-                revokeOnRead=4
+                changeOnRead=5
                 assertTrue(runCatching{opened.resolve(origin,destination)}.isFailure)
-                assertEquals(4,reads)
-                assertFalse(active)
+                assertEquals(5,reads)
+                active=false
                 assertTrue(runCatching{opened.resolve(origin,destination)}.isFailure)
-                assertEquals(4,reads)
+                assertEquals(5,reads)
                 // Resource validity must fail even without requesting a route.
                 assertTrue(resolverResourcesCurrent(opened))
-                lease.close()
+                opened.dispose()
                 assertFalse(resolverResourcesCurrent(opened))
+                assertFalse(grant.current())
             }finally{
                 resolver?.dispose()
-                lease.close()
             }
-            assertFalse(lease.current())
-            assertFalse(lease.claim())
+            assertFalse(grant.current())
+            assertNull(factory.open(target,map,{true},evidence))
             android.util.Log.i("APOIS_VALE_AUTHORIZED","real_engine=true; real_map=true; synthetic_authority=true; revocation_rejected=true")
         }
     }

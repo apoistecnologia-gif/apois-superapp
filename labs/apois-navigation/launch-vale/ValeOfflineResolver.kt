@@ -106,3 +106,65 @@ internal fun valeLocalFactory(context:Context,lease:VerifiedValeRuntimePack.Leas
                 android.os.SystemClock::elapsedRealtime,lease::close)
         }catch(e:Exception){lease.close();throw e}
     }
+
+
+/** Native-only binding to the existing driver-control target contract. The
+ * caller supplies a trusted source; no permit or origin is sent for routing.
+ * An exact evidence ID, version, ride, phase, point and identity must match
+ * every subsequent read. This is not an offline ride authorization. */
+internal suspend fun valeDriverGrant(
+    context:Context,pack:VerifiedValeRuntimePack,request:ConfirmedHostRequest,
+    live:()->Boolean,readTarget:suspend (ConfirmedHostRequest)->DriverControlTarget?,
+    audioAuthorization:(()->Boolean)?=null
+):NativeHostGrant?{
+    fun available()=runCatching{live()}.getOrDefault(false)
+    if(!request.valid()||!available())return null
+    val target=readTarget(request)?.takeIf{it.matches(request)}?:return null
+    if(!available())return null
+    val lease=pack.acquireLease()
+    var handedOff=false
+    try{
+        ensureActiveForValeGrant()
+        fun current()=available()&&lease.current()
+        if(!current())return null
+        val grant=NativeHostGrant(target.approved.identity,target.approved,::current,::current,null,
+            audioAuthorization=audioAuthorization,
+            verifyEvidence={
+                if(!current())null else{
+                    val next=readTarget(request)
+                    if(!current()||!target.currentProof(next))null
+                    else next?.evidence(android.os.SystemClock.elapsedRealtime())
+                }
+            },
+            localFactory=valeLocalFactory(context,lease))
+        handedOff=true
+        return grant
+    }finally{if(!handedOff)lease.close()}
+}
+private suspend fun ensureActiveForValeGrant(){kotlinx.coroutines.currentCoroutineContext().ensureActive()}
+
+/** Deliberately disabled unless a trusted native build explicitly enables it.
+ * No registration in official apps, endpoint deployment or credentials.
+ * Only the existing authenticated driver-control target endpoint is consulted;
+ * calculation is local and never falls back to remote routing. */
+internal suspend fun installValeLocalDriverControlCandidate(
+    enabled:Boolean=false,context:Context,backendHost:String,
+    online:()->Boolean,hostCurrent:()->Boolean,audioAuthorization:(()->Boolean)?=null
+):Boolean{
+    if(!enabled)return false
+    check(android.os.Looper.myLooper()==android.os.Looper.getMainLooper())
+    val client=runCatching{NativeDriverControlClient(backendHost)}.getOrNull()?:return false
+    val pack=try{VerifiedValeRuntimePack.install(context.applicationContext)}
+        catch(e:kotlinx.coroutines.CancellationException){throw e}
+        catch(_:Exception){return false}
+    ensureActiveForValeGrant()
+    if(!runCatching{hostCurrent()}.getOrDefault(false))return false
+    val app=context.applicationContext
+    return NativeConfirmedHost.install(NativeHostConfiguration(
+        backendHost,"","",online,grant={request->
+            val stamp=NativeDriverReadSource.stamp()?:return@NativeHostConfiguration null
+            fun live()=NativeDriverReadSource.current(stamp)&&
+                runCatching{hostCurrent()&&online()}.getOrDefault(false)
+            valeDriverGrant(app,pack,request,::live,client::target,audioAuthorization)
+        },localRoutingOnly=true))
+}

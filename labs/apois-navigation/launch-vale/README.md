@@ -14,3 +14,6 @@ Run de preservação 45750844751 aprovado: quatro artefatos ativos no armazename
 
 ## Revogação de recursos durante a navegação
 A ponte de navegação verifica a validade do resolver gerenciado durante preparação, abertura, eventos, renovação e checagem periódica da Activity. A perda da lease local encerra a autorização da tela mesmo sem recálculo; o resolver de rede conserva o comportamento anterior. O teste de motor real inclui revogação de recursos sem nova rota. A checagem barata de metadados não substitui hashes completos; nenhuma alteração nos hosts oficiais.
+
+## Adaptador nativo para autoridade do motorista (não registrado)
+O candidato local passa pelo mesmo contrato de target do driver-control já existente, com nova leitura autenticada antes/depois da rota e renovação. Fixa identidade, corrida, fase, evidência/versionamento e destino. Não pede permit remoto, não envia origem a roteador e não muda preço ou estado da corrida. Exige host explicitamente aprovado, sessão nativa vigente, conectividade para autoridade e instalação prévia do pacote. Desabilitado por padrão; teste usa resposta sintética do contrato e motor real. Ainda não existe deploy do endpoint nem registro no host oficial.
