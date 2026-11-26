@@ -38,8 +38,8 @@ jobs:
           path: ${{ runner.temp }}/apois-map-assets
       - uses: actions/download-artifact@v4
         with:
-          name: apois-v21-regional-evidence
-          run-id: 45707496288
+          name: apois-vale-synthetic-replay
+          run-id: 45787969611
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/apois-route-assets
       - name: Gerar APK de teste sem backend ou rede

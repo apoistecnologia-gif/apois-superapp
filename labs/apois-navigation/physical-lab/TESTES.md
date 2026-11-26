@@ -10,3 +10,5 @@ Limites: não testa app oficial, autenticação real, servidor remoto, recálcul
 CI 45784332943 falhou na geração do overlay porque há dois callbacks de saída após a separação do painel confirmado. Correção preserva saída confirmada e bloqueia apenas saída SDK do replay sintético. APK passa a incluir hash/commit e lista de arquivos, com retenção 30 dias; ainda requer build verde e teste físico. O teste de tela confirmada separado passou no run 45784332748. Nenhum APK oficial alterado.
 
 O novo ensaio de retenção preserva somente relatório e três rotas/replays sintéticos do run 45707496288, validando métricas, voz e origem antes de copiar; publica hashes SHA-256 para revisão. Não contém tokens, chave de assinatura ou dados de cliente. A mudança para o novo run só deve ocorrer após confirmar sucesso. O arquivo original vence 02/12/2026.
+
+Retenção de replay aprovada no run 45787969611 (artefato 15101661381, vence 26/12/2026). Consumidor usa essa cópia; os sete hashes individuais do relatório e das rotas foram fixados no verificador. Não é distribuição de mapas em produção.
