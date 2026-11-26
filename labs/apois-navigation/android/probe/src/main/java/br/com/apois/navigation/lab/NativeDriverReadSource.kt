@@ -8,7 +8,7 @@ import java.security.MessageDigest
 // It stores no access/refresh tokens. Captures are internal, short lived,
 // never serialized or sent to JavaScript or to a routing provider.
 object NativeDriverReadSource{
-    private class Source(val id:Long,val base:String,val key:String,val access:Supplier<String>)
+    private class Source(val id:Long,val base:String,val key:String,val access:Supplier<String>,val binding:Any=Any())
     private var source:Source?=null
     private fun main(){check(Looper.myLooper()==Looper.getMainLooper())}
     fun bind(id:Long,baseUrl:String,publishableKey:String,access:Supplier<String>):Boolean{
@@ -19,7 +19,7 @@ object NativeDriverReadSource{
         return true
     }
     fun unbind(id:Long){main();if(source?.id==id)source=null}
-    internal class Capture(val sourceId:Long,val base:String,val key:String,val access:String){
+    internal class Capture(val sourceId:Long,val base:String,val key:String,val access:String,val binding:Any){
         override fun toString()="NativeDriverReadCapture(redacted)"
     }
     internal fun capture():Capture?{
@@ -27,24 +27,24 @@ object NativeDriverReadSource{
         val s=source?:return null
         if(DriverGpsFeed.currentSourceId()!=s.id)return null
         val token=runCatching{s.access.get()}.getOrNull()?.takeIf{it.isNotBlank()}?:return null
-        return Capture(s.id,s.base,s.key,token)
+        return Capture(s.id,s.base,s.key,token,s.binding)
     }
     // In-memory fingerprint only. Fail closed if the access token changes,
     // even on a legitimate refresh. No raw credential retained by a route.
-    internal class Stamp(val sourceId:Long,private val digest:ByteArray){
-        fun matches(other:Stamp)=sourceId==other.sourceId&&MessageDigest.isEqual(digest,other.digest)
+    internal class Stamp(val sourceId:Long,private val digest:ByteArray,private val binding:Any){
+        fun matches(other:Stamp)=sourceId==other.sourceId&&binding===other.binding&&MessageDigest.isEqual(digest,other.digest)
         override fun toString()="NativeDriverSessionStamp(redacted)"
     }
     internal fun stamp():Stamp?{
         val c=capture()?:return null
-        return Stamp(c.sourceId,MessageDigest.getInstance("SHA-256").digest(c.access.toByteArray(Charsets.UTF_8)))
+        return Stamp(c.sourceId,MessageDigest.getInstance("SHA-256").digest(c.access.toByteArray(Charsets.UTF_8)),c.binding)
     }
     internal fun current(stamp:Stamp):Boolean=stamp()?.let{stamp.matches(it)}==true
 
     internal fun current(c:Capture):Boolean{
         main()
         val s=source?:return false
-        return s.id==c.sourceId&&DriverGpsFeed.currentSourceId()==s.id&&s.base==c.base&&s.key==c.key&&
+        return s.binding===c.binding&&s.id==c.sourceId&&DriverGpsFeed.currentSourceId()==s.id&&s.base==c.base&&s.key==c.key&&
             runCatching{s.access.get()==c.access}.getOrDefault(false)
     }
 }
