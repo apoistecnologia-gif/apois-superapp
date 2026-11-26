@@ -8,6 +8,11 @@ internal sealed class RouteRegion {
     data object Vale:RouteRegion(){
         override fun contains(point:RegionalPoint)=point.valid()
     }
+    // Dedicated rectangular field pilot, never the official Northeast policy.
+    data object FieldPilot:RouteRegion(){
+        override fun contains(point:RegionalPoint)=point.lat.isFinite()&&point.lng.isFinite()&&
+            point.lat in -7.75..-6.85&&point.lng in -41.85..-41.15
+    }
     class Verified(private val policy:NativeRegionPolicy):RouteRegion(){
         override fun contains(point:RegionalPoint)=policy.contains(point.lat,point.lng)
     }
