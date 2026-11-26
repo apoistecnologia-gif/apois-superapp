@@ -11,6 +11,14 @@ import org.junit.runner.RunWith
  * Authority is a synthetic in-memory fixture only, never an official backend. */
 @RunWith(AndroidJUnit4::class)
 class ValeAuthorizedResolverTest {
+    @Test fun nativeBootstrapDefaultDoesNotTouchHostOrStorage(){
+        val inst=InstrumentationRegistry.getInstrumentation()
+        val context=inst.targetContext
+        runBlocking{
+            assertFalse(ValeNativeHostBootstrap.install(context,"not-an-origin",{error("offline callback")},{error("host callback")}))
+        }
+        inst.runOnMainSync{assertFalse(NativeConfirmedHost.configured())}
+    }
     @Test fun verifiedLocalFactoryAndRevocation(){
         runBlocking {
             val context=InstrumentationRegistry.getInstrumentation().targetContext
