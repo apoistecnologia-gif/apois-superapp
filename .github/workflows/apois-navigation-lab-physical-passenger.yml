@@ -2,7 +2,7 @@ name: APOIS Passageiro - APK fisico isolado WebView
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/physical-passenger/**','.github/workflows/apois-navigation-lab-physical-passenger.yml']
+    paths: ['labs/apois-navigation/physical-passenger/**','labs/apois-navigation/passenger-provenance-snapshot/experimental/apois-navigation/ui/**','labs/apois-navigation/emulator-common/boot.sh','labs/apois-navigation/emulator-common/apk-assertions.sh','.github/workflows/apois-navigation-lab-physical-passenger.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,7 +10,7 @@ permissions:
 jobs:
   physical-passenger:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +29,7 @@ jobs:
       - run: |
           set -euo pipefail
           SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
-          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
       - uses: actions/download-artifact@v4
         with:
           name: apois-vale-runtime-assets-inactive
@@ -45,6 +45,19 @@ jobs:
       - name: Verify preserved catalog and reject altered fixture bytes
         run: APOIS_RETAINED_CATALOG="$RUNNER_TEMP/apois-route-assets/catalog.json" node --test labs/apois-navigation/physical-passenger/verify-catalog.test.mjs
       - run: bash labs/apois-navigation/physical-passenger/build.sh
+      - name: Enable emulator acceleration
+        run: |
+          test -e /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Verify isolated APK in actual Android WebView
+        run: bash labs/apois-navigation/physical-passenger/emulator.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apois-passenger-webview-report
+          path: ${{ runner.temp }}/apois-passenger-webview-report/
+          retention-days: 30
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: APOIS-Passageiro-Teste-Fisico
