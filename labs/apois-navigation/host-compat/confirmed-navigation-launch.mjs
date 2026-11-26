@@ -114,10 +114,10 @@ export class ConfirmedNavigationLaunch {
     if(this.#closing)return this.#awaitClose(this.#closing);
     return !this.#blocked && !this.#busy;
   }
-  async launch({rideId,phase,openExternal}) {
+  async launch({rideId,phase,openExternal,allowExternalFallback=true}) {
     // Preserve exact QA290 behavior by default: no verification RPC, native
     // calls, state changes, or new dependency on an experimental feature.
-    if(!this.#enabled){await openExternal();return "external";}
+    if(!this.#enabled){if(!allowExternalFallback)return "unavailable";await openExternal();return "external";}
     if(!uuid(rideId)||!Object.hasOwn(statusFor,phase))return "unverified";
     if(this.#busy||this.#native)return "busy";
     if(this.#blocked)return "uncertain";
@@ -138,6 +138,7 @@ export class ConfirmedNavigationLaunch {
       // The existing external route remains available for all categories.
       // Only a verified passenger-car ride may use the auto-costing resolver.
       if(proof.row.category!=="carros"){
+        if(!allowExternalFallback)return "unavailable";
         await openExternal();
         return current()?"external":"stale";
       }
@@ -148,6 +149,7 @@ export class ConfirmedNavigationLaunch {
         try{available=await this.canOpenNative()===true;}catch{}
         if(!current())return "stale";
         if(!available){
+          if(!allowExternalFallback)return "unavailable";
           const again=await this.verify({rideId,phase});
           if(!current())return "stale";
           if(!again||again.row?.id!==rideId||again.row.status!==statusFor[phase]||
@@ -202,6 +204,7 @@ export class ConfirmedNavigationLaunch {
       if(result?.state!=="unavailable"){this.#blocked=true;return "uncertain";}
       nativeUncertain=false;
       releaseAudio?.();releaseAudio=null;
+      if(!allowExternalFallback)return "unavailable";
       // Reverify even after a definitive failure: account/ride may have changed
       // while the native attempt was running.
       const again=await this.verify({rideId,phase});

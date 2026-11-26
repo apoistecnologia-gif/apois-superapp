@@ -280,3 +280,18 @@ test("capability check never enables after logout or identity change",async()=>{
   const p=x.launch(request(async()=>{external++;}));await entered.promise;await x.invalidate();d.resolve(false);
   assert.equal(await p,"stale");assert.equal(external,0);
 });
+
+test("explicit internal-only launch never surprises the driver with an external app",async()=>{
+  let external=0;const r={...request(async()=>{external++;}),allowExternalFallback:false};
+  const disabled=new ConfirmedNavigationLaunch({});
+  assert.equal(await disabled.launch(r),"unavailable");
+  const unsupported=proof();unsupported.row.category="motos";
+  for(const options of [
+    {verify:async()=>unsupported},
+    {verify:async()=>proof(),canOpenNative:async()=>false},
+    {verify:async()=>proof(),openNative:async()=>({state:"unavailable"})}
+  ])assert.equal(await new ConfirmedNavigationLaunch({enabled:true,...options}).launch(r),"unavailable");
+  const uncertain=new ConfirmedNavigationLaunch({enabled:true,verify:async()=>proof(),openNative:async()=>{throw Error("ambiguous")}});
+  assert.equal(await uncertain.launch(r),"uncertain");
+  assert.equal(external,0);
+});
