@@ -28,3 +28,12 @@ returns jsonb language sql stable security invoker set search_path='' as $$
 $$;
 revoke all on function public.apois_nav_lab_driver_proof_v21(uuid,uuid,text) from public,anon,authenticated;
 grant execute on function public.apois_nav_lab_driver_proof_v21(uuid,uuid,text) to service_role;
+
+do $$
+begin
+ if has_function_privilege('anon','public.apois_nav_lab_driver_proof_v21(uuid,uuid,text)','execute')
+ or has_function_privilege('authenticated','public.apois_nav_lab_driver_proof_v21(uuid,uuid,text)','execute')
+ or not has_function_privilege('service_role','public.apois_nav_lab_driver_proof_v21(uuid,uuid,text)','execute') then
+ raise exception 'Driver proof RPC grants incorrect';
+ end if;
+end $$;
