@@ -1,9 +1,10 @@
 // Login JWT is used only by verifySession; never forwarded.
 import {createDriverSigner} from './driver-protocol.mjs'
 import {uuid,boundedJson,json,deny} from './http.mjs'
-export function createDriverProxy({enabled=false,endpoint,keyId,secret,verifySession,allowPilot,fetcher=fetch}={}){
+export function createDriverProxy({enabled=false,localOnly=false,endpoint,keyId,secret,verifySession,allowPilot,fetcher=fetch}={}){
  if(!enabled)return async()=>deny(409)
  const url=new URL(endpoint)
+ if(typeof localOnly!=='boolean')throw Error('Invalid local mode')
  if(url.protocol!=='https:'||url.username||url.password||url.pathname!=='/driver-control'||url.search||url.hash||typeof verifySession!=='function'||typeof allowPilot!=='function')throw Error('Invalid trusted proxy configuration')
  return async req=>{
   if(req.method!=='POST')return deny(405)
@@ -11,6 +12,10 @@ export function createDriverProxy({enabled=false,endpoint,keyId,secret,verifySes
   if(!header.startsWith('Bearer ')||header.length>8192)return deny(401)
   try{
    const request=await boundedJson(req)
+   if(localOnly){
+    if(request?.action!=='target')return deny(409)
+    if(!request||Object.keys(request).length!==3||!uuid(request.rideId)||!['PICKUP','TRIP'].includes(request.phase))return deny(422)
+   }
    const actor=await verifySession(header.slice(7))
    if(!uuid(actor))return deny(401)
    if(await allowPilot(actor)!==true)return deny(403)
