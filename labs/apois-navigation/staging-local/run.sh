@@ -27,4 +27,8 @@ test "$(docker exec "$DB_CONTAINER" psql -X -qAt -U supabase_admin -d postgres -
 docker exec -i "$DB_CONTAINER" psql -X -q -U supabase_admin -d postgres -v ON_ERROR_STOP=1 < fixture.sql
 npm init -y >/dev/null
 npm install --save-exact --no-audit --no-fund @supabase/supabase-js@2.45.4
+if test "${APOIS_LOCAL_REGIONAL:-false}" = true;then
+ openssl req -x509 -newkey rsa:2048 -nodes -keyout "$ROOT/quote-key.pem" -out "$ROOT/quote-cert.pem" -days 1 -subj /CN=localhost -addext subjectAltName=DNS:localhost >/dev/null 2>&1
+ export NODE_EXTRA_CA_CERTS="$ROOT/quote-cert.pem"
+fi
 node "$LAB/apps-auth.integration.mjs" "$ROOT"

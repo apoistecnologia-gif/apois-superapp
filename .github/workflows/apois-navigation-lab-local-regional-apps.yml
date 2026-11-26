@@ -1,0 +1,46 @@
+name: APOIS Navegacao - Auth local e Valhalla regional integrados
+on:
+  push:
+    branches: [lab/apois-navegacao-ferrostar-etapa1]
+    paths: ['labs/apois-navigation/staging-local/start-regional-valhalla.sh','.github/workflows/apois-navigation-lab-local-regional-apps.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  regional-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: supabase/setup-cli@v3
+        with:
+          version: '2.122.1'
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-vale-runtime-assets-inactive
+          run-id: 45750844751
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-vale-runtime-assets
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-inactive-passenger-catalog
+          run-id: 45762910530
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-inactive-passenger-catalog
+      - name: Auth real, catalogo OSM, Valhalla e formula observada
+        env:
+          APOIS_LOCAL_REGIONAL: 'true'
+        run: |
+          set -euo pipefail
+          trap 'docker rm -f apois-local-auth-valhalla >/dev/null 2>&1 || true' EXIT
+          node labs/apois-navigation/physical-passenger/verify-catalog.mjs "$RUNNER_TEMP/apois-inactive-passenger-catalog/catalog.json"
+          bash labs/apois-navigation/staging-local/start-regional-valhalla.sh
+          bash labs/apois-navigation/staging-local/run.sh
+          test "$(docker inspect -f '{{.State.Running}} {{.State.OOMKilled}}' apois-local-auth-valhalla)" = "true false"
