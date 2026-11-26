@@ -2,7 +2,7 @@ name: APOIS Navegacao - compatibilidade Capacitor (sem APK)
 on:
   push:
     branches: [lab/apois-navegacao-ferrostar-etapa1]
-    paths: ['labs/apois-navigation/host-compat/**', 'labs/apois-navigation/android/**', '.github/workflows/apois-navigation-lab-host-compat.yml']
+    paths: ['labs/apois-navigation/host-compat/**', 'labs/apois-navigation/android/**','labs/apois-navigation/launch-vale/ValeOfflineResolver.kt','labs/apois-navigation/launch-vale/ValeRuntimePack.kt','labs/apois-navigation/pack-store/OfflinePackStore.kt', '.github/workflows/apois-navigation-lab-host-compat.yml']
   workflow_dispatch:
 # Avoid redundant dependency downloads for superseded laboratory commits.
 concurrency:
@@ -10,14 +10,16 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
+  actions: read
 jobs:
   host:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: false
+          persist-credentials: false
       - name: Checkout pinned public Motorista source (read only)
         uses: actions/checkout@v4
         with:
@@ -83,6 +85,14 @@ jobs:
           javac -d "$RUNNER_TEMP/voice-tests" "$V/VoiceGeneration.java" "$V/VoiceGenerationTest.java"
           java -cp "$RUNNER_TEMP/voice-tests" br.com.apois.navigation.compat.lab.VoiceGenerationTest
           node "$V/prepare-driver-voice.mjs" "$RUNNER_TEMP/apois-compat-host" "$GITHUB_WORKSPACE/.navigation-driver-source" "$GITHUB_WORKSPACE"
+      - uses: actions/download-artifact@v4
+        with:
+          name: apois-vale-runtime-assets-inactive
+          run-id: 45750844751
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/apois-vale-runtime-assets
+      - name: Stage verified Vale beside actual QA290 GPS and voice code
+        run: node labs/apois-navigation/host-compat/prepare-vale-native.mjs "$RUNNER_TEMP/apois-compat-host" "$GITHUB_WORKSPACE/labs/apois-navigation" "$RUNNER_TEMP/apois-vale-runtime-assets"
       - name: Compilar no Gradle original, checar manifesto e dependencias
         run: |
           set -euo pipefail
