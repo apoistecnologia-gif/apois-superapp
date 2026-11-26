@@ -57,7 +57,7 @@ try{
  // Observe actual Chromium traffic without Playwright interception (which can change CORS/cache behavior).
  page.on('request',r=>{const u=r.url();if(!u.startsWith(origin+'/')&&u!==mapOrigin+path&&!u.startsWith('blob:')&&!u.startsWith('data:'))external.push(u)})
  page.on('pageerror',e=>errors.push(String(e)))
- await page.goto(origin);await page.waitForFunction(()=>typeof window.startMap==='function')
+ await page.goto(origin);await page.locator('script[type=module]').waitFor({state:'attached'});assert.equal(await page.evaluate(()=>typeof window.startMap),'function')
  // Independent browser CORS check: require If-Range preflight and exposed response metadata.
  const probe=await page.evaluate(async({url,etag})=>{
   const r=await fetch(url,{headers:{Range:'bytes=0-126','If-Range':etag},credentials:'omit',redirect:'error'});
@@ -68,7 +68,16 @@ try{
  assert.ok(preflights>0,'No actual CORS preflight received')
  const initialBytes=bytes,initialRequests=requests
  await page.evaluate(()=>window.startMap())
- await page.waitForFunction(()=>window.lab?.map.loaded()&&window.lab.map.queryRenderedFeatures({layers:['road-label']}).length>0,{},{timeout:25000})
+ // Poll from the Node test harness; waitForFunction evaluates a string inside
+ // the page and conflicts with strict script-src. Do not relax the CSP.
+ const deadline=Date.now()+25000
+ let rendered=false
+ while(Date.now()<deadline){
+  rendered=await page.evaluate(()=>Boolean(window.lab?.map.loaded()&&window.lab.map.queryRenderedFeatures({layers:['road-label']}).length>0))
+  if(rendered)break
+  await new Promise(r=>setTimeout(r,150))
+ }
+ assert.ok(rendered,'Map did not render road labels before deadline')
  const stats=await page.evaluate(()=>({roads:window.lab.map.queryRenderedFeatures({layers:['roads']}).length,labels:window.lab.map.queryRenderedFeatures({layers:['road-label','place-label']}).length,attribution:document.querySelector('.maplibregl-ctrl-attrib')?.textContent,...window.lab.metrics()}))
  assert.ok(stats.roads>0&&stats.labels>0&&stats.tiles>0);assert.match(stats.attribution,/OpenStreetMap contributors/)
  console.log('MAP_RANGE_METRICS',JSON.stringify({archiveBytes:size,rangeBytes:bytes-initialBytes,requests:requests-initialRequests,preflights,unexpected,external,errors,...stats}))
