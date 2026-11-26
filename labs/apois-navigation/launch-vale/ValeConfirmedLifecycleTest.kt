@@ -51,6 +51,24 @@ class ValeConfirmedLifecycleTest{
             }}
             runCatching{val out=ByteArrayOutputStream();device.dumpWindowHierarchy(out);android.util.Log.e("APOIS_VALE_LIFECYCLE","diagnostic hierarchy="+out.toString("UTF-8").take(12000))}
         }
+        // The previous CI hierarchy proved a Pixel Launcher ANR covered the
+        // resumed, authorized APOIS Activity. Only dismiss that exact external
+        // system dialog; never dismiss an APOIS crash/ANR or restart a ride.
+        var launcherDismissals=0
+        fun waitForAppText(expected:String,timeout:Long):Boolean{
+            val until=SystemClock.elapsedRealtime()+timeout
+            val selector=By.pkg(app.packageName).textContains(expected)
+            while(SystemClock.elapsedRealtime()<until){
+                if(device.hasObject(By.pkg("android").text("Pixel Launcher isn't responding"))){
+                    val close=device.findObject(By.pkg("android").res("android:id/aerr_close"))
+                    check(close!=null&&launcherDismissals<2){"External launcher ANR could not be cleared"}
+                    launcherDismissals++
+                    android.util.Log.w("APOIS_VALE_LIFECYCLE","external_launcher_anr_dismissed=$launcherDismissals")
+                    close.click()
+                }else if(device.wait(Until.hasObject(selector),1000L)==true)return true
+            }
+            return false
+        }
         try{
             device.wakeUp()
             scenario.onActivity{
@@ -89,8 +107,8 @@ class ValeConfirmedLifecycleTest{
                 assertTrue("open callback timeout",opened.await(40,TimeUnit.SECONDS))
                 assertFalse("ambiguous opening",uncertain.get())
                 val id=checkNotNull(session.get()){ "native session unavailable" }
-                assertTrue("confirmed Activity not rendered: $expected",device.wait(Until.hasObject(By.textContains(expected)),25_000L))
-                assertTrue("host-only operations not shown",device.wait(Until.hasObject(By.textContains("demais ações permanecem")),10_000L))
+                assertTrue("confirmed Activity not rendered: $expected",waitForAppText(expected,25_000L))
+                assertTrue("host-only operations not shown",waitForAppText("demais ações permanecem",10_000L))
                 inst.runOnMainSync{
                     val screen=checkNotNull(ConfirmedLiveNavigationBridge.screen.value)
                     assertEquals(id,screen.id);assertEquals(phase,screen.ride.phase)
@@ -105,13 +123,13 @@ class ValeConfirmedLifecycleTest{
                 return id to closed
             }
             val pickup=open(RidePhase.PICKUP,"Indo ao passageiro").first
-            assertTrue(device.wait(Until.hasObject(By.textContains("APOIS CI fixture")),10_000L))
+            assertTrue(waitForAppText("APOIS CI fixture",10_000L))
             val ack=CountDownLatch(1);val accepted=AtomicBoolean(false)
             inst.runOnMainSync{ConfirmedLiveNavigationBridge.closeAcknowledged(pickup){ok->accepted.set(ok);ack.countDown()}}
             assertTrue(ack.await(5,TimeUnit.SECONDS));assertTrue(accepted.get())
             val trip=open(RidePhase.TRIP,"Corrida em andamento").first
             assertNotEquals(pickup,trip)
-            assertTrue(device.wait(Until.hasObject(By.textContains("APOIS CI fixture")),10_000L))
+            assertTrue(waitForAppText("APOIS CI fixture",10_000L))
             inst.runOnMainSync{assertNull(ConfirmedLiveNavigationBridge.screen.value);assertFalse(ConfirmedLiveNavigationBridge.occupied())}
             android.util.Log.i("APOIS_VALE_LIFECYCLE","confirmed_activity=true; back_ack=true; next_leg=true; authority_revoked=true; synthetic_gps=true")
         }catch(t:Throwable){
